@@ -2,12 +2,14 @@ const mongoose = require('mongoose');
 
 const purchaseOrderItemSchema = new mongoose.Schema({
   itemName: String,
+  productCode: String,
   category: String,
   paperType: String,
   gsm: Number,
   sheetSize: String,
   unit: String,
   qty: Number,
+  weight: Number,
   rate: Number,
   amount: Number
 }, { _id: false });

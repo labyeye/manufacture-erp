@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { authAPI } from '../api/auth';
 
-const AuthContext = createContext({
+export const AuthContext = createContext({
   user: null,
   token: null,
   isAdmin: false,
@@ -17,7 +17,11 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [token, setToken] = useState(() => {
+    const stored = localStorage.getItem('token');
+    if (!stored || stored === "undefined" || stored === "null") return null;
+    return stored;
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,7 +29,7 @@ export const AuthProvider = ({ children }) => {
       const storedToken = localStorage.getItem('token');
       const storedUser = localStorage.getItem('user');
 
-      if (storedToken && storedUser) {
+      if (storedToken && storedToken !== "undefined" && storedUser && storedUser !== "undefined") {
         try {
           const parsed = JSON.parse(storedUser);
           setUser(parsed);
@@ -55,7 +59,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
 
-      return { success: true };
+      return { success: true, user: data.user };
     } catch (error) {
       console.error('Login error:', error);
       return {

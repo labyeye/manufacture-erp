@@ -1,0 +1,1097 @@
+import React, { useState, useMemo, useEffect } from "react";
+import { C } from "../constants/colors";
+import { purchaseOrdersAPI } from "../api/auth";
+import {
+  Card,
+  SectionTitle,
+  Badge,
+  Field,
+  SubmitBtn,
+  AutocompleteInput,
+  DatePicker,
+  DateRangeFilter,
+} from "../components/ui/BasicComponents";
+
+const PAPER_TYPES_BY_ITEM = {
+  "Paper Reel": ["MG Kraft", "MF Kraft", "Bleached Kraft", "OGR"],
+  "Paper Sheets": [
+    "White PE Coated",
+    "Kraft PE Coated",
+    "Kraft Uncoated",
+    "SBS/FBB",
+    "Whiteback",
+    "Greyback",
+    "Art Paper",
+    "Gumming Sheet",
+  ],
+};
+const RM_ITEMS = ["Paper Reel", "Paper Sheets"];
+const CONSUMABLE_BOX_CATS = ["Corrugated Box", "Folding Box"];
+const CONSUMABLE_BAG_CATS = ["LDPE Polybag", "Paper Bag"];
+
+const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
+const today = () => new Date().toISOString().slice(0, 10);
+const fmt = (n) => (n ?? 0).toLocaleString("en-IN");
+
+const computeRMItemName = (it) => {
+  if (it.rmItem === "Paper Reel") {
+    return [
+      it.paperType,
+      "Paper Reel",
+      it.gsm ? it.gsm + "gsm" : "",
+      it.widthMm ? it.widthMm + "mm" : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+  } else if (it.rmItem === "Paper Sheets") {
+    return [
+      it.paperType,
+      "Sheet",
+      it.gsm ? it.gsm + "gsm" : "",
+      it.widthMm && it.lengthMm
+        ? it.widthMm + "x" + it.lengthMm + "mm"
+        : it.widthMm
+          ? it.widthMm + "mm"
+          : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+  }
+  return "";
+};
+
+export default function PurchaseOrders({
+  purchaseOrders = [],
+  setPurchaseOrders,
+  poCounter = 0,
+  setPoCounter,
+  vendorMaster = [],
+  categoryMaster = {},
+  sizeMaster = {},
+  itemMasterFG = {},
+  toast,
+}) {
+  const blankHeader = {
+    poDate: today(),
+    deliveryDate: "",
+    vendorName: "",
+    vendorContact: "",
+    poStatus: "Open",
+    remarks: "",
+    poNumber: "",
+  };
+  const blankItem = () => ({
+    _id: uid(),
+    materialType: "Raw Material",
+    productCode: "",
+    rmItem: "",
+    paperType: "",
+    widthMm: "",
+    lengthMm: "",
+    gsm: "",
+    noOfSheets: "",
+    noOfReels: "",
+    weight: "",
+    qty: "",
+    rate: "",
+    amount: "",
+    category: "",
+    itemName: "",
+    size: "",
+  });
+
+  const [header, setHeader] = useState(blankHeader);
+  const [items, setItems] = useState([blankItem()]);
+  const [headerErrors, setHeaderErrors] = useState({});
+  const [itemErrors, setItemErrors] = useState([{}]);
+  const [view, setView] = useState("form");
+  const [drDateFrom, setDrDateFrom] = useState("");
+  const [drDateTo, setDrDateTo] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+
+  // Fetch POs from backend on mount
+  useEffect(() => {
+    fetchPOs();
+  }, []);
+
+  const fetchPOs = async () => {
+    try {
+      setLoading(true);
+      const data = await purchaseOrdersAPI.getAll();
+      setPurchaseOrders(data.purchaseOrders || []);
+    } catch (error) {
+      console.error("Failed to fetch POs:", error);
+      toast("Failed to load purchase orders", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const paperTypesByItem = useMemo(
+    () => ({
+      "Paper Reel":
+        (sizeMaster && sizeMaster["Paper Reel"]) ||
+        PAPER_TYPES_BY_ITEM["Paper Reel"],
+      "Paper Sheets":
+        (sizeMaster && sizeMaster["Paper Sheet"]) ||
+        PAPER_TYPES_BY_ITEM["Paper Sheets"],
+    }),
+    [sizeMaster],
+  );
+
+  const setH = (k, v) => {
+    setHeader((f) => ({ ...f, [k]: v }));
+    setHeaderErrors((e) => ({ ...e, [k]: false }));
+  };
+
+  const EH = (k) => (headerErrors[k] ? { border: `1px solid ${C.red}` } : {});
+  const EHMsg = (k) =>
+    headerErrors[k] ? (
+      <div style={{ color: C.red, fontSize: 10, marginTop: 3 }}>Required</div>
+    ) : null;
+
+  const setItem = (idx, k, v) => {
+    setItems((prev) => {
+      const updated = [...prev];
+      const it = { ...updated[idx], [k]: v };
+
+      if (k === "productCode" && v) {
+        const masterItem = (itemMasterFG["Raw Material"] || []).find(
+          (x) => (x.code || "").toLowerCase() === v.toLowerCase(),
+        );
+        if (masterItem) {
+          const name = masterItem.name || "";
+          if (name.includes("Paper Reel")) {
+            it.rmItem = "Paper Reel";
+            const gsmMatch = name.match(/(\d+)gsm/);
+            const widthMatch = name.match(/(\d+)mm/);
+            const paperTypes = [
+              "MG Kraft",
+              "MF Kraft",
+              "Bleached Kraft",
+              "OGR",
+            ];
+            const foundType = paperTypes.find((t) => name.includes(t));
+            if (gsmMatch) it.gsm = gsmMatch[1];
+            if (widthMatch) it.widthMm = widthMatch[1];
+            if (foundType) it.paperType = foundType;
+          } else if (name.includes("Sheet")) {
+            it.rmItem = "Paper Sheets";
+            const gsmMatch = name.match(/(\d+)gsm/);
+            const dimMatch = name.match(/(\d+)x(\d+)mm/);
+            const widthMatch = name.match(/(\d+)mm/);
+            const paperTypes = [
+              "White PE Coated",
+              "Kraft PE Coated",
+              "Kraft Uncoated",
+              "SBS/FBB",
+              "Whiteback",
+              "Greyback",
+              "Art Paper",
+              "Gumming Sheet",
+            ];
+            const foundType = paperTypes.find((t) => name.includes(t));
+            if (gsmMatch) it.gsm = gsmMatch[1];
+            if (dimMatch) {
+              it.widthMm = dimMatch[1];
+              it.lengthMm = dimMatch[2];
+            } else if (widthMatch) it.widthMm = widthMatch[1];
+            if (foundType) it.paperType = foundType;
+          }
+          it.itemName = masterItem.name;
+        }
+      }
+
+      if (k === "materialType") {
+        it.rmItem = "";
+        it.paperType = "";
+        it.itemName = "";
+        it.widthMm = "";
+        it.lengthMm = "";
+        it.gsm = "";
+        it.noOfSheets = "";
+        it.noOfReels = "";
+        it.weight = "";
+        it.qty = "";
+        it.productCode = "";
+      }
+
+      if (k === "rmItem") {
+        it.paperType = "";
+        it.itemName = "";
+      }
+
+      const isRM = it.materialType === "Raw Material" || !it.materialType;
+      const weight = k === "weight" ? +v : +(it.weight || 0);
+      const qty = k === "qty" ? +v : +(it.qty || 0);
+      const rate = k === "rate" ? +v : +(it.rate || 0);
+      it.amount = isRM
+        ? weight && rate
+          ? (weight * rate).toFixed(2)
+          : ""
+        : qty && rate
+          ? (qty * rate).toFixed(2)
+          : "";
+
+      it.itemName = isRM ? computeRMItemName(it) : it.itemName;
+      updated[idx] = it;
+      return updated;
+    });
+    setItemErrors((prev) => {
+      const e = [...prev];
+      e[idx] = { ...(e[idx] || {}), [k]: false };
+      return e;
+    });
+  };
+
+  const EI = (idx, k) =>
+    (itemErrors[idx] || {})[k] ? { border: `1px solid ${C.red}` } : {};
+  const EIMsg = (idx, k) =>
+    (itemErrors[idx] || {})[k] ? (
+      <div style={{ color: C.red, fontSize: 10, marginTop: 3 }}>Required</div>
+    ) : null;
+
+  const addItem = () => {
+    setItems((prev) => [...prev, blankItem()]);
+    setItemErrors((prev) => [...prev, {}]);
+  };
+
+  const removeItem = (idx) => {
+    if (items.length === 1) return;
+    setItems((prev) => prev.filter((_, i) => i !== idx));
+    setItemErrors((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const submit = async () => {
+    const he = {};
+    if (!header.poDate) he.poDate = true;
+    if (!header.deliveryDate) he.deliveryDate = true;
+    if (!header.vendorName) he.vendorName = true;
+    setHeaderErrors(he);
+
+    const allItemErrors = items.map((it) => {
+      const e = {};
+      const isRM = it.materialType === "Raw Material" || !it.materialType;
+      if (isRM) {
+        if (!it.rmItem) e.rmItem = true;
+        if (!it.paperType) e.paperType = true;
+        if (!it.widthMm) e.widthMm = true;
+        if (it.rmItem !== "Paper Reel" && !it.lengthMm) e.lengthMm = true;
+        if (!it.gsm) e.gsm = true;
+        if (!it.weight) e.weight = true;
+      } else {
+        if (!it.qty) e.qty = true;
+      }
+      if (!it.rate) e.rate = true;
+      return e;
+    });
+    setItemErrors(allItemErrors);
+
+    if (
+      Object.keys(he).length > 0 ||
+      allItemErrors.some((e) => Object.keys(e).length > 0)
+    ) {
+      toast("Please fill all required fields", "error");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      let result;
+
+      const poData = {
+        poNo: header.poNumber || `PO-${Date.now()}`,
+        poDate: header.poDate,
+        vendor: header.vendorName,
+        items: items.map((it) => {
+          const isRM = it.materialType === "Raw Material" || !it.materialType;
+          return {
+            itemName: it.itemName,
+            productCode: it.productCode,
+            category: it.category || it.materialType,
+            paperType: it.paperType,
+            gsm: it.gsm,
+            sheetSize: `${it.widthMm}${it.lengthMm ? "x" + it.lengthMm : ""}mm`,
+            unit: isRM ? "kg" : "pcs",
+            qty: isRM ? it.weight : it.qty,
+            weight: isRM ? it.weight : null,
+            rate: it.rate,
+            amount: (isRM ? it.weight : it.qty) * it.rate || 0,
+          };
+        }),
+        deliveryDate: header.deliveryDate,
+        remarks: header.remarks,
+      };
+
+      if (editingId) {
+        result = await purchaseOrdersAPI.update(editingId, poData);
+        setSuccessMessage("Purchase Order updated successfully!");
+      } else {
+        result = await purchaseOrdersAPI.create(poData);
+        setSuccessMessage(
+          `Purchase Order ${result.purchaseOrder.poNo} created successfully!`,
+        );
+      }
+
+      setShowSuccessModal(true);
+      setTimeout(() => {
+        setShowSuccessModal(false);
+        setEditingId(null);
+
+        fetchPOs();
+        setHeader(blankHeader);
+        setItems([blankItem()]);
+        setHeaderErrors({});
+        setItemErrors([{}]);
+        setView("records");
+      }, 2000);
+    } catch (error) {
+      console.error("Save error:", error);
+      toast(error.response?.data?.error || "Failed to save PO", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEdit = (po) => {
+    // Populate form with PO data
+    const vendorName =
+      typeof po.vendor === "object" ? po.vendor.name : po.vendor;
+
+    // Convert ISO date to YYYY-MM-DD format
+    const formatDateForInput = (dateString) => {
+      if (!dateString) return "";
+      const date = new Date(dateString);
+      return date.toISOString().split("T")[0];
+    };
+
+    setHeader({
+      poNumber: po.poNo,
+      poDate: formatDateForInput(po.poDate),
+      deliveryDate: formatDateForInput(po.deliveryDate),
+      vendorName: vendorName,
+      vendorContact: typeof po.vendor === "object" ? po.vendor.contact : "",
+      poStatus: po.status || "Open",
+      remarks: po.remarks || "",
+    });
+    setItems(
+      (po.items || []).map((it) => ({
+        _id: uid(),
+        materialType: "Raw Material",
+        itemName: it.itemName || "",
+        productCode: it.productCode || "",
+        category: it.category || "",
+        paperType: it.paperType || "",
+        gsm: it.gsm || "",
+        widthMm: it.sheetSize
+          ? it.sheetSize.split("x")[0].replace("mm", "")
+          : "",
+        lengthMm: it.sheetSize
+          ? it.sheetSize.split("x")[1]?.replace("mm", "")
+          : "",
+        qty: it.qty || "",
+        weight: it.weight || "",
+        rate: it.rate || "",
+        amount: it.amount || "",
+        rmItem: "",
+        noOfSheets: it.qty || "",
+        noOfReels: "",
+        size: "",
+      })),
+    );
+    setEditingId(po._id);
+    setView("form");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleDelete = async (id) => {
+    if (confirm("Delete this purchase order?")) {
+      try {
+        setLoading(true);
+        await purchaseOrdersAPI.delete(id);
+        await fetchPOs();
+        if (toast) toast("Purchase Order deleted successfully", "success");
+      } catch (error) {
+        console.error("Failed to delete PO:", error);
+        if (toast)
+          toast(error.response?.data?.error || "Failed to delete PO", "error");
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  return (
+    <div className="fade">
+      <SectionTitle
+        icon="📋"
+        title="Purchase Orders"
+        sub="Create POs for raw materials and consumables"
+      />
+
+      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+        {[
+          ["form", "📝 New PO"],
+          ["records", `📋 POs (${purchaseOrders.length})`],
+        ].map(([v, l]) => (
+          <button
+            key={v}
+            onClick={() => setView(v)}
+            style={{
+              padding: "8px 20px",
+              borderRadius: 6,
+              border: `1px solid ${view === v ? C.blue : C.border}`,
+              background: view === v ? C.blue + "22" : "transparent",
+              color: view === v ? C.blue : C.muted,
+              fontWeight: 700,
+              fontSize: 13,
+            }}
+          >
+            {l}
+          </button>
+        ))}
+      </div>
+
+      {view === "form" && (
+        <div>
+          <Card style={{ marginBottom: 16 }}>
+            <h3
+              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                color: C.blue,
+                marginBottom: 16,
+              }}
+            >
+              PO Details
+            </h3>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+                gap: 14,
+              }}
+            >
+              <Field label="PO Date *">
+                <DatePicker
+                  value={header.poDate}
+                  onChange={(v) => setH("poDate", v)}
+                  style={EH("poDate")}
+                />
+                {EHMsg("poDate")}
+              </Field>
+              <Field label="Delivery Date *">
+                <DatePicker
+                  value={header.deliveryDate}
+                  onChange={(v) => setH("deliveryDate", v)}
+                  style={EH("deliveryDate")}
+                />
+                {EHMsg("deliveryDate")}
+              </Field>
+              <Field label="Vendor Name*">
+                <AutocompleteInput
+                  value={header.vendorName}
+                  onChange={(v) => setH("vendorName", v)}
+                  suggestions={(vendorMaster || []).map((v) => v.name)}
+                  placeholder="Supplier name"
+                  inputStyle={EH("vendorName")}
+                />
+                {EHMsg("vendorName")}
+              </Field>
+              <Field label="Vendor Contact">
+                <input
+                  type="tel"
+                  placeholder="Phone / Email"
+                  value={header.vendorContact}
+                  onChange={(e) => setH("vendorContact", e.target.value)}
+                />
+              </Field>
+              <Field label="Status">
+                <select
+                  value={header.poStatus}
+                  onChange={(e) => setH("poStatus", e.target.value)}
+                >
+                  <option value="Open">Open</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Received">Received</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+              </Field>
+              <Field label="Remarks">
+                <input
+                  placeholder="PO notes..."
+                  value={header.remarks}
+                  onChange={(e) => setH("remarks", e.target.value)}
+                />
+              </Field>
+            </div>
+          </Card>
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 10,
+            }}
+          >
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: C.blue }}>
+              Items ({items.length})
+            </h3>
+            <button
+              onClick={addItem}
+              style={{
+                background: C.blue,
+                color: "#fff",
+                border: "none",
+                borderRadius: 6,
+                padding: "8px 18px",
+                fontWeight: 700,
+                fontSize: 13,
+              }}
+            >
+              + Add Item
+            </button>
+          </div>
+
+          {items.map((it, idx) => (
+            <Card
+              key={it._id}
+              style={{ marginBottom: 12, borderLeft: `3px solid ${C.blue}` }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 14,
+                }}
+              >
+                <span style={{ fontWeight: 700, color: C.blue, fontSize: 13 }}>
+                  Item {idx + 1}
+                </span>
+                {items.length > 1 && (
+                  <button
+                    onClick={() => removeItem(idx)}
+                    style={{
+                      background: C.red + "22",
+                      color: C.red,
+                      border: "none",
+                      borderRadius: 5,
+                      padding: "4px 12px",
+                      fontWeight: 700,
+                      fontSize: 12,
+                    }}
+                  >
+                    ✕ Remove
+                  </button>
+                )}
+              </div>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+                  gap: 12,
+                }}
+              >
+                <Field label="Product Code">
+                  <input
+                    type="text"
+                    placeholder="Item SKU / Code"
+                    value={it.productCode}
+                    onChange={(e) =>
+                      setItem(idx, "productCode", e.target.value)
+                    }
+                  />
+                </Field>
+                <Field label="Item Name">
+                  <input
+                    type="text"
+                    placeholder="Item name"
+                    value={it.itemName}
+                    onChange={(e) => setItem(idx, "itemName", e.target.value)}
+                  />
+                </Field>
+                <Field label="Material Type *">
+                  <select
+                    value={it.materialType || "Raw Material"}
+                    onChange={(e) =>
+                      setItem(idx, "materialType", e.target.value)
+                    }
+                  >
+                    <option value="Raw Material">Raw Material</option>
+                    <option value="Consumable">Consumable</option>
+                  </select>
+                </Field>
+                {(it.materialType === "Raw Material" || !it.materialType) && (
+                  <>
+                    <Field label="RM Item *">
+                      <select
+                        value={it.rmItem}
+                        onChange={(e) => setItem(idx, "rmItem", e.target.value)}
+                        style={EI(idx, "rmItem")}
+                      >
+                        <option value="">-- Select Item --</option>
+                        {RM_ITEMS.map((i) => (
+                          <option key={i}>{i}</option>
+                        ))}
+                      </select>
+                      {EIMsg(idx, "rmItem")}
+                    </Field>
+                    <Field label="Paper Type *">
+                      <select
+                        value={it.paperType}
+                        onChange={(e) =>
+                          setItem(idx, "paperType", e.target.value)
+                        }
+                        disabled={!it.rmItem}
+                        style={EI(idx, "paperType")}
+                      >
+                        <option value="">
+                          {it.rmItem
+                            ? "-- Select Type --"
+                            : "-- Select RM Item first --"}
+                        </option>
+                        {(paperTypesByItem[it.rmItem] || []).map((p) => (
+                          <option key={p}>{p}</option>
+                        ))}
+                      </select>
+                      {EIMsg(idx, "paperType")}
+                    </Field>
+                    <Field label="Width (mm) *">
+                      <input
+                        type="number"
+                        placeholder="e.g. 700"
+                        value={it.widthMm}
+                        onChange={(e) =>
+                          setItem(idx, "widthMm", e.target.value)
+                        }
+                        style={EI(idx, "widthMm")}
+                      />
+                      {EIMsg(idx, "widthMm")}
+                    </Field>
+                    {it.rmItem !== "Paper Reel" && (
+                      <Field label="Length (mm) *">
+                        <input
+                          type="number"
+                          placeholder="e.g. 1000"
+                          value={it.lengthMm}
+                          onChange={(e) =>
+                            setItem(idx, "lengthMm", e.target.value)
+                          }
+                          style={EI(idx, "lengthMm")}
+                        />
+                        {EIMsg(idx, "lengthMm")}
+                      </Field>
+                    )}
+                    <Field label="GSM *">
+                      <input
+                        type="number"
+                        placeholder="e.g. 90, 130, 250"
+                        value={it.gsm}
+                        onChange={(e) => setItem(idx, "gsm", e.target.value)}
+                        style={EI(idx, "gsm")}
+                      />
+                      {EIMsg(idx, "gsm")}
+                    </Field>
+                    <Field label="Weight (kg) *">
+                      <input
+                        type="number"
+                        placeholder="Total weight"
+                        value={it.weight}
+                        onChange={(e) => setItem(idx, "weight", e.target.value)}
+                        style={EI(idx, "weight")}
+                      />
+                      {EIMsg(idx, "weight")}
+                    </Field>
+                  </>
+                )}
+                {it.materialType === "Consumable" && (
+                  <>
+                    <Field label="Item Name *">
+                      <input
+                        placeholder="e.g. Corrugated Box"
+                        value={it.itemName}
+                        onChange={(e) =>
+                          setItem(idx, "itemName", e.target.value)
+                        }
+                        style={EI(idx, "itemName")}
+                      />
+                      {EIMsg(idx, "itemName")}
+                    </Field>
+                    <Field label="Quantity *">
+                      <input
+                        type="number"
+                        placeholder="Qty in units"
+                        value={it.qty}
+                        onChange={(e) => setItem(idx, "qty", e.target.value)}
+                        style={EI(idx, "qty")}
+                      />
+                      {EIMsg(idx, "qty")}
+                    </Field>
+                  </>
+                )}
+                <Field
+                  label={`Rate (₹/${it.materialType === "Raw Material" || !it.materialType ? "kg" : "unit"}) *`}
+                >
+                  <input
+                    type="number"
+                    placeholder="Rate per unit"
+                    value={it.rate || ""}
+                    onChange={(e) => setItem(idx, "rate", e.target.value)}
+                    style={EI(idx, "rate")}
+                  />
+                  {EIMsg(idx, "rate")}
+                </Field>
+                <Field label="Amount (₹)">
+                  <div
+                    style={{
+                      padding: "9px 12px",
+                      background: C.inputBg,
+                      border: `1px solid ${C.border}`,
+                      borderRadius: 6,
+                      fontSize: 13,
+                      color: it.amount ? C.green : C.muted,
+                      fontWeight: it.amount ? 700 : 400,
+                      fontFamily: "'JetBrains Mono',monospace",
+                    }}
+                  >
+                    {it.amount ? (
+                      `₹${fmt(+it.amount)}`
+                    ) : (
+                      <span style={{ fontSize: 11, color: C.muted }}>
+                        —{" "}
+                        {it.materialType === "Raw Material" || !it.materialType
+                          ? "Wt"
+                          : "Qty"}{" "}
+                        × Rate —
+                      </span>
+                    )}
+                  </div>
+                </Field>
+              </div>
+            </Card>
+          ))}
+
+          <div
+            style={{
+              display: "flex",
+              gap: 10,
+              marginTop: 4,
+              alignItems: "center",
+              flexWrap: "wrap",
+            }}
+          >
+            <button
+              onClick={addItem}
+              style={{
+                background: C.blue + "22",
+                color: C.blue,
+                border: `1px solid ${C.blue}44`,
+                borderRadius: 6,
+                padding: "9px 20px",
+                fontWeight: 700,
+                fontSize: 13,
+              }}
+            >
+              + Add Another Item
+            </button>
+            <SubmitBtn
+              label={
+                editingId
+                  ? `Update PO (${items.length} item${items.length > 1 ? "s" : ""})`
+                  : `Create PO (${items.length} item${items.length > 1 ? "s" : ""})`
+              }
+              color={C.blue}
+              onClick={submit}
+            />
+            {editingId && (
+              <button
+                onClick={() => {
+                  setEditingId(null);
+                  setHeader(blankHeader);
+                  setItems([blankItem()]);
+                  setHeaderErrors({});
+                  setItemErrors([{}]);
+                }}
+                style={{
+                  background: C.muted + "22",
+                  color: C.muted,
+                  border: `1px solid ${C.muted}44`,
+                  borderRadius: 6,
+                  padding: "9px 20px",
+                  fontWeight: 700,
+                  fontSize: 13,
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+            )}
+            {items.some((it) => it.amount) && (
+              <div
+                style={{
+                  marginLeft: "auto",
+                  padding: "9px 16px",
+                  background: C.green + "22",
+                  border: `1px solid ${C.green}44`,
+                  borderRadius: 6,
+                }}
+              >
+                <span style={{ fontSize: 12, color: C.muted }}>Total: </span>
+                <span
+                  style={{
+                    fontFamily: "'JetBrains Mono',monospace",
+                    fontWeight: 700,
+                    color: C.green,
+                    fontSize: 14,
+                  }}
+                >
+                  ₹{fmt(items.reduce((sum, it) => sum + +(it.amount || 0), 0))}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {view === "records" && (
+        <Card>
+          <div
+            style={{
+              display: "flex",
+              gap: 12,
+              alignItems: "center",
+              flexWrap: "wrap",
+              marginBottom: 14,
+            }}
+          >
+            <h3
+              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                color: C.muted,
+                margin: 0,
+              }}
+            >
+              Purchase Orders
+            </h3>
+            <DateRangeFilter
+              dateFrom={drDateFrom}
+              setDateFrom={setDrDateFrom}
+              dateTo={drDateTo}
+              setDateTo={setDrDateTo}
+            />
+            <span style={{ fontSize: 12, color: C.muted, marginLeft: "auto" }}>
+              {purchaseOrders.length} orders
+            </span>
+          </div>
+          {purchaseOrders.length === 0 && (
+            <div
+              style={{
+                textAlign: "center",
+                color: C.muted,
+                padding: 32,
+                fontSize: 13,
+              }}
+            >
+              No purchase orders yet.
+            </div>
+          )}
+          {(purchaseOrders || [])
+            .slice()
+            .reverse()
+            .map((r) => {
+              const total = (r.items || []).reduce(
+                (s, it) => s + +(it.amount || 0),
+                0,
+              );
+              const vendorDisplayName =
+                typeof r.vendor === "object" ? r.vendor.name : r.vendorName;
+              return (
+                <div
+                  key={r._id}
+                  style={{
+                    borderBottom: `1px solid ${C.border}22`,
+                    padding: "12px 4px",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                      gap: 8,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 14,
+                        alignItems: "center",
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontFamily: "'JetBrains Mono',monospace",
+                          color: C.blue,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {r.poNo}
+                      </span>
+                      <span style={{ fontSize: 12, color: C.muted }}>
+                        {r.poDate}
+                      </span>
+                      <span style={{ fontSize: 13, fontWeight: 600 }}>
+                        {vendorDisplayName}
+                      </span>
+                      <Badge
+                        text={r.status || "Open"}
+                        color={r.status === "Open" ? C.yellow : C.green}
+                      />
+                      {total > 0 && (
+                        <span
+                          style={{
+                            fontFamily: "'JetBrains Mono',monospace",
+                            color: C.green,
+                            fontSize: 12,
+                            fontWeight: 700,
+                          }}
+                        >
+                          ₹{fmt(total)}
+                        </span>
+                      )}
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 8,
+                        alignItems: "center",
+                      }}
+                    >
+                      <button
+                        onClick={() => handleEdit(r)}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: C.blue,
+                          cursor: "pointer",
+                          fontSize: 12,
+                          fontWeight: 600,
+                          padding: "4px 8px",
+                        }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(r._id)}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: C.red,
+                          cursor: "pointer",
+                          fontSize: 12,
+                          fontWeight: 600,
+                          padding: "4px 8px",
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                      flexWrap: "wrap",
+                      marginTop: 6,
+                    }}
+                  >
+                    {(r.items || []).map((it, i) => (
+                      <span
+                        key={i}
+                        style={{
+                          fontSize: 11,
+                          background: C.surface,
+                          border: `1px solid ${C.border}`,
+                          borderRadius: 4,
+                          padding: "2px 8px",
+                          color: C.muted,
+                        }}
+                      >
+                        {it.itemName}{" "}
+                        {it.weight
+                          ? `· ${it.weight}kg`
+                          : it.qty
+                            ? `· ${it.qty}`
+                            : ""}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+        </Card>
+      )}
+
+      {showSuccessModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            style={{
+              background: C.card,
+              border: `1px solid ${C.border}`,
+              borderRadius: 10,
+              padding: 40,
+              textAlign: "center",
+              maxWidth: 300,
+              animation: "scaleIn 0.3s ease-out",
+            }}
+          >
+            <div style={{ fontSize: 50, marginBottom: 16 }}>✓</div>
+            <p
+              style={{
+                fontSize: 16,
+                fontWeight: 700,
+                color: C.green,
+                margin: 0,
+              }}
+            >
+              {successMessage}
+            </p>
+          </div>
+          <style>{`
+            @keyframes scaleIn {
+              from {
+                transform: scale(0.8);
+                opacity: 0;
+              }
+              to {
+                transform: scale(1);
+                opacity: 1;
+              }
+            }
+          `}</style>
+        </div>
+      )}
+    </div>
+  );
+}

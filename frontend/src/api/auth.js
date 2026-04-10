@@ -79,4 +79,95 @@ export const salesOrdersAPI = {
   }
 };
 
+export const purchaseOrdersAPI = {
+  getAll: async () => {
+    const response = await api.get('/purchase-orders');
+    return response.data;
+  },
+
+  getOne: async (id) => {
+    const response = await api.get(`/purchase-orders/${id}`);
+    return response.data;
+  },
+
+  create: async (data) => {
+    const response = await api.post('/purchase-orders', data);
+    return response.data;
+  },
+
+  update: async (id, data) => {
+    const response = await api.put(`/purchase-orders/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id) => {
+    const response = await api.delete(`/purchase-orders/${id}`);
+    return response.data;
+  },
+
+  updateStatus: async (id, status) => {
+    const response = await api.patch(`/purchase-orders/${id}/status`, { status });
+    return response.data;
+  }
+};
+
+export const materialInwardAPI = {
+  getAll: async () => {
+    const response = await api.get('/material-inward');
+    return response.data;
+  },
+
+  getOne: async (id) => {
+    const response = await api.get(`/material-inward/${id}`);
+    return response.data;
+  },
+
+  create: async (data) => {
+    const response = await api.post('/material-inward', data);
+    return response.data;
+  },
+
+  update: async (id, data) => {
+    const response = await api.put(`/material-inward/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id) => {
+    const response = await api.delete(`/material-inward/${id}`);
+    return response.data;
+  },
+
+  updateStatus: async (id, status) => {
+    const response = await api.patch(`/material-inward/${id}/status`, { status });
+    return response.data;
+  }
+};
+
+export const categoryMasterAPI = {
+  getAll: async () => {
+    const response = await api.get('/category-master');
+    return response.data;
+  },
+
+  getOne: async (id) => {
+    const response = await api.get(`/category-master/${id}`);
+    return response.data;
+  },
+
+  create: async (data) => {
+    const response = await api.post('/category-master', data);
+    return response.data;
+  },
+
+  update: async (id, data) => {
+    const response = await api.put(`/category-master/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id) => {
+    const response = await api.delete(`/category-master/${id}`);
+    return response.data;
+  }
+};
+
 export default api;
