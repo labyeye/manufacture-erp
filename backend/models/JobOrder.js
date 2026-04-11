@@ -43,7 +43,7 @@ const jobOrderSchema = new mongoose.Schema({
   clientName: String,
   clientCategory: String,
   itemName: String,
-  product: String, // legacy field
+  product: String, 
   orderQty: {
     type: Number,
     required: true
@@ -72,12 +72,12 @@ const jobOrderSchema = new mongoose.Schema({
   paperType2: String,
   paperGsm2: Number,
   noOfSheets2: Number,
-  // Reel fields
+  
   reelSize: String,
   reelWidthMm: Number,
   cuttingLengthMm: Number,
   reelWeightKg: Number,
-  // Status tracking
+  
   status: {
     type: String,
     enum: ['Open', 'In Progress', 'Partially Done', 'Completed', 'Cancelled'],

@@ -1,9 +1,9 @@
 const PurchaseOrder = require("../models/PurchaseOrder");
 const VendorMaster = require("../models/VendorMaster");
 
-/**
- * Get all purchase orders
- */
+
+
+
 exports.getAll = async (req, res) => {
   try {
     const pos = await PurchaseOrder.find()
@@ -16,9 +16,9 @@ exports.getAll = async (req, res) => {
   }
 };
 
-/**
- * Get single purchase order
- */
+
+
+
 exports.getOne = async (req, res) => {
   try {
     const po = await PurchaseOrder.findById(req.params.id);
@@ -32,9 +32,9 @@ exports.getOne = async (req, res) => {
   }
 };
 
-/**
- * Create purchase order
- */
+
+
+
 exports.create = async (req, res) => {
   try {
     const { poNo, poDate, vendor, items, deliveryDate, remarks } = req.body;
@@ -43,7 +43,7 @@ exports.create = async (req, res) => {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // Check if PO number already exists
+    
     const existingPO = await PurchaseOrder.findOne({ poNo });
     if (existingPO) {
       return res.status(400).json({ error: "PO number already exists" });
@@ -73,9 +73,9 @@ exports.create = async (req, res) => {
   }
 };
 
-/**
- * Update purchase order
- */
+
+
+
 exports.update = async (req, res) => {
   try {
     const { poNo, poDate, vendor, items, deliveryDate, remarks, status } =
@@ -87,7 +87,7 @@ exports.update = async (req, res) => {
       return res.status(404).json({ error: "Purchase order not found" });
     }
 
-    // Check if new PO number is unique (if changed)
+    
     if (poNo && poNo !== po.poNo) {
       const existingPO = await PurchaseOrder.findOne({ poNo });
       if (existingPO) {
@@ -116,9 +116,9 @@ exports.update = async (req, res) => {
   }
 };
 
-/**
- * Delete purchase order
- */
+
+
+
 exports.delete = async (req, res) => {
   try {
     const { id } = req.params;
@@ -128,7 +128,7 @@ exports.delete = async (req, res) => {
       return res.status(404).json({ error: "Purchase order not found" });
     }
 
-    // Don't allow deletion of received orders
+    
     if (po.status === "Received") {
       return res
         .status(400)
@@ -144,9 +144,9 @@ exports.delete = async (req, res) => {
   }
 };
 
-/**
- * Update PO status
- */
+
+
+
 exports.updateStatus = async (req, res) => {
   try {
     const { id } = req.params;

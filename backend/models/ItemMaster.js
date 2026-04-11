@@ -4,22 +4,50 @@ const itemMasterSchema = new mongoose.Schema({
   code: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
+    trim: true,
+    uppercase: true
   },
   name: {
     type: String,
-    required: true
+    required: true,
+    trim: true
   },
   type: {
     type: String,
     enum: ['Raw Material', 'Finished Goods', 'Consumable', 'Machine Spare'],
     required: true
   },
-  category: String,
+  category: {
+    type: String,
+    trim: true
+  },
+  subCategory: {
+    type: String,
+    trim: true
+  },
+  gsm: {
+    type: Number
+  },
+  width: {
+    type: Number
+  },
+  length: {
+    type: Number
+  },
+  status: {
+    type: String,
+    enum: ['Active', 'Inactive'],
+    default: 'Active'
+  },
   clientCodes: {
     type: Map,
     of: String,
     default: {}
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
   },
   addedOn: {
     type: Date,
@@ -28,5 +56,9 @@ const itemMasterSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+
+itemMasterSchema.index({ type: 1, status: 1 });
+itemMasterSchema.index({ name: 'text', code: 'text' });
 
 module.exports = mongoose.model('ItemMaster', itemMasterSchema);

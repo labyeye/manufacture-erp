@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(ls:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(cd /Users/labh/Desktop/Projects/untitled\\\\ folder\\\\ 3 && npm start:*)"
     ]
   }
 }

@@ -3,7 +3,7 @@ const router = express.Router();
 const clientMasterController = require('../controllers/clientMasterController');
 const { auth } = require('../middleware/auth');
 
-// All routes are protected
+
 router.get('/', auth, clientMasterController.getAll);
 router.get('/:id', auth, clientMasterController.getOne);
 router.post('/', auth, clientMasterController.create);

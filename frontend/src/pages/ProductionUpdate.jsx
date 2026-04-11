@@ -65,7 +65,7 @@ export default function ProductionUpdate({
     setProductionUpdates(p => [...p, record]);
     setPudCounter(c => c + 1);
 
-    // Update WIP stock
+    
     setWipStock(prev => {
       const key = `${entry.joNo}-${entry.productionStage}`;
       const idx = prev.findIndex(s => s.key === key);

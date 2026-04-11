@@ -6,6 +6,8 @@ const purchaseOrderItemSchema = new mongoose.Schema({
   category: String,
   paperType: String,
   gsm: Number,
+  width: Number,
+  length: Number,
   sheetSize: String,
   unit: String,
   qty: Number,
@@ -48,7 +50,7 @@ const purchaseOrderSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Calculate total amount before saving
+
 purchaseOrderSchema.pre('save', function(next) {
   this.totalAmount = this.items.reduce((sum, item) => sum + (item.amount || 0), 0);
   next();

@@ -2,9 +2,9 @@ const SalesOrder = require("../models/SalesOrder");
 const Counter = require("../models/Counter");
 const ClientMaster = require("../models/ClientMaster");
 
-/**
- * Get next SO number
- */
+
+
+
 const getNextSONumber = async () => {
   const counter = await Counter.findOneAndUpdate(
     { name: "salesOrder" },
@@ -14,9 +14,9 @@ const getNextSONumber = async () => {
   return `SO-${String(counter.seq).padStart(5, "0")}`;
 };
 
-/**
- * Get all sales orders
- */
+
+
+
 exports.getAll = async (req, res) => {
   try {
     const salesOrders = await SalesOrder.find()
@@ -29,9 +29,9 @@ exports.getAll = async (req, res) => {
   }
 };
 
-/**
- * Get single sales order
- */
+
+
+
 exports.getOne = async (req, res) => {
   try {
     const salesOrder = await SalesOrder.findById(req.params.id)
@@ -46,9 +46,9 @@ exports.getOne = async (req, res) => {
   }
 };
 
-/**
- * Create sales order
- */
+
+
+
 exports.create = async (req, res) => {
   try {
     const {
@@ -62,15 +62,15 @@ exports.create = async (req, res) => {
       status,
     } = req.body;
 
-    // Validation
+    
     if (!orderDate || !deliveryDate || !clientName || !items || items.length === 0) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // Generate SO number
+    
     const soNo = await getNextSONumber();
 
-    // Check if SO number already exists (shouldn't happen with proper counter)
+    
     const existingSO = await SalesOrder.findOne({ soNo });
     if (existingSO) {
       return res.status(400).json({ error: "SO number already exists" });
@@ -92,7 +92,7 @@ exports.create = async (req, res) => {
     await salesOrder.save();
     await salesOrder.populate("createdBy", "name username");
 
-    // Auto-create client if doesn't exist
+    
     if (clientName && clientName.trim()) {
       const existingClient = await ClientMaster.findOne({
         name: { $regex: new RegExp(`^${clientName.trim()}$`, 'i') }
@@ -119,9 +119,9 @@ exports.create = async (req, res) => {
   }
 };
 
-/**
- * Update sales order
- */
+
+
+
 exports.update = async (req, res) => {
   try {
     const {
@@ -163,9 +163,9 @@ exports.update = async (req, res) => {
   }
 };
 
-/**
- * Delete sales order
- */
+
+
+
 exports.delete = async (req, res) => {
   try {
     const { id } = req.params;
@@ -175,7 +175,7 @@ exports.delete = async (req, res) => {
       return res.status(404).json({ error: "Sales order not found" });
     }
 
-    // Don't allow deletion of dispatched or closed orders
+    
     if (["Dispatched", "Closed"].includes(salesOrder.status)) {
       return res
         .status(400)
@@ -191,9 +191,9 @@ exports.delete = async (req, res) => {
   }
 };
 
-/**
- * Update sales order status
- */
+
+
+
 exports.updateStatus = async (req, res) => {
   try {
     const { id } = req.params;

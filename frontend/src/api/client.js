@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const API_URL ='http://localhost:2500/api';
 
-// Create axios instance
+
 const api = axios.create({
   baseURL: API_URL,
   headers: {
@@ -10,7 +10,7 @@ const api = axios.create({
   }
 });
 
-// Add auth token to requests
+
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -24,14 +24,15 @@ api.interceptors.request.use(
   }
 );
 
-// Handle auth errors
+
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid
+      
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      localStorage.removeItem('erp_auth');
       window.location.href = '/login';
     }
     return Promise.reject(error);

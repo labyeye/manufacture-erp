@@ -25,7 +25,7 @@ export default function ConsumableStock({
   const [drDateTo, setDrDateTo] = useState("");
   const fileInputRef = useRef(null);
 
-  /* ── stats ── */
+  
   const totalItems = consumableStock.length;
   const inStock = consumableStock.filter((s) => (s.qty || 0) > 0).length;
   const outOfStock = consumableStock.filter((s) => (s.qty || 0) <= 0).length;
@@ -37,7 +37,7 @@ export default function ConsumableStock({
     0,
   );
 
-  /* ── filtered list ── */
+  
   const filtered = useMemo(() => {
     let list = consumableStock || [];
     if (search) {
@@ -50,7 +50,7 @@ export default function ConsumableStock({
     return list;
   }, [consumableStock, search, typeFilter]);
 
-  /* ── issue item ── */
+  
   const handleIssue = () => {
     if (!selectedStock || !issueQty) { toast("Please select item and enter quantity", "error"); return; }
     const qty = +issueQty;
@@ -69,7 +69,7 @@ export default function ConsumableStock({
     setIssueQty("");
   };
 
-  /* ── export ── */
+  
   const handleExport = () => {
     const headers = ["Code", "Name", "Category", "Type", "Qty", "Unit", "Reorder Level", "Rate (₹)"];
     const rows = (consumableStock || []).map((s) => [s.code || "", s.name || "", s.category || "", s.type || "", s.qty || 0, s.unit || "nos", s.reorderLevel || "", s.rate || ""]);
@@ -79,7 +79,7 @@ export default function ConsumableStock({
     toast && toast("Exported", "success");
   };
 
-  /* ── import ── */
+  
   const handleImport = (e) => {
     const file = e.target.files[0]; if (!file) return;
     const reader = new FileReader();
@@ -104,7 +104,7 @@ export default function ConsumableStock({
     <div className="fade">
       <SectionTitle icon="📦" title="Consumable Stock" sub="Consumables, machine spares and other non-RM inventory" />
 
-      {/* ── Tabs ── */}
+      {}
       <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
         {[
           ["stock", "📦 Stock"],
@@ -130,10 +130,10 @@ export default function ConsumableStock({
         ))}
       </div>
 
-      {/* ════ STOCK VIEW ════ */}
+      {}
       {view === "stock" && (
         <div>
-          {/* ── 5 Stat cards ── */}
+          {}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12, marginBottom: 18 }}>
             <StatCard value={fmt(totalItems)} label="Total Items" color={C.blue || "#3b82f6"} />
             <StatCard value={fmt(inStock)} label="In Stock" color={C.green || "#22c55e"} />
@@ -142,7 +142,7 @@ export default function ConsumableStock({
             <StatCard value={`₹${fmt(Math.round(totalValue))}`} label="Total Value (₹)" color={C.orange || "#f97316"} />
           </div>
 
-          {/* ── Toolbar ── */}
+          {}
           <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 12 }}>
             <div style={{ position: "relative", flex: 1, minWidth: 180 }}>
               <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: C.muted, fontSize: 13 }}>🔍</span>
@@ -161,7 +161,7 @@ export default function ConsumableStock({
             <ActionBtn label="↓ Export Excel" color={C.green || "#22c55e"} onClick={handleExport} />
             <input ref={fileInputRef} type="file" accept=".csv" style={{ display: "none" }} onChange={handleImport} />
 
-            {/* Type filters */}
+            {}
             <div style={{ display: "flex", gap: 0, borderRadius: 6, overflow: "hidden", border: `1px solid ${C.border}`, marginLeft: 4 }}>
               {TYPE_FILTERS.map((t) => (
                 <button
@@ -186,7 +186,7 @@ export default function ConsumableStock({
             <span style={{ fontSize: 12, color: C.muted, whiteSpace: "nowrap" }}>{filtered.length} items</span>
           </div>
 
-          {/* ── Table / Empty state ── */}
+          {}
           <div style={{ border: `1px solid ${C.border}`, borderRadius: 8, background: C.surface, overflow: "hidden" }}>
             {filtered.length === 0 ? (
               <div style={{ textAlign: "center", padding: "60px 20px", color: C.muted }}>
@@ -257,7 +257,7 @@ export default function ConsumableStock({
         </div>
       )}
 
-      {/* ════ ISSUE VIEW ════ */}
+      {}
       {view === "issue" && (
         <Card>
           <h3 style={{ fontSize: 14, fontWeight: 700, color: C.orange || "#f97316", marginBottom: 16 }}>Issue Consumable Item</h3>
@@ -298,7 +298,7 @@ export default function ConsumableStock({
         </Card>
       )}
 
-      {/* ════ LOG VIEW ════ */}
+      {}
       {view === "log" && (
         <Card>
           <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 14 }}>

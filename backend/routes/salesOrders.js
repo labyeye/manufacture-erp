@@ -3,7 +3,7 @@ const router = express.Router();
 const salesOrderController = require('../controllers/salesOrderController');
 const { auth } = require('../middleware/auth');
 
-// All routes are protected
+
 router.get('/', auth, salesOrderController.getAll);
 router.get('/:id', auth, salesOrderController.getOne);
 router.post('/', auth, salesOrderController.create);

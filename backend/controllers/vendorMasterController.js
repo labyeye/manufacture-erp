@@ -1,8 +1,8 @@
 const VendorMaster = require("../models/VendorMaster");
 
-/**
- * Get all vendors
- */
+
+
+
 exports.getAll = async (req, res) => {
   try {
     const vendors = await VendorMaster.find()
@@ -15,9 +15,9 @@ exports.getAll = async (req, res) => {
   }
 };
 
-/**
- * Get single vendor
- */
+
+
+
 exports.getOne = async (req, res) => {
   try {
     const vendor = await VendorMaster.findById(req.params.id)
@@ -32,9 +32,9 @@ exports.getOne = async (req, res) => {
   }
 };
 
-/**
- * Create vendor
- */
+
+
+
 exports.create = async (req, res) => {
   try {
     const { name, category, contact, phone, email, address, gstin, status } = req.body;
@@ -43,7 +43,7 @@ exports.create = async (req, res) => {
       return res.status(400).json({ error: "Vendor name is required" });
     }
 
-    // Check if vendor name already exists
+    
     const existingVendor = await VendorMaster.findOne({
       name: { $regex: new RegExp(`^${name.trim()}$`, 'i') }
     });
@@ -76,9 +76,9 @@ exports.create = async (req, res) => {
   }
 };
 
-/**
- * Update vendor
- */
+
+
+
 exports.update = async (req, res) => {
   try {
     const { name, category, contact, phone, email, address, gstin, status } = req.body;
@@ -89,7 +89,7 @@ exports.update = async (req, res) => {
       return res.status(404).json({ error: "Vendor not found" });
     }
 
-    // Check if new name is unique (if changed)
+    
     if (name && name.trim() !== vendor.name) {
       const existingVendor = await VendorMaster.findOne({
         name: { $regex: new RegExp(`^${name.trim()}$`, 'i') },
@@ -122,9 +122,9 @@ exports.update = async (req, res) => {
   }
 };
 
-/**
- * Delete vendor
- */
+
+
+
 exports.delete = async (req, res) => {
   try {
     const { id } = req.params;
@@ -143,9 +143,9 @@ exports.delete = async (req, res) => {
   }
 };
 
-/**
- * Update vendor status
- */
+
+
+
 exports.updateStatus = async (req, res) => {
   try {
     const { id } = req.params;

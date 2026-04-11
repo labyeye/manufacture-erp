@@ -17,10 +17,17 @@ import {
   setRoles,
   usePersistedState,
 } from "./utils/helpers";
-import { AuthContext, AuthProvider } from "./context/AuthContext";
+import {
+  materialInwardAPI,
+  rawMaterialStockAPI,
+  vendorMasterAPI,
+  clientMasterAPI,
+  categoryMasterAPI,
+  itemMasterAPI,
+} from "./api/auth";
+import { AuthContext, AuthProvider, useAuth } from "./context/AuthContext";
 import { Toast } from "./components/ui/AdvancedComponents";
 
-// Import all pages
 import { Dashboard } from "./pages/Dashboard";
 import MaterialInward from "./pages/MaterialInward";
 import SalesOrders from "./pages/SalesOrders";
@@ -43,76 +50,74 @@ import RMStock from "./pages/RMStock";
 import FGStock from "./pages/FGStock";
 
 function App() {
-  const [session, setSession] = useState(() => {
-    const auth = getAuth();
-    return auth;
-  });
-
-  const handleLogin = (user) => {
-    setAuth(user);
-    setSession(user);
-  };
-
-  const handleLogout = () => {
-    setAuth(null);
-    setSession(null);
-  };
-
-  if (!session) {
-    return (
-      <AuthProvider>
-        <LoginScreen onLogin={handleLogin} />
-      </AuthProvider>
-    );
-  }
-
-  // Get allowed tabs for this user
-  const userRole = DEFAULT_ROLES[session.role] || DEFAULT_ROLES["Sales"];
-  const allowedTabs = userRole.tabs;
-  const editableTabs = session.editableTabs;
-
   return (
     <AuthProvider>
-      <AuthContext.Provider
-        value={{
-          isAdmin: session.isAdmin,
-          editableTabs,
-          canEdit: (tabId) =>
-            session.isAdmin ||
-            editableTabs === null ||
-            editableTabs.includes(tabId),
-        }}
-      >
-        <AppInner
-          session={session}
-          onLogout={handleLogout}
-          allowedTabs={allowedTabs}
-          editableTabs={editableTabs}
-        />
-      </AuthContext.Provider>
+      <AppContent />
     </AuthProvider>
   );
 }
 
-/**
- * App Inner Component
- * ──────────────────────────────────────────────────────────────────────────
- * Main application with navigation and state management
- */
+function AppContent() {
+  const { user, loading, logout } = useAuth();
+
+  useEffect(() => {
+    const style = document.createElement("style");
+    style.textContent = GLOBAL_STYLE;
+    document.head.appendChild(style);
+    return () => document.head.removeChild(style);
+  }, []);
+
+  if (loading) {
+    return (
+      <div
+        style={{
+          height: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: C.bg,
+          color: C.text,
+          flexDirection: "column",
+          gap: 20,
+        }}
+      >
+        <div style={{ fontSize: 40, animation: "bounce 1s infinite" }}>🏭</div>
+        <div style={{ fontWeight: 600, letterSpacing: 1 }}>
+          LOADING SYSTEM...
+        </div>
+        <style>{`
+          @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+          }
+        `}</style>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginScreen />;
+  }
+
+  const userRole = DEFAULT_ROLES[user.role] || DEFAULT_ROLES["Sales"];
+  const allowedTabs = userRole.tabs;
+
+  return (
+    <AppInner session={user} onLogout={logout} allowedTabs={allowedTabs} />
+  );
+}
+
 function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
   const [currentTab, setCurrentTab] = useState(() => {
-    // Restore last visited tab from localStorage
     const lastTab = localStorage.getItem("erp_lastTab");
     return lastTab || "dashboard";
   });
   const [toast, setToast] = useState(null);
 
-  // Save current tab to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem("erp_lastTab", currentTab);
   }, [currentTab]);
 
-  // Persisted state for all data collections
   const [salesOrders, setSalesOrders] = usePersistedState(
     "erp_salesOrders",
     [],
@@ -157,7 +162,6 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
     [],
   );
 
-  // Counters for auto-increment
   const [soCounter, setSoCounter] = usePersistedState("erp_soCounter", {
     SO: 1,
   });
@@ -179,27 +183,47 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
     { RM: 1, FG: 1, CG: 1, SP: 1 },
   );
 
-  // Reporting data
   const [machineReportData, setMachineReportData] = usePersistedState(
     "erp_machineReportData",
     {},
   );
 
-  // Inject global styles
   useEffect(() => {
-    const style = document.createElement("style");
-    style.textContent = GLOBAL_STYLE;
-    document.head.appendChild(style);
-    return () => document.head.removeChild(style);
-  }, []);
+    fetchMasters();
+  }, [currentTab]);
 
-  // Helper to show toast notification
+  const fetchMasters = async () => {
+    try {
+      const [vendors, clients, categories, items, stocks] = await Promise.all([
+        vendorMasterAPI.getAll(),
+        clientMasterAPI.getAll(),
+        categoryMasterAPI.getAll(),
+        itemMasterAPI.getAll(),
+        rawMaterialStockAPI.getAll(),
+      ]);
+
+      if (vendors.vendors) setVendorMaster(vendors.vendors);
+      if (clients.clients) setClientMaster(clients.clients);
+
+      if (categories.categories) {
+        console.log("📂 Category Master updated:", categories.categories);
+        setCategoryMaster(categories.categories);
+      }
+
+      if (items.items) setItemMasterFG(items.items);
+      if (stocks) {
+        setRawStock(stocks.stock || stocks);
+      }
+    } catch (err) {
+      console.error("Global fetch error:", err);
+    }
+  };
+
   const showToast = (msg, type = "success") => {
     const id = Math.random();
     setToast({ id, msg, type });
   };
 
-  // Data package for page components
   const data = {
     salesOrders,
     setSalesOrders,
@@ -247,9 +271,9 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
     setItemCounters,
     machineReportData,
     setMachineReportData,
+    refreshData: fetchMasters,
   };
 
-  // Page routing
   const renderPage = () => {
     switch (currentTab) {
       case "dashboard":
@@ -279,7 +303,7 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
       case "inward":
         return <MaterialInward {...data} toast={showToast} />;
       case "sales":
-        return <SalesOrders sizeMaster={sizeMaster} toast={showToast} />;
+        return <SalesOrders {...data} toast={showToast} />;
       case "jobs":
         return <JobOrders {...data} toast={showToast} />;
       case "production":
@@ -301,20 +325,11 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
       case "clientmaster":
         return <ClientMaster toast={showToast} />;
       case "sizemaster":
-        return (
-          <CategoryMaster
-            toast={showToast}
-          />
-        );
+        return <CategoryMaster toast={showToast} />;
       case "itemmaster":
-        return <ItemMasterFG {...data} toast={showToast} />;
+        return <ItemMasterFG toast={showToast} />;
       case "machinemaster":
-        return (
-          <MachineMaster
-            machineMaster={machineMaster}
-            setMachineMaster={setMachineMaster}
-          />
-        );
+        return <MachineMaster toast={showToast} />;
       case "users":
         return <UserManagement currentUser={session} toast={showToast} />;
       default:
@@ -339,7 +354,7 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
         color: C.text,
       }}
     >
-      {/* Header */}
+      {}
       <div
         style={{
           background: C.card,
@@ -391,9 +406,9 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
         </div>
       </div>
 
-      {/* Main Layout */}
+      {}
       <div style={{ display: "flex", flex: 1, overflowY: "auto" }}>
-        {/* Sidebar Navigation */}
+        {}
         <div
           style={{
             background: C.surface,
@@ -439,13 +454,13 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
           ))}
         </div>
 
-        {/* Main Content */}
+        {}
         <div style={{ flex: 1, padding: 24, overflowY: "auto" }}>
           {renderPage()}
         </div>
       </div>
 
-      {/* Toast Notification */}
+      {}
       {toast && (
         <Toast
           msg={toast.msg}

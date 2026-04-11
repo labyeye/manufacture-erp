@@ -45,7 +45,7 @@ const clientMasterSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index for faster searches
+
 clientMasterSchema.index({ name: 1 });
 clientMasterSchema.index({ status: 1 });
 

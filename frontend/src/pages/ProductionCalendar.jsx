@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { C } from "../constants/colors";
 import { Card, SectionTitle, Badge } from "../components/ui/BasicComponents";
 
-/* ─── helpers ─── */
+
 const fmt = (n) => (n ?? 0).toLocaleString("en-IN");
 
 const DAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
@@ -29,7 +29,7 @@ function addDays(dateStr, n) {
 
 function getWeekStart(dateStr) {
   const d = new Date(dateStr);
-  d.setDate(d.getDate() - d.getDay()); // Sunday
+  d.setDate(d.getDate() - d.getDay()); 
   return d.toISOString().split("T")[0];
 }
 
@@ -53,7 +53,7 @@ function formatMonthRange(startStr) {
   return `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-/* ─── default machines if machineMaster not provided ─── */
+
 const DEFAULT_MACHINES = [
   { id: "M1", name: "SBBM 360 Machine 1", type: "Bag Making" },
   { id: "M2", name: "SBBM 360 Machine 2", type: "Bag Making" },
@@ -90,16 +90,16 @@ const TYPE_COLOR = {
   Pasting: "#eab308",
 };
 
-/* ─── job status color ─── */
+
 function jobColor(jo, today) {
   if (!jo) return null;
-  if (jo.status === "Completed") return "#22c55e"; // Done green
+  if (jo.status === "Completed") return "#22c55e"; 
   const due = jo.deliveryDate || jo.joDate;
-  if (due && due < today) return "#ef4444"; // Overdue red
-  return "#3b82f6"; // On track blue
+  if (due && due < today) return "#ef4444"; 
+  return "#3b82f6"; 
 }
 
-/* ════════════════════════════════════════════════ */
+
 export default function ProductionCalendar({
   jobOrders = [],
   salesOrders = [],
@@ -107,13 +107,13 @@ export default function ProductionCalendar({
   toast,
 }) {
   const today = todayStr();
-  const [mainView, setMainView] = useState("machine"); // 'machine' | 'date'
-  const [rangeView, setRangeView] = useState("week"); // 'week' | 'month'
+  const [mainView, setMainView] = useState("machine"); 
+  const [rangeView, setRangeView] = useState("week"); 
   const [pivotDate, setPivotDate] = useState(getWeekStart(today));
   const [machineTypeFilter, setMachineTypeFilter] =
     useState("All Machine Types");
 
-  /* build machines list */
+  
   const machines = useMemo(() => {
     const flat = [];
     if (machineMaster && Object.keys(machineMaster).length > 0) {
@@ -133,13 +133,13 @@ export default function ProductionCalendar({
     return flat.length > 0 ? flat : DEFAULT_MACHINES;
   }, [machineMaster]);
 
-  /* machine types for filter */
+  
   const machineTypes = useMemo(() => {
     const types = [...new Set(machines.map((m) => m.type))];
     return ["All Machine Types", ...types];
   }, [machines]);
 
-  /* days to show */
+  
   const days = rangeView === "week" ? 7 : 30;
   const displayStart =
     rangeView === "week" ? getWeekStart(pivotDate) : getMonthStart(pivotDate);
@@ -149,15 +149,15 @@ export default function ProductionCalendar({
     [displayStart, days],
   );
 
-  /* navigate */
+  
   const navigate = (dir) => {
     const step = rangeView === "week" ? 7 : 30;
     setPivotDate(addDays(pivotDate, dir * step));
   };
 
-  /* jobs indexed by machine + date */
+  
   const jobIndex = useMemo(() => {
-    const idx = {}; // key: `machineId|date` → [jo, ...]
+    const idx = {}; 
     (jobOrders || []).forEach((jo) => {
       const date = jo.joDate || jo.createdAt || today;
       const machine = jo.machine || jo.assignedMachine || "";
@@ -169,7 +169,7 @@ export default function ProductionCalendar({
     return idx;
   }, [jobOrders, today]);
 
-  /* filtered machines */
+  
   const visibleMachines = useMemo(
     () =>
       machineTypeFilter === "All Machine Types"
@@ -183,7 +183,7 @@ export default function ProductionCalendar({
       ? formatDateRange(displayStart, 7)
       : formatMonthRange(displayStart);
 
-  /* col width */
+  
   const colW = rangeView === "week" ? 110 : 36;
 
   return (
@@ -194,7 +194,7 @@ export default function ProductionCalendar({
         sub="Machine-wise schedule — click any job to log actual production"
       />
 
-      {/* ── Controls bar ── */}
+      {}
       <div
         style={{
           display: "flex",
@@ -204,7 +204,7 @@ export default function ProductionCalendar({
           marginBottom: 16,
         }}
       >
-        {/* Main view tabs */}
+        {}
         <button
           onClick={() => setMainView("machine")}
           style={tabBtn(mainView === "machine", C.blue)}
@@ -218,7 +218,7 @@ export default function ProductionCalendar({
           📅 Date View
         </button>
 
-        {/* Week / Month */}
+        {}
         <div
           style={{
             display: "flex",
@@ -249,7 +249,7 @@ export default function ProductionCalendar({
           ))}
         </div>
 
-        {/* Prev / Next */}
+        {}
         <button onClick={() => navigate(-1)} style={navBtn()}>
           ‹
         </button>
@@ -268,7 +268,7 @@ export default function ProductionCalendar({
           ›
         </button>
 
-        {/* Today */}
+        {}
         <button
           onClick={() =>
             setPivotDate(
@@ -289,7 +289,7 @@ export default function ProductionCalendar({
           Today
         </button>
 
-        {/* Machine type filter */}
+        {}
         <select
           value={machineTypeFilter}
           onChange={(e) => setMachineTypeFilter(e.target.value)}
@@ -310,7 +310,7 @@ export default function ProductionCalendar({
         </select>
       </div>
 
-      {/* ── Legend ── */}
+      {}
       <div
         style={{
           display: "flex",
@@ -351,7 +351,7 @@ export default function ProductionCalendar({
         </span>
       </div>
 
-      {/* ── Calendar Grid ── */}
+      {}
       <div
         style={{
           overflowX: "auto",
@@ -365,7 +365,7 @@ export default function ProductionCalendar({
         >
           <thead>
             <tr>
-              {/* Machine column header */}
+              {}
               <th
                 style={{
                   padding: "10px 16px",
@@ -385,7 +385,7 @@ export default function ProductionCalendar({
               >
                 MACHINE
               </th>
-              {/* Day headers */}
+              {}
               {daysArray.map((d) => {
                 const dateObj = new Date(d);
                 const dayName = DAYS[dateObj.getDay()];
@@ -438,7 +438,7 @@ export default function ProductionCalendar({
                       mi % 2 === 0 ? "transparent" : C.inputBg || "#ffffff08",
                   }}
                 >
-                  {/* Machine label */}
+                  {}
                   <td
                     style={{
                       padding: "10px 16px",
@@ -477,7 +477,7 @@ export default function ProductionCalendar({
                           {machine.type}
                         </div>
                       </div>
-                      {/* Settings icon placeholder */}
+                      {}
                       <span
                         style={{
                           marginLeft: "auto",
@@ -491,7 +491,7 @@ export default function ProductionCalendar({
                     </div>
                   </td>
 
-                  {/* Day cells */}
+                  {}
                   {daysArray.map((d) => {
                     const key = `${machine.id}|${d}`;
                     const nameKey = `${machine.name}|${d}`;
@@ -571,7 +571,7 @@ export default function ProductionCalendar({
         </table>
       </div>
 
-      {/* ── Date View (list) ── */}
+      {}
       {mainView === "date" && (
         <Card style={{ marginTop: 16 }}>
           <h3
@@ -655,7 +655,7 @@ export default function ProductionCalendar({
   );
 }
 
-/* ─── style helpers ─── */
+
 function tabBtn(active, color) {
   return {
     padding: "8px 18px",

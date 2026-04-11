@@ -1,12 +1,12 @@
 const Counter = require('../models/Counter');
 
-/**
- * Get next sequence number for a counter
- * @param {string} name - Counter name (SO, JO, PO, GRN, DC, RM, FG, CG, SP)
- * @param {string} prefix - Optional prefix for the ID
- * @param {number} padLength - Number of digits to pad (default: 3)
- * @returns {string} - Formatted ID (e.g., "SO-001", "RM0001")
- */
+
+
+
+
+
+
+
 async function getNextSequence(name, prefix = null, padLength = 3) {
   const counter = await Counter.findOneAndUpdate(
     { name },
@@ -23,9 +23,9 @@ async function getNextSequence(name, prefix = null, padLength = 3) {
   return number;
 }
 
-/**
- * Generate specific ID types
- */
+
+
+
 async function generateSONo() {
   return await getNextSequence('SO', 'SO-', 3);
 }

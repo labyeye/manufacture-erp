@@ -56,7 +56,7 @@ export default function Dispatch({
   const [drDateTo, setDrDateTo] = useState("");
   const [editId, setEditId] = useState(null);
 
-  // Load data on mount
+  
   useEffect(() => {
     fetchDispatches();
     fetchSalesOrders();
@@ -124,12 +124,12 @@ export default function Dispatch({
     setItems((prev) => {
       const updated = [...prev];
       const it = { ...updated[idx], [k]: v };
-      // auto product code from FG stock
+      
       if (k === "itemName") {
         const stock = (fgStock || []).find((s) => s.name === v);
         it.productCode = stock?.code || stock?.productCode || "";
       }
-      // auto calc boxes
+      
       const qty = k === "qty" ? +v : +(it.qty || 0);
       const ppb = k === "pcsPerBox" ? +v : +(it.pcsPerBox || 0);
       it.noOfBox = qty && ppb ? Math.ceil(qty / ppb).toString() : "";
@@ -223,7 +223,7 @@ export default function Dispatch({
     <div className="fade">
       <SectionTitle icon="🚚" title="Dispatch" sub="Record outgoing dispatches against sales orders" />
 
-      {/* Tabs */}
+      {}
       <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
         {[
           ["form", "📝 New Dispatch"],
@@ -250,13 +250,13 @@ export default function Dispatch({
 
       {view === "form" && (
         <div>
-          {/* ── Dispatch Details Card ── */}
+          {}
           <Card style={{ marginBottom: 16 }}>
             <h3 style={{ fontSize: 14, fontWeight: 700, color: C.purple, marginBottom: 18 }}>
               Dispatch Details
             </h3>
 
-            {/* Row 1: Date | SO# | Client Name | Delivery Address | Vehicle No */}
+            {}
             <div
               style={{
                 display: "grid",
@@ -311,7 +311,7 @@ export default function Dispatch({
               </Field>
             </div>
 
-            {/* Row 2: Driver Name | Remarks */}
+            {}
             <div
               style={{
                 display: "grid",
@@ -336,7 +336,7 @@ export default function Dispatch({
             </div>
           </Card>
 
-          {/* ── Items header ── */}
+          {}
           <div
             style={{
               display: "flex",
@@ -365,7 +365,7 @@ export default function Dispatch({
             </button>
           </div>
 
-          {/* ── Item cards ── */}
+          {}
           {items.map((it, idx) => (
             <Card
               key={it._id}
@@ -401,7 +401,7 @@ export default function Dispatch({
                 )}
               </div>
 
-              {/* Row: Item Name | Product Code | Quantity | Unit | Pcs/Box */}
+              {}
               <div
                 style={{
                   display: "grid",
@@ -460,7 +460,7 @@ export default function Dispatch({
                 </Field>
               </div>
 
-              {/* No. of Box auto */}
+              {}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 3fr", gap: 12 }}>
                 <Field label="No. of Box">
                   <div
@@ -482,7 +482,7 @@ export default function Dispatch({
             </Card>
           ))}
 
-          {/* ── Bottom actions ── */}
+          {}
           <div style={{ display: "flex", gap: 10, marginTop: 4, alignItems: "center" }}>
             <button
               onClick={addItem}

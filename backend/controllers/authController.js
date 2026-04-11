@@ -1,9 +1,9 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
-/**
- * Login user
- */
+
+
+
 exports.login = async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -26,11 +26,11 @@ exports.login = async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    // Update last login
+    
     user.lastLogin = new Date();
     await user.save();
 
-    // Generate JWT token
+    
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRES_IN || "7d",
     });
@@ -52,9 +52,9 @@ exports.login = async (req, res) => {
   }
 };
 
-/**
- * Get current user
- */
+
+
+
 exports.me = async (req, res) => {
   try {
     res.json({
@@ -73,17 +73,17 @@ exports.me = async (req, res) => {
   }
 };
 
-/**
- * Logout (optional - client-side token removal is sufficient)
- */
+
+
+
 exports.logout = async (req, res) => {
-  // In a more advanced system, you could blacklist the token here
+  
   res.json({ message: "Logged out successfully" });
 };
 
-/**
- * Get all users
- */
+
+
+
 exports.getAllUsers = async (req, res) => {
   try {
     const users = await User.find().select("-password");
@@ -94,9 +94,9 @@ exports.getAllUsers = async (req, res) => {
   }
 };
 
-/**
- * Get user by ID
- */
+
+
+
 exports.getUserById = async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select("-password");
@@ -110,9 +110,9 @@ exports.getUserById = async (req, res) => {
   }
 };
 
-/**
- * Create new user
- */
+
+
+
 exports.createUser = async (req, res) => {
   try {
     const { username, password, name, role, allowedTabs, editableTabs } =
@@ -124,7 +124,7 @@ exports.createUser = async (req, res) => {
         .json({ error: "Username, password and name are required" });
     }
 
-    // Check if user already exists
+    
     const existingUser = await User.findOne({
       username: username.toLowerCase(),
     });
@@ -154,9 +154,9 @@ exports.createUser = async (req, res) => {
   }
 };
 
-/**
- * Update user
- */
+
+
+
 exports.updateUser = async (req, res) => {
   try {
     const { id } = req.params;
@@ -173,7 +173,7 @@ exports.updateUser = async (req, res) => {
     if (allowedTabs !== undefined) user.allowedTabs = allowedTabs;
     if (editableTabs !== undefined) user.editableTabs = editableTabs;
     if (isActive !== undefined) user.isActive = isActive;
-    if (password) user.password = password; // Will be hashed by pre-save hook
+    if (password) user.password = password; 
 
     await user.save();
 
@@ -187,9 +187,9 @@ exports.updateUser = async (req, res) => {
   }
 };
 
-/**
- * Delete user
- */
+
+
+
 exports.deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
@@ -199,7 +199,7 @@ exports.deleteUser = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    // Don't allow deleting the last admin
+    
     const adminCount = await User.countDocuments({ role: "Admin" });
     if (user.role === "Admin" && adminCount === 1) {
       return res

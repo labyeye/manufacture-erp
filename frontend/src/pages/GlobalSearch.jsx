@@ -2,17 +2,17 @@ import React, { useState } from "react";
 import { C } from "../constants/colors";
 import { Card, SectionTitle } from "../components/ui/BasicComponents";
 
-/**
- * Global Search Component
- * ──────────────────────────────────────────────────────────────────────────
- * Search across all entities:
- * - Sales Orders
- * - Job Orders
- * - Purchase Orders
- * - Material Inward
- * - Stock items
- * - Dispatches
- */
+
+
+
+
+
+
+
+
+
+
+
 export function GlobalSearch({
   salesOrders,
   jobOrders,
@@ -36,7 +36,7 @@ export function GlobalSearch({
     const term_lower = term.toLowerCase();
     const results = [];
 
-    // Search in sales orders
+    
     (salesOrders || []).forEach((so) => {
       if (
         so.soNo?.toLowerCase().includes(term_lower) ||
@@ -51,7 +51,7 @@ export function GlobalSearch({
       }
     });
 
-    // Search in job orders
+    
     (jobOrders || []).forEach((jo) => {
       if (
         jo.joNo?.toLowerCase().includes(term_lower) ||
@@ -66,7 +66,7 @@ export function GlobalSearch({
       }
     });
 
-    // Search in purchase orders
+    
     (purchaseOrders || []).forEach((po) => {
       if (
         po.poNo?.toLowerCase().includes(term_lower) ||

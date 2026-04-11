@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { C } from '../constants/colors';
 import { Card, SectionTitle, Badge, Field, SubmitBtn } from '../components/ui/BasicComponents';
+import { printingDetailMasterAPI } from '../api/auth';
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 
-export default function PrintingDetailMaster({
-  printingMaster = [], setPrintingMaster, itemMasterFG = {}, toast
-}) {
+export default function PrintingDetailMaster({ toast }) {
+  const [printingMaster, setPrintingMaster] = useState([]);
+  const [loading, setLoading] = useState(false);
   const blankEntry = {
     itemName: '', clientName: '', paperType: '', paperGsm: '',
     printing: '', plate: '', processes: [], remarks: ''
@@ -15,6 +16,21 @@ export default function PrintingDetailMaster({
   const [entry, setEntry] = useState(blankEntry);
   const [errors, setErrors] = useState({});
   const [view, setView] = useState('form');
+  const [editingId, setEditingId] = useState(null);
+
+  
+  useEffect(() => {
+    fetchPrintingDetails();
+  }, []);
+
+  const fetchPrintingDetails = async () => {
+    try {
+      const res = await printingDetailMasterAPI.getAll();
+      setPrintingMaster(res.printingDetails || []);
+    } catch (error) {
+      toast?.('Failed to load printing details', 'error');
+    }
+  };
 
   const setField = (k, v) => {
     setEntry(f => ({ ...f, [k]: v }));
@@ -33,7 +49,7 @@ export default function PrintingDetailMaster({
   const E = (k) => errors[k] ? { border: `1px solid ${C.red}` } : {};
   const EMsg = (k) => errors[k] ? <div style={{ color: C.red, fontSize: 10, marginTop: 3 }}>Required</div> : null;
 
-  const submit = () => {
+  const submit = async () => {
     const err = {};
     if (!entry.itemName) err.itemName = true;
     if (!entry.clientName) err.clientName = true;
@@ -45,12 +61,64 @@ export default function PrintingDetailMaster({
       return;
     }
 
-    const newEntry = { ...entry, id: uid() };
-    setPrintingMaster(p => [...p, newEntry]);
+    setLoading(true);
+    try {
+      const payload = {
+        itemName: entry.itemName,
+        clientName: entry.clientName,
+        paperType: entry.paperType,
+        paperGsm: entry.paperGsm ? Number(entry.paperGsm) : undefined,
+        printing: entry.printing,
+        plate: entry.plate,
+        process: entry.processes || [],
+      };
 
-    toast('Printing detail saved', 'success');
-    setEntry(blankEntry);
-    setErrors({});
+      if (editingId) {
+        await printingDetailMasterAPI.update(editingId, payload);
+        toast('Printing detail updated', 'success');
+        setEditingId(null);
+      } else {
+        await printingDetailMasterAPI.create(payload);
+        toast('Printing detail saved', 'success');
+      }
+
+      setEntry(blankEntry);
+      setErrors({});
+      setView('records');
+      fetchPrintingDetails();
+    } catch (error) {
+      toast(error.response?.data?.error || 'Failed to save printing detail', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEdit = (detail) => {
+    setEditingId(detail._id);
+    setEntry({
+      itemName: detail.itemName || '',
+      clientName: detail.clientName || '',
+      paperType: detail.paperType || '',
+      paperGsm: detail.paperGsm || '',
+      printing: detail.printing || '',
+      plate: detail.plate || '',
+      processes: detail.process || [],
+      remarks: detail.remarks || ''
+    });
+    setView('form');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm('Delete this printing detail?')) return;
+
+    try {
+      await printingDetailMasterAPI.delete(id);
+      toast('Printing detail deleted', 'success');
+      fetchPrintingDetails();
+    } catch (error) {
+      toast(error.response?.data?.error || 'Failed to delete printing detail', 'error');
+    }
   };
 
   return (
@@ -125,7 +193,7 @@ export default function PrintingDetailMaster({
           <h3 style={{ fontSize: 14, fontWeight: 700, color: C.muted, marginBottom: 14 }}>Printing Templates</h3>
           {printingMaster.length === 0 && <div style={{ textAlign: 'center', color: C.muted, padding: 32 }}>No templates yet.</div>}
           {(printingMaster || []).map(t => (
-            <div key={t.id} style={{ borderBottom: `1px solid ${C.border}22`, padding: '12px 4px' }}>
+            <div key={t._id || t.id} style={{ borderBottom: `1px solid ${C.border}22`, padding: '12px 4px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                 <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
                   <span style={{ fontSize: 13, fontWeight: 600 }}>{t.itemName}</span>
@@ -133,10 +201,42 @@ export default function PrintingDetailMaster({
                   <Badge text={t.paperType} color={C.accent} />
                   {t.printing && <Badge text={t.printing} color={C.yellow} />}
                 </div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button
+                    onClick={() => handleEdit(t)}
+                    style={{
+                      background: (C.blue || '#3b82f6') + '22',
+                      color: C.blue || '#3b82f6',
+                      border: 'none',
+                      borderRadius: 5,
+                      padding: '4px 12px',
+                      fontWeight: 700,
+                      fontSize: 12,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    ✏️ Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(t._id)}
+                    style={{
+                      background: (C.red || '#ef4444') + '22',
+                      color: C.red || '#ef4444',
+                      border: 'none',
+                      borderRadius: 5,
+                      padding: '4px 12px',
+                      fontWeight: 700,
+                      fontSize: 12,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    🗑️
+                  </button>
+                </div>
               </div>
-              {t.processes.length > 0 && (
+              {(t.process || t.processes || []).length > 0 && (
                 <div style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>
-                  Processes: {t.processes.join(', ')}
+                  Processes: {(t.process || t.processes || []).join(', ')}
                 </div>
               )}
             </div>

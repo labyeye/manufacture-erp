@@ -5,14 +5,14 @@ import { SHEET_STAGES, FORMATION_STAGES_QTY } from "../constants/seedData";
 const STAGES = [...SHEET_STAGES, ...FORMATION_STAGES_QTY];
 import { today, fmt, daysSince } from "../utils/helpers";
 
-/**
- * Dashboard Component
- * ──────────────────────────────────────────────────────────────────────────
- * Main production dashboard with:
- * - Production overview (open orders, pending by process)
- * - Multiple report tabs (operator, machine, PO/SO reconciliation, etc.)
- * - Drill-down views for detailed analysis
- */
+
+
+
+
+
+
+
+
 export function Dashboard({
   data,
   onNavigate,
@@ -38,7 +38,7 @@ export function Dashboard({
   const [selMachineId, setSelMachineId] = useState("");
   const [selOperator, setSelOperator] = useState("");
 
-  // ── Production overview data ──
+  
   const { activeJOs, processPendingMap, totalActiveJOs } = React.useMemo(() => {
     const activeJOs = jobOrders.filter(
       (j) => j.status !== "Completed" && j.status !== "Cancelled",
@@ -68,7 +68,7 @@ export function Dashboard({
         </h2>
       </div>
 
-      {/* Report tabs */}
+      {}
       <div
         style={{
           display: "flex",
@@ -119,7 +119,7 @@ export function Dashboard({
         ))}
       </div>
 
-      {/* Production Report */}
+      {}
       {reportTab === "production" && (
         <div>
           <SectionTitle
@@ -128,7 +128,7 @@ export function Dashboard({
             sub="Open orders and pending work by process"
           />
 
-          {/* Open Orders Card */}
+          {}
           <div
             onClick={() => setDrill("open_orders")}
             style={{
@@ -184,7 +184,7 @@ export function Dashboard({
             <div style={{ color: C.yellow, fontSize: 22 }}>→</div>
           </div>
 
-          {/* Pending by Process Grid */}
+          {}
           <div
             style={{
               fontSize: 11,
@@ -327,7 +327,7 @@ export function Dashboard({
         </div>
       )}
 
-      {/* Other report tabs - placeholders for now */}
+      {}
       {reportTab === "operator" && (
         <Card style={{ padding: 40, textAlign: "center" }}>
           👤 Operator Report - Coming Soon
@@ -349,7 +349,7 @@ export function Dashboard({
         </Card>
       )}
 
-      {/* Drill-down views */}
+      {}
       {drill === "open_orders" && (
         <div className="fade" style={{ marginTop: 20 }}>
           <button

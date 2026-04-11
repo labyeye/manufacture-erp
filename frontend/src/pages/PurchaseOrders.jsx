@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { C } from "../constants/colors";
-import { purchaseOrdersAPI } from "../api/auth";
+import { purchaseOrdersAPI, itemMasterAPI } from "../api/auth";
 import {
   Card,
   SectionTitle,
@@ -8,44 +8,27 @@ import {
   Field,
   SubmitBtn,
   AutocompleteInput,
-  DatePicker,
   DateRangeFilter,
 } from "../components/ui/BasicComponents";
-
-const PAPER_TYPES_BY_ITEM = {
-  "Paper Reel": ["MG Kraft", "MF Kraft", "Bleached Kraft", "OGR"],
-  "Paper Sheets": [
-    "White PE Coated",
-    "Kraft PE Coated",
-    "Kraft Uncoated",
-    "SBS/FBB",
-    "Whiteback",
-    "Greyback",
-    "Art Paper",
-    "Gumming Sheet",
-  ],
-};
-const RM_ITEMS = ["Paper Reel", "Paper Sheets"];
-const CONSUMABLE_BOX_CATS = ["Corrugated Box", "Folding Box"];
-const CONSUMABLE_BAG_CATS = ["LDPE Polybag", "Paper Bag"];
+import { DatePicker } from "../components/ui/DatePicker";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 const today = () => new Date().toISOString().slice(0, 10);
 const fmt = (n) => (n ?? 0).toLocaleString("en-IN");
 
 const computeRMItemName = (it) => {
-  if (it.rmItem === "Paper Reel") {
+  if (it.category === "Paper Reel") {
     return [
-      it.paperType,
+      it.subCategory,
       "Paper Reel",
       it.gsm ? it.gsm + "gsm" : "",
       it.widthMm ? it.widthMm + "mm" : "",
     ]
       .filter(Boolean)
       .join(" ");
-  } else if (it.rmItem === "Paper Sheets") {
+  } else if (it.category === "Paper Sheets") {
     return [
-      it.paperType,
+      it.subCategory,
       "Sheet",
       it.gsm ? it.gsm + "gsm" : "",
       it.widthMm && it.lengthMm
@@ -57,7 +40,7 @@ const computeRMItemName = (it) => {
       .filter(Boolean)
       .join(" ");
   }
-  return "";
+  return it.itemName || "";
 };
 
 export default function PurchaseOrders({
@@ -84,8 +67,8 @@ export default function PurchaseOrders({
     _id: uid(),
     materialType: "Raw Material",
     productCode: "",
-    rmItem: "",
-    paperType: "",
+    category: "",
+    subCategory: "",
     widthMm: "",
     lengthMm: "",
     gsm: "",
@@ -95,13 +78,13 @@ export default function PurchaseOrders({
     qty: "",
     rate: "",
     amount: "",
-    category: "",
     itemName: "",
     size: "",
   });
 
   const [header, setHeader] = useState(blankHeader);
   const [items, setItems] = useState([blankItem()]);
+  const [itemMasterItems, setItemMasterItems] = useState([]);
   const [headerErrors, setHeaderErrors] = useState({});
   const [itemErrors, setItemErrors] = useState([{}]);
   const [view, setView] = useState("form");
@@ -112,10 +95,19 @@ export default function PurchaseOrders({
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
 
-  // Fetch POs from backend on mount
   useEffect(() => {
     fetchPOs();
+    fetchItemMaster();
   }, []);
+
+  const fetchItemMaster = async () => {
+    try {
+      const data = await itemMasterAPI.getAll();
+      setItemMasterItems(data.items || []);
+    } catch (error) {
+      console.error("Failed to fetch item master:", error);
+    }
+  };
 
   const fetchPOs = async () => {
     try {
@@ -130,17 +122,60 @@ export default function PurchaseOrders({
     }
   };
 
-  const paperTypesByItem = useMemo(
-    () => ({
-      "Paper Reel":
-        (sizeMaster && sizeMaster["Paper Reel"]) ||
-        PAPER_TYPES_BY_ITEM["Paper Reel"],
-      "Paper Sheets":
-        (sizeMaster && sizeMaster["Paper Sheet"]) ||
-        PAPER_TYPES_BY_ITEM["Paper Sheets"],
-    }),
-    [sizeMaster],
-  );
+  // Get Raw Material items from CategoryMaster + ItemMaster items
+  const rmItems = useMemo(() => {
+    const rmCat = Object.values(categoryMaster || {}).find(
+      (c) => (c.type || "").trim().toLowerCase() === "raw material",
+    );
+    const fromMaster =
+      rmCat && rmCat.subTypes ? Object.keys(rmCat.subTypes) : [];
+
+    const fromItems = itemMasterItems
+      .filter(
+        (it) =>
+          it.type === "Raw Material" || it.materialType === "Raw Material",
+      )
+      .map((it) => it.category)
+      .filter(Boolean);
+
+    return [...new Set([...fromMaster, ...fromItems])].map((k) => k.trim());
+  }, [categoryMaster, itemMasterItems]);
+
+  // Get paper types (subtypes) for selected RM Item
+  const subCategoriesByItem = useMemo(() => {
+    const result = {};
+    const rmCat = Object.values(categoryMaster || {}).find(
+      (c) => (c.type || "").trim().toLowerCase() === "raw material",
+    );
+
+    rmItems.forEach((item) => {
+      const fromMaster =
+        (rmCat && rmCat.subTypes ? rmCat.subTypes[item] : []) || [];
+      const fromItems = itemMasterItems
+        .filter(
+          (it) =>
+            (it.type === "Raw Material" ||
+              it.materialType === "Raw Material") &&
+            it.category === item,
+        )
+        .map((it) => it.subCategory)
+        .filter(Boolean);
+
+      result[item] = [...new Set([...fromMaster, ...fromItems])].map((p) =>
+        p.trim(),
+      );
+    });
+
+    return result;
+  }, [categoryMaster, rmItems, itemMasterItems]);
+
+  const sortedItemMasterItems = useMemo(() => {
+    return [...itemMasterItems].sort((a, b) => {
+      const codeA = a.code || "";
+      const codeB = b.code || "";
+      return codeA.localeCompare(codeB, undefined, { numeric: true });
+    });
+  }, [itemMasterItems]);
 
   const setH = (k, v) => {
     setHeader((f) => ({ ...f, [k]: v }));
@@ -159,55 +194,53 @@ export default function PurchaseOrders({
       const it = { ...updated[idx], [k]: v };
 
       if (k === "productCode" && v) {
-        const masterItem = (itemMasterFG["Raw Material"] || []).find(
-          (x) => (x.code || "").toLowerCase() === v.toLowerCase(),
+        let code = v;
+        if (v.includes(" — ")) {
+          code = v.split(" — ")[0].trim();
+        }
+        it.productCode = code;
+
+        const masterItem = itemMasterItems.find(
+          (x) =>
+            (x.code || "").trim().toLowerCase() === code.trim().toLowerCase(),
         );
+
         if (masterItem) {
-          const name = masterItem.name || "";
-          if (name.includes("Paper Reel")) {
-            it.rmItem = "Paper Reel";
-            const gsmMatch = name.match(/(\d+)gsm/);
-            const widthMatch = name.match(/(\d+)mm/);
-            const paperTypes = [
-              "MG Kraft",
-              "MF Kraft",
-              "Bleached Kraft",
-              "OGR",
-            ];
-            const foundType = paperTypes.find((t) => name.includes(t));
-            if (gsmMatch) it.gsm = gsmMatch[1];
-            if (widthMatch) it.widthMm = widthMatch[1];
-            if (foundType) it.paperType = foundType;
-          } else if (name.includes("Sheet")) {
-            it.rmItem = "Paper Sheets";
-            const gsmMatch = name.match(/(\d+)gsm/);
-            const dimMatch = name.match(/(\d+)x(\d+)mm/);
-            const widthMatch = name.match(/(\d+)mm/);
-            const paperTypes = [
-              "White PE Coated",
-              "Kraft PE Coated",
-              "Kraft Uncoated",
-              "SBS/FBB",
-              "Whiteback",
-              "Greyback",
-              "Art Paper",
-              "Gumming Sheet",
-            ];
-            const foundType = paperTypes.find((t) => name.includes(t));
-            if (gsmMatch) it.gsm = gsmMatch[1];
-            if (dimMatch) {
-              it.widthMm = dimMatch[1];
-              it.lengthMm = dimMatch[2];
-            } else if (widthMatch) it.widthMm = widthMatch[1];
-            if (foundType) it.paperType = foundType;
+          it.itemName = (masterItem.name || "").trim();
+          it.materialType = masterItem.type || "Raw Material";
+          it.productCode = masterItem.code;
+
+          if (it.materialType === "Raw Material") {
+            it.category = (masterItem.category || "").trim();
+            it.subCategory = (masterItem.subCategory || "").trim();
+            it.gsm = masterItem.gsm || "";
+            it.widthMm = masterItem.width || "";
+            it.lengthMm = masterItem.length || "";
+
+            // Fallback for older items
+            if (!it.gsm) {
+              const gsmMatch = it.itemName.match(/(\d+)[\s-]*gsm/i);
+              if (gsmMatch) it.gsm = gsmMatch[1];
+            }
+            if (!it.widthMm) {
+              const dimMatch = it.itemName.match(
+                /(\d+)[\s-]*x[\s-]*(\d+)[\s-]*mm/i,
+              );
+              const widthMatch = it.itemName.match(/(\d+)[\s-]*mm/i);
+              if (dimMatch) {
+                it.widthMm = dimMatch[1];
+                it.lengthMm = dimMatch[2];
+              } else if (widthMatch) {
+                it.widthMm = widthMatch[1];
+              }
+            }
           }
-          it.itemName = masterItem.name;
         }
       }
 
       if (k === "materialType") {
-        it.rmItem = "";
-        it.paperType = "";
+        it.category = "";
+        it.subCategory = "";
         it.itemName = "";
         it.widthMm = "";
         it.lengthMm = "";
@@ -219,8 +252,8 @@ export default function PurchaseOrders({
         it.productCode = "";
       }
 
-      if (k === "rmItem") {
-        it.paperType = "";
+      if (k === "category") {
+        it.subCategory = "";
         it.itemName = "";
       }
 
@@ -236,7 +269,8 @@ export default function PurchaseOrders({
           ? (qty * rate).toFixed(2)
           : "";
 
-      it.itemName = isRM ? computeRMItemName(it) : it.itemName;
+      it.itemName =
+        isRM && !it.productCode ? computeRMItemName(it) : it.itemName;
       updated[idx] = it;
       return updated;
     });
@@ -276,10 +310,10 @@ export default function PurchaseOrders({
       const e = {};
       const isRM = it.materialType === "Raw Material" || !it.materialType;
       if (isRM) {
-        if (!it.rmItem) e.rmItem = true;
-        if (!it.paperType) e.paperType = true;
+        if (!it.category) e.category = true;
+        if (!it.subCategory) e.subCategory = true;
         if (!it.widthMm) e.widthMm = true;
-        if (it.rmItem !== "Paper Reel" && !it.lengthMm) e.lengthMm = true;
+        if (it.category !== "Paper Reel" && !it.lengthMm) e.lengthMm = true;
         if (!it.gsm) e.gsm = true;
         if (!it.weight) e.weight = true;
       } else {
@@ -294,7 +328,7 @@ export default function PurchaseOrders({
       Object.keys(he).length > 0 ||
       allItemErrors.some((e) => Object.keys(e).length > 0)
     ) {
-      toast("Please fill all required fields", "error");
+      toast("Please fill all required fields correctly", "error");
       return;
     }
 
@@ -312,8 +346,10 @@ export default function PurchaseOrders({
             itemName: it.itemName,
             productCode: it.productCode,
             category: it.category || it.materialType,
-            paperType: it.paperType,
+            paperType: it.subCategory,
             gsm: it.gsm,
+            width: it.widthMm,
+            length: it.lengthMm,
             sheetSize: `${it.widthMm}${it.lengthMm ? "x" + it.lengthMm : ""}mm`,
             unit: isRM ? "kg" : "pcs",
             qty: isRM ? it.weight : it.qty,
@@ -357,11 +393,9 @@ export default function PurchaseOrders({
   };
 
   const handleEdit = (po) => {
-    // Populate form with PO data
     const vendorName =
       typeof po.vendor === "object" ? po.vendor.name : po.vendor;
 
-    // Convert ISO date to YYYY-MM-DD format
     const formatDateForInput = (dateString) => {
       if (!dateString) return "";
       const date = new Date(dateString);
@@ -384,19 +418,19 @@ export default function PurchaseOrders({
         itemName: it.itemName || "",
         productCode: it.productCode || "",
         category: it.category || "",
-        paperType: it.paperType || "",
+        subCategory: it.paperType || "",
         gsm: it.gsm || "",
-        widthMm: it.sheetSize
-          ? it.sheetSize.split("x")[0].replace("mm", "")
-          : "",
-        lengthMm: it.sheetSize
-          ? it.sheetSize.split("x")[1]?.replace("mm", "")
-          : "",
+        splitSize: it.sheetSize || "",
+        widthMm:
+          it.width ||
+          (it.sheetSize ? it.sheetSize.split("x")[0].replace("mm", "") : ""),
+        lengthMm:
+          it.length ||
+          (it.sheetSize ? it.sheetSize.split("x")[1]?.replace("mm", "") : ""),
         qty: it.qty || "",
         weight: it.weight || "",
         rate: it.rate || "",
         amount: it.amount || "",
-        rmItem: "",
         noOfSheets: it.qty || "",
         noOfReels: "",
         size: "",
@@ -454,7 +488,6 @@ export default function PurchaseOrders({
           </button>
         ))}
       </div>
-
       {view === "form" && (
         <div>
           <Card style={{ marginBottom: 16 }}>
@@ -475,7 +508,7 @@ export default function PurchaseOrders({
                 gap: 14,
               }}
             >
-              <Field label="PO Date *">
+              <Field label="PO Date 📅 *">
                 <DatePicker
                   value={header.poDate}
                   onChange={(v) => setH("poDate", v)}
@@ -483,7 +516,7 @@ export default function PurchaseOrders({
                 />
                 {EHMsg("poDate")}
               </Field>
-              <Field label="Delivery Date *">
+              <Field label="Delivery Date 📅 *">
                 <DatePicker
                   value={header.deliveryDate}
                   onChange={(v) => setH("deliveryDate", v)}
@@ -598,13 +631,13 @@ export default function PurchaseOrders({
                 }}
               >
                 <Field label="Product Code">
-                  <input
-                    type="text"
-                    placeholder="Item SKU / Code"
+                  <AutocompleteInput
                     value={it.productCode}
-                    onChange={(e) =>
-                      setItem(idx, "productCode", e.target.value)
-                    }
+                    onChange={(v) => setItem(idx, "productCode", v)}
+                    suggestions={sortedItemMasterItems.map(
+                      (item) => `${item.code} — ${item.name}`,
+                    )}
+                    placeholder="Type or select code"
                   />
                 </Field>
                 <Field label="Item Name">
@@ -630,41 +663,47 @@ export default function PurchaseOrders({
                   <>
                     <Field label="RM Item *">
                       <select
-                        value={it.rmItem}
-                        onChange={(e) => setItem(idx, "rmItem", e.target.value)}
-                        style={EI(idx, "rmItem")}
+                        value={it.category}
+                        onChange={(e) =>
+                          setItem(idx, "category", e.target.value)
+                        }
+                        style={EI(idx, "category")}
                       >
                         <option value="">-- Select Item --</option>
-                        {RM_ITEMS.map((i) => (
-                          <option key={i}>{i}</option>
+                        {rmItems.map((i) => (
+                          <option key={i} value={i}>
+                            {i}
+                          </option>
                         ))}
                       </select>
-                      {EIMsg(idx, "rmItem")}
+                      {EIMsg(idx, "category")}
                     </Field>
                     <Field label="Paper Type *">
                       <select
-                        value={it.paperType}
+                        value={it.subCategory}
                         onChange={(e) =>
-                          setItem(idx, "paperType", e.target.value)
+                          setItem(idx, "subCategory", e.target.value)
                         }
-                        disabled={!it.rmItem}
-                        style={EI(idx, "paperType")}
+                        disabled={!it.category}
+                        style={EI(idx, "subCategory")}
                       >
                         <option value="">
-                          {it.rmItem
-                            ? "-- Select Type --"
+                          {it.category
+                            ? "-- Select Paper Type --"
                             : "-- Select RM Item first --"}
                         </option>
-                        {(paperTypesByItem[it.rmItem] || []).map((p) => (
-                          <option key={p}>{p}</option>
+                        {(subCategoriesByItem[it.category] || []).map((p) => (
+                          <option key={p} value={p}>
+                            {p}
+                          </option>
                         ))}
                       </select>
-                      {EIMsg(idx, "paperType")}
+                      {EIMsg(idx, "subCategory")}
                     </Field>
                     <Field label="Width (mm) *">
                       <input
                         type="number"
-                        placeholder="e.g. 700"
+                        placeholder="700"
                         value={it.widthMm}
                         onChange={(e) =>
                           setItem(idx, "widthMm", e.target.value)
@@ -673,20 +712,16 @@ export default function PurchaseOrders({
                       />
                       {EIMsg(idx, "widthMm")}
                     </Field>
-                    {it.rmItem !== "Paper Reel" && (
-                      <Field label="Length (mm) *">
-                        <input
-                          type="number"
-                          placeholder="e.g. 1000"
-                          value={it.lengthMm}
-                          onChange={(e) =>
-                            setItem(idx, "lengthMm", e.target.value)
-                          }
-                          style={EI(idx, "lengthMm")}
-                        />
-                        {EIMsg(idx, "lengthMm")}
-                      </Field>
-                    )}
+                    <Field label="Length (mm)">
+                      <input
+                        type="number"
+                        placeholder="1000"
+                        value={it.lengthMm}
+                        onChange={(e) =>
+                          setItem(idx, "lengthMm", e.target.value)
+                        }
+                      />
+                    </Field>
                     <Field label="GSM *">
                       <input
                         type="number"

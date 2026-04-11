@@ -68,7 +68,7 @@ const PROCESS_TAGS = [
 ];
 const SHEET_UOM_OPTIONS = ["mm", "inch", "cm"];
 
-/* ─── sub-section label ─── */
+
 const SubLabel = ({ text }) => (
   <div
     style={{
@@ -85,7 +85,7 @@ const SubLabel = ({ text }) => (
   </div>
 );
 
-/* ─── read-only auto-fill field ─── */
+
 const AutoField = ({ value, placeholder }) => (
   <div
     style={{
@@ -102,12 +102,14 @@ const AutoField = ({ value, placeholder }) => (
   </div>
 );
 
-export default function JobOrders({
-  machineMaster = {},
-  rawStock = [],
-  setRawStock,
-  toast,
-}) {
+export default function JobOrders(props) {
+  const {
+    machineMaster = {},
+    rawStock = [],
+    setRawStock,
+    toast,
+    clientMaster = [],
+  } = props;
   const [jobOrders, setJobOrders] = useState([]);
   const [salesOrders, setSalesOrders] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -127,11 +129,10 @@ export default function JobOrders({
     paperCategory: "",
     paperType: "",
     paperGsm: "",
-    noOfUps: "",
-    noOfSheets: "",
-    sheetUom: "mm",
-    sheetW: "",
-    sheetL: "",
+    reelSize: "",
+    reelWidth: "",
+    cuttingLength: "",
+    reelWeight: "",
     hasSecondPaper: false,
     paperType2: "",
     paperGsm2: "",
@@ -143,7 +144,13 @@ export default function JobOrders({
   const [view, setView] = useState("form");
   const [editId, setEditId] = useState(null);
 
-  // Load data on mount
+  const uniqueClientCategories = useMemo(() => {
+    return [
+      ...new Set((clientMaster || []).map((c) => c.category).filter(Boolean)),
+    ];
+  }, [clientMaster]);
+
+  
   useEffect(() => {
     fetchJobOrders();
     fetchSalesOrders();
@@ -174,7 +181,7 @@ export default function JobOrders({
     [salesOrders],
   );
 
-  /* computed sheet size */
+  
   const sheetSize = useMemo(() => {
     if (header.sheetW && header.sheetL && header.sheetUom)
       return `${header.sheetW} × ${header.sheetL} ${header.sheetUom}`;
@@ -223,31 +230,24 @@ export default function JobOrders({
 
   const validateRMStock = () => {
     if (!header.paperType || !header.paperGsm) return true;
-    const stockKey = [
-      header.paperCategory,
-      header.paperType,
-      header.paperGsm + "gsm",
-    ]
-      .filter(Boolean)
-      .join(" | ");
-    const stock = (rawStock || []).find((s) => s.name === stockKey);
+    
+    // Find stock matching category, type and gsm
+    const stock = (rawStock || []).find((s) => {
+      const sCat = (s.category || s.paperCategory || "").toLowerCase();
+      const sType = (s.name || s.paperType || "").toLowerCase();
+      const sGsm = (s.gsm || s.paperGsm || 0).toString();
+
+      return (
+        sCat === header.paperCategory.toLowerCase() &&
+        sType.includes(header.paperType.toLowerCase()) &&
+        sGsm === header.paperGsm.toString()
+      );
+    });
+
     if (!stock || (stock.qty <= 0 && stock.weight <= 0)) {
-      toast(`Insufficient RM stock: ${stockKey}`, "error");
+      const stockName = `${header.paperCategory} | ${header.paperType} | ${header.paperGsm}gsm`;
+      toast(`Insufficient RM stock: ${stockName}`, "error");
       return false;
-    }
-    if (header.hasSecondPaper) {
-      const stockKey2 = [
-        header.paperCategory,
-        header.paperType2,
-        header.paperGsm2 + "gsm",
-      ]
-        .filter(Boolean)
-        .join(" | ");
-      const stock2 = (rawStock || []).find((s) => s.name === stockKey2);
-      if (!stock2 || (stock2.qty <= 0 && stock2.weight <= 0)) {
-        toast(`Insufficient RM stock for Paper 2: ${stockKey2}`, "error");
-        return false;
-      }
     }
     return true;
   };
@@ -283,12 +283,10 @@ export default function JobOrders({
         paperCategory: header.paperCategory,
         paperType: header.paperType,
         paperGsm: Number(header.paperGsm),
-        sheetSize,
-        sheetW: Number(header.sheetW),
-        sheetL: Number(header.sheetL),
-        sheetUom: header.sheetUom,
-        noOfUps: Number(header.noOfUps),
-        noOfSheets: Number(header.noOfSheets),
+        reelSize: header.reelSize,
+        reelWidthMm: Number(header.reelWidth),
+        cuttingLengthMm: Number(header.cuttingLength),
+        reelWeightKg: Number(header.reelWeight),
         hasSecondPaper: header.hasSecondPaper,
         paperType2: header.paperType2,
         paperGsm2: header.paperGsm2 ? Number(header.paperGsm2) : null,
@@ -315,7 +313,7 @@ export default function JobOrders({
     }
   };
 
-  /* ══════════════════════════════════════════════════════ */
+  
   return (
     <div className="fade">
       <SectionTitle
@@ -324,7 +322,7 @@ export default function JobOrders({
         sub="Create production job orders linked to sales orders"
       />
 
-      {/* ── Tab buttons ── */}
+      {}
       <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
         {[
           ["form", "📝 New Job Order"],
@@ -349,7 +347,7 @@ export default function JobOrders({
         ))}
       </div>
 
-      {/* ════════════════ FORM VIEW ════════════════ */}
+      {}
       {view === "form" && (
         <Card>
           <h3
@@ -363,7 +361,7 @@ export default function JobOrders({
             New Job Card
           </h3>
 
-          {/* ── BASIC DETAILS ── */}
+          {}
           <SubLabel text="Basic Details" />
           <div
             style={{
@@ -397,14 +395,20 @@ export default function JobOrders({
               {EHMsg("soRef")}
             </Field>
             <Field label="Order Date">
-              <AutoField value={header.orderDate} placeholder="DD/MM/YYYY" />
+              <AutoField 
+                value={header.orderDate ? new Date(header.orderDate).toLocaleDateString('en-GB') : ""} 
+                placeholder="DD/MM/YYYY" 
+              />
             </Field>
             <Field label="Delivery Date">
-              <AutoField value={header.deliveryDate} placeholder="DD/MM/YYYY" />
+              <AutoField 
+                value={header.deliveryDate ? new Date(header.deliveryDate).toLocaleDateString('en-GB') : ""} 
+                placeholder="DD/MM/YYYY" 
+              />
             </Field>
           </div>
 
-          {/* ── CLIENT & ITEM DETAILS ── */}
+          {}
           <SubLabel text="Client & Item Details" />
           <div
             style={{
@@ -426,8 +430,10 @@ export default function JobOrders({
                 onChange={(e) => setH("clientCategory", e.target.value)}
               >
                 <option value="">-- Select --</option>
-                {["HP", "ZPL", "Others"].map((c) => (
-                  <option key={c}>{c}</option>
+                {uniqueClientCategories.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
                 ))}
               </select>
             </Field>
@@ -447,7 +453,7 @@ export default function JobOrders({
             </Field>
           </div>
 
-          {/* ── PRODUCTION DETAILS ── */}
+          {}
           <SubLabel text="Production Details" />
           <div
             style={{
@@ -524,19 +530,20 @@ export default function JobOrders({
             </Field>
           </div>
 
-          {/* ── SHEET / REEL DETAILS ── */}
+          {}
           <SubLabel text="Sheet / Reel Details" />
 
-          {/* Row 1: Paper Category | Paper Type | Paper GSM | # of Ups | # of Sheets | Sheet UOM */}
+          {}
+          {/* Row 1: 5 Columns */}
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "1.5fr 1.5fr 1fr 1fr 1fr 1fr",
+              gridTemplateColumns: "1.2fr 1.5fr 1fr 1.2fr 1fr",
               gap: 14,
               marginBottom: 14,
             }}
           >
-            <Field label="Paper Category *">
+            <Field label="PAPER CATEGORY *">
               <select
                 value={header.paperCategory}
                 onChange={(e) => setH("paperCategory", e.target.value)}
@@ -549,7 +556,7 @@ export default function JobOrders({
               </select>
               {EHMsg("paperCategory")}
             </Field>
-            <Field label="Paper Type *">
+            <Field label="PAPER TYPE *">
               <select
                 value={header.paperType}
                 onChange={(e) => setH("paperType", e.target.value)}
@@ -567,7 +574,7 @@ export default function JobOrders({
               </select>
               {EHMsg("paperType")}
             </Field>
-            <Field label="Paper GSM *">
+            <Field label="PAPER GSM *">
               <input
                 type="number"
                 placeholder="e.g. 300"
@@ -577,66 +584,50 @@ export default function JobOrders({
               />
               {EHMsg("paperGsm")}
             </Field>
-            <Field label="# of Ups *">
-              <input
-                type="number"
-                placeholder="No. of ups"
-                value={header.noOfUps}
-                onChange={(e) => setH("noOfUps", e.target.value)}
+            <Field label="REEL SIZE *">
+              <AutocompleteInput
+                value={header.reelSize}
+                onChange={(v) => setH("reelSize", v)}
+                suggestions={[]} // Add relevant suggestions if available
+                placeholder="Select or type reel"
               />
             </Field>
-            <Field label="# of Sheets *">
+            <Field label="REEL WIDTH (MM)">
               <input
                 type="number"
-                placeholder="No. of sheets"
-                value={header.noOfSheets}
-                onChange={(e) => setH("noOfSheets", e.target.value)}
+                placeholder="e.g. 690"
+                value={header.reelWidth}
+                onChange={(e) => setH("reelWidth", e.target.value)}
               />
-            </Field>
-            <Field label="Sheet UOM">
-              <select
-                value={header.sheetUom}
-                onChange={(e) => setH("sheetUom", e.target.value)}
-              >
-                {SHEET_UOM_OPTIONS.map((u) => (
-                  <option key={u}>{u}</option>
-                ))}
-              </select>
             </Field>
           </div>
 
-          {/* Row 2: Sheet W | Sheet L | Sheet Size (auto) | Remarks */}
+          {/* Row 2: 3 Columns */}
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr 1fr 1.5fr 2fr",
+              gridTemplateColumns: "1fr 1.2fr 2.5fr",
               gap: 14,
               marginBottom: 20,
             }}
           >
-            <Field label="Sheet W *">
+            <Field label="CUTTING LENGTH (MM)">
               <input
                 type="number"
-                placeholder="Width"
-                value={header.sheetW}
-                onChange={(e) => setH("sheetW", e.target.value)}
+                placeholder="e.g. 920"
+                value={header.cuttingLength}
+                onChange={(e) => setH("cuttingLength", e.target.value)}
               />
             </Field>
-            <Field label="Sheet L *">
+            <Field label="REEL WEIGHT REQUIRED (KG) *">
               <input
                 type="number"
-                placeholder="Length"
-                value={header.sheetL}
-                onChange={(e) => setH("sheetL", e.target.value)}
+                placeholder="e.g. 200"
+                value={header.reelWeight}
+                onChange={(e) => setH("reelWeight", e.target.value)}
               />
             </Field>
-            <Field label="Sheet Size">
-              <AutoField
-                value={sheetSize}
-                placeholder="— Auto from W × L × UOM —"
-              />
-            </Field>
-            <Field label="Remarks">
+            <Field label="REMARKS">
               <input
                 placeholder="Special instructions"
                 value={header.remarks}
@@ -645,7 +636,7 @@ export default function JobOrders({
             </Field>
           </div>
 
-          {/* ── Second Paper ── */}
+          {}
           <div style={{ marginBottom: 24 }}>
             <div
               style={{
@@ -712,7 +703,7 @@ export default function JobOrders({
             )}
           </div>
 
-          {/* ── Submit ── */}
+          {}
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <SubmitBtn
               label={editId ? "Update Job Order" : "Create Job Order"}
@@ -744,7 +735,7 @@ export default function JobOrders({
         </Card>
       )}
 
-      {/* ════════════════ RECORDS VIEW ════════════════ */}
+      {}
       {view === "records" && (
         <Card>
           <div
@@ -854,34 +845,22 @@ export default function JobOrders({
                     gap: 8,
                   }}
                 >
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 14,
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontFamily: "'JetBrains Mono', monospace",
-                        color: C.yellow || "#facc15",
-                        fontWeight: 700,
-                      }}
-                    >
-                      {r.joNo}
-                    </span>
-                    <span style={{ fontSize: 12, color: C.muted }}>
-                      {r.joDate}
-                    </span>
-                    <span style={{ fontSize: 13, fontWeight: 600 }}>
-                      {r.clientName}
-                    </span>
-                    <Badge
-                      text={r.status}
-                      color={r.status === "Completed" ? C.green : C.yellow}
-                    />
-                  </div>
+                    <div style={{ display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
+                      <span style={{ fontFamily: "'JetBrains Mono', monospace", color: C.yellow || "#facc15", fontWeight: 700 }}>
+                        {r.joNo}
+                      </span>
+                      <span style={{ fontSize: 12, color: C.muted }}>
+                        {r.jobcardDate ? new Date(r.jobcardDate).toLocaleDateString('en-GB') : "N/A"}
+                      </span>
+                      <span style={{ fontSize: 13, fontWeight: 600 }}>
+                        {r.clientName}
+                      </span>
+                      <Badge text={r.itemName} color={C.blue} />
+                      <span style={{ fontSize: 13, color: C.muted }}>
+                        Qty: {fmt(r.orderQty)}
+                      </span>
+                      <Badge text={r.status} color={r.status === "Completed" ? C.green : C.orange} />
+                    </div>
                   <div style={{ display: 'flex', gap: 6 }}>
                     <button
                       onClick={() => handleEdit(r)}

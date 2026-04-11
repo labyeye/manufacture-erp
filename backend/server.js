@@ -7,14 +7,14 @@ const morgan = require('morgan');
 
 const app = express();
 
-// Middleware
+
 app.use(helmet());
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(morgan('dev'));
 
-// Database connection
+
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
@@ -25,7 +25,7 @@ mongoose.connect(process.env.MONGODB_URI, {
     process.exit(1);
   });
 
-// Import routes
+
 const authRoutes = require('./routes/auth');
 const purchaseOrderRoutes = require('./routes/purchaseOrders');
 const materialInwardRoutes = require('./routes/materialInward');
@@ -35,8 +35,15 @@ const vendorMasterRoutes = require('./routes/vendorMaster');
 const salesOrderRoutes = require('./routes/salesOrders');
 const jobOrderRoutes = require('./routes/jobOrders');
 const dispatchRoutes = require('./routes/dispatch');
+const itemMasterRoutes = require('./routes/itemMaster');
+const machineMasterRoutes = require('./routes/machineMaster');
+const sizeMasterRoutes = require('./routes/sizeMaster');
+const printingDetailMasterRoutes = require('./routes/printingDetailMaster');
+const rawMaterialStockRoutes = require('./routes/rawMaterialStock');
+const fgStockRoutes = require('./routes/fgStock');
+const consumableStockRoutes = require('./routes/consumableStock');
 
-// Use routes
+
 app.use('/api/auth', authRoutes);
 app.use('/api/purchase-orders', purchaseOrderRoutes);
 app.use('/api/material-inward', materialInwardRoutes);
@@ -46,8 +53,15 @@ app.use('/api/vendor-master', vendorMasterRoutes);
 app.use('/api/sales-orders', salesOrderRoutes);
 app.use('/api/job-orders', jobOrderRoutes);
 app.use('/api/dispatch', dispatchRoutes);
+app.use('/api/item-master', itemMasterRoutes);
+app.use('/api/machine-master', machineMasterRoutes);
+app.use('/api/size-master', sizeMasterRoutes);
+app.use('/api/printing-detail-master', printingDetailMasterRoutes);
+app.use('/api/raw-material-stock', rawMaterialStockRoutes);
+app.use('/api/fg-stock', fgStockRoutes);
+app.use('/api/consumable-stock', consumableStockRoutes);
 
-// Health check
+
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -56,12 +70,12 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// 404 handler
+
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-// Error handler
+
 app.use((err, req, res, next) => {
   console.error('Server error:', err);
   res.status(500).json({

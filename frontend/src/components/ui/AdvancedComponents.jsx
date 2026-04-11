@@ -286,7 +286,7 @@ export function ExcelImportBtn({ label, onImport, templateCols, templateRows, co
         const rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
         onImport(rows);
       } catch {
-        // silent
+        
       }
     };
     reader.readAsArrayBuffer(file);

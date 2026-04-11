@@ -1,4 +1,4 @@
-// ── Global Styles ─────────────────────────────────────────────────────────
+
 import { C } from "./colors";
 
 export const GLOBAL_STYLE = `

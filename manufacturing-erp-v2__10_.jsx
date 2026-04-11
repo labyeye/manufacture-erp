@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import React from "react";
 import * as XLSX from "xlsx";
 
-// ── Palette & helpers ──────────────────────────────────────────────────────────
+
 const C = {
   bg: "#0d1117",
   surface: "#161b22",
@@ -23,7 +23,7 @@ const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 const today = () => new Date().toISOString().slice(0, 10);
 const fmt = (n) => (n ?? 0).toLocaleString("en-IN");
 
-// ── Safe Excel download — uses Blob URL to work in all environments ──────────
+
 const xlsxDownload = (wb, filename) => {
   const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
   const blob = new Blob([wbout], { type: "application/octet-stream" });
@@ -35,14 +35,14 @@ const xlsxDownload = (wb, filename) => {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
 
-// ── Auth Context — provides isAdmin + canEdit(tabId) to all components ──────
+
 const AuthContext = React.createContext({ isAdmin: true, editableTabs: null, canEdit: () => true });
 const useAuth = () => React.useContext(AuthContext);
-// canEdit(tabId): returns true if user has edit rights for that module.
-// Admin always can. Non-admins need the tabId in their editableTabs array.
-// null editableTabs = legacy user (grant edit by default).
 
-// ── Global styles injected once ───────────────────────────────────────────────
+
+
+
+
 const STYLE = `
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
   *{box-sizing:border-box;margin:0;padding:0}
@@ -63,10 +63,10 @@ const STYLE = `
   .fade{animation:fadeIn .25s ease}
 `;
 
-// ── Seed data ──────────────────────────────────────────────────────────────────
+
 const STAGES = ["Printing", "Varnish", "Lamination", "Die Cutting", "Formation", "Manual Formation"];
 
-// ── Small reusable components ──────────────────────────────────────────────────
+
 function Badge({ label, color = C.accent }) {
   return (
     <span style={{
@@ -198,7 +198,7 @@ function AutocompleteInput({ value, onChange, suggestions = [], placeholder = ""
               onMouseLeave={e => e.currentTarget.style.background = "transparent"}
             >
               {(() => {
-                // Bold the matching part
+                
                 if (!value) return s;
                 const idx = s.toLowerCase().indexOf(value.toLowerCase());
                 if (idx === -1) return s;
@@ -248,7 +248,7 @@ function Toast({ msg, onClose, type = "success" }) {
   );
 }
 
-// ── Custom Date Picker ────────────────────────────────────────────────────────
+
 function DatePicker({ value, onChange, style = {} }) {
   const [open, setOpen] = useState(false);
   const [viewDate, setViewDate] = useState(() => {
@@ -320,17 +320,17 @@ function DatePicker({ value, onChange, style = {} }) {
           background: C.card, border: `1px solid ${C.border}`, borderRadius: 10,
           padding: 14, width: 260, boxShadow: "0 8px 32px #0004"
         }}>
-          {/* Header */}
+          {}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
             <button onClick={prevMonth} style={{ background: "none", border: "none", color: C.muted, fontSize: 18, cursor: "pointer", padding: "0 4px" }}>‹</button>
             <span style={{ fontWeight: 700, fontSize: 13, color: C.text }}>{MONTHS[viewDate.month]} {viewDate.year}</span>
             <button onClick={nextMonth} style={{ background: "none", border: "none", color: C.muted, fontSize: 18, cursor: "pointer", padding: "0 4px" }}>›</button>
           </div>
-          {/* Day names */}
+          {}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2, marginBottom: 4 }}>
             {DAYS.map(d => <div key={d} style={{ textAlign: "center", fontSize: 10, color: C.muted, fontWeight: 700, padding: "2px 0" }}>{d}</div>)}
           </div>
-          {/* Cells */}
+          {}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2 }}>
             {cells.map((day, i) => {
               if (!day) return <div key={i} />;
@@ -351,7 +351,7 @@ function DatePicker({ value, onChange, style = {} }) {
               );
             })}
           </div>
-          {/* Today shortcut */}
+          {}
           <div style={{ marginTop: 10, borderTop: `1px solid ${C.border}`, paddingTop: 8, textAlign: "center" }}>
             <button onClick={() => select(today.getDate()) || setViewDate({ year: today.getFullYear(), month: today.getMonth() })}
               style={{ background: "none", border: `1px solid ${C.border}`, borderRadius: 5, color: C.muted, fontSize: 11, padding: "3px 12px", cursor: "pointer", fontFamily: "'Syne',sans-serif" }}>
@@ -365,7 +365,7 @@ function DatePicker({ value, onChange, style = {} }) {
 }
 
 
-// ── Reusable date range filter ────────────────────────────────────────────────
+
 function DateRangeFilter({ dateFrom, setDateFrom, dateTo, setDateTo }) {
   return (
     <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
@@ -412,7 +412,7 @@ function Table({ cols, rows, emptyMsg = "No records yet." }) {
 }
 
 
-// ── Product code generator ─────────────────────────────────────────────────────
+
 function generateProductCode(type, counters) {
   const prefixMap = { "Raw Material": "RM", "Finished Goods": "FG", "Consumable": "CG", "Machine Spare": "SP" };
   const prefix = prefixMap[type] || "IT";
@@ -420,7 +420,7 @@ function generateProductCode(type, counters) {
   return prefix + String(num).padStart(4, "0");
 }
 
-// ── Shared RM item name builder ──
+
 function computeRMItemName(it) {
   if (it.rmItem === "Paper Reel") {
     return [it.paperType, "Paper Reel", it.gsm ? it.gsm + "gsm" : "", it.widthMm ? it.widthMm + "mm" : ""].filter(Boolean).join(" ");
@@ -432,17 +432,17 @@ function computeRMItemName(it) {
 }
 
 
-// ── Excel Import Button ────────────────────────────────────────────────────────
+
 function ExcelImportBtn({ label, onImport, templateCols, templateRows, color }) {
   const fileRef = useRef(null);
   const col = color || C.green;
 
   const downloadTemplate = () => {
-    // Build data: header obj + example rows
+    
     const examples = templateRows && templateRows.length > 0 ? templateRows : [];
     const data = examples.length > 0
       ? examples
-      : [Object.fromEntries(templateCols.map(c => [c, ""]))]; // blank row if no examples
+      : [Object.fromEntries(templateCols.map(c => [c, ""]))]; 
     const ws = XLSX.utils.json_to_sheet(data, { header: templateCols });
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Template");
@@ -460,7 +460,7 @@ function ExcelImportBtn({ label, onImport, templateCols, templateRows, color }) 
         const rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
         onImport(rows);
       } catch {
-        // silent — malformed file
+        
       }
     };
     reader.readAsArrayBuffer(file);
@@ -481,9 +481,9 @@ function ExcelImportBtn({ label, onImport, templateCols, templateRows, color }) 
 }
 
 
-// ── Bulk Import Component ──────────────────────────────────────────────────────
 
-// ── Dashboard ──────────────────────────────────────────────────────────────────
+
+
 const PROCESS_COLORS = {
   "Printing":         C.blue,
   "Varnish":          "#06b6d4",
@@ -504,7 +504,7 @@ const PROCESS_ICONS = {
 function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }) {
   const { jobOrders, machineMaster, purchaseOrders, inward, salesOrders, dispatches, rawStock, fgStock, itemMasterFG } = data;
 
-  // ── ALL HOOKS FIRST — no early returns before this line ──
+  
   const [reportTab,    setReportTab]    = useState("production");
   const [dateFrom,     setDateFrom]     = useState("");
   const [dateTo,       setDateTo]       = useState("");
@@ -520,10 +520,10 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
   const [ageingFilter, setAgeingFilter] = useState("All");
   const [ageingSearch, setAgeingSearch] = useState("");
   const [pvtProcess, setPvtProcess] = useState("All");
-  const [pvtTargets, setPvtTargets] = useState({}); // "YYYY-MM-DD|process" → target qty
-  const [poReconFilter, setPoReconFilter] = useState("All"); // "All" | "Open/Partial"
+  const [pvtTargets, setPvtTargets] = useState({}); 
+  const [poReconFilter, setPoReconFilter] = useState("All"); 
 
-  // ── Build unified production log from stageHistory across all JOs ──
+  
   const allEntries = React.useMemo(() => {
     const entries = [];
     jobOrders.forEach(jo => {
@@ -546,7 +546,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
     return entries;
   }, [jobOrders]);
 
-  // ── Ageing helper: days since a date ──
+  
   const daysSince = (dateStr) => {
     if (!dateStr) return 0;
     const diff = new Date(today() + "T00:00:00") - new Date(dateStr + "T00:00:00");
@@ -559,7 +559,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
     return { col, label };
   };
 
-  // ── Production report data ──
+  
   const { activeJOs, processPendingMap, totalActiveJOs } = React.useMemo(() => {
     const activeJOs = jobOrders.filter(j => j.status !== "Completed" && j.status !== "Cancelled");
     const processPendingMap = {};
@@ -577,7 +577,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
     return { activeJOs, processPendingMap, totalActiveJOs: activeJOs.length };
   }, [jobOrders]);
 
-  // ── Date range for reports ──
+  
   const reportDates = (() => {
     const end   = dateTo   || today();
     const start = dateFrom || (() => { const d = new Date(end + "T00:00:00"); d.setDate(d.getDate() - 29); return d.toISOString().slice(0, 10); })();
@@ -618,7 +618,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
     return map;
   };
 
-  // ── Date filter bar ──
+  
   const DateFilter = () => (
     <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
       <span style={{ fontSize: 12, color: C.muted, fontWeight: 600 }}>Date range:</span>
@@ -631,7 +631,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
     </div>
   );
 
-  // ── Excel export helper ──
+  
   const exportToExcel = (rows, filename, sheetName = "Report") => {
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
@@ -639,7 +639,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
     xlsxDownload(wb, filename + "_" + today() + ".xlsx");
   };
 
-  // ── Shared date-row table ──
+  
   const SimpleDateTable = ({ dates, getRow }) => (
     <Card style={{ padding: 0, overflow: "hidden" }}>
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
@@ -698,7 +698,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
     </Card>
   );
 
-  // ── Drill views (no early returns needed — use conditional rendering below) ──
+  
   const isDrillingOpenOrders  = reportTab === "production" && drill === "open_orders";
   const isDrillingProcess     = reportTab === "production" && drill && STAGES.includes(drill);
 
@@ -727,7 +727,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
                 const refDate = slot?.startDate || j.jobcardDate || j.date || "";
                 return { j, age: daysSince(refDate) };
               })
-              .sort((a, b) => b.age - a.age) // oldest first
+              .sort((a, b) => b.age - a.age) 
               .map(({ j, age }) => (
                 <JODetailCard key={j.id} j={j} highlightProcess={drill} age={age} />
               ))}
@@ -740,7 +740,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
         <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 4 }}>📊 Production Dashboard</h2>
       </div>
 
-      {/* Report tabs */}
+      {}
       <div style={{ display: "flex", gap: 8, marginBottom: 24, borderBottom: `1px solid ${C.border}`, flexWrap: "wrap" }}>
         {[
           ["production", "⚙️ Production Report"],
@@ -767,7 +767,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
         ))}
       </div>
 
-      {/* ── Production Report ── */}
+      {}
       {reportTab === "production" && (
         <div>
           <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
@@ -817,9 +817,9 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
               const col = PROCESS_COLORS[proc];
               const isEmpty = jobs.length === 0;
 
-              // Ageing: max days waiting for this process
+              
               const ages = jobs.map(j => {
-                // Use schedule slot startDate if available, else jobcardDate
+                
                 const slot = (j.schedule || []).find(s => s.process === proc);
                 const refDate = slot?.startDate || j.jobcardDate || j.date || "";
                 return daysSince(refDate);
@@ -855,7 +855,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
         </div>
       )}
 
-      {/* ── Operator Report ── */}
+      {}
       {reportTab === "operator" && (
         <div>
           <div style={{ display: "flex", gap: 14, alignItems: "flex-end", marginBottom: 20, flexWrap: "wrap" }}>
@@ -984,7 +984,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
         </div>
       )}
 
-      {/* ── Machine Report ── */}
+      {}
       {reportTab === "machine" && (
         <div>
           <div style={{ display: "flex", gap: 14, alignItems: "flex-end", marginBottom: 20, flexWrap: "wrap" }}>
@@ -1118,9 +1118,9 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
           })()}
         </div>
       )}
-      {/* ── PO Reconciliation ── */}
+      {}
       {reportTab === "po_recon" && (() => {
-        // Filter POs by date range
+        
         const pos = (purchaseOrders || []).filter(p => {
           if (p.status === "Cancelled") return false;
           if (dateFrom && p.poDate < dateFrom) return false;
@@ -1128,7 +1128,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
           return true;
         });
 
-        // Build GRN received map filtered by date range: poRef → itemName → { qty, weight }
+        
         const grnMap = {};
         (inward || []).forEach(grn => {
           if (!grn.poRef) return;
@@ -1143,7 +1143,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
           });
         });
 
-        // Summary stats
+        
         const totalPOs = pos.length;
         const openPOs  = pos.filter(p => {
           const grns = grnMap[p.poNo] || {};
@@ -1163,7 +1163,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
 
         return (
           <div>
-            {/* Date filter + Export */}
+            {}
             <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
               <DateFilter />
               <button onClick={() => {
@@ -1253,7 +1253,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
               }} />
             </div>
 
-            {/* Summary cards */}
+            {}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 12, marginBottom: 20 }}>
               {(() => {
                 const totalSKUsOrdered  = pos.reduce((s, p) => s + (p.items||[]).length, 0);
@@ -1299,7 +1299,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
               })()}
             </div>
 
-            {/* Active filter indicator */}
+            {}
             {poReconFilter !== "All" && (
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, padding: "8px 14px", background: C.yellow + "18", border: `1px solid ${C.yellow}44`, borderRadius: 6 }}>
                 <span style={{ fontSize: 12, fontWeight: 700, color: C.yellow }}>⚡ Showing: {poReconFilter} orders only</span>
@@ -1307,7 +1307,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
               </div>
             )}
 
-            {/* Per-PO reconciliation table */}
+            {}
             <Card style={{ padding: 0, overflow: "hidden" }}>
               <div style={{ padding: "10px 16px", background: C.surface, borderBottom: `1px solid ${C.border}`, display: "grid", gridTemplateColumns: "110px 1fr 110px 90px 1fr 1fr 80px", gap: 8, alignItems: "center" }}>
                 {["PO #", "Vendor", "PO Date", "Status", "Ordered", "Received", "Fill Rate"].map(h => (
@@ -1336,7 +1336,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
                 const pendQty    = Math.max(0, ordQty - recQty);
                 const pendWeight = Math.max(0, ordWeight - recWeight);
 
-                // Fill rate: use weight if available, else qty
+                
                 const fillRate = ordWeight > 0
                   ? Math.round(Math.min(recWeight, ordWeight) / ordWeight * 100)
                   : ordQty > 0
@@ -1344,7 +1344,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
                     : 0;
                 const fillColor = fillRate >= 90 ? C.green : fillRate >= 50 ? C.yellow : fillRate > 0 ? C.red : C.border;
 
-                // Status derived using 90% threshold
+                
                 const derivedStatus = p.status === "Cancelled" ? "Cancelled"
                   : recWeight === 0 && recQty === 0 ? "Open"
                   : fillRate >= 90 ? "Received"
@@ -1352,7 +1352,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
                 const statusColor = derivedStatus === "Received" ? C.green : derivedStatus === "Partial" ? C.yellow : derivedStatus === "Cancelled" ? C.red : C.blue;
                 const recCol = fillRate >= 90 ? C.green : recWeight > 0 || recQty > 0 ? C.yellow : C.border;
 
-                // Format combined qty+kg display
+                
                 const fmtQtyKg = (qty, weight, unit) => {
                   const parts = [];
                   if (qty > 0) parts.push(fmt(qty) + (unit ? " " + unit : ""));
@@ -1380,7 +1380,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
                     <span style={{ fontSize: 12, color: C.muted }}>{p.poDate}</span>
                     <span style={{ fontSize: 11, fontWeight: 700, color: statusColor, background: statusColor + "18", borderRadius: 4, padding: "2px 8px" }}>{derivedStatus}</span>
 
-                    {/* Ordered */}
+                    {}
                     <div>
                       <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12, color: C.text }}>
                         {fmtQtyKg(ordQty, ordWeight, unitLabel)}
@@ -1388,7 +1388,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
                       <div style={{ fontSize: 9, color: C.muted, marginTop: 2 }}>{(p.items||[]).length} SKU{(p.items||[]).length !== 1 ? "s" : ""}</div>
                     </div>
 
-                    {/* Received */}
+                    {}
                     <div>
                       <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12, color: recCol }}>
                         {fmtQtyKg(recQty, recWeight, unitLabel)}
@@ -1400,7 +1400,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
                       )}
                     </div>
 
-                    {/* Fill Rate */}
+                    {}
                     <div>
                       <div style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, fontSize: 13, color: fillColor }}>
                         {ordWeight > 0 || ordQty > 0 ? fillRate + "%" : "—"}
@@ -1418,9 +1418,9 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
           </div>
         );
       })()}
-      {/* ── SO Reconciliation ── */}
+      {}
       {reportTab === "so_recon" && (() => {
-        // Filter SOs by date range
+        
         const sos = (salesOrders || []).filter(s => {
           if (s.status === "Cancelled") return false;
           if (dateFrom && (s.orderDate || "") < dateFrom) return false;
@@ -1428,10 +1428,10 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
           return true;
         });
 
-        // Build dispatch map: soNo → itemName.lower → totalQty dispatched
+        
         const soDispMap = {};
-        const soDispDatesMap = {}; // soNo → Set of dispatch dates
-        const soDispNosMap  = {}; // soNo → Set of dispatch nos
+        const soDispDatesMap = {}; 
+        const soDispNosMap  = {}; 
         (dispatches || []).forEach(d => {
           if (!d.soRef) return;
           if (!soDispMap[d.soRef]) soDispMap[d.soRef] = {};
@@ -1449,7 +1449,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
           }
         });
 
-        // Build JO map: soRef → list of JOs
+        
         const soJOMap = {};
         (jobOrders || []).forEach(j => {
           if (!j.soRef) return;
@@ -1457,7 +1457,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
           soJOMap[j.soRef].push(j);
         });
 
-        // Per-SO reconciliation rows
+        
         const soRows = sos.map(s => {
           const disp    = soDispMap[s.soNo] || {};
           const ordQty  = (s.items || []).reduce((sum, it) => sum + +(it.orderQty || 0), 0);
@@ -1465,7 +1465,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
           const dispQty = (s.items || []).reduce((sum, it) => {
             return sum + (disp[(it.itemName || "").toLowerCase().trim()] || 0);
           }, 0);
-          // Dispatched value = proportional to qty dispatched per item
+          
           const dispVal = (s.items || []).reduce((sum, it) => {
             const dq = disp[(it.itemName || "").toLowerCase().trim()] || 0;
             const oq = +(it.orderQty || 0);
@@ -1489,7 +1489,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
           return { s, ordQty, dispQty, pendQty, ordVal, dispVal, pendVal, pct, status, dispDates, dispNos, linkedJOs, joNos, joStatus };
         });
 
-        // Summary stats
+        
         const totalSOs      = soRows.length;
         const fullyDisp     = soRows.filter(r => r.status === "Fully Dispatched").length;
         const partialDisp   = soRows.filter(r => r.status === "Partially Dispatched").length;
@@ -1580,7 +1580,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
 
         return (
           <div>
-            {/* Date filter + exports */}
+            {}
             <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
               <DateFilter />
               <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
@@ -1589,7 +1589,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
               </div>
             </div>
 
-            {/* Summary cards */}
+            {}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 12, marginBottom: 20 }}>
               {[
                 { label: "Total SOs",           val: totalSOs,                                          color: C.blue },
@@ -1609,7 +1609,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
               ))}
             </div>
 
-            {/* Filters */}
+            {}
             <div style={{ display: "flex", gap: 10, marginBottom: 14, flexWrap: "wrap", alignItems: "center" }}>
               <input
                 placeholder="🔍 Search SO#, client or JO#..."
@@ -1629,7 +1629,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
               <span style={{ fontSize: 12, color: C.muted, marginLeft: "auto" }}>{filtered.length} of {totalSOs} SOs</span>
             </div>
 
-            {/* SO table */}
+            {}
             {sos.length === 0 ? (
               <Card style={{ textAlign: "center", padding: 60, color: C.muted }}>
                 <div style={{ fontSize: 40, marginBottom: 10 }}>📋</div>
@@ -1637,7 +1637,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
               </Card>
             ) : (
               <Card style={{ padding: 0, overflow: "hidden" }}>
-                {/* Header row */}
+                {}
                 <div style={{ display: "grid", gridTemplateColumns: "110px 150px 1fr 95px 75px 80px 75px 90px 90px 90px 100px 80px", gap: 6, padding: "8px 16px", background: C.surface, borderBottom: `1px solid ${C.border}` }}>
                   {["SO #", "Client", "Items", "Delivery Date", "Ord Qty", "Disp Qty", "Pend Qty", "Ord Value ₹", "Disp Value ₹", "Pend Value ₹", "Dispatch Dates", "Status"].map(h => (
                     <div key={h} style={{ fontSize: 10, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>{h}</div>
@@ -1656,16 +1656,16 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
                       onMouseEnter={e => e.currentTarget.style.background = C.surface}
                       onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
 
-                      {/* SO No */}
+                      {}
                       <div>
                         <div style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, color: C.green, fontSize: 12 }}>{s.soNo}</div>
                         <div style={{ fontSize: 10, color: C.muted, marginTop: 2 }}>{s.orderDate || ""}</div>
                       </div>
 
-                      {/* Client */}
+                      {}
                       <div style={{ fontSize: 12, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.clientName}</div>
 
-                      {/* Items */}
+                      {}
                       <div style={{ fontSize: 11, color: C.muted }}>
                         {(s.items || []).slice(0, 2).map(it => it.itemName).filter(Boolean).join(", ")}
                         {(s.items || []).length > 2 && <span> +{(s.items||[]).length - 2} more</span>}
@@ -1678,16 +1678,16 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
                         )}
                       </div>
 
-                      {/* Delivery Date */}
+                      {}
                       <div style={{ fontSize: 11, color: s.deliveryDate && s.deliveryDate < today() && status !== "Fully Dispatched" ? C.red : C.muted, fontWeight: s.deliveryDate && s.deliveryDate < today() && status !== "Fully Dispatched" ? 700 : 400 }}>
                         {s.deliveryDate || "—"}
                         {s.deliveryDate && s.deliveryDate < today() && status !== "Fully Dispatched" && <div style={{ fontSize: 9, color: C.red }}>Overdue</div>}
                       </div>
 
-                      {/* Ord Qty */}
+                      {}
                       <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11 }}>{ordQty > 0 ? fmt(ordQty) : "—"}</span>
 
-                      {/* Disp Qty */}
+                      {}
                       <div>
                         <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: dispQty >= ordQty && ordQty > 0 ? C.green : dispQty > 0 ? C.yellow : C.border }}>
                           {dispQty > 0 ? fmt(dispQty) : "—"}
@@ -1699,32 +1699,32 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
                         )}
                       </div>
 
-                      {/* Pend Qty */}
+                      {}
                       <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, fontWeight: pendQty > 0 ? 700 : 400, color: pendQty > 0 ? C.red : C.muted }}>
                         {pendQty > 0 ? fmt(pendQty) : "—"}
                       </span>
 
-                      {/* Ord Value */}
+                      {}
                       <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: ordVal > 0 ? C.text : C.border }}>
                         {ordVal > 0 ? "₹" + fmt(Math.round(ordVal)) : "—"}
                       </span>
 
-                      {/* Disp Value */}
+                      {}
                       <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: dispVal > 0 ? C.green : C.border }}>
                         {dispVal > 0 ? "₹" + fmt(Math.round(dispVal)) : "—"}
                       </span>
 
-                      {/* Pend Value */}
+                      {}
                       <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, fontWeight: pendVal > 0 ? 700 : 400, color: pendVal > 0 ? C.red : C.muted }}>
                         {pendVal > 0 ? "₹" + fmt(Math.round(pendVal)) : "—"}
                       </span>
 
-                      {/* Dispatch Dates */}
+                      {}
                       <div style={{ fontSize: 10, color: C.muted }}>
                         {dispDates.length === 0 ? "—" : dispDates.map((d, i) => <div key={i}>{d}</div>)}
                       </div>
 
-                      {/* Status */}
+                      {}
                       <div>
                         <span style={{ fontSize: 11, fontWeight: 700, color: scol, background: scol + "18", borderRadius: 4, padding: "2px 8px", whiteSpace: "nowrap" }}>{pct}%</span>
                         <div style={{ fontSize: 10, color: scol, marginTop: 3 }}>{status}</div>
@@ -1738,7 +1738,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
         );
       })()}
 
-      {/* ── SO Ageing ── */}
+      {}
       {reportTab === "so_ageing" && (() => {
         const ageBucket = (days) =>
           days <= 7  ? "0–7 days"  :
@@ -1756,7 +1756,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
           return true;
         });
 
-        // Build dispatch map for pending check
+        
         const ageDispMap = {};
         (dispatches || []).forEach(d => {
           if (!d.soRef) return;
@@ -1786,7 +1786,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
             : 0;
           const bucket = ageBucket(ageDays);
           return { s, ordQty, dispQty, pendQty, ordVal, pendVal, pct, status, ageDays, overdueDelivery, deliveryAgeDays, bucket };
-        }).filter(r => r.status !== "Fully Dispatched") // only show open/partial
+        }).filter(r => r.status !== "Fully Dispatched") 
           .sort((a, b) => b.ageDays - a.ageDays);
 
         const buckets = ["0–7 days","8–14 days","15–30 days","30+ days"];
@@ -1824,7 +1824,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
               }} />
             </div>
 
-            {/* Bucket summary cards */}
+            {}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
               {bucketStats.map(({ bucket, count, pendVal }) => {
                 const col = bucketColor(bucket);
@@ -1839,7 +1839,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
               })}
             </div>
 
-            {/* Totals row */}
+            {}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 12, marginBottom: 20 }}>
               {[
                 { label: "Open / Partial SOs",   val: ageRows.length,                color: C.yellow },
@@ -1854,7 +1854,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
               ))}
             </div>
 
-            {/* Search + filter */}
+            {}
             <div style={{ display: "flex", gap: 10, marginBottom: 14, alignItems: "center", flexWrap: "wrap" }}>
               <input placeholder="🔍 Search SO# or client..." value={ageingSearch}
                 onChange={e => setAgeingSearch(e.target.value)} style={{ maxWidth: 240, fontSize: 13 }} />
@@ -1921,12 +1921,12 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
         );
       })()}
 
-      {/* ── Production vs Target ── */}
+      {}
       {reportTab === "prod_target" && (() => {
         const processes = ["All", ...STAGES];
 
-        // Build daily actual production from stageHistory
-        const dailyActual = {}; // "YYYY-MM-DD|process" → qty
+        
+        const dailyActual = {}; 
         jobOrders.forEach(jo => {
           (jo.stageHistory || []).forEach(e => {
             if (!e.date) return;
@@ -1940,9 +1940,9 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
           });
         });
 
-        const pvtDates = reportDates; // reuse dashboard date range
+        const pvtDates = reportDates; 
 
-        // Summary for selected process
+        
         const totalActual = pvtDates.reduce((s, d) => s + (dailyActual[d + "|" + pvtProcess] || 0), 0);
         const totalTarget = pvtDates.reduce((s, d) => {
           const k = d + "|" + pvtProcess;
@@ -1959,7 +1959,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
 
         return (
           <div>
-            {/* Controls */}
+            {}
             <div style={{ display: "flex", gap: 14, alignItems: "flex-end", marginBottom: 20, flexWrap: "wrap" }}>
               <div>
                 <label style={{ display: "block", fontSize: 11, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 5 }}>Process</label>
@@ -1989,7 +1989,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
               }} />
             </div>
 
-            {/* Summary KPI cards */}
+            {}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(155px, 1fr))", gap: 12, marginBottom: 20 }}>
               {[
                 { label: "Total Target",     val: totalTarget > 0 ? fmt(totalTarget) : "Not set", color: C.blue },
@@ -2006,7 +2006,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
               ))}
             </div>
 
-            {/* Daily table */}
+            {}
             <Card style={{ padding: 0, overflow: "hidden" }}>
               <div style={{ display: "grid", gridTemplateColumns: "130px 90px 90px 90px 100px 90px 1fr", gap: 8, padding: "8px 16px", background: C.surface, borderBottom: `1px solid ${C.border}` }}>
                 {["Date", "Target", "Actual", "Gap", "Achievement", "Hit?", "Set Target"].map(h => (
@@ -2034,22 +2034,22 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
                       <span style={{ fontSize: 10, color: C.muted, marginLeft: 6 }}>{dt.toLocaleString("default",{weekday:"short"})}{isSun?" · Off":""}{isToday?" · Today":""}</span>
                     </div>
 
-                    {/* Target */}
+                    {}
                     <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12, color: target > 0 ? C.blue : C.border }}>
                       {target > 0 ? fmt(target) : "—"}
                     </span>
 
-                    {/* Actual */}
+                    {}
                     <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12, fontWeight: actual > 0 ? 700 : 400, color: actual > 0 ? C.text : C.border }}>
                       {actual > 0 ? fmt(actual) : "—"}
                     </span>
 
-                    {/* Gap */}
+                    {}
                     <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12, fontWeight: 700, color: target === 0 ? C.border : gap >= 0 ? C.green : C.red }}>
                       {target === 0 ? "—" : (gap >= 0 ? "+" : "") + fmt(gap)}
                     </span>
 
-                    {/* Achievement % */}
+                    {}
                     <div>
                       {ach !== null ? (
                         <>
@@ -2061,10 +2061,10 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
                       ) : <span style={{ color: C.border, fontSize: 12 }}>—</span>}
                     </div>
 
-                    {/* Hit? */}
+                    {}
                     <span style={{ fontSize: 13 }}>{target === 0 ? "" : hit ? "✅" : "❌"}</span>
 
-                    {/* Inline target setter */}
+                    {}
                     {!isSun && (
                       <input
                         type="number"
@@ -2089,9 +2089,9 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
         );
       })()}
 
-      {/* ── Yield Tracking ── */}
+      {}
       {reportTab === "yield" && (() => {
-        // ── Date-filtered entries ──
+        
         const inDateRange = (dateStr) => {
           if (!dateStr) return false;
           if (dateFrom && dateStr < dateFrom) return false;
@@ -2102,13 +2102,13 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
         const FORMATION = ["Formation", "Manual Formation"];
         const yieldColor = (pct) => pct >= 95 ? C.green : pct >= 85 ? C.yellow : C.red;
 
-        // Jobs with any production entry in selected period
+        
         const jos = jobOrders.filter(j =>
           j.status !== "Cancelled" &&
           (j.stageHistory || []).some(e => inDateRange(e.date))
         );
 
-        // ── Per-JO yield (date-filtered) ──
+        
         const joYield = jos.map(j => {
           const ordered = +(j.orderQty || 0);
           const entriesInRange = (j.stageHistory || []).filter(e => inDateRange(e.date));
@@ -2131,7 +2131,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
           return { j, ordered, finalQty, totalRejected, yieldPct, rejPct };
         }).sort((a, b) => (a.yieldPct ?? 100) - (b.yieldPct ?? 100));
 
-        // ── Per-Process yield (date-filtered, with per-JO breakdown for drill-down) ──
+        
         const processStats = {};
         jobOrders.forEach(jo => {
           (jo.stageHistory || []).filter(e => inDateRange(e.date)).forEach(e => {
@@ -2151,15 +2151,15 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
           return { proc, ...s, total, yieldPct, rejPct };
         }).sort((a, b) => a.yieldPct - b.yieldPct);
 
-        // ── Summary ──
+        
         const totalOrdered  = joYield.reduce((s, r) => s + r.ordered, 0);
         const totalProduced = joYield.reduce((s, r) => s + r.finalQty, 0);
         const totalRejected = joYield.reduce((s, r) => s + r.totalRejected, 0);
         const overallYield  = totalOrdered > 0 ? Math.round((totalProduced / totalOrdered) * 100) : 0;
 
-        // ── Drill state is at component level (yieldDrill) ──
+        
 
-        // ── Process drill-down view ──
+        
         if (yieldDrill) {
           const pData = processStats[yieldDrill] || { completed: 0, rejected: 0, jobs: {} };
           const drillJobs = Object.values(pData.jobs).sort((a, b) => {
@@ -2227,7 +2227,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
           );
         }
 
-        // ── Main view ──
+        
         return (
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
@@ -2353,11 +2353,11 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
       })()}
 
 
-      {/* ── Delivery Status ── */}
+      {}
       {reportTab === "delivery" && (() => {
-        // Build dispatch map filtered by date range: soNo → { itemName.lower → totalQty }
+        
         const dispatchMap = {};
-        const dispatchDatesMap = {}; // soNo → sorted array of unique dispatch dates
+        const dispatchDatesMap = {}; 
         (dispatches || []).forEach(d => {
           if (!d.soRef) return;
           if (dateFrom && d.dispatchDate < dateFrom) return;
@@ -2380,7 +2380,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
           return true;
         });
 
-        // Classify each SO
+        
         const soStatus = activeSOs.map(s => {
           const soDisp = dispatchMap[s.soNo] || {};
           const totalOrdered    = (s.items || []).reduce((sum, it) => sum + +(it.orderQty || 0), 0);
@@ -2408,14 +2408,14 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
           if (filterStatus !== "All" && r.status !== filterStatus) return false;
           if (searchDel && !(r.s.soNo + r.s.clientName).toLowerCase().includes(searchDel.toLowerCase())) return false;
           return true;
-        }).sort((a, b) => a.pct - b.pct); // worst first
+        }).sort((a, b) => a.pct - b.pct); 
 
         const statusColor = (st) => st === "Fully Dispatched" ? C.green : st === "Partially Dispatched" ? C.yellow : C.red;
         const statusIcon  = (st) => st === "Fully Dispatched" ? "✅" : st === "Partially Dispatched" ? "⚡" : "⏳";
 
         return (
           <div>
-            {/* Date filter + Export */}
+            {}
             <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
               <DateFilter />
               <button onClick={() => {
@@ -2476,7 +2476,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
               }} />
             </div>
 
-            {/* Summary cards */}
+            {}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 12, marginBottom: 20 }}>
               {[
                 { label: "Total Active SOs",        val: activeSOs.length,   color: C.blue },
@@ -2492,7 +2492,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
               ))}
             </div>
 
-            {/* Filters */}
+            {}
             <div style={{ display: "flex", gap: 10, marginBottom: 14, flexWrap: "wrap", alignItems: "center" }}>
               <input placeholder="🔍 Search SO# or client..." value={searchDel} onChange={e => setSearchDel(e.target.value)} style={{ maxWidth: 240, fontSize: 13 }} />
               <div style={{ display: "flex", gap: 6 }}>
@@ -2507,7 +2507,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
               </div>
             </div>
 
-            {/* SO list */}
+            {}
             <Card style={{ padding: 0, overflow: "hidden" }}>
               <div style={{ display: "grid", gridTemplateColumns: "120px 150px 1fr 90px 90px 80px 80px", gap: 8, padding: "8px 16px", background: C.surface, borderBottom: `1px solid ${C.border}` }}>
                 {["SO #", "Client", "Items", "Ordered", "Dispatched", "Pending", "Status"].map(h => (
@@ -2549,12 +2549,12 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
         );
       })()}
 
-      {/* ── Low Stock ── */}
+      {}
       {reportTab === "low_stock" && (() => {
-        // RM low stock
+        
         const lowRM = (rawStock || []).filter(r => r.reorderWeightKg && +(r.weight || 0) <= +r.reorderWeightKg);
 
-        // FG low stock
+        
         const fgItems = (itemMasterFG?.["Finished Goods"] || []);
         const fgStockMap = {};
         (fgStock || []).forEach(f => {
@@ -2566,7 +2566,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
 
         return (
           <div>
-            {/* Header + Export */}
+            {}
             <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
               <button onClick={() => {
                 const rmRows = lowRM.map(r => {
@@ -2644,7 +2644,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
               }} />
             </div>
 
-            {/* Summary */}
+            {}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 12, marginBottom: 20 }}>
               {[
                 { label: "Total Alerts", val: total, color: total > 0 ? C.red : C.green },
@@ -2665,7 +2665,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
                 <div style={{ fontSize: 12, marginTop: 8 }}>Set reorder levels in RM Stock and FG Stock by clicking Edit on any item</div>
               </Card>
             ) : (<>
-              {/* RM Low Stock */}
+              {}
               {lowRM.length > 0 && (
                 <Card style={{ marginBottom: 16, padding: 0, overflow: "hidden" }}>
                   <div style={{ padding: "10px 16px", background: C.red + "18", borderBottom: `1px solid ${C.red}33`, display: "flex", alignItems: "center", gap: 8 }}>
@@ -2698,7 +2698,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
                 </Card>
               )}
 
-              {/* FG Low Stock */}
+              {}
               {lowFG.length > 0 && (
                 <Card style={{ padding: 0, overflow: "hidden" }}>
                   <div style={{ padding: "10px 16px", background: C.yellow + "18", borderBottom: `1px solid ${C.yellow}33`, display: "flex", alignItems: "center", gap: 8 }}>
@@ -2735,14 +2735,14 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
         );
       })()}
 
-      {/* ── Monthly Production Summary ── */}
+      {}
       {reportTab === "monthly" && (() => {
-        // Get all months from stageHistory entries
+        
         const months = {};
         jobOrders.forEach(jo => {
           (jo.stageHistory || []).forEach(e => {
             if (!e.date) return;
-            const month = e.date.slice(0, 7); // YYYY-MM
+            const month = e.date.slice(0, 7); 
             if (!months[month]) months[month] = { completed: 0, rejected: 0, jobs: new Set(), processes: {}, machines: {} };
             months[month].completed += +(e.qtyCompleted || 0);
             months[month].rejected  += +(e.qtyRejected  || 0);
@@ -2753,7 +2753,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
           });
         });
 
-        // Jobs completed per month
+        
         jobOrders.forEach(jo => {
           if (jo.status !== "Completed" || !jo.jobcardDate) return;
           const month = jo.jobcardDate.slice(0, 7);
@@ -2762,7 +2762,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
 
         const sortedMonths = Object.keys(months).sort().reverse();
 
-        // Selected month state (use dateFrom year-month if set)
+        
         const selMonth = (dateFrom || today()).slice(0, 7);
         const mData = months[selMonth];
 
@@ -2807,7 +2807,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
 
         return (
           <div>
-            {/* Month selector */}
+            {}
             <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 20, flexWrap: "wrap" }}>
               <div>
                 <label style={{ fontSize: 11, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 5 }}>Select Month</label>
@@ -2856,7 +2856,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
                 <div style={{ fontSize: 12, marginTop: 8 }}>Log production entries in the Production module to see monthly summaries</div>
               </Card>
             ) : (<>
-              {/* Summary cards */}
+              {}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", gap: 12, marginBottom: 20 }}>
                 {(() => {
                   const t = mData.completed + mData.rejected;
@@ -2876,7 +2876,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
                 })()}
               </div>
 
-              {/* By Process */}
+              {}
               <Card style={{ marginBottom: 16 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: C.accent, textTransform: "uppercase", letterSpacing: 2, marginBottom: 12 }}>Production by Process</div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 10 }}>
@@ -2903,7 +2903,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
                 </div>
               </Card>
 
-              {/* Active JOs this month */}
+              {}
               <Card>
                 <div style={{ fontSize: 12, fontWeight: 700, color: C.accent, textTransform: "uppercase", letterSpacing: 2, marginBottom: 12 }}>
                   Job Orders Active in {monthLabel(selMonth)}
@@ -2928,9 +2928,9 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
         );
       })()}
 
-      {/* ── Vendor Performance ── */}
+      {}
       {reportTab === "vendor" && (() => {
-        // Build per-vendor stats from POs and GRNs
+        
         const vendorMap = {};
 
         (purchaseOrders || []).forEach(po => {
@@ -2951,7 +2951,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
           const recKg = (grn.items || []).reduce((s, it) => s + +(it.weight || 0), 0);
           vendorMap[v].receivedKg += recKg;
 
-          // Check on-time delivery: compare grnDate vs PO deliveryDate
+          
           if (grn.poRef) {
             const po = (purchaseOrders || []).find(p => p.poNo === grn.poRef);
             if (po && po.deliveryDate && grn.grnDate) {
@@ -2961,7 +2961,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
           }
         });
 
-        // Pending POs per vendor
+        
         (purchaseOrders || []).forEach(po => {
           const v = (po.vendorName || "").trim();
           if (!v || !vendorMap[v]) return;
@@ -3007,7 +3007,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
 
         return (
           <div>
-            {/* Header with export */}
+            {}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, gap: 8 }}>
               <DateFilter />
               <div style={{ display: "flex", gap: 8 }}>
@@ -3042,7 +3042,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
                 <div style={{ fontSize: 12, marginTop: 8 }}>Create Purchase Orders and record GRNs to see vendor performance</div>
               </Card>
             ) : (<>
-              {/* Summary */}
+              {}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 12, marginBottom: 20 }}>
                 {[
                   { label: "Total Vendors", val: vendors.length, color: C.blue },
@@ -3057,7 +3057,7 @@ function Dashboard({ data, onNavigate, machineReportData, setMachineReportData }
                 ))}
               </div>
 
-              {/* Vendor table */}
+              {}
               <Card style={{ padding: 0, overflow: "hidden" }}>
                 <div style={{ display: "grid", gridTemplateColumns: "1.5fr 70px 70px 110px 110px 110px 90px 80px", gap: 8, padding: "8px 16px", background: C.surface, borderBottom: `1px solid ${C.border}` }}>
                   {["Vendor", "POs", "GRNs", "Ord (kg)", "Rec (kg)", "Pending (kg)", "On-Time", "Open POs"].map(h => (
@@ -3118,7 +3118,7 @@ function JODetailCard({ j, highlightProcess, age }) {
 
   return (
     <Card style={{ marginBottom: 10, borderLeft: `3px solid ${j.status === "Completed" ? C.green : C.yellow}` }}>
-      {/* Header row — always visible */}
+      {}
       <div
         onClick={() => setExpanded(e => !e)}
         style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
@@ -3148,7 +3148,7 @@ function JODetailCard({ j, highlightProcess, age }) {
         </div>
       </div>
 
-      {/* Process chips — always show */}
+      {}
       {processes.length > 0 && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
           {STAGES.filter(p => processes.includes(p)).map(p => {
@@ -3171,7 +3171,7 @@ function JODetailCard({ j, highlightProcess, age }) {
         </div>
       )}
 
-      {/* Expanded detail */}
+      {}
       {expanded && (
         <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${C.border}33` }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 10, marginBottom: 12 }}>
@@ -3192,7 +3192,7 @@ function JODetailCard({ j, highlightProcess, age }) {
             ))}
           </div>
 
-          {/* Stage history */}
+          {}
           {(j.stageHistory || []).length > 0 && (
             <div>
               <div style={{ fontSize: 10, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Production Log</div>
@@ -3215,7 +3215,7 @@ function JODetailCard({ j, highlightProcess, age }) {
   );
 }
 
-// ── Paper Type & RM Item options ───────────────────────────────────────────────
+
 const PAPER_TYPES_BY_ITEM = {
   "Paper Sheets": ["White PE Coated", "Kraft PE Coated", "SBS/FBB", "Whiteback", "Greyback", "Kraft Uncoated", "Art Paper", "Gumming Sheet"],
   "Paper Reel": ["MG Kraft", "MF Kraft", "Bleached Kraft", "OGR"],
@@ -3223,7 +3223,7 @@ const PAPER_TYPES_BY_ITEM = {
 const RM_ITEMS = ["Paper Reel", "Paper Sheets"];
 const LOCATIONS = ["Vijay Nagar", "Lal Kuan"];
 
-// ── 1. Material Inward ─────────────────────────────────────────────────────────
+
 function printGRN(r) {
   var itemRows = (r.items || []).map(function(it) {
     var qty = it.rmItem === "Paper Reel"
@@ -3297,7 +3297,7 @@ function MaterialInward({ rawStock, setRawStock, inward, setInward, itemMasterFG
     noOfSheets: "", noOfReels: "", weight: "", rate: "", amount: "", itemName: "", qty: "", unit: "nos", category: "", size: "", uom: "nos"
   };
 
-  // Paper types from Category Master (sizeMaster stores paper types under RM categories)
+  
   const paperTypesByItem = {
     "Paper Reel":   (sizeMaster && sizeMaster["Paper Reel"])  || PAPER_TYPES_BY_ITEM["Paper Reel"],
     "Paper Sheets": (sizeMaster && sizeMaster["Paper Sheet"]) || PAPER_TYPES_BY_ITEM["Paper Sheets"],
@@ -3316,7 +3316,7 @@ function MaterialInward({ rawStock, setRawStock, inward, setInward, itemMasterFG
         const po = purchaseOrders.find(p => p.poNo === v);
         if (po) {
           updated.vendorName = po.vendorName || f.vendorName;
-          // Auto-populate material items from PO items
+          
           const poItems = po.items || [];
           if (poItems.length > 0) {
             const newItems = poItems.map(pit => ({
@@ -3356,11 +3356,11 @@ function MaterialInward({ rawStock, setRawStock, inward, setInward, itemMasterFG
     setItems(prev => {
       const updated = [...prev];
       const it = { ...updated[idx], [k]: v };
-      // Auto-fill from product code
+      
       if (k === "productCode" && v) {
         const masterItem = (itemMasterFG["Raw Material"] || []).find(x => (x.code || "").toLowerCase() === v.toLowerCase());
         if (masterItem) {
-          // Parse item name back to fields: e.g. "MG Kraft Paper Reel 60gsm 690mm"
+          
           const name = masterItem.name || "";
           if (name.includes("Paper Reel")) {
             it.rmItem = "Paper Reel";
@@ -3415,7 +3415,7 @@ function MaterialInward({ rawStock, setRawStock, inward, setInward, itemMasterFG
   const EIMsg = (idx, k) => (itemErrors[idx] || {})[k] ? (<div style={{ color: C.red, fontSize: 10, marginTop: 3 }}>Required</div>) : null;
 
   const submit = () => {
-    // Validate header
+    
     const he = {};
     if (!header.date) he.date = true;
     if (!header.vendorName) he.vendorName = true;
@@ -3426,7 +3426,7 @@ function MaterialInward({ rawStock, setRawStock, inward, setInward, itemMasterFG
     if (!header.remarks) he.remarks = true;
     setHeaderErrors(he);
 
-    // Validate each item
+    
     const allItemErrors = items.map(it => {
       const e = {};
       if (it.materialType === "Raw Material" || !it.materialType) {
@@ -3456,14 +3456,14 @@ function MaterialInward({ rawStock, setRawStock, inward, setInward, itemMasterFG
       return;
     }
 
-    // Check rate against linked PO — GRN rate must be ≤ PO rate for same item
+    
     if (header.poRef) {
       const linkedPO = purchaseOrders.find(p => p.poNo === header.poRef);
       if (linkedPO) {
         const rateWarnings = [];
         const qtyWarnings = [];
 
-        // Build already-received qty map from existing GRNs for this PO
+        
         const alreadyReceivedMap = {};
         (inward || []).filter(r => r.poRef === header.poRef).forEach(grn => {
           (grn.items || []).forEach(it => {
@@ -3480,7 +3480,7 @@ function MaterialInward({ rawStock, setRawStock, inward, setInward, itemMasterFG
           const tolerance = isRM ? 1.20 : 1.10;
           const tolerancePct = isRM ? "120%" : "110%";
 
-          // Rate check
+          
           const grnRate = +(it.rate || 0);
           if (grnRate && it.itemName) {
             const poItem = (linkedPO.items || []).find(pi =>
@@ -3493,7 +3493,7 @@ function MaterialInward({ rawStock, setRawStock, inward, setInward, itemMasterFG
                 rateWarnings.push(`Item ${idx + 1} (${it.itemName}): GRN rate ₹${grnRate}/${unitLabel} exceeds PO rate ₹${poRate}/${unitLabel}`);
               }
 
-              // Qty check: RM uses weight, others use qty
+              
               const grnQty = isRM ? +(it.weight || 0) : +(it.qty || 0);
               const poQty  = isRM ? +(poItem.weight || 0) : +(poItem.qty || 0);
               if (poQty > 0 && grnQty > 0) {
@@ -3522,7 +3522,7 @@ function MaterialInward({ rawStock, setRawStock, inward, setInward, itemMasterFG
       }
     }
 
-    // Block duplicate: same vendor + invoice
+    
     const dupGRN = inward.find(r =>
       r.vendorName.trim().toLowerCase() === header.vendorName.trim().toLowerCase() &&
       r.invoiceNo.trim().toLowerCase() === header.invoiceNo.trim().toLowerCase()
@@ -3537,26 +3537,26 @@ function MaterialInward({ rawStock, setRawStock, inward, setInward, itemMasterFG
     const entry = { ...header, id: uid(), grn, items };
     setInward(p => [...p, entry]);
 
-    // Update RM stock & Item Master for each item
-    // Track counter locally to avoid stale closure across items
+    
+    
     let rmCounter = itemCounters.RM || 1;
     const newRMItems = [];
 
     items.forEach(it => {
-      // Skip RM stock update for non-RM items
+      
       if (it.materialType && it.materialType !== "Raw Material") return;
 
       const stockKey = [it.rmItem, it.paperType, it.gsm + "gsm", it.widthMm + (it.lengthMm ? "x" + it.lengthMm : "") + "mm"].filter(Boolean).join(" | ");
       const addQty = it.noOfSheets ? +it.noOfSheets : it.noOfReels ? +it.noOfReels : 0;
       const unit = it.noOfSheets ? "sheets" : it.noOfReels ? "reels" : "kg";
       const addWeight = +it.weight || 0;
-      // Calculate weight per sheet for Paper Sheets
+      
       const newWeightPerSheet = (it.rmItem === "Paper Sheets" && it.noOfSheets && it.weight)
         ? (+it.weight / +it.noOfSheets)
         : null;
       setRawStock(prev => {
         const idx = prev.findIndex(s => s.name === stockKey);
-        // Get code from Item Master if itemName matches
+        
         const rmMaster = (itemMasterFG["Raw Material"] || []);
         const masterMatch = it.itemName
           ? rmMaster.find(x => x.name.toLowerCase() === it.itemName.toLowerCase())
@@ -3589,7 +3589,7 @@ function MaterialInward({ rawStock, setRawStock, inward, setInward, itemMasterFG
           rmCounter++;
           const newEntry = { id: uid(), code, name: it.itemName, addedOn: today(), source: "Material Inward" };
           newRMItems.push(newEntry);
-          // Backfill rmCode on the stock entry
+          
           setRawStock(prev2 => prev2.map(s => s.name === stockKey && !s.rmCode ? { ...s, rmCode: code } : s));
         }
       }
@@ -3603,7 +3603,7 @@ function MaterialInward({ rawStock, setRawStock, inward, setInward, itemMasterFG
       setItemCounters(c => ({ ...c, RM: rmCounter }));
     }
 
-    // Update Consumable Stock for non-RM items
+    
     const consumableItems = items.filter(it => it.materialType && it.materialType !== "Raw Material");
     if (consumableItems.length > 0) {
       setConsumableStock(prev => {
@@ -3628,14 +3628,14 @@ function MaterialInward({ rawStock, setRawStock, inward, setInward, itemMasterFG
       });
     }
 
-    // Update linked PO status
+    
     if (header.poRef) {
       const linkedPO = purchaseOrders.find(p => p.poNo === header.poRef);
       if (linkedPO) {
-        // All GRNs linked to this PO (including current)
+        
         const allGRNsForPO = [...inward.filter(r => r.poRef === header.poRef), { ...header, items }];
 
-        // Build received qty map keyed by itemName (lowercased)
+        
         const receivedMap = {};
         allGRNsForPO.forEach(r => (r.items || []).forEach(it => {
           const key = (it.itemName || "").toLowerCase().trim();
@@ -3659,14 +3659,14 @@ function MaterialInward({ rawStock, setRawStock, inward, setInward, itemMasterFG
             : +(pit.qty || 0);
           const received = receivedMap[key] || 0;
           totalPOQty += poQty;
-          totalReceivedQty += Math.min(received, poQty * 1.20); // cap at 120% for calculation
+          totalReceivedQty += Math.min(received, poQty * 1.20); 
         });
 
         let newStatus;
         if (totalPOQty === 0 || totalReceivedQty === 0) {
           newStatus = totalReceivedQty === 0 ? "Open" : "Partial";
         } else if (totalReceivedQty >= totalPOQty * 0.90) {
-          // ≥90% received → close the PO
+          
           newStatus = "Received";
         } else {
           newStatus = "Partial";
@@ -3684,7 +3684,7 @@ function MaterialInward({ rawStock, setRawStock, inward, setInward, itemMasterFG
     setItemErrors([{}]);
   };
 
-  // Save GRN edit: reverse old item contributions from rawStock, apply new ones
+  
   const saveGRNEdit = (originalRecord, updatedData) => {
     const oldItems = originalRecord.items || [];
     const newItems = updatedData.items || [];
@@ -3692,7 +3692,7 @@ function MaterialInward({ rawStock, setRawStock, inward, setInward, itemMasterFG
 
     setRawStock(prev => {
       let stock = prev.map(s => ({ ...s }));
-      // Reverse old items
+      
       oldItems.forEach(it => {
         const key = makeKey(it);
         const idx = stock.findIndex(s => s.name === key);
@@ -3702,7 +3702,7 @@ function MaterialInward({ rawStock, setRawStock, inward, setInward, itemMasterFG
           weight: Math.max(0, (stock[idx].weight || 0) - +(it.weight || 0))
         };
       });
-      // Apply new items
+      
       newItems.forEach(it => {
         const key = makeKey(it);
         const addQty    = it.noOfSheets ? +it.noOfSheets : it.noOfReels ? +it.noOfReels : 0;
@@ -3747,7 +3747,7 @@ function MaterialInward({ rawStock, setRawStock, inward, setInward, itemMasterFG
 
       {view === "form" && (
         <div>
-          {/* ── Invoice Header ── */}
+          {}
           <Card style={{ marginBottom: 16 }}>
             <h3 style={{ fontSize: 14, fontWeight: 700, color: C.blue, marginBottom: 16 }}>Invoice Details</h3>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 14 }}>
@@ -3794,7 +3794,7 @@ function MaterialInward({ rawStock, setRawStock, inward, setInward, itemMasterFG
             </div>
           </Card>
 
-          {/* ── Item Rows ── */}
+          {}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
             <h3 style={{ fontSize: 14, fontWeight: 700, color: C.accent }}>Material Items ({items.length})</h3>
             <button onClick={addItem} style={{
@@ -3811,7 +3811,7 @@ function MaterialInward({ rawStock, setRawStock, inward, setInward, itemMasterFG
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
 
-                {/* Product Code — always first */}
+                {}
                 <Field label="Product Code">
                   <AutocompleteInput
                     value={it.productCode || ""}
@@ -3824,7 +3824,7 @@ function MaterialInward({ rawStock, setRawStock, inward, setInward, itemMasterFG
                   />
                 </Field>
 
-                {/* Material Type */}
+                {}
                 <Field label="Material Type *">
                   <select value={it.materialType || "Raw Material"} onChange={e => setItem(idx, "materialType", e.target.value)}>
                     <option value="Raw Material">Raw Material</option>
@@ -3834,7 +3834,7 @@ function MaterialInward({ rawStock, setRawStock, inward, setInward, itemMasterFG
                   </select>
                 </Field>
 
-                {/* ── Raw Material fields ── */}
+                {}
                 {(it.materialType === "Raw Material" || !it.materialType) && (<>
                   <Field label="RM Item *">
                     <select value={it.rmItem} onChange={e => setItem(idx, "rmItem", e.target.value)} style={EI(idx, "rmItem")}>
@@ -3896,7 +3896,7 @@ function MaterialInward({ rawStock, setRawStock, inward, setInward, itemMasterFG
                   </Field>
                 </>)}
 
-                {/* ── Non-RM fields ── */}
+                {}
                 {it.materialType && it.materialType !== "Raw Material" && (<>
                   <Field label="Category">
                     {(() => {
@@ -4006,7 +4006,7 @@ function MaterialInward({ rawStock, setRawStock, inward, setInward, itemMasterFG
             const addItem = () => setEditData(p => ({ ...p, items: [...p.items, { _id: uid(), productCode: "", rmItem: "", paperType: "", widthMm: "", lengthMm: "", gsm: "", noOfSheets: "", noOfReels: "", weight: "", rate: "", amount: "", itemName: "" }] }));
             return (
               <div key={r.id} style={{ borderBottom: `1px solid ${C.border}22`, padding: "12px 4px" }}>
-                {/* Header row */}
+                {}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
                   <div style={{ display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
                     <span style={{ fontFamily: "'JetBrains Mono',monospace", color: C.blue, fontWeight: 700 }}>{r.grn}</span>
@@ -4054,7 +4054,7 @@ function MaterialInward({ rawStock, setRawStock, inward, setInward, itemMasterFG
                     )}
                   </div>
                 </div>
-                {/* Extra header fields in edit mode */}
+                {}
                 {isEditing && (
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 8, marginTop: 10, paddingBottom: 12, borderBottom: `1px solid ${C.border}` }}>
                     {[["vehicleNo","Vehicle No"],["location","Location"],["receivedBy","Received By"],["remarks","Remarks"]].map(([k, label]) => (
@@ -4065,7 +4065,7 @@ function MaterialInward({ rawStock, setRawStock, inward, setInward, itemMasterFG
                     ))}
                   </div>
                 )}
-                {/* Editable items in edit mode */}
+                {}
                 {isEditing && (
                   <div style={{ marginTop: 10 }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: C.accent, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Items</div>
@@ -4083,7 +4083,7 @@ function MaterialInward({ rawStock, setRawStock, inward, setInward, itemMasterFG
                     <button onClick={addItem} style={{ marginTop: 8, background: C.accent + "22", color: C.accent, border: `1px solid ${C.accent}44`, borderRadius: 5, padding: "5px 14px", fontWeight: 700, fontSize: 12 }}>+ Add Item</button>
                   </div>
                 )}
-                {/* Items summary (view mode) */}
+                {}
                 {!isEditing && (
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 6 }}>
                     {(r.items || []).map((it, i) => (
@@ -4106,7 +4106,7 @@ function MaterialInward({ rawStock, setRawStock, inward, setInward, itemMasterFG
   );
 }
 
-// ── Sales Order constants ──────────────────────────────────────────────────────
+
 const SO_SALESPERSONS = ["Ankit", "Direct Order"];
 const SO_CLIENT_CATEGORIES = ["HP", "ZPL", "Others"];
 const FG_SEED_CATEGORIES = ["Paper Dip Bowl", "Paper Dip Bowl Lid", "Paper Cup", "Paper Cup Lid", "Paper Soup Bowl", "Paper Soup Bowl Lid", "Paper Flat Bowl", "Paper Flat Bowl Lid", "Paper Salad Box", "Paper Burger Box", "Paper Boat Tray", "Wrapping Paper", "Cake Box", "Pastry Box", "Paper Bag with Handle", "Paper Bag without Handle", "Paper Bag Manual", "Insert", "Sleeve", "Sticker"];
@@ -4149,7 +4149,7 @@ const SEED_SIZE_MASTER = {
   "Sticker": [],
 };
 
-// ── Size Master Manager ────────────────────────────────────────────────────────
+
 function SizeMaster({ sizeMaster, setSizeMaster, categoryMaster, setCategoryMaster, toast }) {
   const { isAdmin, canEdit } = useAuth();
   const canEditSizemaster = canEdit("sizemaster");
@@ -4162,7 +4162,7 @@ function SizeMaster({ sizeMaster, setSizeMaster, categoryMaster, setCategoryMast
   const sizes = sizeMaster[selCat] || [];
   const isWrappingPaper = selCat === "Wrapping Paper";
 
-  // Config for structured-input categories
+  
   const STRUCTURED_CONFIGS = {
     "Wrapping Paper": {
       fields: [{ key: "width", label: "Width" }, { key: "length", label: "Length" }, { key: "gsm", label: "GSM", noUom: true }],
@@ -4271,7 +4271,7 @@ function SizeMaster({ sizeMaster, setSizeMaster, categoryMaster, setCategoryMast
   };
 
   const deleteCategory = (cat) => {
-    // confirmed inline
+    
     setCategoryMaster(prev => ({ ...prev, [selType]: (prev[selType] || []).filter(c => c !== cat) }));
     setSizeMaster(prev => { const n = { ...prev }; delete n[cat]; return n; });
     if (selCat === cat) setSelCat(categories.filter(c => c !== cat)[0] || "");
@@ -4283,7 +4283,7 @@ function SizeMaster({ sizeMaster, setSizeMaster, categoryMaster, setCategoryMast
     <div className="fade">
       <SectionTitle icon="📐" title="Category Master" sub="Manage item categories and their sizes across all types" />
 
-      {/* Type selector tabs */}
+      {}
       <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
         {ITEM_TYPE_GROUPS.map(t => (
           <button key={t} onClick={() => { setSelType(t); const first = (categoryMaster[t] || [])[0] || ""; setSelCat(first); setStructFields({}); setStructErrors({}); setStructUom("inch"); setNewSize(""); }} style={{
@@ -4297,14 +4297,14 @@ function SizeMaster({ sizeMaster, setSizeMaster, categoryMaster, setCategoryMast
 
       <div style={{ display: "grid", gridTemplateColumns: selType === "Raw Material" ? "300px 1fr" : "1fr", gap: 16, alignItems: "start" }}>
 
-        {/* Category list */}
+        {}
         <Card style={{ padding: 0, overflow: "hidden" }}>
           <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontSize: 11, fontWeight: 700, color: TYPE_COLORS[selType], textTransform: "uppercase", letterSpacing: 1 }}>{selType}</span>
             <span style={{ fontSize: 11, color: C.muted }}>{categories.length} categories</span>
           </div>
 
-          {/* Add new category */}
+          {}
           <div style={{ padding: "10px 12px", borderBottom: `1px solid ${C.border}` }}>
             <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
               <input placeholder="New category name..." value={newCatName} onChange={e => setNewCatName(e.target.value)} onKeyDown={e => e.key === "Enter" && addCategory()} style={{ flex: 1, fontSize: 12, padding: "6px 10px" }} />
@@ -4339,7 +4339,7 @@ function SizeMaster({ sizeMaster, setSizeMaster, categoryMaster, setCategoryMast
           </div>
         </Card>
 
-        {/* Paper Types panel — only for Raw Material */}
+        {}
         {selType === "Raw Material" && (
           <Card>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
@@ -4382,7 +4382,7 @@ function SizeMaster({ sizeMaster, setSizeMaster, categoryMaster, setCategoryMast
 }
 
 
-// ── 2. Sales Orders ────────────────────────────────────────────────────────────
+
 function SalesOrders({ salesOrders, setSalesOrders, sizeMaster, categoryMaster, clientMaster, setClientMaster, itemMasterFG, setItemMasterFG, soCounter, setSoCounter, jobOrders, setJobOrders, itemCounters, setItemCounters, dispatches, toast }) {
   const { isAdmin, canEdit } = useAuth();
 
@@ -4404,7 +4404,7 @@ function SalesOrders({ salesOrders, setSalesOrders, sizeMaster, categoryMaster, 
   const EH = (k) => headerErrors[k] ? { border: `1px solid ${C.red}` } : {};
   const EHMsg = (k) => headerErrors[k] ? (<div style={{ color: C.red, fontSize: 10, marginTop: 3 }}>Required</div>) : null;
 
-  // Generate item name from item fields + client name
+  
   const generateItemName = (it, clientName) => {
     const cat = it.itemCategory || "";
     const client = clientName || "";
@@ -4438,37 +4438,37 @@ function SalesOrders({ salesOrders, setSalesOrders, sizeMaster, categoryMaster, 
     setItems(prev => {
       const updated = [...prev];
       const it = { ...updated[idx], [k]: v };
-      // Auto-fill from product code
+      
       if (k === "productCode" && v) {
         const masterItem = (itemMasterFG["Finished Goods"] || []).find(x => (x.code || "").toLowerCase() === v.toLowerCase());
         if (masterItem) {
           it.itemName = masterItem.name || "";
           if (masterItem.category) it.itemCategory = masterItem.category;
-          // Parse dimensions from item name
+          
           const name = masterItem.name || "";
           const cat  = masterItem.category || "";
-          // Extract UOM
+          
           const uomMatch = name.match(/(inch|mm|cm)$/i);
           const uom = uomMatch ? uomMatch[1].toLowerCase() : "inch";
           it.uom = uom;
           if (FG_BOX_CATS.includes(cat)) {
-            // e.g. "Cake Box 8x8x5inch" → W=8 L=8 H=5
+            
             const dimMatch = name.match(/(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)(inch|mm|cm)?/i);
             if (dimMatch) { it.width = dimMatch[1]; it.length = dimMatch[2]; it.height = dimMatch[3]; }
           } else if (FG_BAG_CATS.includes(cat)) {
-            // e.g. "Paper Bag with Handle 9x6x7inch" → W=9 G=6 H=7
+            
             const dimMatch = name.match(/(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)(inch|mm|cm)?/i);
             if (dimMatch) { it.width = dimMatch[1]; it.gussett = dimMatch[2]; it.height = dimMatch[3]; }
           } else if (FG_FLAT_CATS.includes(cat)) {
-            // e.g. "Insert 5x7inch" → W=5 L=7
+            
             const dimMatch = name.match(/(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)(inch|mm|cm)?/i);
             if (dimMatch) { it.width = dimMatch[1]; it.length = dimMatch[2]; }
           } else if (FG_WRAP_CATS.includes(cat)) {
-            // e.g. "Wrapping Paper 20x30inch" → W=20 H=30
+            
             const dimMatch = name.match(/(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)(inch|mm|cm)?/i);
             if (dimMatch) { it.width = dimMatch[1]; it.height = dimMatch[2]; }
           } else if (FG_SIZE_CLIENT_CATS.includes(cat)) {
-            // e.g. "Paper Cup 350ml Client" — extract size token before client name
+            
             const sizeMatch = name.replace(cat, "").trim().split(" ")[0];
             if (sizeMatch) it.size = sizeMatch;
           }
@@ -4476,7 +4476,7 @@ function SalesOrders({ salesOrders, setSalesOrders, sizeMaster, categoryMaster, 
       }
       if (k === "itemCategory") { it.size = ""; it.variant = ""; it.width = ""; it.length = ""; it.height = ""; it.gussett = ""; it.uom = "inch"; it.productCode = ""; }
       it.itemName = generateItemName(it, header.clientName);
-      // Auto-compute amount = qty * price
+      
       const qty = k === "orderQty" ? +v : +(it.orderQty || 0);
       const price = k === "price" ? +v : +(it.price || 0);
       it.amount = qty && price ? (qty * price).toFixed(2) : "";
@@ -4486,7 +4486,7 @@ function SalesOrders({ salesOrders, setSalesOrders, sizeMaster, categoryMaster, 
     setItemErrors(prev => { const e = [...prev]; e[idx] = { ...(e[idx] || {}), [k]: false }; return e; });
   };
 
-  // Recompute all item names when clientName changes
+  
   const setHWithItemNameRefresh = (k, v) => {
     setH(k, v);
     if (k === "clientName") {
@@ -4505,7 +4505,7 @@ function SalesOrders({ salesOrders, setSalesOrders, sizeMaster, categoryMaster, 
   const EIMsg = (idx, k) => (itemErrors[idx] || {})[k] ? (<div style={{ color: C.red, fontSize: 10, marginTop: 3 }}>Required</div>) : null;
 
   const submit = () => {
-    // Header validation
+    
     const he = {};
     if (!header.orderDate) he.orderDate = true;
     if (!header.deliveryDate) he.deliveryDate = true;
@@ -4514,7 +4514,7 @@ function SalesOrders({ salesOrders, setSalesOrders, sizeMaster, categoryMaster, 
     if (!header.clientName) he.clientName = true;
     setHeaderErrors(he);
 
-    // Item validation
+    
     const allItemErrors = items.map(it => {
       const e = {};
       if (!it.itemCategory) e.itemCategory = true;
@@ -4542,7 +4542,7 @@ function SalesOrders({ salesOrders, setSalesOrders, sizeMaster, categoryMaster, 
     const entry = { ...header, soNo, id: uid(), items };
     setSalesOrders(p => [...p, entry]);
 
-    // Auto-add client to Client Master
+    
     const clientName = header.clientName.trim();
     if (clientName) {
       setClientMaster(prev => {
@@ -4551,7 +4551,7 @@ function SalesOrders({ salesOrders, setSalesOrders, sizeMaster, categoryMaster, 
       });
     }
 
-    // Auto-add each item name to Item Master FG
+    
     let fgCounter = itemCounters.FG || 1;
     const newFGItems = [];
     items.forEach(it => {
@@ -4596,7 +4596,7 @@ function SalesOrders({ salesOrders, setSalesOrders, sizeMaster, categoryMaster, 
 
       {view === "form" && (
         <div>
-          {/* ── Order Header ── */}
+          {}
           <Card style={{ marginBottom: 16 }}>
             <h3 style={{ fontSize: 14, fontWeight: 700, color: C.green, marginBottom: 16 }}>Order & Client Details</h3>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 14 }}>
@@ -4638,7 +4638,7 @@ function SalesOrders({ salesOrders, setSalesOrders, sizeMaster, categoryMaster, 
             </div>
           </Card>
 
-          {/* ── Item Rows ── */}
+          {}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
             <h3 style={{ fontSize: 14, fontWeight: 700, color: C.green }}>Order Items ({items.length})</h3>
             <button onClick={addItem} style={{ background: C.green, color: "#fff", border: "none", borderRadius: 6, padding: "8px 18px", fontWeight: 700, fontSize: 13 }}>+ Add Item</button>
@@ -4770,7 +4770,7 @@ function SalesOrders({ salesOrders, setSalesOrders, sizeMaster, categoryMaster, 
 }
 
 
-// ── Sales Order Records with Edit ─────────────────────────────────────────────
+
 
 
 function printSO(s) {
@@ -4888,7 +4888,7 @@ function SORecords({ salesOrders, setSalesOrders, sizeMaster, categoryMaster, se
   const [filterCat, setFilterCat] = useState("All");
   const [expandedDispatch, setExpandedDispatch] = useState(null);
 
-  // Build dispatch map: soNo → { totalQty dispatched per itemName }
+  
   const dispatchMap = {};
   (dispatches || []).forEach(d => {
     if (!d.soRef) return;
@@ -4904,10 +4904,10 @@ function SORecords({ salesOrders, setSalesOrders, sizeMaster, categoryMaster, se
   const startEdit = (s) => { setEditId(s.id); setEditData({ ...s }); };
   const cancelEdit = () => { setEditId(null); setEditData(null); };
   const saveEdit = () => {
-    // Find old SO to detect item name changes
+    
     const oldSO = salesOrders.find(s => s.id === editId);
     setSalesOrders(prev => prev.map(s => s.id === editId ? { ...editData } : s));
-    // Cascade: update Item Master FG if item names changed
+    
     const oldItems = oldSO?.items || [];
     const newItems = editData?.items || [];
     oldItems.forEach((oldIt, i) => {
@@ -4927,7 +4927,7 @@ function SORecords({ salesOrders, setSalesOrders, sizeMaster, categoryMaster, se
   const deleteOrder = (id) => {
     const so = salesOrders.find(s => s.id === id);
     setSalesOrders(prev => prev.filter(s => s.id !== id));
-    // Cascade: clear soRef in linked Job Orders
+    
     if (so) {
       setJobOrders(prev => prev.map(j => j.soRef === so.soNo ? { ...j, soRef: "" } : j));
     }
@@ -5041,7 +5041,7 @@ function SORecords({ salesOrders, setSalesOrders, sizeMaster, categoryMaster, se
                   </select>
                 </div>
               </div>
-              {/* Items */}
+              {}
               <div style={{ fontSize: 11, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Items</div>
               {(editData.items || []).map((it, idx) => (
                 <div key={idx} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 10, padding: "10px 12px", background: C.surface, borderRadius: 6, marginBottom: 8 }}>
@@ -5071,7 +5071,7 @@ function SORecords({ salesOrders, setSalesOrders, sizeMaster, categoryMaster, se
             </div>
           ) : (
             <div>
-              {/* Dispatch status summary */}
+              {}
               {(() => {
                 const soDispatched = dispatchMap[s.soNo] || {};
                 const totalOrdered  = (s.items || []).reduce((sum, it) => sum + +(it.orderQty || 0), 0);
@@ -5102,7 +5102,7 @@ function SORecords({ salesOrders, setSalesOrders, sizeMaster, categoryMaster, se
                       <span style={{ fontSize: 10, color: C.muted, marginLeft: "auto" }}>{dispatchedDispatches.length} dispatch{dispatchedDispatches.length !== 1 ? "es" : ""} {expandedDispatch === s.id ? "▲" : "▼"}</span>
                     </div>
 
-                    {/* Per-item breakdown */}
+                    {}
                     {expandedDispatch === s.id && (
                       <div style={{ marginTop: 6, padding: "8px 12px", background: C.surface, border: `1px solid ${C.border}33`, borderRadius: 6 }}>
                         <div style={{ fontSize: 10, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Item-wise Dispatch Status</div>
@@ -5126,7 +5126,7 @@ function SORecords({ salesOrders, setSalesOrders, sizeMaster, categoryMaster, se
                             </div>
                           );
                         })}
-                        {/* Dispatch list */}
+                        {}
                         <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${C.border}33` }}>
                           <div style={{ fontSize: 10, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Dispatch Records</div>
                           {dispatchedDispatches.map((d, i) => (
@@ -5166,7 +5166,7 @@ function SORecords({ salesOrders, setSalesOrders, sizeMaster, categoryMaster, se
 }
 
 
-// ── Restore RM stock from a job order ─────────────────────────────────────────
+
 function restoreRMStock(jo, setRawStock) {
   if (!jo || !jo.paperType || !jo.paperGsm) return;
   const gsm = jo.paperGsm + "gsm";
@@ -5183,9 +5183,9 @@ function restoreRMStock(jo, setRawStock) {
     if (matchIdx >= 0) {
       const r = updated[matchIdx];
       const isSheet = r.unit === "sheets" || r.name.includes("Sheet");
-      // Restore sheets
+      
       const newQty = (+(r.qty || 0)) + (isSheet ? sheetsToRestore : 0);
-      // Restore weight (kg) using stored weightPerSheet
+      
       const weightToRestore = isSheet && r.weightPerSheet
         ? sheetsToRestore * r.weightPerSheet
         : 0;
@@ -5196,7 +5196,7 @@ function restoreRMStock(jo, setRawStock) {
   });
 }
 
-// ── Job Order Records with Edit ────────────────────────────────────────────────
+
 function printJO(j) {
   var html = "<div style=\'border-bottom:2px solid #1e3a5f;padding-bottom:14px;margin-bottom:20px;text-align:center\'><div style=\'font-size:20px;font-weight:900;color:#1e3a5f;letter-spacing:-0.5px;margin-bottom:3px\'>AARAY PACKAGING PRIVATE LIMITED</div><div style=\'font-size:10px;color:#666;margin-bottom:1px\'>Unit I: A7/64 &amp; A7/65, South Side GT Road Industrial Area, Ghaziabad</div><div style=\'font-size:10px;color:#666;margin-bottom:4px\'>Unit II: 27MI &amp; 28MI, South Side GT Road Industrial Area, Ghaziabad</div><div style=\'font-size:10px;color:#444\'>www.rapackaging.in &nbsp;|&nbsp; orders@rapackaging.in &nbsp;|&nbsp; +91 9311802540</div></div><div class=\'header\'>" +
     "<div><h1>Job Card</h1><h2>" + j.joNo + "</h2></div>" +
@@ -5278,7 +5278,7 @@ function JORecords({ jobOrders, setJobOrders, salesOrders, sizeMaster, allPaperT
   const startEdit = (j) => { setEditId(j.id); setEditData({ ...j }); };
   const cancelEdit = () => { setEditId(null); setEditData(null); };
   const saveEdit = () => {
-    // Rebuild planned schedule when job details change; preserve actual fields
+    
     const rebuilt = buildSchedule(
       { ...editData, _editId: editData.id },
       machineMaster || [],
@@ -5356,7 +5356,7 @@ function JORecords({ jobOrders, setJobOrders, salesOrders, sizeMaster, allPaperT
       </div>
       {filtered.map(j => (
         <Card key={j.id} style={{ marginBottom: 12, borderLeft: `3px solid ${j.id === editId ? C.blue : j.status === "Completed" ? C.green : j.status === "Cancelled" ? C.red : C.yellow}` }}>
-          {/* Card header */}
+          {}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
             <div>
               <span style={{ fontFamily: "'JetBrains Mono',monospace", color: C.yellow, fontWeight: 700, fontSize: 14 }}>{j.joNo}</span>
@@ -5374,7 +5374,7 @@ function JORecords({ jobOrders, setJobOrders, salesOrders, sizeMaster, allPaperT
             </div>
           </div>
 
-          {/* Edit form */}
+          {}
           {editId === j.id && editData ? (
             <div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12, marginBottom: 14 }}>
@@ -5434,7 +5434,7 @@ function JORecords({ jobOrders, setJobOrders, salesOrders, sizeMaster, allPaperT
               </div>
             </div>
           ) : (
-            /* Collapsed view */
+            
             <div>
               <div style={{ display: "flex", gap: 16, flexWrap: "wrap", fontSize: 12, color: C.muted, marginBottom: (j.schedule || []).length ? 8 : 0 }}>
                 <span>Date: {j.jobcardDate || j.date || "—"}</span>
@@ -5445,7 +5445,7 @@ function JORecords({ jobOrders, setJobOrders, salesOrders, sizeMaster, allPaperT
                 <span>Sheets: {j.noOfSheets || "—"}</span>
                 {(j.process || []).length > 0 && <div style={{ display: "flex", gap: 4 }}>{(j.process || []).map(p => <Badge key={p} label={p} color={C.accent} />)}</div>}
               </div>
-              {/* Compact schedule pills */}
+              {}
               {(j.schedule || []).length > 0 && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                   {j.schedule.map((slot, i) => {
@@ -5577,7 +5577,7 @@ function PurchaseOrders({ purchaseOrders, setPurchaseOrders, poCounter, setPoCou
   const consumableCategories = (categoryMaster && categoryMaster["Consumable"]) || [];
   const allPOCategories = [...rmCategories, ...consumableCategories];
 
-  // Paper types from Category Master
+  
   const paperTypesByItem = {
     "Paper Reel":   (sizeMaster && sizeMaster["Paper Reel"])  || PAPER_TYPES_BY_ITEM["Paper Reel"],
     "Paper Sheets": (sizeMaster && sizeMaster["Paper Sheet"]) || PAPER_TYPES_BY_ITEM["Paper Sheets"],
@@ -5595,7 +5595,7 @@ function PurchaseOrders({ purchaseOrders, setPurchaseOrders, poCounter, setPoCou
     setItems(prev => {
       const updated = [...prev];
       const it = { ...updated[idx], [k]: v };
-      // Auto-fill from product code
+      
       if (k === "productCode" && v) {
         const masterItem = (itemMasterFG["Raw Material"] || []).find(x => (x.code || "").toLowerCase() === v.toLowerCase());
         if (masterItem) {
@@ -5628,7 +5628,7 @@ function PurchaseOrders({ purchaseOrders, setPurchaseOrders, poCounter, setPoCou
       if (k === "rmItem") { it.paperType = ""; it.itemName = ""; it.productCode = ""; }
       const isRM = it.materialType === "Raw Material" || !it.materialType;
       it.itemName = isRM ? computeRMItemName(it) : computeConsumableItemName(it);
-      // Amount: RM = weight × rate, Non-RM = qty × rate
+      
       const weight = k === "weight" ? +v : +(it.weight || 0);
       const qty    = k === "qty"    ? +v : +(it.qty    || 0);
       const rate   = k === "rate"   ? +v : +(it.rate   || 0);
@@ -5799,7 +5799,7 @@ function PurchaseOrders({ purchaseOrders, setPurchaseOrders, poCounter, setPoCou
                 {items.length > 1 && <button onClick={() => removeItem(idx)} style={{ background: C.red + "22", color: C.red, border: "none", borderRadius: 5, padding: "4px 12px", fontWeight: 700, fontSize: 12 }}>✕ Remove</button>}
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
-                {/* Product Code — always first */}
+                {}
                 <Field label="Product Code">
                   <AutocompleteInput
                     value={it.productCode || ""}
@@ -5812,7 +5812,7 @@ function PurchaseOrders({ purchaseOrders, setPurchaseOrders, poCounter, setPoCou
                   />
                 </Field>
 
-                {/* Material Type selector */}
+                {}
                 <Field label="Material Type *">
                   <select value={it.materialType || "Raw Material"} onChange={e => setItem(idx, "materialType", e.target.value)}>
                     <option value="Raw Material">Raw Material</option>
@@ -5822,7 +5822,7 @@ function PurchaseOrders({ purchaseOrders, setPurchaseOrders, poCounter, setPoCou
                   </select>
                 </Field>
 
-                {/* ── Raw Material fields ── */}
+                {}
                 {(it.materialType === "Raw Material" || !it.materialType) && (<>
                   <Field label="RM Item *">
                     <select value={it.rmItem || ""} onChange={e => setItem(idx, "rmItem", e.target.value)} style={EI(idx, "rmItem")}>
@@ -5882,7 +5882,7 @@ function PurchaseOrders({ purchaseOrders, setPurchaseOrders, poCounter, setPoCou
                   </Field>
                 </>)}
 
-                {/* ── Non-RM fields (Consumable / Machine Spare / Other) ── */}
+                {}
                 {it.materialType && it.materialType !== "Raw Material" && (<>
                   <Field label="Category">
                     {(() => {
@@ -5990,7 +5990,7 @@ function PurchaseOrders({ purchaseOrders, setPurchaseOrders, poCounter, setPoCou
               </div>
               {editId === p.id && editData ? (
                 <div>
-                  {/* Header fields */}
+                  {}
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12, marginBottom: 16 }}>
                     <div><label style={{ fontSize: 11, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 4 }}>PO Date</label><DatePicker value={editData.poDate} onChange={v => setEditData(p => ({ ...p, poDate: v }))} /></div>
                     <div><label style={{ fontSize: 11, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 4 }}>Delivery Date</label><DatePicker value={editData.deliveryDate} onChange={v => setEditData(p => ({ ...p, deliveryDate: v }))} /></div>
@@ -6004,21 +6004,21 @@ function PurchaseOrders({ purchaseOrders, setPurchaseOrders, poCounter, setPoCou
                     <div><label style={{ fontSize: 11, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 4 }}>Remarks</label><input value={editData.remarks || ""} onChange={e => setEditData(p => ({ ...p, remarks: e.target.value }))} /></div>
                   </div>
 
-                  {/* Items edit */}
+                  {}
                   <div style={{ marginBottom: 10 }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: C.blue, textTransform: "uppercase", letterSpacing: 2, marginBottom: 10 }}>Items</div>
                     {(editData.items || []).map((it, idx) => {
                       const setItField = (k, v) => setEditData(prev => {
                         const items = [...(prev.items || [])];
                         const updated = { ...items[idx], [k]: v };
-                        // Auto-compute amount
+                        
                         if (k === "weight" || k === "rate") {
                           const w = k === "weight" ? +v : +(updated.weight || 0);
                           const r = k === "rate" ? +v : +(updated.rate || 0);
                           updated.amount = w > 0 && r > 0 ? String(w * r) : "";
                         }
                         if (k === "rmItem") { updated.paperType = ""; updated.itemName = ""; }
-                        // Rebuild item name
+                        
                         if (updated.rmItem === "Paper Reel") {
                           updated.itemName = [updated.paperType, "Paper Reel", updated.gsm ? updated.gsm + "gsm" : "", updated.widthMm ? updated.widthMm + "mm" : ""].filter(Boolean).join(" ");
                         } else if (updated.rmItem === "Paper Sheets") {
@@ -6098,14 +6098,14 @@ function PurchaseOrders({ purchaseOrders, setPurchaseOrders, poCounter, setPoCou
                         </Card>
                       );
                     })}
-                    {/* Add item button */}
+                    {}
                     <button onClick={() => setEditData(prev => ({ ...prev, items: [...(prev.items || []), blankItem()] }))}
                       style={{ background: C.blue + "22", color: C.blue, border: "1px solid " + C.blue + "44", borderRadius: 6, padding: "7px 16px", fontWeight: 700, fontSize: 12, cursor: "pointer", marginBottom: 10 }}>
                       + Add Item
                     </button>
                   </div>
 
-                  {/* Total */}
+                  {}
                   {(editData.items || []).some(it => it.amount) && (
                     <div style={{ padding: "10px 14px", background: C.blue + "18", border: "1px solid " + C.blue + "33", borderRadius: 6, marginBottom: 12, textAlign: "right" }}>
                       <span style={{ fontSize: 12, color: C.muted }}>Total: </span>
@@ -6151,11 +6151,11 @@ function PurchaseOrders({ purchaseOrders, setPurchaseOrders, poCounter, setPoCou
   );
 }
 
-// ── Helpers: get working days between two dates ────────────────────────────────
+
 function addWorkingDays(dateStr, days) {
   if (days <= 0) return dateStr;
   const d = new Date(dateStr + "T00:00:00");
-  // Fast calculation: each week has 6 working days
+  
   const fullWeeks = Math.floor(days / 6);
   const remaining = days % 6;
   d.setDate(d.getDate() + fullWeeks * 7);
@@ -6171,12 +6171,12 @@ function dateRangesOverlap(s1, e1, s2, e2) {
   return s1 <= e2 && s2 <= e1;
 }
 
-// ── Build capacity-aware production schedule ───────────────────────────────────
+
 function buildSchedule(form, machineMaster, existingJobOrders = []) {
   const ordered = STAGES.filter(p => (form.process || []).includes(p));
   const schedule = [];
 
-  // Build machine booking map — sorted once upfront
+  
   const machineBookings = {};
   existingJobOrders.forEach(jo => {
     if (jo.status === "Cancelled") return;
@@ -6187,18 +6187,18 @@ function buildSchedule(form, machineMaster, existingJobOrders = []) {
       machineBookings[slot.machineId].push({ startDate: slot.startDate, endDate: slot.endDate });
     });
   });
-  // Sort each machine's bookings once
+  
   Object.keys(machineBookings).forEach(mid => {
     machineBookings[mid].sort((a, b) => a.startDate.localeCompare(b.startDate));
   });
 
-  // Skip Sundays for a date string (fast)
+  
   function skipSunday(dateStr) {
     if (new Date(dateStr + "T00:00:00").getDay() === 0) return addWorkingDays(dateStr, 1);
     return dateStr;
   }
 
-  // Find earliest available start (max iterations capped to prevent hang)
+  
   function findAvailableStart(machineId, desiredStart, daysNeeded) {
     const bookings = machineBookings[machineId] || [];
     let start = skipSunday(desiredStart);
@@ -6209,7 +6209,7 @@ function buildSchedule(form, machineMaster, existingJobOrders = []) {
       iterations++;
       const end = addWorkingDays(start, Math.max(daysNeeded, 1));
       for (const b of bookings) {
-        if (b.startDate > end) break; // sorted — no need to check further
+        if (b.startDate > end) break; 
         if (dateRangesOverlap(start, end, b.startDate, b.endDate)) {
           start = skipSunday(addWorkingDays(b.endDate, 1));
           changed = true;
@@ -6246,7 +6246,7 @@ function buildSchedule(form, machineMaster, existingJobOrders = []) {
     if (machineId) {
       if (!machineBookings[machineId]) machineBookings[machineId] = [];
       machineBookings[machineId].push({ startDate, endDate });
-      // Keep sorted after insertion
+      
       machineBookings[machineId].sort((a, b) => a.startDate.localeCompare(b.startDate));
     }
 
@@ -6264,7 +6264,7 @@ function buildSchedule(form, machineMaster, existingJobOrders = []) {
   return schedule;
 }
 
-// ── Process → Machine Type mapping ────────────────────────────────────────────
+
 const FORMATION_STAGES_QTY = ["Formation", "Manual Formation"];
 const FORMATION_MACHINE_TYPES = ["Formation", "Bag Making", "Sheeting", "Sheet Cutting", "Cutting"];
 const MANUAL_FORMATION_MACHINE_TYPES = ["Handmade"];
@@ -6278,7 +6278,7 @@ const PROCESS_MACHINE_TYPE = {
   "Manual Formation": "Formation",
 };
 
-// ── 3. Job Orders ──────────────────────────────────────────────────────────────
+
 function JobOrders({ jobOrders, setJobOrders, salesOrders, sizeMaster, joCounter, setJoCounter, rawStock, setRawStock, wipStock, setWipStock, fgStock, setFgStock, machineMaster, printingMaster, setPrintingMaster, toast }) {
   const { isAdmin, canEdit } = useAuth();
   const blank = {
@@ -6300,7 +6300,7 @@ function JobOrders({ jobOrders, setJobOrders, salesOrders, sizeMaster, joCounter
   const set = (k, v) => {
     setForm(f => {
       const updated = { ...f, [k]: v };
-      // Auto-fill from SO when soRef changes
+      
       if (k === "soRef" && v) {
         const so = salesOrders.find(s => s.soNo === v);
         if (so) {
@@ -6308,7 +6308,7 @@ function JobOrders({ jobOrders, setJobOrders, salesOrders, sizeMaster, joCounter
           updated.deliveryDate = so.deliveryDate || "";
           updated.clientName = so.clientName || "";
           updated.clientCategory = so.clientCategory || "";
-          // For single-item SOs auto-fill item details; for multi-item SOs let user pick from dropdown
+          
           if (!so.items || so.items.length <= 1) {
             const firstItem = so.items ? so.items[0] : so;
             updated.itemName = firstItem.itemName || "";
@@ -6319,31 +6319,31 @@ function JobOrders({ jobOrders, setJobOrders, salesOrders, sizeMaster, joCounter
                firstItem.width && firstItem.height ? `${firstItem.width}x${firstItem.height}${firstItem.uom || "inch"}` : "") || "";
             updated.orderQty = firstItem.orderQty || "";
           } else {
-            // Clear item fields so user must select from the dropdown
+            
             updated.itemName = "";
             updated.size = "";
             updated.orderQty = "";
           }
         }
       }
-      // Clear paperType when paperCategory changes
+      
       if (k === "paperCategory") { updated.paperType = ""; updated.reelSize = ""; updated.reelWidthMm = ""; updated.cuttingLengthMm = ""; updated.reelWeightKg = ""; updated.noOfSheets = ""; updated.sheetW = ""; updated.sheetL = ""; updated.sheetSize = ""; }
-      // Auto-compute sheet size
+      
       if (["sheetW", "sheetL", "sheetUom"].includes(k)) {
         const w = k === "sheetW" ? v : updated.sheetW;
         const l = k === "sheetL" ? v : updated.sheetL;
         const u = k === "sheetUom" ? v : updated.sheetUom;
         updated.sheetSize = (w && l) ? `${w}x${l}${u}` : "";
       }
-      // Auto-compute sheet size 2
+      
       if (["sheetW2", "sheetL2", "sheetUom2"].includes(k)) {
         const w = k === "sheetW2" ? v : updated.sheetW2;
         const l = k === "sheetL2" ? v : updated.sheetL2;
         const u = k === "sheetUom2" ? v : updated.sheetUom2;
         updated.sheetSize2 = (w && l) ? `${w}x${l}${u}` : "";
       }
-      // ── Auto-populate from Printing Detail Master ──
-      // Runs after all SO/itemName fields are resolved so clientName + clientCategory are available
+      
+      
       if (updated.itemName && printingMaster && printingMaster.length > 0 &&
           (k === "itemName" || k === "soRef")) {
         const iName = (updated.itemName || "").toLowerCase();
@@ -6357,14 +6357,14 @@ function JobOrders({ jobOrders, setJobOrders, salesOrders, sizeMaster, joCounter
           (r.itemName || "").toLowerCase() === iName && !r.clientName && !r.clientCategory
         );
         if (pm) {
-          // Common fields
+          
           if (pm.paperCategory) updated.paperCategory = pm.paperCategory;
           if (pm.printing)  updated.printing  = pm.printing;
           if (pm.plate)     updated.plate     = pm.plate;
           if (pm.process && pm.process.length) updated.process = pm.process;
           if (pm.paperType) updated.paperType = pm.paperType;
           if (pm.paperGsm)  updated.paperGsm  = pm.paperGsm;
-          // Reel or sheet specific
+          
           if (pm.paperCategory === "Paper Reel") {
             if (pm.reelSize)        updated.reelSize        = pm.reelSize;
             if (pm.reelWidthMm)     updated.reelWidthMm     = pm.reelWidthMm;
@@ -6411,7 +6411,7 @@ function JobOrders({ jobOrders, setJobOrders, salesOrders, sizeMaster, joCounter
       if (!form.sheetL) e.sheetL = true;
     }
     if (!form.paperGsm) e.paperGsm = true;
-    // Second paper validation
+    
     if (form.hasSecondPaper) {
       if (!form.paperType2) e.paperType2 = true;
       if (!form.paperGsm2)  e.paperGsm2  = true;
@@ -6426,7 +6426,7 @@ function JobOrders({ jobOrders, setJobOrders, salesOrders, sizeMaster, joCounter
         if (!form.sheetL2) e.sheetL2 = true;
       }
     }
-    // Machine assignment mandatory for each selected process
+    
     (form.process || []).forEach(proc => {
       if (!(form.machineAssignments || {})[proc]) e["machine_" + proc] = true;
     });
@@ -6440,7 +6440,7 @@ function JobOrders({ jobOrders, setJobOrders, salesOrders, sizeMaster, joCounter
     setErrors({});
     const joProcesses = form.process && form.process.length > 0 ? form.process : [];
     const initStatus = joProcesses.length > 0 ? joProcesses[0] + " Pending" : "Open";
-    // ── Check RM Stock availability BEFORE creating JO ──
+    
     if (form.paperType && form.paperGsm) {
       const gsm = form.paperGsm + "gsm";
       const isReelJob = form.paperCategory === "Paper Reel";
@@ -6466,7 +6466,7 @@ function JobOrders({ jobOrders, setJobOrders, salesOrders, sizeMaster, joCounter
       }
     }
 
-    // ── Check Second Paper RM Stock availability ──
+    
     if (form.hasSecondPaper && form.paperType2 && form.paperGsm2) {
       const gsm2 = form.paperGsm2 + "gsm";
       const sheetSz2 = form.sheetSize2 || (form.sheetW2 && form.sheetL2 ? form.sheetW2 + "x" + form.sheetL2 + (form.sheetUom2 || "mm") : "");
@@ -6491,7 +6491,7 @@ function JobOrders({ jobOrders, setJobOrders, salesOrders, sizeMaster, joCounter
       }
     }
 
-    // Block duplicate JO: same SO ref + item name
+    
     if (form.soRef && form.itemName) {
       const dupJO = jobOrders.find(j =>
         j.soRef === form.soRef &&
@@ -6508,19 +6508,19 @@ function JobOrders({ jobOrders, setJobOrders, salesOrders, sizeMaster, joCounter
       ...form, joNo: "JO-" + joCounter, id: uid(), status: initStatus,
       currentStage: "Not Started", completedProcesses: [], stageQtyMap: {}, stageHistory: [],
       machineAssignments: form.machineAssignments || {},
-      schedule: [] // will be filled async
+      schedule: [] 
     };
     const joNoVal = "JO-" + joCounter;
     setJoCounter(n => n + 1);
     setSubmitting(true);
 
-    // Defer heavy schedule computation off the main thread render cycle
+    
     setTimeout(() => {
       const schedule = buildSchedule(form, machineMaster, jobOrders);
       const fullEntry = { ...entry, joNo: joNoVal, schedule };
       setJobOrders(p => [...p, fullEntry]);
 
-    // ── Deduct RM Stock ──
+    
     if (form.paperType && form.paperGsm) {
       const gsm = form.paperGsm + "gsm";
       const isReelJob = form.paperCategory === "Paper Reel";
@@ -6553,7 +6553,7 @@ function JobOrders({ jobOrders, setJobOrders, salesOrders, sizeMaster, joCounter
       });
     }
 
-    // ── Deduct Second Paper from RM Stock ──
+    
     if (form.hasSecondPaper && form.paperType2 && form.paperGsm2) {
       const gsm2 = form.paperGsm2 + "gsm";
       const sheetSz2 = form.sheetW2 && form.sheetL2 ? form.sheetW2 + "x" + form.sheetL2 + (form.sheetUom2 || "mm") : "";
@@ -6578,7 +6578,7 @@ function JobOrders({ jobOrders, setJobOrders, salesOrders, sizeMaster, joCounter
       });
     }
 
-    // ── Save/update Printing Detail Master ──
+    
     if (form.itemName && setPrintingMaster) {
       const _isReel = form.paperCategory === "Paper Reel";
       const pmEntry = {
@@ -6591,14 +6591,14 @@ function JobOrders({ jobOrders, setJobOrders, salesOrders, sizeMaster, joCounter
         paperCategory:  form.paperCategory  || "",
         paperType:      form.paperType      || "",
         paperGsm:       form.paperGsm       || "",
-        // Reel-specific fields
+        
         ...(_isReel ? {
           reelSize:        form.reelSize        || "",
           reelWidthMm:     form.reelWidthMm     || "",
           cuttingLengthMm: form.cuttingLengthMm || "",
           reelWeightKg:    form.reelWeightKg    || "",
         } : {
-        // Sheet-specific fields
+        
           noOfUps:   form.noOfUps   || "",
           sheetUom:  form.sheetUom  || "mm",
           sheetW:    form.sheetW    || "",
@@ -6613,10 +6613,10 @@ function JobOrders({ jobOrders, setJobOrders, salesOrders, sizeMaster, joCounter
           (r.clientCategory || "").toLowerCase() === (form.clientCategory || "").toLowerCase()
         );
         if (idx < 0) {
-          // New item — add to master
+          
           return [...prev, { id: uid(), ...pmEntry, addedOn: today() }];
         }
-        // Existing — check if values differ
+        
         const existing = prev[idx];
         const _isReelPM = (pmEntry.paperCategory || existing.paperCategory) === "Paper Reel";
         const fields = _isReelPM
@@ -6641,7 +6641,7 @@ function JobOrders({ jobOrders, setJobOrders, salesOrders, sizeMaster, joCounter
     toast("Job Order created: " + joNoVal);
       setForm(blank);
       setSubmitting(false);
-    }, 0); // defer to next event loop tick — keeps UI responsive
+    }, 0); 
   };
 
   const divider = (label) => {
@@ -6686,7 +6686,7 @@ function JobOrders({ jobOrders, setJobOrders, salesOrders, sizeMaster, joCounter
                   const soItems = s.items && s.items.length > 0 ? s.items : [s];
                   return soItems.some(it => {
                     const itName = (it.itemName || "").trim().toLowerCase();
-                    // If itemName is blank on the SO item, always show the SO (can't match)
+                    
                     if (!itName) return true;
                     return !jobOrders.some(j =>
                       j.soRef === s.soNo &&
@@ -6726,7 +6726,7 @@ function JobOrders({ jobOrders, setJobOrders, salesOrders, sizeMaster, joCounter
                 <>
                   <select value={form.itemName} onChange={e => {
                     const it = selectedSO.items.find(i => i.itemName === e.target.value);
-                    // Build size from size field or from dimensions (width x length x height)
+                    
                     const derivedSize = it?.size ||
                       (it?.width && it?.gussett && it?.height ? `${it.width}x${it.gussett}x${it.height}${it.uom || "inch"}` :
                        it?.width && it?.length && it?.height ? `${it.width}x${it.length}x${it.height}${it.uom || "inch"}` :
@@ -6841,7 +6841,7 @@ function JobOrders({ jobOrders, setJobOrders, salesOrders, sizeMaster, joCounter
                     <div key={p} onClick={() => {
                       const cur = form.process || [];
                       const newProc = selected ? cur.filter(x => x !== p) : [...cur, p];
-                      // Clear machine assignment if process deselected
+                      
                       const newMA = { ...(form.machineAssignments || {}) };
                       if (selected) delete newMA[p];
                       set("process", newProc);
@@ -6861,7 +6861,7 @@ function JobOrders({ jobOrders, setJobOrders, salesOrders, sizeMaster, joCounter
               {errors.process && <div style={{ color: C.red, fontSize: 10, marginTop: 3 }}>Select at least one process</div>}
             </Field>
 
-            {/* Machine assignment — one per selected process */}
+            {}
             {(form.process || []).length > 0 && (
               <div style={{ gridColumn: "1 / -1" }}>
                 <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 14, marginTop: 6, marginBottom: 12 }}>
@@ -7016,7 +7016,7 @@ function JobOrders({ jobOrders, setJobOrders, salesOrders, sizeMaster, joCounter
               <input placeholder="Special instructions" value={form.remarks} onChange={e => set("remarks", e.target.value)} />
             </Field>
 
-            {/* ── Second Paper Toggle — after Remarks ── */}
+            {}
             <Field label="Second Paper" span={2}>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 13 }}>
@@ -7126,8 +7126,8 @@ function JobOrders({ jobOrders, setJobOrders, salesOrders, sizeMaster, joCounter
   );
 }
 
-// ── 4. Production Update ───────────────────────────────────────────────────────
-// Get target qty for a stage based on job card
+
+
 const SHEET_STAGES = ["Printing", "Varnish", "Lamination", "Die Cutting"];
 function getStageTarget(jo, stage) {
   if (!jo) return 0;
@@ -7141,14 +7141,14 @@ function getStageFilledQty(jo, stage) {
   return +((jo.stageQtyMap || {})[stage] || 0);
 }
 
-// Recompute completedProcesses, currentStage and status from stageQtyMap + stageHistory
+
 function recomputeJO(jo, stageQtyMap, newHistory) {
   const processes = jo.process || [];
   const orderedProcs = STAGES.filter(p => processes.includes(p));
 
-  // Completed = processes whose filled qty >= target
+  
   const completedProcesses = orderedProcs.filter((p, idx) => {
-    // For Printing on dual-paper jobs: both Paper 1 AND Paper 2 must be done
+    
     if (p === "Printing" && jo.hasSecondPaper) {
       const p1target = getStageTarget(jo, "Printing");
       const p1filled = +(stageQtyMap["Printing"] || 0);
@@ -7159,26 +7159,26 @@ function recomputeJO(jo, stageQtyMap, newHistory) {
     const target = getStageTarget(jo, p);
     const filled = +(stageQtyMap[p] || 0);
     if (filled === 0) return false;
-    // Primary check: filled >= original target
+    
     if (target > 0 && filled >= target) return true;
-    // Secondary check: filled >= what came out of the previous stage (handles wastage cascade)
-    // "came out" = completed qty only (not rejected) from the previous stage
+    
+    
     if (idx > 0) {
       const prevProc = orderedProcs[idx - 1];
       const prevEntries = newHistory.filter(h => h.stage === prevProc);
       const prevOutput = prevEntries.reduce((s, e) => s + +(e.qtyCompleted || 0), 0);
       if (prevOutput > 0 && filled >= prevOutput) return true;
     }
-    // No previous stage: check if all input has been accounted for
+    
     if (idx === 0 && target === 0) return newHistory.some(h => h.stage === p);
     return false;
   });
 
-  // Current stage = last stage with any entry
+  
   const lastEntry = [...newHistory].sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0))[0];
   const currentStage = lastEntry?.stage || "Not Started";
 
-  // Status
+  
   const nextProcess = orderedProcs.find(p => !completedProcesses.includes(p));
   let status;
   if (processes.length > 0) {
@@ -7209,13 +7209,13 @@ function ProductionUpdate({ jobOrders, setJobOrders, wipStock, setWipStock, fgSt
     const currentJO = jobOrders.find(j => j.joNo === form.joNo);
     const FORMATION_STAGES_LOCAL = ["Formation", "Manual Formation"];
 
-    // Block duplicate only for NON-formation stages (formation allows partial fills)
+    
     if (currentJO && !FORMATION_STAGES_LOCAL.includes(form.stage) &&
         (currentJO.completedProcesses || []).includes(form.stage)) {
       toast(`${form.stage} already completed for ${form.joNo}`, "error"); return;
     }
 
-    // Check if adding this qty would exceed the target
+    
     if (currentJO && form.stage) {
       const target = getStageTarget(currentJO, form.stage);
       if (target > 0) {
@@ -7232,23 +7232,23 @@ function ProductionUpdate({ jobOrders, setJobOrders, wipStock, setWipStock, fgSt
       const history = [...(j.stageHistory || []), stageEntry];
       const processes = j.process || [];
 
-      // Accumulate qty for this stage
+      
       const stageQtyMap = { ...(j.stageQtyMap || {}) };
       const prevQty = +(stageQtyMap[form.stage] || 0);
       const addedQty = +(form.qtyCompleted || 0) + +(form.qtyRejected || 0);
       stageQtyMap[form.stage] = prevQty + addedQty;
 
-      // Check if this stage is now complete
+      
       let stageNowComplete = false;
       if (form.stage === "Printing" && j.hasSecondPaper) {
-        // Dual paper: Printing complete only when BOTH papers done
+        
         const p1filled = stageQtyMap["Printing"] || 0;
         const p1target = getStageTarget(j, "Printing");
         const p2filled = stageQtyMap["Printing 2"] || 0;
         const p2target = getStageTarget(j, "Printing 2");
         stageNowComplete = p1filled >= p1target && p1target > 0 && p2filled >= p2target && p2target > 0;
       } else if (form.stage === "Printing 2" && j.hasSecondPaper) {
-        // Also check combined completion when Paper 2 is updated
+        
         const p1filled = stageQtyMap["Printing"] || 0;
         const p1target = getStageTarget(j, "Printing");
         const p2filled = stageQtyMap["Printing 2"] || 0;
@@ -7272,7 +7272,7 @@ function ProductionUpdate({ jobOrders, setJobOrders, wipStock, setWipStock, fgSt
       }
 
       const completed = [...(j.completedProcesses || [])];
-      // For dual-paper jobs, "Printing" completes when both papers done (not "Printing 2" separately)
+      
       const stageForCompletion = (form.stage === "Printing 2" && j.hasSecondPaper) ? "Printing" : form.stage;
       if (stageNowComplete && processes.includes(stageForCompletion) && !completed.includes(stageForCompletion)) {
         completed.push(stageForCompletion);
@@ -7304,11 +7304,11 @@ function ProductionUpdate({ jobOrders, setJobOrders, wipStock, setWipStock, fgSt
       }
       return { ...j, currentStage: form.stage, stageHistory: history, completedProcesses: completed, stageQtyMap, status: newStatus };
     }));
-    // ── Check completion AFTER including current stage in completed list ──
+    
     const FORMATION_DONE = ["Formation", "Manual Formation"];
     const j = jobOrders.find(j => j.joNo === form.joNo);
     const processes = j?.process || [];
-    // Simulate updated stageQtyMap to check if target is reached with this entry
+    
     const simQtyMap = { ...(j?.stageQtyMap || {}) };
     const simAdded = +(form.qtyCompleted || 0) + +(form.qtyRejected || 0);
     simQtyMap[form.stage] = (+(simQtyMap[form.stage] || 0)) + simAdded;
@@ -7323,7 +7323,7 @@ function ProductionUpdate({ jobOrders, setJobOrders, wipStock, setWipStock, fgSt
 
     const isFormationStage = FORMATION_DONE.includes(form.stage);
 
-    // Always add to FG Stock when Formation/Manual Formation qty is submitted
+    
     if (isFormationStage) {
       const activeJO = currentJO || selectedJO;
       const qtyToAdd = +form.qtyCompleted || 0;
@@ -7350,7 +7350,7 @@ function ProductionUpdate({ jobOrders, setJobOrders, wipStock, setWipStock, fgSt
           }
     }
 
-    // Update WIP — remove when fully completed, otherwise update stage
+    
     if (isCompletion) {
       setWipStock(prev => prev.filter(w => w.joNo !== form.joNo));
     } else {
@@ -7367,14 +7367,14 @@ function ProductionUpdate({ jobOrders, setJobOrders, wipStock, setWipStock, fgSt
   const activeJOs = jobOrders.filter(j => j.status !== "Completed");
 
   const [prodTab, setProdTab] = useState("details");
-  const [editEntry, setEditEntry] = useState(null); // { joNo, entryId, fields }
+  const [editEntry, setEditEntry] = useState(null); 
   const [recordsFilter, setRecordsFilter] = useState("");
 
   return (
     <div className="fade">
       <SectionTitle icon="🔧" title="Production" sub="Record and track stage-wise production progress" />
 
-      {/* Tabs */}
+      {}
       <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
         {[["details", "🔧 Production Details"], ["records", "📋 Records"], ["status", "📊 Production Status"]].map(([v, l]) => (
           <button key={v} onClick={() => setProdTab(v)} style={{
@@ -7435,7 +7435,7 @@ function ProductionUpdate({ jobOrders, setJobOrders, wipStock, setWipStock, fgSt
                       }
                       return !completed.includes(s);
                     });
-                    // For dual-paper jobs: show "Printing" and "Printing 2" separately when Printing not yet completed
+                    
                     const stages = [];
                     available.forEach(s => {
                       stages.push(s);
@@ -7579,7 +7579,7 @@ function ProductionUpdate({ jobOrders, setJobOrders, wipStock, setWipStock, fgSt
                     borderRadius: 8, border: `1px solid ${C.border}`
                   }}>
                     {editEntry?.joNo === j.joNo && editEntry?.entryId === entry.id ? (
-                      // ── Edit mode ──
+                      
                       <div>
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 10, marginBottom: 10 }}>
                           <div>
@@ -7617,9 +7617,9 @@ function ProductionUpdate({ jobOrders, setJobOrders, wipStock, setWipStock, fgSt
                               const stageQtyMap = { ...(jo.stageQtyMap || {}) };
                               const oldTotal = +(oldEntry?.qtyCompleted || 0) + +(oldEntry?.qtyRejected || 0);
                               const newTotal = +(editEntry.fields.qtyCompleted || 0) + +(editEntry.fields.qtyRejected || 0);
-                              // Adjust qty map for old stage
+                              
                               stageQtyMap[entry.stage] = Math.max(0, (+(stageQtyMap[entry.stage] || 0)) - oldTotal);
-                              // Adjust qty map for new stage
+                              
                               const newStage = editEntry.fields.stage;
                               stageQtyMap[newStage] = (+(stageQtyMap[newStage] || 0)) + newTotal;
                               const newHistory = jo.stageHistory.map(e => e.id === entry.id ? { ...e, ...editEntry.fields } : e);
@@ -7644,7 +7644,7 @@ function ProductionUpdate({ jobOrders, setJobOrders, wipStock, setWipStock, fgSt
                         </div>
                       </div>
                     ) : (
-                      // ── View mode ──
+                      
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
                           <Badge label={entry.stage} color={C.accent} />
@@ -7706,7 +7706,7 @@ function ProductionUpdate({ jobOrders, setJobOrders, wipStock, setWipStock, fgSt
             </Card>
           </div>
 
-          {/* All Job Orders status table */}
+          {}
           <Card>
             <h3 style={{ fontSize: 14, fontWeight: 700, color: C.muted, marginBottom: 14 }}>All Job Orders ({jobOrders.length})</h3>
             <Table
@@ -7739,11 +7739,11 @@ function ProductionUpdate({ jobOrders, setJobOrders, wipStock, setWipStock, fgSt
 }
 
 
-// ── Dispatch ──────────────────────────────────────────────────────────────────
+
 function printDispatch(d, itemMasterFG) {
   const fgItems = (itemMasterFG?.["Finished Goods"] || []);
   var itemRows = (d.items || []).map(function(it) {
-    // Find client-specific code first, then internal code
+    
     const master = fgItems.find(x => x.name?.toLowerCase() === (it.itemName || "").toLowerCase());
     const clientCode = master?.clientCodes?.[d.clientName] || "";
     const internalCode = it.productCode || master?.code || "";
@@ -7831,7 +7831,7 @@ function Dispatch({ dispatches, setDispatches, fgStock, setFgStock, salesOrders,
   const [drDateFrom, setDrDateFrom] = useState("");
   const [drDateTo,   setDrDateTo]   = useState("");
 
-  // FG items with stock
+  
   const { fgStockMap, availableFGItems } = React.useMemo(() => {
     const map = {};
     fgStock.forEach(f => { const k = (f.itemName||f.product||"").trim(); if (k) map[k] = (map[k]||0) + (+(f.qty)||0); });
@@ -7845,12 +7845,12 @@ function Dispatch({ dispatches, setDispatches, fgStock, setFgStock, salesOrders,
         const so = salesOrders.find(s => s.soNo === v);
         if (so) {
           updated.clientName = so.clientName || "";
-          // Reset to a single blank item row so user picks which SKU to dispatch
+          
           setItems([blankItem()]);
         }
       }
       if (k === "soRef" && !v) {
-        // Reset items when SO cleared
+        
         setItems([blankItem()]);
       }
       return updated;
@@ -7886,7 +7886,7 @@ function Dispatch({ dispatches, setDispatches, fgStock, setFgStock, salesOrders,
       toast(msgs, "validation");
       return;
     }
-    // ── Check FG Stock availability BEFORE creating Dispatch ──
+    
     const stockErrors = items
       .filter(it => it.itemName && it.qty)
       .map(it => {
@@ -7904,9 +7904,9 @@ function Dispatch({ dispatches, setDispatches, fgStock, setFgStock, salesOrders,
     }
 
 
-    // Deduct from FG Stock — single setFgStock call to avoid stale state
+    
     setFgStock(prev => {
-      let arr = prev.map(f => ({ ...f })); // clone all entries
+      let arr = prev.map(f => ({ ...f })); 
       items.forEach(it => {
         if (!it.itemName || !it.qty) return;
         let remaining = +(it.qty);
@@ -7925,7 +7925,7 @@ function Dispatch({ dispatches, setDispatches, fgStock, setFgStock, salesOrders,
 
     const dispatchNo = "Dispatch" + dispatchCounter;
     setDispatchCounter(n => n + 1);
-    // Attach product code to each item from Item Master
+    
     const fgItems = (itemMasterFG?.["Finished Goods"] || []);
     const itemsWithCode = items.map(it => {
       const master = fgItems.find(x => x.name?.toLowerCase() === (it.itemName || "").toLowerCase());
@@ -7934,7 +7934,7 @@ function Dispatch({ dispatches, setDispatches, fgStock, setFgStock, salesOrders,
     const newDispatchEntry = { ...form, dispatchNo, id: uid(), items: itemsWithCode };
     setDispatches(p => [...p, newDispatchEntry]);
 
-    // ── Auto-close SO if all SKUs have reached dispatch threshold ──
+    
     if (form.soRef) {
       const so = salesOrders.find(s => s.soNo === form.soRef);
       if (so && so.status !== "Closed") {
@@ -7943,14 +7943,14 @@ function Dispatch({ dispatches, setDispatches, fgStock, setFgStock, salesOrders,
         const allClosed = soItems.every(soIt => {
           const itemName = (soIt.itemName || "").trim().toLowerCase();
           const orderQty = +(soIt.orderQty || 0);
-          // Find linked JO production qty for this item
+          
           const linkedJO = jobOrders.find(j =>
             j.soRef === form.soRef &&
             (j.itemName || "").trim().toLowerCase() === itemName
           );
           const productionQty = linkedJO ? +(linkedJO.orderQty || 0) : 0;
           const threshold = Math.max(orderQty * 0.95, productionQty);
-          // Sum all dispatched qty for this item under this SO
+          
           const totalDispatched = allDispatches
             .filter(d => d.soRef === form.soRef)
             .flatMap(d => d.items || [])
@@ -7976,13 +7976,13 @@ function Dispatch({ dispatches, setDispatches, fgStock, setFgStock, salesOrders,
     setErrors({});
   };
 
-  // Save dispatch edit: reverse old item deductions from fgStock, apply new ones
+  
   const saveDispatchEdit = (originalRecord, updatedData) => {
     const oldItems = originalRecord.items || [];
     const newItems = updatedData.items || [];
 
-    // ── Check FG Stock availability for edit BEFORE applying changes ──
-    // Build a temporary stock map with old items restored
+    
+    
     const tempStockMap = {};
     fgStock.forEach(f => {
       const k = (f.itemName || f.product || "").trim().toLowerCase();
@@ -8013,22 +8013,22 @@ function Dispatch({ dispatches, setDispatches, fgStock, setFgStock, salesOrders,
     setFgStock(prev => {
       let stock = prev.map(f => ({ ...f }));
 
-      // Step 1: add back old items (reverse the original deduction)
+      
       oldItems.forEach(it => {
         if (!it.itemName || !it.qty) return;
         const itemKey = (it.itemName || "").trim().toLowerCase();
         let remaining = +(it.qty);
-        // Find existing entry to add back to, or create one
+        
         const idx = stock.findIndex(f => (f.itemName || f.product || "").trim().toLowerCase() === itemKey);
         if (idx >= 0) {
           stock[idx] = { ...stock[idx], qty: (+(stock[idx].qty) || 0) + remaining };
         } else {
-          // Re-create the FG stock entry
+          
           stock.push({ id: "FG-" + uid(), itemName: it.itemName, qty: remaining, unit: it.unit || "nos" });
         }
       });
 
-      // Step 2: deduct new items
+      
       newItems.forEach(it => {
         if (!it.itemName || !it.qty) return;
         const itemKey = (it.itemName || "").trim().toLowerCase();
@@ -8184,7 +8184,7 @@ function Dispatch({ dispatches, setDispatches, fgStock, setFgStock, salesOrders,
                         const name = e.target.value;
                         const fgItems = (itemMasterFG?.["Finished Goods"] || []);
                         const master = fgItems.find(x => x.name?.toLowerCase() === name.toLowerCase());
-                        // Auto-populate pcsPerBox from most recent past dispatch for this item
+                        
                         const pastItem = [...dispatches].reverse()
                           .flatMap(d => d.items || [])
                           .find(di => (di.itemName || "").trim().toLowerCase() === name.trim().toLowerCase() && di.pcsPerBox);
@@ -8421,7 +8421,7 @@ function Dispatch({ dispatches, setDispatches, fgStock, setFgStock, salesOrders,
   );
 }
 
-// ── 5. Raw Material Stock ──────────────────────────────────────────────────────
+
 function RawMaterialStock({ rawStock, setRawStock, itemMasterFG, toast }) {
   const { canEdit } = useAuth();
   const canEditRawstock = canEdit("rawstock");
@@ -8430,23 +8430,23 @@ function RawMaterialStock({ rawStock, setRawStock, itemMasterFG, toast }) {
   const [editId, setEditId] = useState(null);
   const [editFields, setEditFields] = useState({});
 
-  // Determine type from unit or name
+  
   const isPaperSheet = (r) => r.unit === "sheets" || r.name?.toLowerCase().includes("sheet");
   const isPaperReel = (r) => r.unit === "reels" || r.name?.toLowerCase().includes("reel");
 
-  // Build category lookup from Item Master RM items
+  
   const rmMasterItems = (itemMasterFG?.["Raw Material"] || []);
   const getCategoryForStock = (r) => {
-    // Match by name containing the item master name
+    
     const match = rmMasterItems.find(it => r.name.includes(it.name) || it.name.includes(r.name));
     if (match?.category) return match.category;
-    // Fallback: derive from name
+    
     if (isPaperReel(r)) return "Paper Reel";
     if (isPaperSheet(r)) return "Paper Sheet";
     return "Other";
   };
 
-  // Derive unique categories
+  
   const rmCategories = ["All", ...new Set(rawStock.map(r => getCategoryForStock(r)).filter(Boolean))];
 
   const filtered = React.useMemo(() => rawStock.filter(r => {
@@ -8455,14 +8455,14 @@ function RawMaterialStock({ rawStock, setRawStock, itemMasterFG, toast }) {
     return matchSearch && matchCat;
   }), [rawStock, search, selCategory]);
 
-  // ── Code lookup: use stored rmCode first, then fuzzy-match Item Master ──
+  
   const getRMCode = (r) => {
     if (r.rmCode) return r.rmCode;
     const masterItems = itemMasterFG?.["Raw Material"] || [];
-    // Try exact match
+    
     let match = masterItems.find(x => x.name.toLowerCase() === r.name.toLowerCase());
     if (!match) {
-      // Fuzzy: check if the item name (space-joined) appears in the stock name (pipe-joined) or vice versa
+      
       const stockTokens = r.name.toLowerCase().replace(/ \| /g, " ").replace(/\|/g, " ");
       match = masterItems.find(x => {
         if (!x.name) return false;
@@ -8483,7 +8483,7 @@ function RawMaterialStock({ rawStock, setRawStock, itemMasterFG, toast }) {
     setEditId(null);
   };
 
-  // Summary stats (always from all rawStock)
+  
   const totalItems = rawStock.length;
   const totalWeight = rawStock.reduce((s, r) => s + +(r.weight || 0), 0);
   const totalValue = rawStock.reduce((s, r) => s + (+(r.weight || 0) * +(r.rate || 0)), 0);
@@ -8526,7 +8526,7 @@ function RawMaterialStock({ rawStock, setRawStock, itemMasterFG, toast }) {
 
       <div style={{ display: "flex", gap: 10, marginBottom: 10, alignItems: "center", flexWrap: "wrap" }}>
         <input placeholder="🔍  Search material..." style={{ maxWidth: 320 }} value={search} onChange={e => setSearch(e.target.value)} />
-        {/* Backfill rmCode for existing stock entries that don't have one */}
+        {}
         {rawStock.some(r => !r.rmCode) && (
           <button onClick={() => {
             const masterItems = (itemMasterFG?.["Raw Material"] || []);
@@ -8558,7 +8558,7 @@ function RawMaterialStock({ rawStock, setRawStock, itemMasterFG, toast }) {
               const category    = (row["Category"]  || row["category"]  || "").toString().trim();
               const type        = (row["Type"]       || row["type"]      || "").toString().trim();
               const reorderRaw  = row["Reorder Level (kg)"];
-              // Mandatory fields check
+              
               if (!itemName)   { skipped.push("Row missing Item Name"); return; }
               if (!category)   { skipped.push(`${itemName}: missing Category`); return; }
               if (!type)       { skipped.push(`${itemName}: missing Type`); return; }
@@ -8606,7 +8606,7 @@ function RawMaterialStock({ rawStock, setRawStock, itemMasterFG, toast }) {
       </div>
 
       <Card>
-        {/* Header */}
+        {}
         <div style={{ display: "grid", gridTemplateColumns: "80px 1.5fr 110px 100px 100px 90px 110px 110px 80px", gap: 8, padding: "8px 12px", borderBottom: `1px solid ${C.border}`, marginBottom: 4 }}>
           {["Code", "Material Name", "Category", "Qty (Sheets)", "Qty (kg)", "Reorder (kg)", "Rate (₹/kg)", "Value (₹)", "Action"].map(h => (
             <div key={h} style={{ fontSize: 10, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>{h}</div>
@@ -8619,7 +8619,7 @@ function RawMaterialStock({ rawStock, setRawStock, itemMasterFG, toast }) {
           const isSheet = isPaperSheet(r);
           const isReel = isPaperReel(r);
           const qtySheets = isSheet ? r.qty : null;
-          const qtyKg = r.weight || (isReel ? r.qty : null); // reels stored in qty for legacy
+          const qtyKg = r.weight || (isReel ? r.qty : null); 
           const value = (+(r.weight || 0)) * (+(r.rate || 0));
 
           return (
@@ -8628,7 +8628,7 @@ function RawMaterialStock({ rawStock, setRawStock, itemMasterFG, toast }) {
               onMouseEnter={e => e.currentTarget.style.background = C.surface}
               onMouseLeave={e => e.currentTarget.style.background = (r.reorderWeightKg && +(r.weight||0) <= +r.reorderWeightKg) ? C.red + "08" : "transparent"}>
 
-              {/* Code */}
+              {}
               <div>
                 {(() => {
                   const code = getRMCode(r);
@@ -8638,7 +8638,7 @@ function RawMaterialStock({ rawStock, setRawStock, itemMasterFG, toast }) {
                 })()}
               </div>
 
-              {/* Name */}
+              {}
               <div>
                 <div style={{ fontSize: 13, fontWeight: 600 }}>{r.name}</div>
                 {r.reorderWeightKg && +(r.weight||0) <= +r.reorderWeightKg && (
@@ -8647,10 +8647,10 @@ function RawMaterialStock({ rawStock, setRawStock, itemMasterFG, toast }) {
                 <div style={{ fontSize: 10, color: C.muted, fontFamily: "'JetBrains Mono',monospace" }}>{r.id}</div>
               </div>
 
-              {/* Category */}
+              {}
               <div><Badge label={getCategoryForStock(r)} color={C.blue} /></div>
 
-              {/* Qty Sheets */}
+              {}
               {editId === r.id ? (
                 <input type="number" value={editFields.qty} onChange={e => setEditFields(p => ({ ...p, qty: e.target.value }))} style={{ fontSize: 12 }} />
               ) : (
@@ -8659,7 +8659,7 @@ function RawMaterialStock({ rawStock, setRawStock, itemMasterFG, toast }) {
                 </span>
               )}
 
-              {/* Qty Kg */}
+              {}
               {editId === r.id ? (
                 <input type="number" placeholder="kg" value={editFields.weight} onChange={e => setEditFields(p => ({ ...p, weight: e.target.value }))} style={{ fontSize: 12 }} />
               ) : (
@@ -8668,7 +8668,7 @@ function RawMaterialStock({ rawStock, setRawStock, itemMasterFG, toast }) {
                 </span>
               )}
 
-              {/* Reorder Level (kg) */}
+              {}
               {canEditRawstock ? (
                 <input type="number" placeholder="—"
                   value={r.reorderWeightKg ?? ""}
@@ -8683,7 +8683,7 @@ function RawMaterialStock({ rawStock, setRawStock, itemMasterFG, toast }) {
                 </span>
               )}
 
-              {/* Rate */}
+              {}
               {editId === r.id ? (
                 <input type="number" placeholder="₹/kg" value={editFields.rate} onChange={e => setEditFields(p => ({ ...p, rate: e.target.value }))} style={{ fontSize: 12 }} />
               ) : (
@@ -8692,12 +8692,12 @@ function RawMaterialStock({ rawStock, setRawStock, itemMasterFG, toast }) {
                 </span>
               )}
 
-              {/* Value */}
+              {}
               <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12, fontWeight: value > 0 ? 700 : 400, color: value > 0 ? C.green : C.border }}>
                 {value > 0 ? `₹${fmt(value)}` : "—"}
               </span>
 
-              {/* Action */}
+              {}
               {editId === r.id ? (
                 <div style={{ display: "flex", gap: 4 }}>
                   <button onClick={() => saveEdit(r.id)} style={{ background: C.green, color: "#fff", border: "none", borderRadius: 4, padding: "4px 8px", fontWeight: 700, fontSize: 11 }}>✓</button>
@@ -8723,8 +8723,8 @@ function RawMaterialStock({ rawStock, setRawStock, itemMasterFG, toast }) {
   );
 }
 
-// ── 6. WIP Stock ───────────────────────────────────────────────────────────────
-// ── Consumable Stock ──────────────────────────────────────────────────────────
+
+
 function ConsumableStock({ consumableStock, setConsumableStock, categoryMaster, itemMasterFG, toast }) {
   const { canEdit } = useAuth();
   const canEditConsumable = canEdit("rawstock");
@@ -8783,12 +8783,12 @@ function ConsumableStock({ consumableStock, setConsumableStock, categoryMaster, 
       return;
     }
 
-    // Deduct from stock
+    
     setConsumableStock(prev => prev.map(r =>
       r.id === issueForm.itemId ? { ...r, qty: availQty - issueQty } : r
     ));
 
-    // Add to records
+    
     setIssueLog(prev => [...prev, {
       id: uid(),
       date: issueForm.date,
@@ -8838,7 +8838,7 @@ function ConsumableStock({ consumableStock, setConsumableStock, categoryMaster, 
     <div className="fade">
       <SectionTitle icon="🗂️" title="Consumable Stock" sub="Consumables, machine spares and other non-RM inventory" />
 
-      {/* View tabs */}
+      {}
       <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
         {[["stock", "📦 Stock"], ["issue", "➡️ Issue Item"], ["log", `📋 Records (${issueLog.length})`]].map(([v, l]) => (
           <button key={v} onClick={() => setView(v)} style={{
@@ -8850,7 +8850,7 @@ function ConsumableStock({ consumableStock, setConsumableStock, categoryMaster, 
         ))}
       </div>
 
-      {/* ── Issue Form ── */}
+      {}
       {view === "issue" && (
         <Card style={{ marginBottom: 16 }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, color: C.accent, marginBottom: 16 }}>Issue Consumable Item</h3>
@@ -8898,7 +8898,7 @@ function ConsumableStock({ consumableStock, setConsumableStock, categoryMaster, 
         </Card>
       )}
 
-      {/* ── Records ── */}
+      {}
       {view === "log" && (
         <div>
           <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 14, flexWrap: "wrap" }}>
@@ -8952,10 +8952,10 @@ function ConsumableStock({ consumableStock, setConsumableStock, categoryMaster, 
         </div>
       )}
 
-      {/* ── Stock View ── */}
+      {}
       {view === "stock" && (<>
 
-      {/* Summary + Export */}
+      {}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 10 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 12, flex: 1 }}>
           {[
@@ -8973,7 +8973,7 @@ function ConsumableStock({ consumableStock, setConsumableStock, categoryMaster, 
         </div>
       </div>
 
-      {/* Filters */}
+      {}
       <div style={{ display: "flex", gap: 10, marginBottom: 14, flexWrap: "wrap", alignItems: "center" }}>
         <input placeholder="🔍 Search item..." value={search} onChange={e => setSearch(e.target.value)} style={{ maxWidth: 260 }} />
         <ExcelImportBtn
@@ -9046,7 +9046,7 @@ function ConsumableStock({ consumableStock, setConsumableStock, categoryMaster, 
         </Card>
       ) : (
         <Card style={{ padding: 0, overflow: "hidden" }}>
-          {/* Header */}
+          {}
           <div style={{ display: "grid", gridTemplateColumns: "80px 1.5fr 90px 100px 80px 70px 80px 80px 90px", gap: 8, padding: "8px 16px", background: C.surface, borderBottom: `1px solid ${C.border}` }}>
             {["Code", "Item Name", "Type", "Category", "Qty", "Unit", "Reorder", "Rate ₹", "Action"].map(h => (
               <div key={h} style={{ fontSize: 10, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>{h}</div>
@@ -9069,12 +9069,12 @@ function ConsumableStock({ consumableStock, setConsumableStock, categoryMaster, 
                 onMouseEnter={e => e.currentTarget.style.background = C.surface}
                 onMouseLeave={e => e.currentTarget.style.background = isBelowReorder && !isEditing ? C.red + "08" : "transparent"}>
 
-                {/* Product Code */}
+                {}
                 <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, fontWeight: 700, color: r.productCode ? C.blue : C.border }}>
                   {r.productCode || "—"}
                 </span>
 
-                {/* Item Name */}
+                {}
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 600 }}>{r.itemName}</div>
                   {isBelowReorder && <div style={{ fontSize: 10, fontWeight: 700, color: C.red, marginTop: 2 }}>⚠ Below reorder level</div>}
@@ -9082,13 +9082,13 @@ function ConsumableStock({ consumableStock, setConsumableStock, categoryMaster, 
                   {r.lastInward && <div style={{ fontSize: 10, color: C.muted }}>Last in: {r.lastInward}</div>}
                 </div>
 
-                {/* Type */}
+                {}
                 <Badge label={r.materialType || "—"} color={r.materialType === "Consumable" ? C.blue : r.materialType === "Machine Spare" ? C.purple : C.muted} />
 
-                {/* Category */}
+                {}
                 <span style={{ fontSize: 12, color: C.muted }}>{r.category || "—"}</span>
 
-                {/* Qty */}
+                {}
                 {isEditing ? (
                   <input type="number" value={editFields.qty} onChange={e => setEditFields(p => ({ ...p, qty: e.target.value }))} style={{ fontSize: 12, padding: "4px 6px" }} />
                 ) : (
@@ -9098,10 +9098,10 @@ function ConsumableStock({ consumableStock, setConsumableStock, categoryMaster, 
                   </div>
                 )}
 
-                {/* Unit */}
+                {}
                 <span style={{ fontSize: 12, color: C.muted }}>{r.unit || "—"}</span>
 
-                {/* Reorder Level */}
+                {}
                 {canEditConsumable ? (
                   <input type="number" placeholder="—"
                     value={r.reorderQty ?? ""}
@@ -9116,7 +9116,7 @@ function ConsumableStock({ consumableStock, setConsumableStock, categoryMaster, 
                   </span>
                 )}
 
-                {/* Rate */}
+                {}
                 {isEditing ? (
                   <input type="number" value={editFields.rate} onChange={e => setEditFields(p => ({ ...p, rate: e.target.value }))} style={{ fontSize: 12, padding: "4px 6px" }} />
                 ) : (
@@ -9128,7 +9128,7 @@ function ConsumableStock({ consumableStock, setConsumableStock, categoryMaster, 
                   </div>
                 )}
 
-                {/* Action */}
+                {}
                 {isEditing ? (
                   <div style={{ display: "flex", gap: 4 }}>
                     <button onClick={() => saveEdit(r.id)} style={{ background: C.green, color: "#fff", border: "none", borderRadius: 4, padding: "4px 8px", fontWeight: 700, fontSize: 11 }}>✓</button>
@@ -9164,7 +9164,7 @@ function ConsumableStock({ consumableStock, setConsumableStock, categoryMaster, 
   );
 }
 
-// ── 7. FG Stock ────────────────────────────────────────────────────────────────
+
 function FGStock({ fgStock, setFgStock, itemMasterFG, setItemMasterFG, salesOrders, toast }) {
   const { canEdit } = useAuth();
   const canEditFG = canEdit("fg");
@@ -9174,19 +9174,19 @@ function FGStock({ fgStock, setFgStock, itemMasterFG, setItemMasterFG, salesOrde
   const [editId, setEditId] = useState(null);
   const [editFields, setEditFields] = useState({});
 
-  // Build master list: all FG items from Item Master, merged with actual stock qty
+  
   const fgMasterItems = React.useMemo(() => (itemMasterFG["Finished Goods"] || []), [itemMasterFG]);
 
-  // Merge: for each master item, find stock entry; for stock entries not in master show them too
-  // Build clientCategory lookup: itemName → clientCategory from SOs + direct fgStock entries
+  
+  
   const itemClientCategoryMap = React.useMemo(() => {
     const map = {};
-    // From fgStock entries (set via import)
+    
     fgStock.forEach(f => {
       const key = (f.itemName || f.product || "").trim();
       if (key && f.clientCategory) map[key] = f.clientCategory;
     });
-    // From SOs (overrides if available — more reliable)
+    
     (salesOrders || []).forEach(so => {
       (so.items || []).forEach(it => {
         const key = (it.itemName || "").trim();
@@ -9204,12 +9204,12 @@ function FGStock({ fgStock, setFgStock, itemMasterFG, setItemMasterFG, salesOrde
     else stockMap[key].qty = (+(stockMap[key].qty)||0) + (+(f.qty)||0);
   });
 
-  // All items: master items + any stock items not in master
+  
   const masterNames = new Set(fgMasterItems.map(x => x.name));
   const extraStockItems = Object.keys(stockMap).filter(k => !masterNames.has(k)).map(k => ({ name: k, id: k, category: "Other" }));
   const allItems = [...fgMasterItems, ...extraStockItems];
 
-  // Derive unique categories from Item Master
+  
   const categories = ["All", ...new Set(allItems.map(it => it.category).filter(Boolean))];
 
   const filtered = allItems.filter(item =>
@@ -9241,7 +9241,7 @@ function FGStock({ fgStock, setFgStock, itemMasterFG, setItemMasterFG, salesOrde
     const newQty = +editFields.qty;
     const newPrice = editFields.price !== "" ? +editFields.price : undefined;
     setFgStock(prev => {
-      // Update qty on first matching stock entry, remove others to avoid duplicates
+      
       let assigned = false;
       return prev.map(f => {
         if ((f.itemName || f.product) !== itemName) return f;
@@ -9348,7 +9348,7 @@ function FGStock({ fgStock, setFgStock, itemMasterFG, setItemMasterFG, salesOrde
       </div>
 
       <Card>
-        {/* Header */}
+        {}
         <div style={{ display: "grid", gridTemplateColumns: "80px 2fr 110px 80px 80px 90px 90px 100px 100px 80px", gap: 8, padding: "8px 12px", borderBottom: `1px solid ${C.border}`, marginBottom: 4 }}>
           {["Code", "Item Name", "Category", "Client Cat.", "In Stock", "Qty", "Reorder", "Price (₹)", "Value (₹)", "Action"].map(h => (
             <div key={h} style={{ fontSize: 10, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>{h}</div>
@@ -9380,28 +9380,28 @@ function FGStock({ fgStock, setFgStock, itemMasterFG, setItemMasterFG, salesOrde
               onMouseEnter={e => e.currentTarget.style.background = C.surface}
               onMouseLeave={e => e.currentTarget.style.background = isLow ? C.red + "08" : "transparent"}>
 
-              {/* Code */}
+              {}
               <div>
                 {item.code
                   ? <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12, fontWeight: 700, color: C.purple }}>{item.code}</span>
                   : <span style={{ fontSize: 11, color: C.muted }}>—</span>}
               </div>
 
-              {/* Item Name */}
+              {}
               <div>
                 <div style={{ fontSize: 13, fontWeight: 600 }}>{item.name}</div>
                 {isLow && <div style={{ fontSize: 10, fontWeight: 700, color: C.red, marginTop: 2 }}>⚠ Below reorder level</div>}
                 {st?.joNo && <div style={{ fontSize: 10, color: C.muted, fontFamily: "'JetBrains Mono',monospace" }}>{st.joNo}</div>}
               </div>
 
-              {/* Category */}
+              {}
               <div>
                 {(item.category || st?.itemCategory)
                   ? <Badge label={item.category || st?.itemCategory} color={C.purple} />
                   : <span style={{ fontSize: 11, color: C.border }}>—</span>}
               </div>
 
-              {/* Client Category */}
+              {}
               <div>
                 {(() => {
                   const cc = itemClientCategoryMap[item.name];
@@ -9410,12 +9410,12 @@ function FGStock({ fgStock, setFgStock, itemMasterFG, setItemMasterFG, salesOrde
                 })()}
               </div>
 
-              {/* In Stock badge */}
+              {}
               <div>
                 <Badge label={inStock ? "Yes" : "Nil"} color={inStock ? C.green : C.muted} />
               </div>
 
-              {/* Qty — editable in edit mode */}
+              {}
               {editId === item.name ? (
                 <input type="number" value={editFields.qty} onChange={e => setEditFields(p => ({ ...p, qty: e.target.value }))} style={{ fontSize: 12 }} />
               ) : (
@@ -9424,7 +9424,7 @@ function FGStock({ fgStock, setFgStock, itemMasterFG, setItemMasterFG, salesOrde
                 </span>
               )}
 
-              {/* Reorder Level — gated by edit rights */}
+              {}
               {canEditFG ? (
                 <input type="number" placeholder="—"
                   value={item.reorderQty ?? ""}
@@ -9442,7 +9442,7 @@ function FGStock({ fgStock, setFgStock, itemMasterFG, setItemMasterFG, salesOrde
                 </span>
               )}
 
-              {/* Price — editable in edit mode or via inline click */}
+              {}
               <div>
                 {editId === item.name ? (
                   <input type="number" placeholder="₹" value={editFields.price} onChange={e => setEditFields(p => ({ ...p, price: e.target.value }))} style={{ fontSize: 12 }} />
@@ -9463,12 +9463,12 @@ function FGStock({ fgStock, setFgStock, itemMasterFG, setItemMasterFG, salesOrde
                 )}
               </div>
 
-              {/* Value */}
+              {}
               <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12, fontWeight: value > 0 ? 700 : 400, color: value > 0 ? C.purple : C.border }}>
                 {value > 0 ? `₹${fmt(value)}` : "—"}
               </span>
 
-              {/* Action */}
+              {}
               {editId === item.name ? (
                 <div style={{ display: "flex", gap: 4 }}>
                   <button onClick={() => saveEditFG(item.name)} style={{ background: C.green, color: "#fff", border: "none", borderRadius: 4, padding: "4px 8px", fontWeight: 700, fontSize: 11 }}>✓</button>
@@ -9491,8 +9491,8 @@ function FGStock({ fgStock, setFgStock, itemMasterFG, setItemMasterFG, salesOrde
   );
 }
 
-// ── Client Master ──────────────────────────────────────────────────────────────
-// ── Vendor Master ──────────────────────────────────────────────────────────────
+
+
 function VendorMaster({ vendorMaster, setVendorMaster, toast }) {
   const { canEdit } = useAuth();
   const canEditVendormaster = canEdit("vendormaster");
@@ -9763,7 +9763,7 @@ function ClientMaster({ clientMaster, setClientMaster, toast }) {
   );
 }
 
-// ── Item Master ────────────────────────────────────────────────────────────────
+
 const ITEM_TYPE_COLORS = { "Raw Material": "#3b82f6", "Consumable": "#eab308", "Finished Goods": "#22c55e", "Machine Spare": "#ef4444" };
 
 const FG_BOX_CATS  = ["Cake Box", "Pastry Box"];
@@ -9771,9 +9771,9 @@ const FG_FLAT_CATS = ["Insert", "Sleeve", "Sticker"];
 const FG_BAG_CATS  = ["Paper Bag with Handle", "Paper Bag without Handle", "Paper Bag Manual"];
 const FG_WRAP_CATS = ["Wrapping Paper"];
 
-// ── Consumable item name groups ───────────────────────────────────────────────
-const CONSUMABLE_BOX_CATS  = ["Corrugated Box"];           // W x L x H + UOM
-const CONSUMABLE_BAG_CATS  = ["LDPE Polybag", "Polybag"];  // W x H + UOM
+
+const CONSUMABLE_BOX_CATS  = ["Corrugated Box"];           
+const CONSUMABLE_BAG_CATS  = ["LDPE Polybag", "Polybag"];  
 
 const computeConsumableItemName = (it) => {
   const cat = it.category || "";
@@ -9786,7 +9786,7 @@ const computeConsumableItemName = (it) => {
     const dims = (it.width && it.height) ? `${it.width}x${it.height}${uom}` : "";
     return [cat, dims].filter(Boolean).join(" ");
   }
-  // Generic: category + size
+  
   const size = it.size || "";
   return [cat, size].filter(Boolean).join(" ") || it.itemName || "";
 };
@@ -9807,7 +9807,7 @@ function ItemMasterFG({ itemMasterFG, setItemMasterFG, categoryMaster, sizeMaste
   const [filterCat, setFilterCat] = useState("All");
   const [expandedItem, setExpandedItem] = useState(null);
 
-  // Structured fields state (for RM)
+  
   const [structFields, setStructFields] = useState({});
   const [structErrors, setStructErrors] = useState({});
   const [structUom, setStructUom] = useState("mm");
@@ -9815,14 +9815,14 @@ function ItemMasterFG({ itemMasterFG, setItemMasterFG, categoryMaster, sizeMaste
   const typeColor = ITEM_TYPE_COLORS[selType];
   const categories = (categoryMaster && categoryMaster[selType]) || [];
 
-  // When type changes, reset and auto-select first category
+  
   const switchType = (t) => {
     setSelType(t);
     setSelCat((categoryMaster && categoryMaster[t] && categoryMaster[t][0]) || "");
     setSearch(""); setFilterCat("All"); setNewItem(""); setStructFields({}); setStructErrors({});
   };
 
-  // Paper types for the selected category come from sizeMaster[selCat]
+  
   const paperTypes = (sizeMaster && selCat && sizeMaster[selCat]) || [];
 
   const items = itemMasterFG[selType] || [];
@@ -9834,7 +9834,7 @@ function ItemMasterFG({ itemMasterFG, setItemMasterFG, categoryMaster, sizeMaste
 
   const setStructField = (k, v) => { setStructFields(p => ({ ...p, [k]: v })); setStructErrors(p => ({ ...p, [k]: false })); };
 
-  // Generate item name from structured fields
+  
   const generateName = () => {
     if (!selCat) return "";
     const pt = structFields.paperType || "";
@@ -9847,10 +9847,10 @@ function ItemMasterFG({ itemMasterFG, setItemMasterFG, categoryMaster, sizeMaste
     if (selType === "Raw Material") {
       if (selCat === "Paper Reel") return [pt, "Paper Reel", gsm ? gsm + "gsm" : "", size ? size + "mm" : ""].filter(Boolean).join(" ");
       if (selCat === "Paper Sheet") return [pt, "Sheet", gsm ? gsm + "gsm" : "", (width && length) ? width + "x" + length + structUom : ""].filter(Boolean).join(" ");
-      // Generic RM category
+      
       return [selCat, pt, gsm ? gsm + "gsm" : "", size ? size + structUom : ""].filter(Boolean).join(" ");
     }
-    // Finished Goods — Bag categories (Width x Gussett x Height + UOM + Client)
+    
     if (selType === "Finished Goods" && FG_BAG_CATS.includes(selCat)) {
       const w = structFields.width || "";
       const g = structFields.gussett || "";
@@ -9860,7 +9860,7 @@ function ItemMasterFG({ itemMasterFG, setItemMasterFG, categoryMaster, sizeMaste
       const dims = (w && g && h) ? `${w}x${g}x${h}${uom}` : "";
       return [selCat, dims, client].filter(Boolean).join(" ");
     }
-    // Finished Goods — Flat categories (Width x Length + UOM + Client)
+    
     if (selType === "Finished Goods" && FG_FLAT_CATS.includes(selCat)) {
       const w = structFields.width || "";
       const l = structFields.length || "";
@@ -9869,7 +9869,7 @@ function ItemMasterFG({ itemMasterFG, setItemMasterFG, categoryMaster, sizeMaste
       const dims = (w && l) ? `${w}x${l}${uom}` : "";
       return [selCat, dims, client].filter(Boolean).join(" ");
     }
-    // Finished Goods — Box categories (Width x Length x Height + UOM + Client)
+    
     if (selType === "Finished Goods" && FG_BOX_CATS.includes(selCat)) {
       const w = structFields.width || "";
       const l = structFields.length || "";
@@ -9879,7 +9879,7 @@ function ItemMasterFG({ itemMasterFG, setItemMasterFG, categoryMaster, sizeMaste
       const dims = (w && l && h) ? `${w}x${l}x${h}${uom}` : "";
       return [selCat, dims, client].filter(Boolean).join(" ");
     }
-    // Finished Goods — Wrapping Paper (Width x Height + UOM + Client)
+    
     if (selType === "Finished Goods" && FG_WRAP_CATS.includes(selCat)) {
       const w = structFields.width || "";
       const h = structFields.height || "";
@@ -9888,15 +9888,15 @@ function ItemMasterFG({ itemMasterFG, setItemMasterFG, categoryMaster, sizeMaste
       const dims = (w && h) ? `${w}x${h}${uom}` : "";
       return [selCat, dims, client].filter(Boolean).join(" ");
     }
-    // Finished Goods — Size+Client categories
+    
     if (selType === "Finished Goods" && FG_SIZE_CLIENT_CATS.includes(selCat)) {
       const sz = structFields.size || "";
       const client = structFields.client || "";
       return [selCat, sz, client].filter(Boolean).join(" ");
     }
-    // Finished Goods — other categories (free name)
+    
     if (selType === "Finished Goods") return [selCat, name].filter(Boolean).join(" ");
-    // Consumable / Machine Spare — Category + Size + UOM
+    
     const sizeVal = structFields.size || "";
     const uomVal = structFields.uom || "inch";
     if (sizeVal) return [selCat, sizeVal + uomVal].filter(Boolean).join(" ");
@@ -9950,7 +9950,7 @@ function ItemMasterFG({ itemMasterFG, setItemMasterFG, categoryMaster, sizeMaste
 
   const handleItemBulkImport = (rows) => {
     const typeKey = selType === "Raw Material" ? "RM" : selType === "Finished Goods" ? "FG" : selType === "Consumable" ? "CG" : "SP";
-    // Read current counter once and increment locally — avoids stale closure across forEach
+    
     let localCounter = itemCounters[typeKey] || 1;
     let added = 0;
     const newItems = [];
@@ -9973,7 +9973,7 @@ function ItemMasterFG({ itemMasterFG, setItemMasterFG, categoryMaster, sizeMaste
       const deduped = newItems.filter(n => !existing.some(x => x.name.toLowerCase() === n.name.toLowerCase()));
       return { ...prev, [selType]: [...existing, ...deduped] };
     });
-    // Commit the final counter value in one update
+    
     setItemCounters(c => ({ ...c, [typeKey]: localCounter }));
     setTimeout(() => alert(added + " items imported to " + selType + "!"), 100);
     setStructFields({});
@@ -9988,7 +9988,7 @@ function ItemMasterFG({ itemMasterFG, setItemMasterFG, categoryMaster, sizeMaste
     <div className="fade">
       <SectionTitle icon="📋" title="Item Master" sub="All items — categories and sub-types driven by Category Master" />
 
-      {/* Type tabs */}
+      {}
       <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
         {ITEM_TYPE_GROUPS.map(t => (
           <button key={t} onClick={() => switchType(t)} style={{
@@ -10003,7 +10003,7 @@ function ItemMasterFG({ itemMasterFG, setItemMasterFG, categoryMaster, sizeMaste
         ))}
       </div>
 
-      {/* Bulk Import */}
+      {}
       <Card style={{ marginBottom: 12, padding: 14 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           <span style={{ fontSize: 12, color: C.muted, fontWeight: 700 }}>Bulk Import:</span>
@@ -10021,7 +10021,7 @@ function ItemMasterFG({ itemMasterFG, setItemMasterFG, categoryMaster, sizeMaste
       </Card>
 
 
-      {/* Add Item form */}
+      {}
       {selType === "Finished Goods" && (
         <Card style={{ marginBottom: 12, padding: 14, borderLeft: `3px solid ${C.purple}` }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: C.purple, marginBottom: 8 }}>🏷 Bulk Import Client Product Codes</div>
@@ -10443,7 +10443,7 @@ function ItemMasterFG({ itemMasterFG, setItemMasterFG, categoryMaster, sizeMaste
                   onMouseEnter={e => e.currentTarget.style.background = C.surface}
                   onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    {/* Code — prominent */}
+                    {}
                     <div style={{ minWidth: 72, padding: "3px 8px", background: it.code ? typeColor + "22" : C.border + "33", borderRadius: 5, border: `1px solid ${it.code ? typeColor + "55" : C.border}`, textAlign: "center" }}>
                       <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12, fontWeight: 800, color: it.code ? typeColor : C.muted }}>
                         {it.code || "—"}
@@ -10479,7 +10479,7 @@ function ItemMasterFG({ itemMasterFG, setItemMasterFG, categoryMaster, sizeMaste
                   </div>
                 </div>
 
-                {/* Client codes panel — only for FG items */}
+                {}
                 {isExpanded && selType === "Finished Goods" && (
                   <div style={{ background: C.surface, borderTop: `1px solid ${C.border}22`, padding: "12px 16px 14px 16px", marginLeft: 84 }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: C.purple, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>
@@ -10487,7 +10487,7 @@ function ItemMasterFG({ itemMasterFG, setItemMasterFG, categoryMaster, sizeMaste
                       <span style={{ marginLeft: 8, fontSize: 10, color: C.muted, fontWeight: 400, textTransform: "none" }}>— printed on delivery challan for that client</span>
                     </div>
 
-                    {/* Existing client codes */}
+                    {}
                     {Object.entries(clientCodes).filter(([, v]) => v).map(([clientName, code]) => (
                       <div key={clientName} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, padding: "6px 10px", background: C.purple + "12", border: `1px solid ${C.purple}33`, borderRadius: 6 }}>
                         <span style={{ fontSize: 12, fontWeight: 600, color: C.text, flex: 1 }}>{clientName}</span>
@@ -10508,7 +10508,7 @@ function ItemMasterFG({ itemMasterFG, setItemMasterFG, categoryMaster, sizeMaste
                       </div>
                     ))}
 
-                    {/* Add new client code */}
+                    {}
                     {(() => {
                       const unmapped = clientMaster.filter(cl => !clientCodes[cl.name]);
                       if (unmapped.length === 0 && Object.keys(clientCodes).length === 0) {
@@ -10547,8 +10547,8 @@ function ItemMasterFG({ itemMasterFG, setItemMasterFG, categoryMaster, sizeMaste
 }
 
 
-// ── Machine Master ─────────────────────────────────────────────────────────────
-// ── Machine Master seed data ───────────────────────────────────────────────────
+
+
 const SEED_MACHINES = [
   { name: "SBBM 360 Machine 1",           type: "Bag Making"   },
   { name: "SBBM 360 Machine 2",           type: "Bag Making"   },
@@ -10579,7 +10579,7 @@ const SEED_MACHINES = [
 ];
 
 
-// ── Printing Detail Master ─────────────────────────────────────────────────────
+
 function PrintingDetailMaster({ printingMaster, setPrintingMaster, toast }) {
   const { canEdit } = useAuth();
   const canEditPM = canEdit("printingmaster");
@@ -10706,11 +10706,11 @@ function PrintingDetailMaster({ printingMaster, setPrintingMaster, toast }) {
           </div>
           {filtered.map(r => (
             <React.Fragment key={r.id}>
-              {/* ── Summary row ── */}
+              {}
               <div style={{ display: "grid", gridTemplateColumns: "2fr 70px 60px 60px 1.2fr 100px 55px 50px 90px 75px", gap: 8, padding: "10px 16px", borderBottom: editId === r.id ? "none" : `1px solid ${C.border}22`, alignItems: "center", background: editId === r.id ? C.surface : "transparent" }}
                 onMouseEnter={e => { if (editId !== r.id) e.currentTarget.style.background = C.surface; }}
                 onMouseLeave={e => { if (editId !== r.id) e.currentTarget.style.background = "transparent"; }}>
-                {/* Item + Client merged */}
+                {}
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 12, fontWeight: 600, color: C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.itemName}</div>
                   <div style={{ fontSize: 11, color: C.muted, marginTop: 1, display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
@@ -10729,22 +10729,22 @@ function PrintingDetailMaster({ printingMaster, setPrintingMaster, toast }) {
                     )}
                   </div>
                 </div>
-                {/* remaining cols — no action col */}
+                {}
                 {r.clientCategory ? <Badge label={r.clientCategory} color={r.clientCategory === "HP" ? C.blue : r.clientCategory === "ZPL" ? C.green : C.yellow} /> : <span style={{ fontSize: 11, color: C.border }}>—</span>}
                 <span style={{ fontSize: 12, color: C.muted }}>{r.printing || "—"}</span>
                 <span style={{ fontSize: 12, color: C.muted }}>{r.plate || "—"}</span>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 3 }}>{(r.process || []).map(p => <span key={p} style={{ fontSize: 10, padding: "1px 5px", borderRadius: 4, background: C.accent + "22", color: C.accent }}>{p}</span>)}</div>
                 <span style={{ fontSize: 11, color: C.muted }}>{r.paperType || "—"}</span>
                 <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono',monospace", color: C.blue }}>{r.paperGsm ? r.paperGsm + "g" : "—"}</span>
-                {/* Ups (sheet) or Reel Size (reel) */}
+                {}
                 <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono',monospace", color: C.muted }}>
                   {r.paperCategory === "Paper Reel" ? (r.reelSize ? r.reelSize.split(" — ")[0] : "—") : (r.noOfUps || "—")}
                 </span>
-                {/* Sheet Size or Reel Width */}
+                {}
                 <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono',monospace", color: C.green }}>
                   {r.paperCategory === "Paper Reel" ? (r.reelWidthMm ? r.reelWidthMm + "mm" : "—") : (r.sheetSize || "—")}
                 </span>
-                {/* W×L or Cutting Length / Reel Weight */}
+                {}
                 <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono',monospace", color: C.muted }}>
                   {r.paperCategory === "Paper Reel"
                     ? (r.cuttingLengthMm ? r.cuttingLengthMm + "mm cut" : r.reelWeightKg ? r.reelWeightKg + "kg" : "—")
@@ -10752,50 +10752,50 @@ function PrintingDetailMaster({ printingMaster, setPrintingMaster, toast }) {
                 </span>
               </div>
 
-              {/* ── Expanded edit panel ── */}
+              {}
               {editId === r.id && (
                 <div style={{ padding: "20px 20px 16px", background: C.surface, borderBottom: `1px solid ${C.border}`, borderTop: `1px solid ${C.border}33` }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: C.accent, textTransform: "uppercase", letterSpacing: 2, marginBottom: 14 }}>Edit Printing Details — {r.itemName}</div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12, marginBottom: 14 }}>
 
-                    {/* Item Name */}
+                    {}
                     <div><label style={{ fontSize: 10, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 4 }}>Item Name</label>
                       <input value={editData.itemName || ""} onChange={e => setEditData(p => ({ ...p, itemName: e.target.value }))} /></div>
 
-                    {/* Client Name */}
+                    {}
                     <div><label style={{ fontSize: 10, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 4 }}>Client Name</label>
                       <input value={editData.clientName || ""} onChange={e => setEditData(p => ({ ...p, clientName: e.target.value }))} /></div>
 
-                    {/* Client Category */}
+                    {}
                     <div><label style={{ fontSize: 10, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 4 }}>Client Category</label>
                       <select value={editData.clientCategory || ""} onChange={e => setEditData(p => ({ ...p, clientCategory: e.target.value }))}>
                         <option value="">-- Select --</option>
                         {["HP", "ZPL", "Others", "Unprinted"].map(c => <option key={c}>{c}</option>)}
                       </select></div>
 
-                    {/* Printing */}
+                    {}
                     <div><label style={{ fontSize: 10, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 4 }}>Printing</label>
                       <select value={editData.printing || ""} onChange={e => setEditData(p => ({ ...p, printing: e.target.value }))}>
                         <option value="">-- Select --</option>
                         {["1","2","3","4","5","6","Unprinted"].map(v => <option key={v}>{v}</option>)}
                       </select></div>
 
-                    {/* Plate */}
+                    {}
                     <div><label style={{ fontSize: 10, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 4 }}>Plate</label>
                       <select value={editData.plate || ""} onChange={e => setEditData(p => ({ ...p, plate: e.target.value }))}>
                         <option value="">-- Select --</option>
                         {["New","Old"].map(v => <option key={v}>{v}</option>)}
                       </select></div>
 
-                    {/* Paper Type */}
+                    {}
                     <div><label style={{ fontSize: 10, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 4 }}>Paper Type</label>
                       <input value={editData.paperType || ""} onChange={e => setEditData(p => ({ ...p, paperType: e.target.value }))} /></div>
 
-                    {/* Paper GSM */}
+                    {}
                     <div><label style={{ fontSize: 10, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 4 }}>Paper GSM</label>
                       <input type="number" placeholder="e.g. 330" value={editData.paperGsm || ""} onChange={e => setEditData(p => ({ ...p, paperGsm: e.target.value }))} /></div>
 
-                    {/* Paper Category toggle */}
+                    {}
                     <div><label style={{ fontSize: 10, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 4 }}>Paper Category</label>
                       <select value={editData.paperCategory || ""} onChange={e => setEditData(p => ({ ...p, paperCategory: e.target.value }))}>
                         <option value="">-- Select --</option>
@@ -10803,7 +10803,7 @@ function PrintingDetailMaster({ printingMaster, setPrintingMaster, toast }) {
                         <option value="Paper Sheet">Paper Sheet</option>
                       </select></div>
 
-                    {/* Reel fields */}
+                    {}
                     {editData.paperCategory === "Paper Reel" ? (<>
                       <div><label style={{ fontSize: 10, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 4 }}>Reel Size</label>
                         <input placeholder="e.g. RM0001 — MG Kraft..." value={editData.reelSize || ""} onChange={e => setEditData(p => ({ ...p, reelSize: e.target.value }))} /></div>
@@ -10814,7 +10814,7 @@ function PrintingDetailMaster({ printingMaster, setPrintingMaster, toast }) {
                       <div><label style={{ fontSize: 10, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 4 }}>Reel Weight (kg)</label>
                         <input type="number" placeholder="e.g. 200" value={editData.reelWeightKg || ""} onChange={e => setEditData(p => ({ ...p, reelWeightKg: e.target.value }))} /></div>
                     </>) : (<>
-                      {/* Sheet fields */}
+                      {}
                       <div><label style={{ fontSize: 10, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 4 }}># of Ups</label>
                         <input type="number" placeholder="e.g. 24" value={editData.noOfUps || ""} onChange={e => setEditData(p => ({ ...p, noOfUps: e.target.value }))} /></div>
                       <div><label style={{ fontSize: 10, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 4 }}>Sheet UOM</label>
@@ -10828,7 +10828,7 @@ function PrintingDetailMaster({ printingMaster, setPrintingMaster, toast }) {
                     </>)}
                   </div>
 
-                  {/* Process — full-width toggle buttons */}
+                  {}
                   <div style={{ marginBottom: 16 }}>
                     <label style={{ fontSize: 10, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 8 }}>Process</label>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -10888,7 +10888,7 @@ function MachineMaster({ machineMaster, setMachineMaster }) {
   const [addErr, setAddErr]         = useState(false);
   const [editId, setEditId]         = useState(null);
   const [editFields, setEditFields] = useState({});
-  const [view, setView]             = useState("grid"); // "grid" | "list" | "capacity"
+  const [view, setView]             = useState("grid"); 
 
   const remove = (id) => setMachineMaster(prev => prev.filter(m => m.id !== id));
   const toggle = (id) => setMachineMaster(prev => prev.map(m => m.id === id ? { ...m, status: m.status === "Active" ? "Inactive" : "Active" } : m));
@@ -10916,7 +10916,7 @@ function MachineMaster({ machineMaster, setMachineMaster }) {
   };
   const setEF = (k, v) => setEditFields(p => ({ ...p, [k]: v }));
 
-  // Inline capacity update (from capacity planning view)
+  
   const updateCapacity = (id, field, val) => {
     setMachineMaster(prev => prev.map(m => m.id === id ? { ...m, [field]: val } : m));
   };
@@ -10928,7 +10928,7 @@ function MachineMaster({ machineMaster, setMachineMaster }) {
     return matchSearch && matchType && matchStatus;
   });
 
-  // Group by type for grid view
+  
   const grouped = {};
   filtered.forEach(m => { if (!grouped[m.type]) grouped[m.type] = []; grouped[m.type].push(m); });
   const allTypes = Object.keys(grouped).sort();
@@ -10937,7 +10937,7 @@ function MachineMaster({ machineMaster, setMachineMaster }) {
   const inactiveCount = machineMaster.filter(m => m.status === "Inactive").length;
   const configuredCount = machineMaster.filter(m => m.capacity && +m.capacity > 0).length;
 
-  // Daily output = capacity × workingHours × shiftsPerDay
+  
   const dailyOutput = (m) => {
     const cap = +(m.capacity || 0);
     const hrs = +(m.workingHours || 8);
@@ -10990,7 +10990,7 @@ function MachineMaster({ machineMaster, setMachineMaster }) {
     <div className="fade">
       <SectionTitle icon="🏗️" title="Machine Master" sub="Production machines — capacity, working time & shift planning" />
 
-      {/* Summary bar */}
+      {}
       <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
         {[
           { label: "Total",       val: machineMaster.length, color: C.text,   bg: C.border  },
@@ -11005,7 +11005,7 @@ function MachineMaster({ machineMaster, setMachineMaster }) {
         ))}
       </div>
 
-      {/* Add machine */}
+      {}
       <Card style={{ marginBottom: 16 }}>
         <h3 style={{ fontSize: 14, fontWeight: 700, color: C.yellow, marginBottom: 14 }}>Add New Machine</h3>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 180px auto", gap: 12, alignItems: "end" }}>
@@ -11028,7 +11028,7 @@ function MachineMaster({ machineMaster, setMachineMaster }) {
         </div>
       </Card>
 
-      {/* Filters + view toggle */}
+      {}
       <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
         <input placeholder="🔍 Search..." value={search} onChange={e => setSearch(e.target.value)} style={{ width: 200 }} />
         <select value={filterType} onChange={e => setFilterType(e.target.value)} style={{ width: 150 }}>
@@ -11048,7 +11048,7 @@ function MachineMaster({ machineMaster, setMachineMaster }) {
         <span style={{ fontSize: 12, color: C.muted }}>{filtered.length} machines</span>
       </div>
 
-      {/* ── GRID VIEW ── */}
+      {}
       {view === "grid" && (
         filtered.length === 0 ? (
           <Card style={{ textAlign: "center", padding: 50, color: C.muted }}><div style={{ fontSize: 40, marginBottom: 10 }}>🏗️</div>No machines match your filters.</Card>
@@ -11083,7 +11083,7 @@ function MachineMaster({ machineMaster, setMachineMaster }) {
                             <span style={{ fontSize: 10, fontWeight: 800, padding: "3px 8px", borderRadius: 10, background: m.status === "Active" ? C.green + "22" : C.red + "22", color: m.status === "Active" ? C.green : C.red, border: `1px solid ${m.status === "Active" ? C.green + "55" : C.red + "55"}` }}>{m.status}</span>
                           </div>
 
-                          {/* Capacity info */}
+                          {}
                           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginBottom: 10, padding: "8px 10px", background: C.surface, borderRadius: 6 }}>
                             <div style={{ textAlign: "center" }}>
                               <div style={{ fontSize: 9, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 2 }}>Capacity</div>
@@ -11102,7 +11102,7 @@ function MachineMaster({ machineMaster, setMachineMaster }) {
                             </div>
                           </div>
 
-                          {/* Daily output */}
+                          {}
                           {daily !== null && (
                             <div style={{ marginBottom: 10, padding: "6px 10px", background: col + "11", borderRadius: 5, border: `1px solid ${col}33`, textAlign: "center" }}>
                               <span style={{ fontSize: 10, color: C.muted }}>Daily Output: </span>
@@ -11129,7 +11129,7 @@ function MachineMaster({ machineMaster, setMachineMaster }) {
         })
       )}
 
-      {/* ── LIST VIEW ── */}
+      {}
       {view === "list" && (
         <Card style={{ padding: 0, overflow: "hidden" }}>
           {filtered.length === 0 ? (
@@ -11176,7 +11176,7 @@ function MachineMaster({ machineMaster, setMachineMaster }) {
         </Card>
       )}
 
-      {/* ── CAPACITY PLANNING VIEW ── */}
+      {}
       {view === "capacity" && (
         <div>
           <Card style={{ marginBottom: 16, borderLeft: `3px solid ${C.blue}`, padding: "14px 18px" }}>
@@ -11208,7 +11208,7 @@ function MachineMaster({ machineMaster, setMachineMaster }) {
                   </div>
                   {group.map(m => {
                     const daily = dailyOutput(m);
-                    const weekly = daily ? daily * 6 : null; // 6-day week
+                    const weekly = daily ? daily * 6 : null; 
                     return (
                       <div key={m.id} style={{ display: "grid", gridTemplateColumns: "2fr 110px 120px 80px 80px 110px 80px", gap: 0, padding: "10px 14px", borderBottom: `1px solid ${C.border}22`, alignItems: "center", opacity: m.status==="Inactive" ? 0.5 : 1 }}
                         onMouseEnter={e => e.currentTarget.style.background = C.surface}
@@ -11257,7 +11257,7 @@ function MachineMaster({ machineMaster, setMachineMaster }) {
 }
 
 
-// ── Global Search ─────────────────────────────────────────────────────────────
+
 function GlobalSearch({ salesOrders, jobOrders, purchaseOrders, inward, fgStock, rawStock, dispatches, clientMaster }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState(null);
@@ -11399,20 +11399,20 @@ function GlobalSearch({ salesOrders, jobOrders, purchaseOrders, inward, fgStock,
   );
 }
 
-// ── Production Calendar ────────────────────────────────────────────────────────
+
 function ProductionCalendar({ jobOrders, setJobOrders, machineMaster, machineReportData, setMachineReportData }) {
-  const [viewMode, setViewMode]   = useState("machine"); // "machine" | "date"
-  const [calMode, setCalMode]     = useState("week");    // "week" | "month"
+  const [viewMode, setViewMode]   = useState("machine"); 
+  const [calMode, setCalMode]     = useState("week");    
   const [anchor, setAnchor]       = useState(() => today());
   const [filterType, setFilterType] = useState("All");
 
-  // Edit panel state: { joNo, process, slotIdx } | null
+  
   const [editSlot, setEditSlot]   = useState(null);
   const [editFields, setEditFields] = useState({});
 
-  // Machine daily table panel
-  const [machinePanel, setMachinePanel] = useState(null); // machine object | null
-  // actualDailyMap: machineId → date → actualQty (string)
+  
+  const [machinePanel, setMachinePanel] = useState(null); 
+  
   
 
   const todayStr = today();
@@ -11424,7 +11424,7 @@ function ProductionCalendar({ jobOrders, setJobOrders, machineMaster, machineRep
     }));
   };
 
-  // ── Date range ──
+  
   const anchorDate = new Date(anchor + "T00:00:00");
   const getDates = () => {
     const dates = [];
@@ -11449,7 +11449,7 @@ function ProductionCalendar({ jobOrders, setJobOrders, machineMaster, machineRep
   const prev = () => { const d = new Date(anchor+"T00:00:00"); calMode==="week" ? d.setDate(d.getDate()-7) : d.setMonth(d.getMonth()-1); setAnchor(d.toISOString().slice(0,10)); };
   const next = () => { const d = new Date(anchor+"T00:00:00"); calMode==="week" ? d.setDate(d.getDate()+7) : d.setMonth(d.getMonth()+1); setAnchor(d.toISOString().slice(0,10)); };
 
-  // ── Open edit panel for a slot ──
+  
   const openEdit = (joNo, process) => {
     const jo = jobOrders.find(j => j.joNo === joNo);
     if (!jo) return;
@@ -11490,13 +11490,13 @@ function ProductionCalendar({ jobOrders, setJobOrders, machineMaster, machineRep
 
   const setEF = (k, v) => setEditFields(p => ({ ...p, [k]: v }));
 
-  // ── Job colour map ──
+  
   const JO_COLORS = [C.blue, C.green, C.accent, C.purple, "#06b6d4", "#ec4899", "#f59e0b", "#10b981"];
   const joColorMap = {};
   jobOrders.forEach((j, i) => { joColorMap[j.joNo] = JO_COLORS[i % JO_COLORS.length]; });
 
-  // ── Assignment map ──
-  const assignmentMap = {}; // machineId → date → [slot info]
+  
+  const assignmentMap = {}; 
   jobOrders.forEach(jo => {
     if (jo.status === "Cancelled") return;
     (jo.schedule || []).forEach(slot => {
@@ -11545,7 +11545,7 @@ function ProductionCalendar({ jobOrders, setJobOrders, machineMaster, machineRep
     return <div style={{ textAlign:"center", fontSize:11, fontWeight:d===todayStr?800:400, color:d===todayStr?C.accent:dt.getDay()===0?C.red:C.muted }}>{dt.getDate()}</div>;
   };
 
-  // ── Edit panel (slide-in from right) ──
+  
   const EditPanel = () => {
     if (!editSlot) return null;
     const jo = editSlot.jo;
@@ -11558,7 +11558,7 @@ function ProductionCalendar({ jobOrders, setJobOrders, machineMaster, machineRep
 
     return (
       <div style={{ position:"fixed", top:0, right:0, width:420, height:"100vh", background:C.card, borderLeft:`1px solid ${C.border}`, boxShadow:"-8px 0 32px #0008", zIndex:10000, display:"flex", flexDirection:"column", animation:"fadeIn .2s ease" }}>
-        {/* Header */}
+        {}
         <div style={{ padding:"18px 20px", borderBottom:`1px solid ${C.border}`, display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
           <div>
             <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:4 }}>
@@ -11574,7 +11574,7 @@ function ProductionCalendar({ jobOrders, setJobOrders, machineMaster, machineRep
         </div>
 
         <div style={{ flex:1, overflowY:"auto", padding:"18px 20px" }}>
-          {/* Planned summary */}
+          {}
           <div style={{ marginBottom:20, padding:"12px 14px", background:C.surface, borderRadius:8, border:`1px solid ${C.border}` }}>
             <div style={{ fontSize:10, color:C.muted, fontWeight:700, textTransform:"uppercase", letterSpacing:1, marginBottom:10 }}>Planned Schedule</div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
@@ -11590,7 +11590,7 @@ function ProductionCalendar({ jobOrders, setJobOrders, machineMaster, machineRep
             </div>
           </div>
 
-          {/* Actual production edit */}
+          {}
           <div style={{ marginBottom:8 }}>
             <div style={{ fontSize:11, fontWeight:800, color:C.green, textTransform:"uppercase", letterSpacing:1, marginBottom:14, display:"flex", alignItems:"center", gap:8 }}>
               <span>✏️ Actual Production</span>
@@ -11615,7 +11615,7 @@ function ProductionCalendar({ jobOrders, setJobOrders, machineMaster, machineRep
               </div>
             </div>
 
-            {/* Live variance */}
+            {}
             {variance !== null && (
               <div style={{ marginTop:14, padding:"10px 14px", borderRadius:8, background: variance >= 0 ? C.green+"18" : C.red+"18", border:`1px solid ${variance>=0?C.green:C.red}44` }}>
                 <div style={{ fontSize:12, fontWeight:700, color: variance>=0 ? C.green : C.red }}>
@@ -11627,7 +11627,7 @@ function ProductionCalendar({ jobOrders, setJobOrders, machineMaster, machineRep
               </div>
             )}
 
-            {/* Date variance */}
+            {}
             {editFields.actualEnd && editFields.endDate && (
               <div style={{ marginTop:10, padding:"8px 14px", borderRadius:8, background: editFields.actualEnd <= editFields.endDate ? C.green+"18" : C.yellow+"18", border:`1px solid ${editFields.actualEnd<=editFields.endDate?C.green:C.yellow}44` }}>
                 <div style={{ fontSize:11, fontWeight:700, color: editFields.actualEnd <= editFields.endDate ? C.green : C.yellow }}>
@@ -11640,7 +11640,7 @@ function ProductionCalendar({ jobOrders, setJobOrders, machineMaster, machineRep
           </div>
         </div>
 
-        {/* Footer actions */}
+        {}
         <div style={{ padding:"16px 20px", borderTop:`1px solid ${C.border}`, display:"flex", gap:10 }}>
           <button onClick={saveEdit} style={{ flex:1, background:C.green, color:"#fff", border:"none", borderRadius:8, padding:"10px 0", fontWeight:800, fontSize:14, cursor:"pointer" }}>
             Save Actual
@@ -11657,7 +11657,7 @@ function ProductionCalendar({ jobOrders, setJobOrders, machineMaster, machineRep
     <div className="fade">
       <SectionTitle icon="📅" title="Production Calendar" sub="Machine-wise schedule — click any job to log actual production" />
 
-      {/* Controls */}
+      {}
       <div style={{ display:"flex", gap:10, marginBottom:16, flexWrap:"wrap", alignItems:"center" }}>
         <div style={{ display:"flex", gap:6 }}>
           {[["machine","🏭 Machine View"],["date","📅 Date View"]].map(([v,l]) => (
@@ -11679,7 +11679,7 @@ function ProductionCalendar({ jobOrders, setJobOrders, machineMaster, machineRep
         </select>
       </div>
 
-      {/* Legend */}
+      {}
       <div style={{ display:"flex", gap:10, marginBottom:14, flexWrap:"wrap", alignItems:"center" }}>
         {[["Job colour","On track",C.blue],["#22c55e","Done",C.green],["#ef4444","Overdue",C.red]].map(([_,label,col]) => (
           <div key={label} style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, color:C.muted }}>
@@ -11695,7 +11695,7 @@ function ProductionCalendar({ jobOrders, setJobOrders, machineMaster, machineRep
         ))}
       </div>
 
-      {/* ── MACHINE VIEW ── */}
+      {}
       {viewMode === "machine" && (
         <div style={{ overflowX:"auto" }}>
           <table style={{ borderCollapse:"collapse", minWidth:"100%" }}>
@@ -11776,7 +11776,7 @@ function ProductionCalendar({ jobOrders, setJobOrders, machineMaster, machineRep
         </div>
       )}
 
-      {/* ── DATE VIEW ── */}
+      {}
       {viewMode === "date" && (
         <div>
           {dates.map(d => {
@@ -11836,7 +11836,7 @@ function ProductionCalendar({ jobOrders, setJobOrders, machineMaster, machineRep
         </div>
       )}
 
-      {/* Machine Daily Table Panel */}
+      {}
       {machinePanel && (() => {
         const m = machinePanel;
         const col = MACHINE_TYPE_COLORS[m.type] || C.muted;
@@ -11846,7 +11846,7 @@ function ProductionCalendar({ jobOrders, setJobOrders, machineMaster, machineRep
         const shifts = +(m.shiftsPerDay || 1);
         const dailyCap = cap * hrs * shifts;
 
-        // Jobs scheduled on this machine per date (for context only)
+        
         const jobsByDate = {};
         jobOrders.forEach(jo => {
           if (jo.status === "Cancelled") return;
@@ -11869,7 +11869,7 @@ function ProductionCalendar({ jobOrders, setJobOrders, machineMaster, machineRep
 
         return (
           <div style={{ position:"fixed", top:0, right:0, width:640, height:"100vh", background:C.card, borderLeft:`1px solid ${C.border}`, boxShadow:"-8px 0 32px #0008", zIndex:10001, display:"flex", flexDirection:"column", animation:"fadeIn .2s ease" }}>
-            {/* Header */}
+            {}
             <div style={{ padding:"18px 20px", borderBottom:`1px solid ${C.border}`, display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
               <div>
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:4 }}>
@@ -11887,7 +11887,7 @@ function ProductionCalendar({ jobOrders, setJobOrders, machineMaster, machineRep
               <button onClick={() => setMachinePanel(null)} style={{ background:"none", border:"none", color:C.muted, fontSize:22, cursor:"pointer", padding:"0 4px" }}>✕</button>
             </div>
 
-            {/* Summary row */}
+            {}
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:0, borderBottom:`1px solid ${C.border}` }}>
               {[
                 ["Total Capacity", dailyCap > 0 ? fmt(totalCap) : "—", C.blue],
@@ -11901,7 +11901,7 @@ function ProductionCalendar({ jobOrders, setJobOrders, machineMaster, machineRep
               ))}
             </div>
 
-            {/* Table */}
+            {}
             <div style={{ flex:1, overflowY:"auto" }}>
               <table style={{ width:"100%", borderCollapse:"collapse" }}>
                 <thead style={{ position:"sticky", top:0, zIndex:1 }}>
@@ -11929,7 +11929,7 @@ function ProductionCalendar({ jobOrders, setJobOrders, machineMaster, machineRep
                     return (
                       <tr key={d} style={{ borderBottom:`1px solid ${C.border}22`, background: isToday ? C.accent + "08" : isSunday ? C.border + "22" : "transparent" }}>
 
-                        {/* Date */}
+                        {}
                         <td style={{ padding:"8px 14px" }}>
                           <div style={{ fontSize:12, fontWeight: isToday ? 800 : 600, color: isToday ? C.accent : isSunday ? C.red : C.text }}>
                             {String(dt.getDate()).padStart(2,"0")}/{String(dt.getMonth()+1).padStart(2,"0")}/{String(dt.getFullYear()).slice(2)}
@@ -11939,7 +11939,7 @@ function ProductionCalendar({ jobOrders, setJobOrders, machineMaster, machineRep
                             {isToday ? " · Today" : ""}
                             {isSunday ? " · Off" : ""}
                           </div>
-                          {/* Jobs scheduled on this date (context only) */}
+                          {}
                           {!isSunday && dayJobs.length > 0 && (
                             <div style={{ display:"flex", flexWrap:"wrap", gap:2, marginTop:3 }}>
                               {dayJobs.slice(0, 3).map((jb, ji) => (
@@ -11952,7 +11952,7 @@ function ProductionCalendar({ jobOrders, setJobOrders, machineMaster, machineRep
                           )}
                         </td>
 
-                        {/* Capacity Qty — from machine master, read-only */}
+                        {}
                         <td style={{ padding:"8px 14px", textAlign:"right", verticalAlign:"middle" }}>
                           {isSunday ? (
                             <span style={{ fontSize:10, color:C.red }}>Off</span>
@@ -11963,7 +11963,7 @@ function ProductionCalendar({ jobOrders, setJobOrders, machineMaster, machineRep
                           )}
                         </td>
 
-                        {/* Planned Qty — user fills in */}
+                        {}
                         <td style={{ padding:"5px 14px", textAlign:"right", verticalAlign:"middle" }}>
                           {isSunday ? null : (
                             <input
@@ -11976,7 +11976,7 @@ function ProductionCalendar({ jobOrders, setJobOrders, machineMaster, machineRep
                           )}
                         </td>
 
-                        {/* Actual Qty — user fills in */}
+                        {}
                         <td style={{ padding:"5px 14px", textAlign:"right", verticalAlign:"middle" }}>
                           {isSunday ? null : (
                             <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:3 }}>
@@ -11993,7 +11993,7 @@ function ProductionCalendar({ jobOrders, setJobOrders, machineMaster, machineRep
                           )}
                         </td>
 
-                        {/* Operator Name — user fills in */}
+                        {}
                         <td style={{ padding:"5px 14px", verticalAlign:"middle" }}>
                           {isSunday ? null : (
                             <input
@@ -12012,7 +12012,7 @@ function ProductionCalendar({ jobOrders, setJobOrders, machineMaster, machineRep
               </table>
             </div>
 
-            {/* Footer */}
+            {}
             <div style={{ padding:"12px 20px", borderTop:`1px solid ${C.border}`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
               <span style={{ fontSize:11, color:C.muted }}>Capacity auto-filled · enter Planned and Actual manually</span>
               <button onClick={() => setMachinePanel(null)} style={{ background:C.surface, color:C.muted, border:`1px solid ${C.border}`, borderRadius:6, padding:"7px 16px", fontWeight:700, fontSize:12, cursor:"pointer" }}>Close</button>
@@ -12021,7 +12021,7 @@ function ProductionCalendar({ jobOrders, setJobOrders, machineMaster, machineRep
         );
       })()}
 
-      {/* Edit Panel (job slot actual) */}
+      {}
       <EditPanel />
       {(editSlot || machinePanel) && (
         <div onClick={() => { setEditSlot(null); setMachinePanel(null); }} style={{ position:"fixed", inset:0, background:"#0006", zIndex:9999 }} />
@@ -12051,10 +12051,10 @@ const TABS = [
   { id: "machinemaster", icon: "🏗️", label: "Machine Master" },
 ];
 
-// ── localStorage helpers ──────────────────────────────────────────────────────
-const SEED_VERSION = "v13"; // bump this to reset seed data on all browsers
 
-// Transaction keys to clear when version changes (masters are preserved separately)
+const SEED_VERSION = "v13"; 
+
+
 const TRANSACTION_KEYS = [
   "erp_purchaseOrders", "erp_dispatches", "erp_rawStock", "erp_inward",
   "erp_salesOrders", "erp_jobOrders", "erp_wipStock", "erp_fgStock",
@@ -12064,7 +12064,7 @@ const TRANSACTION_KEYS = [
   "erp_clear_inward_rmstock_v2",
 ];
 
-// Run once on load: clear transaction data if version bumped
+
 (() => {
   const vk = "erp_txn_version";
   if (localStorage.getItem(vk) !== SEED_VERSION) {
@@ -12079,7 +12079,7 @@ function usePersistedState(key, defaultVal) {
       const versionKey = key + "_version";
       const stored = localStorage.getItem(key);
       const storedVersion = localStorage.getItem(versionKey);
-      // Masters always use stored value; only fall back to defaultVal if nothing stored
+      
       return stored ? JSON.parse(stored) : defaultVal;
     } catch { return defaultVal; }
   });
@@ -12089,12 +12089,12 @@ function usePersistedState(key, defaultVal) {
       try { localStorage.setItem(key, JSON.stringify(next)); } catch {}
       return next;
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  
   }, [key]);
   return [state, setPersisted];
 }
 
-// ── Auth System ───────────────────────────────────────────────────────────────
+
 
 const DEFAULT_ROLES = {
   Admin: {
@@ -12132,7 +12132,7 @@ const getUsers = () => {
   try {
     const u = JSON.parse(localStorage.getItem("erp_users") || "null");
     if (u) return u;
-    // Seed default admin
+    
     const admin = [{ id: uid(), username: "admin", password: "admin123", role: "Admin", name: "Administrator", active: true }];
     localStorage.setItem("erp_users", JSON.stringify(admin));
     return admin;
@@ -12144,7 +12144,7 @@ const getRoles = () => {
 };
 const setRoles = (v) => localStorage.setItem("erp_roles", JSON.stringify(v));
 
-// ── Login Screen ──────────────────────────────────────────────────────────────
+
 function LoginScreen({ onLogin }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -12172,7 +12172,7 @@ function LoginScreen({ onLogin }) {
     <div style={{ minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'JetBrains Mono',monospace" }}>
       <style>{STYLE}</style>
       <div style={{ width: 380, background: C.card, borderRadius: 16, border: `1px solid ${C.border}`, padding: "40px 36px", boxShadow: "0 24px 80px #0008" }}>
-        {/* Logo */}
+        {}
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <div style={{ fontSize: 40, marginBottom: 8 }}>🏭</div>
           <div style={{ fontSize: 11, color: C.accent, fontWeight: 800, letterSpacing: 3, textTransform: "uppercase" }}>ManufactureIQ</div>
@@ -12214,10 +12214,10 @@ function LoginScreen({ onLogin }) {
   );
 }
 
-// ── User Management (Admin only) ─────────────────────────────────────────────
+
 function UserManagement({ currentUser, toast }) {
   const [users, setUsersState] = useState(getUsers);
-  const [view, setView] = useState("users"); // "users" | "roles"
+  const [view, setView] = useState("users"); 
   const [showAdd, setShowAdd] = useState(false);
   const [editUser, setEditUser] = useState(null);
 
@@ -12233,7 +12233,7 @@ function UserManagement({ currentUser, toast }) {
   const toggleTab = (obj, setObj, tabId) => {
     const cur = obj.tabs || [];
     const updated = cur.includes(tabId) ? cur.filter(x => x !== tabId) : [...cur, tabId];
-    // If removing view access, also remove edit access
+    
     const newEditableTabs = updated.includes(tabId)
       ? (obj.editableTabs || [])
       : (obj.editableTabs || []).filter(x => x !== tabId);
@@ -12276,7 +12276,7 @@ function UserManagement({ currentUser, toast }) {
     toast("User updated");
   };
 
-  // Module access grid — View access + optional Edit rights per module
+  
   const ModuleGrid = ({ obj, setObj, isAdmin }) => (
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
@@ -12290,7 +12290,7 @@ function UserManagement({ currentUser, toast }) {
         <div style={{ fontSize: 12, color: C.muted, fontStyle: "italic" }}>Admin has full access and edit rights to all modules.</div>
       ) : (
         <>
-          {/* Legend */}
+          {}
           <div style={{ display: "flex", gap: 16, marginBottom: 10, fontSize: 11, color: C.muted }}>
             <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
               <span style={{ width: 13, height: 13, borderRadius: 3, border: `2px solid ${C.accent}`, display: "inline-block" }} /> View — can see module &amp; create new entries
@@ -12309,7 +12309,7 @@ function UserManagement({ currentUser, toast }) {
                   background: hasView ? C.accent + "0a" : C.surface,
                   overflow: "hidden", transition: "all .15s"
                 }}>
-                  {/* View row */}
+                  {}
                   <label style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", cursor: "pointer" }}>
                     <input type="checkbox" checked={hasView} onChange={() => toggleTab(obj, setObj, t.id)}
                       style={{ accentColor: C.accent, width: 14, height: 14, flexShrink: 0 }} />
@@ -12317,7 +12317,7 @@ function UserManagement({ currentUser, toast }) {
                     <span style={{ fontSize: 12, fontWeight: hasView ? 700 : 400, color: hasView ? C.accent : C.muted, flex: 1 }}>{t.label}</span>
                     {hasView && <span style={{ fontSize: 10, color: C.accent, fontWeight: 700, background: C.accent + "18", borderRadius: 3, padding: "1px 6px" }}>VIEW</span>}
                   </label>
-                  {/* Edit row — only shown when view is enabled */}
+                  {}
                   {hasView && (
                     <label style={{
                       display: "flex", alignItems: "center", gap: 8, padding: "6px 10px 8px 32px",
@@ -12349,12 +12349,12 @@ function UserManagement({ currentUser, toast }) {
         <button onClick={() => { setShowAdd(true); setNewUser(blankUser()); }} style={{ background: C.accent, color: "#fff", border: "none", borderRadius: 6, padding: "8px 20px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>+ Add User</button>
       </div>
 
-      {/* ── Add user form ── */}
+      {}
       {showAdd && (
         <Card style={{ marginBottom: 20, borderLeft: `3px solid ${C.accent}` }}>
           <div style={{ fontSize: 12, fontWeight: 800, color: C.accent, marginBottom: 16, textTransform: "uppercase", letterSpacing: 1 }}>New User</div>
 
-          {/* Basic info */}
+          {}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12, marginBottom: 20 }}>
             {[["Full Name","name","text","e.g. Ravi Kumar"],["Username","username","text","e.g. ravi"],["Password","password","password","Min 6 chars"],["Role / Title","role","text","e.g. Store Manager (optional)"]].map(([lbl,k,type,ph]) => (
               <div key={k}>
@@ -12364,7 +12364,7 @@ function UserManagement({ currentUser, toast }) {
             ))}
           </div>
 
-          {/* Module access */}
+          {}
           <div style={{ padding: "16px", background: C.surface, borderRadius: 8, marginBottom: 16 }}>
             <ModuleGrid obj={newUser} setObj={setNewUser} isAdmin={false} />
           </div>
@@ -12376,7 +12376,7 @@ function UserManagement({ currentUser, toast }) {
         </Card>
       )}
 
-      {/* ── User list ── */}
+      {}
       {users.map(u => {
         const isAdmin = u.username === "admin";
         const isEditing = editUser?.id === u.id;
@@ -12385,7 +12385,7 @@ function UserManagement({ currentUser, toast }) {
         return (
           <Card key={u.id} style={{ marginBottom: 12, borderLeft: `3px solid ${u.active===false ? C.border : C.accent}`, opacity: u.active===false ? 0.6 : 1 }}>
 
-            {/* Header — always visible */}
+            {}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: isEditing ? 20 : 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <div style={{ width: 40, height: 40, borderRadius: "50%", background: C.accent + "22", border: `2px solid ${C.accent}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, fontWeight: 800, color: C.accent }}>
@@ -12414,7 +12414,7 @@ function UserManagement({ currentUser, toast }) {
               </div>
             </div>
 
-            {/* Edit form */}
+            {}
             {isEditing && (
               <div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12, marginBottom: 20 }}>
@@ -12437,7 +12437,7 @@ function UserManagement({ currentUser, toast }) {
               </div>
             )}
 
-            {/* Module pills preview (collapsed) */}
+            {}
             {!isEditing && !isAdmin && (u.tabs || []).length > 0 && (
               <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginTop: 10 }}>
                 {ALL_TABS.filter(t => (u.tabs || []).includes(t.id)).map(t => {
@@ -12459,11 +12459,11 @@ function UserManagement({ currentUser, toast }) {
 }
 
 export default function App() {
-  // ── Auth state ──
+  
   const [session, setSession] = useState(() => {
     const auth = getAuth();
     if (!auth.userId) return null;
-    // Verify user still exists and is active
+    
     const users = getUsers();
     const user = users.find(u => u.id === auth.userId && u.active !== false);
     return user ? auth : null;
@@ -12474,13 +12474,13 @@ export default function App() {
 
   if (!session) return <LoginScreen onLogin={handleLogin} />;
 
-  // Get current user's allowed tabs — per-user custom tabs, admin gets all
+  
   const allTabIds = [...TABS.map(t => t.id), "users"];
   const userRecord = (() => { const users = getUsers(); return users.find(u => u.id === session.userId); })();
   const allowedTabs = session.username === "admin"
     ? allTabIds
     : (userRecord?.tabs?.length ? userRecord.tabs : allTabIds);
-  // editableTabs: null = admin (all), array = specific modules with edit rights
+  
   const editableTabs = session.username === "admin" ? null : (userRecord?.editableTabs ?? null);
 
   return <AppInner session={session} onLogout={handleLogout} allowedTabs={allowedTabs} editableTabs={editableTabs} />;
@@ -12490,11 +12490,11 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
   const roles = getRoles();
   const roleColor = roles[session.role]?.color || C.accent;
   const isAdmin = session.username === "admin";
-  // canEdit: admin always yes; null editableTabs = legacy (yes); else check array
+  
   const canEdit = (tabId) => isAdmin || editableTabs === null || (editableTabs || []).includes(tabId);
 
   const [tab, setTab] = useState(() => {
-    // Default to first allowed tab
+    
     const first = allowedTabs[0] || "dashboard";
     return allowedTabs.includes("dashboard") ? "dashboard" : first;
   });
@@ -12520,7 +12520,7 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
   const [machineMaster, setMachineMaster] = usePersistedState("erp_machineMaster", SEED_MACHINES.map(m => ({ id: uid(), name: m.name, type: m.type, status: "Active", capacity: "", capacityUnit: "pcs/hr", workingHours: 8, shiftsPerDay: 1, addedOn: today() })));
   const [machineReportData, setMachineReportData] = usePersistedState("erp_machineReportData", {});
 
-  // ── Migrate: add any missing seed machines that don't exist yet ──
+  
   useEffect(() => {
     setMachineMaster(prev => {
       const existingTypes = prev.map(m => m.type.toLowerCase() + "|" + m.name.toLowerCase());
@@ -12528,12 +12528,12 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
       if (!toAdd.length) return prev;
       return [...prev, ...toAdd.map(m => ({ id: uid(), name: m.name, type: m.type, status: "Active", capacity: "", capacityUnit: "pcs/hr", workingHours: 8, shiftsPerDay: 1, addedOn: today() }))];
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  
   }, []);
   const [itemMasterFG, setItemMasterFG] = usePersistedState("erp_itemMasterFG", { "Raw Material": [], "Consumable": [], "Finished Goods": [], "Machine Spare": [] });
   const [itemCounters, setItemCounters] = usePersistedState("erp_itemCounters", { RM: 1, FG: 1, CG: 1, SP: 1 });
 
-  // ── Always sync itemCounters from actual item codes — prevents gaps/duplicates ──
+  
   useEffect(() => {
     const prefixMap = { RM: "Raw Material", FG: "Finished Goods", CG: "Consumable", SP: "Machine Spare" };
     const newCounters = { RM: 1, FG: 1, CG: 1, SP: 1 };
@@ -12552,22 +12552,22 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
   }, [itemMasterFG]);
 
 
-  // Data cleared via SEED_VERSION bump
+  
 
-  // ── Migration: backfill FG stock price from linked Sales Orders ──
+  
   useEffect(() => {
     if (!fgStock.length || !salesOrders.length || !jobOrders.length) return;
     const needsUpdate = fgStock.some(f => !f.price || f.price === 0);
     if (!needsUpdate) return;
     setFgStock(prev => prev.map(f => {
       if (f.price && f.price > 0) return f;
-      // Find linked JO
+      
       const jo = jobOrders.find(j => j.joNo === f.joNo);
       if (!jo || !jo.soRef) return f;
-      // Find linked SO
+      
       const so = salesOrders.find(s => s.soNo === jo.soRef);
       if (!so) return f;
-      // Find matching item by name
+      
       const itemName = f.itemName || f.product || "";
       const soItem = (so.items || []).find(it =>
         (it.itemName || "").toLowerCase() === itemName.toLowerCase()
@@ -12577,7 +12577,7 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
     }));
   }, [fgStock.length, salesOrders.length, jobOrders.length]);
 
-  const [toastMsg, setToastMsg] = useState(null); // { msg, type }
+  const [toastMsg, setToastMsg] = useState(null); 
 
   const toast = (msg, type = 'success') => setToastMsg({ msg, type });
 
@@ -12608,7 +12608,7 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
     }
   };
 
-  // Filter sidebar tabs by what this user is allowed to see
+  
   const visibleTabs = [...TABS, { id: "users", icon: "👥", label: "User Management" }]
     .filter(t => allowedTabs.includes(t.id));
 
@@ -12617,7 +12617,7 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
       <>
       <style>{STYLE}</style>
       <div style={{ display: "flex", minHeight: "100vh" }}>
-        {/* Sidebar */}
+        {}
         <div style={{
           width: 220, background: C.surface, borderRight: `1px solid ${C.border}`,
           display: "flex", flexDirection: "column", flexShrink: 0, position: "sticky", top: 0, height: "100vh", overflowY: "auto"
@@ -12648,7 +12648,7 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
             })}
           </nav>
 
-          {/* User info + logout */}
+          {}
           <div style={{ padding: "12px 16px", borderTop: `1px solid ${C.border}` }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
               <div style={{ width: 34, height: 34, borderRadius: "50%", background: roleColor + "22", border: `2px solid ${roleColor}55`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 800, color: roleColor, flexShrink: 0 }}>
@@ -12665,7 +12665,7 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
           </div>
         </div>
 
-        {/* Main content */}
+        {}
         <div style={{ flex: 1, padding: "28px 32px", overflowY: "auto", minWidth: 0 }}>
           {renderTab()}
         </div>

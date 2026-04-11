@@ -3,7 +3,7 @@ const router = express.Router();
 const jobOrderController = require('../controllers/jobOrderController');
 const { auth } = require('../middleware/auth');
 
-// All routes are protected
+
 router.get('/', auth, jobOrderController.getAll);
 router.get('/:id', auth, jobOrderController.getOne);
 router.post('/', auth, jobOrderController.create);

@@ -1,8 +1,8 @@
-// const puppeteer = require('puppeteer');
 
-/**
- * Company header HTML template
- */
+
+
+
+
 const COMPANY_HEADER = `
 <div style="border-bottom:2px solid #1e3a5f;padding-bottom:14px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-start">
   <div>
@@ -18,9 +18,9 @@ const COMPANY_HEADER = `
 </div>
 `;
 
-/**
- * Base PDF styles
- */
+
+
+
 const BASE_STYLES = `
   body { font-family: Arial, sans-serif; font-size: 12px; color: #000; margin: 30px; }
   h1 { font-size: 20px; margin-bottom: 4px; color: #1e3a5f; }
@@ -43,12 +43,12 @@ const BASE_STYLES = `
   @media print { body { margin: 15px; } }
 `;
 
-/**
- * Generate PDF from HTML content
- * @param {string} html - HTML content
- * @param {string} title - Document title
- * @returns {Buffer} - PDF buffer
- */
+
+
+
+
+
+
 async function generatePDF(html, title = 'Document') {
   const browser = await puppeteer.launch({
     headless: 'new',
@@ -90,9 +90,9 @@ async function generatePDF(html, title = 'Document') {
   }
 }
 
-/**
- * Generate Job Card PDF
- */
+
+
+
 async function generateJobCardPDF(jobOrder) {
   const html = `
     ${COMPANY_HEADER}

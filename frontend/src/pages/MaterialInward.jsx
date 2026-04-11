@@ -6,17 +6,28 @@ import {
   Field,
   Badge,
   SubmitBtn,
-  DatePicker,
   AutocompleteInput,
   DateRangeFilter,
 } from "../components/ui/BasicComponents";
-import { materialInwardAPI } from "../api/auth";
+import { DatePicker } from "../components/ui/DatePicker";
+import {
+  materialInwardAPI,
+  purchaseOrdersAPI,
+  itemMasterAPI,
+} from "../api/auth";
 
 const formatDateForInput = (dateStr) => {
   if (!dateStr) return "";
   const d = new Date(dateStr);
   return d.toISOString().split("T")[0];
 };
+
+const LOCATIONS = [
+  "Main Warehouse",
+  "Factory Store",
+  "Raw Material Godown",
+  "Finished Goods Store",
+];
 
 export default function MaterialInward({
   inward = [],
@@ -41,23 +52,7 @@ export default function MaterialInward({
   const uid = () => Math.random().toString(36).substr(2, 9);
   const fmt = (n) => (+n || 0).toLocaleString("en-IN");
 
-  const RM_ITEMS = ["Paper Reel", "Paper Sheets"];
-  const LOCATIONS = ["Unit I", "Unit II"];
-  const PAPER_TYPES_BY_ITEM = {
-    "Paper Reel": ["MG Kraft", "MF Kraft", "Bleached Kraft", "OGR"],
-    "Paper Sheets": [
-      "White PE Coated",
-      "Kraft PE Coated",
-      "Kraft Uncoated",
-      "SBS/FBB",
-      "Whiteback",
-      "Greyback",
-      "Art Paper",
-      "Gumming Sheet",
-    ],
-  };
-  const CONSUMABLE_BOX_CATS = ["Box"];
-  const CONSUMABLE_BAG_CATS = ["Bag"];
+  // Removed static constants - now using CategoryMaster API data
 
   const blankHeader = {
     date: today(),
@@ -70,10 +65,11 @@ export default function MaterialInward({
     poRef: "",
   };
   const blankItem = {
+    _id: uid(),
     materialType: "Raw Material",
     productCode: "",
-    rmItem: "",
-    paperType: "",
+    category: "",
+    subCategory: "",
     widthMm: "",
     lengthMm: "",
     gsm: "",
@@ -85,25 +81,14 @@ export default function MaterialInward({
     itemName: "",
     qty: "",
     unit: "nos",
-    category: "",
     size: "",
     uom: "nos",
   };
 
-  const paperTypesByItem = useMemo(
-    () => ({
-      "Paper Reel":
-        (sizeMaster && sizeMaster["Paper Reel"]) ||
-        PAPER_TYPES_BY_ITEM["Paper Reel"],
-      "Paper Sheets":
-        (sizeMaster && sizeMaster["Paper Sheet"]) ||
-        PAPER_TYPES_BY_ITEM["Paper Sheets"],
-    }),
-    [sizeMaster],
-  );
-
   const [header, setHeader] = useState(blankHeader);
   const [items, setItems] = useState([{ ...blankItem, _id: uid() }]);
+  const [itemMasterItems, setItemMasterItems] = useState([]);
+  const [poList, setPoList] = useState([]);
   const [headerErrors, setHeaderErrors] = useState({});
   const [itemErrors, setItemErrors] = useState([{}]);
   const [view, setView] = useState("form");
@@ -112,10 +97,75 @@ export default function MaterialInward({
   const [drDateFrom, setDrDateFrom] = useState("");
   const [drDateTo, setDrDateTo] = useState("");
 
-  // Fetch inwards on component mount
+  // Get Raw Material items from CategoryMaster + ItemMaster
+  const rmItems = useMemo(() => {
+    const rmCat = Object.values(categoryMaster || {}).find(
+      (c) => (c.type || "").trim().toLowerCase() === "raw material",
+    );
+    const fromMaster =
+      rmCat && rmCat.subTypes ? Object.keys(rmCat.subTypes) : [];
+
+    const fromItems = itemMasterItems
+      .filter((it) => it.type === "Raw Material")
+      .map((it) => it.category)
+      .filter(Boolean);
+
+    return [...new Set([...fromMaster, ...fromItems])].map((k) => k.trim());
+  }, [categoryMaster, itemMasterItems]);
+
+  // Get paper types (subtypes) for selected RM Item
+  const subCategoriesByItem = useMemo(() => {
+    const result = {};
+    const rmCat = Object.values(categoryMaster || {}).find(
+      (c) => (c.type || "").trim().toLowerCase() === "raw material",
+    );
+
+    rmItems.forEach((item) => {
+      const fromMaster =
+        (rmCat && rmCat.subTypes ? rmCat.subTypes[item] : []) || [];
+      const fromItems = itemMasterItems
+        .filter((it) => it.type === "Raw Material" && it.category === item)
+        .map((it) => it.subCategory)
+        .filter(Boolean);
+
+      result[item] = [...new Set([...fromMaster, ...fromItems])].map((p) =>
+        p.trim(),
+      );
+    });
+    return result;
+  }, [categoryMaster, rmItems, itemMasterItems]);
+
+  const sortedItemMasterItems = useMemo(() => {
+    return [...itemMasterItems].sort((a, b) => {
+      const codeA = a.code || "";
+      const codeB = b.code || "";
+      return codeA.localeCompare(codeB, undefined, { numeric: true });
+    });
+  }, [itemMasterItems]);
+
   useEffect(() => {
     fetchInwards();
+    fetchItemMaster();
+    fetchPOs();
   }, []);
+
+  const fetchItemMaster = async () => {
+    try {
+      const data = await itemMasterAPI.getAll();
+      setItemMasterItems(data.items || []);
+    } catch (error) {
+      console.error("Failed to fetch item master:", error);
+    }
+  };
+
+  const fetchPOs = async () => {
+    try {
+      const data = await purchaseOrdersAPI.getAll();
+      setPoList(data.purchaseOrders || []);
+    } catch (error) {
+      console.error("Failed to fetch purchase orders:", error);
+    }
+  };
 
   const fetchInwards = async () => {
     try {
@@ -134,27 +184,44 @@ export default function MaterialInward({
     setHeader((f) => {
       const updated = { ...f, [k]: v };
       if (k === "poRef" && v) {
-        const po = purchaseOrders.find((p) => p.poNo === v);
+        let po = poList.find((p) => p.poNo === v);
+        if (!po) {
+          po = purchaseOrders.find((p) => p.poNo === v);
+        }
+
         if (po) {
-          updated.vendorName = po.vendorName || f.vendorName;
+          updated.vendorName =
+            typeof po.vendor === "object"
+              ? po.vendor.name
+              : po.vendor || po.vendorName || f.vendorName;
           const poItems = po.items || [];
           if (poItems.length > 0) {
-            const newItems = poItems.map((pit) => ({
-              ...blankItem,
-              _id: uid(),
-              materialType: pit.materialType || "Raw Material",
-              rmItem: pit.rmItem || "",
-              paperType: pit.paperType || "",
-              widthMm: pit.widthMm || "",
-              lengthMm: pit.lengthMm || "",
-              gsm: pit.gsm || "",
-              noOfSheets: "",
-              noOfReels: "",
-              rate: pit.rate || "",
-              itemName: pit.itemName || "",
-              qty: "",
-              unit: pit.unit || "nos",
-            }));
+            const newItems = poItems.map((pit) => {
+              return {
+                ...blankItem,
+                _id: uid(),
+                materialType: "Raw Material",
+                category: pit.category || "",
+                subCategory: pit.paperType || "",
+                widthMm:
+                  pit.width ||
+                  (pit.sheetSize
+                    ? pit.sheetSize.split("x")[0].replace("mm", "")
+                    : ""),
+                lengthMm:
+                  pit.length ||
+                  (pit.sheetSize
+                    ? pit.sheetSize.split("x")[1]?.replace("mm", "")
+                    : ""),
+                gsm: pit.gsm || "",
+                weight: pit.weight || "",
+                rate: pit.rate || "",
+                itemName: pit.itemName || "",
+                qty: pit.qty || "",
+                unit: pit.unit || "kg",
+                productCode: pit.productCode || "",
+              };
+            });
             setItems(newItems);
             setItemErrors(newItems.map(() => ({})));
           }
@@ -181,13 +248,23 @@ export default function MaterialInward({
       const it = { ...updated[idx], [k]: v };
 
       if (k === "productCode" && v) {
-        const masterItem = (itemMasterFG["Raw Material"] || []).find(
+        let masterItem = itemMasterItems.find(
           (x) => (x.code || "").toLowerCase() === v.toLowerCase(),
         );
+
+        if (!masterItem) {
+          masterItem = (itemMasterFG["Raw Material"] || []).find(
+            (x) => (x.code || "").toLowerCase() === v.toLowerCase(),
+          );
+        }
+
         if (masterItem) {
           const name = masterItem.name || "";
+          it.itemName = masterItem.name;
+          it.materialType = masterItem.type || "Raw Material";
+
           if (name.includes("Paper Reel")) {
-            it.rmItem = "Paper Reel";
+            it.category = "Paper Reel";
             const gsmMatch = name.match(/(\d+)gsm/);
             const widthMatch = name.match(/(\d+)mm/);
             const paperTypes = [
@@ -199,9 +276,9 @@ export default function MaterialInward({
             const foundType = paperTypes.find((t) => name.includes(t));
             if (gsmMatch) it.gsm = gsmMatch[1];
             if (widthMatch) it.widthMm = widthMatch[1];
-            if (foundType) it.paperType = foundType;
+            if (foundType) it.subCategory = foundType;
           } else if (name.includes("Sheet")) {
-            it.rmItem = "Paper Sheets";
+            it.category = "Paper Sheets";
             const gsmMatch = name.match(/(\d+)gsm/);
             const dimMatch = name.match(/(\d+)x(\d+)mm/);
             const widthMatch = name.match(/(\d+)mm/);
@@ -221,15 +298,14 @@ export default function MaterialInward({
               it.widthMm = dimMatch[1];
               it.lengthMm = dimMatch[2];
             } else if (widthMatch) it.widthMm = widthMatch[1];
-            if (foundType) it.paperType = foundType;
+            if (foundType) it.subCategory = foundType;
           }
-          it.itemName = masterItem.name;
         }
       }
 
       if (k === "materialType") {
-        it.rmItem = "";
-        it.paperType = "";
+        it.category = "";
+        it.subCategory = "";
         it.itemName = "";
         it.productCode = "";
         it.widthMm = "";
@@ -239,7 +315,6 @@ export default function MaterialInward({
         it.noOfReels = "";
         it.weight = "";
         it.qty = "";
-        it.category = "";
         it.size = "";
         it.uom = "nos";
         it.width = "";
@@ -247,8 +322,8 @@ export default function MaterialInward({
         it.height = "";
       }
 
-      if (k === "rmItem") {
-        it.paperType = "";
+      if (k === "category") {
+        it.subCategory = "";
         it.itemName = "";
         it.productCode = "";
       }
@@ -307,12 +382,13 @@ export default function MaterialInward({
     const allItemErrors = items.map((it) => {
       const e = {};
       if (it.materialType === "Raw Material" || !it.materialType) {
-        if (!it.rmItem) e.rmItem = true;
-        if (!it.paperType) e.paperType = true;
+        if (!it.category) e.category = true;
+        if (!it.subCategory) e.subCategory = true;
         if (!it.widthMm) e.widthMm = true;
-        if (it.rmItem !== "Paper Reel" && !it.lengthMm) e.lengthMm = true;
+        if (it.category !== "Paper Reel" && !it.lengthMm) e.lengthMm = true;
         if (!it.gsm) e.gsm = true;
-        if (it.rmItem === "Paper Sheets" && !it.noOfSheets) e.noOfSheets = true;
+        if (it.category === "Paper Sheets" && !it.noOfSheets)
+          e.noOfSheets = true;
         if (!it.weight) e.weight = true;
         if (!it.rate) e.rate = true;
       }
@@ -345,14 +421,13 @@ export default function MaterialInward({
       };
 
       if (editId) {
-        // Update existing
         await materialInwardAPI.update(editId, payload);
         toast("Material Inward updated successfully", "success");
         setEditId(null);
       } else {
-        // Create new
         await materialInwardAPI.create(payload);
         toast("Material Inward created successfully", "success");
+        if (props.refreshData) props.refreshData();
       }
 
       setShowSuccess(true);
@@ -450,8 +525,21 @@ export default function MaterialInward({
       {view === "form" && (
         <div>
           {editId && (
-            <div style={{ marginBottom: 16, padding: "12px 14px", background: C.blue + "11", border: `1px solid ${C.blue}22`, borderRadius: 6, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 13, color: C.blue, fontWeight: 600 }}>✎ Edit Mode</span>
+            <div
+              style={{
+                marginBottom: 16,
+                padding: "12px 14px",
+                background: C.blue + "11",
+                border: `1px solid ${C.blue}22`,
+                borderRadius: 6,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <span style={{ fontSize: 13, color: C.blue, fontWeight: 600 }}>
+                ✎ Edit Mode
+              </span>
               <button
                 onClick={() => {
                   setEditId(null);
@@ -493,7 +581,7 @@ export default function MaterialInward({
                 gap: 14,
               }}
             >
-              <Field label="Date *">
+              <Field label="Date 📅 *">
                 <DatePicker
                   value={header.date}
                   onChange={(v) => setH("date", v)}
@@ -647,6 +735,16 @@ export default function MaterialInward({
                   gap: 12,
                 }}
               >
+                <Field label="Product Code">
+                  <AutocompleteInput
+                    value={it.productCode}
+                    onChange={(v) => setItem(idx, "productCode", v)}
+                    suggestions={sortedItemMasterItems.map(
+                      (i) => `${i.code} — ${i.name}`,
+                    )}
+                    placeholder="Type or select code (optional)"
+                  />
+                </Field>
                 <Field label="Material Type *">
                   <select
                     value={it.materialType || "Raw Material"}
@@ -662,36 +760,42 @@ export default function MaterialInward({
                   <>
                     <Field label="RM Item *">
                       <select
-                        value={it.rmItem}
-                        onChange={(e) => setItem(idx, "rmItem", e.target.value)}
-                        style={EI(idx, "rmItem")}
+                        value={it.category}
+                        onChange={(e) =>
+                          setItem(idx, "category", e.target.value)
+                        }
+                        style={EI(idx, "category")}
                       >
                         <option value="">-- Select Item --</option>
-                        {RM_ITEMS.map((i) => (
-                          <option key={i}>{i}</option>
+                        {rmItems.map((i) => (
+                          <option key={i} value={i}>
+                            {i}
+                          </option>
                         ))}
                       </select>
-                      {EIMsg(idx, "rmItem")}
+                      {EIMsg(idx, "category")}
                     </Field>
                     <Field label="Paper Type *">
                       <select
-                        value={it.paperType}
+                        value={it.subCategory}
                         onChange={(e) =>
-                          setItem(idx, "paperType", e.target.value)
+                          setItem(idx, "subCategory", e.target.value)
                         }
-                        disabled={!it.rmItem}
-                        style={EI(idx, "paperType")}
+                        disabled={!it.category}
+                        style={EI(idx, "subCategory")}
                       >
                         <option value="">
-                          {it.rmItem
-                            ? "-- Select Type --"
+                          {it.category
+                            ? "-- Select Paper Type --"
                             : "-- Select RM Item first --"}
                         </option>
-                        {(paperTypesByItem[it.rmItem] || []).map((p) => (
-                          <option key={p}>{p}</option>
+                        {(subCategoriesByItem[it.category] || []).map((p) => (
+                          <option key={p} value={p}>
+                            {p}
+                          </option>
                         ))}
                       </select>
-                      {EIMsg(idx, "paperType")}
+                      {EIMsg(idx, "subCategory")}
                     </Field>
                     <Field label="Width (mm) *">
                       <input
@@ -705,20 +809,18 @@ export default function MaterialInward({
                       />
                       {EIMsg(idx, "widthMm")}
                     </Field>
-                    {it.rmItem !== "Paper Reel" && (
-                      <Field label="Length (mm) *">
-                        <input
-                          type="number"
-                          placeholder="e.g. 1000"
-                          value={it.lengthMm}
-                          onChange={(e) =>
-                            setItem(idx, "lengthMm", e.target.value)
-                          }
-                          style={EI(idx, "lengthMm")}
-                        />
-                        {EIMsg(idx, "lengthMm")}
-                      </Field>
-                    )}
+                    <Field label="Length (mm) *">
+                      <input
+                        type="number"
+                        placeholder="e.g. 1000"
+                        value={it.lengthMm}
+                        onChange={(e) =>
+                          setItem(idx, "lengthMm", e.target.value)
+                        }
+                        style={EI(idx, "lengthMm")}
+                      />
+                      {EIMsg(idx, "lengthMm")}
+                    </Field>
                     <Field label="GSM *">
                       <input
                         type="number"
@@ -729,75 +831,49 @@ export default function MaterialInward({
                       />
                       {EIMsg(idx, "gsm")}
                     </Field>
-                    {it.rmItem === "Paper Sheets" && (
-                      <Field label="No. of Sheets *">
-                        <input
-                          type="number"
-                          placeholder="Qty in sheets"
-                          value={it.noOfSheets}
-                          onChange={(e) =>
-                            setItem(idx, "noOfSheets", e.target.value)
-                          }
-                          style={EI(idx, "noOfSheets")}
-                        />
-                        {EIMsg(idx, "noOfSheets")}
-                      </Field>
-                    )}
-                    {it.rmItem === "Paper Reel" && (
-                      <Field label="No. of Reels *">
-                        <input
-                          type="number"
-                          placeholder="Qty in reels"
-                          value={it.noOfReels}
-                          onChange={(e) =>
-                            setItem(idx, "noOfReels", e.target.value)
-                          }
-                          style={EI(idx, "noOfReels")}
-                        />
-                        {EIMsg(idx, "noOfReels")}
-                      </Field>
-                    )}
                     <Field label="Weight (kg) *">
                       <input
                         type="number"
-                        placeholder="Gross / net weight"
+                        placeholder="Total weight"
                         value={it.weight}
                         onChange={(e) => setItem(idx, "weight", e.target.value)}
                         style={EI(idx, "weight")}
                       />
                       {EIMsg(idx, "weight")}
                     </Field>
-                    <Field
-                      label={`Rate (₹/${it.rmItem === "Paper Reel" ? "kg" : it.noOfSheets ? "sheet" : "kg"}) *`}
-                    >
+                    <Field label="Rate (₹/kg) *">
                       <input
                         type="number"
-                        placeholder="Rate per unit"
-                        value={it.rate || ""}
+                        placeholder="Rate per kg"
+                        value={it.rate}
                         onChange={(e) => setItem(idx, "rate", e.target.value)}
                         style={EI(idx, "rate")}
                       />
                       {EIMsg(idx, "rate")}
                     </Field>
                     <Field label="Amount (₹)">
-                      <div
+                      <input
+                        readOnly
+                        value={
+                          it.amount
+                            ? `₹${fmt(+it.amount)}`
+                            : "-- Weight × Rate --"
+                        }
                         style={{
-                          padding: "9px 12px",
-                          background: C.inputBg,
-                          border: `1px solid ${C.border}`,
-                          borderRadius: 6,
-                          fontSize: 13,
+                          background: C.border + "22",
+                          fontWeight: 700,
                           color: it.amount ? C.green : C.muted,
-                          fontWeight: it.amount ? 700 : 400,
-                          fontFamily: it.amount
-                            ? "'JetBrains Mono',monospace"
-                            : undefined,
+                          fontFamily: "'JetBrains Mono', monospace",
                         }}
-                      >
-                        {it.amount
-                          ? `₹${fmt(+it.amount)}`
-                          : "— Weight × Rate —"}
-                      </div>
+                      />
+                    </Field>
+                    <Field label="Item Name" span={2}>
+                      <input
+                        readOnly
+                        placeholder="Auto-filled from material details"
+                        value={it.itemName || ""}
+                        style={{ background: C.border + "22", fontSize: 13 }}
+                      />
                     </Field>
                   </>
                 )}
@@ -1045,7 +1121,7 @@ export default function MaterialInward({
         </Card>
       )}
 
-      {/* Success Modal */}
+      {}
       {showSuccess && (
         <div
           style={{

@@ -45,7 +45,7 @@ const dispatchSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Calculate totals before saving
+
 dispatchSchema.pre('save', function(next) {
   this.totalQty = this.items.reduce((sum, item) => sum + (item.qty || 0), 0);
   this.totalAmount = this.items.reduce((sum, item) => sum + (item.amount || 0), 0);

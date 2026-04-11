@@ -105,7 +105,7 @@ export function DatePicker({ value, onChange, style = {} }) {
             boxShadow: "0 8px 32px #0004"
           }}
         >
-          {/* Header */}
+          {}
           <div
             style={{
               display: "flex",
@@ -145,7 +145,7 @@ export function DatePicker({ value, onChange, style = {} }) {
             </button>
           </div>
 
-          {/* Day names */}
+          {}
           <div
             style={{
               display: "grid",
@@ -170,7 +170,7 @@ export function DatePicker({ value, onChange, style = {} }) {
             ))}
           </div>
 
-          {/* Cells */}
+          {}
           <div
             style={{
               display: "grid",
@@ -218,7 +218,7 @@ export function DatePicker({ value, onChange, style = {} }) {
             })}
           </div>
 
-          {/* Today shortcut */}
+          {}
           <div
             style={{
               marginTop: 10,

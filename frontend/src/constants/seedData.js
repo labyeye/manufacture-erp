@@ -1,4 +1,4 @@
-// ── Seed Data & Constants ──────────────────────────────────────────────────
+
 export const SO_SALESPERSONS = ["Ankit", "Direct Order"];
 export const SO_CLIENT_CATEGORIES = ["HP", "ZPL", "Others"];
 

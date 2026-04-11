@@ -68,7 +68,7 @@ async function seed() {
 
     console.log("✓ Connected to MongoDB");
 
-    // 1. Create default admin user
+    
     const existingAdmin = await User.findOne({ username: "admin" });
 
     if (!existingAdmin) {
@@ -77,7 +77,7 @@ async function seed() {
         password: "admin123",
         name: "Administrator",
         role: "Admin",
-        editableTabs: null, // null means all access
+        editableTabs: null, 
         allowedTabs: [
           "dashboard",
           "search",
@@ -110,7 +110,7 @@ async function seed() {
       console.log("→ Admin user already exists");
     }
 
-    // Create additional demo users
+    
     const demoUsers = [
       {
         username: "production",
@@ -182,7 +182,7 @@ async function seed() {
       }
     }
 
-    // 2. Seed Category Masters
+    
     const categories = [
       { type: "Raw Material", categories: RM_CATEGORIES },
       { type: "Finished Goods", categories: FG_CATEGORIES },
@@ -200,7 +200,7 @@ async function seed() {
 
     console.log("✓ Seeded category masters");
 
-    // 3. Seed some default machines
+    
     const machines = [
       {
         name: "Heidelberg Press",

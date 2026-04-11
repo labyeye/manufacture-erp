@@ -32,7 +32,7 @@ export default function VendorMaster({ toast }) {
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Load vendors on mount
+  
   useEffect(() => {
     fetchVendors();
   }, []);
@@ -144,7 +144,7 @@ export default function VendorMaster({ toast }) {
             });
             successCount++;
           } catch (error) {
-            // Skip duplicates
+            
           }
         }
       }
@@ -164,7 +164,7 @@ export default function VendorMaster({ toast }) {
 
   return (
     <div className="fade">
-      {/* Header */}
+      {}
       <div style={{ marginBottom: 20 }}>
         <h2 style={{ fontSize: 22, fontWeight: 700, color: '#e0e0e0', display: 'flex', alignItems: 'center', gap: 10, margin: 0 }}>
           🏭 Vendor Master
@@ -174,7 +174,7 @@ export default function VendorMaster({ toast }) {
         </p>
       </div>
 
-      {/* Add Vendor Form */}
+      {}
       <div style={cardStyle}>
         <div style={{ marginBottom: 14, fontSize: 14, fontWeight: 700, color: '#4CAF50' }}>
           {editingId ? '✏️ Edit Vendor' : '+ Add Vendor'}
@@ -224,7 +224,7 @@ export default function VendorMaster({ toast }) {
         </div>
       </div>
 
-      {/* Vendors List */}
+      {}
       <div style={cardStyle}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
           <span style={{ fontSize: 14, fontWeight: 700, color: '#e0e0e0' }}>Vendors ({vendorMaster.length})</span>

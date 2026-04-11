@@ -35,7 +35,7 @@ export const AuthProvider = ({ children }) => {
           setUser(parsed);
           setToken(storedToken);
 
-          // Verify token is still valid
+          
           await authAPI.me();
         } catch (error) {
           console.error('Token verification failed:', error);
@@ -74,12 +74,14 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('erp_auth');
+    localStorage.removeItem('erp_lastTab');
   };
 
   const canEdit = (tabId) => {
     if (!user) return false;
     if (user.role === 'Admin') return true;
-    if (user.editableTabs === null) return false; // Legacy users have restricted access
+    if (user.editableTabs === null) return false; 
     return Array.isArray(user.editableTabs) && user.editableTabs.includes(tabId);
   };
 

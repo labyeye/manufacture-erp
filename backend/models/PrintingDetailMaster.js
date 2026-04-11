@@ -20,7 +20,7 @@ const printingDetailMasterSchema = new mongoose.Schema({
   sheetSize: String,
   sheetW: Number,
   sheetL: Number,
-  // OR reel fields
+  
   reelSize: String,
   reelWidthMm: Number,
   cuttingLengthMm: Number,
@@ -36,10 +36,10 @@ const printingDetailMasterSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Unique compound index on itemName + clientName
+
 printingDetailMasterSchema.index({ itemName: 1, clientName: 1 }, { unique: true });
 
-// Update updatedAt on save
+
 printingDetailMasterSchema.pre('save', function(next) {
   this.updatedAt = new Date();
   next();

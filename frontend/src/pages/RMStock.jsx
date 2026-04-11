@@ -9,15 +9,15 @@ export default function RMStock({ rawStock = [], setRawStock, toast }) {
   const [activeFilter, setActiveFilter] = useState("All");
   const fileInputRef = useRef(null);
 
-  /* ── derive categories from stock ── */
+  
   const categories = useMemo(() => {
-    const cats = [...new Set((rawStock || []).map((s) => s.category || s.paperCategory || "").filter(Boolean))];
+    const list = Array.isArray(rawStock) ? rawStock : [];
+    const cats = [...new Set(list.map((s) => s.category || s.paperCategory || "").filter(Boolean))];
     return ["All", ...cats];
   }, [rawStock]);
 
-  /* ── filtered list ── */
   const filtered = useMemo(() => {
-    let list = rawStock || [];
+    let list = Array.isArray(rawStock) ? rawStock : [];
     if (search) {
       const q = search.toLowerCase();
       list = list.filter(
@@ -33,7 +33,7 @@ export default function RMStock({ rawStock = [], setRawStock, toast }) {
     return list;
   }, [rawStock, search, activeFilter]);
 
-  /* ── summary stats ── */
+  
   const totalItems = filtered.length;
   const totalWeightKg = filtered.reduce((sum, s) => sum + +(s.weight || s.weightKg || 0), 0);
   const totalValue = filtered.reduce((sum, s) => {
@@ -42,7 +42,7 @@ export default function RMStock({ rawStock = [], setRawStock, toast }) {
     return sum + qty * rate;
   }, 0);
 
-  /* ── stock level color ── */
+  
   const levelColor = (s) => {
     const qty = +(s.qty || s.qtyKg || 0);
     const reorder = +(s.reorderLevel || s.reorderKg || 0);
@@ -51,7 +51,7 @@ export default function RMStock({ rawStock = [], setRawStock, toast }) {
     return C.green || "#22c55e";
   };
 
-  /* ── export CSV ── */
+  
   const handleExport = () => {
     const headers = ["Code", "Material Name", "Category", "Qty (Sheets)", "Qty (KG)", "Reorder (KG)", "Rate (₹/KG)", "Value (₹)"];
     const rows = (rawStock || []).map((s) => [
@@ -75,7 +75,7 @@ export default function RMStock({ rawStock = [], setRawStock, toast }) {
     toast && toast("Exported successfully", "success");
   };
 
-  /* ── import CSV (basic) ── */
+  
   const handleImport = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -114,14 +114,14 @@ export default function RMStock({ rawStock = [], setRawStock, toast }) {
     <div className="fade">
       <SectionTitle icon="📦" title="Raw Material Stock" sub="Live inventory of all raw materials" />
 
-      {/* ── Stats row ── */}
+      {}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, marginBottom: 18 }}>
         <StatCard value={fmt(totalItems)} label="Total Items" color={C.blue || "#3b82f6"} prefix="" />
         <StatCard value={fmt(Math.round(totalWeightKg))} label="Total Weight (kg)" color={C.orange || "#f97316"} suffix=" kg" />
         <StatCard value={fmt(Math.round(totalValue))} label="Total Value" color={C.green || "#22c55e"} prefix="₹" />
       </div>
 
-      {/* ── Toolbar ── */}
+      {}
       <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 12 }}>
         <div style={{ position: "relative", flex: 1, minWidth: 200 }}>
           <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: C.muted, fontSize: 14 }}>🔍</span>
@@ -151,7 +151,7 @@ export default function RMStock({ rawStock = [], setRawStock, toast }) {
         <input ref={fileInputRef} type="file" accept=".csv" style={{ display: "none" }} onChange={handleImport} />
       </div>
 
-      {/* ── Category filter pills ── */}
+      {}
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
         {categories.map((cat) => (
           <button
@@ -173,7 +173,7 @@ export default function RMStock({ rawStock = [], setRawStock, toast }) {
         ))}
       </div>
 
-      {/* ── Table ── */}
+      {}
       <div
         style={{
           border: `1px solid ${C.border}`,
@@ -263,7 +263,7 @@ export default function RMStock({ rawStock = [], setRawStock, toast }) {
           </table>
         </div>
 
-        {/* Footer */}
+        {}
         <div
           style={{
             display: "flex",

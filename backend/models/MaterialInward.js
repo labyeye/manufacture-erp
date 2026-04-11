@@ -7,24 +7,24 @@ const materialInwardItemSchema = new mongoose.Schema(
       enum: ["Raw Material", "Consumable"],
       default: "Raw Material",
     },
-    // Raw Material fields
+    
     productCode: String,
-    rmItem: String, // Paper Reel, Paper Sheets
-    paperType: String, // MG Kraft, Bleached Kraft, etc
+    rmItem: String, 
+    paperType: String, 
     widthMm: Number,
     lengthMm: Number,
     gsm: Number,
     noOfSheets: Number,
     noOfReels: Number,
-    weight: Number, // in kg
-    // Consumable fields
+    weight: Number, 
+    
     itemName: String,
     category: String,
     size: String,
     qty: Number,
     unit: String,
     uom: String,
-    // Common fields
+    
     rate: Number,
     amount: Number,
   },
@@ -36,13 +36,12 @@ const materialInwardSchema = new mongoose.Schema(
     inwardNo: {
       type: String,
       unique: true,
-      required: true,
     },
     inwardDate: {
       type: Date,
       required: true,
     },
-    poRef: String, // Optional PO reference number
+    poRef: String, 
     purchaseOrderRef: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "PurchaseOrder",
@@ -50,7 +49,7 @@ const materialInwardSchema = new mongoose.Schema(
     vendorName: String,
     invoiceNo: String,
     vehicleNo: String,
-    location: String, // Unit I, Unit II
+    location: String, 
     receivedBy: String,
     remarks: String,
     vendor: {
@@ -79,15 +78,14 @@ const materialInwardSchema = new mongoose.Schema(
 );
 
 materialInwardSchema.pre("save", async function (next) {
-  if (this.isNew) {
-    const counter = await mongoose
-      .model("Counter")
-      .findByIdAndUpdate(
-        "materialInward",
-        { $inc: { sequence_value: 1 } },
-        { new: true, upsert: true },
-      );
-    this.inwardNo = `MI-${String(counter.sequence_value).padStart(5, "0")}`;
+  if (this.isNew && !this.inwardNo) {
+    const Counter = mongoose.model("Counter");
+    const counter = await Counter.findOneAndUpdate(
+      { name: "materialInward" },
+      { $inc: { seq: 1 } },
+      { new: true, upsert: true },
+    );
+    this.inwardNo = `MI-${String(counter.seq).padStart(5, "0")}`;
   }
 
   const total = this.items.reduce((sum, item) => sum + (item.amount || 0), 0);

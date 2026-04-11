@@ -1,4 +1,4 @@
-// ── Utility Functions ──────────────────────────────────────────────────────
+
 import React from "react";
 import * as XLSX from "xlsx";
 
@@ -19,7 +19,7 @@ export const xlsxDownload = (wb, filename) => {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
 
-// ── Persisted State Helper ──
+
 export function usePersistedState(key, defaultVal) {
   const [state, setState] = React.useState(() => {
     const raw = localStorage.getItem(key);
@@ -40,7 +40,7 @@ export function usePersistedState(key, defaultVal) {
   return [state, setPersistedState];
 }
 
-// ── LocalStorage Auth Helpers ──
+
 export const getAuth = () => {
   const raw = localStorage.getItem("erp_auth");
   if (!raw || raw === "undefined" || raw === "null") return null;
@@ -83,7 +83,7 @@ export const getRoles = () => {
 };
 export const setRoles = (v) => localStorage.setItem("erp_roles", JSON.stringify(v));
 
-// ── Product Code Generator ──
+
 export function generateProductCode(type, counters) {
   const prefixMap = { "Raw Material": "RM", "Finished Goods": "FG", "Consumable": "CG", "Machine Spare": "SP" };
   const prefix = prefixMap[type] || "IT";
@@ -91,7 +91,7 @@ export function generateProductCode(type, counters) {
   return prefix + String(num).padStart(4, "0");
 }
 
-// ── Raw Material Item Name Builder ──
+
 export function computeRMItemName(it) {
   if (it.rmItem === "Paper Reel") {
     return [it.paperType, "Paper Reel", it.gsm ? it.gsm + "gsm" : "", it.widthMm ? it.widthMm + "mm" : ""].filter(Boolean).join(" ");
@@ -102,7 +102,7 @@ export function computeRMItemName(it) {
   return it.itemName || "";
 }
 
-// ── Consumable Item Name ──
+
 export const computeConsumableItemName = (it) => {
   const dims = [];
   if (it.width) dims.push(it.width + "mm");
@@ -112,13 +112,13 @@ export const computeConsumableItemName = (it) => {
   return (it.category && it.category.match(/Box|Bag|Polybag/i) ? it.category + dimStr : it.category) + (it.uom ? " (" + it.uom + ")" : "");
 };
 
-// ── Date Utilities ──
+
 export function addWorkingDays(dateStr, days) {
   const d = new Date(dateStr + "T00:00:00");
   let added = 0, remaining = days;
   while (added < remaining) {
     d.setDate(d.getDate() + 1);
-    if (d.getDay() !== 0) added++; // skip Sundays
+    if (d.getDay() !== 0) added++; 
   }
   return d.toISOString().slice(0, 10);
 }
@@ -133,7 +133,7 @@ export function daysSince(dateStr) {
   return Math.floor(diff / 86400000);
 }
 
-// ── Build Production Schedule ──
+
 export function buildSchedule(form, machineMaster, existingJobOrders = []) {
   const schedule = [];
   const FORMATION_MACHINES = ["Formation", "Bag Making", "Sheeting", "Sheet Cutting", "Cutting"];
@@ -152,13 +152,13 @@ export function buildSchedule(form, machineMaster, existingJobOrders = []) {
           : (machineMaster || []).filter(m => m.type === proc && m.status === "Active");
 
     if (allocMachines.length === 0) {
-      return; // skip if no machines
+      return; 
     }
 
-    // Determine duration
+    
     let duration = form.durByProcess && form.durByProcess[proc] ? +(form.durByProcess[proc]) : 1;
 
-    // Increment date by duration
+    
     curDate = addWorkingDays(curDate, duration);
 
     schedule.push({
@@ -174,7 +174,7 @@ export function buildSchedule(form, machineMaster, existingJobOrders = []) {
   return schedule;
 }
 
-// ── Stage Info ──
+
 export function getStageTarget(jo, stage) {
   if (!jo.stageQtyMap) return 0;
   return +(jo.stageQtyMap[stage] || 0);
@@ -186,7 +186,7 @@ export function getStageFilledQty(jo, stage) {
   return entries.reduce((s, e) => s + +(e.qtyCompleted || 0), 0);
 }
 
-// ── Recompute Job Order Status ──
+
 export function recomputeJO(jo, stageQtyMap, newHistory) {
   const completedProcesses = [];
   const history = newHistory || jo.stageHistory || [];

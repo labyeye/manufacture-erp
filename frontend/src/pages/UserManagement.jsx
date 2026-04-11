@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
-
-const API_URL = "http://localhost:2500/api/auth";
+import { usersAPI } from "../api/auth";
 
 const ALL_MODULES = [
   { key: "dashboard", label: "Dashboard", icon: "📊" },
@@ -80,7 +78,7 @@ export default function UserManagement({ currentUser, toast }) {
   };
   const [form, setForm] = useState(emptyForm);
 
-  // Fetch users on mount
+  
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -88,11 +86,8 @@ export default function UserManagement({ currentUser, toast }) {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      const response = await axios.get(`${API_URL}/users`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setUsers(response.data.users);
+      const response = await usersAPI.getAll();
+      setUsers(response.users || []);
     } catch (error) {
       console.error("Failed to fetch users:", error);
       toast("Failed to fetch users", "error");
@@ -139,8 +134,6 @@ export default function UserManagement({ currentUser, toast }) {
 
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      const headers = { Authorization: `Bearer ${token}` };
 
       if (editingId) {
         const updateData = {
@@ -151,16 +144,16 @@ export default function UserManagement({ currentUser, toast }) {
         if (form.password && form.password !== "••••••") {
           updateData.password = form.password;
         }
-        await axios.put(`${API_URL}/users/${editingId}`, updateData, { headers });
+        await usersAPI.update(editingId, updateData);
         toast("User updated successfully", "success");
       } else {
-        await axios.post(`${API_URL}/users`, {
+        await usersAPI.create({
           name: form.name,
           username: form.username,
           password: form.password,
           role: form.role,
           allowedTabs: form.allowedTabs,
-        }, { headers });
+        });
         toast("User created successfully", "success");
       }
 
@@ -192,11 +185,7 @@ export default function UserManagement({ currentUser, toast }) {
   const handleToggleStatus = async (id, currentStatus) => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      await axios.put(`${API_URL}/users/${id}`, 
-        { isActive: !currentStatus }, 
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await usersAPI.update(id, { isActive: !currentStatus });
       await fetchUsers();
       toast("User status updated", "success");
     } catch (error) {
@@ -208,21 +197,18 @@ export default function UserManagement({ currentUser, toast }) {
   };
 
   const handleDelete = async (id) => {
-    if (confirm("Delete this user?")) {
-      try {
-        setLoading(true);
-        const token = localStorage.getItem("token");
-        await axios.delete(`${API_URL}/users/${id}`, 
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        await fetchUsers();
-        toast("User deleted successfully", "success");
-      } catch (error) {
-        console.error("Failed to delete user:", error);
-        toast(error.response?.data?.error || "Failed to delete user", "error");
-      } finally {
-        setLoading(false);
-      }
+    if (!confirm("Delete this user?")) return;
+
+    try {
+      setLoading(true);
+      await usersAPI.delete(id);
+      await fetchUsers();
+      toast("User deleted successfully", "success");
+    } catch (error) {
+      console.error("Failed to delete user:", error);
+      toast(error.response?.data?.error || "Failed to delete user", "error");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -235,7 +221,7 @@ export default function UserManagement({ currentUser, toast }) {
 
   return (
     <div className="fade">
-      {/* Header */}
+      {}
       <div
         style={{
           display: "flex",
@@ -282,7 +268,7 @@ export default function UserManagement({ currentUser, toast }) {
         )}
       </div>
 
-      {/* Add/Edit User Form */}
+      {}
       {showForm && (
         <div
           style={{
@@ -293,7 +279,7 @@ export default function UserManagement({ currentUser, toast }) {
             marginBottom: 20,
           }}
         >
-          {/* Form Title */}
+          {}
           <div
             style={{
               fontSize: 12,
@@ -307,7 +293,7 @@ export default function UserManagement({ currentUser, toast }) {
             {editingId ? "Edit User" : "New User"}
           </div>
 
-          {/* Fields Row */}
+          {}
           <div
             style={{
               display: "grid",
@@ -415,7 +401,7 @@ export default function UserManagement({ currentUser, toast }) {
             </div>
           </div>
 
-          {/* Module Access Grid */}
+          {}
           <div style={{ marginBottom: 16 }}>
             <div
               style={{
@@ -468,7 +454,7 @@ export default function UserManagement({ currentUser, toast }) {
               </button>
             </div>
 
-            {/* Module Grid */}
+            {}
             <div
               style={{
                 display: "grid",
@@ -494,7 +480,7 @@ export default function UserManagement({ currentUser, toast }) {
                     }}
                     onClick={() => handleModuleToggle(mod.key, "view")}
                   >
-                    {/* Checkbox */}
+                    {}
                     <div
                       style={{
                         width: 16,
@@ -530,7 +516,7 @@ export default function UserManagement({ currentUser, toast }) {
             </div>
           </div>
 
-          {/* Form Buttons */}
+          {}
           <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
             <button
               onClick={handleSubmit}
@@ -570,7 +556,7 @@ export default function UserManagement({ currentUser, toast }) {
         </div>
       )}
 
-      {/* Search */}
+      {}
       {!showForm && (
         <div style={{ marginBottom: 14 }}>
           <input
@@ -582,7 +568,7 @@ export default function UserManagement({ currentUser, toast }) {
         </div>
       )}
 
-      {/* Users List */}
+      {}
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {loading && <div style={{ color: "#666", textAlign: "center", padding: "20px 0" }}>Loading...</div>}
         {filteredUsers.map((user) => {
@@ -609,7 +595,7 @@ export default function UserManagement({ currentUser, toast }) {
                 flexWrap: "wrap",
               }}
             >
-              {/* Avatar */}
+              {}
               <div
                 style={{
                   width: 42,
@@ -629,7 +615,7 @@ export default function UserManagement({ currentUser, toast }) {
                 {initials}
               </div>
 
-              {/* Info */}
+              {}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div
                   style={{
@@ -679,7 +665,7 @@ export default function UserManagement({ currentUser, toast }) {
                 </div>
               </div>
 
-              {/* Actions */}
+              {}
               <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
                 <button
                   onClick={() => handleEdit(user)}

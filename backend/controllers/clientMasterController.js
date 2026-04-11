@@ -1,8 +1,8 @@
 const ClientMaster = require("../models/ClientMaster");
 
-/**
- * Get all clients
- */
+
+
+
 exports.getAll = async (req, res) => {
   try {
     const clients = await ClientMaster.find()
@@ -15,9 +15,9 @@ exports.getAll = async (req, res) => {
   }
 };
 
-/**
- * Get single client
- */
+
+
+
 exports.getOne = async (req, res) => {
   try {
     const client = await ClientMaster.findById(req.params.id)
@@ -32,9 +32,9 @@ exports.getOne = async (req, res) => {
   }
 };
 
-/**
- * Create client
- */
+
+
+
 exports.create = async (req, res) => {
   try {
     const { name, category, contact, phone, email, address, gstin, status } = req.body;
@@ -43,7 +43,7 @@ exports.create = async (req, res) => {
       return res.status(400).json({ error: "Client name is required" });
     }
 
-    // Check if client name already exists
+    
     const existingClient = await ClientMaster.findOne({
       name: { $regex: new RegExp(`^${name.trim()}$`, 'i') }
     });
@@ -76,9 +76,9 @@ exports.create = async (req, res) => {
   }
 };
 
-/**
- * Update client
- */
+
+
+
 exports.update = async (req, res) => {
   try {
     const { name, category, contact, phone, email, address, gstin, status } = req.body;
@@ -89,7 +89,7 @@ exports.update = async (req, res) => {
       return res.status(404).json({ error: "Client not found" });
     }
 
-    // Check if new name is unique (if changed)
+    
     if (name && name.trim() !== client.name) {
       const existingClient = await ClientMaster.findOne({
         name: { $regex: new RegExp(`^${name.trim()}$`, 'i') },
@@ -122,9 +122,9 @@ exports.update = async (req, res) => {
   }
 };
 
-/**
- * Delete client
- */
+
+
+
 exports.delete = async (req, res) => {
   try {
     const { id } = req.params;
@@ -143,9 +143,9 @@ exports.delete = async (req, res) => {
   }
 };
 
-/**
- * Update client status
- */
+
+
+
 exports.updateStatus = async (req, res) => {
   try {
     const { id } = req.params;

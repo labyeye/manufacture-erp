@@ -32,7 +32,7 @@ export default function ClientMaster({ toast }) {
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Load clients on mount
+  
   useEffect(() => {
     fetchClients();
   }, []);
@@ -144,7 +144,7 @@ export default function ClientMaster({ toast }) {
             });
             successCount++;
           } catch (error) {
-            // Skip duplicates
+            
           }
         }
       }
@@ -164,7 +164,7 @@ export default function ClientMaster({ toast }) {
 
   return (
     <div className="fade">
-      {/* Header */}
+      {}
       <div style={{ marginBottom: 20 }}>
         <h2 style={{ fontSize: 22, fontWeight: 700, color: '#e0e0e0', display: 'flex', alignItems: 'center', gap: 10, margin: 0 }}>
           👥 Client Master
@@ -174,7 +174,7 @@ export default function ClientMaster({ toast }) {
         </p>
       </div>
 
-      {/* Add Client Form */}
+      {}
       <div style={cardStyle}>
         <div style={{ marginBottom: 14, fontSize: 14, fontWeight: 700, color: '#4CAF50' }}>
           {editingId ? '✏️ Edit Client' : '+ Add Client'}
@@ -224,7 +224,7 @@ export default function ClientMaster({ toast }) {
         </div>
       </div>
 
-      {/* Clients List */}
+      {}
       <div style={cardStyle}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
           <span style={{ fontSize: 14, fontWeight: 700, color: '#e0e0e0' }}>Clients ({clientMaster.length})</span>

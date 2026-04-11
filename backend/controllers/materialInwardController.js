@@ -61,6 +61,53 @@ exports.create = async (req, res) => {
     });
 
     await inward.save();
+    
+    // Auto-update RM Stock
+    try {
+      const RawMaterialStock = require("../models/RawMaterialStock");
+      for (const item of items) {
+        if (item.materialType === "Raw Material" || !item.materialType) {
+          try {
+            // Normalize product code
+            const itemCode = (item.productCode || "").trim() || null;
+            const itemCategory = item.category || item.rmItem || "General";
+            const itemSubCategory = item.subCategory || item.paperType || "Standard";
+            
+            // Build a descriptive name if not provided
+            const itemName = item.itemName || `${itemCategory} | ${itemSubCategory}${item.gsm ? ` | ${item.gsm}gsm` : ""}${item.widthMm ? ` | ${item.widthMm}mm` : ""}`;
+
+            // We only upsert if we have a code, otherwise we might create duplicates
+            const query = itemCode ? { code: itemCode } : { name: itemName, category: itemCategory };
+
+            await RawMaterialStock.findOneAndUpdate(
+              query,
+              {
+                $set: {
+                  name: itemName,
+                  category: itemCategory,
+                  paperType: itemSubCategory,
+                  gsm: item.gsm || 0,
+                  sheetSize: item.widthMm && item.lengthMm ? `${item.widthMm}x${item.lengthMm}mm` : (item.widthMm ? `${item.widthMm}mm` : ""),
+                  location: location || "Main Warehouse",
+                  lastUpdated: new Date()
+                },
+                $inc: {
+                  weight: +(item.weight || 0),
+                  qty: +(item.noOfSheets || item.qty || 0)
+                }
+              },
+              { upsert: true, new: true, setDefaultsOnInsert: true }
+            );
+          } catch (itemErr) {
+            console.error("Failed to update stock for item:", item.itemName || item.productCode, itemErr);
+            // We continue with other items
+          }
+        }
+      }
+    } catch (stockErr) {
+      console.error("Critical error in stock update loop:", stockErr);
+    }
+
     await inward.populate("purchaseOrderRef");
     await inward.populate("vendor.id");
     await inward.populate("createdBy", "name email");

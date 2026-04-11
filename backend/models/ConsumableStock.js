@@ -23,7 +23,7 @@ const consumableStockSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Update lastUpdated on save
+
 consumableStockSchema.pre('save', function(next) {
   this.lastUpdated = new Date();
   next();

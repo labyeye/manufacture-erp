@@ -1,9 +1,9 @@
 const Dispatch = require("../models/Dispatch");
 const Counter = require("../models/Counter");
 
-/**
- * Get next Dispatch number
- */
+
+
+
 const getNextDispatchNo = async () => {
   const counter = await Counter.findOneAndUpdate(
     { name: "dispatch" },
@@ -13,9 +13,9 @@ const getNextDispatchNo = async () => {
   return `DIS-${String(counter.seq).padStart(5, "0")}`;
 };
 
-/**
- * Get all dispatches
- */
+
+
+
 exports.getAll = async (req, res) => {
   try {
     const dispatches = await Dispatch.find()
@@ -28,9 +28,9 @@ exports.getAll = async (req, res) => {
   }
 };
 
-/**
- * Get single dispatch
- */
+
+
+
 exports.getOne = async (req, res) => {
   try {
     const dispatch = await Dispatch.findById(req.params.id)
@@ -45,9 +45,9 @@ exports.getOne = async (req, res) => {
   }
 };
 
-/**
- * Create dispatch
- */
+
+
+
 exports.create = async (req, res) => {
   try {
     const {
@@ -62,12 +62,12 @@ exports.create = async (req, res) => {
       remarks,
     } = req.body;
 
-    // Validation
+    
     if (!date || !clientName || !items || items.length === 0) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // Generate Dispatch number
+    
     const dispatchNo = await getNextDispatchNo();
 
     const dispatch = new Dispatch({
@@ -97,9 +97,9 @@ exports.create = async (req, res) => {
   }
 };
 
-/**
- * Update dispatch
- */
+
+
+
 exports.update = async (req, res) => {
   try {
     const {
@@ -143,9 +143,9 @@ exports.update = async (req, res) => {
   }
 };
 
-/**
- * Delete dispatch
- */
+
+
+
 exports.delete = async (req, res) => {
   try {
     const { id } = req.params;

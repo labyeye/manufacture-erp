@@ -26,7 +26,7 @@ const fgStockSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Update lastUpdated on save
+
 fgStockSchema.pre('save', function(next) {
   this.lastUpdated = new Date();
   next();

@@ -21,7 +21,7 @@ const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 const today = () => new Date().toISOString().slice(0, 10);
 const fmt = (n) => (n ?? 0).toLocaleString("en-IN");
 
-/* ─── shared label style ─── */
+
 const sectionLabelStyle = {
   fontSize: 11,
   fontWeight: 700,
@@ -31,14 +31,51 @@ const sectionLabelStyle = {
   marginBottom: 14,
 };
 
-export default function SalesOrders({ sizeMaster = {}, toast }) {
+export default function SalesOrders(props) {
+  const {
+    sizeMaster = {},
+    toast,
+    categoryMaster = {},
+    itemMasterFG = [],
+    refreshData,
+    clientMaster = [],
+  } = props;
   const [salesOrders, setSalesOrders] = useState([]);
   const [clients, setClients] = useState([]);
   const [users, setUsers] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [clientCategories, setClientCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const today_val = today();
+
+  const fgItems = useMemo(() => {
+    return (itemMasterFG || []).filter(
+      (it) => it.type === "Finished Good" || it.type === "Finished Goods",
+    );
+  }, [itemMasterFG]);
+
+  const sortedFGItems = useMemo(() => {
+    return [...fgItems].sort((a, b) =>
+      (a.code || "").localeCompare(b.code || ""),
+    );
+  }, [fgItems]);
+
+  const fgCategories = useMemo(() => {
+    const fgDoc = (categoryMaster || []).find(
+      (c) =>
+        c.type === "Finished Good" ||
+        c.type === "Finished Goods" ||
+        c.type === "Finished Goods",
+    );
+    return fgDoc && fgDoc.subTypes ? Object.keys(fgDoc.subTypes) : [];
+  }, [categoryMaster]);
+
+  const subTypeMap = useMemo(() => {
+    const res = {};
+    (categoryMaster || []).forEach((c) => {
+      if (c.subTypes) Object.assign(res, c.subTypes);
+    });
+    return res;
+  }, [categoryMaster]);
 
   const blankHeader = {
     orderDate: today_val,
@@ -46,6 +83,7 @@ export default function SalesOrders({ sizeMaster = {}, toast }) {
     salesPerson: "",
     clientCategory: "",
     clientName: "",
+    clientContact: "",
     remarks: "",
     status: "Open",
   };
@@ -70,6 +108,12 @@ export default function SalesOrders({ sizeMaster = {}, toast }) {
 
   const [header, setHeader] = useState(blankHeader);
   const [items, setItems] = useState([blankItem()]);
+  const uniqueClientCategories = useMemo(() => {
+    return [
+      ...new Set((clientMaster || []).map((c) => c.category).filter(Boolean)),
+    ];
+  }, [clientMaster]);
+
   const [headerErrors, setHeaderErrors] = useState({});
   const [itemErrors, setItemErrors] = useState([{}]);
   const [view, setView] = useState("form");
@@ -77,12 +121,11 @@ export default function SalesOrders({ sizeMaster = {}, toast }) {
   const [drDateTo, setDrDateTo] = useState("");
   const [editId, setEditId] = useState(null);
 
-  // Load data on mount
+  
   useEffect(() => {
     fetchSalesOrders();
     fetchClients();
     fetchUsers();
-    fetchCategories();
   }, []);
 
   const fetchSalesOrders = async () => {
@@ -99,7 +142,7 @@ export default function SalesOrders({ sizeMaster = {}, toast }) {
       const res = await clientMasterAPI.getAll();
       setClients(res.clients || []);
 
-      // Extract unique client categories
+      
       const uniqueCategories = [
         ...new Set((res.clients || []).map((c) => c.category).filter(Boolean)),
       ];
@@ -123,21 +166,7 @@ export default function SalesOrders({ sizeMaster = {}, toast }) {
     }
   };
 
-  const fetchCategories = async () => {
-    try {
-      const res = await categoryMasterAPI.getAll();
-      // Filter only Finished Good categories
-      const fgCats = (res || [])
-        .filter(
-          (cat) =>
-            cat.type === "Finished Good" || cat.type === "Finished Goods",
-        )
-        .map((cat) => cat.name);
-      setCategories(fgCats);
-    } catch (error) {
-      console.error("Failed to fetch categories:", error);
-    }
-  };
+
 
   const salesPersons = useMemo(
     () =>
@@ -150,11 +179,11 @@ export default function SalesOrders({ sizeMaster = {}, toast }) {
   const generateItemName = (it) => {
     const parts = [it.itemCategory];
 
-    // If has size, use it
+    
     if (it.size) {
       parts.push(it.size);
     }
-    // If has dimensions, build dimension string
+    
     else if (it.width || it.length || it.height || it.gussett) {
       const dims = [];
       if (it.width) dims.push(it.width);
@@ -170,7 +199,17 @@ export default function SalesOrders({ sizeMaster = {}, toast }) {
   };
 
   const setH = (k, v) => {
-    setHeader((f) => ({ ...f, [k]: v }));
+    setHeader((f) => {
+      const next = { ...f, [k]: v };
+      // Auto-fill contact if name changes
+      if (k === "clientName") {
+        const found = clientMaster.find((c) => c.name === v);
+        if (found) {
+          next.clientContact = found.phone || found.whatsapp || "";
+        }
+      }
+      return next;
+    });
     setHeaderErrors((e) => ({ ...e, [k]: false }));
   };
 
@@ -183,7 +222,22 @@ export default function SalesOrders({ sizeMaster = {}, toast }) {
   const setItem = (idx, k, v) => {
     setItems((prev) => {
       const updated = [...prev];
-      const it = { ...updated[idx], [k]: v };
+      let it = { ...updated[idx], [k]: v };
+
+      if (k === "productCode") {
+        const found = fgItems.find((f) => f.code === v);
+        if (found) {
+          it = {
+            ...it,
+            itemCategory: found.category || it.itemCategory,
+            size: found.size || it.size,
+            variant: found.variant || it.variant,
+            uom: found.uom || it.uom || "nos",
+            itemName: found.name || it.itemName,
+          };
+        }
+      }
+
       const orderQty = k === "orderQty" ? +v : +(it.orderQty || 0);
       const price = k === "price" ? +v : +(it.price || 0);
       it.amount = orderQty && price ? (orderQty * price).toFixed(2) : "";
@@ -226,7 +280,7 @@ export default function SalesOrders({ sizeMaster = {}, toast }) {
     const allItemErrors = items.map((it) => {
       const e = {};
       if (!it.itemCategory) e.itemCategory = true;
-      // Require either size or at least one dimension
+      
       if (!it.size && !it.width && !it.length && !it.height && !it.gussett) {
         e.size = true;
       }
@@ -290,7 +344,8 @@ export default function SalesOrders({ sizeMaster = {}, toast }) {
       setItemErrors([{}]);
       setView("records");
       fetchSalesOrders();
-      fetchClients(); // Refresh clients as backend auto-creates them
+      fetchClients();
+      if (refreshData) refreshData();
     } catch (error) {
       toast(
         error.response?.data?.error || "Failed to save sales order",
@@ -301,69 +356,8 @@ export default function SalesOrders({ sizeMaster = {}, toast }) {
     }
   };
 
-  /* ─── dimension fields helper ─── */
-  const DimensionFields = ({ it, idx }) => {
-    // Check if size master has sizes for this category
-    const hasSize = (sizeMaster || {})[it.itemCategory]?.length > 0;
+  
 
-    if (hasSize) {
-      return (
-        <Field label="Size">
-          <select
-            value={it.size}
-            onChange={(e) => setItem(idx, "size", e.target.value)}
-            style={EI(idx, "size")}
-          >
-            <option value="">-- Select Size --</option>
-            {((sizeMaster || {})[it.itemCategory] || []).map((s) => (
-              <option key={s}>{s}</option>
-            ))}
-          </select>
-          {EIMsg(idx, "size")}
-        </Field>
-      );
-    }
-
-    // Otherwise show dimension fields
-    return (
-      <>
-        <Field label="Width (inch)">
-          <input
-            type="number"
-            placeholder="Width"
-            value={it.width}
-            onChange={(e) => setItem(idx, "width", e.target.value)}
-            style={EI(idx, "size")}
-          />
-        </Field>
-        <Field label="Length (inch)">
-          <input
-            type="number"
-            placeholder="Length"
-            value={it.length}
-            onChange={(e) => setItem(idx, "length", e.target.value)}
-          />
-        </Field>
-        <Field label="Height (inch)">
-          <input
-            type="number"
-            placeholder="Height"
-            value={it.height}
-            onChange={(e) => setItem(idx, "height", e.target.value)}
-          />
-        </Field>
-        <Field label="Gussett (inch)">
-          <input
-            type="number"
-            placeholder="Gussett (optional)"
-            value={it.gussett}
-            onChange={(e) => setItem(idx, "gussett", e.target.value)}
-          />
-        </Field>
-        {EIMsg(idx, "size")}
-      </>
-    );
-  };
 
   return (
     <div className="fade">
@@ -373,7 +367,7 @@ export default function SalesOrders({ sizeMaster = {}, toast }) {
         sub="Create and track customer sales orders"
       />
 
-      {/* ── Tab buttons ── */}
+      {}
       <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
         {[
           ["form", "📝 New Order"],
@@ -398,10 +392,10 @@ export default function SalesOrders({ sizeMaster = {}, toast }) {
         ))}
       </div>
 
-      {/* ════════════════ FORM VIEW ════════════════ */}
+      {}
       {view === "form" && (
         <div>
-          {/* ── Order & Client Details Card ── */}
+          {}
           <Card style={{ marginBottom: 16 }}>
             <h3
               style={{
@@ -414,7 +408,7 @@ export default function SalesOrders({ sizeMaster = {}, toast }) {
               Order &amp; Client Details
             </h3>
 
-            {/* ORDER DETAILS sub-section */}
+            {}
             <div style={sectionLabelStyle}>Order Details</div>
             <div
               style={{
@@ -424,7 +418,7 @@ export default function SalesOrders({ sizeMaster = {}, toast }) {
                 marginBottom: 20,
               }}
             >
-              <Field label="Order Date *">
+              <Field label="Order Date 📅 *">
                 <DatePicker
                   value={header.orderDate}
                   onChange={(v) => setH("orderDate", v)}
@@ -432,7 +426,7 @@ export default function SalesOrders({ sizeMaster = {}, toast }) {
                 />
                 {EHMsg("orderDate")}
               </Field>
-              <Field label="Delivery Date *">
+              <Field label="Delivery Date 📅 *">
                 <DatePicker
                   value={header.deliveryDate}
                   onChange={(v) => setH("deliveryDate", v)}
@@ -456,32 +450,51 @@ export default function SalesOrders({ sizeMaster = {}, toast }) {
               </Field>
             </div>
 
-            {/* CLIENT DETAILS sub-section */}
+            {}
             <div style={sectionLabelStyle}>Client Details</div>
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr 1fr 2fr",
+                gridTemplateColumns: "1fr 1.2fr 1fr 1.8fr",
                 gap: 14,
               }}
             >
               <Field label="Client Category">
-                <AutocompleteInput
+                <select
                   value={header.clientCategory}
-                  onChange={(v) => setH("clientCategory", v)}
-                  suggestions={clientCategories}
-                  placeholder="Select or type new category"
-                />
+                  onChange={(e) => setH("clientCategory", e.target.value)}
+                >
+                  <option value="">-- All Categories --</option>
+                  {uniqueClientCategories.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
               </Field>
               <Field label="Client Name *">
                 <AutocompleteInput
                   value={header.clientName}
                   onChange={(v) => setH("clientName", v)}
-                  suggestions={clients.map((c) => c.name)}
-                  placeholder="Client / Company name"
+                  suggestions={
+                    header.clientCategory
+                      ? clientMaster
+                          .filter((c) => c.category === header.clientCategory)
+                          .map((c) => c.name)
+                      : clientMaster.map((c) => c.name)
+                  }
+                  placeholder="Type to search..."
                   inputStyle={EH("clientName")}
                 />
                 {EHMsg("clientName")}
+              </Field>
+              <Field label="Client Contact">
+                <input
+                  readOnly
+                  placeholder="— Auto-filled —"
+                  value={header.clientContact}
+                  style={{ color: C.muted, background: "transparent" }}
+                />
               </Field>
               <Field label="Remarks">
                 <input
@@ -493,7 +506,7 @@ export default function SalesOrders({ sizeMaster = {}, toast }) {
             </div>
           </Card>
 
-          {/* ── Order Items header row ── */}
+          {}
           <div
             style={{
               display: "flex",
@@ -528,7 +541,7 @@ export default function SalesOrders({ sizeMaster = {}, toast }) {
             </button>
           </div>
 
-          {/* ── Item cards ── */}
+          {}
           {items.map((it, idx) => (
             <Card
               key={it._id}
@@ -537,7 +550,7 @@ export default function SalesOrders({ sizeMaster = {}, toast }) {
                 borderLeft: `3px solid ${C.green || "#4ade80"}`,
               }}
             >
-              {/* Item header */}
+              {}
               <div
                 style={{
                   display: "flex",
@@ -574,26 +587,24 @@ export default function SalesOrders({ sizeMaster = {}, toast }) {
                 )}
               </div>
 
-              {/* Row 1: Product Code | Category | Variant | Order Qty | Price | Amount */}
+              {/* Row 1: Core Identifiers */}
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "1.2fr 1.5fr 1.2fr 1fr 1fr 1fr",
+                  gridTemplateColumns: "1.2fr 1.5fr 1.2fr 1.5fr 1fr",
                   gap: 12,
                   marginBottom: 12,
                 }}
               >
-                <Field label="Product Code">
-                  <input
-                    type="text"
-                    placeholder="Type or select code (optional)"
+                <Field label="PRODUCT CODE">
+                  <AutocompleteInput
                     value={it.productCode}
-                    onChange={(e) =>
-                      setItem(idx, "productCode", e.target.value)
-                    }
+                    onChange={(v) => setItem(idx, "productCode", v)}
+                    suggestions={sortedFGItems.map((f) => f.code)}
+                    placeholder="Search FG code..."
                   />
                 </Field>
-                <Field label="Category *">
+                <Field label="CATEGORY *">
                   <select
                     value={it.itemCategory}
                     onChange={(e) =>
@@ -602,20 +613,35 @@ export default function SalesOrders({ sizeMaster = {}, toast }) {
                     style={EI(idx, "itemCategory")}
                   >
                     <option value="">-- Select Category --</option>
-                    {categories.map((c) => (
+                    {fgCategories.map((c) => (
                       <option key={c}>{c}</option>
                     ))}
                   </select>
                   {EIMsg(idx, "itemCategory")}
                 </Field>
-                <Field label="Variant / Colour">
+                <Field label="SIZE *">
+                  <select
+                    value={it.size}
+                    onChange={(e) => setItem(idx, "size", e.target.value)}
+                    style={EI(idx, "size")}
+                  >
+                    <option value="">-- Select Size --</option>
+                    {(subTypeMap[it.itemCategory] || []).map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                  {EIMsg(idx, "size")}
+                </Field>
+                <Field label="VARIANT / COLOUR">
                   <input
                     placeholder="e.g. Blue, Yellow, Plain (optional)"
                     value={it.variant}
                     onChange={(e) => setItem(idx, "variant", e.target.value)}
                   />
                 </Field>
-                <Field label="Order Quantity *">
+                <Field label="ORDER QUANTITY *">
                   <input
                     type="number"
                     placeholder="Qty"
@@ -625,7 +651,18 @@ export default function SalesOrders({ sizeMaster = {}, toast }) {
                   />
                   {EIMsg(idx, "orderQty")}
                 </Field>
-                <Field label="Price (₹)">
+              </div>
+
+              {/* Row 2: Pricing & Display Name */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr 2.5fr",
+                  gap: 12,
+                  marginBottom: 12,
+                }}
+              >
+                <Field label="PRICE (₹)">
                   <input
                     type="number"
                     placeholder="Price per unit"
@@ -635,7 +672,7 @@ export default function SalesOrders({ sizeMaster = {}, toast }) {
                   />
                   {EIMsg(idx, "price")}
                 </Field>
-                <Field label="Amount (₹)">
+                <Field label="AMOUNT (₹)">
                   <div
                     style={{
                       padding: "9px 12px",
@@ -659,40 +696,23 @@ export default function SalesOrders({ sizeMaster = {}, toast }) {
                     )}
                   </div>
                 </Field>
-              </div>
-
-              {/* Row 2 (conditional): dimension fields if category chosen */}
-              {it.itemCategory && (
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns:
-                      "repeat(auto-fill, minmax(160px, 1fr))",
-                    gap: 12,
-                    marginBottom: 12,
-                  }}
-                >
-                  <DimensionFields it={it} idx={idx} />
-                </div>
-              )}
-
-              {/* Row 3: Item Name (auto) | Item Remarks */}
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: 12,
-                }}
-              >
-                <Field label="Item Name">
+                <Field label="ITEM NAME">
                   <input
                     readOnly
                     placeholder="— Auto-filled from category + size + client —"
                     value={it.itemName}
-                    style={{ color: C.muted, cursor: "default" }}
+                    style={{
+                      color: it.itemName ? (C.green || "#4ade80") : C.muted,
+                      cursor: "default",
+                      fontWeight: it.itemName ? 600 : 400
+                    }}
                   />
                 </Field>
-                <Field label="Item Remarks">
+              </div>
+
+              {/* Row 3: Remarks */}
+              <div style={{ marginBottom: 4 }}>
+                <Field label="ITEM REMARKS">
                   <input
                     placeholder="Special instructions for this item (optional)"
                     value={it.remarks}
@@ -703,7 +723,7 @@ export default function SalesOrders({ sizeMaster = {}, toast }) {
             </Card>
           ))}
 
-          {/* ── Bottom action row ── */}
+          {}
           <div
             style={{
               display: "flex",
@@ -787,7 +807,7 @@ export default function SalesOrders({ sizeMaster = {}, toast }) {
         </div>
       )}
 
-      {/* ════════════════ RECORDS VIEW ════════════════ */}
+      {}
       {view === "records" && (
         <Card>
           <div
@@ -844,10 +864,8 @@ export default function SalesOrders({ sizeMaster = {}, toast }) {
               const handleEdit = async (so) => {
                 setEditId(so._id);
                 setHeader({
-                  orderDate: new Date(so.orderDate).toISOString().slice(0, 10),
-                  deliveryDate: new Date(so.deliveryDate)
-                    .toISOString()
-                    .slice(0, 10),
+                  orderDate: so.orderDate ? new Date(so.orderDate).toISOString().slice(0, 10) : "",
+                  deliveryDate: so.deliveryDate ? new Date(so.deliveryDate).toISOString().slice(0, 10) : "",
                   salesPerson: so.salesPerson || "",
                   clientCategory: so.clientCategory || "",
                   clientName: so.clientName,
@@ -927,7 +945,7 @@ export default function SalesOrders({ sizeMaster = {}, toast }) {
                         {r.soNo}
                       </span>
                       <span style={{ fontSize: 12, color: C.muted }}>
-                        {new Date(r.orderDate).toISOString().slice(0, 10)}
+                        {r.orderDate ? new Date(r.orderDate).toLocaleDateString('en-GB') : 'N/A'}
                       </span>
                       <span style={{ fontSize: 13, fontWeight: 600 }}>
                         {r.clientName}

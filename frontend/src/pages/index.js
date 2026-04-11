@@ -1,5 +1,5 @@
-// ── Pages Index - All pages to be imported ──────────────────────────────────
-// Each page handles a major feature of the ERP
+
+
 
 export { Dashboard } from "./Dashboard";
 export { MaterialInward } from "./MaterialInward";

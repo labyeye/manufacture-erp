@@ -83,7 +83,7 @@ export const dispatchAPI = {
   }
 };
 
-// Add more API modules as needed
+
 export const salesOrdersAPI = {
   getAll: async () => {
     const response = await api.get('/sales-orders');
@@ -294,6 +294,245 @@ export const usersAPI = {
 
   delete: async (id) => {
     const response = await api.delete(`/auth/users/${id}`);
+    return response.data;
+  }
+};
+
+export const itemMasterAPI = {
+  getAll: async (params) => {
+    const response = await api.get('/item-master', { params });
+    return response.data;
+  },
+
+  getOne: async (id) => {
+    const response = await api.get(`/item-master/${id}`);
+    return response.data;
+  },
+
+  create: async (data) => {
+    const response = await api.post('/item-master', data);
+    return response.data;
+  },
+
+  update: async (id, data) => {
+    const response = await api.put(`/item-master/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id) => {
+    const response = await api.delete(`/item-master/${id}`);
+    return response.data;
+  },
+
+  updateStatus: async (id, status) => {
+    const response = await api.patch(`/item-master/${id}/status`, { status });
+    return response.data;
+  },
+
+  bulkImport: async (items) => {
+    const response = await api.post('/item-master/bulk-import', { items });
+    return response.data;
+  }
+};
+
+export const machineMasterAPI = {
+  getAll: async (params) => {
+    const response = await api.get('/machine-master', { params });
+    return response.data;
+  },
+
+  getOne: async (id) => {
+    const response = await api.get(`/machine-master/${id}`);
+    return response.data;
+  },
+
+  create: async (data) => {
+    const response = await api.post('/machine-master', data);
+    return response.data;
+  },
+
+  update: async (id, data) => {
+    const response = await api.put(`/machine-master/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id) => {
+    const response = await api.delete(`/machine-master/${id}`);
+    return response.data;
+  },
+
+  updateStatus: async (id, status) => {
+    const response = await api.patch(`/machine-master/${id}/status`, { status });
+    return response.data;
+  }
+};
+
+export const sizeMasterAPI = {
+  getAll: async () => {
+    const response = await api.get('/size-master');
+    return response.data;
+  },
+
+  getByCategory: async (category) => {
+    const response = await api.get(`/size-master/${category}`);
+    return response.data;
+  },
+
+  addSize: async (category, size) => {
+    const response = await api.post('/size-master/add', { category, size });
+    return response.data;
+  },
+
+  updateSize: async (category, oldSize, newSize) => {
+    const response = await api.put('/size-master/update', { category, oldSize, newSize });
+    return response.data;
+  },
+
+  deleteSize: async (category, size) => {
+    const response = await api.delete('/size-master/delete', { data: { category, size } });
+    return response.data;
+  },
+
+  deleteCategory: async (category) => {
+    const response = await api.delete(`/size-master/category/${category}`);
+    return response.data;
+  }
+};
+
+export const printingDetailMasterAPI = {
+  getAll: async (params) => {
+    const response = await api.get('/printing-detail-master', { params });
+    return response.data;
+  },
+
+  getOne: async (id) => {
+    const response = await api.get(`/printing-detail-master/${id}`);
+    return response.data;
+  },
+
+  getByItemAndClient: async (itemName, clientName) => {
+    const response = await api.get(`/printing-detail-master/item/${itemName}/client/${clientName}`);
+    return response.data;
+  },
+
+  create: async (data) => {
+    const response = await api.post('/printing-detail-master', data);
+    return response.data;
+  },
+
+  update: async (id, data) => {
+    const response = await api.put(`/printing-detail-master/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id) => {
+    const response = await api.delete(`/printing-detail-master/${id}`);
+    return response.data;
+  }
+};
+
+export const rawMaterialStockAPI = {
+  getAll: async (params) => {
+    const response = await api.get('/raw-material-stock', { params });
+    return response.data;
+  },
+
+  getOne: async (id) => {
+    const response = await api.get(`/raw-material-stock/${id}`);
+    return response.data;
+  },
+
+  getLowStock: async () => {
+    const response = await api.get('/raw-material-stock/low-stock');
+    return response.data;
+  },
+
+  create: async (data) => {
+    const response = await api.post('/raw-material-stock', data);
+    return response.data;
+  },
+
+  update: async (id, data) => {
+    const response = await api.put(`/raw-material-stock/${id}`, data);
+    return response.data;
+  },
+
+  adjustStock: async (id, adjustment, reason) => {
+    const response = await api.patch(`/raw-material-stock/${id}/adjust`, { adjustment, reason });
+    return response.data;
+  },
+
+  delete: async (id) => {
+    const response = await api.delete(`/raw-material-stock/${id}`);
+    return response.data;
+  }
+};
+
+export const fgStockAPI = {
+  getAll: async (params) => {
+    const response = await api.get('/fg-stock', { params });
+    return response.data;
+  },
+
+  getOne: async (id) => {
+    const response = await api.get(`/fg-stock/${id}`);
+    return response.data;
+  },
+
+  create: async (data) => {
+    const response = await api.post('/fg-stock', data);
+    return response.data;
+  },
+
+  update: async (id, data) => {
+    const response = await api.put(`/fg-stock/${id}`, data);
+    return response.data;
+  },
+
+  adjustStock: async (id, adjustment) => {
+    const response = await api.patch(`/fg-stock/${id}/adjust`, { adjustment });
+    return response.data;
+  },
+
+  delete: async (id) => {
+    const response = await api.delete(`/fg-stock/${id}`);
+    return response.data;
+  }
+};
+
+export const consumableStockAPI = {
+  getAll: async (params) => {
+    const response = await api.get('/consumable-stock', { params });
+    return response.data;
+  },
+
+  getOne: async (id) => {
+    const response = await api.get(`/consumable-stock/${id}`);
+    return response.data;
+  },
+
+  getLowStock: async () => {
+    const response = await api.get('/consumable-stock/low-stock');
+    return response.data;
+  },
+
+  create: async (data) => {
+    const response = await api.post('/consumable-stock', data);
+    return response.data;
+  },
+
+  update: async (id, data) => {
+    const response = await api.put(`/consumable-stock/${id}`, data);
+    return response.data;
+  },
+
+  adjustStock: async (id, adjustment) => {
+    const response = await api.patch(`/consumable-stock/${id}/adjust`, { adjustment });
+    return response.data;
+  },
+
+  delete: async (id) => {
+    const response = await api.delete(`/consumable-stock/${id}`);
     return response.data;
   }
 };

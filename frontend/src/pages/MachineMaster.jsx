@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { machineMasterAPI } from "../api/auth";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 
@@ -61,11 +62,9 @@ const inputStyle = {
   outline: "none",
 };
 
-export default function MachineMaster({
-  machineMaster = {},
-  setMachineMaster,
-  toast,
-}) {
+export default function MachineMaster({ toast }) {
+  const [machines, setMachines] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [machineName, setMachineName] = useState("");
   const [machineType, setMachineType] = useState("Printing");
   const [searchTerm, setSearchTerm] = useState("");
@@ -75,14 +74,34 @@ export default function MachineMaster({
   const [editingMachine, setEditingMachine] = useState(null);
   const [editName, setEditName] = useState("");
 
-  // Flatten all machines
-  const allMachines = useMemo(
-    () =>
-      Object.entries(machineMaster).flatMap(([type, machines]) =>
-        (Array.isArray(machines) ? machines : []).map((m) => ({ ...m, type })),
-      ),
-    [machineMaster],
-  );
+  
+  useEffect(() => {
+    fetchMachines();
+  }, []);
+
+  const fetchMachines = async () => {
+    try {
+      const res = await machineMasterAPI.getAll();
+      setMachines(res.machines || []);
+    } catch (error) {
+      toast?.("Failed to load machines", "error");
+    }
+  };
+
+  
+  const allMachines = useMemo(() => machines, [machines]);
+
+  
+  const machineMaster = useMemo(() => {
+    const grouped = {};
+    machines.forEach(machine => {
+      if (!grouped[machine.type]) {
+        grouped[machine.type] = [];
+      }
+      grouped[machine.type].push(machine);
+    });
+    return grouped;
+  }, [machines]);
 
   const totalMachines = allMachines.length;
   const activeMachines = allMachines.filter(
@@ -95,7 +114,7 @@ export default function MachineMaster({
     (t) => (machineMaster[t] || []).length > 0,
   ).length;
 
-  // Filtered machines for list/grid
+  
   const filteredMachines = useMemo(
     () =>
       allMachines.filter((m) => {
@@ -110,7 +129,7 @@ export default function MachineMaster({
     [allMachines, searchTerm, filterType, filterStatus],
   );
 
-  // Grouped by type for grid view
+  
   const groupedMachines = useMemo(() => {
     const groups = {};
     filteredMachines.forEach((m) => {
@@ -120,7 +139,7 @@ export default function MachineMaster({
     return groups;
   }, [filteredMachines]);
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!machineName.trim()) {
       toast("Enter machine name", "error");
       return;
@@ -129,62 +148,69 @@ export default function MachineMaster({
       toast("Select machine type", "error");
       return;
     }
-    const newMachine = {
-      id: uid(),
-      name: machineName.trim(),
-      status: "Active",
-      capacity: "-",
-      hrsPerShift: 8,
-      shifts: 1,
-      addedDate: new Date().toISOString().split("T")[0],
-    };
-    setMachineMaster((prev) => ({
-      ...prev,
-      [machineType]: [...(prev[machineType] || []), newMachine],
-    }));
-    toast(`Machine "${machineName}" added to ${machineType}`, "success");
-    setMachineName("");
-  };
 
-  const handleDelete = (type, id) => {
-    if (confirm("Delete this machine?")) {
-      setMachineMaster((prev) => ({
-        ...prev,
-        [type]: (prev[type] || []).filter((m) => m.id !== id),
-      }));
-      toast("Machine deleted", "success");
+    setLoading(true);
+    try {
+      await machineMasterAPI.create({
+        name: machineName.trim(),
+        type: machineType,
+        capacity: 0,
+        capacityUnit: "pcs/hr",
+        workingHours: 8,
+        shiftsPerDay: 1
+      });
+      toast(`Machine "${machineName}" added to ${machineType}`, "success");
+      setMachineName("");
+      fetchMachines();
+    } catch (error) {
+      toast(error.response?.data?.error || "Failed to add machine", "error");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleToggleStatus = (type, machine) => {
+  const handleDelete = async (machine) => {
+    if (!confirm("Delete this machine?")) return;
+
+    try {
+      await machineMasterAPI.delete(machine._id);
+      toast("Machine deleted", "success");
+      fetchMachines();
+    } catch (error) {
+      toast(error.response?.data?.error || "Failed to delete machine", "error");
+    }
+  };
+
+  const handleToggleStatus = async (machine) => {
     const newStatus = machine.status === "Active" ? "Inactive" : "Active";
-    setMachineMaster((prev) => ({
-      ...prev,
-      [type]: (prev[type] || []).map((m) =>
-        m.id === machine.id ? { ...m, status: newStatus } : m,
-      ),
-    }));
+    try {
+      await machineMasterAPI.updateStatus(machine._id, newStatus);
+      fetchMachines();
+    } catch (error) {
+      toast(error.response?.data?.error || "Failed to update status", "error");
+    }
   };
 
-  const handleEditSave = (type, machine) => {
+  const handleEditSave = async (machine) => {
     if (!editName.trim()) return;
-    setMachineMaster((prev) => ({
-      ...prev,
-      [type]: (prev[type] || []).map((m) =>
-        m.id === machine.id ? { ...m, name: editName } : m,
-      ),
-    }));
-    setEditingMachine(null);
-    toast("Machine updated", "success");
+
+    try {
+      await machineMasterAPI.update(machine._id, { name: editName.trim() });
+      setEditingMachine(null);
+      toast("Machine updated", "success");
+      fetchMachines();
+    } catch (error) {
+      toast(error.response?.data?.error || "Failed to update machine", "error");
+    }
   };
 
-  const handleUpdateField = (type, id, field, value) => {
-    setMachineMaster((prev) => ({
-      ...prev,
-      [type]: (prev[type] || []).map((m) =>
-        m.id === id ? { ...m, [field]: value } : m,
-      ),
-    }));
+  const handleUpdateField = async (machine, field, value) => {
+    try {
+      await machineMasterAPI.update(machine._id, { [field]: value });
+      fetchMachines();
+    } catch (error) {
+      toast(error.response?.data?.error || "Failed to update machine", "error");
+    }
   };
 
   const typeColor = TYPE_COLORS[machineType] || "#2196F3";
@@ -202,7 +228,7 @@ export default function MachineMaster({
         </p>
       </div>
 
-      {/* Stats Bar */}
+      {}
       <div
         style={{
           display: "flex",
@@ -274,7 +300,7 @@ export default function MachineMaster({
         </div>
       </div>
 
-      {/* Add Machine Form */}
+      {}
       <div
         style={{
           background: "#1a1a1a",
@@ -367,7 +393,7 @@ export default function MachineMaster({
         </div>
       </div>
 
-      {/* Filters + View Toggle */}
+      {}
       <div
         style={{
           display: "flex",
@@ -438,7 +464,7 @@ export default function MachineMaster({
         </div>
       </div>
 
-      {/* Grid View - Grouped by Type */}
+      {}
       {viewMode === "grid" && (
         <div>
           {Object.keys(groupedMachines).length === 0 ? (
@@ -509,14 +535,14 @@ export default function MachineMaster({
                           }}
                         >
                           <div>
-                            {editingMachine === machine.id ? (
+                            {editingMachine === machine._id ? (
                               <input
                                 value={editName}
                                 onChange={(e) => setEditName(e.target.value)}
-                                onBlur={() => handleEditSave(type, machine)}
+                                onBlur={() => handleEditSave(machine)}
                                 onKeyDown={(e) =>
                                   e.key === "Enter" &&
-                                  handleEditSave(type, machine)
+                                  handleEditSave(machine)
                                 }
                                 autoFocus
                                 style={{
@@ -567,7 +593,7 @@ export default function MachineMaster({
                           </span>
                         </div>
 
-                        {/* Capacity Stats */}
+                        {}
                         <div
                           style={{
                             display: "grid",
@@ -620,12 +646,11 @@ export default function MachineMaster({
                                     type="number"
                                     min={1}
                                     max={24}
-                                    value={machine.hrsPerShift || 8}
+                                    value={machine.workingHours || machine.hrsPerShift || 8}
                                     onChange={(e) =>
                                       handleUpdateField(
-                                        type,
-                                        machine.id,
-                                        "hrsPerShift",
+                                        machine,
+                                        "workingHours",
                                         parseInt(e.target.value) || 8,
                                       )
                                     }
@@ -645,12 +670,11 @@ export default function MachineMaster({
                                     type="number"
                                     min={1}
                                     max={3}
-                                    value={machine.shifts || 1}
+                                    value={machine.shiftsPerDay || machine.shifts || 1}
                                     onChange={(e) =>
                                       handleUpdateField(
-                                        type,
-                                        machine.id,
-                                        "shifts",
+                                        machine,
+                                        "shiftsPerDay",
                                         parseInt(e.target.value) || 1,
                                       )
                                     }
@@ -684,7 +708,7 @@ export default function MachineMaster({
                           ))}
                         </div>
 
-                        {/* Actions */}
+                        {}
                         <div
                           style={{
                             display: "flex",
@@ -693,7 +717,7 @@ export default function MachineMaster({
                           }}
                         >
                           <button
-                            onClick={() => handleToggleStatus(type, machine)}
+                            onClick={() => handleToggleStatus(machine)}
                             style={{
                               flex: 1,
                               padding: "6px 0",
@@ -718,7 +742,7 @@ export default function MachineMaster({
                           </button>
                           <button
                             onClick={() => {
-                              setEditingMachine(machine.id);
+                              setEditingMachine(machine._id);
                               setEditName(machine.name);
                             }}
                             style={{
@@ -734,7 +758,7 @@ export default function MachineMaster({
                             🖊
                           </button>
                           <button
-                            onClick={() => handleDelete(type, machine.id)}
+                            onClick={() => handleDelete(machine)}
                             style={{
                               padding: "6px 10px",
                               background: "#f4433622",
@@ -758,7 +782,7 @@ export default function MachineMaster({
         </div>
       )}
 
-      {/* List View */}
+      {}
       {viewMode === "list" && (
         <div
           style={{
@@ -864,7 +888,7 @@ export default function MachineMaster({
                     <td style={{ padding: "10px 14px" }}>
                       <div style={{ display: "flex", gap: 6 }}>
                         <button
-                          onClick={() => handleToggleStatus(m.type, m)}
+                          onClick={() => handleToggleStatus(m)}
                           style={{
                             padding: "4px 10px",
                             background: "#FF980022",
@@ -879,7 +903,7 @@ export default function MachineMaster({
                           {m.status === "Active" ? "⏸" : "▶"}
                         </button>
                         <button
-                          onClick={() => handleDelete(m.type, m.id)}
+                          onClick={() => handleDelete(m)}
                           style={{
                             padding: "4px 10px",
                             background: "#f4433622",
@@ -903,7 +927,7 @@ export default function MachineMaster({
         </div>
       )}
 
-      {/* Capacity View */}
+      {}
       {viewMode === "capacity" && (
         <div
           style={{

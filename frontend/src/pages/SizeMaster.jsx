@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { C } from '../constants/colors';
 import { Card, SectionTitle, Field, SubmitBtn } from '../components/ui/BasicComponents';
+import { sizeMasterAPI } from '../api/auth';
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 
@@ -26,22 +27,32 @@ const SIZE_CATEGORIES = [
   'Paper Sheets',
 ];
 
-export default function SizeMaster({
-  sizeMaster = {},
-  setSizeMaster,
-  categoryMaster = {},
-  setCategoryMaster,
-  toast,
-}) {
+export default function SizeMaster({ toast }) {
+  const [sizeMaster, setSizeMaster] = useState({});
+  const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState('list');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [newSize, setNewSize] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [editingValue, setEditingValue] = useState('');
 
+  
+  useEffect(() => {
+    fetchSizes();
+  }, []);
+
+  const fetchSizes = async () => {
+    try {
+      const res = await sizeMasterAPI.getAll();
+      setSizeMaster(res.sizes || {});
+    } catch (error) {
+      toast?.('Failed to load sizes', 'error');
+    }
+  };
+
   const currentSizes = selectedCategory ? (sizeMaster[selectedCategory] || []) : [];
 
-  const handleAddSize = () => {
+  const handleAddSize = async () => {
     if (!selectedCategory) {
       toast('Please select a category', 'error');
       return;
@@ -51,44 +62,44 @@ export default function SizeMaster({
       return;
     }
 
-    setSizeMaster((prev) => ({
-      ...prev,
-      [selectedCategory]: [
-        ...(prev[selectedCategory] || []),
-        newSize.trim(),
-      ],
-    }));
-
-    toast(`Size "${newSize}" added to ${selectedCategory}`, 'success');
-    setNewSize('');
+    setLoading(true);
+    try {
+      await sizeMasterAPI.addSize(selectedCategory, newSize.trim());
+      toast(`Size "${newSize}" added to ${selectedCategory}`, 'success');
+      setNewSize('');
+      fetchSizes();
+    } catch (error) {
+      toast(error.response?.data?.error || 'Failed to add size', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDeleteSize = (size) => {
-    setSizeMaster((prev) => ({
-      ...prev,
-      [selectedCategory]: (prev[selectedCategory] || []).filter(
-        (s) => s !== size
-      ),
-    }));
-    toast('Size deleted', 'success');
+  const handleDeleteSize = async (size) => {
+    try {
+      await sizeMasterAPI.deleteSize(selectedCategory, size);
+      toast('Size deleted', 'success');
+      fetchSizes();
+    } catch (error) {
+      toast(error.response?.data?.error || 'Failed to delete size', 'error');
+    }
   };
 
-  const handleEditSize = (oldSize, newValue) => {
+  const handleEditSize = async (oldSize, newValue) => {
     if (!newValue.trim()) {
       toast('Size cannot be empty', 'error');
       return;
     }
 
-    setSizeMaster((prev) => ({
-      ...prev,
-      [selectedCategory]: (prev[selectedCategory] || []).map((s) =>
-        s === oldSize ? newValue.trim() : s
-      ),
-    }));
-
-    toast('Size updated', 'success');
-    setEditingId(null);
-    setEditingValue('');
+    try {
+      await sizeMasterAPI.updateSize(selectedCategory, oldSize, newValue.trim());
+      toast('Size updated', 'success');
+      setEditingId(null);
+      setEditingValue('');
+      fetchSizes();
+    } catch (error) {
+      toast(error.response?.data?.error || 'Failed to update size', 'error');
+    }
   };
 
   return (

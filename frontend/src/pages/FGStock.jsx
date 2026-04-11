@@ -158,7 +158,7 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
         </p>
       </div>
 
-      {/* Stat Cards */}
+      {}
       <div
         style={{
           display: "grid",
@@ -195,7 +195,7 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
         ))}
       </div>
 
-      {/* Search + Buttons Row */}
+      {}
       <div
         style={{
           display: "flex",
@@ -265,7 +265,7 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
         />
       </div>
 
-      {/* Category Filter Tabs */}
+      {}
       <div
         style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}
       >
@@ -289,7 +289,7 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
         ))}
       </div>
 
-      {/* Table */}
+      {}
       <div
         style={{
           background: "#1a1a1a",

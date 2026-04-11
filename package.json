@@ -1,0 +1,25 @@
+{
+  "name": "untitled-folder-3",
+  "version": "1.0.0",
+  "description": "> A complete, modular manufacturing enterprise resource planning system built with React, MERN stack ready.",
+  "main": "remove-comments.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/labyeye/manufacture-erp.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/labyeye/manufacture-erp/issues"
+  },
+  "homepage": "https://github.com/labyeye/manufacture-erp#readme",
+  "dependencies": {
+    "fs": "^0.0.1-security",
+    "path": "^0.12.7"
+  }
+}

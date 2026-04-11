@@ -12,8 +12,8 @@ const salesOrderItemSchema = new mongoose.Schema({
   gussett: Number,
   uom: {
     type: String,
-    enum: ['inch', 'mm', 'cm'],
-    default: 'inch'
+    enum: ['inch', 'mm', 'cm', 'nos', 'pcs', 'kg', 'set'],
+    default: 'nos'
   },
   orderQty: {
     type: Number,
@@ -60,7 +60,7 @@ const salesOrderSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Calculate total amount before saving
+
 salesOrderSchema.pre('save', function(next) {
   this.totalAmount = this.items.reduce((sum, item) => sum + (item.amount || 0), 0);
   next();

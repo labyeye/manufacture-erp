@@ -45,7 +45,7 @@ const vendorMasterSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index for faster searches
+
 vendorMasterSchema.index({ name: 1 });
 vendorMasterSchema.index({ status: 1 });
 

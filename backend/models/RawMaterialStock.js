@@ -45,7 +45,7 @@ const rawMaterialStockSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Update lastUpdated on save
+
 rawMaterialStockSchema.pre('save', function(next) {
   this.lastUpdated = new Date();
   next();
