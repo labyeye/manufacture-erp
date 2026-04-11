@@ -1,8 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { C } from '../constants/colors';
 import { SectionTitle, Badge } from '../components/ui/BasicComponents';
-
-const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
+import { vendorMasterAPI } from '../api/auth';
 
 const inputStyle = {
   width: '100%',
@@ -25,11 +24,27 @@ const cardStyle = {
   marginBottom: 16,
 };
 
-export default function VendorMaster({ vendorMaster = [], setVendorMaster, toast }) {
-  const [formData, setFormData] = useState({ name: '', contact: '', email: '', gstin: '' });
+export default function VendorMaster({ toast }) {
+  const [vendorMaster, setVendorMaster] = useState([]);
+  const [formData, setFormData] = useState({ name: '', contact: '', email: '', gstin: '', category: '' });
   const [searchTerm, setSearchTerm] = useState('');
   const [editingId, setEditingId] = useState(null);
+  const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
+
+  // Load vendors on mount
+  useEffect(() => {
+    fetchVendors();
+  }, []);
+
+  const fetchVendors = async () => {
+    try {
+      const res = await vendorMasterAPI.getAll();
+      setVendorMaster(res.vendors || []);
+    } catch (error) {
+      toast?.('Failed to load vendors', 'error');
+    }
+  };
 
   const filtered = vendorMaster.filter(
     (v) =>
@@ -40,44 +55,66 @@ export default function VendorMaster({ vendorMaster = [], setVendorMaster, toast
 
   const handleChange = (field, value) => setFormData((p) => ({ ...p, [field]: value }));
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.name.trim()) { toast('Vendor name is required', 'error'); return; }
-    if (!formData.contact.trim()) { toast('Contact is required', 'error'); return; }
 
-    if (editingId) {
-      setVendorMaster((prev) => prev.map((v) => v.id === editingId ? { ...v, ...formData } : v));
-      toast('Vendor updated successfully', 'success');
-      setEditingId(null);
-    } else {
-      setVendorMaster((prev) => [...prev, { id: uid(), ...formData, status: 'Active', createdAt: new Date().toISOString().split('T')[0] }]);
-      toast('Vendor added successfully', 'success');
+    setLoading(true);
+    try {
+      if (editingId) {
+        await vendorMasterAPI.update(editingId, formData);
+        toast('Vendor updated successfully', 'success');
+        setEditingId(null);
+      } else {
+        await vendorMasterAPI.create(formData);
+        toast('Vendor added successfully', 'success');
+      }
+      setFormData({ name: '', contact: '', email: '', gstin: '', category: '' });
+      fetchVendors();
+    } catch (error) {
+      toast(error.response?.data?.error || 'Failed to save vendor', 'error');
+    } finally {
+      setLoading(false);
     }
-    setFormData({ name: '', contact: '', email: '', gstin: '' });
   };
 
   const handleEdit = (vendor) => {
-    setFormData({ name: vendor.name, contact: vendor.contact, email: vendor.email || '', gstin: vendor.gstin || '' });
-    setEditingId(vendor.id);
+    setFormData({
+      name: vendor.name,
+      contact: vendor.contact || '',
+      email: vendor.email || '',
+      gstin: vendor.gstin || '',
+      category: vendor.category || ''
+    });
+    setEditingId(vendor._id);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDelete = (id) => {
-    if (confirm('Delete this vendor?')) {
-      setVendorMaster((prev) => prev.filter((v) => v.id !== id));
+  const handleDelete = async (id) => {
+    if (!confirm('Delete this vendor?')) return;
+
+    try {
+      await vendorMasterAPI.delete(id);
       toast('Vendor deleted', 'success');
+      fetchVendors();
+    } catch (error) {
+      toast('Failed to delete vendor', 'error');
     }
   };
 
-  const handleToggleStatus = (vendor) => {
-    setVendorMaster((prev) =>
-      prev.map((v) => v.id === vendor.id ? { ...v, status: v.status === 'Active' ? 'Inactive' : 'Active' } : v)
-    );
+  const handleToggleStatus = async (vendor) => {
+    try {
+      const newStatus = vendor.status === 'Active' ? 'Inactive' : 'Active';
+      await vendorMasterAPI.updateStatus(vendor._id, newStatus);
+      fetchVendors();
+    } catch (error) {
+      toast('Failed to update status', 'error');
+    }
   };
 
   const handleExportExcel = () => {
     if (vendorMaster.length === 0) { toast('No vendors to export', 'error'); return; }
-    const header = ['Name', 'Phone/WhatsApp', 'Email', 'GST Number', 'Status'];
-    const rows = vendorMaster.map(v => [v.name, v.contact, v.email || '', v.gstin || '', v.status || 'Active']);
+    const header = ['Name', 'Category', 'Phone/WhatsApp', 'Email', 'GST Number', 'Status'];
+    const rows = vendorMaster.map(v => [v.name, v.category || '', v.contact || '', v.email || '', v.gstin || '', v.status || 'Active']);
     const csv = [header, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -85,27 +122,41 @@ export default function VendorMaster({ vendorMaster = [], setVendorMaster, toast
     toast('Exported successfully', 'success');
   };
 
-  const handleImportExcel = (e) => {
+  const handleImportExcel = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
       const text = ev.target.result;
       const lines = text.split('\n').filter(Boolean);
-      const imported = [];
+      let successCount = 0;
       for (let i = 1; i < lines.length; i++) {
         const cols = lines[i].split(',').map(v => v.replace(/^"|"$/g, '').trim());
-        if (cols[0]) imported.push({ id: uid(), name: cols[0], contact: cols[1] || '', email: cols[2] || '', gstin: cols[3] || '', status: cols[4] || 'Active', createdAt: new Date().toISOString().split('T')[0] });
+        if (cols[0]) {
+          try {
+            await vendorMasterAPI.create({
+              name: cols[0],
+              category: cols[1] || '',
+              contact: cols[2] || '',
+              email: cols[3] || '',
+              gstin: cols[4] || '',
+              status: cols[5] || 'Active'
+            });
+            successCount++;
+          } catch (error) {
+            // Skip duplicates
+          }
+        }
       }
-      setVendorMaster((prev) => [...prev, ...imported]);
-      toast(`Imported ${imported.length} vendors`, 'success');
+      fetchVendors();
+      toast(`Imported ${successCount} vendors`, 'success');
     };
     reader.readAsText(file);
     e.target.value = '';
   };
 
   const handleTemplate = () => {
-    const csv = '"Name","Phone/WhatsApp","Email","GST Number","Status"\n"Example Vendor","9876543210","vendor@email.com","22AAAAA0000A1Z5","Active"';
+    const csv = '"Name","Category","Phone/WhatsApp","Email","GST Number","Status"\n"Example Vendor","Paper Supplier","9876543210","vendor@email.com","22AAAAA0000A1Z5","Active"';
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = 'vendor_template.csv'; a.click();
@@ -116,22 +167,26 @@ export default function VendorMaster({ vendorMaster = [], setVendorMaster, toast
       {/* Header */}
       <div style={{ marginBottom: 20 }}>
         <h2 style={{ fontSize: 22, fontWeight: 700, color: '#e0e0e0', display: 'flex', alignItems: 'center', gap: 10, margin: 0 }}>
-          🏪 Vendor Master
+          🏭 Vendor Master
         </h2>
         <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0 0' }}>
-          All vendors / suppliers — used in Purchase Orders and Material Inward
+          All vendors — auto-populated from Purchase Orders or added manually
         </p>
       </div>
 
       {/* Add Vendor Form */}
       <div style={cardStyle}>
-        <div style={{ marginBottom: 14, fontSize: 14, fontWeight: 700, color: '#1976D2' }}>
-          {editingId ? '✏️ Edit Vendor' : 'Add Vendor'}
+        <div style={{ marginBottom: 14, fontSize: 14, fontWeight: 700, color: '#4CAF50' }}>
+          {editingId ? '✏️ Edit Vendor' : '+ Add Vendor'}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12, marginBottom: 14 }}>
           <div>
             <label style={{ fontSize: 11, fontWeight: 600, color: '#888', display: 'block', marginBottom: 5 }}>VENDOR NAME *</label>
-            <input style={inputStyle} placeholder="Vendor / Supplier name" value={formData.name} onChange={e => handleChange('name', e.target.value)} />
+            <input style={inputStyle} placeholder="Vendor name" value={formData.name} onChange={e => handleChange('name', e.target.value)} />
+          </div>
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 600, color: '#888', display: 'block', marginBottom: 5 }}>CATEGORY</label>
+            <input style={inputStyle} placeholder="e.g. Paper Supplier, Ink Supplier" value={formData.category} onChange={e => handleChange('category', e.target.value)} />
           </div>
           <div>
             <label style={{ fontSize: 11, fontWeight: 600, color: '#888', display: 'block', marginBottom: 5 }}>PHONE / WHATSAPP</label>
@@ -147,11 +202,11 @@ export default function VendorMaster({ vendorMaster = [], setVendorMaster, toast
           </div>
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button onClick={handleSubmit} style={{ padding: '9px 20px', background: '#1976D2', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
-            {editingId ? '✅ Update Vendor' : '+ Add Vendor'}
+          <button onClick={handleSubmit} disabled={loading} style={{ padding: '9px 20px', background: loading ? '#666' : '#4CAF50', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 700, fontSize: 13, cursor: loading ? 'not-allowed' : 'pointer' }}>
+            {loading ? 'Saving...' : editingId ? '✅ Update Vendor' : '+ Add Vendor'}
           </button>
           {editingId && (
-            <button onClick={() => { setEditingId(null); setFormData({ name: '', contact: '', email: '', gstin: '' }); }}
+            <button onClick={() => { setEditingId(null); setFormData({ name: '', contact: '', email: '', gstin: '', category: '' }); }}
               style={{ padding: '9px 20px', background: '#333', color: '#aaa', border: '1px solid #444', borderRadius: 6, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
               Cancel
             </button>
@@ -184,23 +239,24 @@ export default function VendorMaster({ vendorMaster = [], setVendorMaster, toast
 
         {filtered.length === 0 ? (
           <div style={{ textAlign: 'center', color: '#555', padding: 40, fontSize: 13 }}>
-            {searchTerm ? 'No vendors found' : 'No vendors yet. Add one above or import from Excel.'}
+            {searchTerm ? 'No vendors found' : 'No vendors yet. They auto-populate when you create Purchase Orders.'}
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid #2a2a2a' }}>
-                  {['Vendor Name', 'Phone/WhatsApp', 'Email', 'GST Number', 'Status', 'Actions'].map(h => (
+                  {['Vendor Name', 'Category', 'Phone/WhatsApp', 'Email', 'GST Number', 'Status', 'Actions'].map(h => (
                     <th key={h} style={{ textAlign: 'left', padding: '10px 12px', fontWeight: 600, color: '#888', fontSize: 11, whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {filtered.map(vendor => (
-                  <tr key={vendor.id} style={{ borderBottom: '1px solid #222' }}>
+                  <tr key={vendor._id} style={{ borderBottom: '1px solid #222' }}>
                     <td style={{ padding: '12px', fontWeight: 600, color: '#e0e0e0' }}>{vendor.name}</td>
-                    <td style={{ padding: '12px', color: '#aaa' }}>{vendor.contact}</td>
+                    <td style={{ padding: '12px', color: '#aaa' }}>{vendor.category || '-'}</td>
+                    <td style={{ padding: '12px', color: '#aaa' }}>{vendor.contact || '-'}</td>
                     <td style={{ padding: '12px', color: '#aaa' }}>{vendor.email || '-'}</td>
                     <td style={{ padding: '12px', color: '#aaa', fontFamily: 'monospace', fontSize: 11 }}>{vendor.gstin || '-'}</td>
                     <td style={{ padding: '12px' }}>
@@ -220,7 +276,7 @@ export default function VendorMaster({ vendorMaster = [], setVendorMaster, toast
                           style={{ padding: '5px 10px', background: '#FF980022', color: '#FF9800', border: 'none', borderRadius: 4, fontWeight: 700, fontSize: 11, cursor: 'pointer' }}>
                           {vendor.status === 'Active' ? '⏸' : '▶'}
                         </button>
-                        <button onClick={() => handleDelete(vendor.id)}
+                        <button onClick={() => handleDelete(vendor._id)}
                           style={{ padding: '5px 10px', background: '#f4433622', color: '#f44336', border: 'none', borderRadius: 4, fontWeight: 700, fontSize: 11, cursor: 'pointer' }}>
                           🗑️
                         </button>

@@ -139,6 +139,7 @@ export default function CategoryMaster({ toast }) {
 
   const filteredData = useMemo(() => {
     return (data || []).filter((item) => {
+      if (!item || !item.name || !item.code) return false;
       const search = searchText.toLowerCase();
       return (
         item.name.toLowerCase().includes(search) ||

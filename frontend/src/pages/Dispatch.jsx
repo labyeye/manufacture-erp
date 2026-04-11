@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { C } from "../constants/colors";
 import {
   Card,
@@ -10,6 +10,7 @@ import {
   DatePicker,
   DateRangeFilter,
 } from "../components/ui/BasicComponents";
+import { dispatchAPI, salesOrdersAPI, jobOrdersAPI } from "../api/auth";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 const today = () => new Date().toISOString().slice(0, 10);
@@ -18,15 +19,13 @@ const fmt = (n) => (n ?? 0).toLocaleString("en-IN");
 const UNIT_OPTIONS = ["nos", "pcs", "boxes", "kg", "rolls", "sheets"];
 
 export default function Dispatch({
-  dispatch = [],
-  setDispatch,
-  salesOrders = [],
   fgStock = [],
-  setFgStock,
-  dispatchCounter = 0,
-  setDispatchCounter,
   toast,
 }) {
+  const [dispatch, setDispatch] = useState([]);
+  const [salesOrders, setSalesOrders] = useState([]);
+  const [jobOrders, setJobOrders] = useState([]);
+  const [loading, setLoading] = useState(false);
   const blankHeader = {
     dispatchDate: today(),
     soRef: "",
@@ -55,6 +54,41 @@ export default function Dispatch({
   const [view, setView] = useState("form");
   const [drDateFrom, setDrDateFrom] = useState("");
   const [drDateTo, setDrDateTo] = useState("");
+  const [editId, setEditId] = useState(null);
+
+  // Load data on mount
+  useEffect(() => {
+    fetchDispatches();
+    fetchSalesOrders();
+    fetchJobOrders();
+  }, []);
+
+  const fetchDispatches = async () => {
+    try {
+      const res = await dispatchAPI.getAll();
+      setDispatch(res.dispatches || []);
+    } catch (error) {
+      toast?.("Failed to load dispatches", "error");
+    }
+  };
+
+  const fetchSalesOrders = async () => {
+    try {
+      const res = await salesOrdersAPI.getAll();
+      setSalesOrders(res.salesOrders || []);
+    } catch (error) {
+      console.error("Failed to fetch sales orders:", error);
+    }
+  };
+
+  const fetchJobOrders = async () => {
+    try {
+      const res = await jobOrdersAPI.getAll();
+      setJobOrders(res || []);
+    } catch (error) {
+      console.error("Failed to fetch job orders:", error);
+    }
+  };
 
   const activeSOList = useMemo(
     () => (salesOrders || []).filter((s) => s.status === "Open" || s.status === "In Progress"),
@@ -124,10 +158,10 @@ export default function Dispatch({
     setItemErrors((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  const submit = () => {
+  const submit = async () => {
     const he = {};
     if (!header.dispatchDate) he.dispatchDate = true;
-    if (!header.vehicleNo) he.vehicleNo = true;
+    if (!header.clientName) he.clientName = true;
     setHeaderErrors(he);
 
     const allItemErrors = items.map((it) => {
@@ -143,24 +177,46 @@ export default function Dispatch({
       return;
     }
 
-    const dispatchNo = `DISP-${String(dispatchCounter + 1).padStart(5, "0")}`;
-    const entry = { ...header, id: uid(), dispatchNo, items };
-    setDispatch((p) => [...p, entry]);
-    setDispatchCounter((c) => c + 1);
+    setLoading(true);
+    try {
+      const payload = {
+        date: new Date(header.dispatchDate),
+        clientName: header.clientName,
+        soRef: header.soRef,
+        joRef: header.joRef,
+        vehicleNo: header.vehicleNo,
+        driverName: header.driverName,
+        lrNo: header.lrNo,
+        remarks: header.remarks,
+        items: items.map(it => ({
+          itemName: it.itemName,
+          qty: Number(it.qty),
+          unit: it.unit,
+          rate: it.rate ? Number(it.rate) : 0,
+          amount: it.amount ? Number(it.amount) : 0
+        }))
+      };
 
-    items.forEach((it) => {
-      setFgStock((prev) =>
-        prev.map((s) =>
-          s.name === it.itemName ? { ...s, qty: (s.qty || 0) - +(it.qty || 0) } : s,
-        ),
-      );
-    });
+      if (editId) {
+        await dispatchAPI.update(editId, payload);
+        toast("Dispatch updated successfully", "success");
+        setEditId(null);
+      } else {
+        const res = await dispatchAPI.create(payload);
+        toast(`Dispatch ${res.dispatch.dispatchNo} created successfully`, "success");
+      }
 
-    toast(`Dispatch ${dispatchNo} recorded`, "success");
-    setHeader(blankHeader);
-    setItems([blankItem()]);
-    setHeaderErrors({});
-    setItemErrors([{}]);
+      setHeader(blankHeader);
+      setItems([blankItem()]);
+      setHeaderErrors({});
+      setItemErrors([{}]);
+      setView("records");
+      fetchDispatches();
+    } catch (error) {
+      toast(error.response?.data?.error || "Failed to save dispatch", "error");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -469,8 +525,45 @@ export default function Dispatch({
           )}
           {(dispatch || []).slice().reverse().map((r) => {
             const totalQty = (r.items || []).reduce((sum, it) => sum + +(it.qty || 0), 0);
+
+            const handleEdit = () => {
+              setEditId(r._id);
+              setHeader({
+                dispatchDate: r.date ? new Date(r.date).toISOString().slice(0, 10) : today(),
+                soRef: r.soRef || "",
+                clientName: r.clientName || "",
+                deliveryAddress: r.deliveryAddress || "",
+                vehicleNo: r.vehicleNo || "",
+                driverName: r.driverName || "",
+                remarks: r.remarks || "",
+                status: r.status || "Dispatched",
+              });
+              setItems((r.items || []).map(it => ({
+                _id: uid(),
+                itemName: it.itemName || "",
+                productCode: it.productCode || "",
+                qty: it.qty?.toString() || "",
+                unit: it.unit || "nos",
+                pcsPerBox: it.pcsPerBox?.toString() || "",
+                noOfBox: it.noOfBox?.toString() || "",
+              })));
+              setView("form");
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+
+            const handleDelete = async () => {
+              if (!confirm(`Delete dispatch ${r.dispatchNo}?`)) return;
+              try {
+                await dispatchAPI.delete(r._id);
+                toast(`Dispatch ${r.dispatchNo} deleted successfully`, "success");
+                fetchDispatches();
+              } catch (error) {
+                toast(error.response?.data?.error || "Failed to delete dispatch", "error");
+              }
+            };
+
             return (
-              <div key={r.id} style={{ borderBottom: `1px solid ${C.border}22`, padding: "12px 4px" }}>
+              <div key={r._id} style={{ borderBottom: `1px solid ${C.border}22`, padding: "12px 4px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
                   <div style={{ display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
                     <span style={{ fontFamily: "'JetBrains Mono',monospace", color: C.purple, fontWeight: 700 }}>{r.dispatchNo}</span>
@@ -478,6 +571,38 @@ export default function Dispatch({
                     <span style={{ fontSize: 13, fontWeight: 600 }}>{r.clientName}</span>
                     <Badge text={r.status} color={C.green} />
                     {totalQty > 0 && <span style={{ fontSize: 12, color: C.muted }}>Qty: {fmt(totalQty)}</span>}
+                  </div>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button
+                      onClick={handleEdit}
+                      style={{
+                        background: (C.blue || "#3b82f6") + "22",
+                        color: C.blue || "#3b82f6",
+                        border: "none",
+                        borderRadius: 5,
+                        padding: "4px 12px",
+                        fontWeight: 700,
+                        fontSize: 12,
+                        cursor: "pointer",
+                      }}
+                    >
+                      ✏️ Edit
+                    </button>
+                    <button
+                      onClick={handleDelete}
+                      style={{
+                        background: (C.red || "#ef4444") + "22",
+                        color: C.red || "#ef4444",
+                        border: "none",
+                        borderRadius: 5,
+                        padding: "4px 12px",
+                        fontWeight: 700,
+                        fontSize: 12,
+                        cursor: "pointer",
+                      }}
+                    >
+                      🗑️
+                    </button>
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 6 }}>

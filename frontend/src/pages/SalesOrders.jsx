@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { C } from "../constants/colors";
 import {
   Card,
@@ -10,16 +10,16 @@ import {
   DatePicker,
   DateRangeFilter,
 } from "../components/ui/BasicComponents";
+import {
+  salesOrdersAPI,
+  clientMasterAPI,
+  usersAPI,
+  categoryMasterAPI,
+} from "../api/auth";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 const today = () => new Date().toISOString().slice(0, 10);
 const fmt = (n) => (n ?? 0).toLocaleString("en-IN");
-
-const FG_SIZE_CLIENT_CATS = ["Paper Cup", "Bowl", "Tray", "Plate", "Container"];
-const FG_BOX_CATS = ["Cake Box", "Food Box", "Printed Box"];
-const FG_FLAT_CATS = ["Insert", "Flat Item", "Label"];
-const FG_BAG_CATS = ["Paper Bag with Handle", "Paper Bag", "Gusseted Bag"];
-const FG_WRAP_CATS = ["Wrapping Paper", "Tissue Paper", "Kraft Paper Wrap"];
 
 /* ─── shared label style ─── */
 const sectionLabelStyle = {
@@ -31,19 +31,13 @@ const sectionLabelStyle = {
   marginBottom: 14,
 };
 
-export default function SalesOrders({
-  salesOrders = [],
-  setSalesOrders,
-  sizeMaster = {},
-  categoryMaster = {},
-  clientMaster = [],
-  setClientMaster,
-  itemMasterFG = {},
-  setItemMasterFG,
-  soCounter = 0,
-  setSoCounter,
-  toast,
-}) {
+export default function SalesOrders({ sizeMaster = {}, toast }) {
+  const [salesOrders, setSalesOrders] = useState([]);
+  const [clients, setClients] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [clientCategories, setClientCategories] = useState([]);
+  const [loading, setLoading] = useState(false);
   const today_val = today();
 
   const blankHeader = {
@@ -81,50 +75,95 @@ export default function SalesOrders({
   const [view, setView] = useState("form");
   const [drDateFrom, setDrDateFrom] = useState("");
   const [drDateTo, setDrDateTo] = useState("");
+  const [editId, setEditId] = useState(null);
 
-  const fgCategories = useMemo(
+  // Load data on mount
+  useEffect(() => {
+    fetchSalesOrders();
+    fetchClients();
+    fetchUsers();
+    fetchCategories();
+  }, []);
+
+  const fetchSalesOrders = async () => {
+    try {
+      const res = await salesOrdersAPI.getAll();
+      setSalesOrders(res.salesOrders || []);
+    } catch (error) {
+      toast?.("Failed to load sales orders", "error");
+    }
+  };
+
+  const fetchClients = async () => {
+    try {
+      const res = await clientMasterAPI.getAll();
+      setClients(res.clients || []);
+
+      // Extract unique client categories
+      const uniqueCategories = [
+        ...new Set((res.clients || []).map((c) => c.category).filter(Boolean)),
+      ];
+      setClientCategories(
+        uniqueCategories.length > 0
+          ? uniqueCategories
+          : ["HP", "ZPL", "Others"],
+      );
+    } catch (error) {
+      console.error("Failed to fetch clients:", error);
+      setClientCategories(["HP", "ZPL", "Others"]);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const res = await usersAPI.getAll();
+      setUsers(res.users || []);
+    } catch (error) {
+      console.error("Failed to fetch users:", error);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const res = await categoryMasterAPI.getAll();
+      // Filter only Finished Good categories
+      const fgCats = (res || [])
+        .filter(
+          (cat) =>
+            cat.type === "Finished Good" || cat.type === "Finished Goods",
+        )
+        .map((cat) => cat.name);
+      setCategories(fgCats);
+    } catch (error) {
+      console.error("Failed to fetch categories:", error);
+    }
+  };
+
+  const salesPersons = useMemo(
     () =>
-      (categoryMaster && categoryMaster["Finished Goods"]) || [
-        ...FG_SIZE_CLIENT_CATS,
-        ...FG_BOX_CATS,
-        ...FG_FLAT_CATS,
-        ...FG_BAG_CATS,
-        ...FG_WRAP_CATS,
-      ],
-    [categoryMaster],
+      users
+        .filter((u) => u.role === "Sales" || u.role === "Admin")
+        .map((u) => u.name),
+    [users],
   );
 
   const generateItemName = (it) => {
     const parts = [it.itemCategory];
-    if (FG_SIZE_CLIENT_CATS.includes(it.itemCategory) && it.size) {
+
+    // If has size, use it
+    if (it.size) {
       parts.push(it.size);
-    } else if (
-      FG_BOX_CATS.includes(it.itemCategory) &&
-      it.width &&
-      it.length &&
-      it.height
-    ) {
-      parts.push(`${it.width}×${it.length}×${it.height}inch`);
-    } else if (
-      FG_FLAT_CATS.includes(it.itemCategory) &&
-      it.width &&
-      it.length
-    ) {
-      parts.push(`${it.width}×${it.length}inch`);
-    } else if (
-      FG_BAG_CATS.includes(it.itemCategory) &&
-      it.width &&
-      it.gussett &&
-      it.height
-    ) {
-      parts.push(`${it.width}×${it.gussett}×${it.height}inch`);
-    } else if (
-      FG_WRAP_CATS.includes(it.itemCategory) &&
-      it.width &&
-      it.height
-    ) {
-      parts.push(`${it.width}×${it.height}inch`);
     }
+    // If has dimensions, build dimension string
+    else if (it.width || it.length || it.height || it.gussett) {
+      const dims = [];
+      if (it.width) dims.push(it.width);
+      if (it.gussett) dims.push(it.gussett);
+      if (it.length) dims.push(it.length);
+      if (it.height) dims.push(it.height);
+      if (dims.length > 0) parts.push(`${dims.join("×")}inch`);
+    }
+
     if (it.variant) parts.push(`(${it.variant})`);
     if (header.clientName) parts.push(`/ ${header.clientName}`);
     return parts.filter(Boolean).join(" ");
@@ -177,33 +216,20 @@ export default function SalesOrders({
     setItemErrors((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  const submit = () => {
+  const submit = async () => {
     const he = {};
     if (!header.orderDate) he.orderDate = true;
     if (!header.deliveryDate) he.deliveryDate = true;
-    if (!header.clientCategory) he.clientCategory = true;
     if (!header.clientName) he.clientName = true;
     setHeaderErrors(he);
 
     const allItemErrors = items.map((it) => {
       const e = {};
       if (!it.itemCategory) e.itemCategory = true;
-      if (FG_SIZE_CLIENT_CATS.includes(it.itemCategory) && !it.size)
+      // Require either size or at least one dimension
+      if (!it.size && !it.width && !it.length && !it.height && !it.gussett) {
         e.size = true;
-      if (
-        FG_BOX_CATS.includes(it.itemCategory) &&
-        (!it.width || !it.length || !it.height)
-      )
-        e.dimensions = true;
-      if (FG_FLAT_CATS.includes(it.itemCategory) && (!it.width || !it.length))
-        e.dimensions = true;
-      if (
-        FG_BAG_CATS.includes(it.itemCategory) &&
-        (!it.width || !it.gussett || !it.height)
-      )
-        e.dimensions = true;
-      if (FG_WRAP_CATS.includes(it.itemCategory) && (!it.width || !it.height))
-        e.dimensions = true;
+      }
       if (!it.orderQty) e.orderQty = true;
       if (!it.price) e.price = true;
       return e;
@@ -218,61 +244,71 @@ export default function SalesOrders({
       return;
     }
 
-    const soNo = `SO-${String(soCounter + 1).padStart(5, "0")}`;
-    const entry = { ...header, id: uid(), soNo, items };
-    setSalesOrders((p) => [...p, entry]);
-    setSoCounter((c) => c + 1);
+    setLoading(true);
+    try {
+      const payload = {
+        orderDate: header.orderDate,
+        deliveryDate: header.deliveryDate,
+        salesPerson: header.salesPerson,
+        clientCategory: header.clientCategory,
+        clientName: header.clientName,
+        remarks: header.remarks,
+        items: items.map((it) => ({
+          productCode: it.productCode,
+          itemCategory: it.itemCategory,
+          itemName: it.itemName,
+          size: it.size,
+          variant: it.variant,
+          width: it.width ? Number(it.width) : undefined,
+          length: it.length ? Number(it.length) : undefined,
+          height: it.height ? Number(it.height) : undefined,
+          gussett: it.gussett ? Number(it.gussett) : undefined,
+          uom: it.uom,
+          orderQty: Number(it.orderQty),
+          price: Number(it.price),
+          amount: Number(it.amount),
+          remarks: it.remarks,
+        })),
+        status: header.status || "Open",
+      };
 
-    if (
-      clientMaster &&
-      !clientMaster.find((c) => c.name === header.clientName)
-    ) {
-      setClientMaster((p) => [
-        ...p,
-        {
-          id: uid(),
-          name: header.clientName,
-          category: header.clientCategory,
-          status: "Active",
-        },
-      ]);
-    }
-
-    items.forEach((it) => {
-      if (!itemMasterFG["Finished Goods"]) itemMasterFG["Finished Goods"] = [];
-      const exists = itemMasterFG["Finished Goods"].find(
-        (x) => x.name === it.itemName,
-      );
-      if (!exists) {
-        setItemMasterFG((prev) => ({
-          ...prev,
-          "Finished Goods": [
-            ...(prev["Finished Goods"] || []),
-            {
-              id: uid(),
-              code: "",
-              name: it.itemName,
-              category: it.itemCategory,
-              size: it.size,
-              status: "Active",
-            },
-          ],
-        }));
+      if (editId) {
+        await salesOrdersAPI.update(editId, payload);
+        toast("Sales Order updated successfully", "success");
+        setEditId(null);
+      } else {
+        const res = await salesOrdersAPI.create(payload);
+        toast(
+          `Sales Order ${res.salesOrder.soNo} created successfully`,
+          "success",
+        );
       }
-    });
 
-    toast(`Sales Order ${soNo} created`, "success");
-    setHeader(blankHeader);
-    setItems([blankItem()]);
-    setHeaderErrors({});
-    setItemErrors([{}]);
+      setHeader(blankHeader);
+      setItems([blankItem()]);
+      setHeaderErrors({});
+      setItemErrors([{}]);
+      setView("records");
+      fetchSalesOrders();
+      fetchClients(); // Refresh clients as backend auto-creates them
+    } catch (error) {
+      toast(
+        error.response?.data?.error || "Failed to save sales order",
+        "error",
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   /* ─── dimension fields helper ─── */
   const DimensionFields = ({ it, idx }) => {
-    if (FG_SIZE_CLIENT_CATS.includes(it.itemCategory)) {
+    // Check if size master has sizes for this category
+    const hasSize = (sizeMaster || {})[it.itemCategory]?.length > 0;
+
+    if (hasSize) {
       return (
-        <Field label="Size *">
+        <Field label="Size">
           <select
             value={it.size}
             onChange={(e) => setItem(idx, "size", e.target.value)}
@@ -287,121 +323,46 @@ export default function SalesOrders({
         </Field>
       );
     }
-    if (FG_BOX_CATS.includes(it.itemCategory)) {
-      return (
-        <>
-          <Field label="Width (inch) *">
-            <input
-              type="number"
-              placeholder="e.g. 8"
-              value={it.width}
-              onChange={(e) => setItem(idx, "width", e.target.value)}
-              style={EI(idx, "dimensions")}
-            />
-          </Field>
-          <Field label="Length (inch) *">
-            <input
-              type="number"
-              placeholder="e.g. 8"
-              value={it.length}
-              onChange={(e) => setItem(idx, "length", e.target.value)}
-              style={EI(idx, "dimensions")}
-            />
-          </Field>
-          <Field label="Height (inch) *">
-            <input
-              type="number"
-              placeholder="e.g. 5"
-              value={it.height}
-              onChange={(e) => setItem(idx, "height", e.target.value)}
-              style={EI(idx, "dimensions")}
-            />
-          </Field>
-        </>
-      );
-    }
-    if (FG_FLAT_CATS.includes(it.itemCategory)) {
-      return (
-        <>
-          <Field label="Width (inch) *">
-            <input
-              type="number"
-              placeholder="e.g. 10"
-              value={it.width}
-              onChange={(e) => setItem(idx, "width", e.target.value)}
-              style={EI(idx, "dimensions")}
-            />
-          </Field>
-          <Field label="Length (inch) *">
-            <input
-              type="number"
-              placeholder="e.g. 14"
-              value={it.length}
-              onChange={(e) => setItem(idx, "length", e.target.value)}
-              style={EI(idx, "dimensions")}
-            />
-          </Field>
-        </>
-      );
-    }
-    if (FG_BAG_CATS.includes(it.itemCategory)) {
-      return (
-        <>
-          <Field label="Width (inch) *">
-            <input
-              type="number"
-              placeholder="e.g. 9"
-              value={it.width}
-              onChange={(e) => setItem(idx, "width", e.target.value)}
-              style={EI(idx, "dimensions")}
-            />
-          </Field>
-          <Field label="Gussett (inch) *">
-            <input
-              type="number"
-              placeholder="e.g. 6"
-              value={it.gussett}
-              onChange={(e) => setItem(idx, "gussett", e.target.value)}
-              style={EI(idx, "dimensions")}
-            />
-          </Field>
-          <Field label="Height (inch) *">
-            <input
-              type="number"
-              placeholder="e.g. 12"
-              value={it.height}
-              onChange={(e) => setItem(idx, "height", e.target.value)}
-              style={EI(idx, "dimensions")}
-            />
-          </Field>
-        </>
-      );
-    }
-    if (FG_WRAP_CATS.includes(it.itemCategory)) {
-      return (
-        <>
-          <Field label="Width (inch) *">
-            <input
-              type="number"
-              placeholder="e.g. 20"
-              value={it.width}
-              onChange={(e) => setItem(idx, "width", e.target.value)}
-              style={EI(idx, "dimensions")}
-            />
-          </Field>
-          <Field label="Height (inch) *">
-            <input
-              type="number"
-              placeholder="e.g. 30"
-              value={it.height}
-              onChange={(e) => setItem(idx, "height", e.target.value)}
-              style={EI(idx, "dimensions")}
-            />
-          </Field>
-        </>
-      );
-    }
-    return null;
+
+    // Otherwise show dimension fields
+    return (
+      <>
+        <Field label="Width (inch)">
+          <input
+            type="number"
+            placeholder="Width"
+            value={it.width}
+            onChange={(e) => setItem(idx, "width", e.target.value)}
+            style={EI(idx, "size")}
+          />
+        </Field>
+        <Field label="Length (inch)">
+          <input
+            type="number"
+            placeholder="Length"
+            value={it.length}
+            onChange={(e) => setItem(idx, "length", e.target.value)}
+          />
+        </Field>
+        <Field label="Height (inch)">
+          <input
+            type="number"
+            placeholder="Height"
+            value={it.height}
+            onChange={(e) => setItem(idx, "height", e.target.value)}
+          />
+        </Field>
+        <Field label="Gussett (inch)">
+          <input
+            type="number"
+            placeholder="Gussett (optional)"
+            value={it.gussett}
+            onChange={(e) => setItem(idx, "gussett", e.target.value)}
+          />
+        </Field>
+        {EIMsg(idx, "size")}
+      </>
+    );
   };
 
   return (
@@ -479,16 +440,18 @@ export default function SalesOrders({
                 />
                 {EHMsg("deliveryDate")}
               </Field>
-              <Field label="Sales Person *">
+              <Field label="Sales Person">
                 <select
                   value={header.salesPerson}
                   onChange={(e) => setH("salesPerson", e.target.value)}
                 >
                   <option value="">-- Select --</option>
                   <option value="Direct Order">Direct Order</option>
-                  <option value="Sales Person 1">Sales Person 1</option>
-                  <option value="Sales Person 2">Sales Person 2</option>
-                  <option value="Sales Person 3">Sales Person 3</option>
+                  {salesPersons.map((sp) => (
+                    <option key={sp} value={sp}>
+                      {sp}
+                    </option>
+                  ))}
                 </select>
               </Field>
             </div>
@@ -502,24 +465,19 @@ export default function SalesOrders({
                 gap: 14,
               }}
             >
-              <Field label="Client Category *">
-                <select
+              <Field label="Client Category">
+                <AutocompleteInput
                   value={header.clientCategory}
-                  onChange={(e) => setH("clientCategory", e.target.value)}
-                  style={EH("clientCategory")}
-                >
-                  <option value="">-- Select Category --</option>
-                  {["HP", "ZPL", "Others"].map((c) => (
-                    <option key={c}>{c}</option>
-                  ))}
-                </select>
-                {EHMsg("clientCategory")}
+                  onChange={(v) => setH("clientCategory", v)}
+                  suggestions={clientCategories}
+                  placeholder="Select or type new category"
+                />
               </Field>
               <Field label="Client Name *">
                 <AutocompleteInput
                   value={header.clientName}
                   onChange={(v) => setH("clientName", v)}
-                  suggestions={(clientMaster || []).map((c) => c.name)}
+                  suggestions={clients.map((c) => c.name)}
                   placeholder="Client / Company name"
                   inputStyle={EH("clientName")}
                 />
@@ -644,7 +602,7 @@ export default function SalesOrders({
                     style={EI(idx, "itemCategory")}
                   >
                     <option value="">-- Select Category --</option>
-                    {fgCategories.map((c) => (
+                    {categories.map((c) => (
                       <option key={c}>{c}</option>
                     ))}
                   </select>
@@ -771,10 +729,37 @@ export default function SalesOrders({
               + Add Another Item
             </button>
             <SubmitBtn
-              label={`Create Sales Order (${items.length} item${items.length > 1 ? "s" : ""})`}
+              label={
+                editId
+                  ? `Update Sales Order (${items.length} item${items.length > 1 ? "s" : ""})`
+                  : `Create Sales Order (${items.length} item${items.length > 1 ? "s" : ""})`
+              }
               color={C.green || "#4ade80"}
               onClick={submit}
+              disabled={loading}
             />
+            {editId && (
+              <button
+                onClick={() => {
+                  setEditId(null);
+                  setHeader(blankHeader);
+                  setItems([blankItem()]);
+                  setHeaderErrors({});
+                  setItemErrors([{}]);
+                }}
+                style={{
+                  padding: "10px 20px",
+                  borderRadius: 6,
+                  border: `1px solid ${C.border}`,
+                  background: "transparent",
+                  color: C.muted,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+            )}
             {items.some((it) => it.amount) && (
               <div
                 style={{
@@ -856,9 +841,60 @@ export default function SalesOrders({
                 (s, it) => s + +(it.amount || 0),
                 0,
               );
+              const handleEdit = async (so) => {
+                setEditId(so._id);
+                setHeader({
+                  orderDate: new Date(so.orderDate).toISOString().slice(0, 10),
+                  deliveryDate: new Date(so.deliveryDate)
+                    .toISOString()
+                    .slice(0, 10),
+                  salesPerson: so.salesPerson || "",
+                  clientCategory: so.clientCategory || "",
+                  clientName: so.clientName,
+                  remarks: so.remarks || "",
+                  status: so.status,
+                });
+                setItems(
+                  so.items.map((it) => ({
+                    _id: it._id || uid(),
+                    productCode: it.productCode || "",
+                    itemCategory: it.itemCategory,
+                    itemName: it.itemName,
+                    size: it.size || "",
+                    variant: it.variant || "",
+                    width: it.width || "",
+                    length: it.length || "",
+                    height: it.height || "",
+                    gussett: it.gussett || "",
+                    uom: it.uom || "nos",
+                    orderQty: it.orderQty,
+                    price: it.price,
+                    amount: it.amount,
+                    remarks: it.remarks || "",
+                  })),
+                );
+                setView("form");
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              };
+
+              const handleDelete = async (id) => {
+                if (!confirm("Delete this sales order?")) return;
+                try {
+                  await salesOrdersAPI.delete(id);
+                  toast("Sales order deleted successfully", "success");
+                  fetchSalesOrders();
+                } catch (error) {
+                  toast(
+                    error.response?.data?.error ||
+                      "Failed to delete sales order",
+                    "error",
+                  );
+                }
+              };
+
               return (
                 <div
-                  key={r.id}
+                  key={r._id}
                   style={{
                     borderBottom: `1px solid ${C.border}22`,
                     padding: "12px 4px",
@@ -891,7 +927,7 @@ export default function SalesOrders({
                         {r.soNo}
                       </span>
                       <span style={{ fontSize: 12, color: C.muted }}>
-                        {r.orderDate}
+                        {new Date(r.orderDate).toISOString().slice(0, 10)}
                       </span>
                       <span style={{ fontSize: 13, fontWeight: 600 }}>
                         {r.clientName}
@@ -912,6 +948,38 @@ export default function SalesOrders({
                           ₹{fmt(total)}
                         </span>
                       )}
+                    </div>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button
+                        onClick={() => handleEdit(r)}
+                        style={{
+                          padding: "5px 12px",
+                          borderRadius: 4,
+                          border: `1px solid ${C.blue}`,
+                          background: C.blue + "22",
+                          color: C.blue,
+                          fontWeight: 600,
+                          fontSize: 12,
+                          cursor: "pointer",
+                        }}
+                      >
+                        ✏️ Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(r._id)}
+                        style={{
+                          padding: "5px 12px",
+                          borderRadius: 4,
+                          border: `1px solid ${C.red}`,
+                          background: C.red + "22",
+                          color: C.red,
+                          fontWeight: 600,
+                          fontSize: 12,
+                          cursor: "pointer",
+                        }}
+                      >
+                        🗑️
+                      </button>
                     </div>
                   </div>
                   <div

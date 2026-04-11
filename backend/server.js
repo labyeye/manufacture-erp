@@ -30,12 +30,22 @@ const authRoutes = require('./routes/auth');
 const purchaseOrderRoutes = require('./routes/purchaseOrders');
 const materialInwardRoutes = require('./routes/materialInward');
 const categoryMasterRoutes = require('./routes/categoryMaster');
+const clientMasterRoutes = require('./routes/clientMaster');
+const vendorMasterRoutes = require('./routes/vendorMaster');
+const salesOrderRoutes = require('./routes/salesOrders');
+const jobOrderRoutes = require('./routes/jobOrders');
+const dispatchRoutes = require('./routes/dispatch');
 
 // Use routes
 app.use('/api/auth', authRoutes);
 app.use('/api/purchase-orders', purchaseOrderRoutes);
 app.use('/api/material-inward', materialInwardRoutes);
 app.use('/api/category-master', categoryMasterRoutes);
+app.use('/api/client-master', clientMasterRoutes);
+app.use('/api/vendor-master', vendorMasterRoutes);
+app.use('/api/sales-orders', salesOrderRoutes);
+app.use('/api/job-orders', jobOrderRoutes);
+app.use('/api/dispatch', dispatchRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

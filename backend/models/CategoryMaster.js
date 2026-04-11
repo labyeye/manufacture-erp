@@ -1,15 +1,35 @@
 const mongoose = require('mongoose');
 
 const categoryMasterSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  code: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
+    uppercase: true
+  },
+  description: {
+    type: String,
+    trim: true
+  },
   type: {
     type: String,
-    enum: ['Raw Material', 'Finished Goods', 'Consumable', 'Machine Spare'],
-    required: true,
-    unique: true
+    enum: ['Raw Material', 'Finished Good', 'Consumable'],
+    default: 'Raw Material'
   },
-  categories: {
-    type: [String],
-    default: []
+  status: {
+    type: String,
+    enum: ['Active', 'Inactive'],
+    default: 'Active'
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
   }
 }, {
   timestamps: true

@@ -56,10 +56,42 @@ export const jobOrdersAPI = {
   }
 };
 
+export const dispatchAPI = {
+  getAll: async () => {
+    const response = await api.get('/dispatch');
+    return response.data;
+  },
+
+  getOne: async (id) => {
+    const response = await api.get(`/dispatch/${id}`);
+    return response.data;
+  },
+
+  create: async (data) => {
+    const response = await api.post('/dispatch', data);
+    return response.data;
+  },
+
+  update: async (id, data) => {
+    const response = await api.put(`/dispatch/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id) => {
+    const response = await api.delete(`/dispatch/${id}`);
+    return response.data;
+  }
+};
+
 // Add more API modules as needed
 export const salesOrdersAPI = {
   getAll: async () => {
     const response = await api.get('/sales-orders');
+    return response.data;
+  },
+
+  getOne: async (id) => {
+    const response = await api.get(`/sales-orders/${id}`);
     return response.data;
   },
 
@@ -75,6 +107,11 @@ export const salesOrdersAPI = {
 
   delete: async (id) => {
     const response = await api.delete(`/sales-orders/${id}`);
+    return response.data;
+  },
+
+  updateStatus: async (id, status) => {
+    const response = await api.patch(`/sales-orders/${id}/status`, { status });
     return response.data;
   }
 };
@@ -166,6 +203,97 @@ export const categoryMasterAPI = {
 
   delete: async (id) => {
     const response = await api.delete(`/category-master/${id}`);
+    return response.data;
+  }
+};
+
+export const clientMasterAPI = {
+  getAll: async () => {
+    const response = await api.get('/client-master');
+    return response.data;
+  },
+
+  getOne: async (id) => {
+    const response = await api.get(`/client-master/${id}`);
+    return response.data;
+  },
+
+  create: async (data) => {
+    const response = await api.post('/client-master', data);
+    return response.data;
+  },
+
+  update: async (id, data) => {
+    const response = await api.put(`/client-master/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id) => {
+    const response = await api.delete(`/client-master/${id}`);
+    return response.data;
+  },
+
+  updateStatus: async (id, status) => {
+    const response = await api.patch(`/client-master/${id}/status`, { status });
+    return response.data;
+  }
+};
+
+export const vendorMasterAPI = {
+  getAll: async () => {
+    const response = await api.get('/vendor-master');
+    return response.data;
+  },
+
+  getOne: async (id) => {
+    const response = await api.get(`/vendor-master/${id}`);
+    return response.data;
+  },
+
+  create: async (data) => {
+    const response = await api.post('/vendor-master', data);
+    return response.data;
+  },
+
+  update: async (id, data) => {
+    const response = await api.put(`/vendor-master/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id) => {
+    const response = await api.delete(`/vendor-master/${id}`);
+    return response.data;
+  },
+
+  updateStatus: async (id, status) => {
+    const response = await api.patch(`/vendor-master/${id}/status`, { status });
+    return response.data;
+  }
+};
+
+export const usersAPI = {
+  getAll: async () => {
+    const response = await api.get('/auth/users');
+    return response.data;
+  },
+
+  getOne: async (id) => {
+    const response = await api.get(`/auth/users/${id}`);
+    return response.data;
+  },
+
+  create: async (data) => {
+    const response = await api.post('/auth/users', data);
+    return response.data;
+  },
+
+  update: async (id, data) => {
+    const response = await api.put(`/auth/users/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id) => {
+    const response = await api.delete(`/auth/users/${id}`);
     return response.data;
   }
 };

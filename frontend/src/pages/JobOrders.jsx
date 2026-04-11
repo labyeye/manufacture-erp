@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { C } from "../constants/colors";
 import {
   Card,
@@ -10,6 +10,7 @@ import {
   DatePicker,
   DateRangeFilter,
 } from "../components/ui/BasicComponents";
+import { jobOrdersAPI, salesOrdersAPI } from "../api/auth";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 const today = () => new Date().toISOString().slice(0, 10);
@@ -102,22 +103,14 @@ const AutoField = ({ value, placeholder }) => (
 );
 
 export default function JobOrders({
-  jobOrders = [],
-  setJobOrders,
-  salesOrders = [],
-  purchaseOrders = [],
-  itemMasterFG = {},
   machineMaster = {},
   rawStock = [],
-  wipStock = [],
-  fgStock = [],
   setRawStock,
-  setWipStock,
-  setFgStock,
-  joCounter = 0,
-  setJoCounter,
   toast,
 }) {
+  const [jobOrders, setJobOrders] = useState([]);
+  const [salesOrders, setSalesOrders] = useState([]);
+  const [loading, setLoading] = useState(false);
   const blankHeader = {
     joDate: today(),
     soRef: "",
@@ -148,6 +141,31 @@ export default function JobOrders({
   const [header, setHeader] = useState(blankHeader);
   const [headerErrors, setHeaderErrors] = useState({});
   const [view, setView] = useState("form");
+  const [editId, setEditId] = useState(null);
+
+  // Load data on mount
+  useEffect(() => {
+    fetchJobOrders();
+    fetchSalesOrders();
+  }, []);
+
+  const fetchJobOrders = async () => {
+    try {
+      const res = await jobOrdersAPI.getAll();
+      setJobOrders(res || []);
+    } catch (error) {
+      toast?.("Failed to load job orders", "error");
+    }
+  };
+
+  const fetchSalesOrders = async () => {
+    try {
+      const res = await salesOrdersAPI.getAll();
+      setSalesOrders(res.salesOrders || []);
+    } catch (error) {
+      console.error("Failed to fetch sales orders:", error);
+    }
+  };
   const [drDateFrom, setDrDateFrom] = useState("");
   const [drDateTo, setDrDateTo] = useState("");
 
@@ -234,7 +252,7 @@ export default function JobOrders({
     return true;
   };
 
-  const submit = () => {
+  const submit = async () => {
     const he = {};
     if (!header.joDate) he.joDate = true;
     if (!header.soRef) he.soRef = true;
@@ -249,41 +267,52 @@ export default function JobOrders({
     }
     if (!validateRMStock()) return;
 
-    const joNo = `JO-${String(joCounter + 1).padStart(5, "0")}`;
-    const entry = {
-      ...header,
-      id: uid(),
-      joNo,
-      sheetSize,
-      status: "Not Started",
-      createdAt: today(),
-    };
+    setLoading(true);
+    try {
+      const payload = {
+        jobcardDate: new Date(header.joDate),
+        soRef: header.soRef,
+        clientName: header.clientName,
+        clientCategory: header.clientCategory,
+        itemName: header.itemName,
+        orderQty: Number(header.orderQty),
+        deliveryDate: header.deliveryDate ? new Date(header.deliveryDate) : null,
+        process: header.processes,
+        printing: header.printing,
+        plate: header.plate,
+        paperCategory: header.paperCategory,
+        paperType: header.paperType,
+        paperGsm: Number(header.paperGsm),
+        sheetSize,
+        sheetW: Number(header.sheetW),
+        sheetL: Number(header.sheetL),
+        sheetUom: header.sheetUom,
+        noOfUps: Number(header.noOfUps),
+        noOfSheets: Number(header.noOfSheets),
+        hasSecondPaper: header.hasSecondPaper,
+        paperType2: header.paperType2,
+        paperGsm2: header.paperGsm2 ? Number(header.paperGsm2) : null,
+        remarks: header.remarks,
+      };
 
-    setJobOrders((p) => [...p, entry]);
-    setJoCounter((c) => c + 1);
+      if (editId) {
+        await jobOrdersAPI.update(editId, payload);
+        toast("Job Order updated successfully", "success");
+        setEditId(null);
+      } else {
+        const res = await jobOrdersAPI.create(payload);
+        toast(`Job Order ${res.joNo} created successfully`, "success");
+      }
 
-    const stockKey = [
-      header.paperCategory,
-      header.paperType,
-      header.paperGsm + "gsm",
-    ]
-      .filter(Boolean)
-      .join(" | ");
-    setRawStock((prev) =>
-      prev.map((s) =>
-        s.name === stockKey
-          ? {
-              ...s,
-              qty: Math.max(0, (s.qty || 0) - 1),
-              weight: Math.max(0, (s.weight || 0) - 0.5),
-            }
-          : s,
-      ),
-    );
-
-    toast(`Job Order ${joNo} created`, "success");
-    setHeader(blankHeader);
-    setHeaderErrors({});
+      setHeader(blankHeader);
+      setHeaderErrors({});
+      setView("records");
+      fetchJobOrders();
+    } catch (error) {
+      toast(error.response?.data?.error || "Failed to save job order", "error");
+    } finally {
+      setLoading(false);
+    }
   };
 
   /* ══════════════════════════════════════════════════════ */
@@ -686,10 +715,31 @@ export default function JobOrders({
           {/* ── Submit ── */}
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <SubmitBtn
-              label="Create Job Order"
+              label={editId ? "Update Job Order" : "Create Job Order"}
               color={C.yellow || "#facc15"}
               onClick={submit}
+              disabled={loading}
             />
+            {editId && (
+              <button
+                onClick={() => {
+                  setEditId(null);
+                  setHeader(blankHeader);
+                  setHeaderErrors({});
+                }}
+                style={{
+                  padding: "10px 20px",
+                  borderRadius: 6,
+                  border: `1px solid ${C.border}`,
+                  background: "transparent",
+                  color: C.muted,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+            )}
           </div>
         </Card>
       )}
@@ -743,9 +793,53 @@ export default function JobOrders({
           {(jobOrders || [])
             .slice()
             .reverse()
-            .map((r) => (
+            .map((r) => {
+              const handleEdit = (jo) => {
+                setEditId(jo._id);
+                setHeader({
+                  joDate: new Date(jo.jobcardDate).toISOString().slice(0, 10),
+                  soRef: jo.soRef || "",
+                  clientName: jo.clientName || "",
+                  clientCategory: jo.clientCategory || "",
+                  itemName: jo.itemName || "",
+                  size: "",
+                  orderDate: "",
+                  deliveryDate: jo.deliveryDate ? new Date(jo.deliveryDate).toISOString().slice(0, 10) : "",
+                  orderQty: jo.orderQty || "",
+                  printing: jo.printing || "",
+                  plate: jo.plate || "",
+                  processes: jo.process || [],
+                  paperCategory: jo.paperCategory || "",
+                  paperType: jo.paperType || "",
+                  paperGsm: jo.paperGsm || "",
+                  noOfUps: jo.noOfUps || "",
+                  noOfSheets: jo.noOfSheets || "",
+                  sheetUom: jo.sheetUom || "mm",
+                  sheetW: jo.sheetW || "",
+                  sheetL: jo.sheetL || "",
+                  hasSecondPaper: jo.hasSecondPaper || false,
+                  paperType2: jo.paperType2 || "",
+                  paperGsm2: jo.paperGsm2 || "",
+                  remarks: jo.remarks || "",
+                });
+                setView("form");
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              };
+
+              const handleDelete = async (id) => {
+                if (!confirm('Delete this job order?')) return;
+                try {
+                  await jobOrdersAPI.delete(id);
+                  toast('Job order deleted successfully', 'success');
+                  fetchJobOrders();
+                } catch (error) {
+                  toast(error.response?.data?.error || 'Failed to delete job order', 'error');
+                }
+              };
+
+              return (
               <div
-                key={r.id}
+                key={r._id || r.id}
                 style={{
                   borderBottom: `1px solid ${C.border}22`,
                   padding: "12px 4px",
@@ -787,6 +881,38 @@ export default function JobOrders({
                       text={r.status}
                       color={r.status === "Completed" ? C.green : C.yellow}
                     />
+                  </div>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button
+                      onClick={() => handleEdit(r)}
+                      style={{
+                        padding: "5px 12px",
+                        borderRadius: 4,
+                        border: `1px solid ${C.yellow || "#facc15"}`,
+                        background: (C.yellow || "#facc15") + "22",
+                        color: C.yellow || "#facc15",
+                        fontWeight: 600,
+                        fontSize: 12,
+                        cursor: "pointer",
+                      }}
+                    >
+                      ✏️ Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(r._id || r.id)}
+                      style={{
+                        padding: "5px 12px",
+                        borderRadius: 4,
+                        border: `1px solid ${C.red}`,
+                        background: C.red + "22",
+                        color: C.red,
+                        fontWeight: 600,
+                        fontSize: 12,
+                        cursor: "pointer",
+                      }}
+                    >
+                      🗑️
+                    </button>
                   </div>
                 </div>
                 <div
@@ -855,7 +981,8 @@ export default function JobOrders({
                   )}
                 </div>
               </div>
-            ))}
+              );
+            })}
         </Card>
       )}
     </div>

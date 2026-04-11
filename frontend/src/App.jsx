@@ -279,7 +279,7 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
       case "inward":
         return <MaterialInward {...data} toast={showToast} />;
       case "sales":
-        return <SalesOrders {...data} toast={showToast} />;
+        return <SalesOrders sizeMaster={sizeMaster} toast={showToast} />;
       case "jobs":
         return <JobOrders {...data} toast={showToast} />;
       case "production":
@@ -297,21 +297,9 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
       case "consumablestock":
         return <ConsumableStock {...data} toast={showToast} />;
       case "vendormaster":
-        return (
-          <VendorMaster
-            vendorMaster={vendorMaster}
-            setVendorMaster={setVendorMaster}
-            toast={showToast}
-          />
-        );
+        return <VendorMaster toast={showToast} />;
       case "clientmaster":
-        return (
-          <ClientMaster
-            clientMaster={clientMaster}
-            setClientMaster={setClientMaster}
-            toast={showToast}
-          />
-        );
+        return <ClientMaster toast={showToast} />;
       case "sizemaster":
         return (
           <CategoryMaster
