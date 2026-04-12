@@ -193,35 +193,73 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
 
   const fetchMasters = async () => {
     try {
-      const [vendors, clients, categories, items, stocks, machines, fgStockData] =
-        await Promise.all([
-          vendorMasterAPI.getAll(),
-          clientMasterAPI.getAll(),
-          categoryMasterAPI.getAll(),
-          itemMasterAPI.getAll(),
-          rawMaterialStockAPI.getAll(),
-          machineMasterAPI.getAll(),
-          fgStockAPI.getAll(),
-        ]);
+      const results = await Promise.allSettled([
+        vendorMasterAPI.getAll(),
+        clientMasterAPI.getAll(),
+        categoryMasterAPI.getAll(),
+        itemMasterAPI.getAll(),
+        rawMaterialStockAPI.getAll(),
+        machineMasterAPI.getAll(),
+        fgStockAPI.getAll(),
+        jobOrdersAPI.getAll(),
+        salesOrdersAPI.getAll(),
+        purchaseOrdersAPI.getAll(),
+        dispatchAPI.getAll(),
+        materialInwardAPI.getAll(),
+      ]);
 
-      if (vendors.vendors) setVendorMaster(vendors.vendors);
-      if (clients.clients) setClientMaster(clients.clients);
+      const [
+        vendors,
+        clients,
+        categories,
+        items,
+        stocks,
+        machines,
+        fgStockData,
+        jos,
+        sos,
+        pos,
+        disp,
+        inw,
+      ] = results.map((r) => (r.status === "fulfilled" ? r.value : null));
 
-      if (categories.categories) {
-        console.log("📂 Category Master updated:", categories.categories);
-        setCategoryMaster(categories.categories);
-      }
+      const unwrap = (val, key) => {
+        if (!val) return [];
+        if (Array.isArray(val)) return val;
+        if (val[key] && Array.isArray(val[key])) return val[key];
+        if (val.data && Array.isArray(val.data)) return val.data;
+        if (val.records && Array.isArray(val.records)) return val.records;
+        if (typeof val === 'object') {
+           const firstArr = Object.values(val).find(v => Array.isArray(v));
+           if (firstArr) return firstArr;
+        }
+        return [];
+      };
 
-      if (items.items) setItemMasterFG(items.items);
-      if (stocks) {
-        setRawStock(stocks.stock || stocks);
-      }
-      if (machines && machines.machines) {
-        setMachineMaster(machines.machines);
-      }
-      if (fgStockData) {
-        setFgStock(fgStockData.stock || fgStockData);
-      }
+      const vList = unwrap(vendors, 'vendors');
+      const cList = unwrap(clients, 'clients');
+      const catList = unwrap(categories, 'categories');
+      const itemList = unwrap(items, 'items');
+      const machineList = unwrap(machines, 'machines');
+      const joList = unwrap(jos, 'jobOrders');
+      const soList = unwrap(sos, 'salesOrders');
+      const poList = unwrap(pos, 'purchaseOrders');
+      const dispList = unwrap(disp, 'dispatches');
+      const inwList = unwrap(inw, 'inwards');
+
+      setVendorMaster(vList);
+      setClientMaster(cList);
+      setCategoryMaster(catList);
+      setItemMasterFG(itemList);
+      setMachineMaster(machineList);
+      setJobOrders(joList);
+      setSalesOrders(soList);
+      setPurchaseOrders(poList);
+      setDispatches(dispList);
+      setInward(inwList);
+
+      if (stocks) setRawStock(stocks.stock || stocks);
+      if (fgStockData) setFgStock(fgStockData.stock || fgStockData);
     } catch (err) {
       console.error("Global fetch error:", err);
     }

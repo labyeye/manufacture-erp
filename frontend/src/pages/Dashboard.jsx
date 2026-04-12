@@ -1,198 +1,380 @@
-import React, { useState } from "react";
-import { C, PROCESS_COLORS, PROCESS_ICONS } from "../constants/colors";
-import { Card, SectionTitle, Badge } from "../components/ui/BasicComponents";
-import { SHEET_STAGES, FORMATION_STAGES_QTY } from "../constants/seedData";
-const STAGES = [...SHEET_STAGES, ...FORMATION_STAGES_QTY];
-import { today, fmt, daysSince } from "../utils/helpers";
+import React, { useState, useMemo, useEffect } from "react";
+import { C, PROCESS_COLORS, STAGES } from "../constants/colors";
+import {
+  Badge,
+  Card,
+  SectionTitle,
+  ExcelBtn,
+} from "../components/ui/BasicComponents";
+import { fmt, today, xlsxDownload, daysSince } from "../utils/helpers";
+import * as XLSX from "xlsx";
 
+const ReportTabs = [
+  { id: "production", label: "Production Report", icon: "⚙️" },
+  { id: "operator", label: "Operator Report", icon: "👤" },
+  { id: "machine", label: "Machine Report", icon: "🏗️" },
+  { id: "po_recon", label: "PO Reconciliation", icon: "🛒" },
+  { id: "so_recon", label: "SO Reconciliation", icon: "📋" },
+  { id: "so_ageing", label: "SO Ageing", icon: "⌛" },
+  { id: "prod_target", label: "Prod vs Target", icon: "🎯" },
+  { id: "yield", label: "Yield Tracking", icon: "📝" },
+  { id: "delivery", label: "Delivery Status", icon: "🚚" },
+  { id: "low_stock", label: "Low Stock", icon: "⚠️" },
+  { id: "monthly", label: "Monthly Summary", icon: "📅" },
+  { id: "vendor", label: "Vendor Performance", icon: "🏪" },
+];
 
+// Shared table styles - fixed, non-stretched
+const TH = {
+  padding: "10px 12px",
+  background: "#1a1a1e",
+  borderBottom: "1px solid #2a2a2e",
+  fontSize: 11,
+  fontWeight: 700,
+  color: "#888",
+  textTransform: "uppercase",
+  letterSpacing: "0.04em",
+  whiteSpace: "nowrap",
+  fontStretch: "normal",
+};
 
+const TD = {
+  padding: "12px 12px",
+  borderBottom: "1px solid #1e1e22",
+  fontSize: 12,
+  fontWeight: 400,
+  color: "#e0e0e0",
+  whiteSpace: "nowrap",
+  fontStretch: "normal",
+};
 
+const TABLE = {
+  width: "100%",
+  borderCollapse: "collapse",
+  tableLayout: "fixed",
+  fontFamily: "'DM Mono', 'Fira Code', 'Consolas', monospace",
+  fontStretch: "normal",
+};
 
-
-
-
-
-export function Dashboard({
-  data,
-  onNavigate,
-  machineReportData,
-  setMachineReportData,
-}) {
+export function Dashboard({ data }) {
   const {
-    jobOrders,
-    machineMaster,
-    purchaseOrders,
-    inward,
-    salesOrders,
-    dispatches,
-    rawStock,
-    fgStock,
-    itemMasterFG,
+    jobOrders = [],
+    salesOrders = [],
+    fgStock = [],
+    machineMaster = [],
+    purchaseOrders = [],
+    dispatches = [],
+    inward = [],
+    vendorMaster = [],
+    refreshData,
   } = data;
+
+  useEffect(() => {
+    if (refreshData) refreshData();
+  }, []);
 
   const [reportTab, setReportTab] = useState("production");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [drill, setDrill] = useState(null);
-  const [selMachineId, setSelMachineId] = useState("");
-  const [selOperator, setSelOperator] = useState("");
 
-  
-  const { activeJOs, processPendingMap, totalActiveJOs } = React.useMemo(() => {
-    const activeJOs = jobOrders.filter(
-      (j) => j.status !== "Completed" && j.status !== "Cancelled",
+  const [selectedOperator, setSelectedOperator] = useState("");
+  const [selectedMachine, setSelectedMachine] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  });
+
+  const [pvtTargets, setPvtTargets] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("erp_pvtTargets") || "{}");
+    } catch {
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem("erp_pvtTargets", JSON.stringify(pvtTargets));
+  }, [pvtTargets]);
+
+  const allEntries = useMemo(() => {
+    const list = [];
+    jobOrders.forEach((jo) => {
+      (jo.stageHistory || []).forEach((h) => {
+        list.push({
+          ...h,
+          joNo: jo.joNo,
+          clientName: jo.clientName,
+          itemName: jo.itemName,
+        });
+      });
+    });
+    return list.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+  }, [jobOrders]);
+
+  const activeJOs = useMemo(
+    () =>
+      jobOrders.filter(
+        (j) => j.status !== "Completed" && j.status !== "Cancelled",
+      ),
+    [jobOrders],
+  );
+
+  const activeMachines = useMemo(() => {
+    const usedIds = new Set(
+      allEntries
+        .map((e) => String(e.machineId || e.machine || ""))
+        .filter(Boolean),
     );
-    const processPendingMap = {};
+    if (usedIds.size === 0) return machineMaster;
+    return machineMaster.filter((m) => {
+      return usedIds.has(String(m._id)) || usedIds.has(String(m.name));
+    });
+  }, [allEntries, machineMaster]);
+
+  const filteredEntries = useMemo(() => {
+    return allEntries.filter((e) => {
+      if (dateFrom && e.date < dateFrom) return false;
+      if (dateTo && e.date > dateTo) return false;
+      if (
+        reportTab === "operator" &&
+        selectedOperator &&
+        e.operator !== selectedOperator
+      )
+        return false;
+      if (reportTab === "machine" && selectedMachine) {
+        const mid = String(selectedMachine);
+        const m = machineMaster.find((mm) => String(mm._id) === mid);
+        const match = String(e.machineId) === mid || e.machine === m?.name;
+        if (!match) return false;
+      }
+      return true;
+    });
+  }, [
+    allEntries,
+    dateFrom,
+    dateTo,
+    reportTab,
+    selectedOperator,
+    selectedMachine,
+    machineMaster,
+  ]);
+
+  const processPendingMap = useMemo(() => {
+    const map = {};
     STAGES.forEach((proc) => {
-      processPendingMap[proc] = activeJOs.filter((j) => {
+      map[proc] = activeJOs.filter((j) => {
         const jobProcs = j.process || [];
         if (!jobProcs.includes(proc)) return false;
         if ((j.completedProcesses || []).includes(proc)) return false;
-        const orderedJobProcs = STAGES.filter((p) => jobProcs.includes(p));
-        const procIdx = orderedJobProcs.indexOf(proc);
-        if (procIdx <= 0) return true;
-        return orderedJobProcs
-          .slice(0, procIdx)
+        const ordProcs = STAGES.filter((p) => jobProcs.includes(p));
+        const idx = ordProcs.indexOf(proc);
+        if (idx <= 0) return true;
+        return ordProcs
+          .slice(0, idx)
           .every((p) => (j.completedProcesses || []).includes(p));
       });
     });
-    return { activeJOs, processPendingMap, totalActiveJOs: activeJOs.length };
-  }, [jobOrders]);
+    return map;
+  }, [activeJOs]);
+
+  // SO dispatch map - robust matching
+  const dispMap = useMemo(() => {
+    const map = {};
+    dispatches.forEach((d) => {
+      const ref = d.soRef || d.soNo || d.so || "";
+      if (!ref) return;
+      if (!map[ref]) map[ref] = 0;
+      (d.items || []).forEach((it) => {
+        map[ref] += +(it.qty || it.quantity || 0);
+      });
+    });
+    return map;
+  }, [dispatches]);
+
+  const soRows = useMemo(() => {
+    return salesOrders.map((so) => {
+      const soKey = so.soNo || so._id || "";
+      const ord = (so.items || []).reduce(
+        (s, it) => s + +(it.orderQty || it.qty || 0),
+        0,
+      );
+      const disp = dispMap[soKey] || 0;
+      const pend = Math.max(0, ord - disp);
+      const pct = ord > 0 ? Math.round((disp / ord) * 100) : 0;
+      const status =
+        pct >= 100 ? "Fully Dispatched" : pct > 0 ? "Partial" : "Pending";
+      const itemsStr =
+        (so.items || [])
+          .map((it) => it.itemName || it.name || "")
+          .filter(Boolean)
+          .join(", ") || "—";
+      return { so, ord, disp, pend, pct, status, itemsStr, soKey };
+    });
+  }, [salesOrders, dispMap]);
+
+  const DateFilter = () => (
+    <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+      <span style={{ color: "#888", fontSize: 11 }}>From:</span>
+      <input
+        type="date"
+        value={dateFrom}
+        onChange={(e) => setDateFrom(e.target.value)}
+        style={{
+          fontSize: 12,
+          padding: "6px 10px",
+          background: "#1a1a1e",
+          color: "#e0e0e0",
+          border: "1px solid #2a2a2e",
+          borderRadius: 6,
+          fontStretch: "normal",
+        }}
+      />
+      <span style={{ color: "#888", fontSize: 11 }}>To:</span>
+      <input
+        type="date"
+        value={dateTo}
+        onChange={(e) => setDateTo(e.target.value)}
+        style={{
+          fontSize: 12,
+          padding: "6px 10px",
+          background: "#1a1a1e",
+          color: "#e0e0e0",
+          border: "1px solid #2a2a2e",
+          borderRadius: 6,
+          fontStretch: "normal",
+        }}
+      />
+    </div>
+  );
+
+  const statusColor = (s) =>
+    s === "Fully Dispatched" ? C.green : s === "Partial" ? C.yellow : C.red;
 
   return (
-    <div className="fade">
-      <div style={{ marginBottom: 20 }}>
-        <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 4 }}>
-          📊 Production Dashboard
-        </h2>
-      </div>
-
-      {}
+    <div
+      style={{
+        background: "#0c0c0e",
+        minHeight: "100vh",
+        color: "#e0e0e0",
+        paddingBottom: 40,
+        fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
+        fontStretch: "normal",
+        fontStyle: "normal",
+      }}
+    >
+      {/* Header */}
       <div
         style={{
           display: "flex",
-          gap: 8,
-          marginBottom: 24,
-          borderBottom: `1px solid ${C.border}`,
-          flexWrap: "wrap",
+          alignItems: "center",
+          gap: 10,
+          marginBottom: 20,
         }}
       >
-        {[
-          ["production", "⚙️ Production Report"],
-          ["operator", "👤 Operator Report"],
-          ["machine", "🏭 Machine Report"],
-          ["po_recon", "🛒 PO Reconciliation"],
-          ["so_recon", "📋 SO Reconciliation"],
-          ["so_ageing", "⏳ SO Ageing"],
-          ["prod_target", "🎯 Prod vs Target"],
-          ["yield", "📈 Yield Tracking"],
-          ["delivery", "🚛 Delivery Status"],
-          ["low_stock", "⚠️ Low Stock"],
-          ["monthly", "📅 Monthly Summary"],
-          ["vendor", "🏭 Vendor Performance"],
-        ].map(([v, l]) => (
-          <button
-            key={v}
-            onClick={() => {
-              setReportTab(v);
-              setDrill(null);
-            }}
+        <span style={{ fontSize: 22 }}>📊</span>
+        <h1
+          style={{
+            fontSize: 20,
+            fontWeight: 800,
+            textTransform: "uppercase",
+            letterSpacing: "0.06em",
+            margin: 0,
+            fontStretch: "normal",
+          }}
+        >
+          Production Dashboard
+        </h1>
+      </div>
+
+      {/* Tab buttons - 2 rows of 6 */}
+      <div style={{ marginBottom: 24 }}>
+        {[ReportTabs.slice(0, 6), ReportTabs.slice(6)].map((row, ri) => (
+          <div
+            key={ri}
             style={{
-              padding: "9px 20px",
-              borderRadius: "6px 6px 0 0",
-              fontWeight: 700,
-              fontSize: 13,
-              border: `1px solid ${reportTab === v ? C.accent : C.border}`,
-              borderBottom:
-                reportTab === v
-                  ? `1px solid ${C.card}`
-                  : `1px solid ${C.border}`,
-              background: reportTab === v ? C.card : "transparent",
-              color: reportTab === v ? C.accent : C.muted,
-              marginBottom: -1,
-              cursor: "pointer",
+              display: "grid",
+              gridTemplateColumns: "repeat(6, 1fr)",
+              gap: 8,
+              marginBottom: 8,
             }}
           >
-            {l}
-          </button>
+            {row.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => {
+                  setReportTab(t.id);
+                  setDrill(null);
+                }}
+                style={{
+                  padding: "9px 10px",
+                  borderRadius: 6,
+                  background: reportTab === t.id ? "#1a1a1e" : "transparent",
+                  border: `1px solid ${reportTab === t.id ? C.yellow : "#2a2a2e"}`,
+                  color: reportTab === t.id ? C.yellow : "#888",
+                  cursor: "pointer",
+                  fontSize: 11,
+                  fontWeight: reportTab === t.id ? 700 : 500,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
+                  fontStretch: "normal",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                }}
+              >
+                <span style={{ fontSize: 13, flexShrink: 0 }}>{t.icon}</span>
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {t.label}
+                </span>
+              </button>
+            ))}
+          </div>
         ))}
       </div>
 
-      {}
+      {/* ── PRODUCTION ── */}
       {reportTab === "production" && (
         <div>
-          <SectionTitle
-            icon="⚙️"
-            title="Active Production"
-            sub="Open orders and pending work by process"
-          />
-
-          {}
           <div
-            onClick={() => setDrill("open_orders")}
             style={{
-              background: C.card,
-              border: `2px solid ${C.yellow}44`,
-              borderRadius: 12,
-              padding: "20px 24px",
-              marginBottom: 24,
-              cursor: "pointer",
+              padding: 20,
+              background: "#141416",
+              borderRadius: 10,
+              border: "1px solid #2a2a2e",
+              marginBottom: 20,
               display: "flex",
-              justifyContent: "space-between",
               alignItems: "center",
-              transition: "border-color .2s, background .2s",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = C.yellow;
-              e.currentTarget.style.background = C.yellow + "0d";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = C.yellow + "44";
-              e.currentTarget.style.background = C.card;
+              gap: 20,
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-              <span style={{ fontSize: 36 }}>⚙️</span>
-              <div>
-                <div
-                  style={{
-                    fontSize: 40,
-                    fontWeight: 800,
-                    color: C.yellow,
-                    fontFamily: "'JetBrains Mono',monospace",
-                    lineHeight: 1,
-                  }}
+            <span style={{ fontSize: 36 }}>⚙️</span>
+            <div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+                <span
+                  style={{ fontSize: 44, fontWeight: 900, color: C.yellow }}
                 >
-                  {totalActiveJOs}
-                </div>
-                <div
-                  style={{
-                    fontSize: 15,
-                    fontWeight: 700,
-                    color: C.text,
-                    marginTop: 4,
-                  }}
-                >
-                  Open Orders
-                </div>
-                <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>
-                  Active job orders in production
-                </div>
+                  {activeJOs.length}
+                </span>
+                <span style={{ fontSize: 16, fontWeight: 700 }}>
+                  Open Job Orders
+                </span>
+              </div>
+              <div style={{ color: "#888", fontSize: 12 }}>
+                Active orders currently in production
               </div>
             </div>
-            <div style={{ color: C.yellow, fontSize: 22 }}>→</div>
           </div>
 
-          {}
           <div
             style={{
               fontSize: 11,
               fontWeight: 700,
-              color: C.muted,
+              color: "#888",
               textTransform: "uppercase",
-              letterSpacing: 2,
-              marginBottom: 14,
+              letterSpacing: "0.08em",
+              marginBottom: 10,
             }}
           >
             Pending by Process
@@ -200,129 +382,39 @@ export function Dashboard({
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-              gap: 14,
+              gridTemplateColumns: "repeat(5, 1fr)",
+              gap: 10,
             }}
           >
             {STAGES.map((proc) => {
-              const jobs = processPendingMap[proc] || [];
-              const col = PROCESS_COLORS[proc];
-              const isEmpty = jobs.length === 0;
-
-              const ages = jobs.map((j) => {
-                const slot = (j.schedule || []).find((s) => s.process === proc);
-                const refDate =
-                  slot?.startDate || j.jobcardDate || j.date || "";
-                if (!refDate) return 0;
-                // Ensure refDate is a serializable string for daysSince
-                const d = typeof refDate === 'string' ? refDate : new Date(refDate).toISOString();
-                return daysSince(d);
-              });
-              const maxAge = ages.length > 0 ? Math.max(...ages) : 0;
-              const ageCol =
-                maxAge > 7 ? C.red : maxAge > 3 ? C.yellow : C.green;
-              const ageLabel =
-                maxAge === 0
-                  ? "Today"
-                  : maxAge === 1
-                    ? "1 day"
-                    : `${maxAge} days`;
-
+              const count = processPendingMap[proc]?.length || 0;
               return (
                 <div
                   key={proc}
-                  onClick={() => !isEmpty && setDrill(proc)}
                   style={{
-                    background: C.card,
-                    border: `1px solid ${isEmpty ? C.border : col + "44"}`,
-                    borderLeft: `4px solid ${isEmpty ? C.border : col}`,
-                    borderRadius: 10,
-                    padding: "16px 18px",
-                    cursor: isEmpty ? "default" : "pointer",
-                    opacity: isEmpty ? 0.55 : 1,
-                    transition: "all .15s",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isEmpty) {
-                      e.currentTarget.style.background = col + "0d";
-                      e.currentTarget.style.transform = "translateY(-2px)";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = C.card;
-                    e.currentTarget.style.transform = "translateY(0)";
+                    background: "#141416",
+                    border: `1px solid ${count > 0 ? C.blue + "55" : "#2a2a2e"}`,
+                    borderRadius: 8,
+                    padding: 14,
                   }}
                 >
                   <div
                     style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "flex-start",
+                      fontSize: 30,
+                      fontWeight: 900,
+                      color: count > 0 ? C.blue : "#333",
                     }}
                   >
-                    <div>
-                      <div
-                        style={{
-                          fontSize: 32,
-                          fontWeight: 800,
-                          color: isEmpty ? C.border : col,
-                          fontFamily: "'JetBrains Mono',monospace",
-                          lineHeight: 1,
-                        }}
-                      >
-                        {jobs.length}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: 13,
-                          fontWeight: 700,
-                          color: isEmpty ? C.muted : C.text,
-                          marginTop: 6,
-                        }}
-                      >
-                        {proc}
-                      </div>
-                      <div
-                        style={{ fontSize: 11, color: C.muted, marginTop: 2 }}
-                      >
-                        {isEmpty
-                          ? "All clear"
-                          : `job${jobs.length !== 1 ? "s" : ""} pending`}
-                      </div>
-                    </div>
-                    <span style={{ fontSize: 26, opacity: isEmpty ? 0.4 : 1 }}>
-                      {PROCESS_ICONS[proc]}
-                    </span>
+                    {count}
                   </div>
-                  {!isEmpty && (
-                    <div
-                      style={{
-                        marginTop: 10,
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <span
-                        style={{ fontSize: 10, color: col, fontWeight: 700 }}
-                      >
-                        Click to view →
-                      </span>
-                      <span
-                        style={{
-                          fontSize: 10,
-                          fontWeight: 800,
-                          color: ageCol,
-                          background: ageCol + "22",
-                          borderRadius: 4,
-                          padding: "2px 7px",
-                          border: `1px solid ${ageCol}44`,
-                        }}
-                      >
-                        ⏱ {ageLabel} max
-                      </span>
-                    </div>
-                  )}
+                  <div
+                    style={{ fontSize: 13, fontWeight: 700, margin: "4px 0" }}
+                  >
+                    {proc}
+                  </div>
+                  <div style={{ fontSize: 11, color: "#888" }}>
+                    {count > 0 ? "jobs pending" : "All clear"}
+                  </div>
                 </div>
               );
             })}
@@ -330,62 +422,1438 @@ export function Dashboard({
         </div>
       )}
 
-      {}
-      {reportTab === "operator" && (
-        <Card style={{ padding: 40, textAlign: "center" }}>
-          👤 Operator Report - Coming Soon
-        </Card>
-      )}
-      {reportTab === "machine" && (
-        <Card style={{ padding: 40, textAlign: "center" }}>
-          🏭 Machine Report - Coming Soon
-        </Card>
-      )}
-      {reportTab === "po_recon" && (
-        <Card style={{ padding: 40, textAlign: "center" }}>
-          🛒 PO Reconciliation - Coming Soon
-        </Card>
-      )}
-      {reportTab === "so_recon" && (
-        <Card style={{ padding: 40, textAlign: "center" }}>
-          📋 SO Reconciliation - Coming Soon
-        </Card>
-      )}
-
-      {}
-      {drill === "open_orders" && (
-        <div className="fade" style={{ marginTop: 20 }}>
-          <button
-            onClick={() => setDrill(null)}
-            style={{
-              background: C.surface,
-              border: `1px solid ${C.border}`,
-              color: C.muted,
-              borderRadius: 6,
-              padding: "6px 14px",
-              fontWeight: 700,
-              fontSize: 13,
-              cursor: "pointer",
-              marginBottom: 20,
-            }}
-          >
-            ← Back
-          </button>
-          <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 16 }}>
-            All Open Orders{" "}
-            <Badge label={`${totalActiveJOs} jobs`} color={C.yellow} />
-          </h2>
+      {/* ── OPERATOR / MACHINE ── */}
+      {(reportTab === "operator" || reportTab === "machine") && (
+        <div>
           <div
             style={{
-              textAlign: "center",
-              color: C.muted,
-              padding: "60px 20px",
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 16,
+              marginBottom: 20,
+              alignItems: "flex-end",
+              background: "#141416",
+              padding: 16,
+              borderRadius: 8,
+              border: "1px solid #2a2a2e",
             }}
           >
-            Job details will be displayed here when implemented
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: "#888",
+                  textTransform: "uppercase",
+                  marginBottom: 6,
+                }}
+              >
+                Select {reportTab === "operator" ? "Operator" : "Machine"}
+              </div>
+              <select
+                value={
+                  reportTab === "operator" ? selectedOperator : selectedMachine
+                }
+                onChange={(e) =>
+                  reportTab === "operator"
+                    ? setSelectedOperator(e.target.value)
+                    : setSelectedMachine(e.target.value)
+                }
+                style={{
+                  width: "100%",
+                  padding: "8px 10px",
+                  background: "#0c0c0e",
+                  border: "1px solid #3a3a3e",
+                  color: "#e0e0e0",
+                  borderRadius: 6,
+                  fontSize: 13,
+                  fontStretch: "normal",
+                }}
+              >
+                <option value="">
+                  -- Select {reportTab === "operator" ? "Operator" : "Machine"}{" "}
+                  --
+                </option>
+                {reportTab === "operator"
+                  ? [
+                      ...new Set(
+                        allEntries.map((e) => e.operator).filter(Boolean),
+                      ),
+                    ]
+                      .sort()
+                      .map((o) => (
+                        <option key={o} value={o}>
+                          {o}
+                        </option>
+                      ))
+                  : activeMachines.map((m) => (
+                      <option key={m._id} value={m._id}>
+                        {m.name} ({m.type})
+                      </option>
+                    ))}
+              </select>
+            </div>
+            <DateFilter />
           </div>
+
+          {(reportTab === "operator" && selectedOperator) ||
+          (reportTab === "machine" && selectedMachine) ? (
+            filteredEntries.length === 0 ? (
+              <div style={{ textAlign: "center", padding: 60, color: "#555" }}>
+                No entries found for selected filters.
+              </div>
+            ) : (
+              <div
+                style={{
+                  borderRadius: 8,
+                  overflow: "hidden",
+                  border: "1px solid #2a2a2e",
+                }}
+              >
+                <table style={TABLE}>
+                  <colgroup>
+                    <col style={{ width: 120 }} />
+                    <col style={{ width: "40%" }} />
+                    <col style={{ width: 130 }} />
+                    <col style={{ width: 120 }} />
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      {["Date", "Item / JO", "Process", "Qty Done"].map((h) => (
+                        <th key={h} style={TH}>
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredEntries.map((e, idx) => (
+                      <tr
+                        key={idx}
+                        style={{
+                          background: idx % 2 === 0 ? "#0e0e12" : "#121216",
+                        }}
+                      >
+                        <td style={TD}>{e.date || "—"}</td>
+                        <td style={TD}>
+                          <div style={{ fontWeight: 600 }}>
+                            {e.itemName || "—"}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 10,
+                              color: C.yellow,
+                              marginTop: 2,
+                            }}
+                          >
+                            {e.joNo || ""}
+                          </div>
+                        </td>
+                        <td style={TD}>
+                          <span
+                            style={{
+                              padding: "2px 8px",
+                              borderRadius: 4,
+                              background:
+                                (PROCESS_COLORS[e.stage] || "#555") + "33",
+                              color: PROCESS_COLORS[e.stage] || "#aaa",
+                              fontSize: 11,
+                              fontWeight: 700,
+                            }}
+                          >
+                            {e.stage || "—"}
+                          </span>
+                        </td>
+                        <td style={{ ...TD, color: C.green, fontWeight: 700 }}>
+                          {fmt(e.qtyCompleted)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )
+          ) : (
+            <div style={{ textAlign: "center", padding: 60, color: "#555" }}>
+              Select {reportTab === "operator" ? "an operator" : "a machine"} to
+              view logs
+            </div>
+          )}
         </div>
       )}
+
+      {/* ── PO RECONCILIATION ── */}
+      {reportTab === "po_recon" &&
+        (() => {
+          const rows = purchaseOrders.map((po) => {
+            const ordered = (po.items || []).reduce(
+              (acc, it) => acc + +(it.qty || it.quantity || 0),
+              0,
+            );
+            const inwardItems = inward.filter(
+              (inw) =>
+                String(inw.poRef || inw.poNo || "") ===
+                String(po.poNo || po._id || ""),
+            );
+            const received = inwardItems.reduce(
+              (acc, curr) =>
+                acc +
+                (curr.items || []).reduce((a2, it2) => a2 + +(it2.qty || 0), 0),
+              0,
+            );
+            const rate =
+              ordered > 0 ? Math.round((received / ordered) * 100) : 0;
+            return {
+              po,
+              ordered,
+              received,
+              pending: Math.max(0, ordered - received),
+              rate,
+            };
+          });
+
+          if (rows.length === 0)
+            return (
+              <div style={{ textAlign: "center", padding: 60, color: "#555" }}>
+                No Purchase Orders found.
+              </div>
+            );
+
+          return (
+            <div
+              style={{
+                borderRadius: 8,
+                overflow: "hidden",
+                border: "1px solid #2a2a2e",
+              }}
+            >
+              <table style={TABLE}>
+                <colgroup>
+                  <col style={{ width: 110 }} />
+                  <col style={{ width: "25%" }} />
+                  <col style={{ width: 120 }} />
+                  <col style={{ width: 100 }} />
+                  <col style={{ width: 100 }} />
+                  <col style={{ width: 100 }} />
+                  <col style={{ width: 90 }} />
+                </colgroup>
+                <thead>
+                  <tr>
+                    {[
+                      "PO #",
+                      "Vendor",
+                      "PO Date",
+                      "Ordered",
+                      "Received",
+                      "Pending",
+                      "Rate",
+                    ].map((h) => (
+                      <th key={h} style={TH}>
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((r, i) => (
+                    <tr
+                      key={i}
+                      style={{
+                        background: i % 2 === 0 ? "#0e0e12" : "#121216",
+                      }}
+                    >
+                      <td style={{ ...TD, color: C.blue, fontWeight: 700 }}>
+                        {r.po.poNo || "—"}
+                      </td>
+                      <td style={{ ...TD, fontWeight: 600 }}>
+                        {r.po.vendor || r.po.vendorName || "—"}
+                      </td>
+                      <td style={{ ...TD, color: "#888" }}>
+                        {r.po.poDate?.slice(0, 10) || "—"}
+                      </td>
+                      <td style={TD}>{fmt(r.ordered)} kg</td>
+                      <td style={{ ...TD, color: C.green }}>
+                        {fmt(r.received)} kg
+                      </td>
+                      <td style={{ ...TD, color: C.red }}>
+                        {fmt(r.pending)} kg
+                      </td>
+                      <td
+                        style={{
+                          ...TD,
+                          fontWeight: 800,
+                          color: r.rate >= 95 ? C.green : C.yellow,
+                        }}
+                      >
+                        {r.rate}%
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
+        })()}
+
+      {/* ── SO RECONCILIATION ── */}
+      {(reportTab === "so_recon" || reportTab === "delivery") &&
+        (() => {
+          const stats = {
+            total: soRows.length,
+            fully: soRows.filter((r) => r.status === "Fully Dispatched").length,
+            partial: soRows.filter((r) => r.status === "Partial").length,
+            none: soRows.filter((r) => r.status === "Pending").length,
+            totalPend: soRows.reduce((s, r) => s + r.pend, 0),
+          };
+
+          return (
+            <div>
+              {/* Summary cards */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(5, 1fr)",
+                  gap: 12,
+                  marginBottom: 20,
+                }}
+              >
+                {[
+                  { label: "Total SOs", val: stats.total, color: C.blue },
+                  {
+                    label: "Fully Dispatched",
+                    val: stats.fully,
+                    color: C.green,
+                  },
+                  {
+                    label: "Partially Dispatched",
+                    val: stats.partial,
+                    color: C.yellow,
+                  },
+                  { label: "Not Dispatched", val: stats.none, color: C.red },
+                  {
+                    label: "Total Pending (pcs)",
+                    val: fmt(stats.totalPend),
+                    color: C.red,
+                  },
+                ].map((s) => (
+                  <div
+                    key={s.label}
+                    style={{
+                      background: "#141416",
+                      border: `1px solid ${s.color}44`,
+                      borderLeft: `4px solid ${s.color}`,
+                      borderRadius: 8,
+                      padding: 16,
+                    }}
+                  >
+                    <div
+                      style={{ fontSize: 26, fontWeight: 900, color: s.color }}
+                    >
+                      {s.val}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        marginTop: 4,
+                        color: "#bbb",
+                      }}
+                    >
+                      {s.label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {soRows.length === 0 ? (
+                <div
+                  style={{ textAlign: "center", padding: 60, color: "#555" }}
+                >
+                  No Sales Orders found.
+                </div>
+              ) : (
+                <div
+                  style={{
+                    borderRadius: 8,
+                    overflow: "hidden",
+                    border: "1px solid #2a2a2e",
+                  }}
+                >
+                  <table style={TABLE}>
+                    <colgroup>
+                      <col style={{ width: 100 }} />
+                      <col style={{ width: 130 }} />
+                      <col style={{ width: "30%" }} />
+                      <col style={{ width: 90 }} />
+                      <col style={{ width: 90 }} />
+                      <col style={{ width: 90 }} />
+                      <col style={{ width: 130 }} />
+                    </colgroup>
+                    <thead>
+                      <tr>
+                        {[
+                          "SO #",
+                          "Client",
+                          "Items",
+                          "Ordered",
+                          "Dispatched",
+                          "Pending",
+                          "Status",
+                        ].map((h) => (
+                          <th key={h} style={TH}>
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {soRows.map((r, i) => (
+                        <tr
+                          key={r.soKey || i}
+                          style={{
+                            background: i % 2 === 0 ? "#0e0e12" : "#121216",
+                          }}
+                        >
+                          <td style={TD}>
+                            <div style={{ color: C.green, fontWeight: 700 }}>
+                              {r.so.soNo || "—"}
+                            </div>
+                            <div
+                              style={{
+                                fontSize: 9,
+                                color: "#666",
+                                marginTop: 2,
+                              }}
+                            >
+                              {r.so.orderDate?.slice(0, 10) || ""}
+                            </div>
+                          </td>
+                          <td style={{ ...TD, fontWeight: 600 }}>
+                            {r.so.clientName || "—"}
+                          </td>
+                          <td
+                            style={{
+                              ...TD,
+                              color: "#888",
+                              whiteSpace: "normal",
+                              wordBreak: "break-word",
+                              maxWidth: 0,
+                            }}
+                          >
+                            {r.itemsStr}
+                          </td>
+                          <td style={TD}>{fmt(r.ord)}</td>
+                          <td style={{ ...TD, color: C.green }}>
+                            {fmt(r.disp)}
+                          </td>
+                          <td
+                            style={{
+                              ...TD,
+                              color: r.pend > 0 ? C.red : C.green,
+                            }}
+                          >
+                            {fmt(r.pend)}
+                          </td>
+                          <td style={TD}>
+                            <span
+                              style={{
+                                fontSize: 10,
+                                fontWeight: 700,
+                                color: statusColor(r.status),
+                                display: "block",
+                                marginBottom: 4,
+                              }}
+                            >
+                              {r.status} ({r.pct}%)
+                            </span>
+                            <div
+                              style={{
+                                width: "100%",
+                                height: 3,
+                                background: "#1e1e22",
+                                borderRadius: 2,
+                              }}
+                            >
+                              <div
+                                style={{
+                                  width: Math.min(r.pct, 100) + "%",
+                                  height: "100%",
+                                  background: statusColor(r.status),
+                                  borderRadius: 2,
+                                }}
+                              />
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+      {/* ── SO AGEING ── */}
+      {reportTab === "so_ageing" &&
+        (() => {
+          const rows = salesOrders
+            .filter((o) => o.status !== "Closed" && o.status !== "Cancelled")
+            .map((s) => {
+              const age = daysSince(s.orderDate);
+              const ord = (s.items || []).reduce(
+                (a, i) => a + +(i.orderQty || i.qty || 0),
+                0,
+              );
+              const soKey = s.soNo || s._id || "";
+              const disp = dispMap[soKey] || 0;
+              return { s, age, ord, disp, soKey };
+            });
+
+          const bucket = (lo, hi) =>
+            rows.filter((r) => r.age >= lo && (hi === null || r.age <= hi));
+
+          return (
+            <div>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(4, 1fr)",
+                  gap: 14,
+                  marginBottom: 20,
+                }}
+              >
+                {[
+                  { label: "0-7 days", rows: bucket(0, 7), color: C.green },
+                  { label: "8-14 days", rows: bucket(8, 14), color: C.yellow },
+                  {
+                    label: "15-30 days",
+                    rows: bucket(15, 30),
+                    color: C.orange || "#f97316",
+                  },
+                  { label: "30+ days", rows: bucket(31, null), color: C.red },
+                ].map((st) => (
+                  <div
+                    key={st.label}
+                    style={{
+                      background: "#141416",
+                      border: `1px solid ${st.color}44`,
+                      borderLeft: `5px solid ${st.color}`,
+                      borderRadius: 8,
+                      padding: 18,
+                    }}
+                  >
+                    <div
+                      style={{ fontSize: 32, fontWeight: 900, color: st.color }}
+                    >
+                      {st.rows.length}
+                    </div>
+                    <div
+                      style={{ fontSize: 13, fontWeight: 700, marginTop: 4 }}
+                    >
+                      {st.label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {rows.length === 0 ? (
+                <div
+                  style={{ textAlign: "center", padding: 60, color: "#555" }}
+                >
+                  No open Sales Orders found.
+                </div>
+              ) : (
+                <div
+                  style={{
+                    borderRadius: 8,
+                    overflow: "hidden",
+                    border: "1px solid #2a2a2e",
+                  }}
+                >
+                  <table style={TABLE}>
+                    <colgroup>
+                      <col style={{ width: 100 }} />
+                      <col style={{ width: 140 }} />
+                      <col style={{ width: "30%" }} />
+                      <col style={{ width: 90 }} />
+                      <col style={{ width: 90 }} />
+                      <col style={{ width: 90 }} />
+                      <col style={{ width: 90 }} />
+                    </colgroup>
+                    <thead>
+                      <tr>
+                        {[
+                          "SO #",
+                          "Client",
+                          "Items",
+                          "Order Date",
+                          "Age (Days)",
+                          "Ordered",
+                          "Dispatched",
+                        ].map((h) => (
+                          <th key={h} style={TH}>
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((r, i) => {
+                        const ageColor =
+                          r.age <= 7
+                            ? C.green
+                            : r.age <= 14
+                              ? C.yellow
+                              : r.age <= 30
+                                ? C.orange || "#f97316"
+                                : C.red;
+                        return (
+                          <tr
+                            key={r.soKey || i}
+                            style={{
+                              background: i % 2 === 0 ? "#0e0e12" : "#121216",
+                            }}
+                          >
+                            <td
+                              style={{ ...TD, color: C.green, fontWeight: 700 }}
+                            >
+                              {r.s.soNo || "—"}
+                            </td>
+                            <td style={{ ...TD, fontWeight: 600 }}>
+                              {r.s.clientName || "—"}
+                            </td>
+                            <td
+                              style={{
+                                ...TD,
+                                color: "#888",
+                                whiteSpace: "normal",
+                                wordBreak: "break-word",
+                                maxWidth: 0,
+                              }}
+                            >
+                              {(r.s.items || [])
+                                .map((it) => it.itemName || it.name || "")
+                                .filter(Boolean)
+                                .join(", ") || "—"}
+                            </td>
+                            <td style={{ ...TD, color: "#888" }}>
+                              {r.s.orderDate?.slice(0, 10) || "—"}
+                            </td>
+                            <td
+                              style={{
+                                ...TD,
+                                color: ageColor,
+                                fontWeight: 800,
+                              }}
+                            >
+                              {r.age}
+                            </td>
+                            <td style={TD}>{fmt(r.ord)}</td>
+                            <td style={{ ...TD, color: C.green }}>
+                              {fmt(r.disp)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+      {/* ── PROD VS TARGET ── */}
+      {reportTab === "prod_target" &&
+        (() => {
+          const dates = [];
+          for (let i = 0; i < 15; i++) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            dates.push(d.toISOString().slice(0, 10));
+          }
+
+          return (
+            <div
+              style={{
+                borderRadius: 8,
+                overflow: "hidden",
+                border: "1px solid #2a2a2e",
+              }}
+            >
+              <table style={TABLE}>
+                <colgroup>
+                  <col style={{ width: 140 }} />
+                  <col style={{ width: 80 }} />
+                  <col style={{ width: 120 }} />
+                  <col style={{ width: 120 }} />
+                  <col style={{ width: "auto" }} />
+                </colgroup>
+                <thead>
+                  <tr>
+                    {["Date", "Day", "Target", "Actual", "Set Target"].map(
+                      (h) => (
+                        <th key={h} style={TH}>
+                          {h}
+                        </th>
+                      ),
+                    )}
+                  </tr>
+                </thead>
+                <tbody>
+                  {dates.map((d, i) => {
+                    const actual = allEntries
+                      .filter((e) => e.date === d)
+                      .reduce((s, e) => s + +(e.qtyCompleted || 0), 0);
+                    const target = pvtTargets[d] || 0;
+                    const dayLabel = new Date(d).toLocaleDateString("en-US", {
+                      weekday: "short",
+                    });
+                    return (
+                      <tr
+                        key={d}
+                        style={{
+                          background: i % 2 === 0 ? "#0e0e12" : "#121216",
+                        }}
+                      >
+                        <td style={TD}>{d}</td>
+                        <td style={{ ...TD, color: "#888" }}>{dayLabel}</td>
+                        <td
+                          style={{ ...TD, color: target > 0 ? C.blue : "#555" }}
+                        >
+                          {target > 0 ? fmt(target) : "—"}
+                        </td>
+                        <td
+                          style={{
+                            ...TD,
+                            fontWeight: 700,
+                            color: actual > 0 ? C.green : "#555",
+                          }}
+                        >
+                          {actual > 0 ? fmt(actual) : "—"}
+                        </td>
+                        <td style={TD}>
+                          <input
+                            type="number"
+                            placeholder="Set target..."
+                            defaultValue={pvtTargets[d] || ""}
+                            onBlur={(e) => {
+                              const val = +e.target.value;
+                              setPvtTargets((prev) => ({ ...prev, [d]: val }));
+                            }}
+                            style={{
+                              padding: "4px 8px",
+                              width: 110,
+                              background: "#0c0c0e",
+                              border: "1px solid #2a2a2e",
+                              color: "#e0e0e0",
+                              borderRadius: 4,
+                              fontSize: 12,
+                              fontStretch: "normal",
+                            }}
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          );
+        })()}
+
+      {/* ── YIELD TRACKING ── */}
+      {reportTab === "yield" &&
+        (() => {
+          const ySummary = STAGES.map((stage) => {
+            const logs = allEntries.filter((e) => e.stage === stage);
+            const ok = logs.reduce((s, l) => s + +(l.qtyCompleted || 0), 0);
+            const rj = logs.reduce((s, l) => s + +(l.qtyRejected || 0), 0);
+            const tot = ok + rj;
+            const pct = tot > 0 ? Math.round((ok / tot) * 100) : 100;
+            return { stage, ok, rj, tot, pct };
+          });
+
+          return (
+            <div>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                  gap: 14,
+                  marginBottom: 24,
+                }}
+              >
+                {ySummary.map((y) => (
+                  <div
+                    key={y.stage}
+                    style={{
+                      background: "#141416",
+                      border: `1px solid ${y.pct > 95 ? C.green : C.yellow}44`,
+                      borderTop: `4px solid ${y.pct > 95 ? C.green : C.yellow}`,
+                      borderRadius: 8,
+                      padding: 16,
+                    }}
+                  >
+                    <div
+                      style={{ fontSize: 12, fontWeight: 700, color: "#888" }}
+                    >
+                      {y.stage}
+                    </div>
+                    <div
+                      style={{ fontSize: 30, fontWeight: 900, margin: "8px 0" }}
+                    >
+                      {y.pct}%
+                    </div>
+                    <div style={{ fontSize: 11 }}>
+                      <span style={{ color: C.green }}>{fmt(y.ok)} ok</span>{" "}
+                      <span style={{ color: "#555" }}>/</span>{" "}
+                      <span style={{ color: C.red }}>{fmt(y.rj)} rej</span>
+                    </div>
+                    <div
+                      style={{
+                        width: "100%",
+                        height: 3,
+                        background: "#1e1e22",
+                        borderRadius: 2,
+                        marginTop: 10,
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: y.pct + "%",
+                          height: "100%",
+                          background: y.pct > 95 ? C.green : C.yellow,
+                          borderRadius: 2,
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Yield detail table */}
+              <div
+                style={{
+                  borderRadius: 8,
+                  overflow: "hidden",
+                  border: "1px solid #2a2a2e",
+                }}
+              >
+                <table style={TABLE}>
+                  <colgroup>
+                    <col style={{ width: "30%" }} />
+                    <col style={{ width: 120 }} />
+                    <col style={{ width: 100 }} />
+                    <col style={{ width: 100 }} />
+                    <col style={{ width: 90 }} />
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      {[
+                        "Stage",
+                        "Total Produced",
+                        "Accepted",
+                        "Rejected",
+                        "Yield %",
+                      ].map((h) => (
+                        <th key={h} style={TH}>
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ySummary.map((y, i) => (
+                      <tr
+                        key={y.stage}
+                        style={{
+                          background: i % 2 === 0 ? "#0e0e12" : "#121216",
+                        }}
+                      >
+                        <td style={{ ...TD, fontWeight: 700 }}>{y.stage}</td>
+                        <td style={TD}>{fmt(y.tot)}</td>
+                        <td style={{ ...TD, color: C.green }}>{fmt(y.ok)}</td>
+                        <td style={{ ...TD, color: y.rj > 0 ? C.red : "#555" }}>
+                          {fmt(y.rj)}
+                        </td>
+                        <td
+                          style={{
+                            ...TD,
+                            fontWeight: 800,
+                            color: y.pct > 95 ? C.green : C.yellow,
+                          }}
+                        >
+                          {y.pct}%
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          );
+        })()}
+
+      {/* ── LOW STOCK ── */}
+      {reportTab === "low_stock" &&
+        (() => {
+          const low = fgStock.filter((f) => (f.qty || f.quantity || 0) < 500);
+          return low.length === 0 ? (
+            <div
+              style={{
+                textAlign: "center",
+                padding: 60,
+                color: C.green,
+                background: "#141416",
+                borderRadius: 8,
+                border: "1px solid #2a2a2e",
+              }}
+            >
+              ✅ All items are within healthy stock levels.
+            </div>
+          ) : (
+            <div>
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: "#888",
+                  textTransform: "uppercase",
+                  marginBottom: 14,
+                }}
+              >
+                {low.length} items below threshold (500 units)
+              </div>
+              <div
+                style={{
+                  borderRadius: 8,
+                  overflow: "hidden",
+                  border: "1px solid #2a2a2e",
+                }}
+              >
+                <table style={TABLE}>
+                  <colgroup>
+                    <col style={{ width: "40%" }} />
+                    <col style={{ width: 120 }} />
+                    <col style={{ width: 120 }} />
+                    <col style={{ width: 140 }} />
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      {["Item Name", "Category", "Current Stock", "Status"].map(
+                        (h) => (
+                          <th key={h} style={TH}>
+                            {h}
+                          </th>
+                        ),
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {low.map((f, i) => (
+                      <tr
+                        key={f.itemName || i}
+                        style={{
+                          background: i % 2 === 0 ? "#0e0e12" : "#121216",
+                        }}
+                      >
+                        <td style={{ ...TD, fontWeight: 700 }}>
+                          {f.itemName || f.name || "—"}
+                        </td>
+                        <td style={{ ...TD, color: "#888" }}>
+                          {f.category || "—"}
+                        </td>
+                        <td style={{ ...TD, color: C.red, fontWeight: 800 }}>
+                          {fmt(f.qty || f.quantity || 0)}
+                        </td>
+                        <td style={TD}>
+                          <span
+                            style={{
+                              padding: "3px 10px",
+                              borderRadius: 4,
+                              background: C.red + "22",
+                              color: C.red,
+                              fontSize: 11,
+                              fontWeight: 700,
+                            }}
+                          >
+                            RESTOCK REQUIRED
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          );
+        })()}
+
+      {/* ── MONTHLY SUMMARY ── */}
+      {reportTab === "monthly" &&
+        (() => {
+          const monthStr = selectedMonth;
+          const mEntries = allEntries.filter((e) =>
+            (e.date || "").startsWith(monthStr),
+          );
+          const mJOs = jobOrders.filter(
+            (j) =>
+              (j.createdAt || "").startsWith(monthStr) ||
+              activeJOs.some((aj) => aj._id === j._id),
+          );
+
+          const totalProd = mEntries.reduce(
+            (s, e) => s + +(e.qtyCompleted || 0),
+            0,
+          );
+          const totalRej = mEntries.reduce(
+            (s, e) => s + +(e.qtyRejected || 0),
+            0,
+          );
+          const yieldPct =
+            totalProd + totalRej > 0
+              ? Math.round((totalProd / (totalProd + totalRej)) * 100)
+              : 100;
+
+          return (
+            <div>
+              <div
+                style={{
+                  marginBottom: 20,
+                  display: "flex",
+                  gap: 14,
+                  alignItems: "center",
+                }}
+              >
+                <span
+                  style={{
+                    color: "#888",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Month:
+                </span>
+                <input
+                  type="month"
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  style={{
+                    padding: "7px 12px",
+                    background: "#141416",
+                    border: "1px solid #2a2a2e",
+                    color: "#e0e0e0",
+                    borderRadius: 6,
+                    fontSize: 13,
+                    fontStretch: "normal",
+                  }}
+                />
+              </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(4, 1fr)",
+                  gap: 14,
+                  marginBottom: 20,
+                }}
+              >
+                {[
+                  {
+                    label: "Total Produced",
+                    val: fmt(totalProd),
+                    color: C.green,
+                  },
+                  { label: "Total Rejected", val: fmt(totalRej), color: C.red },
+                  { label: "Active JOs", val: mJOs.length, color: C.blue },
+                  {
+                    label: "Overall Yield",
+                    val: yieldPct + "%",
+                    color: C.green,
+                  },
+                ].map((s) => (
+                  <div
+                    key={s.label}
+                    style={{
+                      background: "#141416",
+                      border: `1px solid ${s.color}44`,
+                      borderLeft: `4px solid ${s.color}`,
+                      borderRadius: 8,
+                      padding: 16,
+                    }}
+                  >
+                    <div
+                      style={{ fontSize: 26, fontWeight: 900, color: s.color }}
+                    >
+                      {s.val}
+                    </div>
+                    <div style={{ fontSize: 11, color: "#aaa", marginTop: 4 }}>
+                      {s.label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div
+                style={{
+                  borderRadius: 8,
+                  overflow: "hidden",
+                  border: "1px solid #2a2a2e",
+                  marginBottom: 20,
+                }}
+              >
+                <div
+                  style={{
+                    padding: "10px 14px",
+                    background: "#1a1a1e",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: C.yellow,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Production by Process — {monthStr}
+                </div>
+                <table style={TABLE}>
+                  <colgroup>
+                    <col style={{ width: "30%" }} />
+                    <col style={{ width: 100 }} />
+                    <col style={{ width: 100 }} />
+                    <col style={{ width: 90 }} />
+                    <col style={{ width: "auto" }} />
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      {["Process", "Produced", "Rejected", "Yield", "Bar"].map(
+                        (h) => (
+                          <th key={h} style={TH}>
+                            {h}
+                          </th>
+                        ),
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {STAGES.map((proc, i) => {
+                      const logs = mEntries.filter((e) => e.stage === proc);
+                      const ok = logs.reduce(
+                        (s, l) => s + +(l.qtyCompleted || 0),
+                        0,
+                      );
+                      const rj = logs.reduce(
+                        (s, l) => s + +(l.qtyRejected || 0),
+                        0,
+                      );
+                      const y =
+                        ok + rj > 0 ? Math.round((ok / (ok + rj)) * 100) : 100;
+                      return (
+                        <tr
+                          key={proc}
+                          style={{
+                            background: i % 2 === 0 ? "#0e0e12" : "#121216",
+                          }}
+                        >
+                          <td style={{ ...TD, fontWeight: 700 }}>{proc}</td>
+                          <td style={{ ...TD, color: C.green }}>{fmt(ok)}</td>
+                          <td style={{ ...TD, color: rj > 0 ? C.red : "#555" }}>
+                            {fmt(rj)}
+                          </td>
+                          <td
+                            style={{
+                              ...TD,
+                              fontWeight: 800,
+                              color: y > 95 ? C.green : C.yellow,
+                            }}
+                          >
+                            {y}%
+                          </td>
+                          <td style={TD}>
+                            <div
+                              style={{
+                                width: "100%",
+                                height: 4,
+                                background: "#1e1e22",
+                                borderRadius: 2,
+                              }}
+                            >
+                              <div
+                                style={{
+                                  width: y + "%",
+                                  height: "100%",
+                                  background: y > 95 ? C.green : C.yellow,
+                                  borderRadius: 2,
+                                }}
+                              />
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Active JOs */}
+              {mJOs.length > 0 && (
+                <div
+                  style={{
+                    borderRadius: 8,
+                    overflow: "hidden",
+                    border: "1px solid #2a2a2e",
+                  }}
+                >
+                  <div
+                    style={{
+                      padding: "10px 14px",
+                      background: "#1a1a1e",
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: C.yellow,
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    Job Orders — {monthStr}
+                  </div>
+                  <table style={TABLE}>
+                    <colgroup>
+                      <col style={{ width: 110 }} />
+                      <col style={{ width: "35%" }} />
+                      <col style={{ width: 120 }} />
+                      <col style={{ width: 100 }} />
+                    </colgroup>
+                    <thead>
+                      <tr>
+                        {["JO #", "Item", "Status", "Ordered Qty"].map((h) => (
+                          <th key={h} style={TH}>
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {mJOs.map((j, i) => (
+                        <tr
+                          key={j._id || i}
+                          style={{
+                            background: i % 2 === 0 ? "#0e0e12" : "#121216",
+                          }}
+                        >
+                          <td
+                            style={{ ...TD, color: C.yellow, fontWeight: 700 }}
+                          >
+                            {j.joNo || "—"}
+                          </td>
+                          <td style={TD}>{j.itemName || "—"}</td>
+                          <td style={TD}>
+                            <span
+                              style={{
+                                padding: "2px 8px",
+                                borderRadius: 4,
+                                background:
+                                  (j.status === "Completed"
+                                    ? C.green
+                                    : C.yellow) + "22",
+                                color:
+                                  j.status === "Completed" ? C.green : C.yellow,
+                                fontSize: 11,
+                                fontWeight: 700,
+                              }}
+                            >
+                              {j.status || "—"}
+                            </span>
+                          </td>
+                          <td style={TD}>{fmt(j.orderQty)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+      {/* ── VENDOR PERFORMANCE ── */}
+      {reportTab === "vendor" &&
+        (() => {
+          const vRows = vendorMaster.map((v) => {
+            const vPOs = purchaseOrders.filter(
+              (p) =>
+                p.vendor === v.name ||
+                p.vendorName === v.name ||
+                p.vendorId === v._id,
+            );
+            const vInwards = inward.filter(
+              (i) =>
+                i.vendorName === v.name ||
+                i.vendor?.name === v.name ||
+                i.vendor === v.name,
+            );
+            const ordKg = vPOs.reduce(
+              (s, p) =>
+                s + (p.items || []).reduce((sa, it) => sa + +(it.qty || 0), 0),
+              0,
+            );
+            const recKg = vInwards.reduce(
+              (s, i) =>
+                s + (i.items || []).reduce((sa, it) => sa + +(it.qty || 0), 0),
+              0,
+            );
+            const openPOs = vPOs.filter(
+              (p) => p.status !== "Received" && p.status !== "Closed",
+            ).length;
+            return {
+              v,
+              poCount: vPOs.length,
+              grnCount: vInwards.length,
+              ordKg,
+              recKg,
+              pendKg: Math.max(0, ordKg - recKg),
+              openPOs,
+            };
+          });
+
+          return (
+            <div>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(4, 1fr)",
+                  gap: 14,
+                  marginBottom: 20,
+                }}
+              >
+                {[
+                  {
+                    label: "Total Vendors",
+                    val: vendorMaster.length,
+                    color: C.blue,
+                  },
+                  {
+                    label: "Total POs",
+                    val: purchaseOrders.length,
+                    color: C.blue,
+                  },
+                  { label: "Total GRNs", val: inward.length, color: C.green },
+                  {
+                    label: "Pending POs",
+                    val: purchaseOrders.filter(
+                      (p) => p.status !== "Received" && p.status !== "Closed",
+                    ).length,
+                    color: C.red,
+                  },
+                ].map((s) => (
+                  <div
+                    key={s.label}
+                    style={{
+                      background: "#141416",
+                      border: `1px solid ${s.color}44`,
+                      borderLeft: `4px solid ${s.color}`,
+                      borderRadius: 8,
+                      padding: 16,
+                    }}
+                  >
+                    <div
+                      style={{ fontSize: 26, fontWeight: 900, color: s.color }}
+                    >
+                      {s.val}
+                    </div>
+                    <div style={{ fontSize: 11, color: "#aaa", marginTop: 4 }}>
+                      {s.label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {vRows.length === 0 ? (
+                <div
+                  style={{ textAlign: "center", padding: 60, color: "#555" }}
+                >
+                  No vendors found.
+                </div>
+              ) : (
+                <div
+                  style={{
+                    borderRadius: 8,
+                    overflow: "hidden",
+                    border: "1px solid #2a2a2e",
+                  }}
+                >
+                  <table style={TABLE}>
+                    <colgroup>
+                      <col style={{ width: "25%" }} />
+                      <col style={{ width: 70 }} />
+                      <col style={{ width: 70 }} />
+                      <col style={{ width: 110 }} />
+                      <col style={{ width: 110 }} />
+                      <col style={{ width: 110 }} />
+                      <col style={{ width: 90 }} />
+                    </colgroup>
+                    <thead>
+                      <tr>
+                        {[
+                          "Vendor",
+                          "POs",
+                          "GRNs",
+                          "Ordered (kg)",
+                          "Received (kg)",
+                          "Pending (kg)",
+                          "Open POs",
+                        ].map((h) => (
+                          <th key={h} style={TH}>
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {vRows.map((r, i) => (
+                        <tr
+                          key={r.v._id || i}
+                          style={{
+                            background: i % 2 === 0 ? "#0e0e12" : "#121216",
+                          }}
+                        >
+                          <td style={{ ...TD, fontWeight: 700 }}>
+                            {r.v.name || "—"}
+                          </td>
+                          <td style={{ ...TD, color: C.blue }}>{r.poCount}</td>
+                          <td style={{ ...TD, color: C.green }}>
+                            {r.grnCount}
+                          </td>
+                          <td style={TD}>{fmt(r.ordKg)}</td>
+                          <td style={{ ...TD, color: C.green }}>
+                            {fmt(r.recKg)}
+                          </td>
+                          <td
+                            style={{
+                              ...TD,
+                              color: r.pendKg > 0 ? C.red : C.green,
+                            }}
+                          >
+                            {fmt(r.pendKg)}
+                          </td>
+                          <td
+                            style={{
+                              ...TD,
+                              color: r.openPOs > 0 ? C.yellow : C.green,
+                              fontWeight: 700,
+                            }}
+                          >
+                            {r.openPOs}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          );
+        })()}
     </div>
   );
 }
