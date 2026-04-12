@@ -26,6 +26,10 @@ const itemMasterSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  clientName: {
+    type: String,
+    trim: true
+  },
   gsm: {
     type: Number
   },

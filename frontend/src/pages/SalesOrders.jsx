@@ -102,16 +102,13 @@ export default function SalesOrders(props) {
     price: "",
     amount: "",
     itemName: "",
+    clientName: "",
     remarks: "",
   });
 
   const [header, setHeader] = useState(blankHeader);
   const [items, setItems] = useState([blankItem()]);
-  const uniqueClientCategories = useMemo(() => {
-    return [
-      ...new Set((clientMaster || []).map((c) => c.category).filter(Boolean)),
-    ];
-  }, [clientMaster]);
+  const uniqueClientCategories = useMemo(() => ["HP", "ZPL", "Others"], []);
 
   const [headerErrors, setHeaderErrors] = useState({});
   const [itemErrors, setItemErrors] = useState([{}]);
@@ -140,14 +137,7 @@ export default function SalesOrders(props) {
       const res = await clientMasterAPI.getAll();
       setClients(res.clients || []);
 
-      const uniqueCategories = [
-        ...new Set((res.clients || []).map((c) => c.category).filter(Boolean)),
-      ];
-      setClientCategories(
-        uniqueCategories.length > 0
-          ? uniqueCategories
-          : ["HP", "ZPL", "Others"],
-      );
+      setClientCategories(["HP", "ZPL", "Others"]);
     } catch (error) {
       console.error("Failed to fetch clients:", error);
       setClientCategories(["HP", "ZPL", "Others"]);
@@ -163,16 +153,11 @@ export default function SalesOrders(props) {
     }
   };
 
-  const salesPersons = useMemo(
-    () =>
-      users
-        .filter((u) => u.role === "Sales" || u.role === "Admin")
-        .map((u) => u.name),
-    [users],
-  );
+  const salesPersons = useMemo(() => ["Direct", "Ankit"], []);
 
-  const generateItemName = (it) => {
+  const generateItemName = (it, overrideHeader) => {
     const parts = [it.itemCategory];
+    const h = overrideHeader || header;
 
     if (it.size) {
       parts.push(it.size);
@@ -185,25 +170,37 @@ export default function SalesOrders(props) {
       if (dims.length > 0) parts.push(`${dims.join("×")}inch`);
     }
 
-    if (header.clientName) parts.push(`${header.clientName}`);
-    if (it.variant) parts.push(`${it.variant}`);
+    if (it.clientName) parts.push(it.clientName);
+    else if (h.clientName) parts.push(h.clientName);
+
+    if (it.variant) parts.push(it.variant);
 
     return parts.filter(Boolean).join(" ");
   };
 
   const setH = (k, v) => {
+    let nextH;
     setHeader((f) => {
       const next = { ...f, [k]: v };
-      // Auto-fill contact if name changes
       if (k === "clientName") {
         const found = clientMaster.find((c) => c.name === v);
         if (found) {
           next.clientContact = found.phone || found.whatsapp || "";
         }
       }
+      nextH = next;
       return next;
     });
     setHeaderErrors((e) => ({ ...e, [k]: false }));
+
+    if (k === "clientName") {
+      setItems((prev) =>
+        prev.map((it) => ({
+          ...it,
+          itemName: generateItemName(it, nextH),
+        })),
+      );
+    }
   };
 
   const EH = (k) => (headerErrors[k] ? { border: `1px solid ${C.red}` } : {});
@@ -218,14 +215,17 @@ export default function SalesOrders(props) {
       let it = { ...updated[idx], [k]: v };
 
       if (k === "productCode") {
-        const found = fgItems.find((f) => f.code === v);
+        const codeOnly = v.split(" — ")[0];
+        it.productCode = codeOnly;
+        const found = fgItems.find((f) => f.code === codeOnly);
         if (found) {
           it = {
             ...it,
             itemCategory: found.category || it.itemCategory,
-            size: found.size || it.size,
+            size: found.subCategory || it.size,
             variant: found.variant || it.variant,
             uom: found.uom || it.uom || "nos",
+            clientName: found.clientName || "",
             itemName: found.name || it.itemName,
           };
         }
@@ -261,6 +261,61 @@ export default function SalesOrders(props) {
     if (items.length === 1) return;
     setItems((prev) => prev.filter((_, i) => i !== idx));
     setItemErrors((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleEdit = async (so) => {
+    setEditId(so._id);
+    setHeader({
+      orderDate: so.orderDate
+        ? new Date(so.orderDate).toISOString().slice(0, 10)
+        : "",
+      deliveryDate: so.deliveryDate
+        ? new Date(so.deliveryDate).toISOString().slice(0, 10)
+        : "",
+      salesPerson: so.salesPerson || "",
+      clientCategory: so.clientCategory || "",
+      clientName: so.clientName,
+      remarks: so.remarks || "",
+      status: so.status || "Open",
+    });
+    setItems(
+      (so.items || []).map((it) => ({
+        _id: it._id || uid(),
+        productCode: it.productCode || "",
+        itemCategory: it.itemCategory || "",
+        itemName: it.itemName || "",
+        size: it.size || "",
+        variant: it.variant || "",
+        width: it.width || "",
+        length: it.length || "",
+        height: it.height || "",
+        gussett: it.gussett || "",
+        uom: it.uom || "nos",
+        orderQty: it.orderQty || 0,
+        price: it.price || 0,
+        amount: it.amount || 0,
+        remarks: it.remarks || "",
+      })),
+    );
+    setView("form");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm("Delete this sales order?")) return;
+    try {
+      setLoading(true);
+      await salesOrdersAPI.delete(id);
+      toast("Sales order deleted successfully", "success");
+      fetchSalesOrders();
+    } catch (error) {
+      toast(
+        error.response?.data?.error || "Failed to delete sales order",
+        "error",
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   const submit = async () => {
@@ -430,7 +485,6 @@ export default function SalesOrders(props) {
                   onChange={(e) => setH("salesPerson", e.target.value)}
                 >
                   <option value="">-- Select --</option>
-                  <option value="Direct Order">Direct Order</option>
                   {salesPersons.map((sp) => (
                     <option key={sp} value={sp}>
                       {sp}
@@ -590,7 +644,7 @@ export default function SalesOrders(props) {
                   <AutocompleteInput
                     value={it.productCode}
                     onChange={(v) => setItem(idx, "productCode", v)}
-                    suggestions={sortedFGItems.map((f) => f.code)}
+                    suggestions={sortedFGItems.map((f) => `${f.code} — ${f.name}`)}
                     placeholder="Search FG code..."
                   />
                 </Field>
@@ -799,36 +853,39 @@ export default function SalesOrders(props) {
 
       {}
       {view === "records" && (
-        <Card>
-          <div
-            style={{
-              display: "flex",
-              gap: 12,
-              alignItems: "center",
-              flexWrap: "wrap",
-              marginBottom: 14,
-            }}
-          >
-            <h3
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <Card style={{ padding: "12px 20px" }}>
+            <div
               style={{
-                fontSize: 14,
-                fontWeight: 700,
-                color: C.muted,
-                margin: 0,
+                display: "flex",
+                gap: 12,
+                alignItems: "center",
+                flexWrap: "wrap",
               }}
             >
-              Sales Orders
-            </h3>
-            <DateRangeFilter
-              dateFrom={drDateFrom}
-              setDateFrom={setDrDateFrom}
-              dateTo={drDateTo}
-              setDateTo={setDrDateTo}
-            />
-            <span style={{ fontSize: 12, color: C.muted, marginLeft: "auto" }}>
-              {salesOrders.length} orders
-            </span>
-          </div>
+              <h3
+                style={{
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: C.muted,
+                  margin: 0,
+                }}
+              >
+                📊 Sales Order History
+              </h3>
+              <DateRangeFilter
+                dateFrom={drDateFrom}
+                setDateFrom={setDrDateFrom}
+                dateTo={drDateTo}
+                setDateTo={setDrDateTo}
+              />
+              <span
+                style={{ fontSize: 12, color: C.muted, marginLeft: "auto" }}
+              >
+                {salesOrders.length} orders total
+              </span>
+            </div>
+          </Card>
 
           {salesOrders.length === 0 && (
             <div
@@ -837,6 +894,8 @@ export default function SalesOrders(props) {
                 color: C.muted,
                 padding: 32,
                 fontSize: 13,
+                background: "#1a1a1a",
+                borderRadius: 10,
               }}
             >
               No sales orders yet.
@@ -851,129 +910,90 @@ export default function SalesOrders(props) {
                 (s, it) => s + +(it.amount || 0),
                 0,
               );
-              const handleEdit = async (so) => {
-                setEditId(so._id);
-                setHeader({
-                  orderDate: so.orderDate
-                    ? new Date(so.orderDate).toISOString().slice(0, 10)
-                    : "",
-                  deliveryDate: so.deliveryDate
-                    ? new Date(so.deliveryDate).toISOString().slice(0, 10)
-                    : "",
-                  salesPerson: so.salesPerson || "",
-                  clientCategory: so.clientCategory || "",
-                  clientName: so.clientName,
-                  remarks: so.remarks || "",
-                  status: so.status,
-                });
-                setItems(
-                  so.items.map((it) => ({
-                    _id: it._id || uid(),
-                    productCode: it.productCode || "",
-                    itemCategory: it.itemCategory,
-                    itemName: it.itemName,
-                    size: it.size || "",
-                    variant: it.variant || "",
-                    width: it.width || "",
-                    length: it.length || "",
-                    height: it.height || "",
-                    gussett: it.gussett || "",
-                    uom: it.uom || "nos",
-                    orderQty: it.orderQty,
-                    price: it.price,
-                    amount: it.amount,
-                    remarks: it.remarks || "",
-                  })),
-                );
-                setView("form");
-                window.scrollTo({ top: 0, behavior: "smooth" });
-              };
-
-              const handleDelete = async (id) => {
-                if (!confirm("Delete this sales order?")) return;
-                try {
-                  await salesOrdersAPI.delete(id);
-                  toast("Sales order deleted successfully", "success");
-                  fetchSalesOrders();
-                } catch (error) {
-                  toast(
-                    error.response?.data?.error ||
-                      "Failed to delete sales order",
-                    "error",
-                  );
-                }
-              };
 
               return (
-                <div
+                <Card
                   key={r._id}
                   style={{
-                    borderBottom: `1px solid ${C.border}22`,
-                    padding: "12px 4px",
+                    padding: "16px 20px",
+                    borderLeft: `3px solid ${C.green || "#4ade80"}`,
+                    background: "#161b22",
                   }}
                 >
+                  {/* Card Header */}
                   <div
                     style={{
                       display: "flex",
                       justifyContent: "space-between",
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                      gap: 8,
+                      alignItems: "flex-start",
+                      marginBottom: 16,
                     }}
                   >
                     <div
                       style={{
                         display: "flex",
-                        gap: 14,
+                        gap: 12,
                         alignItems: "center",
-                        flexWrap: "wrap",
                       }}
                     >
                       <span
                         style={{
+                          fontSize: 16,
+                          fontWeight: 800,
+                          color: C.green || "#4ade80",
                           fontFamily: "'JetBrains Mono', monospace",
-                          color: C.blue,
-                          fontWeight: 700,
                         }}
                       >
                         {r.soNo}
                       </span>
-                      <span style={{ fontSize: 12, color: C.muted }}>
+                      <span
+                        style={{
+                          color: "#8b949e",
+                          fontSize: 13,
+                          fontWeight: 600,
+                        }}
+                      >
+                        {r.clientName} ·{" "}
                         {r.orderDate
                           ? new Date(r.orderDate).toLocaleDateString("en-GB")
                           : "N/A"}
                       </span>
-                      <span style={{ fontSize: 13, fontWeight: 600 }}>
-                        {r.clientName}
-                      </span>
-                      <Badge
-                        text={r.status}
-                        color={r.status === "Open" ? C.yellow : C.green}
-                      />
-                      {total > 0 && (
-                        <span
-                          style={{
-                            fontFamily: "'JetBrains Mono', monospace",
-                            color: C.green || "#4ade80",
-                            fontSize: 12,
-                            fontWeight: 700,
-                          }}
-                        >
-                          ₹{fmt(total)}
-                        </span>
-                      )}
                     </div>
-                    <div style={{ display: "flex", gap: 6 }}>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <div
+                        style={{
+                          background:
+                            r.status === "Complated" || r.status === "Received"
+                              ? "#064e3b"
+                              : "#453b03",
+                          color:
+                            r.status === "Complated" || r.status === "Received"
+                              ? "#10b981"
+                              : "#f59e0b",
+                          border: `1px solid ${
+                            r.status === "Complated" || r.status === "Received"
+                              ? "#065f46"
+                              : "#78650f"
+                          }`,
+                          borderRadius: 6,
+                          padding: "4px 12px",
+                          fontSize: 11,
+                          fontWeight: 700,
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        {r.status || "Open"}
+                      </div>
                       <button
                         onClick={() => handleEdit(r)}
                         style={{
-                          padding: "5px 12px",
-                          borderRadius: 4,
-                          border: `1px solid ${C.blue}`,
-                          background: C.blue + "22",
-                          color: C.blue,
-                          fontWeight: 600,
+                          background: "#1e293b",
+                          color: C.green || "#4ade80",
+                          border: "1px solid #334155",
+                          borderRadius: 6,
+                          padding: "4px 14px",
                           fontSize: 12,
+                          fontWeight: 700,
                           cursor: "pointer",
                         }}
                       >
@@ -982,13 +1002,13 @@ export default function SalesOrders(props) {
                       <button
                         onClick={() => handleDelete(r._id)}
                         style={{
-                          padding: "5px 12px",
-                          borderRadius: 4,
-                          border: `1px solid ${C.red}`,
-                          background: C.red + "22",
-                          color: C.red,
-                          fontWeight: 600,
+                          background: "#3e1a1a",
+                          color: "#ef4444",
+                          border: "1px solid #7f1d1d",
+                          borderRadius: 6,
+                          padding: "4px 10px",
                           fontSize: 12,
+                          fontWeight: 700,
                           cursor: "pointer",
                         }}
                       >
@@ -996,35 +1016,118 @@ export default function SalesOrders(props) {
                       </button>
                     </div>
                   </div>
+
+                  {/* Items List Table-like */}
                   <div
                     style={{
                       display: "flex",
+                      flexDirection: "column",
                       gap: 8,
-                      flexWrap: "wrap",
-                      marginTop: 6,
+                      marginBottom: 16,
                     }}
                   >
-                    {(r.items || []).map((it, i) => (
-                      <span
-                        key={i}
+                    {(r.items || []).map((it, idx) => (
+                      <div
+                        key={idx}
                         style={{
-                          fontSize: 11,
-                          background: C.surface,
-                          border: `1px solid ${C.border}`,
-                          borderRadius: 4,
-                          padding: "2px 8px",
-                          color: C.muted,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 12,
+                          fontSize: 12,
+                          color: "#c9d1d9",
+                          paddingBottom: idx === r.items.length - 1 ? 0 : 4,
+                          borderBottom:
+                            idx === r.items.length - 1
+                              ? "none"
+                              : "1px solid #30363d55",
                         }}
                       >
-                        {it.itemCategory}{" "}
-                        {it.size || it.width ? `· ${it.size || it.width}` : ""}
-                      </span>
+                        <span style={{ fontWeight: 700, flex: 2 }}>
+                          {it.itemName}
+                        </span>
+                        <span style={{ flex: 1, color: "#8b949e" }}>
+                          Qty:{" "}
+                          <b style={{ color: "#e6edf3" }}>
+                            {fmt(it.orderQty)} {it.uom}
+                          </b>
+                        </span>
+                        <span style={{ flex: 1, color: "#8b949e" }}>
+                          Rate: ₹{fmt(it.price)}
+                        </span>
+                        <span
+                          style={{
+                            color: C.green || "#4ade80",
+                            fontWeight: 700,
+                            fontFamily: "'JetBrains Mono', monospace",
+                            width: 100,
+                            textAlign: "right",
+                          }}
+                        >
+                          ₹{fmt(it.amount)}
+                        </span>
+                      </div>
                     ))}
                   </div>
-                </div>
+
+                  {/* Footer Info */}
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-end",
+                      paddingTop: 12,
+                      borderTop: "1px solid #30363d",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 20,
+                        color: "#8b949e",
+                        fontSize: 11,
+                      }}
+                    >
+                      <span>
+                        Delivery:{" "}
+                        <b style={{ color: "#c9d1d9" }}>
+                          {r.deliveryDate
+                            ? new Date(r.deliveryDate).toLocaleDateString(
+                                "en-GB",
+                              )
+                            : "—"}
+                        </b>
+                      </span>
+                      <span>
+                        Sales Person:{" "}
+                        <b style={{ color: "#c9d1d9" }}>
+                          {r.salesPerson || "None"}
+                        </b>
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 16,
+                        fontWeight: 800,
+                        color: C.green || "#4ade80",
+                        fontFamily: "'JetBrains Mono', monospace",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: 11,
+                          color: "#8b949e",
+                          fontWeight: 400,
+                        }}
+                      >
+                        Total:{" "}
+                      </span>
+                      ₹{fmt(total)}
+                    </div>
+                  </div>
+                </Card>
               );
             })}
-        </Card>
+        </div>
       )}
     </div>
   );

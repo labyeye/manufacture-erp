@@ -583,34 +583,70 @@ export function Dashboard({ data }) {
       )}
 
       {/* ── PO RECONCILIATION ── */}
+      {/* ── PO RECONCILIATION ── */}
       {reportTab === "po_recon" &&
         (() => {
           const rows = purchaseOrders.map((po) => {
-            const ordered = (po.items || []).reduce(
-              (acc, it) => acc + +(it.qty || it.quantity || 0),
-              0,
-            );
-            const inwardItems = inward.filter(
+            const items = po.items || [];
+            const orderedQty = items.reduce((s, it) => s + +(it.qty || 0), 0);
+            const orderedWt = items.reduce((s, it) => s + +(it.weight || 0), 0);
+            const skuCount = items.length;
+
+            const inRecords = inward.filter(
               (inw) =>
                 String(inw.poRef || inw.poNo || "") ===
                 String(po.poNo || po._id || ""),
             );
-            const received = inwardItems.reduce(
-              (acc, curr) =>
-                acc +
-                (curr.items || []).reduce((a2, it2) => a2 + +(it2.qty || 0), 0),
+
+            const receivedQty = inRecords.reduce(
+              (s, r) =>
+                s + (r.items || []).reduce((a, it) => a + +(it.qty || 0), 0),
               0,
             );
-            const rate =
-              ordered > 0 ? Math.round((received / ordered) * 100) : 0;
+            const receivedWt = inRecords.reduce(
+              (s, r) =>
+                s + (r.items || []).reduce((a, it) => a + +(it.weight || 0), 0),
+              0,
+            );
+            const skusReceived = [
+              ...new Set(
+                inRecords.flatMap((r) =>
+                  (r.items || []).filter((it) => (it.qty || it.weight) > 0).map((it) => it.productCode),
+                ),
+              ),
+            ].length;
+
+            const fillRate = orderedWt > 0 ? (receivedWt / orderedWt) * 100 : 0;
+            
+            let status = "Open";
+            if (fillRate >= 90) status = "Received";
+            else if (fillRate > 0) status = "Partial";
+
             return {
               po,
-              ordered,
-              received,
-              pending: Math.max(0, ordered - received),
-              rate,
+              orderedQty,
+              orderedWt,
+              receivedQty,
+              receivedWt,
+              skuCount,
+              skusReceived,
+              fillRate: Math.round(fillRate),
+              status,
+              pendingQty: Math.max(0, orderedQty - receivedQty),
+              pendingWt: Math.max(0, orderedWt - receivedWt),
             };
           });
+
+          const stats = {
+            total: rows.length,
+            notOpen: rows.filter((r) => r.status !== "Open").length,
+            skusOrd: rows.reduce((s, r) => s + r.skuCount, 0),
+            skusRec: rows.reduce((s, r) => s + r.skusReceived, 0),
+            totOrdWt: rows.reduce((s, r) => s + r.orderedWt, 0),
+            totRecWt: rows.reduce((s, r) => s + r.receivedWt, 0),
+            pendingWt: rows.reduce((s, r) => s + r.pendingWt, 0),
+          };
+          stats.overallFill = stats.totOrdWt > 0 ? Math.round((stats.totRecWt / stats.totOrdWt) * 100) : 0;
 
           if (rows.length === 0)
             return (
@@ -620,77 +656,92 @@ export function Dashboard({ data }) {
             );
 
           return (
-            <div
-              style={{
-                borderRadius: 8,
-                overflow: "hidden",
-                border: "1px solid #2a2a2e",
-              }}
-            >
-              <table style={TABLE}>
-                <colgroup>
-                  <col style={{ width: 110 }} />
-                  <col style={{ width: "25%" }} />
-                  <col style={{ width: 120 }} />
-                  <col style={{ width: 100 }} />
-                  <col style={{ width: 100 }} />
-                  <col style={{ width: 100 }} />
-                  <col style={{ width: 90 }} />
-                </colgroup>
-                <thead>
-                  <tr>
-                    {[
-                      "PO #",
-                      "Vendor",
-                      "PO Date",
-                      "Ordered",
-                      "Received",
-                      "Pending",
-                      "Rate",
-                    ].map((h) => (
-                      <th key={h} style={TH}>
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((r, i) => (
-                    <tr
-                      key={i}
-                      style={{
-                        background: i % 2 === 0 ? "#0e0e12" : "#121216",
-                      }}
-                    >
-                      <td style={{ ...TD, color: C.blue, fontWeight: 700 }}>
-                        {r.po.poNo || "—"}
-                      </td>
-                      <td style={{ ...TD, fontWeight: 600 }}>
-                        {r.po.vendor || r.po.vendorName || "—"}
-                      </td>
-                      <td style={{ ...TD, color: "#888" }}>
-                        {r.po.poDate?.slice(0, 10) || "—"}
-                      </td>
-                      <td style={TD}>{fmt(r.ordered)} kg</td>
-                      <td style={{ ...TD, color: C.green }}>
-                        {fmt(r.received)} kg
-                      </td>
-                      <td style={{ ...TD, color: C.red }}>
-                        {fmt(r.pending)} kg
-                      </td>
-                      <td
-                        style={{
-                          ...TD,
-                          fontWeight: 800,
-                          color: r.rate >= 95 ? C.green : C.yellow,
-                        }}
-                      >
-                        {r.rate}%
-                      </td>
+            <div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 12, marginBottom: 20 }}>
+                {[
+                  { label: "Total POs", val: stats.total, color: C.blue },
+                  { label: "Open / Partial", val: stats.total - rows.filter(r => r.status === "Received").length, color: C.yellow },
+                  { label: "SKUs Ordered", val: stats.skusOrd, color: C.blue },
+                  { label: "SKUs Received", val: stats.skusRec, color: C.green },
+                  { label: "Total Ordered (kg)", val: fmt(stats.totOrdWt), color: C.blue },
+                  { label: "Total Received (kg)", val: fmt(stats.totRecWt), color: C.green },
+                ].map((s) => (
+                  <div key={s.label} style={{ background: "#141416", border: `1px solid ${s.color}44`, borderLeft: `4px solid ${s.color}`, borderRadius: 8, padding: 16 }}>
+                    <div style={{ fontSize: 24, fontWeight: 900, color: s.color }}>{s.val}</div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: "#888", textTransform: "uppercase", marginTop: 4 }}>{s.label}</div>
+                  </div>
+                ))}
+              </div>
+              
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 12, marginBottom: 20 }}>
+                 <div style={{ background: "#141416", border: `1px solid ${C.red}44`, borderLeft: `4px solid ${C.red}`, borderRadius: 8, padding: 16 }}>
+                    <div style={{ fontSize: 24, fontWeight: 900, color: C.red }}>{stats.overallFill}%</div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: "#888", textTransform: "uppercase", marginTop: 4 }}>Overall Fill Rate</div>
+                  </div>
+                  <div style={{ background: "#141416", border: `1px solid ${C.red}44`, borderLeft: `4px solid ${C.red}`, borderRadius: 8, padding: 16 }}>
+                    <div style={{ fontSize: 24, fontWeight: 900, color: C.red }}>{fmt(stats.pendingWt)} kg</div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: "#888", textTransform: "uppercase", marginTop: 4 }}>Pending (kg)</div>
+                  </div>
+              </div>
+
+              <div style={{ borderRadius: 8, overflow: "hidden", border: "1px solid #2a2a2e" }}>
+                <table style={TABLE}>
+                  <colgroup>
+                    <col style={{ width: 110 }} />
+                    <col style={{ width: "22%" }} />
+                    <col style={{ width: 110 }} />
+                    <col style={{ width: 110 }} />
+                    <col style={{ width: 180 }} />
+                    <col style={{ width: 180 }} />
+                    <col style={{ width: 120 }} />
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      {["PO #", "Vendor", "PO Date", "Status", "Ordered", "Received", "Fill Rate"].map((h) => (
+                        <th key={h} style={TH}>{h}</th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {rows.map((r, i) => (
+                      <tr key={i} style={{ background: i % 2 === 0 ? "#0e0e12" : "#121216" }}>
+                        <td style={{ ...TD, color: C.blue, fontWeight: 700 }}>{r.po.poNo || "—"}</td>
+                        <td style={{ ...TD }}>
+                          <div style={{ fontWeight: 600 }}>{r.po.vendor || r.po.vendorName || "—"}</div>
+                          <div style={{ fontSize: 9, color: "#666" }}>{r.skuCount} SKU</div>
+                        </td>
+                        <td style={{ ...TD, color: "#888" }}>{r.po.poDate?.slice(0, 10) || "—"}</td>
+                        <td style={TD}>
+                          <Badge 
+                            label={r.status}
+                            color={r.status === "Received" ? C.green : r.status === "Partial" ? C.yellow : C.blue}
+                          />
+                        </td>
+                        <td style={TD}>
+                          <div style={{ fontWeight: 600 }}>{fmt(r.orderedQty)} sheets / {fmt(r.orderedWt)} kg</div>
+                          <div style={{ fontSize: 9, color: "#666" }}>{r.skuCount} SKU</div>
+                        </td>
+                        <td style={TD}>
+                          <div style={{ fontWeight: 600, color: C.green }}>{fmt(r.receivedQty)} sheets / {fmt(r.receivedWt)} kg</div>
+                          {r.pendingWt > 0 && (
+                            <div style={{ fontSize: 9, color: C.red, marginTop: 4 }}>
+                              ▼ {fmt(r.pendingQty)} sheets / {fmt(r.pendingWt)} kg pending
+                            </div>
+                          )}
+                        </td>
+                        <td style={TD}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
+                            <span style={{ fontSize: 11, fontWeight: 800, color: r.fillRate >= 90 ? C.green : C.yellow }}>{r.fillRate}%</span>
+                          </div>
+                          <div style={{ width: "100%", height: 4, background: "#2a2a2e", borderRadius: 2, overflow: "hidden" }}>
+                            <div style={{ width: `${r.fillRate}%`, height: "100%", background: r.fillRate >= 90 ? C.green : C.yellow, borderRadius: 2 }} />
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           );
         })()}

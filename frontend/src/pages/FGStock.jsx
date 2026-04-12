@@ -1,4 +1,5 @@
 import React, { useState, useRef, useMemo } from "react";
+import * as XLSX from "xlsx";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 
@@ -91,30 +92,46 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
   const handleImport = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
     const reader = new FileReader();
     reader.onload = (ev) => {
-      const lines = ev.target.result.split("\n").filter(Boolean);
-      const imported = [];
-      for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i]
-          .split(",")
-          .map((v) => v.replace(/^"|"$/g, "").trim());
-        if (cols[1])
-          imported.push({
-            id: uid(),
-            code: cols[0] || `FG${String(i).padStart(3, "0")}`,
-            itemName: cols[1],
-            category: cols[2] || "",
-            clientCat: cols[3] || "",
-            qty: parseFloat(cols[4]) || 0,
-            reorder: parseFloat(cols[5]) || 0,
-            price: parseFloat(cols[6]) || 0,
-          });
+      try {
+        const data = new Uint8Array(ev.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+        const imported = [];
+        // Skip header row
+        for (let i = 1; i < json.length; i++) {
+          const row = json[i];
+          if (row && (row[0] || row[1])) {
+            imported.push({
+              _id: uid(),
+              code: row[0] || `FG${String(i).padStart(3, "0")}`,
+              itemName: row[1] || "Unnamed Item",
+              category: row[2] || "",
+              clientCat: row[3] || "",
+              qty: parseFloat(row[4]) || 0,
+              reorder: parseFloat(row[5]) || 0,
+              price: parseFloat(row[6]) || 0,
+            });
+          }
+        }
+
+        if (imported.length > 0) {
+          setFgStock((prev) => [...prev, ...imported]);
+          toast(`Successfully imported ${imported.length} items`, "success");
+        } else {
+          toast("No valid data found in file", "error");
+        }
+      } catch (err) {
+        console.error("Import error:", err);
+        toast("Failed to parse Excel file", "error");
       }
-      setFgStock((prev) => [...prev, ...imported]);
-      toast(`Imported ${imported.length} items`, "success");
     };
-    reader.readAsText(file);
+    reader.readAsArrayBuffer(file);
     e.target.value = "";
   };
 
@@ -259,7 +276,7 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
         <input
           ref={fileInputRef}
           type="file"
-          accept=".csv"
+          accept=".csv, .xlsx, .xls"
           style={{ display: "none" }}
           onChange={handleImport}
         />

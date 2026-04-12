@@ -211,11 +211,11 @@ export default function MaterialInward({
                     ? pit.sheetSize.split("x")[1]?.replace("mm", "")
                     : ""),
                 gsm: pit.gsm || "",
-                weight: pit.weight || "",
+                weight: "",
                 rate: pit.rate || "",
                 itemName: pit.itemName || "",
-                qty: pit.qty || "",
-                noOfSheets: pit.noOfSheets || "",
+                qty: "",
+                noOfSheets: "",
                 unit: pit.unit || "kg",
                 productCode: pit.productCode || "",
               };
@@ -385,8 +385,10 @@ export default function MaterialInward({
         if (!it.widthMm) e.widthMm = true;
         if (it.category !== "Paper Reel" && !it.lengthMm) e.lengthMm = true;
         if (!it.gsm) e.gsm = true;
-        if ((it.category === "Paper Sheets" || it.category === "Paper Sheet") &&
-          !it.noOfSheets)
+        if (
+          (it.category === "Paper Sheets" || it.category === "Paper Sheet") &&
+          !it.noOfSheets
+        )
           e.noOfSheets = true;
         if (!it.weight) e.weight = true;
         if (!it.rate) e.rate = true;
@@ -489,6 +491,228 @@ export default function MaterialInward({
     } finally {
       setLoading(false);
     }
+  };
+
+  const [search, setSearch] = useState("");
+
+  const filteredInwards = useMemo(() => {
+    let list = [...(inward || [])];
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter(
+        (r) =>
+          (r.inwardNo || "").toLowerCase().includes(q) ||
+          (r.vendorName || "").toLowerCase().includes(q) ||
+          (r.invoiceNo || "").toLowerCase().includes(q) ||
+          (r.items || []).some((it) =>
+            (it.rmItem || "").toLowerCase().includes(q),
+          ),
+      );
+    }
+    if (drDateFrom && drDateTo) {
+      list = list.filter((r) => {
+        const d = r.inwardDate?.slice(0, 10);
+        return d >= drDateFrom && d <= drDateTo;
+      });
+    }
+    return list;
+  }, [inward, search, drDateFrom, drDateTo]);
+
+  const handleExportCSV = () => {
+    const headers = [
+      "GRN No",
+      "Date",
+      "Vendor",
+      "Invoice",
+      "Vehicle",
+      "Location",
+      "Received By",
+      "Item Code",
+      "Item Name",
+      "Category",
+      "Type",
+      "GSM",
+      "Size",
+      "Sheets",
+      "Weight (kg)",
+      "Rate",
+      "Amount",
+    ];
+
+    const rows = [];
+    filteredInwards.forEach((r) => {
+      r.items.forEach((it) => {
+        rows.push([
+          r.inwardNo,
+          formatDateForInput(r.inwardDate),
+          r.vendorName,
+          r.invoiceNo,
+          r.vehicleNo,
+          r.location,
+          r.receivedBy,
+          it.productCode,
+          it.itemName || it.rmItem,
+          it.category,
+          it.subCategory,
+          it.gsm,
+          it.widthMm && it.lengthMm
+            ? `${it.widthMm}x${it.lengthMm}`
+            : it.widthMm || "",
+          it.noOfSheets || "",
+          it.weight || "",
+          it.rate || "",
+          it.amount || "",
+        ]);
+      });
+    });
+
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      [headers, ...rows].map((e) => e.join(",")).join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute(
+      "download",
+      `GRN_Records_${new Date().toISOString().slice(0, 10)}.csv`,
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const generateGRNPDF = (r) => {
+    const total = (r.items || []).reduce((s, it) => s + +(it.amount || 0), 0);
+    const fd = (d) => (d ? d.toString().split("T")[0] : "—");
+
+    const html = `
+      <html>
+        <head>
+          <title>GRN-${r.inwardNo}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&family=JetBrains+Mono:wght@700&display=swap');
+            body { font-family: 'Inter', sans-serif; padding: 20px 30px; color: #1a1a1a; }
+            .header { text-align: center; border-bottom: 2px solid #0891b2; padding-bottom: 10px; margin-bottom: 20px; }
+            .header h1 { color: #0e7490; margin: 0; font-size: 24px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+            .header p { margin: 2px 0; font-size: 11px; color: #475569; font-weight: 500; }
+            
+            .doc-title { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px; }
+            .doc-title h2 { margin: 0; font-size: 18px; font-weight: 700; }
+            .status { color: #0891b2; font-weight: 700; font-size: 12px; }
+            
+            .hr { height: 1px; background: #e2e8f0; margin: 10px 0; border: none; }
+            .po-no { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; color: #1a1a1a; margin: 5px 0; }
+            
+            .section-label { font-size: 10px; color: #64748b; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 15px; margin-top: 20px; }
+            
+            .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px; }
+            .info-item label { display: block; font-size: 9px; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
+            .info-item span { font-size: 11px; font-weight: 600; color: #1e293b; }
+            
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th { background: #f8fafc; border: 1px solid #e2e8f0; padding: 4px 6px; text-align: left; font-size: 9px; font-weight: 800; text-transform: uppercase; color: #475569; }
+            td { border: 1px solid #e2e8f0; padding: 4px 6px; font-size: 9px; color: #1e293b; }
+            .col-qty { text-align: center; }
+            .col-amt { text-align: right; font-weight: 700; }
+            
+            .total-row { display: flex; justify-content: flex-end; margin-top: 15px; }
+            .total-box { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 800; color: #1a1a1a; }
+            
+            @media print { body { padding: 0; } @page { margin: 1cm; } }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>AARAY PACKAGING PRIVATE LIMITED</h1>
+            <p>GRN DOCUMENT — MATERIAL INWARD RECEIPT</p>
+          </div>
+
+          <div class="doc-title">
+            <h2>Material Inward Record (GRN)</h2>
+            <div class="status">Type<br><span>VERIFIED RECEIPT</span></div>
+          </div>
+          <div class="po-no">${r.inwardNo}</div>
+          <div class="hr"></div>
+
+          <div class="section-label">General Information</div>
+          <div class="info-grid">
+            <div class="info-item"><label>GRN Date</label><span>${fd(r.inwardDate)}</span></div>
+            <div class="info-item"><label>PO Reference</label><span>${r.poRef || "DIRECT INWARD"}</span></div>
+            <div class="info-item"><label>Vendor</label><span>${r.vendorName}</span></div>
+          </div>
+          <div class="info-grid">
+            <div class="info-item"><label>Invoice No</label><span>${r.invoiceNo}</span></div>
+            <div class="info-item"><label>Vehicle No</label><span>${r.vehicleNo}</span></div>
+            <div class="info-item"><label>Location</label><span>${r.location}</span></div>
+          </div>
+
+          <div class="section-label">Received Materials</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Product Code</th>
+                <th>Description</th>
+                <th>Category</th>
+                <th>GSM</th>
+                <th>Size</th>
+                <th class="col-qty">No of Sheets</th>
+                <th class="col-qty">Weight</th>
+                <th class="col-amt">Rate</th>
+                <th class="col-amt">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${(r.items || [])
+                .map(
+                  (it) => `
+                <tr>
+                  <td>${it.productCode || "—"}</td>
+                  <td>${it.itemName || it.rmItem}</td>
+                  <td>${it.category}</td>
+                  <td>${it.gsm || "—"}</td>
+                  <td>${it.widthMm}${it.lengthMm ? "x" + it.lengthMm : ""}mm</td>
+                  <td class="col-qty">${it.noOfSheets ? fmt(it.noOfSheets) : "—"}</td>
+                  <td class="col-qty">${fmt(it.weight)} kg</td>
+                  <td class="col-amt">${fmt(it.rate)}</td>
+                  <td class="col-amt">${fmt(it.amount)}</td>
+                </tr>
+              `,
+                )
+                .join("")}
+            </tbody>
+          </table>
+
+          <div class="total-row">
+            <div class="total-box">₹${fmt(total)}</div>
+          </div>
+
+          <div style="margin-top: 50px; display: flex; justify-content: space-between;">
+             <div style="border-top: 1px solid #ccc; width: 140px; text-align: center; padding-top: 5px; font-size: 10px;">Store Keeper</div>
+             <div style="border-top: 1px solid #ccc; width: 140px; text-align: center; padding-top: 5px; font-size: 10px;">Security</div>
+             <div style="border-top: 1px solid #ccc; width: 140px; text-align: center; padding-top: 5px; font-size: 10px;">QC / Manager</div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.bottom = "0";
+    iframe.style.right = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    document.body.appendChild(iframe);
+    iframe.contentWindow.document.open();
+    iframe.contentWindow.document.write(html);
+    iframe.contentWindow.document.close();
+    iframe.onload = () => {
+      setTimeout(() => {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        setTimeout(() => document.body.removeChild(iframe), 1000);
+      }, 500);
+    };
   };
 
   return (
@@ -890,17 +1114,17 @@ export default function MaterialInward({
                         }}
                       />
                     </Field>
-                    <Field label="Item Name" span={2}>
-                      <input
-                        readOnly
-                        placeholder="Auto-filled from material details"
-                        value={it.itemName || ""}
-                        style={{ background: C.border + "22", fontSize: 13 }}
-                      />
-                    </Field>
                   </>
                 )}
               </div>
+              <Field label="Item Name" span={2}>
+                <input
+                  readOnly
+                  placeholder="Auto-filled from material details"
+                  value={it.itemName || ""}
+                  style={{ background: C.border + "22", fontSize: 13 }}
+                />
+              </Field>
             </Card>
           ))}
 
@@ -962,186 +1186,301 @@ export default function MaterialInward({
       )}
 
       {view === "records" && (
-        <Card>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div
             style={{
               display: "flex",
-              gap: 12,
+              justifyContent: "space-between",
               alignItems: "center",
-              flexWrap: "wrap",
-              marginBottom: 14,
             }}
           >
-            <h3
-              style={{
-                fontSize: 14,
-                fontWeight: 700,
-                color: C.muted,
-                margin: 0,
-              }}
-            >
-              GRN Records
-            </h3>
-            <DateRangeFilter
-              dateFrom={drDateFrom}
-              setDateFrom={setDrDateFrom}
-              dateTo={drDateTo}
-              setDateTo={setDrDateTo}
-            />
-            <span style={{ fontSize: 12, color: C.muted, marginLeft: "auto" }}>
-              {inward.length} records
-            </span>
-          </div>
-          {inward.length === 0 && (
-            <div
-              style={{
-                textAlign: "center",
-                color: C.muted,
-                padding: 32,
-                fontSize: 13,
-              }}
-            >
-              No inward records yet.
-            </div>
-          )}
-          {(inward || [])
-            .slice()
-            .reverse()
-            .map((r) => {
-              const total = (r.items || []).reduce(
-                (s, it) => s + +(it.amount || 0),
-                0,
-              );
-              return (
-                <div
-                  key={r._id}
+            <div style={{ display: "flex", gap: 12, flex: 1 }}>
+              <div style={{ position: "relative", width: 300 }}>
+                <span
                   style={{
-                    borderBottom: `1px solid ${C.border}22`,
-                    padding: "12px 4px",
+                    position: "absolute",
+                    left: 12,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    color: "#555",
                   }}
                 >
-                  <div
+                  🔍
+                </span>
+                <input
+                  placeholder="Search records..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "9px 12px 9px 36px",
+                    background: "#141416",
+                    border: "1px solid #2a2a2e",
+                    borderRadius: 6,
+                    color: "#fff",
+                    fontSize: 13,
+                  }}
+                />
+              </div>
+              <DateRangeFilter
+                dateFrom={drDateFrom}
+                setDateFrom={setDrDateFrom}
+                dateTo={drDateTo}
+                setDateTo={setDrDateTo}
+              />
+            </div>
+            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+              <button
+                onClick={handleExportCSV}
+                style={{
+                  background: "#141416",
+                  color: C.green,
+                  border: `1px solid ${C.green}44`,
+                  borderRadius: 6,
+                  padding: "8px 16px",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                📥 Export CSV
+              </button>
+              <span style={{ fontSize: 12, color: C.muted }}>
+                {filteredInwards.length} records found
+              </span>
+            </div>
+          </div>
+
+          {filteredInwards.length === 0 ? (
+            <Card style={{ textAlign: "center", padding: 40, color: C.muted }}>
+              No material inward records found.
+            </Card>
+          ) : (
+            filteredInwards
+              .slice()
+              .reverse()
+              .map((r) => {
+                const total = (r.items || []).reduce(
+                  (s, it) => s + +(it.amount || 0),
+                  0,
+                );
+                return (
+                  <Card
+                    key={r._id}
                     style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                      gap: 8,
+                      padding: "16px 20px",
+                      borderLeft: `4px solid ${C.blue}`,
+                      background: "#111114",
                     }}
                   >
                     <div
                       style={{
                         display: "flex",
-                        gap: 14,
-                        alignItems: "center",
-                        flexWrap: "wrap",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                        marginBottom: 16,
                       }}
                     >
-                      <span
+                      <div
                         style={{
-                          fontFamily: "'JetBrains Mono',monospace",
-                          color: C.blue,
-                          fontWeight: 700,
+                          display: "flex",
+                          gap: 16,
+                          alignItems: "center",
                         }}
                       >
-                        {r.inwardNo}
-                      </span>
-                      <span style={{ fontSize: 12, color: C.muted }}>
-                        {formatDateForInput(r.inwardDate)}
-                      </span>
-                      <span style={{ fontSize: 13, fontWeight: 600 }}>
-                        {r.vendorName}
-                      </span>
-                      <span style={{ fontSize: 12, color: C.muted }}>
-                        Inv: {r.invoiceNo}
-                      </span>
-                      {total > 0 && (
                         <span
                           style={{
-                            fontFamily: "'JetBrains Mono',monospace",
-                            color: C.green,
-                            fontSize: 12,
-                            fontWeight: 700,
+                            fontSize: 18,
+                            fontWeight: 900,
+                            color: C.blue,
+                            fontFamily: "monospace",
                           }}
                         >
-                          ₹{fmt(total)}
+                          {r.inwardNo}
                         </span>
-                      )}
+                        <div
+                          style={{
+                            fontSize: 11,
+                            padding: "4px 10px",
+                            background: "#064e3b",
+                            color: "#10b981",
+                            borderRadius: 4,
+                            fontWeight: 800,
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          Verified
+                        </div>
+                        <span style={{ color: "#555", fontSize: 13 }}>
+                          {formatDateForInput(r.inwardDate)} ·{" "}
+                          <b style={{ color: "#aaa" }}>{r.vendorName}</b>
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button
+                          onClick={() => handleEdit(r)}
+                          style={{
+                            background: "#1e293b",
+                            color: C.blue,
+                            border: "1px solid #334155",
+                            borderRadius: 6,
+                            padding: "6px 14px",
+                            fontSize: 11,
+                            fontWeight: 700,
+                            cursor: "pointer",
+                          }}
+                        >
+                          ✏️ Edit
+                        </button>
+                        <button
+                          onClick={() => generateGRNPDF(r)}
+                          style={{
+                            background: "#2a1a45",
+                            color: "#a855f7",
+                            border: "1px solid #4c1d95",
+                            borderRadius: 6,
+                            padding: "6px 14px",
+                            fontSize: 11,
+                            fontWeight: 700,
+                            cursor: "pointer",
+                          }}
+                        >
+                          🖨️ PDF
+                        </button>
+                        <button
+                          onClick={() => handleDelete(r._id)}
+                          style={{
+                            background: "#451a1a",
+                            color: "#ef4444",
+                            border: "1px solid #7f1d1d",
+                            borderRadius: 6,
+                            padding: "6px 14px",
+                            fontSize: 11,
+                            fontWeight: 700,
+                            cursor: "pointer",
+                          }}
+                        >
+                          ✕
+                        </button>
+                      </div>
                     </div>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button
-                        onClick={() => handleEdit(r)}
-                        disabled={loading}
-                        style={{
-                          background: C.blue + "22",
-                          color: C.blue,
-                          border: "none",
-                          borderRadius: 5,
-                          padding: "4px 12px",
-                          fontWeight: 700,
-                          fontSize: 12,
-                          cursor: loading ? "not-allowed" : "pointer",
-                        }}
-                      >
-                        ✎ Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(r._id)}
-                        disabled={loading}
-                        style={{
-                          background: C.red + "22",
-                          color: C.red,
-                          border: "none",
-                          borderRadius: 5,
-                          padding: "4px 12px",
-                          fontWeight: 700,
-                          fontSize: 12,
-                          cursor: loading ? "not-allowed" : "pointer",
-                        }}
-                      >
-                        ✕ Delete
-                      </button>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 8,
+                        marginBottom: 16,
+                      }}
+                    >
+                      {(r.items || []).map((it, idx) => (
+                        <div
+                          key={idx}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 12,
+                            fontSize: 12,
+                            color: "#888",
+                            padding: "8px 0",
+                            borderBottom: "1px solid #ffffff05",
+                          }}
+                        >
+                          <span
+                            style={{ fontWeight: 700, flex: 1, color: "#ddd" }}
+                          >
+                            {it.rmItem}{" "}
+                            <span style={{ color: "#555", fontWeight: 400 }}>
+                              · {it.itemName}
+                            </span>
+                          </span>
+                          <span style={{ width: 120 }}>
+                            Sheets:{" "}
+                            <b>{it.noOfSheets ? fmt(it.noOfSheets) : "—"}</b>
+                          </span>
+                          <span style={{ width: 100 }}>
+                            Weight: <b>{fmt(it.weight)} kg</b>
+                          </span>
+                          <span style={{ width: 80 }}>
+                            Rate: ₹{fmt(it.rate)}
+                          </span>
+                          <span
+                            style={{
+                              color: C.green,
+                              fontWeight: 800,
+                              width: 110,
+                              textAlign: "right",
+                              fontFamily: "monospace",
+                            }}
+                          >
+                            ₹{fmt(it.amount)}
+                          </span>
+                        </div>
+                      ))}
                     </div>
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 8,
-                      flexWrap: "wrap",
-                      marginTop: 6,
-                    }}
-                  >
-                    {(r.items || []).map((it, i) => (
-                      <span
-                        key={i}
+
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        paddingTop: 12,
+                        borderTop: "1px solid #ffffff05",
+                      }}
+                    >
+                      <div
                         style={{
+                          display: "flex",
+                          gap: 24,
                           fontSize: 11,
-                          background: C.surface,
-                          border: `1px solid ${C.border}`,
-                          borderRadius: 4,
-                          padding: "2px 8px",
-                          color: C.muted,
+                          color: "#444",
                         }}
                       >
-                        {it.rmItem} {it.weight ? `· ${it.weight}kg` : ""}{" "}
-                        {it.noOfSheets ? `· ${it.noOfSheets} sheets` : ""}
-                      </span>
-                    ))}
-                    {r.location && (
-                      <span style={{ fontSize: 11, color: C.muted }}>
-                        📍 {r.location}
-                      </span>
-                    )}
-                    {r.receivedBy && (
-                      <span style={{ fontSize: 11, color: C.muted }}>
-                        👤 {r.receivedBy}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-        </Card>
+                        <span>
+                          Invoice:{" "}
+                          <b style={{ color: "#777" }}>{r.invoiceNo}</b>
+                        </span>
+                        <span>
+                          Vehicle:{" "}
+                          <b style={{ color: "#777" }}>{r.vehicleNo}</b>
+                        </span>
+                        <span>
+                          Location:{" "}
+                          <b style={{ color: "#777" }}>{r.location}</b>
+                        </span>
+                        <span>
+                          Received by:{" "}
+                          <b style={{ color: "#777" }}>{r.receivedBy}</b>
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 16,
+                          fontWeight: 900,
+                          color: C.blue,
+                          fontFamily: "monospace",
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: 11,
+                            color: "#444",
+                            fontWeight: 600,
+                          }}
+                        >
+                          Total Value:{" "}
+                        </span>
+                        ₹{fmt(total)}
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })
+          )}
+        </div>
       )}
 
       {}

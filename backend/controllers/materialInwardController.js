@@ -89,6 +89,7 @@ exports.create = async (req, res) => {
                   gsm: item.gsm || 0,
                   sheetSize: item.widthMm && item.lengthMm ? `${item.widthMm}x${item.lengthMm}mm` : (item.widthMm ? `${item.widthMm}mm` : ""),
                   location: location || "Main Warehouse",
+                  rate: item.rate || 0,
                   lastUpdated: new Date()
                 },
                 $inc: {

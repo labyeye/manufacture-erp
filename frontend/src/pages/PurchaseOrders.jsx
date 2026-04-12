@@ -180,6 +180,171 @@ export default function PurchaseOrders({
     setHeaderErrors((e) => ({ ...e, [k]: false }));
   };
 
+  const generatePOPDF = (po) => {
+    const total = (po.items || []).reduce((s, it) => s + +(it.amount || 0), 0);
+    const fd = (d) => (d ? d.toString().split("T")[0] : "—");
+
+    const html = `
+      <html>
+        <head>
+          <title>PO-${po.poNo}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&family=JetBrains+Mono:wght@700&display=swap');
+            body { font-family: 'Inter', sans-serif; padding: 20px 30px; color: #1a1a1a; }
+            .header { text-align: center; border-bottom: 2px solid #1e40af; padding-bottom: 10px; margin-bottom: 20px; }
+            .header h1 { color: #1e3a8a; margin: 0; font-size: 24px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+            .header p { margin: 2px 0; font-size: 11px; color: #475569; font-weight: 500; }
+            .header a { color: #1e40af; text-decoration: none; }
+            
+            .doc-title { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px; }
+            .doc-title h2 { margin: 0; font-size: 18px; font-weight: 700; }
+            .status { color: #1e40af; font-weight: 700; font-size: 12px; }
+            
+            .hr { height: 1px; background: #e2e8f0; margin: 10px 0; border: none; }
+            .po-no { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; color: #1a1a1a; margin: 5px 0; }
+            
+            .section-label { font-size: 10px; color: #64748b; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 15px; margin-top: 20px; }
+            
+            .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px; }
+            .info-item label { display: block; font-size: 9px; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
+            .info-item span { font-size: 11px; font-weight: 600; color: #1e293b; }
+            
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th { background: #f8fafc; border: 1px solid #e2e8f0; padding: 4px 6px; text-align: left; font-size: 9px; font-weight: 800; text-transform: uppercase; color: #475569; white-space: nowrap; }
+            td { border: 1px solid #e2e8f0; padding: 4px 6px; font-size: 9px; color: #1e293b; line-height: 1.2; word-wrap: break-word; }
+            .col-qty { text-align: center; }
+            .col-amt { text-align: right; font-weight: 700; }
+            
+            .total-row { display: flex; justify-content: flex-end; margin-top: 15px; }
+            .total-box { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 800; color: #1a1a1a; }
+            .total-box label { font-size: 14px; color: #64748b; font-weight: 700; }
+            
+            @media print {
+              body { padding: 0; }
+              @page { margin: 1cm; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <p style="text-align: right; font-size: 9px; margin-bottom: 20px;">${new Date().toLocaleString()}</p>
+            <h1>AARAY PACKAGING PRIVATE LIMITED</h1>
+            <p>Unit I: A7/64 & A7/65, South Side GT Road Industrial Area, Ghaziabad</p>
+            <p>Unit II: 27MI & 28MI, South Side GT Road Industrial Area, Ghaziabad</p>
+            <p>
+              <a href="https://www.rapackaging.in">www.rapackaging.in</a> | 
+              <a href="mailto:orders@rapackaging.in">orders@rapackaging.in</a> | 
+              +91 9311802540
+            </p>
+          </div>
+
+          <div class="doc-title">
+            <h2>Purchase Order</h2>
+            <div class="status">Status<br><span style="color:${po.status === "Received" ? "#10b981" : "#1e40af"}">${po.status || "Open"}</span></div>
+          </div>
+          <div class="po-no">${po.poNo}</div>
+          <div class="hr"></div>
+
+          <div class="section-label">Order Details</div>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>PO Date</label>
+              <span>${fd(po.poDate)}</span>
+            </div>
+            <div class="info-item">
+              <label>Delivery Date</label>
+              <span>${fd(po.deliveryDate)}</span>
+            </div>
+            <div class="info-item">
+              <label>Vendor Name</label>
+              <span>${po.vendor}</span>
+            </div>
+          </div>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Vendor Contact</label>
+              <span>${po.vendorContact || "—"}</span>
+            </div>
+          </div>
+
+          <div class="section-label">Items</div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 20%;">Item Name</th>
+                <th style="width: 12%;">RM Item</th>
+                <th style="width: 12%;">Paper Type</th>
+                <th style="width: 6%;">GSM</th>
+                <th style="width: 10%;">Size</th>
+                <th style="width: 10%;">No Of Sheets</th>
+                <th style="width: 12%;" class="col-qty">Weight</th>
+                <th style="width: 8%;">Rate</th>
+                <th style="width: 10%;" class="col-amt">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${(po.items || [])
+                .map(
+                  (it) => `
+                <tr>
+                  <td>
+                    <div style="font-weight: 700;">${it.itemName}</div>
+                    <div style="font-size: 8px; color: #64748b;">${it.productCode}</div>
+                  </td>
+                  <td style="white-space: nowrap;">${it.category || "—"}</td>
+                  <td style="white-space: nowrap;">${it.paperType || "—"}</td>
+                  <td>${it.gsm ? it.gsm + "gsm" : "—"}</td>
+                  <td style="white-space: nowrap;">${it.sheetSize || (it.width ? it.width + "mm" : "—")}</td>
+                  <td style="text-align: center;">${it.category?.includes("Sheet") && it.noOfSheets ? fmt(it.noOfSheets) : "—"}</td>
+                  <td class="col-qty" style="white-space: nowrap;">${fmt(it.weight || it.qty || 0)} ${it.unit || "kg"}</td>
+                  <td style="white-space: nowrap;">₹${fmt(it.rate)}/${it.unit || "kg"}</td>
+                  <td class="col-amt" style="white-space: nowrap;">₹${fmt(it.amount)}</td>
+                </tr>
+              `,
+                )
+                .join("")}
+            </tbody>
+          </table>
+
+          <div class="total-row">
+            <div class="total-box">
+              <label>Total:</label>
+              ₹${fmt(total)}
+            </div>
+          </div>
+
+          <div style="margin-top: 60px; display: flex; justify-content: space-between;">
+             <div style="border-top: 1px solid #ccc; width: 150px; text-align: center; padding-top: 5px; font-size: 11px; color: #666;">Authorized Signatory</div>
+             <div style="border-top: 1px solid #ccc; width: 150px; text-align: center; padding-top: 5px; font-size: 11px; color: #666;">Vendor Confirmation</div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    document.body.appendChild(iframe);
+
+    iframe.contentWindow.document.open();
+    iframe.contentWindow.document.write(html);
+    iframe.contentWindow.document.close();
+
+    iframe.onload = () => {
+      setTimeout(() => {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        setTimeout(() => {
+          document.body.removeChild(iframe);
+        }, 1000);
+      }, 500);
+    };
+  };
+
   const EH = (k) => (headerErrors[k] ? { border: `1px solid ${C.red}` } : {});
   const EHMsg = (k) =>
     headerErrors[k] ? (
@@ -281,10 +446,15 @@ export default function PurchaseOrders({
 
   const EI = (idx, k) =>
     (itemErrors[idx] || {})[k] ? { border: `1px solid ${C.red}` } : {};
-  const EIMsg = (idx, k) =>
-    (itemErrors[idx] || {})[k] ? (
-      <div style={{ color: C.red, fontSize: 10, marginTop: 3 }}>Required</div>
-    ) : null;
+  const EIMsg = (idx, k) => {
+    if ((itemErrors[idx] || {})[k]) {
+      const msg = k === "productCode" ? "Required / Invalid Code" : "Required";
+      return (
+        <div style={{ color: C.red, fontSize: 10, marginTop: 3 }}>{msg}</div>
+      );
+    }
+    return null;
+  };
 
   const addItem = () => {
     setItems((prev) => [...prev, blankItem()]);
@@ -307,6 +477,18 @@ export default function PurchaseOrders({
     const allItemErrors = items.map((it) => {
       const e = {};
       const isRM = it.materialType === "Raw Material" || !it.materialType;
+
+      // Check if valid product code exists in master list
+      const masterItem = itemMasterItems.find(
+        (x) =>
+          (x.code || "").trim().toLowerCase() ===
+          (it.productCode || "").trim().toLowerCase(),
+      );
+
+      if (!it.productCode || !masterItem) {
+        e.productCode = true;
+      }
+
       if (isRM) {
         if (!it.category) e.category = true;
         if (!it.subCategory) e.subCategory = true;
@@ -350,11 +532,11 @@ export default function PurchaseOrders({
             length: it.lengthMm,
             sheetSize: `${it.widthMm}${it.lengthMm ? "x" + it.lengthMm : ""}mm`,
             unit: isRM ? "kg" : "pcs",
-            qty: isRM ? it.weight : it.qty,
-            weight: isRM ? it.weight : null,
+            qty: it.qty || it.weight || 0,
+            weight: it.weight || null,
             noOfSheets: it.noOfSheets ? Number(it.noOfSheets) : null,
             rate: it.rate,
-            amount: (isRM ? it.weight : it.qty) * it.rate || 0,
+            amount: (isRM ? it.weight || 0 : it.qty || 0) * (it.rate || 0),
           };
         }),
         deliveryDate: header.deliveryDate,
@@ -645,7 +827,7 @@ export default function PurchaseOrders({
                   gap: 12,
                 }}
               >
-                <Field label="Product Code">
+                <Field label="Product Code *">
                   <AutocompleteInput
                     value={it.productCode}
                     onChange={(v) => setItem(idx, "productCode", v)}
@@ -653,16 +835,11 @@ export default function PurchaseOrders({
                       (item) => `${item.code} — ${item.name}`,
                     )}
                     placeholder="Type or select code"
+                    inputStyle={EI(idx, "productCode")}
                   />
+                  {EIMsg(idx, "productCode")}
                 </Field>
-                <Field label="Item Name">
-                  <input
-                    type="text"
-                    placeholder="Item name"
-                    value={it.itemName}
-                    onChange={(e) => setItem(idx, "itemName", e.target.value)}
-                  />
-                </Field>
+
                 <Field label="Material Type *">
                   <select
                     value={it.materialType || "Raw Material"}
@@ -749,14 +926,24 @@ export default function PurchaseOrders({
                     </Field>
                     {(it.category === "Paper Sheets" ||
                       it.category === "Paper Sheet") && (
-                      <Field label="# of Sheets">
+                      <Field label="No. of Sheets *">
                         <input
                           type="number"
-                          placeholder="No. of sheets"
-                          value={it.noOfSheets}
-                          onChange={(e) =>
-                            setItem(idx, "noOfSheets", e.target.value)
-                          }
+                          placeholder="sheets count"
+                          value={it.qty}
+                          onChange={(e) => setItem(idx, "qty", e.target.value)}
+                          style={EI(idx, "qty")}
+                        />
+                      </Field>
+                    )}
+                    {it.category === "Paper Reel" && (
+                      <Field label="No. of Reels *">
+                        <input
+                          type="number"
+                          placeholder="reels count"
+                          value={it.qty}
+                          onChange={(e) => setItem(idx, "qty", e.target.value)}
+                          style={EI(idx, "qty")}
                         />
                       </Field>
                     )}
@@ -774,16 +961,13 @@ export default function PurchaseOrders({
                 )}
                 {it.materialType === "Consumable" && (
                   <>
-                    <Field label="Item Name *">
+                    <Field label="Item Name">
                       <input
-                        placeholder="e.g. Corrugated Box"
+                        placeholder="Select product code first"
                         value={it.itemName}
-                        onChange={(e) =>
-                          setItem(idx, "itemName", e.target.value)
-                        }
-                        style={EI(idx, "itemName")}
+                        readOnly
+                        style={{ background: "#00000011", color: C.muted }}
                       />
-                      {EIMsg(idx, "itemName")}
                     </Field>
                     <Field label="Quantity *">
                       <input
@@ -836,6 +1020,15 @@ export default function PurchaseOrders({
                   </div>
                 </Field>
               </div>
+              <Field label="Item Name">
+                <input
+                  type="text"
+                  placeholder="Item name"
+                  value={it.itemName}
+                  readOnly
+                  style={{ background: "#ffffff11", color: C.muted }}
+                />
+              </Field>
             </Card>
           ))}
 
@@ -922,185 +1115,247 @@ export default function PurchaseOrders({
       )}
 
       {view === "records" && (
-        <Card>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div
             style={{
               display: "flex",
-              gap: 12,
+              justifyContent: "space-between",
               alignItems: "center",
-              flexWrap: "wrap",
-              marginBottom: 14,
+              marginBottom: 4,
             }}
           >
-            <h3
-              style={{
-                fontSize: 14,
-                fontWeight: 700,
-                color: C.muted,
-                margin: 0,
-              }}
-            >
-              Purchase Orders
+            <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>
+              Purchase Order History
             </h3>
-            <DateRangeFilter
-              dateFrom={drDateFrom}
-              setDateFrom={setDrDateFrom}
-              dateTo={drDateTo}
-              setDateTo={setDrDateTo}
-            />
-            <span style={{ fontSize: 12, color: C.muted, marginLeft: "auto" }}>
-              {purchaseOrders.length} orders
-            </span>
-          </div>
-          {purchaseOrders.length === 0 && (
-            <div
-              style={{
-                textAlign: "center",
-                color: C.muted,
-                padding: 32,
-                fontSize: 13,
-              }}
-            >
-              No purchase orders yet.
+            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+              <DateRangeFilter
+                dateFrom={drDateFrom}
+                setDateFrom={setDrDateFrom}
+                dateTo={drDateTo}
+                setDateTo={setDrDateTo}
+              />
+              <span style={{ fontSize: 12, color: C.muted }}>
+                {purchaseOrders.length} records
+              </span>
             </div>
-          )}
-          {(purchaseOrders || [])
-            .slice()
-            .reverse()
-            .map((r) => {
-              const total = (r.items || []).reduce(
-                (s, it) => s + +(it.amount || 0),
-                0,
-              );
-              const vendorDisplayName =
-                typeof r.vendor === "object" ? r.vendor.name : r.vendorName;
-              return (
-                <div
-                  key={r._id}
-                  style={{
-                    borderBottom: `1px solid ${C.border}22`,
-                    padding: "12px 4px",
-                  }}
-                >
-                  <div
+          </div>
+
+          {purchaseOrders.length === 0 ? (
+            <Card style={{ textAlign: "center", padding: 40, color: C.muted }}>
+              No purchase orders found.
+            </Card>
+          ) : (
+            (purchaseOrders || [])
+              .slice()
+              .reverse()
+              .map((r) => {
+                const total = (r.items || []).reduce(
+                  (s, it) => s + +(it.amount || 0),
+                  0,
+                );
+                const vendorDisplayName = r.vendorName || "Unknown Vendor";
+
+                return (
+                  <Card
+                    key={r._id}
                     style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                      gap: 8,
+                      padding: "16px 20px",
+                      borderLeft: `4px solid ${C.blue}`,
+                      background: "#161b22", // Darker background as per screenshot
                     }}
                   >
+                    {/* Header Row */}
                     <div
                       style={{
                         display: "flex",
-                        gap: 14,
-                        alignItems: "center",
-                        flexWrap: "wrap",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                        marginBottom: 16,
                       }}
                     >
-                      <span
+                      <div
                         style={{
-                          fontFamily: "'JetBrains Mono',monospace",
-                          color: C.blue,
-                          fontWeight: 700,
+                          display: "flex",
+                          gap: 12,
+                          alignItems: "center",
                         }}
                       >
-                        {r.poNo}
-                      </span>
-                      <span style={{ fontSize: 12, color: C.muted }}>
-                        {r.poDate}
-                      </span>
-                      <span style={{ fontSize: 13, fontWeight: 600 }}>
-                        {vendorDisplayName}
-                      </span>
-                      <Badge
-                        text={r.status || "Open"}
-                        color={r.status === "Open" ? C.yellow : C.green}
-                      />
-                      {total > 0 && (
                         <span
                           style={{
-                            fontFamily: "'JetBrains Mono',monospace",
-                            color: C.green,
+                            fontSize: 18,
+                            fontWeight: 800,
+                            color: C.blue,
+                            fontFamily: "'JetBrains Mono', monospace",
+                          }}
+                        >
+                          {r.poNo}
+                        </span>
+                        <span style={{ color: C.muted, fontSize: 13 }}>
+                          {vendorDisplayName} · {r.poDate}
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <div
+                          style={{
+                            background:
+                              r.status === "Received" ? "#064e3b" : "#451a03",
+                            color:
+                              r.status === "Received" ? "#10b981" : "#f59e0b",
+                            border: `1px solid ${r.status === "Received" ? "#065f46" : "#78350f"}`,
+                            borderRadius: 6,
+                            padding: "4px 12px",
                             fontSize: 12,
                             fontWeight: 700,
                           }}
                         >
-                          ₹{fmt(total)}
-                        </span>
-                      )}
+                          {r.status || "Open"}
+                        </div>
+                        <button
+                          onClick={() => handleEdit(r)}
+                          style={{
+                            background: "#1e293b",
+                            color: C.blue,
+                            border: "1px solid #334155",
+                            borderRadius: 6,
+                            padding: "4px 14px",
+                            fontSize: 12,
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                          }}
+                        >
+                          ✏️ Edit
+                        </button>
+                        <button
+                          onClick={() => generatePOPDF(r)}
+                          style={{
+                            background: "#451a1a",
+                            color: "#ef4444",
+                            border: "1px solid #7f1d1d",
+                            borderRadius: 6,
+                            padding: "4px 14px",
+                            fontSize: 12,
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                          }}
+                        >
+                          🖨️ PDF
+                        </button>
+                      </div>
                     </div>
+
+                    {/* Items List */}
                     <div
                       style={{
                         display: "flex",
+                        flexDirection: "column",
                         gap: 8,
-                        alignItems: "center",
+                        marginBottom: 16,
                       }}
                     >
-                      <button
-                        onClick={() => handleEdit(r)}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          color: C.blue,
-                          cursor: "pointer",
-                          fontSize: 12,
-                          fontWeight: 600,
-                          padding: "4px 8px",
-                        }}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(r._id)}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          color: C.red,
-                          cursor: "pointer",
-                          fontSize: 12,
-                          fontWeight: 600,
-                          padding: "4px 8px",
-                        }}
-                      >
-                        Delete
-                      </button>
+                      {(r.items || []).map((it, idx) => (
+                        <div
+                          key={idx}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 12,
+                            fontSize: 13,
+                            color: "#e2e8f0",
+                          }}
+                        >
+                          <span style={{ fontWeight: 700, flex: 1 }}>
+                            {it.itemName}
+                          </span>
+                          <span style={{ color: C.muted }}>
+                            Qty:{" "}
+                            <b style={{ color: "#fff" }}>
+                              {it.weight || it.qty}{" "}
+                              {it.uom ||
+                                (it.materialType === "Raw Material"
+                                  ? "kg"
+                                  : "nos")}
+                            </b>
+                          </span>
+                          <span style={{ color: C.muted }}>
+                            Rate: ₹{it.rate}
+                          </span>
+                          <span
+                            style={{
+                              color: C.green,
+                              fontWeight: 700,
+                              fontFamily: "'JetBrains Mono', monospace",
+                              width: 100,
+                              textAlign: "right",
+                            }}
+                          >
+                            ₹{fmt(it.amount)}
+                          </span>
+                        </div>
+                      ))}
                     </div>
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 8,
-                      flexWrap: "wrap",
-                      marginTop: 6,
-                    }}
-                  >
-                    {(r.items || []).map((it, i) => (
-                      <span
-                        key={i}
+
+                    {/* Footer Info */}
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-end",
+                        paddingTop: 12,
+                        borderTop: "1px solid #33415544",
+                      }}
+                    >
+                      <div
                         style={{
-                          fontSize: 11,
-                          background: C.surface,
-                          border: `1px solid ${C.border}`,
-                          borderRadius: 4,
-                          padding: "2px 8px",
+                          display: "flex",
+                          gap: 20,
                           color: C.muted,
+                          fontSize: 11,
                         }}
                       >
-                        {it.itemName}{" "}
-                        {it.weight
-                          ? `· ${it.weight}kg`
-                          : it.qty
-                            ? `· ${it.qty}`
-                            : ""}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-        </Card>
+                        <span>
+                          Delivery:{" "}
+                          <span style={{ color: "#94a3b8" }}>
+                            {r.deliveryDate || "—"}
+                          </span>
+                        </span>
+                        <span>
+                          Contact:{" "}
+                          <span style={{ color: "#94a3b8" }}>
+                            {r.vendorContact || "—"}
+                          </span>
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 16,
+                          fontWeight: 800,
+                          color: C.blue,
+                          fontFamily: "'JetBrains Mono', monospace",
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: 12,
+                            color: C.muted,
+                            fontWeight: 400,
+                          }}
+                        >
+                          Total:{" "}
+                        </span>
+                        ₹{fmt(total)}
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })
+          )}
+        </div>
       )}
 
       {showSuccessModal && (

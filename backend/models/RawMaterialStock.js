@@ -33,6 +33,10 @@ const rawMaterialStockSchema = new mongoose.Schema({
     type: Number,
     default: 50
   },
+  rate: {
+    type: Number,
+    default: 0
+  },
   addedOn: {
     type: Date,
     default: Date.now

@@ -208,6 +208,7 @@ export const DEFAULT_ROLES = {
       "sizemaster",
       "itemmaster",
       "machinemaster",
+      "companymaster",
       "users",
     ],
   },
@@ -252,6 +253,7 @@ export const TABS = [
   { id: "sizemaster", icon: "📐", label: "Category Master" },
   { id: "itemmaster", icon: "📋", label: "Item Master" },
   { id: "machinemaster", icon: "🏗️", label: "Machine Master" },
+  { id: "companymaster", icon: "🏢", label: "Company Master" },
   { id: "users", icon: "👥", label: "User Management" },
 ];
 

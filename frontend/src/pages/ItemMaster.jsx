@@ -37,6 +37,7 @@ export default function ItemMaster({ toast }) {
   const [width, setWidth] = useState("");
   const [length, setLength] = useState("");
   const [newItemName, setNewItemName] = useState("");
+  const [clientName, setClientName] = useState("");
   const [editingItem, setEditingItem] = useState(null);
   const [rawCategories, setRawCategories] = useState([]);
   const [importProgress, setImportProgress] = useState({
@@ -45,6 +46,7 @@ export default function ItemMaster({ toast }) {
     total: 0,
     status: "",
   });
+  const [selectedIds, setSelectedIds] = useState([]);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -60,8 +62,19 @@ export default function ItemMaster({ toast }) {
       else if (width) parts.push(width + "mm");
 
       setNewItemName(parts.filter(Boolean).join(" "));
+    } else if (activeTab === "Finished Goods" && selectedCategory) {
+      const parts = [selectedCategory, selectedSubCategory, clientName];
+      setNewItemName(parts.filter(Boolean).join(" "));
     }
-  }, [selectedCategory, selectedSubCategory, gsm, width, length, activeTab]);
+  }, [
+    selectedCategory,
+    selectedSubCategory,
+    gsm,
+    width,
+    length,
+    activeTab,
+    clientName,
+  ]);
 
   const fetchItems = async () => {
     try {
@@ -171,6 +184,7 @@ export default function ItemMaster({ toast }) {
           gsm: activeTab === "Raw Material" ? Number(gsm) : undefined,
           width: activeTab === "Raw Material" ? Number(width) : undefined,
           length: activeTab === "Raw Material" ? Number(length) : undefined,
+          clientName: activeTab === "Finished Goods" ? clientName : undefined,
           type: activeTab,
         });
         toast("Item updated", "success");
@@ -184,11 +198,13 @@ export default function ItemMaster({ toast }) {
           gsm: activeTab === "Raw Material" ? Number(gsm) : undefined,
           width: activeTab === "Raw Material" ? Number(width) : undefined,
           length: activeTab === "Raw Material" ? Number(length) : undefined,
+          clientName: activeTab === "Finished Goods" ? clientName : undefined,
           code: "",
         });
         toast("Item added successfully", "success");
       }
       setNewItemName("");
+      setClientName("");
       setSelectedCategory("");
       setSelectedSubCategory("");
       setGsm("");
@@ -210,23 +226,59 @@ export default function ItemMaster({ toast }) {
     setGsm(item.gsm || "");
     setWidth(item.width || "");
     setLength(item.length || "");
+    // Extract client name if possible or just let it be
+    if (item.type === "Finished Goods") {
+      // Logic to parse clientName from item.name if it was auto-generated
+      // For now, we'll leave it to manual correction on edit since it's in the name anyway
+    }
   };
 
-  const handleDelete = async (item) => {
-    if (!window.confirm(`Delete ${item.name}?`)) return;
+  const handleBulkDelete = async () => {
+    if (!selectedIds.length) return;
+    if (
+      !window.confirm(`Delete ${selectedIds.length} items permanently?`)
+    )
+      return;
 
     try {
-      await itemMasterAPI.delete(item._id);
-      toast("Deleted", "success");
+      setLoading(true);
+      await itemMasterAPI.bulkDelete(selectedIds);
+      toast(`Successfully deleted ${selectedIds.length} items`, "success");
+      setSelectedIds([]);
       fetchItems();
     } catch (error) {
-      toast(error.response?.data?.error || "Failed to delete item", "error");
+      toast("Bulk delete failed", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === sorted.length && sorted.length > 0) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(sorted.map((i) => i._id));
     }
   };
 
   const handleTemplate = () => {
     const tab = ITEM_TABS.find((t) => t.key === activeTab);
-    const csv = `"Product Code","Item Name","Category","Type"\n"","Example Item","${tabCategories[0] || "Category Name"}","${tabSubCategories[0] || "Type Name"}"`;
+    const header = ["Product Code", "Item Name", "Category", activeTab === "Finished Goods" ? "Size" : "Type"];
+    if (activeTab === "Finished Goods") header.push("Client");
+
+    const row = ["", "Example", tabCategories[0] || "Cat", tabSubCategories[0] || "Sub"];
+    if (activeTab === "Finished Goods") row.push("Customer Name");
+
+    const csv = [header, row]
+      .map((r) => r.map((v) => `"${v}"`).join(","))
+      .join("\n");
+
     const blob = new Blob([csv], { type: "text/csv" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -257,12 +309,24 @@ export default function ItemMaster({ toast }) {
           .split(",")
           .map((v) => v.replace(/^"|"$/g, "").trim());
 
-        if (cols[1]) {
+        if (cols[1] || cols[2]) {
+          const category = cols[2] || "";
+          const subCategory = cols[3] || "";
+          const client = activeTab === "Finished Goods" ? cols[4] || "" : "";
+
+          let itemName = cols[1];
+          if (activeTab === "Finished Goods" && !itemName && category) {
+            itemName = [category, subCategory, client]
+              .filter(Boolean)
+              .join(" ");
+          }
+
           imported.push({
-            name: cols[1],
+            name: itemName,
             type: activeTab,
-            category: cols[2] || "",
-            subCategory: cols[3] || "",
+            category: category,
+            subCategory: subCategory,
+            clientName: client,
             code: cols[0] || "",
           });
         }
@@ -472,6 +536,7 @@ export default function ItemMaster({ toast }) {
               setGsm("");
               setWidth("");
               setLength("");
+              setClientName("");
             }}
             style={{
               flex: 1,
@@ -561,7 +626,7 @@ export default function ItemMaster({ toast }) {
                   letterSpacing: "0.5px",
                 }}
               >
-                SUB-CATEGORY / TYPE *
+                {activeTab === "Finished Goods" ? "SIZE *" : "SUB-CATEGORY / TYPE *"}
               </label>
               <select
                 value={selectedSubCategory}
@@ -575,6 +640,28 @@ export default function ItemMaster({ toast }) {
                   </option>
                 ))}
               </select>
+            </div>
+          )}
+          {activeTab === "Finished Goods" && (
+            <div>
+              <label
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: "#666",
+                  display: "block",
+                  marginBottom: 6,
+                  letterSpacing: "0.5px",
+                }}
+              >
+                CLIENT NAME *
+              </label>
+              <input
+                style={inputStyle}
+                placeholder="e.g. RDBD"
+                value={clientName}
+                onChange={(e) => setClientName(e.target.value)}
+              />
             </div>
           )}
           {activeTab === "Raw Material" && (
@@ -663,10 +750,13 @@ export default function ItemMaster({ toast }) {
               style={{
                 ...inputStyle,
                 background:
-                  activeTab === "Raw Material"
+                  activeTab === "Raw Material" || activeTab === "Finished Goods"
                     ? "#0a0a0a"
                     : inputStyle.background,
               }}
+              readOnly={
+                activeTab === "Raw Material" || activeTab === "Finished Goods"
+              }
               placeholder={`Enter ${activeTab} name`}
               value={newItemName}
               onChange={(e) => setNewItemName(e.target.value)}
@@ -674,6 +764,62 @@ export default function ItemMaster({ toast }) {
             />
           </div>
         </div>
+
+        {/* Preview and Auto Code Display like screenshot */}
+        {(activeTab === "Raw Material" || activeTab === "Finished Goods") && (
+          <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
+            <div
+              style={{
+                flex: 1,
+                padding: "12px 16px",
+                background: "#111",
+                border: "1px dashed #2196F344",
+                borderRadius: 8,
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+              }}
+            >
+              <span style={{ fontSize: 11, color: "#555" }}>Preview:</span>
+              <span
+                style={{
+                  fontSize: 15,
+                  fontWeight: 700,
+                  color: "#4CAF50",
+                  fontFamily: "monospace",
+                }}
+              >
+                {newItemName || "—"}
+              </span>
+            </div>
+            <div
+              style={{
+                width: 160,
+                padding: "12px 16px",
+                background: "#0d0d0d",
+                border: "1px solid #222",
+                borderRadius: 8,
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+              }}
+            >
+              <span style={{ fontSize: 10, color: "#444" }}>Auto Code:</span>
+              <span
+                style={{
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: "#4CAF50",
+                  fontFamily: "monospace",
+                }}
+              >
+                {ITEM_TABS.find((t) => t.key === activeTab)?.prefix}
+                {"????"}
+              </span>
+            </div>
+          </div>
+        )}
+
         <div style={{ display: "flex", gap: 10 }}>
           <button
             onClick={handleAddItem}
@@ -757,7 +903,25 @@ export default function ItemMaster({ toast }) {
           </select>
         </div>
 
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          {selectedIds.length > 0 && (
+            <button
+              onClick={handleBulkDelete}
+              style={{
+                padding: "8px 16px",
+                background: "#f8514922",
+                color: "#f85149",
+                border: "1px solid #f8514944",
+                borderRadius: 6,
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: "pointer",
+                marginRight: 10,
+              }}
+            >
+              🗑️ Delete {selectedIds.length} Selected
+            </button>
+          )}
           <button
             onClick={handleExport}
             style={{
@@ -813,33 +977,74 @@ export default function ItemMaster({ toast }) {
         </div>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {sorted.length > 0 && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            padding: "10px 16px",
+            background: "#1a1a1a",
+            border: "1px solid #2a2a2a",
+            borderRadius: "8px 8px 0 0",
+            marginBottom: -1,
+            gap: 16,
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={
+              sorted.length > 0 && selectedIds.length === sorted.length
+            }
+            onChange={toggleSelectAll}
+            style={{ cursor: "pointer", width: 16, height: 16 }}
+          />
+          <span style={{ fontSize: 11, fontWeight: 700, color: "#666" }}>
+            SELECT ALL {activeTab} ITEMS
+          </span>
+        </div>
+      )}
+
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 0,
+          border: "1px solid #2a2a2a",
+          borderRadius: sorted.length > 0 ? "0 0 10px 10px" : "10px",
+          overflow: "hidden",
+        }}
+      >
         {sorted.length === 0 ? (
           <div
             style={{
               textAlign: "center",
               padding: "40px",
               background: "#1a1a1a",
-              borderRadius: 10,
               color: "#444",
             }}
           >
             No items found.
           </div>
         ) : (
-          sorted.map((item) => (
+          sorted.map((item, idx) => (
             <div
               key={item._id}
               style={{
                 display: "flex",
                 alignItems: "center",
-                padding: "8px 16px",
-                background: "#0d1117",
-                border: "1px solid #21262d",
-                borderRadius: 8,
+                padding: "10px 16px",
+                background: idx % 2 === 0 ? "#0d1117" : "#11151c",
+                borderBottom:
+                  idx === sorted.length - 1 ? "none" : "1px solid #21262d",
                 gap: 16,
               }}
             >
+              <input
+                type="checkbox"
+                checked={selectedIds.includes(item._id)}
+                onChange={() => toggleSelect(item._id)}
+                style={{ cursor: "pointer", width: 16, height: 16 }}
+              />
               <div
                 style={{
                   minWidth: 70,

@@ -27,25 +27,30 @@ async function getNextSequence(name, prefix = null, padLength = 3) {
 
 
 async function generateSONo() {
-  return await getNextSequence('SO', 'SO-', 3);
+  const year = new Date().getFullYear();
+  return await getNextSequence(`SO-${year}`, `SO-${year}`, 3);
 }
 
 async function generateJONo() {
-  return await getNextSequence('JO', 'JO-', 3);
+  const year = new Date().getFullYear();
+  return await getNextSequence(`JO-${year}`, `JO-${year}`, 3);
 }
 
 async function generatePONo() {
-  return await getNextSequence("PO", "PO", 4);
+  const year = new Date().getFullYear();
+  return await getNextSequence(`PO-${year}`, `PO-${year}`, 3);
 }
 
 
 async function generateGRNNo() {
-  return await getNextSequence("GRN", "GRN", 4);
+  const year = new Date().getFullYear();
+  return await getNextSequence(`GRN-${year}`, `GRN-${year}`, 3);
 }
 
 
 async function generateDCNo() {
-  return await getNextSequence('DC', 'DC-', 3);
+  const year = new Date().getFullYear();
+  return await getNextSequence(`DC-${year}`, `DC-${year}`, 3);
 }
 
 async function generateItemCode(type) {

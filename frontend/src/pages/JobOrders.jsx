@@ -362,6 +362,12 @@ export default function JobOrders(props) {
               : null,
         remarks: header.remarks,
         machineAssignments: header.machineAssignments,
+        reelSize: header.reelSize,
+        reelWidthMm: header.reelWidthMm ? Number(header.reelWidthMm) : null,
+        cuttingLengthMm: header.cuttingLengthMm
+          ? Number(header.cuttingLengthMm)
+          : null,
+        reelWeightKg: header.reelWeightKg ? Number(header.reelWeightKg) : null,
       };
 
       if (editId) {

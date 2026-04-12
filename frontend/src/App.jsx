@@ -29,7 +29,8 @@ import {
   jobOrdersAPI,
   salesOrdersAPI,
   purchaseOrdersAPI,
-  dispatchAPI, // ✅ FIX: was missing — caused silent crash in fetchMasters
+  dispatchAPI,
+  companyMasterAPI,
 } from "./api/auth";
 import { AuthContext, AuthProvider, useAuth } from "./context/AuthContext";
 import { Toast } from "./components/ui/AdvancedComponents";
@@ -54,6 +55,7 @@ import UserManagement from "./pages/UserManagement";
 import PrintingDetailMaster from "./pages/PrintingDetailMaster";
 import RMStock from "./pages/RMStock";
 import FGStock from "./pages/FGStock";
+import CompanyMaster from "./pages/CompanyMaster";
 
 function App() {
   return (
@@ -167,6 +169,10 @@ function AppInner({ session, onLogout, allowedTabs }) {
     "erp_printingMaster",
     [],
   );
+  const [companyMaster, setCompanyMaster] = usePersistedState(
+    "erp_companyMaster",
+    [],
+  );
 
   const [soCounter, setSoCounter] = usePersistedState("erp_soCounter", {
     SO: 1,
@@ -224,6 +230,7 @@ function AppInner({ session, onLogout, allowedTabs }) {
         purchaseOrdersAPI.getAll(), // 9
         dispatchAPI.getAll(), // 10  ✅ FIX: dispatchAPI now imported properly
         materialInwardAPI.getAll(), // 11
+        companyMasterAPI.getAll(), // 12
       ]);
 
       const get = (i) =>
@@ -241,6 +248,7 @@ function AppInner({ session, onLogout, allowedTabs }) {
       const pos = get(9);
       const disp = get(10);
       const inw = get(11);
+      const company = get(12);
 
       // ✅ FIX: pass all likely key names so unwrap finds the data
       if (vendors) setVendorMaster(unwrap(vendors, "vendors", "vendor"));
@@ -262,6 +270,8 @@ function AppInner({ session, onLogout, allowedTabs }) {
         setDispatches(unwrap(disp, "dispatches", "dispatch", "deliveries"));
       if (inw)
         setInward(unwrap(inw, "inwards", "inward", "grn", "material_inward"));
+      if (company)
+        setCompanyMaster(unwrap(company, "companies", "company", "entities"));
 
       if (stocks) setRawStock(unwrap(stocks, "stock", "stocks", "rawStock"));
       if (fgStockData)
@@ -319,6 +329,8 @@ function AppInner({ session, onLogout, allowedTabs }) {
     setItemCounters,
     machineReportData,
     setMachineReportData,
+    companyMaster,
+    setCompanyMaster,
     refreshData: fetchMasters,
   };
 
@@ -369,17 +381,19 @@ function AppInner({ session, onLogout, allowedTabs }) {
       case "consumablestock":
         return <ConsumableStock {...data} toast={showToast} />;
       case "vendormaster":
-        return <VendorMaster toast={showToast} />;
+        return <VendorMaster {...data} toast={showToast} />;
       case "clientmaster":
-        return <ClientMaster toast={showToast} />;
+        return <ClientMaster {...data} toast={showToast} />;
       case "sizemaster":
-        return <CategoryMaster toast={showToast} />;
+        return <CategoryMaster {...data} toast={showToast} />;
       case "itemmaster":
-        return <ItemMasterFG toast={showToast} />;
+        return <ItemMasterFG {...data} toast={showToast} />;
       case "machinemaster":
-        return <MachineMaster toast={showToast} />;
+        return <MachineMaster {...data} toast={showToast} />;
+      case "companymaster":
+        return <CompanyMaster {...data} toast={showToast} />;
       case "users":
-        return <UserManagement currentUser={session} toast={showToast} />;
+        return <UserManagement {...data} currentUser={session} toast={showToast} />;
       default:
         return (
           <Dashboard

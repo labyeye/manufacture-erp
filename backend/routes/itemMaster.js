@@ -17,6 +17,7 @@ router.post('/', itemMasterController.createItem);
 
 
 router.post('/bulk-import', itemMasterController.bulkImport);
+router.post('/bulk-delete', itemMasterController.bulkDelete);
 
 
 router.put('/:id', itemMasterController.updateItem);

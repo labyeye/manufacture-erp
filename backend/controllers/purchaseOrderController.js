@@ -1,5 +1,6 @@
 const PurchaseOrder = require("../models/PurchaseOrder");
 const VendorMaster = require("../models/VendorMaster");
+const ItemMaster = require("../models/ItemMaster");
 const { generatePONo } = require("../utils/counters");
 
 
@@ -43,6 +44,19 @@ exports.create = async (req, res) => {
 
     if (!vendor || !items || items.length === 0) {
       return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // Verify all items have valid product codes
+    for (const item of items) {
+      if (!item.productCode) {
+        return res.status(400).json({ error: `Product code is required for item: ${item.itemName || 'Unnamed Item'}` });
+      }
+      const masterItem = await ItemMaster.findOne({ 
+        code: { $regex: new RegExp(`^${item.productCode}$`, 'i') } 
+      });
+      if (!masterItem) {
+        return res.status(400).json({ error: `Invalid or unregistered product code: ${item.productCode}` });
+      }
     }
 
     // Generate PO number if not provided or if it's the old/temp format
@@ -93,6 +107,21 @@ exports.update = async (req, res) => {
     const po = await PurchaseOrder.findById(id);
     if (!po) {
       return res.status(404).json({ error: "Purchase order not found" });
+    }
+
+    // Verify all items have valid product codes if items are being updated
+    if (items && items.length > 0) {
+      for (const item of items) {
+        if (!item.productCode) {
+          return res.status(400).json({ error: `Product code is required for item: ${item.itemName || 'Unnamed Item'}` });
+        }
+        const masterItem = await ItemMaster.findOne({ 
+          code: { $regex: new RegExp(`^${item.productCode}$`, 'i') } 
+        });
+        if (!masterItem) {
+          return res.status(400).json({ error: `Invalid or unregistered product code: ${item.productCode}` });
+        }
+      }
     }
 
     

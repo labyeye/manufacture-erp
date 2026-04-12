@@ -82,12 +82,13 @@ const materialInwardSchema = new mongoose.Schema(
 materialInwardSchema.pre("save", async function (next) {
   if (this.isNew && !this.inwardNo) {
     const Counter = mongoose.model("Counter");
+    const year = new Date().getFullYear();
     const counter = await Counter.findOneAndUpdate(
-      { name: "GRN" },
+      { name: `GRN-${year}` },
       { $inc: { seq: 1 } },
       { new: true, upsert: true },
     );
-    this.inwardNo = `GRN${String(counter.seq).padStart(4, "0")}`;
+    this.inwardNo = `GRN-${year}${String(counter.seq).padStart(3, "0")}`;
   }
   
   // Keep grnNo in sync for legacy database indexes

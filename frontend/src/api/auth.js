@@ -239,6 +239,38 @@ export const clientMasterAPI = {
   }
 };
 
+export const companyMasterAPI = {
+  getAll: async () => {
+    const response = await api.get('/company-master');
+    return response.data;
+  },
+
+  getOne: async (id) => {
+    const response = await api.get(`/company-master/${id}`);
+    return response.data;
+  },
+
+  create: async (data) => {
+    const response = await api.post('/company-master', data);
+    return response.data;
+  },
+
+  update: async (id, data) => {
+    const response = await api.put(`/company-master/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id) => {
+    const response = await api.delete(`/company-master/${id}`);
+    return response.data;
+  },
+
+  updateStatus: async (id, status) => {
+    const response = await api.patch(`/company-master/${id}/status`, { status });
+    return response.data;
+  }
+};
+
 export const vendorMasterAPI = {
   getAll: async () => {
     const response = await api.get('/vendor-master');
@@ -321,6 +353,11 @@ export const itemMasterAPI = {
 
   delete: async (id) => {
     const response = await api.delete(`/item-master/${id}`);
+    return response.data;
+  },
+
+  bulkDelete: async (ids) => {
+    const response = await api.post("/item-master/bulk-delete", { ids });
     return response.data;
   },
 

@@ -76,7 +76,7 @@ const getNextItemCode = async (type) => {
 
 exports.createItem = async (req, res) => {
   try {
-    const { code, name, type, category, subCategory, gsm, width, length, clientCodes } = req.body;
+    const { code, name, type, category, subCategory, gsm, width, length, clientCodes, clientName } = req.body;
 
 
     if (!name || !type) {
@@ -115,6 +115,7 @@ exports.createItem = async (req, res) => {
       width: width ? Number(width) : undefined,
       length: length ? Number(length) : undefined,
       clientCodes: clientCodes || {},
+      clientName: clientName?.trim(),
       createdBy: req.user?.id
     });
 
@@ -133,7 +134,7 @@ exports.createItem = async (req, res) => {
 
 exports.updateItem = async (req, res) => {
   try {
-    const { name, category, subCategory, gsm, width, length, clientCodes, status } = req.body;
+    const { name, category, subCategory, gsm, width, length, clientCodes, status, clientName } = req.body;
 
     const item = await ItemMaster.findById(req.params.id);
     if (!item) {
@@ -160,6 +161,7 @@ exports.updateItem = async (req, res) => {
     if (width !== undefined) item.width = width ? Number(width) : undefined;
     if (length !== undefined) item.length = length ? Number(length) : undefined;
     if (clientCodes !== undefined) item.clientCodes = clientCodes;
+    if (clientName !== undefined) item.clientName = clientName?.trim();
     if (status) item.status = status;
 
     await item.save();
@@ -187,6 +189,27 @@ exports.deleteItem = async (req, res) => {
   } catch (error) {
     console.error('Delete item error:', error);
     res.status(500).json({ error: 'Failed to delete item' });
+  }
+};
+
+
+exports.bulkDelete = async (req, res) => {
+  try {
+    const { ids } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: "Item IDs array is required" });
+    }
+
+    const result = await ItemMaster.deleteMany({ _id: { $in: ids } });
+
+    res.json({
+      message: `Successfully deleted ${result.deletedCount} items`,
+      deletedCount: result.deletedCount,
+    });
+  } catch (error) {
+    console.error("Bulk delete items error:", error);
+    res.status(500).json({ error: "Failed to delete multiple items" });
   }
 };
 
@@ -232,7 +255,7 @@ exports.bulkImport = async (req, res) => {
 
     for (const itemData of items) {
       try {
-        const { code, name, type, category, subCategory, gsm, width, length } = itemData;
+        const { code, name, type, category, subCategory, gsm, width, length, clientName } = itemData;
 
         if (!name || !type) {
           results.failed.push({ item: itemData, reason: 'Name and type are required' });
@@ -261,6 +284,7 @@ exports.bulkImport = async (req, res) => {
           gsm: gsm ? Number(gsm) : undefined,
           width: width ? Number(width) : undefined,
           length: length ? Number(length) : undefined,
+          clientName: clientName?.trim(),
           createdBy: req.user?.id
         });
 

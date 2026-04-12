@@ -1,21 +1,19 @@
 import React, { useState, useMemo, useRef } from "react";
 import { C } from "../constants/colors";
 import { Card, SectionTitle, Badge } from "../components/ui/BasicComponents";
+import { rawMaterialStockAPI } from "../api/auth";
 
 const fmt = (n) => (n ?? 0).toLocaleString("en-IN");
 
-export default function RMStock({ rawStock = [], setRawStock, toast }) {
+export default function RMStock({ rawStock = [], setRawStock, toast, refreshData }) {
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
+  const [editingItem, setEditingItem] = useState(null);
   const fileInputRef = useRef(null);
 
   const categories = useMemo(() => {
     const list = Array.isArray(rawStock) ? rawStock : [];
-    const cats = [
-      ...new Set(
-        list.map((s) => s.category || s.paperCategory || "").filter(Boolean),
-      ),
-    ];
+    const cats = [...new Set(list.map((s) => s.category || s.paperCategory || "").filter(Boolean))];
     return ["All", ...cats];
   }, [rawStock]);
 
@@ -27,66 +25,67 @@ export default function RMStock({ rawStock = [], setRawStock, toast }) {
         (s) =>
           (s.name || s.paperType || "").toLowerCase().includes(q) ||
           (s.category || "").toLowerCase().includes(q) ||
-          (s.code || "").toLowerCase().includes(q),
+          (s.code || "").toLowerCase().includes(q) ||
+          (s.productCode || "").toLowerCase().includes(q)
       );
     }
     if (activeFilter !== "All") {
-      list = list.filter(
-        (s) => (s.category || s.paperCategory || "") === activeFilter,
-      );
+      list = list.filter((s) => (s.category || s.paperCategory || "") === activeFilter);
     }
     return list;
   }, [rawStock, search, activeFilter]);
 
-  const totalItems = filtered.length;
-  const totalWeightKg = filtered.reduce(
-    (sum, s) => sum + +(s.weight || s.weightKg || 0),
-    0,
-  );
-  const totalValue = filtered.reduce((sum, s) => {
-    const qty = +(s.qty || s.qtyKg || 0);
-    const rate = +(s.rate || s.ratePerKg || 0);
-    return sum + qty * rate;
-  }, 0);
-
-  const levelColor = (s) => {
-    const qty = +(s.qty || s.qtyKg || 0);
-    const reorder = +(s.reorderLevel || s.reorderKg || 0);
-    if (qty <= 0) return C.red || "#ef4444";
-    if (reorder && qty <= reorder) return C.orange || "#f97316";
-    return C.green || "#22c55e";
+  const handleUpdateReorder = async (id, newVal) => {
+    try {
+      await rawMaterialStockAPI.update(id, { reorderLevel: newVal });
+      setRawStock(prev => prev.map(s => (s.id === id || s._id === id) ? { ...s, reorderLevel: newVal } : s));
+      toast?.("Reorder level updated", "success");
+    } catch (err) {
+      toast?.("Failed to update", "error");
+    }
   };
 
+  const handleSaveEdit = async () => {
+    if (!editingItem) return;
+    try {
+      const id = editingItem._id || editingItem.id;
+      await rawMaterialStockAPI.update(id, editingItem);
+      setRawStock(prev => prev.map(s => (s._id === id || s.id === id) ? editingItem : s));
+      setEditingItem(null);
+      toast?.("Item updated successfully", "success");
+      if (refreshData) refreshData();
+    } catch (err) {
+      toast?.("Failed to save changes", "error");
+    }
+  };
+
+  const totalItems = filtered.length;
+  const totalWeightKg = filtered.reduce((sum, s) => sum + +(s.weight || s.weightKg || 0), 0);
+  const totalValue = filtered.reduce((sum, s) => {
+    const weight = +(s.weight || s.weightKg || 0);
+    const rate = +(s.rate || 0);
+    return sum + (weight * rate);
+  }, 0);
+
   const handleExport = () => {
-    const headers = [
-      "Code",
-      "Material Name",
-      "Category",
-      "Qty (Sheets)",
-      "Qty (KG)",
-      "Reorder (KG)",
-      "Rate (₹/KG)",
-      "Value (₹)",
-    ];
-    const rows = (rawStock || []).map((s) => [
+    const headers = ["Code", "Material Name", "Category", "Qty (Sheets)", "Qty (KG)", "Reorder (KG)", "Rate (₹/KG)", "Value (₹)"];
+    const rows = filtered.map((s) => [
       s.code || "",
       s.name || s.paperType || "",
       s.category || "",
       s.qty || 0,
-      s.weight || s.weightKg || 0,
+      s.weight || 0,
       s.reorderLevel || "",
-      s.rate || s.ratePerKg || "",
-      (+(s.qty || 0) * +(s.rate || 0)).toFixed(2),
+      s.rate || "",
+      ((s.weight || 0) * (s.rate || 0)).toFixed(2),
     ]);
     const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "rm_stock.csv";
+    a.download = `RM_Stock_${new Date().toISOString().slice(0,10)}.csv`;
     a.click();
-    URL.revokeObjectURL(url);
-    toast && toast("Exported successfully", "success");
   };
 
   const handleImport = (e) => {
@@ -97,164 +96,133 @@ export default function RMStock({ rawStock = [], setRawStock, toast }) {
       try {
         const lines = ev.target.result.split("\n").filter(Boolean);
         const [header, ...rows] = lines;
-        const keys = header.split(",").map((k) => k.trim().toLowerCase());
-        const imported = rows
-          .map((row) => {
-            const vals = row.split(",");
-            const obj = {};
-            keys.forEach((k, i) => {
-              obj[k] = vals[i]?.trim() || "";
-            });
-            return {
-              id: Math.random().toString(36).slice(2),
-              code: obj["code"] || "",
-              name: obj["material name"] || obj["name"] || "",
-              category: obj["category"] || "",
-              qty: parseFloat(obj["qty (sheets)"] || obj["qty"] || 0),
-              weight: parseFloat(obj["qty (kg)"] || obj["weight"] || 0),
-              reorderLevel: parseFloat(
-                obj["reorder (kg)"] || obj["reorderlevel"] || 0,
-              ),
-              rate: parseFloat(obj["rate (₹/kg)"] || obj["rate"] || 0),
-            };
-          })
-          .filter((r) => r.name);
-        setRawStock((prev) => [...prev, ...imported]);
-        toast && toast(`Imported ${imported.length} items`, "success");
-      } catch {
-        toast && toast("Import failed — check file format", "error");
-      }
+        const imported = rows.map((row) => {
+          const vals = row.split(",");
+          return {
+            id: Math.random().toString(36).slice(2, 9),
+            code: vals[0] || "",
+            name: vals[1] || "",
+            category: vals[2] || "",
+            qty: parseFloat(vals[3] || 0),
+            weight: parseFloat(vals[4] || 0),
+            reorderLevel: parseFloat(vals[5] || 0),
+            rate: parseFloat(vals[6] || 0),
+          };
+        }).filter(r => r.name);
+        setRawStock(prev => [...prev, ...imported]);
+        toast?.("Imported items successfully", "success");
+      } catch { toast?.("Import failed", "error"); }
     };
     reader.readAsText(file);
     e.target.value = "";
   };
 
   return (
-    <div className="fade">
-      <SectionTitle
-        icon="📦"
-        title="Raw Material Stock"
-        sub="Live inventory of all raw materials"
-      />
+    <div style={{ paddingBottom: 40 }}>
+      {editingItem && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.85)",
+          display: "flex", alignItems: "center", justifyItems: "center", zIndex: 1000, padding: 20,
+          justifyContent: "center"
+        }}>
+          <div style={{ background: "#141416", border: "1px solid #2a2a2e", borderRadius: 12, width: "100%", maxWidth: 500, padding: 24, boxShadow: "0 20px 50px rgba(0,0,0,0.5)" }}>
+            <h2 style={{ margin: "0 0 20px 0", fontSize: 18, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em" }}>Edit Raw Material</h2>
+            
+            <div style={{ display: "grid", gap: 16 }}>
+              <div>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#666", marginBottom: 6 }}>NAME</label>
+                <input value={editingItem.name || ""} onChange={e => setEditingItem({ ...editingItem, name: e.target.value })}
+                  style={{ width: "100%", padding: 10, background: "#0c0c0e", border: "1px solid #2a2a2e", borderRadius: 6, color: "#fff" }} />
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <div>
+                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#666", marginBottom: 6 }}>CODE</label>
+                  <input value={editingItem.code || ""} onChange={e => setEditingItem({ ...editingItem, code: e.target.value })}
+                    style={{ width: "100%", padding: 10, background: "#0c0c0e", border: "1px solid #2a2a2e", borderRadius: 6, color: "#fff" }} />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#666", marginBottom: 6 }}>CATEGORY</label>
+                  <input value={editingItem.category || ""} onChange={e => setEditingItem({ ...editingItem, category: e.target.value })}
+                    style={{ width: "100%", padding: 10, background: "#0c0c0e", border: "1px solid #2a2a2e", borderRadius: 6, color: "#fff" }} />
+                </div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <div>
+                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#666", marginBottom: 6 }}>RATE (₹/KG)</label>
+                  <input type="number" value={editingItem.rate || ""} onChange={e => setEditingItem({ ...editingItem, rate: +e.target.value })}
+                    style={{ width: "100%", padding: 10, background: "#0c0c0e", border: "1px solid #2a2a2e", borderRadius: 6, color: "#fff" }} />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#666", marginBottom: 6 }}>REORDER (KG)</label>
+                  <input type="number" value={editingItem.reorderLevel || ""} onChange={e => setEditingItem({ ...editingItem, reorderLevel: +e.target.value })}
+                    style={{ width: "100%", padding: 10, background: "#0c0c0e", border: "1px solid #2a2a2e", borderRadius: 6, color: "#fff" }} />
+                </div>
+              </div>
+            </div>
 
-      {}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: 14,
-          marginBottom: 18,
-        }}
-      >
-        <StatCard
-          value={fmt(totalItems)}
-          label="Total Items"
-          color={C.blue || "#3b82f6"}
-          prefix=""
-        />
-        <StatCard
-          value={fmt(Math.round(totalWeightKg))}
-          label="Total Weight (kg)"
-          color={C.orange || "#f97316"}
-          suffix=" kg"
-        />
-        <StatCard
-          value={fmt(Math.round(totalValue))}
-          label="Total Value"
-          color={C.green || "#22c55e"}
-          prefix="₹"
-        />
+            <div style={{ display: "flex", gap: 12, marginTop: 32 }}>
+              <button onClick={() => setEditingItem(null)} style={{ flex: 1, padding: 12, borderRadius: 6, border: "1px solid #2a2a2e", background: "transparent", color: "#888", fontWeight: 700, cursor: "pointer" }}>Cancel</button>
+              <button onClick={handleSaveEdit} style={{ flex: 1, padding: 12, borderRadius: 6, border: "none", background: C.blue, color: "#fff", fontWeight: 700, cursor: "pointer" }}>Save Changes</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+        <span style={{ fontSize: 24 }}>📦</span>
+        <h1 style={{ fontSize: 22, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", margin: 0 }}>
+          Raw Material Stock
+        </h1>
+      </div>
+      <p style={{ color: "#888", fontSize: 13, marginBottom: 24, marginLeft: 36 }}>Live inventory of all raw materials</p>
+
+      {/* Stats row */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 24 }}>
+        <StatCard label="Total Items" val={fmt(totalItems)} color={C.blue} />
+        <StatCard label="Total Weight (kg)" val={fmt(Math.round(totalWeightKg))} suffix=" kg" color={C.yellow} />
+        <StatCard label="Total Value" val={fmt(Math.round(totalValue))} prefix="₹" color={C.green} />
       </div>
 
-      {}
-      <div
-        style={{
-          display: "flex",
-          gap: 10,
-          alignItems: "center",
-          flexWrap: "wrap",
-          marginBottom: 12,
-        }}
-      >
-        <div style={{ position: "relative", flex: 1, minWidth: 200 }}>
-          <span
-            style={{
-              position: "absolute",
-              left: 10,
-              top: "50%",
-              transform: "translateY(-50%)",
-              color: C.muted,
-              fontSize: 14,
-            }}
-          >
-            🔍
-          </span>
+      {/* Action bar */}
+      <div style={{ display: "flex", gap: 12, marginBottom: 20, alignItems: "center" }}>
+        <div style={{ position: "relative", flex: 1 }}>
+          <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#666" }}>🔍</span>
           <input
             placeholder="Search material..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{
-              width: "100%",
-              padding: "9px 12px 9px 32px",
-              border: `1px solid ${C.border}`,
-              borderRadius: 6,
-              fontSize: 13,
-              background: C.inputBg,
-              color: C.text || "#e5e7eb",
-              boxSizing: "border-box",
+              width: "100%", padding: "10px 10px 10px 36px", background: "#141416", border: "1px solid #2a2a2e",
+              borderRadius: 6, color: "#fff", fontSize: 13
             }}
           />
         </div>
-        <ActionBtn
-          label="↓ Template"
-          color="#6366f1"
+        <ActionBtn label="Template" icon="⬇️" color={C.blue + "22"} textColor={C.blue} border={C.blue + "44"}
           onClick={() => {
-            const csv =
-              "Code,Material Name,Category,Qty (Sheets),Qty (KG),Reorder (KG),Rate (₹/KG)\n,,,,,,";
+            const csv = "Code,Name,Category,QtySheets,WeightKg,ReorderKg,Rate\n";
             const blob = new Blob([csv], { type: "text/csv" });
             const a = document.createElement("a");
             a.href = URL.createObjectURL(blob);
-            a.download = "rm_stock_template.csv";
+            a.download = "rm_template.csv";
             a.click();
           }}
         />
-        <ActionBtn
-          label="↑ Import Excel"
-          color={C.blue || "#3b82f6"}
-          onClick={() => fileInputRef.current?.click()}
-        />
-        <ActionBtn
-          label="↓ Export Excel"
-          color={C.green || "#22c55e"}
-          onClick={handleExport}
-        />
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".csv"
-          style={{ display: "none" }}
-          onChange={handleImport}
-        />
+        <ActionBtn label="Import Excel" icon="⬆️" color={C.blue} textColor="#fff" onClick={() => fileInputRef.current.click()} />
+        <ActionBtn label="Export Excel" icon="⬇️" color={C.green} textColor="#fff" onClick={handleExport} />
+        <input ref={fileInputRef} type="file" accept=".csv" style={{ display: "none" }} onChange={handleImport} />
       </div>
 
-      {}
-      <div
-        style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}
-      >
-        {categories.map((cat) => (
+      {/* Tabs */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+        {categories.map(cat => (
           <button
             key={cat}
             onClick={() => setActiveFilter(cat)}
             style={{
-              padding: "5px 14px",
-              borderRadius: 5,
-              border: `1px solid ${activeFilter === cat ? C.blue || "#3b82f6" : C.border}`,
-              background:
-                activeFilter === cat ? C.blue || "#3b82f6" : "transparent",
-              color: activeFilter === cat ? "#fff" : C.muted,
-              fontWeight: activeFilter === cat ? 700 : 400,
-              fontSize: 12,
-              cursor: "pointer",
+              padding: "6px 16px", borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: "pointer",
+              background: activeFilter === cat ? C.blue : "#141416",
+              color: activeFilter === cat ? "#fff" : "#888",
+              border: `1px solid ${activeFilter === cat ? C.blue : "#2a2a2e"}`
             }}
           >
             {cat}
@@ -262,244 +230,105 @@ export default function RMStock({ rawStock = [], setRawStock, toast }) {
         ))}
       </div>
 
-      {}
-      <div
-        style={{
-          border: `1px solid ${C.border}`,
-          borderRadius: 8,
-          overflow: "hidden",
-          background: C.surface,
-        }}
-      >
-        <div style={{ overflowX: "auto" }}>
-          <table
-            style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}
-          >
-            <thead>
-              <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-                {[
-                  "CODE",
-                  "MATERIAL NAME",
-                  "CATEGORY",
-                  "QTY (SHEETS)",
-                  "QTY (KG)",
-                  "REORDER\n(KG)",
-                  "RATE (₹/KG)",
-                  "VALUE (₹)",
-                  "ACTION",
-                ].map((h) => (
-                  <th
-                    key={h}
-                    style={{
-                      padding: "11px 14px",
-                      textAlign:
-                        h.includes("QTY") ||
-                        h.includes("RATE") ||
-                        h.includes("VALUE")
-                          ? "right"
-                          : "left",
-                      fontSize: 11,
-                      fontWeight: 700,
-                      letterSpacing: "0.06em",
-                      color: C.muted,
-                      whiteSpace: "pre-line",
-                      background: C.surface,
-                    }}
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={9}
-                    style={{
-                      textAlign: "center",
-                      padding: 40,
-                      color: C.muted,
-                      fontSize: 13,
-                    }}
-                  >
-                    No materials found
+      {/* Table Section */}
+      <div style={{ background: "#141416", border: "1px solid #2a2a2e", borderRadius: 10, overflow: "hidden" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
+          <thead>
+            <tr style={{ borderBottom: "1px solid #2a2a2e" }}>
+              {[
+                { label: "CODE", w: 100 },
+                { label: "MATERIAL NAME", w: "auto" },
+                { label: "CATEGORY", w: 110 },
+                { label: "QTY (SHEETS)", w: 110 },
+                { label: "QTY (KG)", w: 110 },
+                { label: "REORDER (KG)", w: 110 },
+                { label: "RATE (₹/KG)", w: 110 },
+                { label: "VALUE (₹)", w: 120 },
+                { label: "ACTION", w: 100 },
+              ].map(h => (
+                <th key={h.label} style={{
+                  width: h.w, padding: "14px 16px", textAlign: "left", fontSize: 11, fontWeight: 700,
+                  color: "#666", letterSpacing: "0.05em"
+                }}>
+                  {h.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((s, idx) => {
+              const qty = +(s.qty || 0);
+              const weight = +(s.weight || 0);
+              const rate = +(s.rate || 0);
+              const val = weight * rate;
+
+              return (
+                <tr key={s._id || s.id || idx} style={{ borderBottom: "1px solid #1e1e22" }}>
+                  <td style={{ padding: "16px", color: C.blue, fontWeight: 700, fontSize: 12, fontFamily: "monospace" }}>
+                    {s.code || "—"}
+                  </td>
+                  <td style={{ padding: "16px" }}>
+                    <div style={{ fontWeight: 600, fontSize: 13, color: "#eee" }}>{s.name || s.paperType}</div>
+                    <div style={{ fontSize: 10, color: "#555", marginTop: 2, textTransform: "uppercase" }}>{s.productCode || "—"}</div>
+                  </td>
+                  <td style={{ padding: "16px" }}>
+                    <span style={{ padding: "3px 8px", borderRadius: 4, fontSize: 10, fontWeight: 700, background: C.blue + "22", color: C.blue }}>
+                      {s.category || s.paperCategory || "—"}
+                    </span>
+                  </td>
+                  <td style={{ padding: "16px", color: qty > 0 ? C.green : "#333", fontWeight: 700, fontSize: 13, fontFamily: "monospace" }}>
+                    {qty > 0 ? fmt(qty) : "—"}
+                  </td>
+                  <td style={{ padding: "16px", color: weight > 0 ? C.green : "#333", fontWeight: 700, fontSize: 13, fontFamily: "monospace" }}>
+                    {weight > 0 ? `${fmt(weight)} kg` : "—"}
+                  </td>
+                  <td style={{ padding: "16px" }}>
+                    <input
+                      type="number"
+                      value={s.reorderLevel || ""}
+                      onChange={(e) => handleUpdateReorder(s._id || s.id, +e.target.value)}
+                      style={{
+                        width: 70, padding: "6px 8px", background: "#0c0c0e", border: "1px solid #2a2a2e",
+                        borderRadius: 4, color: "#fff", fontSize: 12, outline: "none"
+                      }}
+                      placeholder="—"
+                    />
+                  </td>
+                  <td style={{ padding: "16px", color: "#888", fontSize: 12, fontFamily: "monospace" }}>
+                    {rate ? `₹${fmt(rate)}` : "—"}
+                  </td>
+                  <td style={{ padding: "16px", color: C.green, fontWeight: 700, fontSize: 13, fontFamily: "monospace" }}>
+                    {val > 0 ? `₹${fmt(Math.round(val))}` : "—"}
+                  </td>
+                  <td style={{ padding: "16px" }}>
+                    <button 
+                      onClick={() => setEditingItem(s)}
+                      style={{
+                        padding: "6px 12px", borderRadius: 4, border: "none", background: C.blue + "22",
+                        color: C.blue, fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 5
+                      }}>
+                      ✏️ Edit
+                    </button>
                   </td>
                 </tr>
-              ) : (
-                filtered.map((s, i) => {
-                  const qty = +(s.qty || 0);
-                  const weightKg = +(s.weight || s.weightKg || 0);
-                  const reorder = +(s.reorderLevel || s.reorderKg || 0);
-                  const rate = +(s.rate || s.ratePerKg || 0);
-                  const value = qty * rate || weightKg * rate;
-                  const lc = levelColor(s);
-                  return (
-                    <tr
-                      key={s.id || i}
-                      style={{
-                        borderBottom: `1px solid ${C.border}22`,
-                        background:
-                          i % 2 === 1
-                            ? C.inputBg || "#ffffff08"
-                            : "transparent",
-                      }}
-                    >
-                      <td
-                        style={{
-                          padding: "10px 14px",
-                          color: C.muted,
-                          fontSize: 12,
-                          fontFamily: "'JetBrains Mono',monospace",
-                        }}
-                      >
-                        {s.code || "—"}
-                      </td>
-                      <td style={{ padding: "10px 14px", fontWeight: 600 }}>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 6,
-                          }}
-                        >
-                          <span
-                            style={{
-                              width: 8,
-                              height: 8,
-                              borderRadius: "50%",
-                              background: lc,
-                              display: "inline-block",
-                              flexShrink: 0,
-                            }}
-                          />
-                          {s.name || s.paperType || "—"}
-                        </div>
-                      </td>
-                      <td
-                        style={{
-                          padding: "10px 14px",
-                          color: C.muted,
-                          fontSize: 12,
-                        }}
-                      >
-                        {s.category || s.paperCategory || "—"}
-                      </td>
-                      <td
-                        style={{
-                          padding: "10px 14px",
-                          textAlign: "right",
-                          color: C.muted,
-                          fontFamily: "'JetBrains Mono',monospace",
-                        }}
-                      >
-                        {(s.category === "Paper Sheet" ||
-                          s.category === "Paper Sheets") &&
-                        s.qty
-                          ? fmt(s.qty)
-                          : "—"}
-                      </td>
-                      <td
-                        style={{
-                          padding: "10px 14px",
-                          textAlign: "right",
-                          fontFamily: "'JetBrains Mono',monospace",
-                        }}
-                      >
-                        {fmt(Math.round(weightKg)) || "—"}
-                      </td>
-                      <td
-                        style={{
-                          padding: "10px 14px",
-                          textAlign: "right",
-                          color: C.muted,
-                        }}
-                      >
-                        {reorder ? fmt(reorder) : "—"}
-                      </td>
-                      <td
-                        style={{
-                          padding: "10px 14px",
-                          textAlign: "right",
-                          color: C.muted,
-                        }}
-                      >
-                        {rate ? `₹${fmt(rate)}` : "—"}
-                      </td>
-                      <td
-                        style={{
-                          padding: "10px 14px",
-                          textAlign: "right",
-                          fontWeight: 600,
-                          color: C.green || "#22c55e",
-                        }}
-                      >
-                        {value ? `₹${fmt(Math.round(value))}` : "—"}
-                      </td>
-                      <td style={{ padding: "10px 14px" }}>
-                        <button
-                          onClick={() => {
-                            setRawStock((prev) =>
-                              prev.filter((_, idx) => idx !== i),
-                            );
-                            toast && toast("Item removed", "success");
-                          }}
-                          style={{
-                            padding: "4px 10px",
-                            borderRadius: 4,
-                            border: `1px solid ${C.red || "#ef4444"}44`,
-                            background: (C.red || "#ef4444") + "11",
-                            color: C.red || "#ef4444",
-                            fontSize: 11,
-                            fontWeight: 700,
-                            cursor: "pointer",
-                          }}
-                        >
-                          ✕
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+              );
+            })}
+          </tbody>
+        </table>
 
-        {}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            padding: "10px 16px",
-            borderTop: `1px solid ${C.border}22`,
-            fontSize: 12,
-            color: C.muted,
-          }}
-        >
-          <span>{filtered.length} items</span>
-          <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+        {/* Legend */}
+        <div style={{ padding: "12px 16px", borderTop: "1px solid #2a2a2e", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ fontSize: 11, color: "#666" }}>{filtered.length} items</span>
+          <div style={{ display: "flex", gap: 16 }}>
             {[
-              ["#ef4444", "Low"],
-              ["#f97316", "Moderate"],
-              ["#22c55e", "Adequate"],
-            ].map(([color, label]) => (
-              <span
-                key={label}
-                style={{ display: "flex", alignItems: "center", gap: 5 }}
-              >
-                <span
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: "50%",
-                    background: color,
-                    display: "inline-block",
-                  }}
-                />
-                {label}
-              </span>
+              { c: C.red, l: "Low" },
+              { c: C.yellow, l: "Moderate" },
+              { c: C.green, l: "Adequate" }
+            ].map(x => (
+              <div key={x.l} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: x.c }} />
+                <span style={{ fontSize: 11, color: "#888" }}>{x.l}</span>
+              </div>
             ))}
           </div>
         </div>
@@ -508,52 +337,26 @@ export default function RMStock({ rawStock = [], setRawStock, toast }) {
   );
 }
 
-function StatCard({ value, label, color, prefix = "", suffix = "" }) {
+function StatCard({ label, val, color, prefix = "", suffix = "" }) {
   return (
-    <div
-      style={{
-        padding: "18px 20px",
-        border: `1px solid ${color}44`,
-        borderLeft: `3px solid ${color}`,
-        borderRadius: 8,
-        background: color + "08",
-      }}
-    >
-      <div
-        style={{
-          fontSize: 24,
-          fontWeight: 900,
-          color,
-          fontFamily: "'JetBrains Mono',monospace",
-        }}
-      >
-        {prefix}
-        {value}
-        {suffix}
-      </div>
-      <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 4 }}>
-        {label}
-      </div>
+    <div style={{
+      background: "#141416", border: `1px solid ${color}44`, borderLeft: `4px solid ${color}`,
+      padding: "16px 20px", borderRadius: 8
+    }}>
+      <div style={{ fontSize: 24, fontWeight: 900, color, fontFamily: "monospace" }}>{prefix}{val}{suffix}</div>
+      <div style={{ fontSize: 11, fontWeight: 600, color: "#666", marginTop: 4, textTransform: "uppercase" }}>{label}</div>
     </div>
   );
 }
 
-function ActionBtn({ label, color, onClick }) {
+function ActionBtn({ label, icon, color, textColor, border, onClick }) {
   return (
-    <button
-      onClick={onClick}
-      style={{
-        padding: "9px 16px",
-        borderRadius: 6,
-        border: "none",
-        background: color,
-        color: "#fff",
-        fontWeight: 700,
-        fontSize: 12,
-        cursor: "pointer",
-        whiteSpace: "nowrap",
-      }}
-    >
+    <button onClick={onClick} style={{
+      background: color, color: textColor, border: border ? `1px solid ${border}` : "none",
+      padding: "8px 16px", borderRadius: 6, fontWeight: 700, fontSize: 12, cursor: "pointer",
+      display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap"
+    }}>
+      <span style={{ fontSize: 14 }}>{icon}</span>
       {label}
     </button>
   );

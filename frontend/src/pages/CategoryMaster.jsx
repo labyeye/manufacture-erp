@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { categoryMasterAPI } from "../api/auth";
+import * as XLSX from "xlsx";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 
@@ -130,11 +131,15 @@ export default function CategoryMaster({ toast }) {
         return;
       }
       
+      const newSubTypes = { ...(typeDoc.subTypes || {}) };
+      delete newSubTypes[catName];
+
       const updated = {
         ...typeDoc,
-        categories: (typeDoc.categories || []).filter(c => c !== catName)
+        categories: (typeDoc.categories || []).filter((c) => c !== catName),
+        subTypes: newSubTypes,
       };
-      
+
       await categoryMasterAPI.update(typeDoc._id, updated);
       await loadCategories();
       
@@ -233,53 +238,63 @@ export default function CategoryMaster({ toast }) {
   const handleImport = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     try {
       const reader = new FileReader();
       reader.onload = async (ev) => {
-        const lines = ev.target.result.split("\n").filter(Boolean);
-        let count = 0;
-        
-        const typeDoc = categories.find(c => c.type === activeTab);
-        if (!typeDoc) {
-          toast("Type data not found", "error");
-          return;
-        }
-        
-        const newCategories = { ...typeDoc.subTypes };
-        
-        for (let i = 1; i < lines.length; i++) {
-          const cols = lines[i]
-            .split(",")
-            .map((v) => v.replace(/^"|"$/g, "").trim());
-          const catName = cols[0];
-          if (!catName) continue;
-          
-          const subTypes = cols.slice(1).filter(Boolean);
-          
-          if (!newCategories[catName]) {
-            newCategories[catName] = [];
+        try {
+          const data = new Uint8Array(ev.target.result);
+          const workbook = XLSX.read(data, { type: "array" });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+          let count = 0;
+          const typeDoc = categories.find((c) => c.type === activeTab);
+          if (!typeDoc) {
+            toast("Type data not found", "error");
+            return;
           }
-          subTypes.forEach((s) => {
-            if (!newCategories[catName].includes(s)) {
-              newCategories[catName].push(s);
+
+          const newCategories = { ...typeDoc.subTypes };
+
+          // Skip header row
+          for (let i = 1; i < json.length; i++) {
+            const row = json[i];
+            if (!row || row.length === 0) continue;
+
+            const catName = String(row[0] || "").trim();
+            if (!catName) continue;
+
+            const subTypes = row.slice(1).filter(Boolean).map(s => String(s).trim());
+
+            if (!newCategories[catName]) {
+              newCategories[catName] = [];
             }
-          });
-          count++;
+            subTypes.forEach((s) => {
+              if (!newCategories[catName].includes(s)) {
+                newCategories[catName].push(s);
+              }
+            });
+            count++;
+          }
+
+          const updated = {
+            ...typeDoc,
+            subTypes: newCategories,
+          };
+
+          await categoryMasterAPI.update(typeDoc._id, updated);
+          await loadCategories();
+          toast(`Imported ${count} categories`, "success");
+          const firstCat = Object.keys(newCategories)[0];
+          if (firstCat) setSelectedCategory(firstCat);
+        } catch (innerErr) {
+          console.error("Excel parse error:", innerErr);
+          toast("Failed to parse Excel file", "error");
         }
-        
-        const updated = {
-          ...typeDoc,
-          subTypes: newCategories
-        };
-        
-        await categoryMasterAPI.update(typeDoc._id, updated);
-        await loadCategories();
-        toast(`Imported ${count} categories`, "success");
-        const firstCat = Object.keys(newCategories)[0];
-        if (firstCat) setSelectedCategory(firstCat);
       };
-      reader.readAsText(file);
+      reader.readAsArrayBuffer(file);
     } catch (err) {
       console.error("Import failed:", err);
       toast("Import failed", "error");
@@ -452,7 +467,7 @@ export default function CategoryMaster({ toast }) {
             <input
               ref={fileInputRef}
               type="file"
-              accept=".csv"
+              accept=".csv, .xlsx, .xls"
               style={{ display: "none" }}
               onChange={handleImport}
             />
