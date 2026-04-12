@@ -213,7 +213,10 @@ export function Dashboard({
                 const slot = (j.schedule || []).find((s) => s.process === proc);
                 const refDate =
                   slot?.startDate || j.jobcardDate || j.date || "";
-                return daysSince(refDate);
+                if (!refDate) return 0;
+                // Ensure refDate is a serializable string for daysSince
+                const d = typeof refDate === 'string' ? refDate : new Date(refDate).toISOString();
+                return daysSince(d);
               });
               const maxAge = ages.length > 0 ? Math.max(...ages) : 0;
               const ageCol =

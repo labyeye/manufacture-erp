@@ -7,9 +7,9 @@ import {
   Field,
   SubmitBtn,
   AutocompleteInput,
-  DatePicker,
   DateRangeFilter,
 } from "../components/ui/BasicComponents";
+import { DatePicker } from "../components/ui/DatePicker";
 import {
   salesOrdersAPI,
   clientMasterAPI,
@@ -20,7 +20,6 @@ import {
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 const today = () => new Date().toISOString().slice(0, 10);
 const fmt = (n) => (n ?? 0).toLocaleString("en-IN");
-
 
 const sectionLabelStyle = {
   fontSize: 11,
@@ -121,7 +120,6 @@ export default function SalesOrders(props) {
   const [drDateTo, setDrDateTo] = useState("");
   const [editId, setEditId] = useState(null);
 
-  
   useEffect(() => {
     fetchSalesOrders();
     fetchClients();
@@ -142,7 +140,6 @@ export default function SalesOrders(props) {
       const res = await clientMasterAPI.getAll();
       setClients(res.clients || []);
 
-      
       const uniqueCategories = [
         ...new Set((res.clients || []).map((c) => c.category).filter(Boolean)),
       ];
@@ -166,8 +163,6 @@ export default function SalesOrders(props) {
     }
   };
 
-
-
   const salesPersons = useMemo(
     () =>
       users
@@ -179,12 +174,9 @@ export default function SalesOrders(props) {
   const generateItemName = (it) => {
     const parts = [it.itemCategory];
 
-    
     if (it.size) {
       parts.push(it.size);
-    }
-    
-    else if (it.width || it.length || it.height || it.gussett) {
+    } else if (it.width || it.length || it.height || it.gussett) {
       const dims = [];
       if (it.width) dims.push(it.width);
       if (it.gussett) dims.push(it.gussett);
@@ -193,8 +185,9 @@ export default function SalesOrders(props) {
       if (dims.length > 0) parts.push(`${dims.join("×")}inch`);
     }
 
-    if (it.variant) parts.push(`(${it.variant})`);
-    if (header.clientName) parts.push(`/ ${header.clientName}`);
+    if (header.clientName) parts.push(`${header.clientName}`);
+    if (it.variant) parts.push(`${it.variant}`);
+
     return parts.filter(Boolean).join(" ");
   };
 
@@ -280,7 +273,7 @@ export default function SalesOrders(props) {
     const allItemErrors = items.map((it) => {
       const e = {};
       if (!it.itemCategory) e.itemCategory = true;
-      
+
       if (!it.size && !it.width && !it.length && !it.height && !it.gussett) {
         e.size = true;
       }
@@ -355,9 +348,6 @@ export default function SalesOrders(props) {
       setLoading(false);
     }
   };
-
-  
-
 
   return (
     <div className="fade">
@@ -702,9 +692,9 @@ export default function SalesOrders(props) {
                     placeholder="— Auto-filled from category + size + client —"
                     value={it.itemName}
                     style={{
-                      color: it.itemName ? (C.green || "#4ade80") : C.muted,
+                      color: it.itemName ? C.green || "#4ade80" : C.muted,
                       cursor: "default",
-                      fontWeight: it.itemName ? 600 : 400
+                      fontWeight: it.itemName ? 600 : 400,
                     }}
                   />
                 </Field>
@@ -864,8 +854,12 @@ export default function SalesOrders(props) {
               const handleEdit = async (so) => {
                 setEditId(so._id);
                 setHeader({
-                  orderDate: so.orderDate ? new Date(so.orderDate).toISOString().slice(0, 10) : "",
-                  deliveryDate: so.deliveryDate ? new Date(so.deliveryDate).toISOString().slice(0, 10) : "",
+                  orderDate: so.orderDate
+                    ? new Date(so.orderDate).toISOString().slice(0, 10)
+                    : "",
+                  deliveryDate: so.deliveryDate
+                    ? new Date(so.deliveryDate).toISOString().slice(0, 10)
+                    : "",
                   salesPerson: so.salesPerson || "",
                   clientCategory: so.clientCategory || "",
                   clientName: so.clientName,
@@ -945,7 +939,9 @@ export default function SalesOrders(props) {
                         {r.soNo}
                       </span>
                       <span style={{ fontSize: 12, color: C.muted }}>
-                        {r.orderDate ? new Date(r.orderDate).toLocaleDateString('en-GB') : 'N/A'}
+                        {r.orderDate
+                          ? new Date(r.orderDate).toLocaleDateString("en-GB")
+                          : "N/A"}
                       </span>
                       <span style={{ fontSize: 13, fontWeight: 600 }}>
                         {r.clientName}

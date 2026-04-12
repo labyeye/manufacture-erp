@@ -22,12 +22,7 @@ const formatDateForInput = (dateStr) => {
   return d.toISOString().split("T")[0];
 };
 
-const LOCATIONS = [
-  "Main Warehouse",
-  "Factory Store",
-  "Raw Material Godown",
-  "Finished Goods Store",
-];
+const LOCATIONS = ["Vijay Nagar", "Lal Kaun"];
 
 export default function MaterialInward({
   inward = [],
@@ -45,6 +40,7 @@ export default function MaterialInward({
   itemCounters = {},
   setItemCounters,
   toast,
+  props = {},
 }) {
   const [loading, setLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -63,6 +59,7 @@ export default function MaterialInward({
     receivedBy: "",
     remarks: "",
     poRef: "",
+    inwardNo: "",
   };
   const blankItem = {
     _id: uid(),
@@ -218,6 +215,7 @@ export default function MaterialInward({
                 rate: pit.rate || "",
                 itemName: pit.itemName || "",
                 qty: pit.qty || "",
+                noOfSheets: pit.noOfSheets || "",
                 unit: pit.unit || "kg",
                 productCode: pit.productCode || "",
               };
@@ -387,7 +385,8 @@ export default function MaterialInward({
         if (!it.widthMm) e.widthMm = true;
         if (it.category !== "Paper Reel" && !it.lengthMm) e.lengthMm = true;
         if (!it.gsm) e.gsm = true;
-        if (it.category === "Paper Sheets" && !it.noOfSheets)
+        if ((it.category === "Paper Sheets" || it.category === "Paper Sheet") &&
+          !it.noOfSheets)
           e.noOfSheets = true;
         if (!it.weight) e.weight = true;
         if (!it.rate) e.rate = true;
@@ -461,6 +460,7 @@ export default function MaterialInward({
         receivedBy: data.receivedBy || "",
         remarks: data.remarks || "",
         poRef: data.poRef || "",
+        inwardNo: data.inwardNo || "",
       });
 
       setItems(data.items || [{ ...blankItem, _id: uid() }]);
@@ -581,6 +581,14 @@ export default function MaterialInward({
                 gap: 14,
               }}
             >
+              <Field label="GRN No">
+                <input
+                  readOnly
+                  placeholder="— Auto-generated —"
+                  value={header.inwardNo}
+                  style={{ color: C.muted, background: "transparent" }}
+                />
+              </Field>
               <Field label="Date 📅 *">
                 <DatePicker
                   value={header.date}
@@ -831,6 +839,21 @@ export default function MaterialInward({
                       />
                       {EIMsg(idx, "gsm")}
                     </Field>
+                    {(it.category === "Paper Sheets" ||
+                      it.category === "Paper Sheet") && (
+                      <Field label="# of Sheets *">
+                        <input
+                          type="number"
+                          placeholder="No. of sheets"
+                          value={it.noOfSheets}
+                          onChange={(e) =>
+                            setItem(idx, "noOfSheets", e.target.value)
+                          }
+                          style={EI(idx, "noOfSheets")}
+                        />
+                        {EIMsg(idx, "noOfSheets")}
+                      </Field>
+                    )}
                     <Field label="Weight (kg) *">
                       <input
                         type="number"

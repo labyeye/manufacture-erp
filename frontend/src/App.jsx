@@ -20,10 +20,15 @@ import {
 import {
   materialInwardAPI,
   rawMaterialStockAPI,
+  fgStockAPI,
   vendorMasterAPI,
   clientMasterAPI,
   categoryMasterAPI,
   itemMasterAPI,
+  machineMasterAPI,
+  jobOrdersAPI,
+  salesOrdersAPI,
+  purchaseOrdersAPI,
 } from "./api/auth";
 import { AuthContext, AuthProvider, useAuth } from "./context/AuthContext";
 import { Toast } from "./components/ui/AdvancedComponents";
@@ -168,12 +173,6 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
   const [joCounter, setJoCounter] = usePersistedState("erp_joCounter", {
     JO: 1,
   });
-  const [poCounter, setPoCounter] = usePersistedState("erp_poCounter", {
-    PO: 1,
-  });
-  const [grnCounter, setGrnCounter] = usePersistedState("erp_grnCounter", {
-    GRN: 1,
-  });
   const [dispatchCounter, setDispatchCounter] = usePersistedState(
     "erp_dispatchCounter",
     { DISP: 1 },
@@ -194,13 +193,16 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
 
   const fetchMasters = async () => {
     try {
-      const [vendors, clients, categories, items, stocks] = await Promise.all([
-        vendorMasterAPI.getAll(),
-        clientMasterAPI.getAll(),
-        categoryMasterAPI.getAll(),
-        itemMasterAPI.getAll(),
-        rawMaterialStockAPI.getAll(),
-      ]);
+      const [vendors, clients, categories, items, stocks, machines, fgStockData] =
+        await Promise.all([
+          vendorMasterAPI.getAll(),
+          clientMasterAPI.getAll(),
+          categoryMasterAPI.getAll(),
+          itemMasterAPI.getAll(),
+          rawMaterialStockAPI.getAll(),
+          machineMasterAPI.getAll(),
+          fgStockAPI.getAll(),
+        ]);
 
       if (vendors.vendors) setVendorMaster(vendors.vendors);
       if (clients.clients) setClientMaster(clients.clients);
@@ -213,6 +215,12 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
       if (items.items) setItemMasterFG(items.items);
       if (stocks) {
         setRawStock(stocks.stock || stocks);
+      }
+      if (machines && machines.machines) {
+        setMachineMaster(machines.machines);
+      }
+      if (fgStockData) {
+        setFgStock(fgStockData.stock || fgStockData);
       }
     } catch (err) {
       console.error("Global fetch error:", err);
@@ -261,10 +269,6 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
     setSoCounter,
     joCounter,
     setJoCounter,
-    poCounter,
-    setPoCounter,
-    grnCounter,
-    setGrnCounter,
     dispatchCounter,
     setDispatchCounter,
     itemCounters,
@@ -347,11 +351,12 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
   return (
     <div
       style={{
-        minHeight: "100vh",
+        height: "100vh",
         display: "flex",
         flexDirection: "column",
         background: C.bg,
         color: C.text,
+        overflow: "hidden",
       }}
     >
       {}
@@ -407,7 +412,7 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
       </div>
 
       {}
-      <div style={{ display: "flex", flex: 1, overflowY: "auto" }}>
+      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
         {}
         <div
           style={{
@@ -416,7 +421,10 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
             width: 240,
             padding: "16px 0",
             overflowY: "auto",
-            maxHeight: "calc(100vh - 80px)",
+            display: "flex",
+            flexDirection: "column",
+            flexShrink: 0,
+            maxHeight: "100%",
           }}
         >
           {TABS.filter((tab) => allowedTabs.includes(tab.id)).map((tab) => (
@@ -448,7 +456,16 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
                   e.currentTarget.style.background = "transparent";
               }}
             >
-              <span style={{ marginRight: 8 }}>{tab.icon}</span>
+              <span
+                style={{
+                  marginRight: 12,
+                  width: 20,
+                  textAlign: "center",
+                  fontSize: 16,
+                }}
+              >
+                {tab.icon}
+              </span>
               {tab.label}
             </button>
           ))}

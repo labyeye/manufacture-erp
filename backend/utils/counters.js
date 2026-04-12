@@ -35,12 +35,14 @@ async function generateJONo() {
 }
 
 async function generatePONo() {
-  return await getNextSequence('PO', 'PO-', 3);
+  return await getNextSequence("PO", "PO", 4);
 }
 
+
 async function generateGRNNo() {
-  return await getNextSequence('GRN', 'GRN-', 3);
+  return await getNextSequence("GRN", "GRN", 4);
 }
+
 
 async function generateDCNo() {
   return await getNextSequence('DC', 'DC-', 3);

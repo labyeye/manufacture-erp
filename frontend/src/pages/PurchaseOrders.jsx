@@ -26,7 +26,8 @@ const computeRMItemName = (it) => {
     ]
       .filter(Boolean)
       .join(" ");
-  } else if (it.category === "Paper Sheets") {
+  } else if (it.category === "Paper Sheets" || it.category === "Paper Sheet") {
+
     return [
       it.subCategory,
       "Sheet",
@@ -46,8 +47,6 @@ const computeRMItemName = (it) => {
 export default function PurchaseOrders({
   purchaseOrders = [],
   setPurchaseOrders,
-  poCounter = 0,
-  setPoCounter,
   vendorMaster = [],
   categoryMaster = {},
   sizeMaster = {},
@@ -337,7 +336,7 @@ export default function PurchaseOrders({
       let result;
 
       const poData = {
-        poNo: header.poNumber || `PO-${Date.now()}`,
+        poNo: header.poNumber, // Backend will auto-generate if empty or old format
         poDate: header.poDate,
         vendor: header.vendorName,
         items: items.map((it) => {
@@ -354,9 +353,11 @@ export default function PurchaseOrders({
             unit: isRM ? "kg" : "pcs",
             qty: isRM ? it.weight : it.qty,
             weight: isRM ? it.weight : null,
+            noOfSheets: it.noOfSheets ? Number(it.noOfSheets) : null,
             rate: it.rate,
             amount: (isRM ? it.weight : it.qty) * it.rate || 0,
           };
+
         }),
         deliveryDate: header.deliveryDate,
         remarks: header.remarks,
@@ -508,6 +509,14 @@ export default function PurchaseOrders({
                 gap: 14,
               }}
             >
+              <Field label="PO No">
+                <input
+                  readOnly
+                  placeholder="— Auto-generated —"
+                  value={header.poNumber}
+                  style={{ color: C.muted, background: "transparent" }}
+                />
+              </Field>
               <Field label="PO Date 📅 *">
                 <DatePicker
                   value={header.poDate}
@@ -732,6 +741,20 @@ export default function PurchaseOrders({
                       />
                       {EIMsg(idx, "gsm")}
                     </Field>
+                    {(it.category === "Paper Sheets" ||
+                      it.category === "Paper Sheet") && (
+
+                      <Field label="# of Sheets">
+                        <input
+                          type="number"
+                          placeholder="No. of sheets"
+                          value={it.noOfSheets}
+                          onChange={(e) =>
+                            setItem(idx, "noOfSheets", e.target.value)
+                          }
+                        />
+                      </Field>
+                    )}
                     <Field label="Weight (kg) *">
                       <input
                         type="number"

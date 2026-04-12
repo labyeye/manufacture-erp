@@ -268,37 +268,43 @@ export function DatePicker({ value, onChange, style = {} }) {
 export function DateRangeFilter({ dateFrom, setDateFrom, dateTo, setDateTo }) {
   return (
     <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-      <input
-        type="date"
-        value={dateFrom}
-        onChange={(e) => setDateFrom(e.target.value)}
-        placeholder="From"
-        style={{
-          padding: "7px 10px",
-          background: C.inputBg,
-          border: "1px solid " + C.border,
-          borderRadius: 5,
-          fontSize: 12,
-          color: C.text,
-          accentColor: "white",
-        }}
-      />
+      <div style={{ position: "relative" }}>
+        <input
+          type="date"
+          value={dateFrom}
+          onChange={(e) => setDateFrom(e.target.value)}
+          placeholder="From"
+          style={{
+            padding: "7px 10px 7px 30px",
+            background: C.inputBg,
+            border: "1px solid " + C.border,
+            borderRadius: 5,
+            fontSize: 12,
+            color: C.text,
+            accentColor: "white",
+          }}
+        />
+        <span style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", fontSize: 12 }}>📅</span>
+      </div>
       <span style={{ color: C.muted, fontSize: 12 }}>to</span>
-      <input
-        type="date"
-        value={dateTo}
-        onChange={(e) => setDateTo(e.target.value)}
-        placeholder="To"
-        style={{
-          padding: "7px 10px",
-          background: C.inputBg,
-          border: "1px solid " + C.border,
-          borderRadius: 5,
-          fontSize: 12,
-          color: C.text,
-          accentColor: "white",
-        }}
-      />
+      <div style={{ position: "relative" }}>
+        <input
+          type="date"
+          value={dateTo}
+          onChange={(e) => setDateTo(e.target.value)}
+          placeholder="To"
+          style={{
+            padding: "7px 10px 7px 30px",
+            background: C.inputBg,
+            border: "1px solid " + C.border,
+            borderRadius: 5,
+            fontSize: 12,
+            color: C.text,
+            accentColor: "white",
+          }}
+        />
+        <span style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", fontSize: 12 }}>📅</span>
+      </div>
     </div>
   );
 }

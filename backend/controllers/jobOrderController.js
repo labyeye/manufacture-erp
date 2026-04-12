@@ -73,7 +73,7 @@ async function deductRawMaterialStock(jobOrder) {
     // 2. Handle Second Paper if present
     if (jobOrder.hasSecondPaper && jobOrder.paperType2) {
       const rmStock2 = await RawMaterialStock.findOne({
-        category: jobOrder.paperCategory,
+        category: jobOrder.paperCategory2 || jobOrder.paperCategory,
         paperType: jobOrder.paperType2,
         gsm: jobOrder.paperGsm2
       });
@@ -155,13 +155,21 @@ exports.create = async (req, res) => {
   try {
     const joNo = await generateJONo();
 
+    const STAGES_ORDER = ["Printing", "Varnish", "Lamination", "Die Cutting", "Formation", "Manual Formation"];
+    let sortedProcess = req.body.process || [];
+    if (Array.isArray(sortedProcess)) {
+      sortedProcess.sort((a, b) => STAGES_ORDER.indexOf(a) - STAGES_ORDER.indexOf(b));
+    }
+
     const jobOrderData = {
       ...req.body,
+      process: sortedProcess,
       joNo,
       createdBy: req.userId,
       status: 'Open',
       completedProcesses: [],
       stageQtyMap: new Map(),
+      stageTotalMap: new Map(),
       stageHistory: []
     };
 
@@ -191,6 +199,10 @@ exports.update = async (req, res) => {
       return res.status(404).json({ error: 'Job order not found' });
     }
 
+    const STAGES_ORDER = ["Printing", "Varnish", "Lamination", "Die Cutting", "Formation", "Manual Formation"];
+    if (req.body.process && Array.isArray(req.body.process)) {
+      req.body.process.sort((a, b) => STAGES_ORDER.indexOf(a) - STAGES_ORDER.indexOf(b));
+    }
     Object.assign(jobOrder, req.body);
 
     if (req.body.machineAssignments) {
@@ -244,18 +256,15 @@ exports.addStage = async (req, res) => {
     const currentQty = jobOrder.stageQtyMap.get(stage) || 0;
     jobOrder.stageQtyMap.set(stage, currentQty + (qtyCompleted || 0));
 
-    const orderedProcesses = STAGES.filter(p => jobOrder.process.includes(p));
+    const currentTotal = jobOrder.stageTotalMap.get(stage) || 0;
+    jobOrder.stageTotalMap.set(stage, currentTotal + (qtyCompleted || 0) + (qtyRejected || 0));
+
+    const orderedProcesses = jobOrder.process || [];
     const completedProcesses = [];
 
     for (const proc of orderedProcesses) {
-      if (['Formation', 'Manual Formation'].includes(proc)) {
-        if ((jobOrder.stageQtyMap.get(proc) || 0) >= jobOrder.orderQty) {
-          completedProcesses.push(proc);
-        }
-      } else {
-        if (jobOrder.stageHistory.some(e => e.stage === proc)) {
-          completedProcesses.push(proc);
-        }
+      if (jobOrder.stageHistory.some(e => e.stage === proc)) {
+        completedProcesses.push(proc);
       }
     }
 
@@ -267,7 +276,14 @@ exports.addStage = async (req, res) => {
       ? 'In Progress'
       : 'Open';
 
-    if (jobOrder.status === 'Completed') {
+    // Update FG Stock if this is a formation stage or if job is completed
+    const isFormationStage = stage.includes('Formation');
+    if (isFormationStage || jobOrder.status === 'Completed') {
+      const lastStage = orderedProcesses[orderedProcesses.length - 1];
+      // If it's a formation stage, we sync the current progress of THAT stage to FG stock
+      // Usually, formation is the final stage anyway.
+      const finishedQty = jobOrder.stageQtyMap.get(stage) || 0;
+
       let price = 0;
       if (jobOrder.soRef) {
         const so = await SalesOrder.findOne({ soNo: jobOrder.soRef });
@@ -287,7 +303,7 @@ exports.addStage = async (req, res) => {
           joNo: jobOrder.joNo,
           soRef: jobOrder.soRef,
           clientName: jobOrder.clientName,
-          qty: jobOrder.orderQty,
+          qty: finishedQty,
           price,
           lastUpdated: new Date()
         },

@@ -9,14 +9,7 @@ const MACHINE_TYPES = [
   "Printing",
   "Die Cutting",
   "Pasting",
-  "Stitching",
   "Lamination",
-  "Coating",
-  "Slitting",
-  "Folding",
-  "Assembly",
-  "Packing",
-  "QC",
 ];
 
 const TYPE_ICONS = {
@@ -25,14 +18,7 @@ const TYPE_ICONS = {
   Printing: "🖨️",
   "Die Cutting": "🔲",
   Pasting: "🔧",
-  Stitching: "🪡",
   Lamination: "📄",
-  Coating: "🎨",
-  Slitting: "🔪",
-  Folding: "📐",
-  Assembly: "⚙️",
-  Packing: "📦",
-  QC: "✅",
 };
 
 const TYPE_COLORS = {
@@ -41,14 +27,7 @@ const TYPE_COLORS = {
   Printing: "#2196F3",
   "Die Cutting": "#FF9800",
   Pasting: "#4CAF50",
-  Stitching: "#E91E63",
   Lamination: "#00BCD4",
-  Coating: "#FF5722",
-  Slitting: "#8BC34A",
-  Folding: "#FFC107",
-  Assembly: "#607D8B",
-  Packing: "#795548",
-  QC: "#009688",
 };
 
 const inputStyle = {
@@ -74,7 +53,6 @@ export default function MachineMaster({ toast }) {
   const [editingMachine, setEditingMachine] = useState(null);
   const [editName, setEditName] = useState("");
 
-  
   useEffect(() => {
     fetchMachines();
   }, []);
@@ -88,13 +66,11 @@ export default function MachineMaster({ toast }) {
     }
   };
 
-  
   const allMachines = useMemo(() => machines, [machines]);
 
-  
   const machineMaster = useMemo(() => {
     const grouped = {};
-    machines.forEach(machine => {
+    machines.forEach((machine) => {
       if (!grouped[machine.type]) {
         grouped[machine.type] = [];
       }
@@ -114,7 +90,6 @@ export default function MachineMaster({ toast }) {
     (t) => (machineMaster[t] || []).length > 0,
   ).length;
 
-  
   const filteredMachines = useMemo(
     () =>
       allMachines.filter((m) => {
@@ -129,7 +104,6 @@ export default function MachineMaster({ toast }) {
     [allMachines, searchTerm, filterType, filterStatus],
   );
 
-  
   const groupedMachines = useMemo(() => {
     const groups = {};
     filteredMachines.forEach((m) => {
@@ -157,7 +131,7 @@ export default function MachineMaster({ toast }) {
         capacity: 0,
         capacityUnit: "pcs/hr",
         workingHours: 8,
-        shiftsPerDay: 1
+        shiftsPerDay: 1,
       });
       toast(`Machine "${machineName}" added to ${machineType}`, "success");
       setMachineName("");
@@ -541,8 +515,7 @@ export default function MachineMaster({ toast }) {
                                 onChange={(e) => setEditName(e.target.value)}
                                 onBlur={() => handleEditSave(machine)}
                                 onKeyDown={(e) =>
-                                  e.key === "Enter" &&
-                                  handleEditSave(machine)
+                                  e.key === "Enter" && handleEditSave(machine)
                                 }
                                 autoFocus
                                 style={{
@@ -646,7 +619,11 @@ export default function MachineMaster({ toast }) {
                                     type="number"
                                     min={1}
                                     max={24}
-                                    value={machine.workingHours || machine.hrsPerShift || 8}
+                                    value={
+                                      machine.workingHours ||
+                                      machine.hrsPerShift ||
+                                      8
+                                    }
                                     onChange={(e) =>
                                       handleUpdateField(
                                         machine,
@@ -670,7 +647,11 @@ export default function MachineMaster({ toast }) {
                                     type="number"
                                     min={1}
                                     max={3}
-                                    value={machine.shiftsPerDay || machine.shifts || 1}
+                                    value={
+                                      machine.shiftsPerDay ||
+                                      machine.shifts ||
+                                      1
+                                    }
                                     onChange={(e) =>
                                       handleUpdateField(
                                         machine,
@@ -805,6 +786,7 @@ export default function MachineMaster({ toast }) {
                 {[
                   "Machine Name",
                   "Type",
+                  "Capacity",
                   "Hrs/Shift",
                   "Shifts/Day",
                   "Status",
@@ -840,87 +822,185 @@ export default function MachineMaster({ toast }) {
                   </td>
                 </tr>
               ) : (
-                filteredMachines.map((m) => (
-                  <tr key={m.id} style={{ borderBottom: "1px solid #1e1e1e" }}>
-                    <td
-                      style={{
-                        padding: "10px 14px",
-                        fontWeight: 600,
-                        color: "#e0e0e0",
-                      }}
-                    >
-                      {m.name}
-                    </td>
-                    <td style={{ padding: "10px 14px" }}>
-                      <span
-                        style={{
-                          padding: "2px 8px",
-                          borderRadius: 20,
-                          fontSize: 11,
-                          background: (TYPE_COLORS[m.type] || "#888") + "22",
-                          color: TYPE_COLORS[m.type] || "#888",
-                        }}
-                      >
-                        {m.type}
-                      </span>
-                    </td>
-                    <td style={{ padding: "10px 14px", color: "#aaa" }}>
-                      {m.hrsPerShift || 8}h
-                    </td>
-                    <td style={{ padding: "10px 14px", color: "#aaa" }}>
-                      {m.shifts || 1}
-                    </td>
-                    <td style={{ padding: "10px 14px" }}>
-                      <span
-                        style={{
-                          padding: "2px 8px",
-                          borderRadius: 20,
-                          fontSize: 11,
-                          fontWeight: 700,
-                          background:
-                            m.status === "Active" ? "#4CAF5022" : "#f4433622",
-                          color: m.status === "Active" ? "#4CAF50" : "#f44336",
-                        }}
-                      >
-                        {m.status}
-                      </span>
-                    </td>
-                    <td style={{ padding: "10px 14px" }}>
-                      <div style={{ display: "flex", gap: 6 }}>
-                        <button
+                filteredMachines.map((m) => {
+                  const isEditing = editingMachine === m._id;
+                  const color = TYPE_COLORS[m.type] || "#888";
+
+                  return (
+                    <tr key={m._id} style={{ borderBottom: "1px solid #1e1e1e" }}>
+                      <td style={{ padding: "10px 14px" }}>
+                        {isEditing ? (
+                          <input
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            onBlur={() => handleEditSave(m)}
+                            onKeyDown={(e) =>
+                              e.key === "Enter" && handleEditSave(m)
+                            }
+                            autoFocus
+                            style={{
+                              ...inputStyle,
+                              padding: "4px 8px",
+                              width: "140px",
+                            }}
+                          />
+                        ) : (
+                          <div style={{ fontWeight: 600, color: "#e0e0e0" }}>
+                            {m.name}
+                          </div>
+                        )}
+                      </td>
+                      <td style={{ padding: "10px 14px" }}>
+                        {isEditing ? (
+                          <select
+                            value={m.type}
+                            onChange={(e) =>
+                              handleUpdateField(m, "type", e.target.value)
+                            }
+                            style={{ ...inputStyle, padding: "4px 8px" }}
+                          >
+                            {MACHINE_TYPES.map((t) => (
+                              <option key={t}>{t}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span
+                            style={{
+                              padding: "2px 8px",
+                              borderRadius: 20,
+                              fontSize: 11,
+                              background: color + "22",
+                              color: color,
+                            }}
+                          >
+                            {m.type}
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ padding: "10px 14px" }}>
+                        <input
+                          type="number"
+                          value={m.capacity || 0}
+                          onChange={(e) =>
+                            handleUpdateField(
+                              m,
+                              "capacity",
+                              parseInt(e.target.value) || 0,
+                            )
+                          }
+                          style={{
+                            ...inputStyle,
+                            width: "60px",
+                            padding: "4px 8px",
+                            textAlign: "center",
+                          }}
+                        />
+                      </td>
+                      <td style={{ padding: "10px 14px" }}>
+                        <input
+                          type="number"
+                          min={1}
+                          max={24}
+                          value={m.workingHours || m.hrsPerShift || 8}
+                          onChange={(e) =>
+                            handleUpdateField(
+                              m,
+                              "workingHours",
+                              parseInt(e.target.value) || 8,
+                            )
+                          }
+                          style={{
+                            ...inputStyle,
+                            width: "50px",
+                            padding: "4px 8px",
+                            textAlign: "center",
+                          }}
+                        />
+                      </td>
+                      <td style={{ padding: "10px 14px" }}>
+                        <input
+                          type="number"
+                          min={1}
+                          max={3}
+                          value={m.shiftsPerDay || m.shifts || 1}
+                          onChange={(e) =>
+                            handleUpdateField(
+                              m,
+                              "shiftsPerDay",
+                              parseInt(e.target.value) || 1,
+                            )
+                          }
+                          style={{
+                            ...inputStyle,
+                            width: "50px",
+                            padding: "4px 8px",
+                            textAlign: "center",
+                          }}
+                        />
+                      </td>
+                      <td style={{ padding: "10px 14px" }}>
+                        <span
+                          style={{
+                            padding: "2px 8px",
+                            borderRadius: 20,
+                            fontSize: 11,
+                            fontWeight: 700,
+                            background:
+                              m.status === "Active"
+                                ? "#4CAF5022"
+                                : "#f4433622",
+                            color: m.status === "Active" ? "#4CAF50" : "#f44336",
+                            cursor: "pointer",
+                          }}
                           onClick={() => handleToggleStatus(m)}
-                          style={{
-                            padding: "4px 10px",
-                            background: "#FF980022",
-                            color: "#FF9800",
-                            border: "none",
-                            borderRadius: 4,
-                            fontSize: 11,
-                            fontWeight: 700,
-                            cursor: "pointer",
-                          }}
                         >
-                          {m.status === "Active" ? "⏸" : "▶"}
-                        </button>
-                        <button
-                          onClick={() => handleDelete(m)}
-                          style={{
-                            padding: "4px 10px",
-                            background: "#f4433622",
-                            color: "#f44336",
-                            border: "none",
-                            borderRadius: 4,
-                            fontSize: 11,
-                            fontWeight: 700,
-                            cursor: "pointer",
-                          }}
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                          {m.status}
+                        </span>
+                      </td>
+                      <td style={{ padding: "10px 14px" }}>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <button
+                            onClick={() => {
+                              if (isEditing) {
+                                handleEditSave(m);
+                              } else {
+                                setEditingMachine(m._id);
+                                setEditName(m.name);
+                              }
+                            }}
+                            style={{
+                              padding: "4px 8px",
+                              background: "#FF980022",
+                              color: "#FF9800",
+                              border: "none",
+                              borderRadius: 4,
+                              fontSize: 12,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                            }}
+                          >
+                            {isEditing ? "💾" : "🖊️"}
+                          </button>
+                          <button
+                            onClick={() => handleDelete(m)}
+                            style={{
+                              padding: "4px 8px",
+                              background: "#f4433622",
+                              color: "#f44336",
+                              border: "none",
+                              borderRadius: 4,
+                              fontSize: 12,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                            }}
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

@@ -78,6 +78,7 @@ const MACHINE_ICON = {
   Handmade: "👐",
   Lamination: "📄",
   Pasting: "🗂️",
+  Formation: "📦",
 };
 
 const TYPE_COLOR = {
@@ -115,22 +116,14 @@ export default function ProductionCalendar({
 
   
   const machines = useMemo(() => {
-    const flat = [];
-    if (machineMaster && Object.keys(machineMaster).length > 0) {
-      Object.entries(machineMaster).forEach(([type, list]) => {
-        const arr = Array.isArray(list)
-          ? list
-          : typeof list === "object" && list !== null
-            ? Object.values(list)
-            : [];
-        arr.forEach((m) => {
-          if (m && typeof m === "object" && m.name) {
-            flat.push({ id: m.id || m.name, name: m.name, type });
-          }
-        });
-      });
+    if (Array.isArray(machineMaster) && machineMaster.length > 0) {
+      return machineMaster.map((m) => ({
+        id: m._id || m.id || m.name,
+        name: m.name,
+        type: m.type,
+      }));
     }
-    return flat.length > 0 ? flat : DEFAULT_MACHINES;
+    return DEFAULT_MACHINES;
   }, [machineMaster]);
 
   
@@ -157,14 +150,33 @@ export default function ProductionCalendar({
 
   
   const jobIndex = useMemo(() => {
-    const idx = {}; 
+    const idx = {};
     (jobOrders || []).forEach((jo) => {
-      const date = jo.joDate || jo.createdAt || today;
-      const machine = jo.machine || jo.assignedMachine || "";
-      if (!machine) return;
-      const key = `${machine}|${date}`;
-      if (!idx[key]) idx[key] = [];
-      idx[key].push(jo);
+      // Use the schedule array for accurate placement
+      if (Array.isArray(jo.schedule) && jo.schedule.length > 0) {
+        jo.schedule.forEach((slot) => {
+          let date = slot.startDate || slot.date || jo.date || today;
+          if (typeof date === "string") date = date.slice(0, 10);
+          
+          // Support matching via machineId or name
+          const mKey = slot.machineId || slot.machineName || "";
+          if (!mKey) return;
+
+          const key = `${mKey}|${date}`;
+          if (!idx[key]) idx[key] = [];
+          idx[key].push({ ...jo, currentSlot: slot });
+        });
+      } else {
+        // Fallback for legacy jobs
+        let date = jo.date || jo.jobcardDate || today;
+        if (typeof date === "string") date = date.slice(0, 10);
+        
+        const machine = jo.machine || jo.assignedMachine || "";
+        if (!machine) return;
+        const key = `${machine}|${date}`;
+        if (!idx[key]) idx[key] = [];
+        idx[key].push(jo);
+      }
     });
     return idx;
   }, [jobOrders, today]);
@@ -556,7 +568,7 @@ export default function ProductionCalendar({
                                   textAlign: "left",
                                 }}
                               >
-                                {jo.joNo}
+                                {jo.joNo} {jo.currentSlot?.process && `· ${jo.currentSlot.process}`}
                               </div>
                             );
                           })

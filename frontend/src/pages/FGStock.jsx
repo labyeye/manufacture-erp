@@ -377,7 +377,7 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
                           fontSize: 11,
                         }}
                       >
-                        {s.code || "-"}
+                        {s.joNo || s.code || "-"}
                       </td>
                       <td
                         style={{
@@ -408,7 +408,7 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
                           fontSize: 11,
                         }}
                       >
-                        {s.clientCat || "-"}
+                        {s.clientName || s.clientCat || "-"}
                       </td>
                       <td style={{ padding: "10px 14px" }}>
                         <span
@@ -468,12 +468,21 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
                       </td>
                       <td style={{ padding: "10px 14px" }}>
                         <button
-                          onClick={() => {
+                          onClick={async () => {
                             if (confirm("Delete this item?")) {
-                              setFgStock((prev) =>
-                                prev.filter((_, idx) => idx !== i),
-                              );
-                              toast("Deleted", "success");
+                              try {
+                                if (s._id) {
+                                  // Call API if item exists in DB
+                                  const { fgStockAPI } = await import("../api/auth");
+                                  await fgStockAPI.delete(s._id);
+                                }
+                                setFgStock((prev) =>
+                                  prev.filter((item) => item._id !== s._id),
+                                );
+                                toast("Deleted successfully", "success");
+                              } catch (err) {
+                                toast("Failed to delete", "error");
+                              }
                             }
                           }}
                           style={{

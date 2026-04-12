@@ -68,6 +68,8 @@ const materialInwardSchema = new mongoose.Schema(
       default: "Received",
     },
     totalAmount: Number,
+    grnNo: String,
+    tenantId: String,
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -81,14 +83,20 @@ materialInwardSchema.pre("save", async function (next) {
   if (this.isNew && !this.inwardNo) {
     const Counter = mongoose.model("Counter");
     const counter = await Counter.findOneAndUpdate(
-      { name: "materialInward" },
+      { name: "GRN" },
       { $inc: { seq: 1 } },
       { new: true, upsert: true },
     );
-    this.inwardNo = `MI-${String(counter.seq).padStart(5, "0")}`;
+    this.inwardNo = `GRN${String(counter.seq).padStart(4, "0")}`;
+  }
+  
+  // Keep grnNo in sync for legacy database indexes
+  if (!this.grnNo) {
+    this.grnNo = this.inwardNo;
   }
 
   const total = this.items.reduce((sum, item) => sum + (item.amount || 0), 0);
+
   this.totalAmount = total;
 
   next();

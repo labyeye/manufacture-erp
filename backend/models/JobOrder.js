@@ -69,6 +69,7 @@ const jobOrderSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  paperCategory2: String,
   paperType2: String,
   paperGsm2: Number,
   noOfSheets2: Number,
@@ -86,6 +87,11 @@ const jobOrderSchema = new mongoose.Schema({
   currentStage: String,
   completedProcesses: [String],
   stageQtyMap: {
+    type: Map,
+    of: Number,
+    default: {}
+  },
+  stageTotalMap: {
     type: Map,
     of: Number,
     default: {}

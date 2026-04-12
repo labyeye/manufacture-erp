@@ -1,5 +1,7 @@
 const PurchaseOrder = require("../models/PurchaseOrder");
 const VendorMaster = require("../models/VendorMaster");
+const { generatePONo } = require("../utils/counters");
+
 
 
 
@@ -39,18 +41,23 @@ exports.create = async (req, res) => {
   try {
     const { poNo, poDate, vendor, items, deliveryDate, remarks } = req.body;
 
-    if (!poNo || !vendor || !items || items.length === 0) {
+    if (!vendor || !items || items.length === 0) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    
-    const existingPO = await PurchaseOrder.findOne({ poNo });
+    // Generate PO number if not provided or if it's the old/temp format
+    let finalPoNo = poNo;
+    if (!finalPoNo || finalPoNo.startsWith("PO-")) {
+      finalPoNo = await generatePONo();
+    }
+
+    const existingPO = await PurchaseOrder.findOne({ poNo: finalPoNo });
     if (existingPO) {
       return res.status(400).json({ error: "PO number already exists" });
     }
 
     const po = new PurchaseOrder({
-      poNo,
+      poNo: finalPoNo,
       poDate: new Date(poDate),
       vendor,
       items,
@@ -59,6 +66,7 @@ exports.create = async (req, res) => {
       createdBy: req.user._id,
       status: "Open",
     });
+
 
     await po.save();
     await po.populate("createdBy", "name username");

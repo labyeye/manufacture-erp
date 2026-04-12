@@ -16,12 +16,9 @@ const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 const today = () => new Date().toISOString().slice(0, 10);
 const fmt = (n) => (n ?? 0).toLocaleString("en-IN");
 
-const UNIT_OPTIONS = ["nos", "pcs", "boxes", "kg", "rolls", "sheets"];
+const UNIT_OPTIONS = ["pcs", "kg"];
 
-export default function Dispatch({
-  fgStock = [],
-  toast,
-}) {
+export default function Dispatch({ fgStock = [], toast }) {
   const [dispatch, setDispatch] = useState([]);
   const [salesOrders, setSalesOrders] = useState([]);
   const [jobOrders, setJobOrders] = useState([]);
@@ -56,7 +53,6 @@ export default function Dispatch({
   const [drDateTo, setDrDateTo] = useState("");
   const [editId, setEditId] = useState(null);
 
-  
   useEffect(() => {
     fetchDispatches();
     fetchSalesOrders();
@@ -91,12 +87,15 @@ export default function Dispatch({
   };
 
   const activeSOList = useMemo(
-    () => (salesOrders || []).filter((s) => s.status === "Open" || s.status === "In Progress"),
+    () =>
+      (salesOrders || []).filter(
+        (s) => s.status === "Open" || s.status === "In Progress",
+      ),
     [salesOrders],
   );
 
   const fgStockOptions = useMemo(
-    () => (fgStock || []).map((s) => s.name).filter(Boolean),
+    () => (fgStock || []).map((s) => s.itemName).filter(Boolean),
     [fgStock],
   );
 
@@ -106,9 +105,31 @@ export default function Dispatch({
       if (k === "soRef") {
         if (v) {
           const so = activeSOList.find((s) => s.soNo === v);
-          if (so) updated.clientName = so.clientName || "";
+          if (so) {
+            updated.clientName = so.clientName || "";
+            updated.deliveryAddress = so.deliveryAddress || "";
+
+            // Auto-populate items from Sales Order
+            const soItems = (so.items || []).map((it) => ({
+              _id: uid(),
+              itemName: it.itemName || "",
+              productCode: it.productCode || "",
+              qty: (it.qty || 0).toString(),
+              unit: it.unit || "nos",
+              pcsPerBox: "",
+              noOfBox: "",
+            }));
+
+            if (soItems.length > 0) {
+              setItems(soItems);
+              setItemErrors(soItems.map(() => ({})));
+            }
+          }
         } else {
           updated.clientName = "";
+          updated.deliveryAddress = "";
+          setItems([blankItem()]);
+          setItemErrors([{}]);
         }
       }
       return updated;
@@ -118,18 +139,20 @@ export default function Dispatch({
 
   const EH = (k) => (headerErrors[k] ? { border: `1px solid ${C.red}` } : {});
   const EHMsg = (k) =>
-    headerErrors[k] ? <div style={{ color: C.red, fontSize: 10, marginTop: 3 }}>Required</div> : null;
+    headerErrors[k] ? (
+      <div style={{ color: C.red, fontSize: 10, marginTop: 3 }}>Required</div>
+    ) : null;
 
   const setItem = (idx, k, v) => {
     setItems((prev) => {
       const updated = [...prev];
       const it = { ...updated[idx], [k]: v };
-      
+
       if (k === "itemName") {
-        const stock = (fgStock || []).find((s) => s.name === v);
-        it.productCode = stock?.code || stock?.productCode || "";
+        const stock = (fgStock || []).find((s) => s.itemName === v);
+        it.productCode = stock?.code || stock?.joNo || "";
       }
-      
+
       const qty = k === "qty" ? +v : +(it.qty || 0);
       const ppb = k === "pcsPerBox" ? +v : +(it.pcsPerBox || 0);
       it.noOfBox = qty && ppb ? Math.ceil(qty / ppb).toString() : "";
@@ -143,9 +166,12 @@ export default function Dispatch({
     });
   };
 
-  const EI = (idx, k) => (itemErrors[idx] || {})[k] ? { border: `1px solid ${C.red}` } : {};
+  const EI = (idx, k) =>
+    (itemErrors[idx] || {})[k] ? { border: `1px solid ${C.red}` } : {};
   const EIMsg = (idx, k) =>
-    (itemErrors[idx] || {})[k] ? <div style={{ color: C.red, fontSize: 10, marginTop: 3 }}>Required</div> : null;
+    (itemErrors[idx] || {})[k] ? (
+      <div style={{ color: C.red, fontSize: 10, marginTop: 3 }}>Required</div>
+    ) : null;
 
   const addItem = () => {
     setItems((prev) => [...prev, blankItem()]);
@@ -172,7 +198,10 @@ export default function Dispatch({
     });
     setItemErrors(allItemErrors);
 
-    if (Object.keys(he).length > 0 || allItemErrors.some((e) => Object.keys(e).length > 0)) {
+    if (
+      Object.keys(he).length > 0 ||
+      allItemErrors.some((e) => Object.keys(e).length > 0)
+    ) {
       toast("Please fill all required fields", "error");
       return;
     }
@@ -188,13 +217,13 @@ export default function Dispatch({
         driverName: header.driverName,
         lrNo: header.lrNo,
         remarks: header.remarks,
-        items: items.map(it => ({
+        items: items.map((it) => ({
           itemName: it.itemName,
           qty: Number(it.qty),
           unit: it.unit,
           rate: it.rate ? Number(it.rate) : 0,
-          amount: it.amount ? Number(it.amount) : 0
-        }))
+          amount: it.amount ? Number(it.amount) : 0,
+        })),
       };
 
       if (editId) {
@@ -203,7 +232,10 @@ export default function Dispatch({
         setEditId(null);
       } else {
         const res = await dispatchAPI.create(payload);
-        toast(`Dispatch ${res.dispatch.dispatchNo} created successfully`, "success");
+        toast(
+          `Dispatch ${res.dispatch.dispatchNo} created successfully`,
+          "success",
+        );
       }
 
       setHeader(blankHeader);
@@ -221,7 +253,11 @@ export default function Dispatch({
 
   return (
     <div className="fade">
-      <SectionTitle icon="🚚" title="Dispatch" sub="Record outgoing dispatches against sales orders" />
+      <SectionTitle
+        icon="🚚"
+        title="Dispatch"
+        sub="Record outgoing dispatches against sales orders"
+      />
 
       {}
       <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
@@ -252,7 +288,14 @@ export default function Dispatch({
         <div>
           {}
           <Card style={{ marginBottom: 16 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: C.purple, marginBottom: 18 }}>
+            <h3
+              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                color: C.purple,
+                marginBottom: 18,
+              }}
+            >
               Dispatch Details
             </h3>
 
@@ -379,7 +422,9 @@ export default function Dispatch({
                   marginBottom: 14,
                 }}
               >
-                <span style={{ fontWeight: 700, color: C.purple, fontSize: 13 }}>
+                <span
+                  style={{ fontWeight: 700, color: C.purple, fontSize: 13 }}
+                >
                   Item {idx + 1}
                 </span>
                 {items.length > 1 && (
@@ -427,7 +472,9 @@ export default function Dispatch({
                   <input
                     placeholder="Auto-filled or enter manually"
                     value={it.productCode}
-                    onChange={(e) => setItem(idx, "productCode", e.target.value)}
+                    onChange={(e) =>
+                      setItem(idx, "productCode", e.target.value)
+                    }
                   />
                 </Field>
                 <Field label="Quantity *">
@@ -461,7 +508,13 @@ export default function Dispatch({
               </div>
 
               {}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 3fr", gap: 12 }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 3fr",
+                  gap: 12,
+                }}
+              >
                 <Field label="No. of Box">
                   <div
                     style={{
@@ -483,13 +536,20 @@ export default function Dispatch({
           ))}
 
           {}
-          <div style={{ display: "flex", gap: 10, marginTop: 4, alignItems: "center" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: 10,
+              marginTop: 4,
+              alignItems: "center",
+            }}
+          >
             <button
               onClick={addItem}
               style={{
                 background: (C.purple || "#a855f7") + "22",
                 color: C.purple || "#a855f7",
-                border: `1px solid ${(C.purple || "#a855f7")}44`,
+                border: `1px solid ${C.purple || "#a855f7"}44`,
                 borderRadius: 6,
                 padding: "9px 20px",
                 fontWeight: 700,
@@ -510,112 +570,214 @@ export default function Dispatch({
 
       {view === "records" && (
         <Card>
-          <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", marginBottom: 14 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: C.muted, margin: 0 }}>Dispatch Records</h3>
+          <div
+            style={{
+              display: "flex",
+              gap: 12,
+              alignItems: "center",
+              flexWrap: "wrap",
+              marginBottom: 14,
+            }}
+          >
+            <h3
+              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                color: C.muted,
+                margin: 0,
+              }}
+            >
+              Dispatch Records
+            </h3>
             <DateRangeFilter
               dateFrom={drDateFrom}
               setDateFrom={setDrDateFrom}
               dateTo={drDateTo}
               setDateTo={setDrDateTo}
             />
-            <span style={{ fontSize: 12, color: C.muted, marginLeft: "auto" }}>{dispatch.length} records</span>
+            <span style={{ fontSize: 12, color: C.muted, marginLeft: "auto" }}>
+              {dispatch.length} records
+            </span>
           </div>
           {dispatch.length === 0 && (
-            <div style={{ textAlign: "center", color: C.muted, padding: 32, fontSize: 13 }}>No dispatch records yet.</div>
+            <div
+              style={{
+                textAlign: "center",
+                color: C.muted,
+                padding: 32,
+                fontSize: 13,
+              }}
+            >
+              No dispatch records yet.
+            </div>
           )}
-          {(dispatch || []).slice().reverse().map((r) => {
-            const totalQty = (r.items || []).reduce((sum, it) => sum + +(it.qty || 0), 0);
+          {(dispatch || [])
+            .slice()
+            .reverse()
+            .map((r) => {
+              const totalQty = (r.items || []).reduce(
+                (sum, it) => sum + +(it.qty || 0),
+                0,
+              );
 
-            const handleEdit = () => {
-              setEditId(r._id);
-              setHeader({
-                dispatchDate: r.date ? new Date(r.date).toISOString().slice(0, 10) : today(),
-                soRef: r.soRef || "",
-                clientName: r.clientName || "",
-                deliveryAddress: r.deliveryAddress || "",
-                vehicleNo: r.vehicleNo || "",
-                driverName: r.driverName || "",
-                remarks: r.remarks || "",
-                status: r.status || "Dispatched",
-              });
-              setItems((r.items || []).map(it => ({
-                _id: uid(),
-                itemName: it.itemName || "",
-                productCode: it.productCode || "",
-                qty: it.qty?.toString() || "",
-                unit: it.unit || "nos",
-                pcsPerBox: it.pcsPerBox?.toString() || "",
-                noOfBox: it.noOfBox?.toString() || "",
-              })));
-              setView("form");
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            };
+              const handleEdit = () => {
+                setEditId(r._id);
+                setHeader({
+                  dispatchDate: r.date
+                    ? new Date(r.date).toISOString().slice(0, 10)
+                    : today(),
+                  soRef: r.soRef || "",
+                  clientName: r.clientName || "",
+                  deliveryAddress: r.deliveryAddress || "",
+                  vehicleNo: r.vehicleNo || "",
+                  driverName: r.driverName || "",
+                  remarks: r.remarks || "",
+                  status: r.status || "Dispatched",
+                });
+                setItems(
+                  (r.items || []).map((it) => ({
+                    _id: uid(),
+                    itemName: it.itemName || "",
+                    productCode: it.productCode || "",
+                    qty: it.qty?.toString() || "",
+                    unit: it.unit || "nos",
+                    pcsPerBox: it.pcsPerBox?.toString() || "",
+                    noOfBox: it.noOfBox?.toString() || "",
+                  })),
+                );
+                setView("form");
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              };
 
-            const handleDelete = async () => {
-              if (!confirm(`Delete dispatch ${r.dispatchNo}?`)) return;
-              try {
-                await dispatchAPI.delete(r._id);
-                toast(`Dispatch ${r.dispatchNo} deleted successfully`, "success");
-                fetchDispatches();
-              } catch (error) {
-                toast(error.response?.data?.error || "Failed to delete dispatch", "error");
-              }
-            };
+              const handleDelete = async () => {
+                if (!confirm(`Delete dispatch ${r.dispatchNo}?`)) return;
+                try {
+                  await dispatchAPI.delete(r._id);
+                  toast(
+                    `Dispatch ${r.dispatchNo} deleted successfully`,
+                    "success",
+                  );
+                  fetchDispatches();
+                } catch (error) {
+                  toast(
+                    error.response?.data?.error || "Failed to delete dispatch",
+                    "error",
+                  );
+                }
+              };
 
-            return (
-              <div key={r._id} style={{ borderBottom: `1px solid ${C.border}22`, padding: "12px 4px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
-                  <div style={{ display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
-                    <span style={{ fontFamily: "'JetBrains Mono',monospace", color: C.purple, fontWeight: 700 }}>{r.dispatchNo}</span>
-                    <span style={{ fontSize: 12, color: C.muted }}>{r.dispatchDate}</span>
-                    <span style={{ fontSize: 13, fontWeight: 600 }}>{r.clientName}</span>
-                    <Badge text={r.status} color={C.green} />
-                    {totalQty > 0 && <span style={{ fontSize: 12, color: C.muted }}>Qty: {fmt(totalQty)}</span>}
-                  </div>
-                  <div style={{ display: "flex", gap: 6 }}>
-                    <button
-                      onClick={handleEdit}
+              return (
+                <div
+                  key={r._id}
+                  style={{
+                    borderBottom: `1px solid ${C.border}22`,
+                    padding: "12px 4px",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                      gap: 8,
+                    }}
+                  >
+                    <div
                       style={{
-                        background: (C.blue || "#3b82f6") + "22",
-                        color: C.blue || "#3b82f6",
-                        border: "none",
-                        borderRadius: 5,
-                        padding: "4px 12px",
-                        fontWeight: 700,
-                        fontSize: 12,
-                        cursor: "pointer",
+                        display: "flex",
+                        gap: 14,
+                        alignItems: "center",
+                        flexWrap: "wrap",
                       }}
                     >
-                      ✏️ Edit
-                    </button>
-                    <button
-                      onClick={handleDelete}
-                      style={{
-                        background: (C.red || "#ef4444") + "22",
-                        color: C.red || "#ef4444",
-                        border: "none",
-                        borderRadius: 5,
-                        padding: "4px 12px",
-                        fontWeight: 700,
-                        fontSize: 12,
-                        cursor: "pointer",
-                      }}
-                    >
-                      🗑️
-                    </button>
+                      <span
+                        style={{
+                          fontFamily: "'JetBrains Mono',monospace",
+                          color: C.purple,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {r.dispatchNo}
+                      </span>
+                      <span style={{ fontSize: 12, color: C.muted }}>
+                        {r.dispatchDate}
+                      </span>
+                      <span style={{ fontSize: 13, fontWeight: 600 }}>
+                        {r.clientName}
+                      </span>
+                      <Badge text={r.status} color={C.green} />
+                      {totalQty > 0 && (
+                        <span style={{ fontSize: 12, color: C.muted }}>
+                          Qty: {fmt(totalQty)}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button
+                        onClick={handleEdit}
+                        style={{
+                          background: (C.blue || "#3b82f6") + "22",
+                          color: C.blue || "#3b82f6",
+                          border: "none",
+                          borderRadius: 5,
+                          padding: "4px 12px",
+                          fontWeight: 700,
+                          fontSize: 12,
+                          cursor: "pointer",
+                        }}
+                      >
+                        ✏️ Edit
+                      </button>
+                      <button
+                        onClick={handleDelete}
+                        style={{
+                          background: (C.red || "#ef4444") + "22",
+                          color: C.red || "#ef4444",
+                          border: "none",
+                          borderRadius: 5,
+                          padding: "4px 12px",
+                          fontWeight: 700,
+                          fontSize: 12,
+                          cursor: "pointer",
+                        }}
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                      flexWrap: "wrap",
+                      marginTop: 6,
+                    }}
+                  >
+                    {(r.items || []).map((it, i) => (
+                      <span
+                        key={i}
+                        style={{
+                          fontSize: 11,
+                          background: C.surface,
+                          border: `1px solid ${C.border}`,
+                          borderRadius: 4,
+                          padding: "2px 8px",
+                          color: C.muted,
+                        }}
+                      >
+                        {it.itemName} · {it.qty} {it.unit}
+                      </span>
+                    ))}
+                    {r.vehicleNo && (
+                      <span style={{ fontSize: 11, color: C.muted }}>
+                        🚗 {r.vehicleNo}
+                      </span>
+                    )}
                   </div>
                 </div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 6 }}>
-                  {(r.items || []).map((it, i) => (
-                    <span key={i} style={{ fontSize: 11, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 4, padding: "2px 8px", color: C.muted }}>
-                      {it.itemName} · {it.qty} {it.unit}
-                    </span>
-                  ))}
-                  {r.vehicleNo && <span style={{ fontSize: 11, color: C.muted }}>🚗 {r.vehicleNo}</span>}
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
         </Card>
       )}
     </div>

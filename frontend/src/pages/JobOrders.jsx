@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { C } from "../constants/colors";
+import { C, PROCESS_COLORS } from "../constants/colors";
+import {
+  PROCESS_MACHINE_TYPE,
+  FORMATION_MACHINE_TYPES,
+} from "../constants/seedData";
 import {
   Card,
   SectionTitle,
@@ -7,9 +11,9 @@ import {
   Field,
   SubmitBtn,
   AutocompleteInput,
-  DatePicker,
   DateRangeFilter,
 } from "../components/ui/BasicComponents";
+import { DatePicker } from "../components/ui/DatePicker";
 import { jobOrdersAPI, salesOrdersAPI } from "../api/auth";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
@@ -31,25 +35,8 @@ const PAPER_TYPES_BY_ITEM = {
   ],
 };
 
-const PRINTING_OPTIONS = [
-  "No Printing",
-  "1 Color",
-  "2 Color",
-  "3 Color",
-  "4 Color",
-  "5 Color",
-  "6 Color",
-  "Flexo",
-  "Offset",
-  "Digital",
-];
-const PLATE_OPTIONS = [
-  "No Plate",
-  "Polymer Plate",
-  "Zinc Plate",
-  "Flexo Plate",
-  "Offset Plate",
-];
+const PRINTING_OPTIONS = ["No Printing", "1", "2", "3", "4", "5", "6"];
+const PLATE_OPTIONS = ["No", "Old", "New"];
 const PROCESS_TAGS = [
   "Printing",
   "Varnish",
@@ -57,17 +44,8 @@ const PROCESS_TAGS = [
   "Die Cutting",
   "Formation",
   "Manual Formation",
-  "Pasting",
-  "Stitching",
-  "Coating",
-  "Slitting",
-  "Folding",
-  "Assembly",
-  "Packing",
-  "QC",
 ];
 const SHEET_UOM_OPTIONS = ["mm", "inch", "cm"];
-
 
 const SubLabel = ({ text }) => (
   <div
@@ -84,7 +62,6 @@ const SubLabel = ({ text }) => (
     {text}
   </div>
 );
-
 
 const AutoField = ({ value, placeholder }) => (
   <div
@@ -129,17 +106,66 @@ export default function JobOrders(props) {
     paperCategory: "",
     paperType: "",
     paperGsm: "",
-    reelSize: "",
-    reelWidth: "",
-    cuttingLength: "",
-    reelWeight: "",
+    noOfUps: "",
+    noOfSheets: "",
+    sheetW: "",
+    sheetL: "",
+    sheetUom: "mm",
+    sheetSize: "",
     hasSecondPaper: false,
+    paperCategory2: "",
     paperType2: "",
     paperGsm2: "",
+    noOfSheets2: "",
     remarks: "",
+    machineAssignments: {},
   };
 
   const [header, setHeader] = useState(blankHeader);
+
+  const matchedStock = useMemo(() => {
+    if (!header.paperCategory || !header.paperType || !header.paperGsm)
+      return null;
+
+    const hCat = header.paperCategory.toLowerCase().replace(/s$/, "");
+    const hType = (header.paperType || "").toLowerCase();
+    const hGsm = (header.paperGsm || "").toString();
+
+    // For sheets, we expect dimensions to be entered as per user request
+    const isSheet = hCat === "paper sheet";
+    if (isSheet && (!header.sheetW || !header.sheetL)) return null;
+
+    return (rawStock || []).find((s) => {
+      const sCat = (s.category || s.paperCategory || "")
+        .toLowerCase()
+        .replace(/s$/, "");
+      const sType = (s.name || s.paperType || "").toLowerCase();
+      const sGsm = (s.gsm || s.paperGsm || 0).toString();
+
+      const basicMatch =
+        sCat === hCat && sType.includes(hType) && sGsm === hGsm;
+
+      if (!basicMatch) return false;
+
+      if (isSheet) {
+        // Match dimensions if it's a sheet (e.g. "370x652mm")
+        const sSize = (s.sheetSize || "").toLowerCase();
+        const hSize = `${header.sheetW}x${header.sheetL}${header.sheetUom || "mm"}`;
+        const hSizeAlt = `${header.sheetW}x${header.sheetL}`; // fallback without uom
+        return sSize.includes(hSize) || sSize.includes(hSizeAlt);
+      }
+
+      return true;
+    });
+  }, [
+    rawStock,
+    header.paperCategory,
+    header.paperType,
+    header.paperGsm,
+    header.sheetW,
+    header.sheetL,
+    header.sheetUom,
+  ]);
   const [headerErrors, setHeaderErrors] = useState({});
   const [view, setView] = useState("form");
   const [editId, setEditId] = useState(null);
@@ -150,7 +176,6 @@ export default function JobOrders(props) {
     ];
   }, [clientMaster]);
 
-  
   useEffect(() => {
     fetchJobOrders();
     fetchSalesOrders();
@@ -181,7 +206,6 @@ export default function JobOrders(props) {
     [salesOrders],
   );
 
-  
   const sheetSize = useMemo(() => {
     if (header.sheetW && header.sheetL && header.sheetUom)
       return `${header.sheetW} × ${header.sheetL} ${header.sheetUom}`;
@@ -206,6 +230,18 @@ export default function JobOrders(props) {
           }
         }
       }
+
+      if (["sheetW", "sheetL", "sheetUom"].includes(k)) {
+        const vW = k === "sheetW" ? v : updated.sheetW;
+        const vL = k === "sheetL" ? v : updated.sheetL;
+        const vUom = k === "sheetUom" ? v : updated.sheetUom;
+        if (vW && vL) {
+          updated.sheetSize = `${vW} x ${vL} ${vUom}`;
+        } else {
+          updated.sheetSize = "";
+        }
+      }
+
       return updated;
     });
     setHeaderErrors((e) => ({ ...e, [k]: false }));
@@ -215,9 +251,19 @@ export default function JobOrders(props) {
     setHeader((f) => {
       const procs = f.processes || [];
       const exists = procs.includes(proc);
+      const newProcs = exists
+        ? procs.filter((p) => p !== proc)
+        : [...procs, proc];
+
+      const newAssignments = { ...(f.machineAssignments || {}) };
+      if (exists) {
+        delete newAssignments[proc];
+      }
+
       return {
         ...f,
-        processes: exists ? procs.filter((p) => p !== proc) : [...procs, proc],
+        processes: newProcs,
+        machineAssignments: newAssignments,
       };
     });
   };
@@ -230,15 +276,19 @@ export default function JobOrders(props) {
 
   const validateRMStock = () => {
     if (!header.paperType || !header.paperGsm) return true;
-    
+
     // Find stock matching category, type and gsm
     const stock = (rawStock || []).find((s) => {
-      const sCat = (s.category || s.paperCategory || "").toLowerCase();
+      const sCat = (s.category || s.paperCategory || "")
+        .toLowerCase()
+        .replace(/s$/, "");
       const sType = (s.name || s.paperType || "").toLowerCase();
       const sGsm = (s.gsm || s.paperGsm || 0).toString();
 
+      const hCat = (header.paperCategory || "").toLowerCase().replace(/s$/, "");
+
       return (
-        sCat === header.paperCategory.toLowerCase() &&
+        sCat === hCat &&
         sType.includes(header.paperType.toLowerCase()) &&
         sGsm === header.paperGsm.toString()
       );
@@ -256,9 +306,15 @@ export default function JobOrders(props) {
     const he = {};
     if (!header.joDate) he.joDate = true;
     if (!header.soRef) he.soRef = true;
+    if (!header.orderQty) he.orderQty = true;
     if (!header.paperCategory) he.paperCategory = true;
     if (!header.paperType) he.paperType = true;
     if (!header.paperGsm) he.paperGsm = true;
+    if (!header.noOfUps) he.noOfUps = true;
+    if (header.paperCategory !== "Paper Reel" && !header.noOfSheets)
+      he.noOfSheets = true;
+    if (!header.sheetW) he.sheetW = true;
+    if (!header.sheetL) he.sheetL = true;
     setHeaderErrors(he);
 
     if (Object.keys(he).length > 0) {
@@ -276,21 +332,36 @@ export default function JobOrders(props) {
         clientCategory: header.clientCategory,
         itemName: header.itemName,
         orderQty: Number(header.orderQty),
-        deliveryDate: header.deliveryDate ? new Date(header.deliveryDate) : null,
+        deliveryDate: header.deliveryDate
+          ? new Date(header.deliveryDate)
+          : null,
         process: header.processes,
         printing: header.printing,
         plate: header.plate,
         paperCategory: header.paperCategory,
         paperType: header.paperType,
         paperGsm: Number(header.paperGsm),
-        reelSize: header.reelSize,
-        reelWidthMm: Number(header.reelWidth),
-        cuttingLengthMm: Number(header.cuttingLength),
-        reelWeightKg: Number(header.reelWeight),
+        sheetSize: header.sheetSize,
+        sheetW: Number(header.sheetW),
+        sheetL: Number(header.sheetL),
+        sheetUom: header.sheetUom,
+        noOfUps: Number(header.noOfUps),
+        noOfSheets:
+          header.paperCategory === "Paper Reel"
+            ? null
+            : Number(header.noOfSheets),
         hasSecondPaper: header.hasSecondPaper,
+        paperCategory2: header.paperCategory2,
         paperType2: header.paperType2,
         paperGsm2: header.paperGsm2 ? Number(header.paperGsm2) : null,
+        noOfSheets2:
+          header.paperCategory2 === "Paper Reel"
+            ? null
+            : header.noOfSheets2
+              ? Number(header.noOfSheets2)
+              : null,
         remarks: header.remarks,
+        machineAssignments: header.machineAssignments,
       };
 
       if (editId) {
@@ -313,7 +384,6 @@ export default function JobOrders(props) {
     }
   };
 
-  
   return (
     <div className="fade">
       <SectionTitle
@@ -371,7 +441,7 @@ export default function JobOrders(props) {
               marginBottom: 24,
             }}
           >
-            <Field label="Jobcard Date *">
+            <Field label="Jobcard Date 📅 *">
               <DatePicker
                 value={header.joDate}
                 onChange={(v) => setH("joDate", v)}
@@ -394,16 +464,24 @@ export default function JobOrders(props) {
               </select>
               {EHMsg("soRef")}
             </Field>
-            <Field label="Order Date">
-              <AutoField 
-                value={header.orderDate ? new Date(header.orderDate).toLocaleDateString('en-GB') : ""} 
-                placeholder="DD/MM/YYYY" 
+            <Field label="Order Date 📅">
+              <AutoField
+                value={
+                  header.orderDate
+                    ? new Date(header.orderDate).toLocaleDateString("en-GB")
+                    : ""
+                }
+                placeholder="DD/MM/YYYY"
               />
             </Field>
-            <Field label="Delivery Date">
-              <AutoField 
-                value={header.deliveryDate ? new Date(header.deliveryDate).toLocaleDateString('en-GB') : ""} 
-                placeholder="DD/MM/YYYY" 
+            <Field label="Delivery Date 📅">
+              <AutoField
+                value={
+                  header.deliveryDate
+                    ? new Date(header.deliveryDate).toLocaleDateString("en-GB")
+                    : ""
+                }
+                placeholder="DD/MM/YYYY"
               />
             </Field>
           </div>
@@ -463,13 +541,15 @@ export default function JobOrders(props) {
               marginBottom: 24,
             }}
           >
-            <Field label="Order Quantity">
+            <Field label="Order Quantity *">
               <input
                 type="number"
                 placeholder="Order quantity"
                 value={header.orderQty}
                 onChange={(e) => setH("orderQty", e.target.value)}
+                style={EH("orderQty")}
               />
+              {EHMsg("orderQty")}
             </Field>
             <Field label="Printing *">
               <select
@@ -530,6 +610,102 @@ export default function JobOrders(props) {
             </Field>
           </div>
 
+          {/* Machine Assignment Section */}
+          {(header.processes || []).length > 0 && (
+            <div style={{ marginBottom: 24 }}>
+              <SubLabel text="Machine Assignment" />
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+                  gap: 14,
+                }}
+              >
+                {header.processes.map((proc) => {
+                  const machineType = PROCESS_MACHINE_TYPE[proc] || "Printing";
+                  const filteredMachines = (
+                    Array.isArray(machineMaster) ? machineMaster : []
+                  ).filter((m) => {
+                    const mType = m.type || "";
+                    if (machineType === "Formation") {
+                      return FORMATION_MACHINE_TYPES.includes(mType);
+                    }
+                    return mType.toLowerCase() === machineType.toLowerCase();
+                  });
+
+                  const accentColor = PROCESS_COLORS[proc] || C.accent;
+
+                  return (
+                    <div
+                      key={proc}
+                      style={{
+                        padding: 16,
+                        background: C.surface,
+                        border: `1px solid ${C.border}`,
+                        borderRadius: 8,
+                        position: "relative",
+                        overflow: "hidden",
+                      }}
+                    >
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          width: 4,
+                          height: "100%",
+                          background: accentColor,
+                        }}
+                      />
+                      <div
+                        style={{
+                          fontSize: 12,
+                          fontWeight: 800,
+                          color: accentColor,
+                          marginBottom: 12,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.05em",
+                        }}
+                      >
+                        {proc}
+                      </div>
+                      <select
+                        value={header.machineAssignments?.[proc] || ""}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setHeader((prev) => ({
+                            ...prev,
+                            machineAssignments: {
+                              ...(prev.machineAssignments || {}),
+                              [proc]: val,
+                            },
+                          }));
+                        }}
+                        style={{
+                          width: "100%",
+                          background: C.inputBg,
+                          border: `1px solid ${C.border}`,
+                          color: C.text,
+                          padding: "8px 12px",
+                          borderRadius: 6,
+                          fontSize: 13,
+                          outline: "none",
+                        }}
+                      >
+                        <option value="">-- Select Machine --</option>
+                        {filteredMachines.map((m) => (
+                          <option key={m._id || m.name} value={m._id || m.name}>
+                            {m.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {}
           <SubLabel text="Sheet / Reel Details" />
 
@@ -538,7 +714,10 @@ export default function JobOrders(props) {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "1.2fr 1.5fr 1fr 1.2fr 1fr",
+              gridTemplateColumns:
+                header.paperCategory === "Paper Reel"
+                  ? "1fr 1fr 1fr 1fr 1fr"
+                  : "1fr 1fr 1fr 1fr 1fr 1fr",
               gap: 14,
               marginBottom: 14,
             }}
@@ -584,49 +763,170 @@ export default function JobOrders(props) {
               />
               {EHMsg("paperGsm")}
             </Field>
-            <Field label="REEL SIZE *">
-              <AutocompleteInput
-                value={header.reelSize}
-                onChange={(v) => setH("reelSize", v)}
-                suggestions={[]} // Add relevant suggestions if available
-                placeholder="Select or type reel"
+            <Field label="ITEM NAME">
+              <input
+                readOnly
+                placeholder="Auto-matched item"
+                value={matchedStock?.name || ""}
+                style={{ background: "transparent", color: C.muted }}
               />
             </Field>
-            <Field label="REEL WIDTH (MM)">
+            <Field label="# OF UPS *">
               <input
                 type="number"
-                placeholder="e.g. 690"
-                value={header.reelWidth}
-                onChange={(e) => setH("reelWidth", e.target.value)}
+                placeholder="No. of ups"
+                value={header.noOfUps}
+                onChange={(e) => setH("noOfUps", e.target.value)}
+                style={EH("noOfUps")}
               />
+              {EHMsg("noOfUps")}
             </Field>
+            {header.paperCategory !== "Paper Reel" && (
+              <Field label="# OF SHEETS *">
+                <input
+                  type="number"
+                  placeholder="No. of sheets"
+                  value={header.noOfSheets}
+                  onChange={(e) => setH("noOfSheets", e.target.value)}
+                  style={EH("noOfSheets")}
+                />
+                {EHMsg("noOfSheets")}
+                {matchedStock?.qty > 0 && (
+                  <div
+                    style={{
+                      fontSize: 10,
+                      color: C.green,
+                      marginTop: 4,
+                      fontWeight: 700,
+                    }}
+                  >
+                    ✓ {fmt(matchedStock.qty)} sheets available
+                  </div>
+                )}
+              </Field>
+            )}
+
+            {header.paperCategory === "Paper Reel" && (
+              <Field label="REEL WEIGHT (KG) *">
+                <input
+                  type="number"
+                  placeholder="Weight in kg"
+                  value={header.reelWeightKg}
+                  onChange={(e) => setH("reelWeightKg", e.target.value)}
+                />
+                {matchedStock?.weight > 0 && (
+                  <div
+                    style={{
+                      fontSize: 10,
+                      color: C.green,
+                      marginTop: 4,
+                      fontWeight: 700,
+                    }}
+                  >
+                    ✓ {fmt(Math.round(matchedStock.weight))} kg available
+                  </div>
+                )}
+              </Field>
+            )}
           </div>
 
-          {/* Row 2: 3 Columns */}
+          {header.paperCategory === "Paper Reel" && (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr 1fr 1.5fr",
+                gap: 14,
+                marginBottom: 20,
+              }}
+            >
+              <Field label="REEL SIZE">
+                <input
+                  placeholder="e.g. 1140mm"
+                  value={header.reelSize}
+                  onChange={(e) => setH("reelSize", e.target.value)}
+                />
+              </Field>
+              <Field label="REEL WIDTH (MM)">
+                <input
+                  type="number"
+                  placeholder="Width"
+                  value={header.reelWidthMm}
+                  onChange={(e) => setH("reelWidthMm", e.target.value)}
+                />
+              </Field>
+              <Field label="CUTTING LENGTH (MM)">
+                <input
+                  type="number"
+                  placeholder="Length"
+                  value={header.cuttingLengthMm}
+                  onChange={(e) => setH("cuttingLengthMm", e.target.value)}
+                />
+              </Field>
+            </div>
+          )}
+
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr 1.2fr 2.5fr",
+              gridTemplateColumns: "1fr 1fr 1fr 1.5fr",
               gap: 14,
               marginBottom: 20,
             }}
           >
-            <Field label="CUTTING LENGTH (MM)">
+            <Field label="SHEET UOM">
+              <select
+                value={header.sheetUom}
+                onChange={(e) => setH("sheetUom", e.target.value)}
+              >
+                <option value="mm">mm</option>
+                <option value="cm">cm</option>
+                <option value="inch">inch</option>
+              </select>
+            </Field>
+            <Field label="SHEET W *">
               <input
                 type="number"
-                placeholder="e.g. 920"
-                value={header.cuttingLength}
-                onChange={(e) => setH("cuttingLength", e.target.value)}
+                placeholder="Width"
+                value={header.sheetW}
+                onChange={(e) => setH("sheetW", e.target.value)}
+                style={EH("sheetW")}
               />
+              {EHMsg("sheetW")}
             </Field>
-            <Field label="REEL WEIGHT REQUIRED (KG) *">
+            <Field label="SHEET L *">
               <input
                 type="number"
-                placeholder="e.g. 200"
-                value={header.reelWeight}
-                onChange={(e) => setH("reelWeight", e.target.value)}
+                placeholder="Length"
+                value={header.sheetL}
+                onChange={(e) => setH("sheetL", e.target.value)}
+                style={EH("sheetL")}
               />
+              {EHMsg("sheetL")}
             </Field>
+            <Field label="SHEET SIZE">
+              <div
+                style={{
+                  padding: "9px 12px",
+                  background: C.inputBg,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 6,
+                  fontSize: 13,
+                  color: header.sheetSize ? C.text : C.muted,
+                }}
+              >
+                {header.sheetSize || "— Auto from W x L x UOM —"}
+              </div>
+            </Field>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1.5fr 1fr",
+              gap: 14,
+              marginBottom: 20,
+            }}
+          >
             <Field label="REMARKS">
               <input
                 placeholder="Special instructions"
@@ -634,76 +934,101 @@ export default function JobOrders(props) {
                 onChange={(e) => setH("remarks", e.target.value)}
               />
             </Field>
-          </div>
-
-          {}
-          <div style={{ marginBottom: 24 }}>
-            <div
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                letterSpacing: "0.09em",
-                color: C.muted,
-                textTransform: "uppercase",
-                marginBottom: 10,
-              }}
-            >
-              Second Paper
-            </div>
-            <label
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                cursor: "pointer",
-                fontSize: 13,
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={header.hasSecondPaper}
-                onChange={(e) => setH("hasSecondPaper", e.target.checked)}
-              />
-              <span style={{ color: C.muted }}>
-                This job uses a second paper
-              </span>
-            </label>
-
-            {header.hasSecondPaper && (
+            <div style={{ alignSelf: "end", paddingBottom: 10 }}>
               <div
                 style={{
-                  display: "grid",
-                  gridTemplateColumns: "1.5fr 1fr",
-                  gap: 14,
-                  marginTop: 14,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: "0.09em",
+                  color: C.muted,
+                  textTransform: "uppercase",
+                  marginBottom: 6,
                 }}
               >
-                <Field label="Paper 2 Type">
-                  <select
-                    value={header.paperType2}
-                    onChange={(e) => setH("paperType2", e.target.value)}
-                  >
-                    <option value="">-- Select Type --</option>
-                    {(PAPER_TYPES_BY_ITEM[header.paperCategory] || []).map(
-                      (p) => (
-                        <option key={p}>{p}</option>
-                      ),
-                    )}
-                  </select>
-                </Field>
-                <Field label="Paper 2 GSM">
-                  <input
-                    type="number"
-                    placeholder="e.g. 130"
-                    value={header.paperGsm2}
-                    onChange={(e) => setH("paperGsm2", e.target.value)}
-                  />
-                </Field>
+                Second Paper
               </div>
-            )}
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  cursor: "pointer",
+                  fontSize: 13,
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={header.hasSecondPaper}
+                  onChange={(e) => setH("hasSecondPaper", e.target.checked)}
+                />
+                <span style={{ color: C.muted }}>
+                  This job uses a second paper
+                </span>
+              </label>
+            </div>
           </div>
 
-          {}
+          {header.hasSecondPaper && (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns:
+                  header.paperCategory2 === "Paper Reel"
+                    ? "1fr 1fr 1fr"
+                    : "1.5fr 1fr 1fr 1fr",
+                gap: 14,
+                marginTop: 14,
+              }}
+            >
+              <Field label="Paper 2 Category">
+                <select
+                  value={header.paperCategory2}
+                  onChange={(e) => setH("paperCategory2", e.target.value)}
+                >
+                  <option value="">-- Paper Reel or Sheet --</option>
+                  {RM_ITEMS.map((i) => (
+                    <option key={i}>{i}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Paper 2 Type">
+                <select
+                  value={header.paperType2}
+                  onChange={(e) => setH("paperType2", e.target.value)}
+                  disabled={!header.paperCategory2}
+                >
+                  <option value="">
+                    {header.paperCategory2
+                      ? "-- Select Paper Type --"
+                      : "-- Select Category first --"}
+                  </option>
+                  {(PAPER_TYPES_BY_ITEM[header.paperCategory2] || []).map(
+                    (p) => (
+                      <option key={p}>{p}</option>
+                    ),
+                  )}
+                </select>
+              </Field>
+              <Field label="Paper 2 GSM">
+                <input
+                  type="number"
+                  placeholder="e.g. 130"
+                  value={header.paperGsm2}
+                  onChange={(e) => setH("paperGsm2", e.target.value)}
+                />
+              </Field>
+              {header.paperCategory2 !== "Paper Reel" && (
+                <Field label="Paper 2 Sheets">
+                  <input
+                    type="number"
+                    placeholder="e.g. 1000"
+                    value={header.noOfSheets2}
+                    onChange={(e) => setH("noOfSheets2", e.target.value)}
+                  />
+                </Field>
+              )}
+            </div>
+          )}
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <SubmitBtn
               label={editId ? "Update Job Order" : "Create Job Order"}
@@ -795,7 +1120,9 @@ export default function JobOrders(props) {
                   itemName: jo.itemName || "",
                   size: "",
                   orderDate: "",
-                  deliveryDate: jo.deliveryDate ? new Date(jo.deliveryDate).toISOString().slice(0, 10) : "",
+                  deliveryDate: jo.deliveryDate
+                    ? new Date(jo.deliveryDate).toISOString().slice(0, 10)
+                    : "",
                   orderQty: jo.orderQty || "",
                   printing: jo.printing || "",
                   plate: jo.plate || "",
@@ -808,49 +1135,71 @@ export default function JobOrders(props) {
                   sheetUom: jo.sheetUom || "mm",
                   sheetW: jo.sheetW || "",
                   sheetL: jo.sheetL || "",
+                  sheetSize: jo.sheetSize || "",
                   hasSecondPaper: jo.hasSecondPaper || false,
+                  paperCategory2: jo.paperCategory2 || "",
                   paperType2: jo.paperType2 || "",
                   paperGsm2: jo.paperGsm2 || "",
+                  noOfSheets2: jo.noOfSheets2 || "",
                   remarks: jo.remarks || "",
+                  machineAssignments: jo.machineAssignments || {},
                 });
                 setView("form");
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                window.scrollTo({ top: 0, behavior: "smooth" });
               };
 
               const handleDelete = async (id) => {
-                if (!confirm('Delete this job order?')) return;
+                if (!confirm("Delete this job order?")) return;
                 try {
                   await jobOrdersAPI.delete(id);
-                  toast('Job order deleted successfully', 'success');
+                  toast("Job order deleted successfully", "success");
                   fetchJobOrders();
                 } catch (error) {
-                  toast(error.response?.data?.error || 'Failed to delete job order', 'error');
+                  toast(
+                    error.response?.data?.error || "Failed to delete job order",
+                    "error",
+                  );
                 }
               };
 
               return (
-              <div
-                key={r._id || r.id}
-                style={{
-                  borderBottom: `1px solid ${C.border}22`,
-                  padding: "12px 4px",
-                }}
-              >
                 <div
+                  key={r._id || r.id}
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    flexWrap: "wrap",
-                    gap: 8,
+                    borderBottom: `1px solid ${C.border}22`,
+                    padding: "12px 4px",
                   }}
                 >
-                    <div style={{ display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
-                      <span style={{ fontFamily: "'JetBrains Mono', monospace", color: C.yellow || "#facc15", fontWeight: 700 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                      gap: 8,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 14,
+                        alignItems: "center",
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontFamily: "'JetBrains Mono', monospace",
+                          color: C.yellow || "#facc15",
+                          fontWeight: 700,
+                        }}
+                      >
                         {r.joNo}
                       </span>
                       <span style={{ fontSize: 12, color: C.muted }}>
-                        {r.jobcardDate ? new Date(r.jobcardDate).toLocaleDateString('en-GB') : "N/A"}
+                        {r.jobcardDate
+                          ? new Date(r.jobcardDate).toLocaleDateString("en-GB")
+                          : "N/A"}
                       </span>
                       <span style={{ fontSize: 13, fontWeight: 600 }}>
                         {r.clientName}
@@ -859,107 +1208,110 @@ export default function JobOrders(props) {
                       <span style={{ fontSize: 13, color: C.muted }}>
                         Qty: {fmt(r.orderQty)}
                       </span>
-                      <Badge text={r.status} color={r.status === "Completed" ? C.green : C.orange} />
+                      <Badge
+                        text={r.status}
+                        color={r.status === "Completed" ? C.green : C.orange}
+                      />
                     </div>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <button
-                      onClick={() => handleEdit(r)}
-                      style={{
-                        padding: "5px 12px",
-                        borderRadius: 4,
-                        border: `1px solid ${C.yellow || "#facc15"}`,
-                        background: (C.yellow || "#facc15") + "22",
-                        color: C.yellow || "#facc15",
-                        fontWeight: 600,
-                        fontSize: 12,
-                        cursor: "pointer",
-                      }}
-                    >
-                      ✏️ Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(r._id || r.id)}
-                      style={{
-                        padding: "5px 12px",
-                        borderRadius: 4,
-                        border: `1px solid ${C.red}`,
-                        background: C.red + "22",
-                        color: C.red,
-                        fontWeight: 600,
-                        fontSize: 12,
-                        cursor: "pointer",
-                      }}
-                    >
-                      🗑️
-                    </button>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button
+                        onClick={() => handleEdit(r)}
+                        style={{
+                          padding: "5px 12px",
+                          borderRadius: 4,
+                          border: `1px solid ${C.yellow || "#facc15"}`,
+                          background: (C.yellow || "#facc15") + "22",
+                          color: C.yellow || "#facc15",
+                          fontWeight: 600,
+                          fontSize: 12,
+                          cursor: "pointer",
+                        }}
+                      >
+                        ✏️ Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(r._id || r.id)}
+                        style={{
+                          padding: "5px 12px",
+                          borderRadius: 4,
+                          border: `1px solid ${C.red}`,
+                          background: C.red + "22",
+                          color: C.red,
+                          fontWeight: 600,
+                          fontSize: 12,
+                          cursor: "pointer",
+                        }}
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                      flexWrap: "wrap",
+                      marginTop: 6,
+                    }}
+                  >
+                    {r.soRef && (
+                      <span
+                        style={{
+                          fontSize: 11,
+                          background: C.surface,
+                          border: `1px solid ${C.border}`,
+                          borderRadius: 4,
+                          padding: "2px 8px",
+                          color: C.muted,
+                        }}
+                      >
+                        SO: {r.soRef}
+                      </span>
+                    )}
+                    {r.itemName && (
+                      <span
+                        style={{
+                          fontSize: 11,
+                          background: C.surface,
+                          border: `1px solid ${C.border}`,
+                          borderRadius: 4,
+                          padding: "2px 8px",
+                          color: C.muted,
+                        }}
+                      >
+                        {r.itemName}
+                      </span>
+                    )}
+                    {r.paperType && (
+                      <span
+                        style={{
+                          fontSize: 11,
+                          background: C.surface,
+                          border: `1px solid ${C.border}`,
+                          borderRadius: 4,
+                          padding: "2px 8px",
+                          color: C.muted,
+                        }}
+                      >
+                        {r.paperType} {r.paperGsm}gsm
+                      </span>
+                    )}
+                    {(r.processes || []).length > 0 && (
+                      <span
+                        style={{
+                          fontSize: 11,
+                          background: C.surface,
+                          border: `1px solid ${C.border}`,
+                          borderRadius: 4,
+                          padding: "2px 8px",
+                          color: C.muted,
+                        }}
+                      >
+                        {(r.processes || []).join(", ")}
+                      </span>
+                    )}
                   </div>
                 </div>
-                <div
-                  style={{
-                    display: "flex",
-                    gap: 8,
-                    flexWrap: "wrap",
-                    marginTop: 6,
-                  }}
-                >
-                  {r.soRef && (
-                    <span
-                      style={{
-                        fontSize: 11,
-                        background: C.surface,
-                        border: `1px solid ${C.border}`,
-                        borderRadius: 4,
-                        padding: "2px 8px",
-                        color: C.muted,
-                      }}
-                    >
-                      SO: {r.soRef}
-                    </span>
-                  )}
-                  {r.itemName && (
-                    <span
-                      style={{
-                        fontSize: 11,
-                        background: C.surface,
-                        border: `1px solid ${C.border}`,
-                        borderRadius: 4,
-                        padding: "2px 8px",
-                        color: C.muted,
-                      }}
-                    >
-                      {r.itemName}
-                    </span>
-                  )}
-                  {r.paperType && (
-                    <span
-                      style={{
-                        fontSize: 11,
-                        background: C.surface,
-                        border: `1px solid ${C.border}`,
-                        borderRadius: 4,
-                        padding: "2px 8px",
-                        color: C.muted,
-                      }}
-                    >
-                      {r.paperType} {r.paperGsm}gsm
-                    </span>
-                  )}
-                  {(r.processes || []).length > 0 && (
-                    <span
-                      style={{
-                        fontSize: 11,
-                        background: C.surface,
-                        border: `1px solid ${C.border}`,
-                        borderRadius: 4,
-                        padding: "2px 8px",
-                        color: C.muted,
-                      }}
-                    >
-                      {(r.processes || []).join(", ")}
-                    </span>
-                  )}
-                </div>
-              </div>
               );
             })}
         </Card>

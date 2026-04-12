@@ -12,9 +12,11 @@ const purchaseOrderItemSchema = new mongoose.Schema({
   unit: String,
   qty: Number,
   weight: Number,
+  noOfSheets: Number,
   rate: Number,
   amount: Number
 }, { _id: false });
+
 
 const purchaseOrderSchema = new mongoose.Schema({
   poNo: {

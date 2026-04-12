@@ -1,5 +1,19 @@
 const Dispatch = require("../models/Dispatch");
 const Counter = require("../models/Counter");
+const FGStock = require("../models/FGStock");
+
+const adjustFGStock = async (items, direction = -1) => {
+  for (const item of items) {
+    // Attempt to find the best matching FG Stock entry
+    // Usually, we match by itemName. In a multi-JO environment, we'd pick the first available.
+    const stockItem = await FGStock.findOne({ itemName: item.itemName }).sort({ createdAt: 1 });
+    if (stockItem) {
+      stockItem.qty += (item.qty * direction);
+      if (stockItem.qty < 0) stockItem.qty = 0;
+      await stockItem.save();
+    }
+  }
+};
 
 
 
@@ -87,6 +101,9 @@ exports.create = async (req, res) => {
     await dispatch.save();
     await dispatch.populate("createdBy", "name username");
 
+    // Deduct from FG Stock
+    await adjustFGStock(items, -1);
+
     res.status(201).json({
       message: "Dispatch created successfully",
       dispatch,
@@ -127,8 +144,12 @@ exports.update = async (req, res) => {
     if (vehicleNo !== undefined) dispatch.vehicleNo = vehicleNo?.trim();
     if (driverName !== undefined) dispatch.driverName = driverName?.trim();
     if (lrNo !== undefined) dispatch.lrNo = lrNo?.trim();
-    if (items) dispatch.items = items;
-    if (remarks !== undefined) dispatch.remarks = remarks?.trim();
+    // Handle stock reversal for old items and deduction for new items
+    if (items) {
+      await adjustFGStock(dispatch.items, 1); // Reverse old
+      dispatch.items = items;
+      await adjustFGStock(items, -1); // Apply new
+    }
 
     await dispatch.save();
     await dispatch.populate("createdBy", "name username");
@@ -154,6 +175,9 @@ exports.delete = async (req, res) => {
     if (!dispatch) {
       return res.status(404).json({ error: "Dispatch not found" });
     }
+
+    // Restore stock before deleting
+    await adjustFGStock(dispatch.items, 1);
 
     await Dispatch.findByIdAndDelete(id);
 
