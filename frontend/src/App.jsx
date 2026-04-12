@@ -29,6 +29,7 @@ import {
   jobOrdersAPI,
   salesOrdersAPI,
   purchaseOrdersAPI,
+  dispatchAPI, // ✅ FIX: was missing — caused silent crash in fetchMasters
 } from "./api/auth";
 import { AuthContext, AuthProvider, useAuth } from "./context/AuthContext";
 import { Toast } from "./components/ui/AdvancedComponents";
@@ -112,7 +113,7 @@ function AppContent() {
   );
 }
 
-function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
+function AppInner({ session, onLogout, allowedTabs }) {
   const [currentTab, setCurrentTab] = useState(() => {
     const lastTab = localStorage.getItem("erp_lastTab");
     return lastTab || "dashboard";
@@ -181,7 +182,6 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
     "erp_itemCounters",
     { RM: 1, FG: 1, CG: 1, SP: 1 },
   );
-
   const [machineReportData, setMachineReportData] = usePersistedState(
     "erp_machineReportData",
     {},
@@ -189,77 +189,83 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
 
   useEffect(() => {
     fetchMasters();
-  }, [currentTab]);
+  }, []); // ✅ FIX: was [currentTab] — now fetches once on mount, not on every tab switch
+
+  // ✅ FIX: robust unwrap handles any API response shape
+  const unwrap = (val, ...keys) => {
+    if (!val) return [];
+    if (Array.isArray(val)) return val;
+    // Try each provided key
+    for (const key of keys) {
+      if (val[key] && Array.isArray(val[key])) return val[key];
+    }
+    // Try common wrapper keys
+    for (const key of ["data", "records", "result", "results", "list"]) {
+      if (val[key] && Array.isArray(val[key])) return val[key];
+    }
+    // Last resort: first array value in object
+    const firstArr = Object.values(val).find((v) => Array.isArray(v));
+    if (firstArr) return firstArr;
+    return [];
+  };
 
   const fetchMasters = async () => {
     try {
       const results = await Promise.allSettled([
-        vendorMasterAPI.getAll(),
-        clientMasterAPI.getAll(),
-        categoryMasterAPI.getAll(),
-        itemMasterAPI.getAll(),
-        rawMaterialStockAPI.getAll(),
-        machineMasterAPI.getAll(),
-        fgStockAPI.getAll(),
-        jobOrdersAPI.getAll(),
-        salesOrdersAPI.getAll(),
-        purchaseOrdersAPI.getAll(),
-        dispatchAPI.getAll(),
-        materialInwardAPI.getAll(),
+        vendorMasterAPI.getAll(), // 0
+        clientMasterAPI.getAll(), // 1
+        categoryMasterAPI.getAll(), // 2
+        itemMasterAPI.getAll(), // 3
+        rawMaterialStockAPI.getAll(), // 4
+        machineMasterAPI.getAll(), // 5
+        fgStockAPI.getAll(), // 6
+        jobOrdersAPI.getAll(), // 7
+        salesOrdersAPI.getAll(), // 8
+        purchaseOrdersAPI.getAll(), // 9
+        dispatchAPI.getAll(), // 10  ✅ FIX: dispatchAPI now imported properly
+        materialInwardAPI.getAll(), // 11
       ]);
 
-      const [
-        vendors,
-        clients,
-        categories,
-        items,
-        stocks,
-        machines,
-        fgStockData,
-        jos,
-        sos,
-        pos,
-        disp,
-        inw,
-      ] = results.map((r) => (r.status === "fulfilled" ? r.value : null));
+      const get = (i) =>
+        results[i].status === "fulfilled" ? results[i].value : null;
 
-      const unwrap = (val, key) => {
-        if (!val) return [];
-        if (Array.isArray(val)) return val;
-        if (val[key] && Array.isArray(val[key])) return val[key];
-        if (val.data && Array.isArray(val.data)) return val.data;
-        if (val.records && Array.isArray(val.records)) return val.records;
-        if (typeof val === 'object') {
-           const firstArr = Object.values(val).find(v => Array.isArray(v));
-           if (firstArr) return firstArr;
-        }
-        return [];
-      };
+      const vendors = get(0);
+      const clients = get(1);
+      const categories = get(2);
+      const items = get(3);
+      const stocks = get(4);
+      const machines = get(5);
+      const fgStockData = get(6);
+      const jos = get(7);
+      const sos = get(8);
+      const pos = get(9);
+      const disp = get(10);
+      const inw = get(11);
 
-      const vList = unwrap(vendors, 'vendors');
-      const cList = unwrap(clients, 'clients');
-      const catList = unwrap(categories, 'categories');
-      const itemList = unwrap(items, 'items');
-      const machineList = unwrap(machines, 'machines');
-      const joList = unwrap(jos, 'jobOrders');
-      const soList = unwrap(sos, 'salesOrders');
-      const poList = unwrap(pos, 'purchaseOrders');
-      const dispList = unwrap(disp, 'dispatches');
-      const inwList = unwrap(inw, 'inwards');
+      // ✅ FIX: pass all likely key names so unwrap finds the data
+      if (vendors) setVendorMaster(unwrap(vendors, "vendors", "vendor"));
+      if (clients) setClientMaster(unwrap(clients, "clients", "client"));
+      if (categories)
+        setCategoryMaster(unwrap(categories, "categories", "category"));
+      if (items) setItemMasterFG(unwrap(items, "items", "item"));
+      if (machines) setMachineMaster(unwrap(machines, "machines", "machine"));
+      if (jos) setJobOrders(unwrap(jos, "jobOrders", "jobs", "job_orders"));
+      if (sos)
+        setSalesOrders(
+          unwrap(sos, "salesOrders", "orders", "sales_orders", "so"),
+        );
+      if (pos)
+        setPurchaseOrders(
+          unwrap(pos, "purchaseOrders", "orders", "purchase_orders", "po"),
+        );
+      if (disp)
+        setDispatches(unwrap(disp, "dispatches", "dispatch", "deliveries"));
+      if (inw)
+        setInward(unwrap(inw, "inwards", "inward", "grn", "material_inward"));
 
-      setVendorMaster(vList);
-      setClientMaster(cList);
-      setCategoryMaster(catList);
-      setItemMasterFG(itemList);
-      setMachineMaster(machineList);
-      setJobOrders(joList);
-      setSalesOrders(soList);
-      setPurchaseOrders(poList);
-      setDispatches(dispList);
-      setInward(inwList);
-
-      if (stocks) setRawStock(stocks.stock || stocks);
-      if (fgStockData) setFgStock(fgStockData.stock || fgStockData);
+      if (stocks) setRawStock(unwrap(stocks, "stock", "stocks", "rawStock"));
+      if (fgStockData)
+        setFgStock(unwrap(fgStockData, "stock", "stocks", "fgStock"));
     } catch (err) {
       console.error("Global fetch error:", err);
     }
@@ -397,7 +403,7 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
         overflow: "hidden",
       }}
     >
-      {}
+      {/* Header */}
       <div
         style={{
           background: C.card,
@@ -449,9 +455,9 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
         </div>
       </div>
 
-      {}
+      {/* Body */}
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-        {}
+        {/* Sidebar */}
         <div
           style={{
             background: C.surface,
@@ -509,13 +515,13 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
           ))}
         </div>
 
-        {}
+        {/* Main content */}
         <div style={{ flex: 1, padding: 24, overflowY: "auto" }}>
           {renderPage()}
         </div>
       </div>
 
-      {}
+      {/* Toast */}
       {toast && (
         <Toast
           msg={toast.msg}

@@ -27,7 +27,6 @@ const computeRMItemName = (it) => {
       .filter(Boolean)
       .join(" ");
   } else if (it.category === "Paper Sheets" || it.category === "Paper Sheet") {
-
     return [
       it.subCategory,
       "Sheet",
@@ -357,7 +356,6 @@ export default function PurchaseOrders({
             rate: it.rate,
             amount: (isRM ? it.weight : it.qty) * it.rate || 0,
           };
-
         }),
         deliveryDate: header.deliveryDate,
         remarks: header.remarks,
@@ -536,9 +534,17 @@ export default function PurchaseOrders({
               <Field label="Vendor Name*">
                 <AutocompleteInput
                   value={header.vendorName}
-                  onChange={(v) => setH("vendorName", v)}
+                  onChange={(v) => {
+                    setH("vendorName", v);
+                    const vendor = (vendorMaster || []).find(
+                      (vm) => vm.name === v,
+                    );
+                    if (vendor) {
+                      setH("vendorContact", vendor.phone || vendor.email || "");
+                    }
+                  }}
                   suggestions={(vendorMaster || []).map((v) => v.name)}
-                  placeholder="Supplier name"
+                  placeholder="Type to search vendors..."
                   inputStyle={EH("vendorName")}
                 />
                 {EHMsg("vendorName")}
@@ -743,7 +749,6 @@ export default function PurchaseOrders({
                     </Field>
                     {(it.category === "Paper Sheets" ||
                       it.category === "Paper Sheet") && (
-
                       <Field label="# of Sheets">
                         <input
                           type="number"

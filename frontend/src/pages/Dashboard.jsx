@@ -695,20 +695,76 @@ export function Dashboard({ data }) {
           );
         })()}
 
-      {/* ── SO RECONCILIATION ── */}
-      {(reportTab === "so_recon" || reportTab === "delivery") &&
+      {/* ── SO RECONCILIATION — directly from salesOrders ── */}
+      {reportTab === "so_recon" &&
         (() => {
+          // Build rows directly from salesOrders — try every possible field name
+          const rows = salesOrders.map((so, idx) => {
+            const soNo =
+              so.soNo ||
+              so.soNumber ||
+              so.so_no ||
+              so.orderId ||
+              so._id ||
+              `SO-${idx + 1}`;
+            const client =
+              so.clientName ||
+              so.client ||
+              so.customerName ||
+              so.customer ||
+              "—";
+            const date = so.orderDate || so.date || so.createdAt || "";
+            const soStatus = so.status || "";
+            // items — try array or single item
+            const items = Array.isArray(so.items)
+              ? so.items
+              : Array.isArray(so.products)
+                ? so.products
+                : so.item
+                  ? [so.item]
+                  : [];
+            const ord = items.reduce(
+              (s, it) =>
+                s + +(it.orderQty || it.qty || it.quantity || it.ordered || 0),
+              0,
+            );
+            const itemsStr =
+              items
+                .map((it) => it.itemName || it.name || it.item || "")
+                .filter(Boolean)
+                .join(", ") || "—";
+            // dispatched qty from dispMap using all possible SO keys
+            const disp =
+              dispMap[soNo] || dispMap[so._id] || dispMap[so.soNumber] || 0;
+            const pend = Math.max(0, ord - disp);
+            const pct = ord > 0 ? Math.round((disp / ord) * 100) : 0;
+            const status =
+              pct >= 100 ? "Fully Dispatched" : pct > 0 ? "Partial" : "Pending";
+            return {
+              soNo,
+              client,
+              date,
+              soStatus,
+              items,
+              ord,
+              disp,
+              pend,
+              pct,
+              status,
+              itemsStr,
+            };
+          });
+
           const stats = {
-            total: soRows.length,
-            fully: soRows.filter((r) => r.status === "Fully Dispatched").length,
-            partial: soRows.filter((r) => r.status === "Partial").length,
-            none: soRows.filter((r) => r.status === "Pending").length,
-            totalPend: soRows.reduce((s, r) => s + r.pend, 0),
+            total: rows.length,
+            fully: rows.filter((r) => r.status === "Fully Dispatched").length,
+            partial: rows.filter((r) => r.status === "Partial").length,
+            none: rows.filter((r) => r.status === "Pending").length,
+            totalPend: rows.reduce((s, r) => s + r.pend, 0),
           };
 
           return (
             <div>
-              {/* Summary cards */}
               <div
                 style={{
                   display: "grid",
@@ -718,7 +774,11 @@ export function Dashboard({ data }) {
                 }}
               >
                 {[
-                  { label: "Total SOs", val: stats.total, color: C.blue },
+                  {
+                    label: "Total Sales Orders",
+                    val: stats.total,
+                    color: C.blue,
+                  },
                   {
                     label: "Fully Dispatched",
                     val: stats.fully,
@@ -765,7 +825,7 @@ export function Dashboard({ data }) {
                 ))}
               </div>
 
-              {soRows.length === 0 ? (
+              {rows.length === 0 ? (
                 <div
                   style={{ textAlign: "center", padding: 60, color: "#555" }}
                 >
@@ -781,12 +841,13 @@ export function Dashboard({ data }) {
                 >
                   <table style={TABLE}>
                     <colgroup>
-                      <col style={{ width: 100 }} />
+                      <col style={{ width: 110 }} />
                       <col style={{ width: 130 }} />
-                      <col style={{ width: "30%" }} />
-                      <col style={{ width: 90 }} />
-                      <col style={{ width: 90 }} />
-                      <col style={{ width: 90 }} />
+                      <col style={{ width: "24%" }} />
+                      <col style={{ width: 100 }} />
+                      <col style={{ width: 85 }} />
+                      <col style={{ width: 85 }} />
+                      <col style={{ width: 85 }} />
                       <col style={{ width: 130 }} />
                     </colgroup>
                     <thead>
@@ -795,6 +856,7 @@ export function Dashboard({ data }) {
                           "SO #",
                           "Client",
                           "Items",
+                          "Order Date",
                           "Ordered",
                           "Dispatched",
                           "Pending",
@@ -807,30 +869,30 @@ export function Dashboard({ data }) {
                       </tr>
                     </thead>
                     <tbody>
-                      {soRows.map((r, i) => (
+                      {rows.map((r, i) => (
                         <tr
-                          key={r.soKey || i}
+                          key={r.soNo + i}
                           style={{
                             background: i % 2 === 0 ? "#0e0e12" : "#121216",
                           }}
                         >
                           <td style={TD}>
                             <div style={{ color: C.green, fontWeight: 700 }}>
-                              {r.so.soNo || "—"}
+                              {r.soNo}
                             </div>
-                            <div
-                              style={{
-                                fontSize: 9,
-                                color: "#666",
-                                marginTop: 2,
-                              }}
-                            >
-                              {r.so.orderDate?.slice(0, 10) || ""}
-                            </div>
+                            {r.soStatus && (
+                              <div
+                                style={{
+                                  fontSize: 9,
+                                  color: "#666",
+                                  marginTop: 2,
+                                }}
+                              >
+                                {r.soStatus}
+                              </div>
+                            )}
                           </td>
-                          <td style={{ ...TD, fontWeight: 600 }}>
-                            {r.so.clientName || "—"}
-                          </td>
+                          <td style={{ ...TD, fontWeight: 600 }}>{r.client}</td>
                           <td
                             style={{
                               ...TD,
@@ -842,17 +904,21 @@ export function Dashboard({ data }) {
                           >
                             {r.itemsStr}
                           </td>
-                          <td style={TD}>{fmt(r.ord)}</td>
+                          <td style={{ ...TD, color: "#888" }}>
+                            {r.date?.slice(0, 10) || "—"}
+                          </td>
+                          <td style={TD}>{r.ord > 0 ? fmt(r.ord) : "—"}</td>
                           <td style={{ ...TD, color: C.green }}>
-                            {fmt(r.disp)}
+                            {r.disp > 0 ? fmt(r.disp) : "—"}
                           </td>
                           <td
                             style={{
                               ...TD,
                               color: r.pend > 0 ? C.red : C.green,
+                              fontWeight: 700,
                             }}
                           >
-                            {fmt(r.pend)}
+                            {r.ord > 0 ? fmt(r.pend) : "—"}
                           </td>
                           <td style={TD}>
                             <span
@@ -864,25 +930,249 @@ export function Dashboard({ data }) {
                                 marginBottom: 4,
                               }}
                             >
-                              {r.status} ({r.pct}%)
+                              {r.status}
+                              {r.ord > 0 ? ` (${r.pct}%)` : ""}
                             </span>
-                            <div
-                              style={{
-                                width: "100%",
-                                height: 3,
-                                background: "#1e1e22",
-                                borderRadius: 2,
-                              }}
-                            >
+                            {r.ord > 0 && (
                               <div
                                 style={{
-                                  width: Math.min(r.pct, 100) + "%",
-                                  height: "100%",
-                                  background: statusColor(r.status),
+                                  width: "100%",
+                                  height: 3,
+                                  background: "#1e1e22",
                                   borderRadius: 2,
                                 }}
-                              />
-                            </div>
+                              >
+                                <div
+                                  style={{
+                                    width: Math.min(r.pct, 100) + "%",
+                                    height: "100%",
+                                    background: statusColor(r.status),
+                                    borderRadius: 2,
+                                  }}
+                                />
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+      {/* ── DELIVERY STATUS — directly from dispatches ── */}
+      {reportTab === "delivery" &&
+        (() => {
+          // Each row = one dispatch record
+          const rows = dispatches.map((d, idx) => {
+            const dispNo =
+              d.dispatchNo ||
+              d.dispNo ||
+              d.invoiceNo ||
+              d._id ||
+              `DISP-${idx + 1}`;
+            const soRef = d.soRef || d.soNo || d.so || "—";
+            const client = d.clientName || d.client || d.customerName || "—";
+            const dispDate = d.dispatchDate || d.date || d.createdAt || "";
+            const vehicle = d.vehicleNo || d.vehicle || d.transport || "—";
+            const carrier =
+              d.carrier || d.transporterName || d.transporter || "—";
+            const items = Array.isArray(d.items) ? d.items : [];
+            const totalQty = items.reduce(
+              (s, it) => s + +(it.qty || it.quantity || 0),
+              0,
+            );
+            const itemsStr =
+              items
+                .map((it) => it.itemName || it.name || "")
+                .filter(Boolean)
+                .join(", ") || "—";
+            const status = d.status || (dispDate ? "Dispatched" : "Pending");
+            return {
+              dispNo,
+              soRef,
+              client,
+              dispDate,
+              vehicle,
+              carrier,
+              totalQty,
+              itemsStr,
+              status,
+              d,
+            };
+          });
+
+          const totalQtyDispatched = rows.reduce((s, r) => s + r.totalQty, 0);
+          const uniqueClients = new Set(
+            rows.map((r) => r.client).filter((c) => c !== "—"),
+          ).size;
+          const today_ = new Date().toISOString().slice(0, 10);
+          const dispToday = rows.filter(
+            (r) => r.dispDate?.slice(0, 10) === today_,
+          ).length;
+
+          return (
+            <div>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(4, 1fr)",
+                  gap: 12,
+                  marginBottom: 20,
+                }}
+              >
+                {[
+                  {
+                    label: "Total Dispatches",
+                    val: rows.length,
+                    color: C.blue,
+                  },
+                  {
+                    label: "Total Qty Dispatched",
+                    val: fmt(totalQtyDispatched),
+                    color: C.green,
+                  },
+                  {
+                    label: "Unique Clients",
+                    val: uniqueClients,
+                    color: C.yellow,
+                  },
+                  { label: "Dispatches Today", val: dispToday, color: C.blue },
+                ].map((s) => (
+                  <div
+                    key={s.label}
+                    style={{
+                      background: "#141416",
+                      border: `1px solid ${s.color}44`,
+                      borderLeft: `4px solid ${s.color}`,
+                      borderRadius: 8,
+                      padding: 16,
+                    }}
+                  >
+                    <div
+                      style={{ fontSize: 26, fontWeight: 900, color: s.color }}
+                    >
+                      {s.val}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        marginTop: 4,
+                        color: "#bbb",
+                      }}
+                    >
+                      {s.label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {rows.length === 0 ? (
+                <div
+                  style={{ textAlign: "center", padding: 60, color: "#555" }}
+                >
+                  No Dispatches found.
+                </div>
+              ) : (
+                <div
+                  style={{
+                    borderRadius: 8,
+                    overflow: "hidden",
+                    border: "1px solid #2a2a2e",
+                  }}
+                >
+                  <table style={TABLE}>
+                    <colgroup>
+                      <col style={{ width: 120 }} />
+                      <col style={{ width: 100 }} />
+                      <col style={{ width: 120 }} />
+                      <col style={{ width: "22%" }} />
+                      <col style={{ width: 100 }} />
+                      <col style={{ width: 85 }} />
+                      <col style={{ width: 120 }} />
+                      <col style={{ width: 100 }} />
+                    </colgroup>
+                    <thead>
+                      <tr>
+                        {[
+                          "Dispatch #",
+                          "SO Ref",
+                          "Client",
+                          "Items",
+                          "Dispatch Date",
+                          "Qty",
+                          "Vehicle / Carrier",
+                          "Status",
+                        ].map((h) => (
+                          <th key={h} style={TH}>
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((r, i) => (
+                        <tr
+                          key={r.dispNo + i}
+                          style={{
+                            background: i % 2 === 0 ? "#0e0e12" : "#121216",
+                          }}
+                        >
+                          <td style={{ ...TD, color: C.blue, fontWeight: 700 }}>
+                            {r.dispNo}
+                          </td>
+                          <td style={{ ...TD, color: C.green }}>{r.soRef}</td>
+                          <td style={{ ...TD, fontWeight: 600 }}>{r.client}</td>
+                          <td
+                            style={{
+                              ...TD,
+                              color: "#888",
+                              whiteSpace: "normal",
+                              wordBreak: "break-word",
+                              maxWidth: 0,
+                            }}
+                          >
+                            {r.itemsStr}
+                          </td>
+                          <td style={{ ...TD, color: "#888" }}>
+                            {r.dispDate?.slice(0, 10) || "—"}
+                          </td>
+                          <td
+                            style={{ ...TD, color: C.green, fontWeight: 700 }}
+                          >
+                            {r.totalQty > 0 ? fmt(r.totalQty) : "—"}
+                          </td>
+                          <td style={{ ...TD, color: "#888" }}>
+                            <div>{r.vehicle}</div>
+                            {r.carrier !== "—" && (
+                              <div
+                                style={{
+                                  fontSize: 10,
+                                  color: "#555",
+                                  marginTop: 2,
+                                }}
+                              >
+                                {r.carrier}
+                              </div>
+                            )}
+                          </td>
+                          <td style={TD}>
+                            <span
+                              style={{
+                                padding: "2px 8px",
+                                borderRadius: 4,
+                                background: C.green + "22",
+                                color: C.green,
+                                fontSize: 11,
+                                fontWeight: 700,
+                              }}
+                            >
+                              {r.status}
+                            </span>
                           </td>
                         </tr>
                       ))}
@@ -1676,45 +1966,94 @@ export function Dashboard({ data }) {
           );
         })()}
 
-      {/* ── VENDOR PERFORMANCE ── */}
+      {/* ── VENDOR PERFORMANCE ── built directly from purchaseOrders ── */}
       {reportTab === "vendor" &&
         (() => {
-          const vRows = vendorMaster.map((v) => {
-            const vPOs = purchaseOrders.filter(
-              (p) =>
-                p.vendor === v.name ||
-                p.vendorName === v.name ||
-                p.vendorId === v._id,
-            );
-            const vInwards = inward.filter(
-              (i) =>
-                i.vendorName === v.name ||
-                i.vendor?.name === v.name ||
-                i.vendor === v.name,
-            );
-            const ordKg = vPOs.reduce(
-              (s, p) =>
-                s + (p.items || []).reduce((sa, it) => sa + +(it.qty || 0), 0),
-              0,
-            );
-            const recKg = vInwards.reduce(
-              (s, i) =>
-                s + (i.items || []).reduce((sa, it) => sa + +(it.qty || 0), 0),
-              0,
-            );
-            const openPOs = vPOs.filter(
-              (p) => p.status !== "Received" && p.status !== "Closed",
-            ).length;
-            return {
-              v,
-              poCount: vPOs.length,
-              grnCount: vInwards.length,
-              ordKg,
-              recKg,
-              pendKg: Math.max(0, ordKg - recKg),
-              openPOs,
-            };
+          // Group purchaseOrders by vendor name (whatever field is present)
+          const vendorMap = {};
+          purchaseOrders.forEach((po) => {
+            const vName =
+              po.vendor || po.vendorName || po.supplierName || "Unknown";
+            if (!vendorMap[vName]) {
+              vendorMap[vName] = { name: vName, pos: [], grns: [] };
+            }
+            vendorMap[vName].pos.push(po);
           });
+
+          // Attach inward GRNs to each vendor
+          inward.forEach((grn) => {
+            const vName =
+              grn.vendorName ||
+              grn.vendor?.name ||
+              grn.vendor ||
+              grn.supplierName ||
+              "";
+            if (vName && vendorMap[vName]) {
+              vendorMap[vName].grns.push(grn);
+            } else if (vName) {
+              // GRN exists but no PO yet for this vendor — still show
+              if (!vendorMap[vName])
+                vendorMap[vName] = { name: vName, pos: [], grns: [] };
+              vendorMap[vName].grns.push(grn);
+            }
+          });
+
+          const vRows = Object.values(vendorMap)
+            .map((v) => {
+              const ordQty = v.pos.reduce(
+                (s, p) =>
+                  s +
+                  (p.items || []).reduce(
+                    (sa, it) => sa + +(it.qty || it.quantity || 0),
+                    0,
+                  ),
+                0,
+              );
+              const ordAmt = v.pos.reduce(
+                (s, p) => s + +(p.totalAmount || p.total || p.amount || 0),
+                0,
+              );
+              const recQty = v.grns.reduce(
+                (s, g) =>
+                  s +
+                  (g.items || []).reduce(
+                    (sa, it) => sa + +(it.qty || it.quantity || 0),
+                    0,
+                  ),
+                0,
+              );
+              const openPOs = v.pos.filter(
+                (p) =>
+                  p.status !== "Received" &&
+                  p.status !== "Closed" &&
+                  p.status !== "Completed",
+              ).length;
+              const pendQty = Math.max(0, ordQty - recQty);
+              const fulfillRate =
+                ordQty > 0 ? Math.round((recQty / ordQty) * 100) : 0;
+              return {
+                name: v.name,
+                poCount: v.pos.length,
+                grnCount: v.grns.length,
+                ordQty,
+                ordAmt,
+                recQty,
+                pendQty,
+                openPOs,
+                fulfillRate,
+              };
+            })
+            .sort((a, b) => b.poCount - a.poCount);
+
+          const totalPOs = purchaseOrders.length;
+          const totalGRNs = inward.length;
+          const pendingPOs = purchaseOrders.filter(
+            (p) =>
+              p.status !== "Received" &&
+              p.status !== "Closed" &&
+              p.status !== "Completed",
+          ).length;
+          const uniqueVendors = Object.keys(vendorMap).length;
 
           return (
             <div>
@@ -1728,21 +2067,23 @@ export function Dashboard({ data }) {
               >
                 {[
                   {
-                    label: "Total Vendors",
-                    val: vendorMaster.length,
+                    label: "Unique Vendors (from POs)",
+                    val: uniqueVendors,
                     color: C.blue,
                   },
                   {
-                    label: "Total POs",
-                    val: purchaseOrders.length,
+                    label: "Total Purchase Orders",
+                    val: totalPOs,
                     color: C.blue,
                   },
-                  { label: "Total GRNs", val: inward.length, color: C.green },
                   {
-                    label: "Pending POs",
-                    val: purchaseOrders.filter(
-                      (p) => p.status !== "Received" && p.status !== "Closed",
-                    ).length,
+                    label: "Total GRNs Received",
+                    val: totalGRNs,
+                    color: C.green,
+                  },
+                  {
+                    label: "Open / Pending POs",
+                    val: pendingPOs,
                     color: C.red,
                   },
                 ].map((s) => (
@@ -1772,7 +2113,7 @@ export function Dashboard({ data }) {
                 <div
                   style={{ textAlign: "center", padding: 60, color: "#555" }}
                 >
-                  No vendors found.
+                  No Purchase Orders found. Add POs to see vendor performance.
                 </div>
               ) : (
                 <div
@@ -1784,13 +2125,14 @@ export function Dashboard({ data }) {
                 >
                   <table style={TABLE}>
                     <colgroup>
-                      <col style={{ width: "25%" }} />
-                      <col style={{ width: 70 }} />
-                      <col style={{ width: 70 }} />
+                      <col style={{ width: "22%" }} />
+                      <col style={{ width: 60 }} />
+                      <col style={{ width: 60 }} />
                       <col style={{ width: 110 }} />
                       <col style={{ width: 110 }} />
                       <col style={{ width: 110 }} />
-                      <col style={{ width: 90 }} />
+                      <col style={{ width: 80 }} />
+                      <col style={{ width: 100 }} />
                     </colgroup>
                     <thead>
                       <tr>
@@ -1798,10 +2140,11 @@ export function Dashboard({ data }) {
                           "Vendor",
                           "POs",
                           "GRNs",
-                          "Ordered (kg)",
-                          "Received (kg)",
-                          "Pending (kg)",
+                          "Ordered Qty",
+                          "Received Qty",
+                          "Pending Qty",
                           "Open POs",
+                          "Fulfillment",
                         ].map((h) => (
                           <th key={h} style={TH}>
                             {h}
@@ -1812,38 +2155,79 @@ export function Dashboard({ data }) {
                     <tbody>
                       {vRows.map((r, i) => (
                         <tr
-                          key={r.v._id || i}
+                          key={r.name}
                           style={{
                             background: i % 2 === 0 ? "#0e0e12" : "#121216",
                           }}
                         >
-                          <td style={{ ...TD, fontWeight: 700 }}>
-                            {r.v.name || "—"}
+                          <td style={{ ...TD, fontWeight: 700 }}>{r.name}</td>
+                          <td style={{ ...TD, color: C.blue, fontWeight: 700 }}>
+                            {r.poCount}
                           </td>
-                          <td style={{ ...TD, color: C.blue }}>{r.poCount}</td>
-                          <td style={{ ...TD, color: C.green }}>
+                          <td
+                            style={{ ...TD, color: C.green, fontWeight: 700 }}
+                          >
                             {r.grnCount}
                           </td>
-                          <td style={TD}>{fmt(r.ordKg)}</td>
+                          <td style={TD}>{fmt(r.ordQty)}</td>
                           <td style={{ ...TD, color: C.green }}>
-                            {fmt(r.recKg)}
+                            {fmt(r.recQty)}
                           </td>
                           <td
                             style={{
                               ...TD,
-                              color: r.pendKg > 0 ? C.red : C.green,
+                              color: r.pendQty > 0 ? C.red : C.green,
                             }}
                           >
-                            {fmt(r.pendKg)}
+                            {fmt(r.pendQty)}
                           </td>
                           <td
                             style={{
                               ...TD,
-                              color: r.openPOs > 0 ? C.yellow : C.green,
+                              color: r.openPOs > 0 ? C.yellow : "#555",
                               fontWeight: 700,
                             }}
                           >
                             {r.openPOs}
+                          </td>
+                          <td style={TD}>
+                            <div
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 800,
+                                color:
+                                  r.fulfillRate >= 95
+                                    ? C.green
+                                    : r.fulfillRate > 0
+                                      ? C.yellow
+                                      : C.red,
+                                marginBottom: 3,
+                              }}
+                            >
+                              {r.fulfillRate}%
+                            </div>
+                            <div
+                              style={{
+                                width: "100%",
+                                height: 3,
+                                background: "#1e1e22",
+                                borderRadius: 2,
+                              }}
+                            >
+                              <div
+                                style={{
+                                  width: Math.min(r.fulfillRate, 100) + "%",
+                                  height: "100%",
+                                  background:
+                                    r.fulfillRate >= 95
+                                      ? C.green
+                                      : r.fulfillRate > 0
+                                        ? C.yellow
+                                        : C.red,
+                                  borderRadius: 2,
+                                }}
+                              />
+                            </div>
                           </td>
                         </tr>
                       ))}
