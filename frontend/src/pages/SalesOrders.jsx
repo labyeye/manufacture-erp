@@ -282,7 +282,7 @@ export default function SalesOrders(props) {
             size: found.subCategory || it.size,
             variant: found.variant || it.variant,
             uom: found.uom || it.uom || "nos",
-            clientName: found.clientName || "",
+            clientName: header.clientName ? "" : found.clientName || "",
             itemName: found.name || it.itemName,
             gstRate: found.gstRate || 18,
             hsnCode: found.hsnCode || "",
@@ -1075,8 +1075,6 @@ export default function SalesOrders(props) {
                             <option value="mm">mm</option>
                             <option value="cm">cm</option>
                             <option value="inch">inch</option>
-                            <option value="nos">nos</option>
-                            <option value="pcs">pcs</option>
                           </select>
                         </Field>
                         <Field label={`${f1} *`}>

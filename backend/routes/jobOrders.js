@@ -10,6 +10,8 @@ router.post('/', auth, jobOrderController.create);
 router.put('/:id', auth, jobOrderController.update);
 router.delete('/:id', auth, jobOrderController.delete);
 router.post('/:id/stage', auth, jobOrderController.addStage);
+router.put('/:id/stage/:stageId', auth, jobOrderController.updateStage);
+router.delete('/:id/stage/:stageId', auth, jobOrderController.deleteStage);
 router.get('/:id/jobcard-pdf', auth, jobOrderController.getJobCardPDF);
 
 module.exports = router;

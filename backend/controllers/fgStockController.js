@@ -50,7 +50,9 @@ exports.createStock = async (req, res) => {
       clientName,
       qty: qty || 0,
       unit,
-      price
+      price,
+      category,
+      reorder
     });
 
     await stock.save();
@@ -65,7 +67,7 @@ exports.createStock = async (req, res) => {
 
 exports.updateStock = async (req, res) => {
   try {
-    const { itemName, joNo, soRef, clientName, qty, unit, price } = req.body;
+    const { itemName, joNo, soRef, clientName, qty, unit, price, category, reorder } = req.body;
 
     const stock = await FGStock.findById(req.params.id);
     if (!stock) {
@@ -79,6 +81,8 @@ exports.updateStock = async (req, res) => {
     if (qty !== undefined) stock.qty = qty;
     if (unit !== undefined) stock.unit = unit;
     if (price !== undefined) stock.price = price;
+    if (category !== undefined) stock.category = category;
+    if (reorder !== undefined) stock.reorder = reorder;
 
     await stock.save();
 

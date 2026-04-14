@@ -23,6 +23,7 @@ const formatDateForInput = (dateStr) => {
 };
 
 const LOCATIONS = ["Vijay Nagar", "Lal Kaun"];
+const consumableCategories = ["Tape", "Glue", "Corrugated Box", "LDPE Polybag"];
 
 export default function MaterialInward({
   inward = [],
@@ -80,6 +81,10 @@ export default function MaterialInward({
     unit: "nos",
     size: "",
     uom: "nos",
+    gstRate: 18,
+    hsnCode: "",
+    taxAmount: "",
+    totalWithTax: "",
   };
 
   const [header, setHeader] = useState(blankHeader);
@@ -194,12 +199,23 @@ export default function MaterialInward({
           const poItems = po.items || [];
           if (poItems.length > 0) {
             const newItems = poItems.map((pit) => {
+              const lowCat = (pit.category || "").toLowerCase();
+              const lowName = (pit.itemName || "").toLowerCase();
+              const isConsumable =
+                pit.materialType === "Consumable" ||
+                consumableCategories.some((c) =>
+                  lowCat.includes(c.toLowerCase()),
+                ) ||
+                ["polybag", "box", "tape", "glue"].some((k) =>
+                  lowName.includes(k),
+                );
+
               return {
                 ...blankItem,
                 _id: uid(),
-                materialType: "Raw Material",
+                materialType: isConsumable ? "Consumable" : "Raw Material",
                 category: pit.category || "",
-                subCategory: pit.paperType || "",
+                subCategory: pit.subCategory || pit.paperType || "",
                 widthMm:
                   pit.width ||
                   (pit.sheetSize
@@ -210,14 +226,21 @@ export default function MaterialInward({
                   (pit.sheetSize
                     ? pit.sheetSize.split("x")[1]?.replace("mm", "")
                     : ""),
+                height: pit.height || "",
+                size: pit.size || pit.sheetSize || "",
+                uom: pit.unit || pit.uom || "nos",
+                unit: pit.unit || "nos",
                 gsm: pit.gsm || "",
-                weight: "",
+                weight: isConsumable ? "" : "",
                 rate: pit.rate || "",
                 itemName: pit.itemName || "",
                 qty: "",
                 noOfSheets: "",
-                unit: pit.unit || "kg",
                 productCode: pit.productCode || "",
+                gstRate: pit.gstRate || 18,
+                hsnCode: pit.hsnCode || "",
+                taxAmount: pit.taxAmount || "",
+                totalWithTax: pit.totalWithTax || "",
               };
             });
             setItems(newItems);
@@ -246,57 +269,82 @@ export default function MaterialInward({
       const it = { ...updated[idx], [k]: v };
 
       if (k === "productCode" && v) {
-        let masterItem = itemMasterItems.find(
-          (x) => (x.code || "").toLowerCase() === v.toLowerCase(),
-        );
-
-        if (!masterItem) {
-          masterItem = (itemMasterFG["Raw Material"] || []).find(
-            (x) => (x.code || "").toLowerCase() === v.toLowerCase(),
-          );
+        let code = v;
+        if (v.includes(" — ")) {
+          code = v.split(" — ")[0].trim();
         }
+        it.productCode = code;
+
+        let masterItem = itemMasterItems.find(
+          (x) =>
+            (x.code || "").trim().toLowerCase() === code.trim().toLowerCase(),
+        );
 
         if (masterItem) {
           const name = masterItem.name || "";
           it.itemName = masterItem.name;
           it.materialType = masterItem.type || "Raw Material";
 
-          if (name.includes("Paper Reel")) {
-            it.category = "Paper Reel";
-            const gsmMatch = name.match(/(\d+)gsm/);
-            const widthMatch = name.match(/(\d+)mm/);
-            const paperTypes = [
-              "MG Kraft",
-              "MF Kraft",
-              "Bleached Kraft",
-              "OGR",
-            ];
-            const foundType = paperTypes.find((t) => name.includes(t));
-            if (gsmMatch) it.gsm = gsmMatch[1];
-            if (widthMatch) it.widthMm = widthMatch[1];
-            if (foundType) it.subCategory = foundType;
-          } else if (name.includes("Sheet")) {
-            it.category = "Paper Sheets";
-            const gsmMatch = name.match(/(\d+)gsm/);
-            const dimMatch = name.match(/(\d+)x(\d+)mm/);
-            const widthMatch = name.match(/(\d+)mm/);
-            const paperTypes = [
-              "White PE Coated",
-              "Kraft PE Coated",
-              "Kraft Uncoated",
-              "SBS/FBB",
-              "Whiteback",
-              "Greyback",
-              "Art Paper",
-              "Gumming Sheet",
-            ];
-            const foundType = paperTypes.find((t) => name.includes(t));
-            if (gsmMatch) it.gsm = gsmMatch[1];
-            if (dimMatch) {
-              it.widthMm = dimMatch[1];
-              it.lengthMm = dimMatch[2];
-            } else if (widthMatch) it.widthMm = widthMatch[1];
-            if (foundType) it.subCategory = foundType;
+          if (it.materialType === "Raw Material") {
+            if (name.includes("Paper Reel")) {
+              it.category = "Paper Reel";
+              const gsmMatch = name.match(/(\d+)gsm/);
+              const widthMatch = name.match(/(\d+)mm/);
+              const paperTypes = [
+                "MG Kraft",
+                "MF Kraft",
+                "Bleached Kraft",
+                "OGR",
+              ];
+              const foundType = paperTypes.find((t) => name.includes(t));
+              if (gsmMatch) it.gsm = gsmMatch[1];
+              if (widthMatch) it.widthMm = widthMatch[1];
+              if (foundType) it.subCategory = foundType;
+            } else if (name.includes("Sheet")) {
+              it.category = "Paper Sheets";
+              const gsmMatch = name.match(/(\d+)gsm/);
+              const dimMatch = name.match(/(\d+)x(\d+)mm/);
+              const widthMatch = name.match(/(\d+)mm/);
+              const paperTypes = [
+                "White PE Coated",
+                "Kraft PE Coated",
+                "Kraft Uncoated",
+                "SBS/FBB",
+                "Whiteback",
+                "Greyback",
+                "Art Paper",
+                "Gumming Sheet",
+              ];
+              const foundType = paperTypes.find((t) => name.includes(t));
+              if (gsmMatch) it.gsm = gsmMatch[1];
+              if (dimMatch) {
+                it.widthMm = dimMatch[1];
+                it.lengthMm = dimMatch[2];
+              } else if (widthMatch) it.widthMm = widthMatch[1];
+              if (foundType) it.subCategory = foundType;
+            }
+          } else if (it.materialType === "Consumable") {
+            const lowName = (it.itemName || "").toLowerCase();
+            if (lowName.includes("ldpe polybag")) it.category = "LDPE Polybag";
+            else if (lowName.includes("box") || lowName.includes("corrugated"))
+              it.category = "Corrugated Box";
+            else if (lowName.includes("tape")) it.category = "Tape";
+            else if (lowName.includes("glue")) it.category = "Glue";
+
+            const consDimMatch = (it.itemName || "").match(
+              /(\d+)[\s-]*x[\s-]*(\d+)(?:[\s-]*x[\s-]*(\d+))?[\s-]*(\w+)/i,
+            );
+            if (consDimMatch) {
+              it.widthMm = consDimMatch[1];
+              if (consDimMatch[3]) {
+                it.lengthMm = consDimMatch[2];
+                it.height = consDimMatch[3];
+                it.uom = consDimMatch[4];
+              } else {
+                it.height = consDimMatch[2];
+                it.uom = consDimMatch[4];
+              }
+            }
           }
         }
       }
@@ -337,6 +385,28 @@ export default function MaterialInward({
         : qty && rate
           ? (qty * rate).toFixed(2)
           : "";
+
+      const amt = +it.amount || 0;
+      const gst = +it.gstRate || 0;
+      const tax = (amt * gst) / 100;
+      it.taxAmount = tax.toFixed(2);
+      it.totalWithTax = (amt + tax).toFixed(2);
+
+      if (it.materialType === "Consumable") {
+        const uom = it.uom || "nos";
+        if (it.category === "Corrugated Box") {
+          const dims = [it.widthMm, it.lengthMm, it.height].filter(Boolean);
+          const sizePart = it.size || (dims.length > 0 ? dims.join("x") : "");
+          it.itemName = `Corrugated Box ${sizePart}${uom}`;
+        } else if (it.category === "LDPE Polybag") {
+          const dims = [it.widthMm, it.height].filter(Boolean);
+          const sizePart = it.size || (dims.length > 0 ? dims.join("x") : "");
+          it.itemName = `LDPE Polybag ${sizePart}${uom}`;
+        } else if (it.category === "Tape" || it.category === "Glue") {
+          const sizePart = it.size ? ` ${it.size}` : "";
+          it.itemName = `${it.category}${sizePart}${uom}`;
+        }
+      }
 
       updated[idx] = it;
       return updated;
@@ -391,6 +461,23 @@ export default function MaterialInward({
         )
           e.noOfSheets = true;
         if (!it.weight) e.weight = true;
+        if (!it.rate) e.rate = true;
+      } else if (it.materialType === "Consumable") {
+        if (!it.category) e.category = true;
+        if (
+          (it.category === "Corrugated Box" ||
+            it.category === "LDPE Polybag") &&
+          !it.widthMm
+        )
+          e.widthMm = true;
+        if (it.category === "Corrugated Box" && !it.lengthMm) e.lengthMm = true;
+        if (
+          (it.category === "Corrugated Box" ||
+            it.category === "LDPE Polybag") &&
+          !it.height
+        )
+          e.height = true;
+        if (!it.qty) e.qty = true;
         if (!it.rate) e.rate = true;
       }
       return e;
@@ -827,11 +914,22 @@ export default function MaterialInward({
                   onChange={(e) => setH("poRef", e.target.value)}
                 >
                   <option value="">-- Link to PO (optional) --</option>
-                  {(purchaseOrders || [])
-                    .filter((p) => p.status !== "Received")
+                  {(poList && poList.length > 0 ? poList : purchaseOrders || [])
+                    .filter((p) => {
+                      const s = (p.status || p.poStatus || "Open")
+                        .toString()
+                        .trim()
+                        .toLowerCase();
+                      return (
+                        s !== "received" &&
+                        s !== "fulfilled" &&
+                        s !== "closed" &&
+                        s !== "completed"
+                      );
+                    })
                     .map((p) => (
                       <option key={p.poNo} value={p.poNo}>
-                        {p.poNo} —{" "}
+                        {p.poNo} ({p.status || p.poStatus || "Open"}) —{" "}
                         {p.vendor?.name ||
                           p.vendor ||
                           p.vendorName ||
@@ -967,7 +1065,7 @@ export default function MaterialInward({
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+                  gridTemplateColumns: "repeat(5, 1fr)",
                   gap: 12,
                 }}
               >
@@ -1106,8 +1204,332 @@ export default function MaterialInward({
                         }}
                       />
                     </Field>
+                    <div style={{ gridColumn: "span 3" }} />
                   </>
                 )}
+
+                {it.materialType === "Consumable" && (
+                  <>
+                    <Field label="Category *">
+                      <select
+                        value={it.category}
+                        onChange={(e) =>
+                          setItem(idx, "category", e.target.value)
+                        }
+                        style={EI(idx, "category")}
+                      >
+                        <option value="">-- Select Category --</option>
+                        {consumableCategories.map((c) => (
+                          <option key={c} value={c}>
+                            {c}
+                          </option>
+                        ))}
+                      </select>
+                      {EIMsg(idx, "category")}
+                    </Field>
+
+                    <Field label="Size">
+                      <input
+                        placeholder="e.g. 200mm"
+                        value={it.size}
+                        onChange={(e) => setItem(idx, "size", e.target.value)}
+                      />
+                    </Field>
+
+                    {it.category === "Corrugated Box" ||
+                    it.category === "LDPE Polybag" ? (
+                      <>
+                        <div
+                          style={{
+                            gridColumn: "1 / -1",
+                            height: 1,
+                            margin: "4px 0",
+                          }}
+                        />
+                        <Field label="UOM">
+                          <select
+                            value={it.uom || "nos"}
+                            onChange={(e) =>
+                              setItem(idx, "uom", e.target.value)
+                            }
+                          >
+                            <option value="nos">nos</option>
+                            <option value="kg">kg</option>
+                            <option value="set">set</option>
+                            <option value="pcs">pcs</option>
+                            <option value="pkt">pkt</option>
+                          </select>
+                        </Field>
+                        {it.category === "Corrugated Box" && (
+                          <>
+                            <Field label="Width *">
+                              <input
+                                type="number"
+                                placeholder="Width"
+                                value={it.widthMm || ""}
+                                onChange={(e) =>
+                                  setItem(idx, "widthMm", e.target.value)
+                                }
+                                style={EI(idx, "widthMm")}
+                              />
+                            </Field>
+                            <Field label="Length *">
+                              <input
+                                type="number"
+                                placeholder="Length"
+                                value={it.lengthMm || ""}
+                                onChange={(e) =>
+                                  setItem(idx, "lengthMm", e.target.value)
+                                }
+                                style={EI(idx, "lengthMm")}
+                              />
+                            </Field>
+                            <Field label="Height *">
+                              <input
+                                type="number"
+                                placeholder="Height"
+                                value={it.height || ""}
+                                onChange={(e) =>
+                                  setItem(idx, "height", e.target.value)
+                                }
+                                style={EI(idx, "height")}
+                              />
+                            </Field>
+                            <div style={{ gridColumn: "span 1" }} />
+                          </>
+                        )}
+                        {it.category === "LDPE Polybag" && (
+                          <>
+                            <Field label="Width *">
+                              <input
+                                type="number"
+                                placeholder="Width"
+                                value={it.widthMm || ""}
+                                onChange={(e) =>
+                                  setItem(idx, "widthMm", e.target.value)
+                                }
+                                style={EI(idx, "widthMm")}
+                              />
+                            </Field>
+                            <Field label="Height *">
+                              <input
+                                type="number"
+                                placeholder="Height"
+                                value={it.height || ""}
+                                onChange={(e) =>
+                                  setItem(idx, "height", e.target.value)
+                                }
+                                style={EI(idx, "height")}
+                              />
+                            </Field>
+                            <div style={{ gridColumn: "span 2" }} />
+                          </>
+                        )}
+
+                        <div
+                          style={{
+                            gridColumn: "1 / -1",
+                            height: 1,
+                            margin: "4px 0",
+                          }}
+                        />
+                        <Field
+                          label="ITEM NAME"
+                          style={{ gridColumn: "span 2" }}
+                        >
+                          <div
+                            style={{
+                              padding: "10px 14px",
+                              background: "#0c0c0e",
+                              border: "1px solid #2a2a2e",
+                              borderRadius: 6,
+                              color: "#4ade80",
+                              fontWeight: 700,
+                              minHeight: 40,
+                              fontSize: 13,
+                            }}
+                          >
+                            {it.itemName}
+                          </div>
+                        </Field>
+                        <Field label="QUANTITY *">
+                          <input
+                            type="number"
+                            placeholder="Qty"
+                            value={it.qty}
+                            onChange={(e) =>
+                              setItem(idx, "qty", e.target.value)
+                            }
+                            style={EI(idx, "qty")}
+                          />
+                        </Field>
+                        <Field label="UNIT *">
+                          <select
+                            value={it.unit || "nos"}
+                            onChange={(e) =>
+                              setItem(idx, "unit", e.target.value)
+                            }
+                          >
+                            <option value="nos">nos</option>
+                            <option value="kg">kg</option>
+                            <option value="pcs">pcs</option>
+                          </select>
+                        </Field>
+                        <Field label="RATE (₹/NOS) *">
+                          <input
+                            type="number"
+                            placeholder="Rate per unit"
+                            value={it.rate}
+                            onChange={(e) =>
+                              setItem(idx, "rate", e.target.value)
+                            }
+                            style={EI(idx, "rate")}
+                          />
+                        </Field>
+
+                        <div
+                          style={{
+                            gridColumn: "1 / -1",
+                            height: 1,
+                            margin: "4px 0",
+                          }}
+                        />
+                        <Field label="AMOUNT (₹)">
+                          <input
+                            readOnly
+                            value={
+                              it.amount
+                                ? `₹${fmt(+it.amount)}`
+                                : "— Qty × Rate —"
+                            }
+                            style={{
+                              background: "#0c0c0e",
+                              color: it.amount ? C.green : C.muted,
+                              fontWeight: 700,
+                            }}
+                          />
+                        </Field>
+                        <div style={{ gridColumn: "span 4" }} />
+                      </>
+                    ) : (
+                      <>
+                        <div
+                          style={{
+                            gridColumn: "1 / -1",
+                            height: 1,
+                            margin: "4px 0",
+                          }}
+                        />
+                        <Field label="UOM">
+                          <select
+                            value={it.uom || "nos"}
+                            onChange={(e) =>
+                              setItem(idx, "uom", e.target.value)
+                            }
+                          >
+                            <option value="nos">nos</option>
+                            <option value="kg">kg</option>
+                            <option value="set">set</option>
+                            <option value="pcs">pcs</option>
+                            <option value="pkt">pkt</option>
+                            <option value="mtr">mtr</option>
+                          </select>
+                        </Field>
+                        <Field label="QUANTITY *">
+                          <input
+                            type="number"
+                            placeholder="e.g. 10"
+                            value={it.qty}
+                            onChange={(e) =>
+                              setItem(idx, "qty", e.target.value)
+                            }
+                            style={EI(idx, "qty")}
+                          />
+                        </Field>
+                        <Field label="UNIT">
+                          <select
+                            value={it.unit || "nos"}
+                            onChange={(e) =>
+                              setItem(idx, "unit", e.target.value)
+                            }
+                          >
+                            <option value="nos">nos</option>
+                            <option value="kg">kg</option>
+                            <option value="pcs">pcs</option>
+                          </select>
+                        </Field>
+                        <Field label="RATE (₹/NOS) *">
+                          <input
+                            type="number"
+                            placeholder="Rate per unit"
+                            value={it.rate}
+                            onChange={(e) =>
+                              setItem(idx, "rate", e.target.value)
+                            }
+                            style={EI(idx, "rate")}
+                          />
+                        </Field>
+                        <Field label="AMOUNT (₹)">
+                          <input
+                            readOnly
+                            value={
+                              it.amount
+                                ? `₹${fmt(+it.amount)}`
+                                : "— Qty × Rate —"
+                            }
+                            style={{
+                              background: "#0c0c0e",
+                              color: it.amount ? C.green : C.muted,
+                              fontWeight: 700,
+                            }}
+                          />
+                        </Field>
+                      </>
+                    )}
+                  </>
+                )}
+
+                <div
+                  style={{
+                    gridColumn: "1 / -1",
+                    height: 1,
+                    borderTop: `1px dashed ${C.border}`,
+                    margin: "4px 0",
+                  }}
+                />
+
+                <Field label="GST (%)">
+                  <input
+                    type="number"
+                    placeholder="18"
+                    value={it.gstRate || 18}
+                    onChange={(e) => setItem(idx, "gstRate", e.target.value)}
+                  />
+                </Field>
+                <Field label="HSN">
+                  <input
+                    placeholder="HSN code"
+                    value={it.hsnCode || ""}
+                    onChange={(e) => setItem(idx, "hsnCode", e.target.value)}
+                  />
+                </Field>
+                <Field label="Total (incl Tax)">
+                  <div
+                    style={{
+                      padding: "9px 12px",
+                      background: "#0c0c0e",
+                      border: "1px solid #2a2a2e",
+                      borderRadius: 6,
+                      fontSize: 13,
+                      color: it.totalWithTax ? C.green : C.muted,
+                      fontWeight: it.totalWithTax ? 700 : 400,
+                      fontFamily: "'JetBrains Mono',monospace",
+                    }}
+                  >
+                    {it.totalWithTax ? `₹${fmt(+it.totalWithTax)}` : "—"}
+                  </div>
+                </Field>
+                <div style={{ gridColumn: "span 2" }} />
               </div>
               <Field label="Item Name" span={2}>
                 <input
@@ -1475,7 +1897,6 @@ export default function MaterialInward({
         </div>
       )}
 
-      {}
       {showSuccess && (
         <div
           style={{

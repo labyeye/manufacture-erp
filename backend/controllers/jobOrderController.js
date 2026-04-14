@@ -235,6 +235,30 @@ exports.create = async (req, res) => {
 
     await upsertPrintingMaster(jobOrder);
 
+    if (jobOrderData.soRef) {
+      const so = await SalesOrder.findOne({ soNo: jobOrderData.soRef });
+      if (so) {
+        const allJOs = await JobOrder.find({ soRef: jobOrderData.soRef });
+        let allScheduled = true;
+
+        so.items.forEach(soItem => {
+          const orderedForThisItem = soItem.orderQty || 0;
+          const scheduledQty = allJOs
+            .filter(jo => jo.itemName === soItem.itemName)
+            .reduce((sum, jo) => sum + (jo.orderQty || 0), 0);
+            
+          if (scheduledQty < orderedForThisItem) {
+            allScheduled = false;
+          }
+        });
+
+        if (allScheduled && so.status !== 'Issued') {
+          so.status = 'Issued';
+          await so.save();
+        }
+      }
+    }
+
     res.status(201).json(jobOrder);
   } catch (error) {
     console.error('Create job order error:', error);
@@ -303,68 +327,7 @@ exports.addStage = async (req, res) => {
       enteredAt: new Date()
     });
 
-    const currentQty = jobOrder.stageQtyMap.get(stage) || 0;
-    jobOrder.stageQtyMap.set(stage, currentQty + (qtyCompleted || 0));
-
-    const currentTotal = jobOrder.stageTotalMap.get(stage) || 0;
-    jobOrder.stageTotalMap.set(stage, currentTotal + (qtyCompleted || 0) + (qtyRejected || 0));
-
-    const orderedProcesses = jobOrder.process || [];
-    const completedProcesses = [];
-
-    for (const proc of orderedProcesses) {
-      if (jobOrder.stageHistory.some(e => e.stage === proc)) {
-        completedProcesses.push(proc);
-      }
-    }
-
-    jobOrder.completedProcesses = completedProcesses;
-    jobOrder.currentStage = orderedProcesses.find(p => !completedProcesses.includes(p)) || 'Completed';
-    jobOrder.status = completedProcesses.length === orderedProcesses.length
-      ? 'Completed'
-      : completedProcesses.length > 0
-      ? 'In Progress'
-      : 'Open';
-
-    // Update FG Stock if this is a formation stage or if job is completed
-    const isFormationStage = stage.includes('Formation');
-    if (isFormationStage || jobOrder.status === 'Completed') {
-      const lastStage = orderedProcesses[orderedProcesses.length - 1];
-      // If it's a formation stage, we sync the current progress of THAT stage to FG stock
-      // Usually, formation is the final stage anyway.
-      const finishedQty = jobOrder.stageQtyMap.get(stage) || 0;
-
-      let price = 0;
-      if (jobOrder.soRef) {
-        const so = await SalesOrder.findOne({ soNo: jobOrder.soRef });
-        if (so) {
-          const joName = (jobOrder.itemName || "").trim().toLowerCase();
-          const item = so.items.find(i => (i.itemName || "").trim().toLowerCase() === joName);
-          if (item) {
-            price = item.price || 0;
-          } else {
-            console.log(`⚠️ Item "${jobOrder.itemName}" not found in SO ${jobOrder.soRef}. Items present:`, so.items.map(i => i.itemName));
-          }
-        }
-      }
-
-      await FGStock.findOneAndUpdate(
-        {
-          itemName: jobOrder.itemName,
-          joNo: jobOrder.joNo
-        },
-        {
-          itemName: jobOrder.itemName,
-          joNo: jobOrder.joNo,
-          soRef: jobOrder.soRef,
-          clientName: jobOrder.clientName,
-          qty: finishedQty,
-          price,
-          lastUpdated: new Date()
-        },
-        { upsert: true }
-      );
-    }
+    await recalculateProductionStats(jobOrder);
 
     await jobOrder.save();
     res.json(jobOrder);
@@ -373,6 +336,140 @@ exports.addStage = async (req, res) => {
     res.status(500).json({ error: 'Failed to add stage entry' });
   }
 };
+
+exports.updateStage = async (req, res) => {
+  try {
+    const { id, stageId } = req.params;
+    const updateData = req.body;
+    const jobOrder = await JobOrder.findById(id);
+
+    if (!jobOrder) {
+      return res.status(404).json({ error: 'Job order not found' });
+    }
+
+    const stageEntry = jobOrder.stageHistory.id(stageId);
+    if (!stageEntry) {
+      return res.status(404).json({ error: 'Stage record not found' });
+    }
+
+    // Update the stage entry
+    Object.assign(stageEntry, {
+      ...updateData,
+      date: updateData.date ? new Date(updateData.date) : stageEntry.date,
+      qtyCompleted: Number(updateData.qtyCompleted),
+      qtyRejected: Number(updateData.qtyRejected || 0)
+    });
+
+    // Helper function to recalculate all stats (similar to addStage logic)
+    await recalculateProductionStats(jobOrder);
+
+    await jobOrder.save();
+    res.json(jobOrder);
+  } catch (error) {
+    console.error('Update stage error:', error);
+    res.status(500).json({ error: 'Failed to update stage entry' });
+  }
+};
+
+exports.deleteStage = async (req, res) => {
+  try {
+    const { id, stageId } = req.params;
+    const jobOrder = await JobOrder.findById(id);
+
+    if (!jobOrder) {
+      return res.status(404).json({ error: 'Job order not found' });
+    }
+
+    jobOrder.stageHistory.pull({ _id: stageId });
+
+    // Helper function to recalculate all stats
+    await recalculateProductionStats(jobOrder);
+
+    await jobOrder.save();
+    res.json(jobOrder);
+  } catch (error) {
+    console.error('Delete stage error:', error);
+    res.status(500).json({ error: 'Failed to delete stage entry' });
+  }
+};
+
+async function recalculateProductionStats(jobOrder) {
+  const stageQtyMap = new Map();
+  const stageTotalMap = new Map();
+  const completedProcessesSet = new Set();
+
+  for (const h of jobOrder.stageHistory) {
+    const stage = h.stage;
+    const qC = Number(h.qtyCompleted || 0);
+    const qR = Number(h.qtyRejected || 0);
+
+    stageQtyMap.set(stage, (stageQtyMap.get(stage) || 0) + qC);
+    stageTotalMap.set(stage, (stageTotalMap.get(stage) || 0) + qC + qR);
+    completedProcessesSet.add(stage);
+  }
+
+  jobOrder.stageQtyMap = stageQtyMap;
+  jobOrder.stageTotalMap = stageTotalMap;
+
+  const orderedProcesses = jobOrder.process || [];
+  const completedProcesses = orderedProcesses.filter(p => completedProcessesSet.has(p));
+
+  jobOrder.completedProcesses = completedProcesses;
+  jobOrder.currentStage = orderedProcesses.find(p => !completedProcessesSet.has(p)) || 'Completed';
+  
+  jobOrder.status = completedProcesses.length === orderedProcesses.length
+    ? 'Completed'
+    : completedProcesses.length > 0
+    ? 'In Progress'
+    : 'Open';
+
+  // FG Stock Update Logic
+  const formationStages = jobOrder.stageHistory.filter(h => h.stage.includes('Formation'));
+  if (formationStages.length > 0 || jobOrder.status === 'Completed') {
+    const formationQty = Array.from(stageQtyMap.entries())
+      .filter(([s]) => s.includes('Formation'))
+      .reduce((sum, [_, q]) => sum + q, 0);
+
+    const lastOrderedStage = orderedProcesses[orderedProcesses.length - 1];
+    const finalQty = formationQty || stageQtyMap.get(lastOrderedStage) || 0;
+
+    let price = 0;
+    if (jobOrder.soRef) {
+      const so = await SalesOrder.findOne({ soNo: jobOrder.soRef });
+      if (so) {
+        const joName = (jobOrder.itemName || "").trim().toLowerCase();
+        const item = so.items.find(i => (i.itemName || "").trim().toLowerCase() === joName);
+        if (item) price = item.price || 0;
+      }
+    }
+
+    if (finalQty > 0 || jobOrder.status === 'Completed') {
+      await FGStock.findOneAndUpdate(
+        { itemName: jobOrder.itemName, joNo: jobOrder.joNo },
+        {
+          itemName: jobOrder.itemName,
+          joNo: jobOrder.joNo,
+          soRef: jobOrder.soRef,
+          clientName: jobOrder.clientName,
+          qty: finalQty,
+          price,
+          lastUpdated: new Date()
+        },
+        { upsert: true }
+      );
+    } else {
+        // If final qty drop to 0 and not completed, maybe remove from FG stock?
+        // For now, just set to 0.
+        await FGStock.updateOne(
+            { itemName: jobOrder.itemName, joNo: jobOrder.joNo },
+            { qty: 0 }
+        );
+    }
+  } else {
+      // If no formation stage and not completed, remove from FG stock if it exists
+      await FGStock.deleteOne({ joNo: jobOrder.joNo });
+  }
+}
 
 exports.getJobCardPDF = async (req, res) => {
   try {

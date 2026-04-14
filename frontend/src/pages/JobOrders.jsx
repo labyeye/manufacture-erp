@@ -248,7 +248,7 @@ export default function JobOrders(props) {
   const [drDateTo, setDrDateTo] = useState("");
 
   const soOptions = useMemo(
-    () => (salesOrders || []).filter((s) => s.status !== "Completed"),
+    () => (salesOrders || []).filter((s) => !["Issued", "Completed", "Closed", "Cancelled"].includes(s.status)),
     [salesOrders],
   );
 

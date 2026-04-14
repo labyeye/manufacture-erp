@@ -48,7 +48,7 @@ const salesOrderSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Open', 'In Production', 'Dispatched', 'Closed', 'Cancelled'],
+    enum: ['Open', 'Issued', 'In Production', 'Dispatched', 'Closed', 'Cancelled'],
     default: 'Open'
   },
   remarks: String,

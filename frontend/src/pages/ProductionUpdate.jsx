@@ -62,6 +62,7 @@ export default function ProductionUpdate({
   const [searchTerm, setSearchTerm] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [editingEntry, setEditingEntry] = useState(null); // { joId, stageId }
 
   const fetchJobOrders = async () => {
     try {
@@ -151,10 +152,16 @@ export default function ProductionUpdate({
         remarks: entry.remarks,
       };
 
-      await jobOrdersAPI.addStage(jo._id, stageData);
-      toast(`Production updated for ${entry.joNo}`, "success");
+      if (editingEntry) {
+        await jobOrdersAPI.updateStage(editingEntry.joId, editingEntry.stageId, stageData);
+        toast(`Production updated for ${entry.joNo}`, "success");
+      } else {
+        await jobOrdersAPI.addStage(jo._id, stageData);
+        toast(`Production recorded for ${entry.joNo}`, "success");
+      }
 
       setEntry(blankEntry);
+      setEditingEntry(null);
       setErrors({});
       fetchJobOrders(); // Refresh data to see new history and status
     } catch (error) {
@@ -163,8 +170,74 @@ export default function ProductionUpdate({
     }
   };
 
+  const handleEdit = (jo, record) => {
+    setEntry({
+      joNo: jo.joNo,
+      productionStage: record.stage,
+      operator: record.operator,
+      date: record.date ? record.date.slice(0, 10) : today(),
+      qtyCompleted: record.qtyCompleted,
+      qtyRejected: record.qtyRejected || 0,
+      remarks: record.remarks || "",
+      shift: record.shift || "",
+    });
+    setEditingEntry({ joId: jo._id, stageId: record._id });
+    setView("entry");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleDelete = async (joId, stageId) => {
+    if (!window.confirm("Are you sure you want to delete this production record?")) return;
+    try {
+      await jobOrdersAPI.deleteStage(joId, stageId);
+      toast("Record deleted", "success");
+      fetchJobOrders();
+    } catch (error) {
+      console.error("Delete record error:", error);
+      toast("Failed to delete record", "error");
+    }
+  };
+
   const selectedJO = useMemo(() => jobOrders.find(j => j.joNo === entry.joNo), [jobOrders, entry.joNo]);
   
+  const stageTargetLogic = useMemo(() => {
+    if (!selectedJO || !entry.productionStage) {
+      return { target: 0, done: 0, remain: 0 };
+    }
+    const STAGES_ORDER = ["Printing", "Varnish", "Lamination", "Die Cutting", "Formation", "Manual Formation"];
+    const procArr = [...(selectedJO.process || [])].sort((a, b) => STAGES_ORDER.indexOf(a) - STAGES_ORDER.indexOf(b));
+    const s = entry.productionStage;
+    const sIdx = procArr.indexOf(s);
+    if (sIdx === -1) return { target: 0, done: 0, remain: 0 };
+
+    const isFormation = s.includes("Formation");
+    const isSheet = (selectedJO.paperCategory || "").toLowerCase().includes("sheet");
+
+    let target = 0;
+    if (isFormation) {
+      target = selectedJO.orderQty || 0;
+    } else if (sIdx === 0) {
+      target = isSheet ? (selectedJO.noOfSheets || 0) : (selectedJO.reelWeightKg || 0);
+    } else {
+      const prevS = procArr[sIdx - 1];
+      target = selectedJO.stageQtyMap?.[prevS] || 0;
+    }
+
+    const done = selectedJO.stageTotalMap?.[s] || 0;
+
+    let pastDoneActual = done;
+    if (editingEntry && editingEntry.joId === selectedJO._id) {
+       const pastRec = selectedJO.stageHistory?.find(h => h._id === editingEntry.stageId);
+       if (pastRec && pastRec.stage === s) {
+          pastDoneActual -= (pastRec.qtyCompleted || 0);
+       }
+    }
+
+    const remain = Math.max(0, target - pastDoneActual);
+
+    return { target, done, remain };
+  }, [selectedJO, entry.productionStage, editingEntry]);
+
   const availableQty = useMemo(() => {
     if (!selectedJO || !entry.productionStage) return null;
     
@@ -253,7 +326,7 @@ export default function ProductionUpdate({
                 textTransform: "capitalize",
               }}
             >
-              Stage Update Entry
+              {editingEntry ? "Edit Production Record" : "Stage Update Entry"}
             </h3>
             <div
               style={{
@@ -337,26 +410,33 @@ export default function ProductionUpdate({
                     const done = selectedJO?.stageTotalMap?.[s] || 0;
                     const unit = isFormation ? "" : (isSheet ? "" : " kg");
                     
-                    // Logic to disable next stage if previous is not done
+                    // Strict sequential lock: disable if ANY previous stage is incomplete
                     let disabled = false;
-                    if (idx > 0) {
-                      const prevS = arr[idx - 1];
+                    for (let i = 0; i < idx; i++) {
+                      const prevS = arr[i];
                       const prevDone = selectedJO?.stageTotalMap?.[prevS] || 0;
                       
                       let prevTarget = 0;
-                      const prevIsFormation = prevS.includes("Formation");
-                      if (prevIsFormation) {
+                      if (prevS.includes("Formation")) {
                         prevTarget = selectedJO?.orderQty || 0;
-                      } else if (idx === 1) { // Prev was the first stage
+                      } else if (i === 0) {
                         prevTarget = isSheet ? (selectedJO?.noOfSheets || 0) : (selectedJO?.reelWeightKg || 0);
                       } else {
-                        const beforePrevS = arr[idx-2];
+                        const beforePrevS = arr[i-1];
                         prevTarget = selectedJO?.stageQtyMap?.[beforePrevS] || 0;
                       }
                       
-                      if (prevDone < prevTarget) {
+                      // If the previous stage has no target (meaning the one before it hasn't produced yield)
+                      // OR the previous stage hasn't hit its target, lock this stage.
+                      if (prevTarget <= 0 || prevDone < prevTarget) {
                         disabled = true;
+                        break;
                       }
+                    }
+
+                    // Strict auto-lock: disable this stage entirely if it's already fully completed!
+                    if (!disabled && target > 0 && done >= target && (!editingEntry || entry.productionStage !== s)) {
+                      disabled = true;
                     }
 
                     return (
@@ -432,8 +512,16 @@ export default function ProductionUpdate({
                 <input
                   type="number"
                   placeholder="Qty done"
+                  max={stageTargetLogic.remain}
                   value={entry.qtyCompleted}
-                  onChange={(e) => setField("qtyCompleted", e.target.value)}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    if (val > stageTargetLogic.remain) {
+                      toast(`Cannot exceed remaining target (${stageTargetLogic.remain})`, "error");
+                      return;
+                    }
+                    setField("qtyCompleted", e.target.value);
+                  }}
                   style={E("qtyCompleted")}
                 />
                 {EMsg("qtyCompleted")}
@@ -474,11 +562,31 @@ export default function ProductionUpdate({
             </div>
             <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
               <SubmitBtn
-                label={fetching ? "Updating..." : "Update Stage"}
+                label={fetching ? "Saving..." : (editingEntry ? "Update Record" : "Add Record")}
                 color="#FF7F11"
                 onClick={submit}
                 disabled={fetching}
               />
+              {editingEntry && (
+                <button
+                  onClick={() => {
+                    setEditingEntry(null);
+                    setEntry(blankEntry);
+                  }}
+                  style={{
+                    padding: "10px 20px",
+                    borderRadius: 6,
+                    border: `1px solid ${C.border}`,
+                    background: "transparent",
+                    color: C.muted,
+                    fontWeight: 700,
+                    fontSize: 13,
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel Edit
+                </button>
+              )}
             </div>
           </Card>
         </div>
@@ -670,23 +778,44 @@ export default function ProductionUpdate({
                           </div>
                         </div>
 
-                        <button
-                          style={{
-                            background: C.card,
-                            border: `1px solid ${C.blue}44`,
-                            color: C.blue,
-                            padding: "6px 12px",
-                            borderRadius: 6,
-                            fontSize: 11,
-                            fontWeight: 700,
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 4,
-                          }}
-                        >
-                          ✏️ Edit
-                        </button>
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <button
+                            onClick={() => handleEdit(jo, r)}
+                            style={{
+                              background: C.card,
+                              border: `1px solid ${C.blue}44`,
+                              color: C.blue,
+                              padding: "6px 12px",
+                              borderRadius: 6,
+                              fontSize: 11,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 4,
+                            }}
+                          >
+                            ✏️ Edit
+                          </button>
+                          <button
+                            onClick={() => handleDelete(jo._id, r._id)}
+                            style={{
+                              background: C.card,
+                              border: `1px solid ${C.red}44`,
+                              color: C.red,
+                              padding: "6px 12px",
+                              borderRadius: 6,
+                              fontSize: 11,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 4,
+                            }}
+                          >
+                            🗑️ Delete
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>

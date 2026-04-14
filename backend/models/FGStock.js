@@ -14,6 +14,11 @@ const fgStockSchema = new mongoose.Schema({
   },
   unit: String,
   price: Number,
+  category: String,
+  reorder: {
+    type: Number,
+    default: 0
+  },
   addedOn: {
     type: Date,
     default: Date.now

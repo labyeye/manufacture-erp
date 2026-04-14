@@ -10,6 +10,8 @@ const MACHINE_TYPES = [
   "Die Cutting",
   "Pasting",
   "Lamination",
+  "Formation",
+  "Manual Formation",
 ];
 
 const TYPE_ICONS = {
@@ -19,6 +21,8 @@ const TYPE_ICONS = {
   "Die Cutting": "🔲",
   Pasting: "🔧",
   Lamination: "📄",
+  Formation: "📦",
+  "Manual Formation": "🤲",
 };
 
 const TYPE_COLORS = {
@@ -28,6 +32,8 @@ const TYPE_COLORS = {
   "Die Cutting": "#FF9800",
   Pasting: "#4CAF50",
   Lamination: "#00BCD4",
+  Formation: "#E91E63",
+  "Manual Formation": "#8D6E63",
 };
 
 const inputStyle = {

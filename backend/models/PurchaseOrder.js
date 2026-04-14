@@ -8,6 +8,7 @@ const purchaseOrderItemSchema = new mongoose.Schema({
   gsm: Number,
   width: Number,
   length: Number,
+  height: Number,
   sheetSize: String,
   unit: String,
   qty: Number,

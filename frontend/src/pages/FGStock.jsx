@@ -18,6 +18,7 @@ const inputStyle = {
 export default function FGStock({ fgStock = [], setFgStock, toast }) {
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState("All");
+  const [editingItem, setEditingItem] = useState(null);
   const fileInputRef = useRef(null);
 
   const handleUpdateReorder = async (id, newVal) => {
@@ -143,6 +144,70 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
             disabled={saving}
             style={{
               background: "#2196F3",
+              border: "none",
+              borderRadius: 4,
+              color: "#fff",
+              padding: "4px 8px",
+              fontSize: 10,
+              cursor: "pointer",
+            }}
+          >
+            {saving ? "..." : "✓"}
+          </button>
+        )}
+      </div>
+    );
+  };
+
+  const QtyEdit = ({ item }) => {
+    const [val, setVal] = useState(item.qty || 0);
+    const [saving, setSaving] = useState(false);
+    const hasChanged = Number(val) !== (item.qty || 0);
+
+    return (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          justifyContent: "flex-end",
+        }}
+      >
+        <input
+          type="number"
+          value={val}
+          onChange={(e) => setVal(e.target.value)}
+          style={{
+            width: 80,
+            padding: "5px 8px",
+            background: "#0c0c0e",
+            border: `1px solid ${hasChanged ? "#4CAF50" : "#2a2a2e"}`,
+            borderRadius: 4,
+            color: hasChanged ? "#4CAF50" : "#e0e0e0",
+            fontSize: 12,
+            fontWeight: 700,
+            outline: "none",
+            textAlign: "right",
+          }}
+        />
+        {hasChanged && (
+          <button
+            onClick={async () => {
+              setSaving(true);
+              try {
+                await fgStockAPI.update(item._id, { qty: +val });
+                setFgStock((prev) =>
+                  prev.map((s) => (s._id === item._id ? { ...s, qty: +val } : s)),
+                );
+                toast("Quantity updated", "success");
+              } catch (err) {
+                toast("Failed to update qty", "error");
+              }
+              setSaving(false);
+            }}
+            disabled={saving}
+            style={{
+              background: "#4CAF50",
               border: "none",
               borderRadius: 4,
               color: "#fff",
@@ -589,7 +654,7 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
                           color: isLow ? "#f44336" : "#e0e0e0",
                         }}
                       >
-                        {s.qty || 0}
+                        <QtyEdit item={s} />
                       </td>
                       <td
                         style={{
@@ -623,35 +688,52 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
                         })}
                       </td>
                       <td style={{ padding: "10px 14px" }}>
-                        <button
-                          onClick={async () => {
-                            if (confirm("Delete this item from stock?")) {
-                              try {
-                                if (s._id) {
-                                  await fgStockAPI.delete(s._id);
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <button
+                            onClick={() => setEditingItem(s)}
+                            style={{
+                              padding: "4px 9px",
+                              background: "#2196F322",
+                              color: "#2196F3",
+                              border: "none",
+                              borderRadius: 4,
+                              fontSize: 11,
+                              cursor: "pointer",
+                              fontWeight: 700,
+                            }}
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            onClick={async () => {
+                              if (confirm("Delete this item from stock?")) {
+                                try {
+                                  if (s._id) {
+                                    await fgStockAPI.delete(s._id);
+                                  }
+                                  setFgStock((prev) =>
+                                    prev.filter((item) => item._id !== s._id),
+                                  );
+                                  toast("Deleted successfully", "success");
+                                } catch (err) {
+                                  toast("Failed to delete", "error");
                                 }
-                                setFgStock((prev) =>
-                                  prev.filter((item) => item._id !== s._id),
-                                );
-                                toast("Deleted successfully", "success");
-                              } catch (err) {
-                                toast("Failed to delete", "error");
                               }
-                            }
-                          }}
-                          style={{
-                            padding: "4px 9px",
-                            background: "#f4433622",
-                            color: "#f44336",
-                            border: "none",
-                            borderRadius: 4,
-                            fontSize: 11,
-                            cursor: "pointer",
-                            fontWeight: 700,
-                          }}
-                        >
-                          🗑️
-                        </button>
+                            }}
+                            style={{
+                              padding: "4px 9px",
+                              background: "#f4433622",
+                              color: "#f44336",
+                              border: "none",
+                              borderRadius: 4,
+                              fontSize: 11,
+                              cursor: "pointer",
+                              fontWeight: 700,
+                            }}
+                          >
+                            🗑️
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -675,6 +757,170 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
             Total: ₹
             {totalValue.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
           </span>
+        </div>
+      </div>
+      {editingItem && (
+        <EditModal 
+          item={editingItem} 
+          onClose={() => setEditingItem(null)} 
+          onSave={async (updatedData) => {
+            try {
+              await fgStockAPI.update(editingItem._id, updatedData);
+              setFgStock(prev => prev.map(s => s._id === editingItem._id ? { ...s, ...updatedData } : s));
+              setEditingItem(null);
+              toast("Stock item updated", "success");
+            } catch (err) {
+              toast("Failed to update item", "error");
+            }
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function EditModal({ item, onClose, onSave }) {
+  const [formData, setFormData] = useState({
+    itemName: item.itemName || "",
+    joNo: item.joNo || "",
+    soRef: item.soRef || "",
+    clientName: item.clientName || "",
+    category: item.category || "",
+    qty: item.qty || 0,
+    price: item.price || 0,
+    reorder: item.reorder || 0,
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const modalStyle = {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    background: "rgba(0,0,0,0.8)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1000,
+    backdropFilter: "blur(4px)",
+  };
+
+  const contentStyle = {
+    background: "#1a1a1a",
+    padding: 30,
+    borderRadius: 12,
+    width: 500,
+    maxWidth: "90%",
+    border: "1px solid #333",
+    boxShadow: "0 20px 40px rgba(0,0,0,0.4)",
+  };
+
+  const fieldStyle = {
+    marginBottom: 16,
+  };
+
+  const labelStyle = {
+    display: "block",
+    fontSize: 12,
+    color: "#888",
+    marginBottom: 6,
+    fontWeight: 600,
+    textTransform: "uppercase",
+  };
+
+  const inputStyle = {
+    width: "100%",
+    padding: "10px 14px",
+    background: "#0c0c0e",
+    border: "1px solid #2a2a2e",
+    borderRadius: 6,
+    color: "#fff",
+    fontSize: 14,
+    outline: "none",
+  };
+
+  return (
+    <div style={modalStyle}>
+      <div style={contentStyle} className="fade-in">
+        <h3 style={{ margin: "0 0 20px 0", color: "#2196F3", fontSize: 18 }}>Edit Stock Item</h3>
+        
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <div style={fieldStyle}>
+            <label style={labelStyle}>Item Name</label>
+            <input name="itemName" value={formData.itemName} onChange={handleChange} style={inputStyle} />
+          </div>
+          <div style={fieldStyle}>
+            <label style={labelStyle}>Client Name</label>
+            <input name="clientName" value={formData.clientName} onChange={handleChange} style={inputStyle} />
+          </div>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <div style={fieldStyle}>
+            <label style={labelStyle}>Category</label>
+            <input name="category" value={formData.category} onChange={handleChange} style={inputStyle} />
+          </div>
+          <div style={fieldStyle}>
+            <label style={labelStyle}>Job Order #</label>
+            <input name="joNo" value={formData.joNo} onChange={handleChange} style={inputStyle} />
+          </div>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+          <div style={fieldStyle}>
+            <label style={labelStyle}>Quantity</label>
+            <input type="number" name="qty" value={formData.qty} onChange={handleChange} style={inputStyle} />
+          </div>
+          <div style={fieldStyle}>
+            <label style={labelStyle}>Price (₹)</label>
+            <input type="number" step="0.01" name="price" value={formData.price} onChange={handleChange} style={inputStyle} />
+          </div>
+          <div style={fieldStyle}>
+            <label style={labelStyle}>Reorder Level</label>
+            <input type="number" name="reorder" value={formData.reorder} onChange={handleChange} style={inputStyle} />
+          </div>
+        </div>
+
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginTop: 10 }}>
+          <button 
+            onClick={onClose}
+            style={{ 
+              padding: "10px 20px", 
+              background: "transparent", 
+              border: "1px solid #333", 
+              color: "#888", 
+              borderRadius: 6, 
+              cursor: "pointer",
+              fontWeight: 600
+            }}
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={() => {
+              const cleaned = { ...formData };
+              cleaned.qty = Number(cleaned.qty);
+              cleaned.price = Number(cleaned.price);
+              cleaned.reorder = Number(cleaned.reorder);
+              onSave(cleaned);
+            }}
+            style={{ 
+              padding: "10px 24px", 
+              background: "#2196F3", 
+              border: "none", 
+              color: "#fff", 
+              borderRadius: 6, 
+              cursor: "pointer",
+              fontWeight: 700
+            }}
+          >
+            Save Changes
+          </button>
         </div>
       </div>
     </div>

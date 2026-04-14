@@ -44,6 +44,50 @@ exports.create = async (req, res) => {
       status,
     } = req.body;
 
+    if (invoiceNo) {
+      const existingInward = await MaterialInward.findOne({ invoiceNo: invoiceNo.trim() });
+      if (existingInward) {
+        return res.status(400).json({ message: `Material Inward with Invoice Number '${invoiceNo}' already exists.` });
+      }
+    }
+
+    if (poRef) {
+      const po = await PurchaseOrder.findOne({ poNo: poRef });
+      if (po) {
+        const allInwards = await MaterialInward.find({ poRef: poRef });
+        
+        let orderedMap = {};
+        po.items.forEach(it => {
+          const key = it.itemName || it.productCode || 'unknown';
+          orderedMap[key] = (orderedMap[key] || 0) + (Number(it.weight) || Number(it.qty) || 0);
+        });
+
+        let receivedMap = {};
+        allInwards.forEach(inw => {
+          inw.items.forEach(it => {
+            const key = it.itemName || it.productCode || 'unknown';
+            receivedMap[key] = (receivedMap[key] || 0) + (Number(it.weight) || Number(it.qty) || 0);
+          });
+        });
+
+        for (const it of items) {
+          const key = it.itemName || it.productCode || 'unknown';
+          const incoming = (Number(it.weight) || Number(it.qty) || 0);
+          const ordered = orderedMap[key] || 0;
+          const previouslyReceived = receivedMap[key] || 0;
+          
+          if (ordered > 0) {
+            const allowed = ordered * 1.20;
+            if ((previouslyReceived + incoming) > allowed) {
+              return res.status(400).json({ 
+                message: `Excess receiving not allowed for ${key}. Ordered: ${ordered}, Maximum Allowed (20% excess): ${allowed}, Trying to receive: ${previouslyReceived + incoming}`
+              });
+            }
+          }
+        }
+      }
+    }
+
     const inward = new MaterialInward({
       inwardDate,
       poRef,
@@ -109,6 +153,35 @@ exports.create = async (req, res) => {
       console.error("Critical error in stock update loop:", stockErr);
     }
 
+    if (poRef) {
+      try {
+        const po = await PurchaseOrder.findOne({ poNo: poRef });
+        if (po) {
+          const allInwards = await MaterialInward.find({ poRef: poRef });
+          
+          let totalOrdered = 0;
+          let totalReceived = 0;
+
+          po.items.forEach(item => {
+             totalOrdered += (Number(item.weight) || Number(item.qty) || 0);
+          });
+
+          allInwards.forEach(inw => {
+            inw.items.forEach(item => {
+               totalReceived += (Number(item.weight) || Number(item.qty) || 0);
+            });
+          });
+
+          if (totalOrdered > 0 && totalReceived >= 0.95 * totalOrdered) {
+            po.status = "Received";
+            await po.save();
+          }
+        }
+      } catch (poErr) {
+        console.error("Failed to update PO status:", poErr);
+      }
+    }
+
     await inward.populate("purchaseOrderRef");
     await inward.populate("vendor.id");
     await inward.populate("createdBy", "name email");
@@ -136,8 +209,52 @@ exports.update = async (req, res) => {
       status,
     } = req.body;
 
+    if (invoiceNo) {
+      const existingInward = await MaterialInward.findOne({ invoiceNo: invoiceNo.trim(), _id: { $ne: req.params.id } });
+      if (existingInward) {
+        return res.status(400).json({ message: `Material Inward with Invoice Number '${invoiceNo}' already exists.` });
+      }
+    }
+
     const inward = await MaterialInward.findById(req.params.id);
     if (!inward) return res.status(404).json({ message: "Inward not found" });
+
+    if (poRef) {
+      const po = await PurchaseOrder.findOne({ poNo: poRef });
+      if (po) {
+        const allInwards = await MaterialInward.find({ poRef: poRef, _id: { $ne: req.params.id } });
+        
+        let orderedMap = {};
+        po.items.forEach(it => {
+          const key = it.itemName || it.productCode || 'unknown';
+          orderedMap[key] = (orderedMap[key] || 0) + (Number(it.weight) || Number(it.qty) || 0);
+        });
+
+        let receivedMap = {};
+        allInwards.forEach(inw => {
+          inw.items.forEach(it => {
+            const key = it.itemName || it.productCode || 'unknown';
+            receivedMap[key] = (receivedMap[key] || 0) + (Number(it.weight) || Number(it.qty) || 0);
+          });
+        });
+
+        for (const it of items) {
+          const key = it.itemName || it.productCode || 'unknown';
+          const incoming = (Number(it.weight) || Number(it.qty) || 0);
+          const ordered = orderedMap[key] || 0;
+          const previouslyReceived = receivedMap[key] || 0;
+          
+          if (ordered > 0) {
+            const allowed = ordered * 1.20;
+            if ((previouslyReceived + incoming) > allowed) {
+              return res.status(400).json({ 
+                message: `Excess receiving not allowed for ${key}. Ordered: ${ordered}, Maximum Allowed (20% excess): ${allowed}, Trying to receive: ${previouslyReceived + incoming}`
+              });
+            }
+          }
+        }
+      }
+    }
 
     inward.inwardDate = inwardDate || inward.inwardDate;
     inward.poRef = poRef || inward.poRef;

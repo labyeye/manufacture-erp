@@ -48,6 +48,16 @@ export const jobOrdersAPI = {
     return response.data;
   },
 
+  updateStage: async (id, stageId, stageData) => {
+    const response = await api.put(`/job-orders/${id}/stage/${stageId}`, stageData);
+    return response.data;
+  },
+
+  deleteStage: async (id, stageId) => {
+    const response = await api.delete(`/job-orders/${id}/stage/${stageId}`);
+    return response.data;
+  },
+
   getJobCardPDF: async (id) => {
     const response = await api.get(`/job-orders/${id}/jobcard-pdf`, {
       responseType: 'blob'

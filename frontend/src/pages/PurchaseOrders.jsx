@@ -80,6 +80,11 @@ export default function PurchaseOrders({
     hsnCode: "",
     itemName: "",
     size: "",
+    width: "",
+    length: "",
+    height: "",
+    uom: "nos",
+    unit: "nos",
   });
 
   const [header, setHeader] = useState(blankHeader);
@@ -140,6 +145,16 @@ export default function PurchaseOrders({
 
     return [...new Set([...fromMaster, ...fromItems])].map((k) => k.trim());
   }, [categoryMaster, itemMasterItems]);
+
+  const consumableCategories = useMemo(() => {
+    const consCat = Object.values(categoryMaster || {}).find(
+      (c) => (c.type || "").trim().toLowerCase() === "consumable",
+    );
+    const fromMaster =
+      consCat && consCat.subTypes ? Object.keys(consCat.subTypes) : [];
+    const baseline = ["Tape", "Corrugated Box", "LDPE Polybag", "Glue"];
+    return [...new Set([...baseline, ...fromMaster])];
+  }, [categoryMaster]);
 
   // Get paper types (subtypes) for selected RM Item
   const subCategoriesByItem = useMemo(() => {
@@ -428,6 +443,31 @@ export default function PurchaseOrders({
                 it.widthMm = widthMatch[1];
               }
             }
+          } else if (it.materialType === "Consumable") {
+            const name = it.itemName.toLowerCase();
+            if (name.includes("ldpe polybag")) it.category = "LDPE Polybag";
+            else if (name.includes("box") || name.includes("corrugated"))
+              it.category = "Corrugated Box";
+            else if (name.includes("tape")) it.category = "Tape";
+            else if (name.includes("glue")) it.category = "Glue";
+
+            // Extract dimensions like 13x19inch or 24x18x18nos
+            const consDimMatch = it.itemName.match(
+              /(\d+)[\s-]*x[\s-]*(\d+)(?:[\s-]*x[\s-]*(\d+))?[\s-]*(\w+)/i,
+            );
+            if (consDimMatch) {
+              it.width = consDimMatch[1];
+              if (consDimMatch[3]) {
+                // 3D dims: W x L x H
+                it.length = consDimMatch[2];
+                it.height = consDimMatch[3];
+                it.uom = consDimMatch[4];
+              } else {
+                // 2D dims: W x H
+                it.height = consDimMatch[2];
+                it.uom = consDimMatch[4];
+              }
+            }
           }
         }
       }
@@ -470,6 +510,23 @@ export default function PurchaseOrders({
 
       it.itemName =
         isRM && !it.productCode ? computeRMItemName(it) : it.itemName;
+
+      if (it.materialType === "Consumable") {
+        const uom = it.uom || "nos";
+        if (it.category === "Corrugated Box") {
+          const dims = [it.width, it.length, it.height].filter(Boolean);
+          const sizePart = dims.length ? dims.join("x") : it.size || "";
+          it.itemName = `${it.category} ${sizePart}${uom}`;
+        } else if (it.category === "LDPE Polybag") {
+          const dims = [it.width, it.height].filter(Boolean);
+          const sizePart = dims.length ? dims.join("x") : it.size || "";
+          it.itemName = `${it.category} ${sizePart}${uom}`;
+        } else if (it.category) {
+          const sizePart = it.size ? " " + it.size : "";
+          it.itemName = `${it.category}${sizePart}${uom}`;
+        }
+      }
+
       updated[idx] = it;
       return updated;
     });
@@ -564,10 +621,14 @@ export default function PurchaseOrders({
             category: it.category || it.materialType,
             paperType: it.subCategory,
             gsm: it.gsm,
-            width: it.widthMm,
-            length: it.lengthMm,
-            sheetSize: `${it.widthMm}${it.lengthMm ? "x" + it.lengthMm : ""}mm`,
-            unit: isRM ? "kg" : "pcs",
+            width: it.widthMm || it.width,
+            length: it.lengthMm || it.length,
+            height: it.height,
+            sheetSize:
+              it.sheetSize ||
+              it.size ||
+              `${it.widthMm}${it.lengthMm ? "x" + it.lengthMm : ""}mm`,
+            unit: isRM ? "kg" : it.unit || "nos",
             qty: it.qty || it.weight || 0,
             weight: it.weight || null,
             noOfSheets: it.noOfSheets ? Number(it.noOfSheets) : null,
@@ -654,6 +715,7 @@ export default function PurchaseOrders({
         noOfSheets: it.qty || "",
         noOfReels: "",
         size: "",
+        unit: it.unit || "nos",
       })),
     );
     setEditingId(po._id);
@@ -862,7 +924,7 @@ export default function PurchaseOrders({
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+                  gridTemplateColumns: "repeat(5, 1fr)",
                   gap: 12,
                 }}
               >
@@ -981,38 +1043,228 @@ export default function PurchaseOrders({
                 )}
                 {it.materialType === "Consumable" && (
                   <>
-                    <Field label="Item Name">
+                    <Field label="Category *">
+                      <select
+                        value={it.category}
+                        onChange={(e) =>
+                          setItem(idx, "category", e.target.value)
+                        }
+                        style={EI(idx, "category")}
+                      >
+                        <option value="">-- Select Category --</option>
+                        {consumableCategories.map((c) => (
+                          <option key={c} value={c}>
+                            {c}
+                          </option>
+                        ))}
+                      </select>
+                      {EIMsg(idx, "category")}
+                    </Field>
+
+                    <Field label="Size">
                       <input
-                        placeholder="Select product code first"
-                        value={it.itemName}
-                        readOnly
-                        style={{ background: "#00000011", color: C.muted }}
+                        placeholder="e.g. 200mm"
+                        value={it.size}
+                        onChange={(e) => setItem(idx, "size", e.target.value)}
                       />
                     </Field>
-                    <Field label="Quantity *">
-                      <input
-                        type="number"
-                        placeholder="Qty in units"
-                        value={it.qty}
-                        onChange={(e) => setItem(idx, "qty", e.target.value)}
-                        style={EI(idx, "qty")}
-                      />
-                      {EIMsg(idx, "qty")}
-                    </Field>
+
+                    {it.category === "Corrugated Box" ||
+                    it.category === "LDPE Polybag" ? (
+                      <>
+                        <div style={{ gridColumn: "1 / -1", height: 1 }} />
+                        <Field label="UOM (for Name)">
+                          <select
+                            value={it.uom || "nos"}
+                            onChange={(e) =>
+                              setItem(idx, "uom", e.target.value)
+                            }
+                          >
+                            <option value="nos">nos</option>
+                            <option value="kg">kg</option>
+                            <option value="set">set</option>
+                            <option value="pcs">pcs</option>
+                            <option value="pkt">pkt</option>
+                            <option value="mtr">mtr</option>
+                            <option value="mm">mm</option>
+                            <option value="cm">cm</option>
+                            <option value="inch">inch</option>
+                          </select>
+                        </Field>
+                        {it.category === "Corrugated Box" && (
+                          <>
+                            <Field label="Width *">
+                              <input
+                                type="number"
+                                placeholder="Width"
+                                value={it.width || ""}
+                                onChange={(e) =>
+                                  setItem(idx, "width", e.target.value)
+                                }
+                                style={EI(idx, "width")}
+                              />
+                            </Field>
+                            <Field label="Length *">
+                              <input
+                                type="number"
+                                placeholder="Length"
+                                value={it.length || ""}
+                                onChange={(e) =>
+                                  setItem(idx, "length", e.target.value)
+                                }
+                                style={EI(idx, "length")}
+                              />
+                            </Field>
+                            <Field label="Height *">
+                              <input
+                                type="number"
+                                placeholder="Height"
+                                value={it.height || ""}
+                                onChange={(e) =>
+                                  setItem(idx, "height", e.target.value)
+                                }
+                                style={EI(idx, "height")}
+                              />
+                            </Field>
+                          </>
+                        )}
+                        {it.category === "LDPE Polybag" && (
+                          <>
+                            <Field label="Width *">
+                              <input
+                                type="number"
+                                placeholder="Width"
+                                value={it.width || ""}
+                                onChange={(e) =>
+                                  setItem(idx, "width", e.target.value)
+                                }
+                                style={EI(idx, "width")}
+                              />
+                            </Field>
+                            <Field label="Height *">
+                              <input
+                                type="number"
+                                placeholder="Height"
+                                value={it.height || ""}
+                                onChange={(e) =>
+                                  setItem(idx, "height", e.target.value)
+                                }
+                                style={EI(idx, "height")}
+                              />
+                            </Field>
+                            <div style={{ gridColumn: "span 2" }} />
+                          </>
+                        )}
+                        <div style={{ gridColumn: "1 / -1", height: 1 }} />
+
+                        <Field label="Quantity *">
+                          <input
+                            type="number"
+                            placeholder="Qty"
+                            value={it.qty}
+                            onChange={(e) =>
+                              setItem(idx, "qty", e.target.value)
+                            }
+                            style={EI(idx, "qty")}
+                          />
+                        </Field>
+                        <Field label="Unit (for Qty) *">
+                          <select
+                            value={it.unit || "nos"}
+                            onChange={(e) =>
+                              setItem(idx, "unit", e.target.value)
+                            }
+                          >
+                            <option value="nos">nos</option>
+                            <option value="kg">kg</option>
+                            <option value="pcs">pcs</option>
+                          </select>
+                        </Field>
+                        <Field label="Rate *">
+                          <input
+                            type="number"
+                            placeholder="Rate"
+                            value={it.rate}
+                            onChange={(e) =>
+                              setItem(idx, "rate", e.target.value)
+                            }
+                            style={EI(idx, "rate")}
+                          />
+                        </Field>
+                      </>
+                    ) : (
+                      <>
+                        <Field label="UOM (for Name)">
+                          <select
+                            value={it.uom || "nos"}
+                            onChange={(e) =>
+                              setItem(idx, "uom", e.target.value)
+                            }
+                          >
+                            <option value="nos">nos</option>
+                            <option value="kg">kg</option>
+                            <option value="set">set</option>
+                            <option value="pcs">pcs</option>
+                            <option value="pkt">pkt</option>
+                            <option value="mtr">mtr</option>
+                            <option value="mm">mm</option>
+                            <option value="cm">cm</option>
+                            <option value="inch">inch</option>
+                          </select>
+                        </Field>
+                        <Field label="Quantity *">
+                          <input
+                            type="number"
+                            placeholder="Qty"
+                            value={it.qty}
+                            onChange={(e) =>
+                              setItem(idx, "qty", e.target.value)
+                            }
+                            style={EI(idx, "qty")}
+                          />
+                        </Field>
+                        <Field label="Unit (for Qty) *">
+                          <select
+                            value={it.unit || "nos"}
+                            onChange={(e) =>
+                              setItem(idx, "unit", e.target.value)
+                            }
+                          >
+                            <option value="nos">nos</option>
+                            <option value="kg">kg</option>
+                            <option value="pcs">pcs</option>
+                          </select>
+                        </Field>
+                        <Field label="Rate *">
+                          <input
+                            type="number"
+                            placeholder="Rate"
+                            value={it.rate}
+                            onChange={(e) =>
+                              setItem(idx, "rate", e.target.value)
+                            }
+                            style={EI(idx, "rate")}
+                          />
+                        </Field>
+                        <div style={{ gridColumn: "span 1" }} />
+                      </>
+                    )}
                   </>
                 )}
-                <Field
-                  label={`Rate (₹/${it.materialType === "Raw Material" || !it.materialType ? "kg" : "unit"}) *`}
-                >
-                  <input
-                    type="number"
-                    placeholder="Rate per unit"
-                    value={it.rate || ""}
-                    onChange={(e) => setItem(idx, "rate", e.target.value)}
-                    style={EI(idx, "rate")}
-                  />
-                  {EIMsg(idx, "rate")}
-                </Field>
+                {it.materialType !== "Consumable" && (
+                  <Field
+                    label={`Rate (₹/${it.materialType === "Raw Material" || !it.materialType ? "kg" : it.uom || "unit"}) *`}
+                  >
+                    <input
+                      type="number"
+                      placeholder="Rate per unit"
+                      value={it.rate || ""}
+                      onChange={(e) => setItem(idx, "rate", e.target.value)}
+                      style={EI(idx, "rate")}
+                    />
+                    {EIMsg(idx, "rate")}
+                  </Field>
+                )}
                 <Field label="GST (%)">
                   <input
                     type="number"
