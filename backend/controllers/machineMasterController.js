@@ -100,8 +100,14 @@ exports.updateMachine = async (req, res) => {
     if (workingHours !== undefined) machine.workingHours = workingHours;
     if (shiftsPerDay !== undefined) machine.shiftsPerDay = shiftsPerDay;
     if (status) machine.status = status;
+    if (req.body.records) {
+      console.log('Saving records for machine:', machine.name, JSON.stringify(req.body.records));
+      machine.set("records", req.body.records || {});
+      machine.markModified("records");
+    }
 
     await machine.save();
+    console.log('Machine saved successfully:', machine.name);
 
     res.json({ machine });
   } catch (error) {

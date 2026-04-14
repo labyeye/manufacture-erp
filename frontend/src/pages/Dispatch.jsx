@@ -42,6 +42,11 @@ export default function Dispatch({ fgStock = [], toast }) {
     unit: "nos",
     pcsPerBox: "",
     noOfBox: "",
+    rate: "",
+    gstRate: 18,
+    amount: "",
+    taxAmount: "",
+    totalWithTax: "",
   });
 
   const [header, setHeader] = useState(blankHeader);
@@ -118,6 +123,11 @@ export default function Dispatch({ fgStock = [], toast }) {
               unit: it.unit || "nos",
               pcsPerBox: "",
               noOfBox: "",
+              rate: it.price || 0,
+              gstRate: it.gstRate || 18,
+              amount: it.amount || 0,
+              taxAmount: it.taxAmount || 0,
+              totalWithTax: it.totalWithTax || 0,
             }));
 
             if (soItems.length > 0) {
@@ -155,7 +165,16 @@ export default function Dispatch({ fgStock = [], toast }) {
 
       const qty = k === "qty" ? +v : +(it.qty || 0);
       const ppb = k === "pcsPerBox" ? +v : +(it.pcsPerBox || 0);
+      const rate = k === "rate" ? +v : +(it.rate || 0);
+      const gst = k === "gstRate" ? +v : +(it.gstRate || 0);
+
       it.noOfBox = qty && ppb ? Math.ceil(qty / ppb).toString() : "";
+      it.amount = qty && rate ? (qty * rate).toFixed(2) : "";
+      
+      const amt = Number(it.amount || 0);
+      it.taxAmount = (amt * gst / 100).toFixed(2);
+      it.totalWithTax = (amt + Number(it.taxAmount)).toFixed(2);
+
       updated[idx] = it;
       return updated;
     });
@@ -219,10 +238,14 @@ export default function Dispatch({ fgStock = [], toast }) {
         remarks: header.remarks,
         items: items.map((it) => ({
           itemName: it.itemName,
+          productCode: it.productCode,
           qty: Number(it.qty),
           unit: it.unit,
           rate: it.rate ? Number(it.rate) : 0,
           amount: it.amount ? Number(it.amount) : 0,
+          gstRate: it.gstRate ? Number(it.gstRate) : 0,
+          taxAmount: it.taxAmount ? Number(it.taxAmount) : 0,
+          totalWithTax: it.totalWithTax ? Number(it.totalWithTax) : 0,
         })),
       };
 
@@ -249,6 +272,164 @@ export default function Dispatch({ fgStock = [], toast }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const generateDispatchPDF = (d) => {
+    const fd = (date) => (date ? new Date(date).toLocaleDateString("en-GB") : "—");
+
+    const html = `
+      <html>
+        <head>
+          <title>DC-${d.dispatchId || "NEW"}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&family=JetBrains+Mono:wght@700&display=swap');
+            body { font-family: 'Inter', sans-serif; padding: 20px 30px; color: #1a1a1a; line-height: 1.4; }
+            .header { text-align: center; border-bottom: 2px solid #1e40af; padding-bottom: 10px; margin-bottom: 20px; }
+            .header h1 { color: #1e3a8a; margin: 0; font-size: 24px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+            .header p { margin: 2px 0; font-size: 11px; color: #475569; font-weight: 500; }
+            
+            .doc-title { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px; }
+            .doc-title h2 { margin: 0; font-size: 20px; font-weight: 700; color: #1e293b; }
+            .dc-no { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 800; color: #1e40af; margin: 5px 0; }
+            
+            .hr { height: 1px; background: #e2e8f0; margin: 15px 0; border: none; }
+            
+            .section-label { font-size: 10px; color: #64748b; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px; background: #f8fafc; padding: 4px 8px; border-radius: 4px; }
+            
+            .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 20px; }
+            .info-item label { display: block; font-size: 9px; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
+            .info-item span { font-size: 12px; font-weight: 600; color: #1e293b; }
+            
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th { background: #f8fafc; border: 1px solid #e2e8f0; padding: 8px; text-align: left; font-size: 9px; font-weight: 800; text-transform: uppercase; color: #475569; }
+            td { border: 1px solid #e2e8f0; padding: 8px; font-size: 11px; color: #1e293b; }
+            .col-qty { text-align: center; font-weight: 700; }
+            
+            .footer { margin-top: 80px; display: flex; justify-content: space-between; }
+            .signature { border-top: 1px solid #cbd5e1; width: 200px; text-align: center; padding-top: 8px; font-size: 11px; color: #64748b; font-weight: 600; }
+            
+            @media print {
+              body { padding: 0; }
+              @page { margin: 1cm; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <p style="text-align: right; font-size: 9px; margin-bottom: 15px;">Printed on: ${new Date().toLocaleString()}</p>
+            <h1>AARAY PACKAGING PRIVATE LIMITED</h1>
+            <p>Unit I: A7/64 & A7/65, South Side GT Road Industrial Area, Ghaziabad</p>
+            <p>Unit II: 27MI & 28MI, South Side GT Road Industrial Area, Ghaziabad</p>
+          </div>
+
+          <div class="doc-title">
+            <h2>DELIVERY CHALLAN</h2>
+            <div style="font-size: 12px; color: #64748b;">Date: <b>${fd(d.dispatchDate)}</b></div>
+          </div>
+          <div class="dc-no">DC: ${d.dispatchNo || d._id?.slice(-6).toUpperCase() || "NEW"}</div>
+          <div class="hr"></div>
+
+          <div class="info-grid">
+            <div>
+              <div class="section-label">Consignee Details</div>
+              <div class="info-item">
+                <label>Customer Name</label>
+                <span style="font-size: 14px; font-weight: 800; color: #1e3a8a;">${d.clientName}</span>
+              </div>
+              <div class="info-item" style="margin-top: 10px;">
+                <label>Delivery Address</label>
+                <span style="font-size: 11px;">${d.deliveryAddress || "As per PO"}</span>
+              </div>
+              <div class="info-item" style="margin-top: 10px;">
+                <label>Sales Order Ref</label>
+                <span>${d.soRef || "—"}</span>
+              </div>
+            </div>
+            <div>
+              <div class="section-label">Transportation Details</div>
+              <div class="info-grid" style="grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom:0;">
+                <div class="info-item">
+                  <label>Vehicle No</label>
+                  <span>${d.vehicleNo || "—"}</span>
+                </div>
+                <div class="info-item">
+                  <label>Driver Name</label>
+                  <span>${d.driverName || "—"}</span>
+                </div>
+              </div>
+              <div class="info-item" style="margin-top: 15px;">
+                <label>Waybill / Remarks</label>
+                <span style="font-style: italic;">${d.remarks || "No additional remarks"}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-label">Description of Goods</div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 50%;">Item Name & Description</th>
+                <th style="width: 15%;">Product Code</th>
+                <th style="width: 10%; text-align: center;">Boxes</th>
+                <th style="width: 10%; text-align: center;">Pcs/Box</th>
+                <th style="width: 15%;" class="col-qty">Total Quantity</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${(d.items || [])
+                .map(
+                  (it) => `
+                <tr>
+                  <td>
+                    <div style="font-weight: 700;">${it.itemName}</div>
+                  </td>
+                  <td>${it.productCode || "—"}</td>
+                  <td style="text-align: center;">${it.noOfBox || "—"}</td>
+                  <td style="text-align: center;">${it.pcsPerBox || "—"}</td>
+                  <td class="col-qty">${it.qty} ${it.unit || "pcs"}</td>
+                </tr>
+              `,
+                )
+                .join("")}
+            </tbody>
+          </table>
+
+          <div style="margin-top: 40px; font-size: 10px; color: #64748b;">
+            <b>Declaration:</b> We declare that this challan shows the actual quantity of goods described and that all particulars are true and correct.
+          </div>
+
+          <div class="footer">
+             <div class="signature">Receiver's Signature</div>
+             <div class="signature">For Aaray Packaging Pvt Ltd</div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    iframe.style.visibility = "hidden";
+    document.body.appendChild(iframe);
+
+    iframe.onload = () => {
+      setTimeout(() => {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        setTimeout(() => {
+          document.body.removeChild(iframe);
+        }, 1500);
+      }, 500);
+    };
+
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(html);
+    doc.close();
   };
 
   return (
@@ -497,13 +678,32 @@ export default function Dispatch({ fgStock = [], toast }) {
                     ))}
                   </select>
                 </Field>
-                <Field label="Pcs / Box">
+                <Field label="Rate (₹)">
                   <input
                     type="number"
-                    placeholder="e.g. 100"
-                    value={it.pcsPerBox}
-                    onChange={(e) => setItem(idx, "pcsPerBox", e.target.value)}
+                    value={it.rate || ""}
+                    onChange={(e) => setItem(idx, "rate", e.target.value)}
                   />
+                </Field>
+                <Field label="GST (%)">
+                  <input
+                    type="number"
+                    value={it.gstRate || 18}
+                    onChange={(e) => setItem(idx, "gstRate", e.target.value)}
+                  />
+                </Field>
+                <Field label="Total (incl Tax)">
+                   <div style={{
+                      padding: "9px 12px",
+                      background: C.inputBg,
+                      border: `1px solid ${C.border}`,
+                      borderRadius: 6,
+                      fontSize: 13,
+                      color: it.totalWithTax ? C.green : C.muted,
+                      fontWeight: it.totalWithTax ? 700 : 400,
+                    }}>
+                      {it.totalWithTax ? `₹${fmt(+it.totalWithTax)}` : "—"}
+                   </div>
                 </Field>
               </div>
 
@@ -714,6 +914,21 @@ export default function Dispatch({ fgStock = [], toast }) {
                       )}
                     </div>
                     <div style={{ display: "flex", gap: 6 }}>
+                      <button
+                        onClick={() => generateDispatchPDF(r)}
+                        style={{
+                          background: (C.purple || "#a855f7") + "22",
+                          color: C.purple || "#a855f7",
+                          border: "none",
+                          borderRadius: 5,
+                          padding: "4px 12px",
+                          fontWeight: 700,
+                          fontSize: 12,
+                          cursor: "pointer",
+                        }}
+                      >
+                        🖨️ Print
+                      </button>
                       <button
                         onClick={handleEdit}
                         style={{

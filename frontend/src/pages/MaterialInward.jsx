@@ -831,7 +831,11 @@ export default function MaterialInward({
                     .filter((p) => p.status !== "Received")
                     .map((p) => (
                       <option key={p.poNo} value={p.poNo}>
-                        {p.poNo} — {p.vendorName}
+                        {p.poNo} —{" "}
+                        {p.vendor?.name ||
+                          p.vendor ||
+                          p.vendorName ||
+                          "Unknown Vendor"}
                       </option>
                     ))}
                 </select>
@@ -1040,18 +1044,6 @@ export default function MaterialInward({
                         style={EI(idx, "widthMm")}
                       />
                       {EIMsg(idx, "widthMm")}
-                    </Field>
-                    <Field label="Length (mm) *">
-                      <input
-                        type="number"
-                        placeholder="e.g. 1000"
-                        value={it.lengthMm}
-                        onChange={(e) =>
-                          setItem(idx, "lengthMm", e.target.value)
-                        }
-                        style={EI(idx, "lengthMm")}
-                      />
-                      {EIMsg(idx, "lengthMm")}
                     </Field>
                     <Field label="GSM *">
                       <input

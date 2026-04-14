@@ -61,6 +61,7 @@ export function Dashboard({ data }) {
     jobOrders = [],
     salesOrders = [],
     fgStock = [],
+    rawStock = [],
     machineMaster = [],
     purchaseOrders = [],
     dispatches = [],
@@ -192,26 +193,98 @@ export function Dashboard({ data }) {
     return map;
   }, [dispatches]);
 
+  const lowStockItems = useMemo(() => {
+    const raw = (rawStock || [])
+      .filter((s) => {
+        const current = +(s.weight || 0);
+        const thresh = +(s.reorderLevel || 0);
+        return thresh > 0 && current < thresh;
+      })
+      .map((s) => ({
+        name: s.name || s.paperType || "Unnamed RM",
+        category: s.category || "Raw Material",
+        stock: s.weight || 0,
+        reorder: s.reorderLevel || 0,
+        unit: "kg",
+        type: "RM",
+      }));
+
+    const fg = (fgStock || [])
+      .filter((s) => {
+        const current = +(s.qty || 0);
+        const thresh = +(s.reorder || 0);
+        return thresh > 0 && current < thresh;
+      })
+      .map((s) => ({
+        name: s.itemName || "Unnamed FG",
+        category: "Finished Goods",
+        stock: s.qty || 0,
+        reorder: s.reorder || 0,
+        unit: s.unit || "pcs",
+        type: "FG",
+      }));
+
+    return [...raw, ...fg];
+  }, [rawStock, fgStock]);
+
   const soRows = useMemo(() => {
-    return salesOrders.map((so) => {
-      const soKey = so.soNo || so._id || "";
-      const ord = (so.items || []).reduce(
-        (s, it) => s + +(it.orderQty || it.qty || 0),
-        0,
-      );
-      const disp = dispMap[soKey] || 0;
-      const pend = Math.max(0, ord - disp);
-      const pct = ord > 0 ? Math.round((disp / ord) * 100) : 0;
-      const status =
-        pct >= 100 ? "Fully Dispatched" : pct > 0 ? "Partial" : "Pending";
-      const itemsStr =
-        (so.items || [])
-          .map((it) => it.itemName || it.name || "")
-          .filter(Boolean)
-          .join(", ") || "—";
-      return { so, ord, disp, pend, pct, status, itemsStr, soKey };
-    });
-  }, [salesOrders, dispMap]);
+    return salesOrders
+      .filter((so) => {
+        if (!dateFrom && !dateTo) return true;
+        const d = (so.orderDate || so.createdAt || "").slice(0, 10);
+        if (dateFrom && d < dateFrom) return false;
+        if (dateTo && d > dateTo) return false;
+        return true;
+      })
+      .map((so) => {
+        const soKey = so.soNo || so._id || "";
+        const ord = (so.items || []).reduce(
+          (s, it) => s + +(it.orderQty || it.qty || 0),
+          0,
+        );
+
+        // Calculate production qty from job orders
+        const joForSO = jobOrders.filter((jo) => jo.soRef === soKey);
+        const producedQty = joForSO.reduce((s, jo) => {
+          // Last stage completion is the best indicator of finished production
+          const lastStage = (jo.process || []).slice(-1)[0];
+          return s + +(jo.stageQtyMap?.[lastStage] || 0);
+        }, 0);
+
+        const disp = dispMap[soKey] || 0;
+
+        // Reconciliation Logic: Complete if 95% of ordered OR everything produced is dispatched
+        const thresh = Math.max(0.95 * ord, producedQty);
+        const isComplete = ord > 0 && disp >= thresh;
+
+        const pend = Math.max(0, ord - disp);
+        const pct = ord > 0 ? Math.round((disp / ord) * 100) : 0;
+
+        const status = isComplete
+          ? "Fully Dispatched"
+          : pct > 0
+            ? "Partial"
+            : "Pending";
+
+        const itemsStr =
+          (so.items || [])
+            .map((it) => it.itemName || it.name || "")
+            .filter(Boolean)
+            .join(", ") || "—";
+        return {
+          so,
+          ord,
+          disp,
+          pend,
+          pct,
+          status,
+          itemsStr,
+          soKey,
+          producedQty,
+          thresh,
+        };
+      });
+  }, [salesOrders, dispMap, jobOrders, dateFrom, dateTo]);
 
   const DateFilter = () => (
     <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
@@ -285,6 +358,113 @@ export function Dashboard({ data }) {
         >
           Production Dashboard
         </h1>
+        <div style={{ marginLeft: "auto" }}>
+          <DateFilter />
+        </div>
+      </div>
+
+      {/* Summary Cards Row */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(5, 1fr)",
+          gap: 12,
+          marginBottom: 24,
+        }}
+      >
+        {[
+          {
+            label: "Active Jobs",
+            val: activeJOs.length,
+            icon: "⚙️",
+            tab: "production",
+            color: C.yellow,
+          },
+          {
+            label: "Daily Output",
+            val: fmt(
+              allEntries
+                .filter((e) => e.date === today())
+                .reduce((s, e) => s + +(e.qtyCompleted || 0), 0),
+            ),
+            icon: "🎯",
+            tab: "prod_target",
+            color: C.green,
+          },
+          {
+            label: "Pending SOs",
+            val: soRows.filter((r) => r.status !== "Fully Dispatched").length,
+            icon: "📋",
+            tab: "so_recon",
+            color: C.blue,
+          },
+          {
+            label: "Deliveries",
+            val: dispatches.filter((d) => d.date?.slice(0, 10) === today())
+              .length,
+            icon: "🚚",
+            tab: "delivery",
+            color: C.purple,
+          },
+          {
+            label: "Low Stock",
+            val: lowStockItems.length,
+            icon: "⚠️",
+            tab: "low_stock",
+            color: C.red,
+          },
+        ].map((card) => (
+          <div
+            key={card.label}
+            onClick={() => setReportTab(card.tab)}
+            style={{
+              background: "#141416",
+              border: `1px solid ${reportTab === card.tab ? card.color : "#2a2a2e"}`,
+              borderRadius: 12,
+              padding: "16px 20px",
+              cursor: "pointer",
+              transition: "transform 0.2s",
+            }}
+            onMouseOver={(e) =>
+              (e.currentTarget.style.transform = "translateY(-4px)")
+            }
+            onMouseOut={(e) =>
+              (e.currentTarget.style.transform = "translateY(0)")
+            }
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                marginBottom: 10,
+              }}
+            >
+              <span style={{ fontSize: 18 }}>{card.icon}</span>
+              <div
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  background: card.color,
+                }}
+              />
+            </div>
+            <div style={{ fontSize: 24, fontWeight: 900, color: card.color }}>
+              {card.val}
+            </div>
+            <div
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                color: "#888",
+                textTransform: "uppercase",
+                marginTop: 4,
+              }}
+            >
+              {card.label}
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Tab buttons - 2 rows of 6 */}
@@ -450,50 +630,76 @@ export function Dashboard({ data }) {
               >
                 Select {reportTab === "operator" ? "Operator" : "Machine"}
               </div>
-              <select
-                value={
-                  reportTab === "operator" ? selectedOperator : selectedMachine
-                }
-                onChange={(e) =>
-                  reportTab === "operator"
-                    ? setSelectedOperator(e.target.value)
-                    : setSelectedMachine(e.target.value)
-                }
-                style={{
-                  width: "100%",
-                  padding: "8px 10px",
-                  background: "#0c0c0e",
-                  border: "1px solid #3a3a3e",
-                  color: "#e0e0e0",
-                  borderRadius: 6,
-                  fontSize: 13,
-                  fontStretch: "normal",
-                }}
-              >
-                <option value="">
-                  -- Select {reportTab === "operator" ? "Operator" : "Machine"}{" "}
-                  --
-                </option>
-                {reportTab === "operator"
-                  ? [
-                      ...new Set(
-                        allEntries.map((e) => e.operator).filter(Boolean),
-                      ),
-                    ]
-                      .sort()
-                      .map((o) => (
-                        <option key={o} value={o}>
-                          {o}
+              <div style={{ display: "flex", gap: 10 }}>
+                <select
+                  value={
+                    reportTab === "operator"
+                      ? selectedOperator
+                      : selectedMachine
+                  }
+                  onChange={(e) =>
+                    reportTab === "operator"
+                      ? setSelectedOperator(e.target.value)
+                      : setSelectedMachine(e.target.value)
+                  }
+                  style={{
+                    flex: 1,
+                    padding: "8px 10px",
+                    background: "#0c0c0e",
+                    border: "1px solid #3a3a3e",
+                    color: "#e0e0e0",
+                    borderRadius: 6,
+                    fontSize: 13,
+                    fontStretch: "normal",
+                  }}
+                >
+                  <option value="">
+                    -- Select{" "}
+                    {reportTab === "operator" ? "Operator" : "Machine"} --
+                  </option>
+                  {reportTab === "operator"
+                    ? [
+                        ...new Set(
+                          allEntries.map((e) => e.operator).filter(Boolean),
+                        ),
+                      ]
+                        .sort()
+                        .map((o) => (
+                          <option key={o} value={o}>
+                            {o}
+                          </option>
+                        ))
+                    : activeMachines.map((m) => (
+                        <option key={m._id} value={m._id}>
+                          {m.name} ({m.type})
                         </option>
-                      ))
-                  : activeMachines.map((m) => (
-                      <option key={m._id} value={m._id}>
-                        {m.name} ({m.type})
-                      </option>
-                    ))}
-              </select>
+                      ))}
+                </select>
+                {reportTab === "machine" && (
+                  <button
+                    onClick={() => {
+                      // Switch to Production Calendar tab if it exists, or just show a message
+                      toast?.(
+                        "Open 'Production Calendar' from the sidebar for full machine planning",
+                        "info",
+                      );
+                    }}
+                    style={{
+                      background: (C.blue || "#3b82f6") + "22",
+                      color: C.blue || "#3b82f6",
+                      border: `1px solid ${C.blue || "#3b82f6"}44`,
+                      borderRadius: 6,
+                      padding: "0 14px",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                    }}
+                  >
+                    🗓️ Open Calendar
+                  </button>
+                )}
+              </div>
             </div>
-            <DateFilter />
           </div>
 
           {(reportTab === "operator" && selectedOperator) ||
@@ -588,7 +794,10 @@ export function Dashboard({ data }) {
         (() => {
           const rows = purchaseOrders.map((po) => {
             const items = po.items || [];
-            const orderedQty = items.reduce((s, it) => s + +(it.qty || 0), 0);
+            const orderedQty = items.reduce((s, it) => {
+              if (it.category === "Paper Reel") return s;
+              return s + +(it.noOfSheets || it.qty || 0);
+            }, 0);
             const orderedWt = items.reduce((s, it) => s + +(it.weight || 0), 0);
             const skuCount = items.length;
 
@@ -600,7 +809,11 @@ export function Dashboard({ data }) {
 
             const receivedQty = inRecords.reduce(
               (s, r) =>
-                s + (r.items || []).reduce((a, it) => a + +(it.qty || 0), 0),
+                s +
+                (r.items || []).reduce((a, it) => {
+                  if (it.category === "Paper Reel") return a;
+                  return a + +(it.noOfSheets || it.qty || 0);
+                }, 0),
               0,
             );
             const receivedWt = inRecords.reduce(
@@ -611,13 +824,15 @@ export function Dashboard({ data }) {
             const skusReceived = [
               ...new Set(
                 inRecords.flatMap((r) =>
-                  (r.items || []).filter((it) => (it.qty || it.weight) > 0).map((it) => it.productCode),
+                  (r.items || [])
+                    .filter((it) => (it.qty || it.weight) > 0)
+                    .map((it) => it.productCode),
                 ),
               ),
             ].length;
 
             const fillRate = orderedWt > 0 ? (receivedWt / orderedWt) * 100 : 0;
-            
+
             let status = "Open";
             if (fillRate >= 90) status = "Received";
             else if (fillRate > 0) status = "Partial";
@@ -646,7 +861,10 @@ export function Dashboard({ data }) {
             totRecWt: rows.reduce((s, r) => s + r.receivedWt, 0),
             pendingWt: rows.reduce((s, r) => s + r.pendingWt, 0),
           };
-          stats.overallFill = stats.totOrdWt > 0 ? Math.round((stats.totRecWt / stats.totOrdWt) * 100) : 0;
+          stats.overallFill =
+            stats.totOrdWt > 0
+              ? Math.round((stats.totRecWt / stats.totOrdWt) * 100)
+              : 0;
 
           if (rows.length === 0)
             return (
@@ -657,34 +875,135 @@ export function Dashboard({ data }) {
 
           return (
             <div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 12, marginBottom: 20 }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(6, 1fr)",
+                  gap: 12,
+                  marginBottom: 20,
+                }}
+              >
                 {[
                   { label: "Total POs", val: stats.total, color: C.blue },
-                  { label: "Open / Partial", val: stats.total - rows.filter(r => r.status === "Received").length, color: C.yellow },
+                  {
+                    label: "Open / Partial",
+                    val:
+                      stats.total -
+                      rows.filter((r) => r.status === "Received").length,
+                    color: C.yellow,
+                  },
                   { label: "SKUs Ordered", val: stats.skusOrd, color: C.blue },
-                  { label: "SKUs Received", val: stats.skusRec, color: C.green },
-                  { label: "Total Ordered (kg)", val: fmt(stats.totOrdWt), color: C.blue },
-                  { label: "Total Received (kg)", val: fmt(stats.totRecWt), color: C.green },
+                  {
+                    label: "SKUs Received",
+                    val: stats.skusRec,
+                    color: C.green,
+                  },
+                  {
+                    label: "Total Ordered (kg)",
+                    val: fmt(stats.totOrdWt),
+                    color: C.blue,
+                  },
+                  {
+                    label: "Total Received (kg)",
+                    val: fmt(stats.totRecWt),
+                    color: C.green,
+                  },
                 ].map((s) => (
-                  <div key={s.label} style={{ background: "#141416", border: `1px solid ${s.color}44`, borderLeft: `4px solid ${s.color}`, borderRadius: 8, padding: 16 }}>
-                    <div style={{ fontSize: 24, fontWeight: 900, color: s.color }}>{s.val}</div>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: "#888", textTransform: "uppercase", marginTop: 4 }}>{s.label}</div>
+                  <div
+                    key={s.label}
+                    style={{
+                      background: "#141416",
+                      border: `1px solid ${s.color}44`,
+                      borderLeft: `4px solid ${s.color}`,
+                      borderRadius: 8,
+                      padding: 16,
+                    }}
+                  >
+                    <div
+                      style={{ fontSize: 24, fontWeight: 900, color: s.color }}
+                    >
+                      {s.val}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        color: "#888",
+                        textTransform: "uppercase",
+                        marginTop: 4,
+                      }}
+                    >
+                      {s.label}
+                    </div>
                   </div>
                 ))}
               </div>
-              
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 12, marginBottom: 20 }}>
-                 <div style={{ background: "#141416", border: `1px solid ${C.red}44`, borderLeft: `4px solid ${C.red}`, borderRadius: 8, padding: 16 }}>
-                    <div style={{ fontSize: 24, fontWeight: 900, color: C.red }}>{stats.overallFill}%</div>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: "#888", textTransform: "uppercase", marginTop: 4 }}>Overall Fill Rate</div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(6, 1fr)",
+                  gap: 12,
+                  marginBottom: 20,
+                }}
+              >
+                <div
+                  style={{
+                    background: "#141416",
+                    border: `1px solid ${C.red}44`,
+                    borderLeft: `4px solid ${C.red}`,
+                    borderRadius: 8,
+                    padding: 16,
+                  }}
+                >
+                  <div style={{ fontSize: 24, fontWeight: 900, color: C.red }}>
+                    {stats.overallFill}%
                   </div>
-                  <div style={{ background: "#141416", border: `1px solid ${C.red}44`, borderLeft: `4px solid ${C.red}`, borderRadius: 8, padding: 16 }}>
-                    <div style={{ fontSize: 24, fontWeight: 900, color: C.red }}>{fmt(stats.pendingWt)} kg</div>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: "#888", textTransform: "uppercase", marginTop: 4 }}>Pending (kg)</div>
+                  <div
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 700,
+                      color: "#888",
+                      textTransform: "uppercase",
+                      marginTop: 4,
+                    }}
+                  >
+                    Overall Fill Rate
                   </div>
+                </div>
+                <div
+                  style={{
+                    background: "#141416",
+                    border: `1px solid ${C.red}44`,
+                    borderLeft: `4px solid ${C.red}`,
+                    borderRadius: 8,
+                    padding: 16,
+                  }}
+                >
+                  <div style={{ fontSize: 24, fontWeight: 900, color: C.red }}>
+                    {fmt(stats.pendingWt)} kg
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 700,
+                      color: "#888",
+                      textTransform: "uppercase",
+                      marginTop: 4,
+                    }}
+                  >
+                    Pending (kg)
+                  </div>
+                </div>
               </div>
 
-              <div style={{ borderRadius: 8, overflow: "hidden", border: "1px solid #2a2a2e" }}>
+              <div
+                style={{
+                  borderRadius: 8,
+                  overflow: "hidden",
+                  border: "1px solid #2a2a2e",
+                }}
+              >
                 <table style={TABLE}>
                   <colgroup>
                     <col style={{ width: 110 }} />
@@ -697,44 +1016,119 @@ export function Dashboard({ data }) {
                   </colgroup>
                   <thead>
                     <tr>
-                      {["PO #", "Vendor", "PO Date", "Status", "Ordered", "Received", "Fill Rate"].map((h) => (
-                        <th key={h} style={TH}>{h}</th>
+                      {[
+                        "PO #",
+                        "Vendor",
+                        "PO Date",
+                        "Status",
+                        "Ordered",
+                        "Received",
+                        "Fill Rate",
+                      ].map((h) => (
+                        <th key={h} style={TH}>
+                          {h}
+                        </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {rows.map((r, i) => (
-                      <tr key={i} style={{ background: i % 2 === 0 ? "#0e0e12" : "#121216" }}>
-                        <td style={{ ...TD, color: C.blue, fontWeight: 700 }}>{r.po.poNo || "—"}</td>
-                        <td style={{ ...TD }}>
-                          <div style={{ fontWeight: 600 }}>{r.po.vendor || r.po.vendorName || "—"}</div>
-                          <div style={{ fontSize: 9, color: "#666" }}>{r.skuCount} SKU</div>
+                      <tr
+                        key={i}
+                        style={{
+                          background: i % 2 === 0 ? "#0e0e12" : "#121216",
+                        }}
+                      >
+                        <td style={{ ...TD, color: C.blue, fontWeight: 700 }}>
+                          {r.po.poNo || "—"}
                         </td>
-                        <td style={{ ...TD, color: "#888" }}>{r.po.poDate?.slice(0, 10) || "—"}</td>
+                        <td style={{ ...TD }}>
+                          <div style={{ fontWeight: 600 }}>
+                            {r.po.vendor || r.po.vendorName || "—"}
+                          </div>
+                          <div style={{ fontSize: 9, color: "#666" }}>
+                            {r.skuCount} SKU
+                          </div>
+                        </td>
+                        <td style={{ ...TD, color: "#888" }}>
+                          {r.po.poDate?.slice(0, 10) || "—"}
+                        </td>
                         <td style={TD}>
-                          <Badge 
+                          <Badge
                             label={r.status}
-                            color={r.status === "Received" ? C.green : r.status === "Partial" ? C.yellow : C.blue}
+                            color={
+                              r.status === "Received"
+                                ? C.green
+                                : r.status === "Partial"
+                                  ? C.yellow
+                                  : C.blue
+                            }
                           />
                         </td>
                         <td style={TD}>
-                          <div style={{ fontWeight: 600 }}>{fmt(r.orderedQty)} sheets / {fmt(r.orderedWt)} kg</div>
-                          <div style={{ fontSize: 9, color: "#666" }}>{r.skuCount} SKU</div>
+                          <div style={{ fontWeight: 600 }}>
+                            {r.orderedQty > 0 ? `${fmt(r.orderedQty)} sheets / ` : ""}
+                            {fmt(r.orderedWt)} kg
+                          </div>
+                          <div style={{ fontSize: 9, color: "#666" }}>
+                            {r.skuCount} SKU
+                          </div>
                         </td>
                         <td style={TD}>
-                          <div style={{ fontWeight: 600, color: C.green }}>{fmt(r.receivedQty)} sheets / {fmt(r.receivedWt)} kg</div>
+                          <div style={{ fontWeight: 600, color: C.green }}>
+                            {r.receivedQty > 0 ? `${fmt(r.receivedQty)} sheets / ` : ""}
+                            {fmt(r.receivedWt)} kg
+                          </div>
                           {r.pendingWt > 0 && (
-                            <div style={{ fontSize: 9, color: C.red, marginTop: 4 }}>
-                              ▼ {fmt(r.pendingQty)} sheets / {fmt(r.pendingWt)} kg pending
+                            <div
+                              style={{
+                                fontSize: 9,
+                                color: C.red,
+                                marginTop: 4,
+                              }}
+                            >
+                              ▼ {r.pendingQty > 0 ? `${fmt(r.pendingQty)} sheets / ` : ""}
+                              {fmt(r.pendingWt)} kg pending
                             </div>
                           )}
                         </td>
                         <td style={TD}>
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
-                            <span style={{ fontSize: 11, fontWeight: 800, color: r.fillRate >= 90 ? C.green : C.yellow }}>{r.fillRate}%</span>
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "baseline",
+                              marginBottom: 4,
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 800,
+                                color: r.fillRate >= 90 ? C.green : C.yellow,
+                              }}
+                            >
+                              {r.fillRate}%
+                            </span>
                           </div>
-                          <div style={{ width: "100%", height: 4, background: "#2a2a2e", borderRadius: 2, overflow: "hidden" }}>
-                            <div style={{ width: `${r.fillRate}%`, height: "100%", background: r.fillRate >= 90 ? C.green : C.yellow, borderRadius: 2 }} />
+                          <div
+                            style={{
+                              width: "100%",
+                              height: 4,
+                              background: "#2a2a2e",
+                              borderRadius: 2,
+                              overflow: "hidden",
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: `${r.fillRate}%`,
+                                height: "100%",
+                                background:
+                                  r.fillRate >= 90 ? C.green : C.yellow,
+                                borderRadius: 2,
+                              }}
+                            />
                           </div>
                         </td>
                       </tr>
@@ -749,63 +1143,7 @@ export function Dashboard({ data }) {
       {/* ── SO RECONCILIATION — directly from salesOrders ── */}
       {reportTab === "so_recon" &&
         (() => {
-          // Build rows directly from salesOrders — try every possible field name
-          const rows = salesOrders.map((so, idx) => {
-            const soNo =
-              so.soNo ||
-              so.soNumber ||
-              so.so_no ||
-              so.orderId ||
-              so._id ||
-              `SO-${idx + 1}`;
-            const client =
-              so.clientName ||
-              so.client ||
-              so.customerName ||
-              so.customer ||
-              "—";
-            const date = so.orderDate || so.date || so.createdAt || "";
-            const soStatus = so.status || "";
-            // items — try array or single item
-            const items = Array.isArray(so.items)
-              ? so.items
-              : Array.isArray(so.products)
-                ? so.products
-                : so.item
-                  ? [so.item]
-                  : [];
-            const ord = items.reduce(
-              (s, it) =>
-                s + +(it.orderQty || it.qty || it.quantity || it.ordered || 0),
-              0,
-            );
-            const itemsStr =
-              items
-                .map((it) => it.itemName || it.name || it.item || "")
-                .filter(Boolean)
-                .join(", ") || "—";
-            // dispatched qty from dispMap using all possible SO keys
-            const disp =
-              dispMap[soNo] || dispMap[so._id] || dispMap[so.soNumber] || 0;
-            const pend = Math.max(0, ord - disp);
-            const pct = ord > 0 ? Math.round((disp / ord) * 100) : 0;
-            const status =
-              pct >= 100 ? "Fully Dispatched" : pct > 0 ? "Partial" : "Pending";
-            return {
-              soNo,
-              client,
-              date,
-              soStatus,
-              items,
-              ord,
-              disp,
-              pend,
-              pct,
-              status,
-              itemsStr,
-            };
-          });
-
+          const rows = soRows;
           const stats = {
             total: rows.length,
             fully: rows.filter((r) => r.status === "Fully Dispatched").length,
@@ -825,27 +1163,11 @@ export function Dashboard({ data }) {
                 }}
               >
                 {[
-                  {
-                    label: "Total Sales Orders",
-                    val: stats.total,
-                    color: C.blue,
-                  },
-                  {
-                    label: "Fully Dispatched",
-                    val: stats.fully,
-                    color: C.green,
-                  },
-                  {
-                    label: "Partially Dispatched",
-                    val: stats.partial,
-                    color: C.yellow,
-                  },
+                  { label: "Total Sales Orders", val: stats.total, color: C.blue },
+                  { label: "Fully Dispatched", val: stats.fully, color: C.green },
+                  { label: "Partially Dispatched", val: stats.partial, color: C.yellow },
                   { label: "Not Dispatched", val: stats.none, color: C.red },
-                  {
-                    label: "Total Pending (pcs)",
-                    val: fmt(stats.totalPend),
-                    color: C.red,
-                  },
+                  { label: "Total Pending (pcs)", val: fmt(stats.totalPend), color: C.red },
                 ].map((s) => (
                   <div
                     key={s.label}
@@ -857,44 +1179,21 @@ export function Dashboard({ data }) {
                       padding: 16,
                     }}
                   >
-                    <div
-                      style={{ fontSize: 26, fontWeight: 900, color: s.color }}
-                    >
-                      {s.val}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 600,
-                        marginTop: 4,
-                        color: "#bbb",
-                      }}
-                    >
-                      {s.label}
-                    </div>
+                    <div style={{ fontSize: 26, fontWeight: 900, color: s.color }}>{s.val}</div>
+                    <div style={{ fontSize: 11, fontWeight: 600, marginTop: 4, color: "#bbb" }}>{s.label}</div>
                   </div>
                 ))}
               </div>
 
               {rows.length === 0 ? (
-                <div
-                  style={{ textAlign: "center", padding: 60, color: "#555" }}
-                >
-                  No Sales Orders found.
-                </div>
+                <div style={{ textAlign: "center", padding: 60, color: "#555" }}>No Sales Orders found.</div>
               ) : (
-                <div
-                  style={{
-                    borderRadius: 8,
-                    overflow: "hidden",
-                    border: "1px solid #2a2a2e",
-                  }}
-                >
+                <div style={{ borderRadius: 8, overflow: "hidden", border: "1px solid #2a2a2e" }}>
                   <table style={TABLE}>
                     <colgroup>
                       <col style={{ width: 110 }} />
                       <col style={{ width: 130 }} />
-                      <col style={{ width: "24%" }} />
+                      <col style={{ width: "22%" }} />
                       <col style={{ width: 100 }} />
                       <col style={{ width: 85 }} />
                       <col style={{ width: 85 }} />
@@ -903,106 +1202,35 @@ export function Dashboard({ data }) {
                     </colgroup>
                     <thead>
                       <tr>
-                        {[
-                          "SO #",
-                          "Client",
-                          "Items",
-                          "Order Date",
-                          "Ordered",
-                          "Dispatched",
-                          "Pending",
-                          "Status",
-                        ].map((h) => (
-                          <th key={h} style={TH}>
-                            {h}
-                          </th>
+                        {["SO #", "Client", "Items", "S.O. Date", "Ordered", "Produced", "Dispatched", "Status"].map((h) => (
+                          <th key={h} style={TH}>{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {rows.map((r, i) => (
-                        <tr
-                          key={r.soNo + i}
-                          style={{
-                            background: i % 2 === 0 ? "#0e0e12" : "#121216",
-                          }}
-                        >
+                        <tr key={r.soKey + i} style={{ background: i % 2 === 0 ? "#0e0e12" : "#121216" }}>
                           <td style={TD}>
-                            <div style={{ color: C.green, fontWeight: 700 }}>
-                              {r.soNo}
-                            </div>
-                            {r.soStatus && (
-                              <div
-                                style={{
-                                  fontSize: 9,
-                                  color: "#666",
-                                  marginTop: 2,
-                                }}
-                              >
-                                {r.soStatus}
-                              </div>
-                            )}
+                            <div style={{ color: C.green, fontWeight: 700 }}>{r.soNo}</div>
+                            <div style={{ fontSize: 9, color: "#666", marginTop: 2 }}>{r.so.status}</div>
                           </td>
-                          <td style={{ ...TD, fontWeight: 600 }}>{r.client}</td>
-                          <td
-                            style={{
-                              ...TD,
-                              color: "#888",
-                              whiteSpace: "normal",
-                              wordBreak: "break-word",
-                              maxWidth: 0,
-                            }}
-                          >
-                            {r.itemsStr}
-                          </td>
-                          <td style={{ ...TD, color: "#888" }}>
-                            {r.date?.slice(0, 10) || "—"}
-                          </td>
+                          <td style={{ ...TD, fontWeight: 600 }}>{r.so.clientName || r.so.client || "—"}</td>
+                          <td style={{ ...TD, color: "#888", whiteSpace: "normal", wordBreak: "break-word", maxWidth: 0 }}>{r.itemsStr}</td>
+                          <td style={{ ...TD, color: "#888" }}>{(r.so.orderDate || "").slice(0, 10) || "—"}</td>
                           <td style={TD}>{r.ord > 0 ? fmt(r.ord) : "—"}</td>
-                          <td style={{ ...TD, color: C.green }}>
-                            {r.disp > 0 ? fmt(r.disp) : "—"}
-                          </td>
-                          <td
-                            style={{
-                              ...TD,
-                              color: r.pend > 0 ? C.red : C.green,
-                              fontWeight: 700,
-                            }}
-                          >
-                            {r.ord > 0 ? fmt(r.pend) : "—"}
-                          </td>
+                          <td style={{ ...TD, color: C.yellow }}>{r.producedQty > 0 ? fmt(r.producedQty) : "—"}</td>
+                          <td style={{ ...TD, color: C.green }}>{r.disp > 0 ? fmt(r.disp) : "—"}</td>
                           <td style={TD}>
-                            <span
-                              style={{
-                                fontSize: 10,
-                                fontWeight: 700,
-                                color: statusColor(r.status),
-                                display: "block",
-                                marginBottom: 4,
-                              }}
-                            >
+                            <div style={{ fontSize: 11, fontWeight: 700, color: statusColor(r.status), marginBottom: 4 }}>
                               {r.status}
-                              {r.ord > 0 ? ` (${r.pct}%)` : ""}
-                            </span>
-                            {r.ord > 0 && (
-                              <div
-                                style={{
-                                  width: "100%",
-                                  height: 3,
-                                  background: "#1e1e22",
-                                  borderRadius: 2,
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    width: Math.min(r.pct, 100) + "%",
-                                    height: "100%",
-                                    background: statusColor(r.status),
-                                    borderRadius: 2,
-                                  }}
-                                />
-                              </div>
+                              {r.ord > 0 && r.status !== "Fully Dispatched" ? ` (${r.pct}%)` : ""}
+                            </div>
+                            {r.status === "Fully Dispatched" && r.disp < r.ord && (
+                                <div style={{ fontSize: 9, color: C.green }}>Reconciled @ {r.pct}%</div>
                             )}
+                            <div style={{ width: "100%", height: 3, background: "#1e1e22", borderRadius: 2, marginTop: 4 }}>
+                              <div style={{ width: Math.min(r.pct, 100) + "%", height: "100%", background: statusColor(r.status), borderRadius: 2 }} />
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -1640,7 +1868,7 @@ export function Dashboard({ data }) {
       {/* ── LOW STOCK ── */}
       {reportTab === "low_stock" &&
         (() => {
-          const low = fgStock.filter((f) => (f.qty || f.quantity || 0) < 500);
+          const low = lowStockItems;
           return low.length === 0 ? (
             <div
               style={{
@@ -1665,7 +1893,7 @@ export function Dashboard({ data }) {
                   marginBottom: 14,
                 }}
               >
-                {low.length} items below threshold (500 units)
+                {low.length} items below reorder level
               </div>
               <div
                 style={{
@@ -1676,14 +1904,15 @@ export function Dashboard({ data }) {
               >
                 <table style={TABLE}>
                   <colgroup>
-                    <col style={{ width: "40%" }} />
-                    <col style={{ width: 120 }} />
-                    <col style={{ width: 120 }} />
-                    <col style={{ width: 140 }} />
+                    <col style={{ width: "35%" }} />
+                    <col style={{ width: "20%" }} />
+                    <col style={{ width: "15%" }} />
+                    <col style={{ width: "15%" }} />
+                    <col style={{ width: "15%" }} />
                   </colgroup>
                   <thead>
                     <tr>
-                      {["Item Name", "Category", "Current Stock", "Status"].map(
+                      {["Item Name", "Category", "Current Stock", "Reorder Level", "Status"].map(
                         (h) => (
                           <th key={h} style={TH}>
                             {h}
@@ -1695,32 +1924,36 @@ export function Dashboard({ data }) {
                   <tbody>
                     {low.map((f, i) => (
                       <tr
-                        key={f.itemName || i}
+                        key={i}
                         style={{
                           background: i % 2 === 0 ? "#0e0e12" : "#121216",
                         }}
                       >
                         <td style={{ ...TD, fontWeight: 700 }}>
-                          {f.itemName || f.name || "—"}
+                          {f.name}
                         </td>
                         <td style={{ ...TD, color: "#888" }}>
-                          {f.category || "—"}
+                          {f.category}
                         </td>
                         <td style={{ ...TD, color: C.red, fontWeight: 800 }}>
-                          {fmt(f.qty || f.quantity || 0)}
+                          {fmt(f.stock)} {f.unit}
+                        </td>
+                        <td style={{ ...TD, color: "#888" }}>
+                          {fmt(f.reorder)} {f.unit}
                         </td>
                         <td style={TD}>
                           <span
                             style={{
-                              padding: "3px 10px",
+                              padding: "2px 8px",
                               borderRadius: 4,
                               background: C.red + "22",
                               color: C.red,
-                              fontSize: 11,
-                              fontWeight: 700,
+                              fontSize: 10,
+                              fontWeight: 800,
+                              textTransform: "uppercase",
                             }}
                           >
-                            RESTOCK REQUIRED
+                            Critical
                           </span>
                         </td>
                       </tr>

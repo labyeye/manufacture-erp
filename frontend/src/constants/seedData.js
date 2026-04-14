@@ -121,15 +121,15 @@ export const FORMATION_MACHINE_TYPES = [
   "Sheet Cutting",
   "Cutting",
 ];
-export const MANUAL_FORMATION_MACHINE_TYPES = ["Handmade"];
+export const MANUAL_FORMATION_MACHINE_TYPES = ["Manual Formation", "Handmade"];
 
 export const PROCESS_MACHINE_TYPE = {
   Printing: "Printing",
   Varnish: "Printing",
-  Lamination: "Printing",
+  Lamination: "Lamination",
   "Die Cutting": "Die Cutting",
   Formation: "Formation",
-  "Manual Formation": "Formation",
+  "Manual Formation": "Manual Formation",
 };
 
 export const FG_BOX_CATS = ["Cake Box", "Pastry Box"];
@@ -162,7 +162,9 @@ export const SEED_MACHINES = [
   { name: "SBBM 360 Machine 2", type: "Formation" },
   { name: "Flexo Printing Machine", type: "Printing" },
   { name: "Sheet Cutting Machine", type: "Cutting" },
-  { name: "Handmade", type: "Handmade" },
+  { name: "Laminator Machine 1", type: "Lamination" },
+  { name: "Laminator Machine 2", type: "Lamination" },
+  { name: "Handmade", type: "Manual Formation" },
   { name: "Komori 28x40inch Machine", type: "Printing" },
   { name: "Akiyama 19x26inch Machine", type: "Printing" },
   { name: "Manual Die Cutting Machine 1", type: "Die Cutting" },

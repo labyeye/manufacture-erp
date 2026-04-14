@@ -216,69 +216,33 @@ function AppInner({ session, onLogout, allowedTabs }) {
   };
 
   const fetchMasters = async () => {
-    try {
-      const results = await Promise.allSettled([
-        vendorMasterAPI.getAll(), // 0
-        clientMasterAPI.getAll(), // 1
-        categoryMasterAPI.getAll(), // 2
-        itemMasterAPI.getAll(), // 3
-        rawMaterialStockAPI.getAll(), // 4
-        machineMasterAPI.getAll(), // 5
-        fgStockAPI.getAll(), // 6
-        jobOrdersAPI.getAll(), // 7
-        salesOrdersAPI.getAll(), // 8
-        purchaseOrdersAPI.getAll(), // 9
-        dispatchAPI.getAll(), // 10  ✅ FIX: dispatchAPI now imported properly
-        materialInwardAPI.getAll(), // 11
-        companyMasterAPI.getAll(), // 12
-      ]);
+    // Helper to fetch and set state immediately after each API call finishes
+    const run = async (apiCall, setter, ...keys) => {
+      try {
+        const res = await apiCall();
+        if (res) setter(unwrap(res, ...keys));
+        return res;
+      } catch (err) {
+        console.error(`Fetch error for ${keys[0] || "unknown"}:`, err);
+      }
+    };
 
-      const get = (i) =>
-        results[i].status === "fulfilled" ? results[i].value : null;
-
-      const vendors = get(0);
-      const clients = get(1);
-      const categories = get(2);
-      const items = get(3);
-      const stocks = get(4);
-      const machines = get(5);
-      const fgStockData = get(6);
-      const jos = get(7);
-      const sos = get(8);
-      const pos = get(9);
-      const disp = get(10);
-      const inw = get(11);
-      const company = get(12);
-
-      // ✅ FIX: pass all likely key names so unwrap finds the data
-      if (vendors) setVendorMaster(unwrap(vendors, "vendors", "vendor"));
-      if (clients) setClientMaster(unwrap(clients, "clients", "client"));
-      if (categories)
-        setCategoryMaster(unwrap(categories, "categories", "category"));
-      if (items) setItemMasterFG(unwrap(items, "items", "item"));
-      if (machines) setMachineMaster(unwrap(machines, "machines", "machine"));
-      if (jos) setJobOrders(unwrap(jos, "jobOrders", "jobs", "job_orders"));
-      if (sos)
-        setSalesOrders(
-          unwrap(sos, "salesOrders", "orders", "sales_orders", "so"),
-        );
-      if (pos)
-        setPurchaseOrders(
-          unwrap(pos, "purchaseOrders", "orders", "purchase_orders", "po"),
-        );
-      if (disp)
-        setDispatches(unwrap(disp, "dispatches", "dispatch", "deliveries"));
-      if (inw)
-        setInward(unwrap(inw, "inwards", "inward", "grn", "material_inward"));
-      if (company)
-        setCompanyMaster(unwrap(company, "companies", "company", "entities"));
-
-      if (stocks) setRawStock(unwrap(stocks, "stock", "stocks", "rawStock"));
-      if (fgStockData)
-        setFgStock(unwrap(fgStockData, "stock", "stocks", "fgStock"));
-    } catch (err) {
-      console.error("Global fetch error:", err);
-    }
+    // Trigger all fetches and await them all
+    await Promise.all([
+      run(vendorMasterAPI.getAll, setVendorMaster, "vendors", "vendor"),
+      run(clientMasterAPI.getAll, setClientMaster, "clients", "client"),
+      run(categoryMasterAPI.getAll, setCategoryMaster, "categories", "category"),
+      run(itemMasterAPI.getAll, setItemMasterFG, "items", "item"),
+      run(rawMaterialStockAPI.getAll, setRawStock, "stock", "stocks", "rawStock"),
+      run(machineMasterAPI.getAll, setMachineMaster, "machines", "machine"),
+      run(fgStockAPI.getAll, setFgStock, "stock", "stocks", "fgStock"),
+      run(jobOrdersAPI.getAll, setJobOrders, "jobOrders", "jobs", "job_orders"),
+      run(salesOrdersAPI.getAll, setSalesOrders, "salesOrders", "orders", "sales_orders", "so"),
+      run(purchaseOrdersAPI.getAll, setPurchaseOrders, "purchaseOrders", "orders", "purchase_orders"),
+      run(dispatchAPI.getAll, setDispatches, "dispatches", "dispatch", "deliveries"),
+      run(materialInwardAPI.getAll, setInward, "inwards", "inward", "grn", "material_inward"),
+      run(companyMasterAPI.getAll, setCompanyMaster, "companies", "company", "entities"),
+    ]);
   };
 
   const showToast = (msg, type = "success") => {
@@ -393,7 +357,9 @@ function AppInner({ session, onLogout, allowedTabs }) {
       case "companymaster":
         return <CompanyMaster {...data} toast={showToast} />;
       case "users":
-        return <UserManagement {...data} currentUser={session} toast={showToast} />;
+        return (
+          <UserManagement {...data} currentUser={session} toast={showToast} />
+        );
       default:
         return (
           <Dashboard

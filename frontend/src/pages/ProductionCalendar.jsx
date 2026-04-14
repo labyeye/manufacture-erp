@@ -105,34 +105,36 @@ export default function ProductionCalendar({
   jobOrders = [],
   salesOrders = [],
   machineMaster = {},
+  refreshData,
   toast,
 }) {
   const today = todayStr();
   const [mainView, setMainView] = useState("machine"); 
   const [rangeView, setRangeView] = useState("week"); 
   const [pivotDate, setPivotDate] = useState(getWeekStart(today));
-  const [machineTypeFilter, setMachineTypeFilter] =
-    useState("All Machine Types");
+  const [machineTypeFilter, setMachineTypeFilter] = useState("All Machine Types");
+  const [selectedMachine, setSelectedMachine] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
 
-  
   const machines = useMemo(() => {
     if (Array.isArray(machineMaster) && machineMaster.length > 0) {
       return machineMaster.map((m) => ({
         id: m._id || m.id || m.name,
         name: m.name,
         type: m.type,
+        records: m.records || {},
+        workingHours: m.workingHours,
+        shiftsPerDay: m.shiftsPerDay,
       }));
     }
     return DEFAULT_MACHINES;
   }, [machineMaster]);
 
-  
   const machineTypes = useMemo(() => {
     const types = [...new Set(machines.map((m) => m.type))];
     return ["All Machine Types", ...types];
   }, [machines]);
 
-  
   const days = rangeView === "week" ? 7 : 30;
   const displayStart =
     rangeView === "week" ? getWeekStart(pivotDate) : getMonthStart(pivotDate);
@@ -142,35 +144,27 @@ export default function ProductionCalendar({
     [displayStart, days],
   );
 
-  
   const navigate = (dir) => {
     const step = rangeView === "week" ? 7 : 30;
     setPivotDate(addDays(pivotDate, dir * step));
   };
 
-  
   const jobIndex = useMemo(() => {
     const idx = {};
     (jobOrders || []).forEach((jo) => {
-      // Use the schedule array for accurate placement
       if (Array.isArray(jo.schedule) && jo.schedule.length > 0) {
         jo.schedule.forEach((slot) => {
           let date = slot.startDate || slot.date || jo.date || today;
           if (typeof date === "string") date = date.slice(0, 10);
-          
-          // Support matching via machineId or name
           const mKey = slot.machineId || slot.machineName || "";
           if (!mKey) return;
-
           const key = `${mKey}|${date}`;
           if (!idx[key]) idx[key] = [];
           idx[key].push({ ...jo, currentSlot: slot });
         });
       } else {
-        // Fallback for legacy jobs
         let date = jo.date || jo.jobcardDate || today;
         if (typeof date === "string") date = date.slice(0, 10);
-        
         const machine = jo.machine || jo.assignedMachine || "";
         if (!machine) return;
         const key = `${machine}|${date}`;
@@ -181,7 +175,6 @@ export default function ProductionCalendar({
     return idx;
   }, [jobOrders, today]);
 
-  
   const visibleMachines = useMemo(
     () =>
       machineTypeFilter === "All Machine Types"
@@ -195,8 +188,299 @@ export default function ProductionCalendar({
       ? formatDateRange(displayStart, 7)
       : formatMonthRange(displayStart);
 
-  
   const colW = rangeView === "week" ? 110 : 36;
+
+  // Machine Side Panel Component
+  const MachineSidePanel = () => {
+    if (!selectedMachine) return null;
+
+    const mId = selectedMachine.id || selectedMachine._id;
+    const [editData, setEditData] = useState({ ...selectedMachine });
+    const [localReport, setLocalReport] = useState(selectedMachine.records || {});
+    const [showSuccess, setShowSuccess] = useState(false);
+
+    const updateReport = (date, field, value) => {
+      setLocalReport(prev => ({
+        ...prev,
+        [date]: {
+          ...(prev[date] || {}),
+          [field]: value
+        }
+      }));
+    };
+
+    const handleSave = async () => {
+      try {
+        setIsSaving(true);
+        const payload = {
+          name: editData.name,
+          type: editData.type,
+          workingHours: Number(editData.workingHours || 8),
+          shiftsPerDay: Number(editData.shiftsPerDay || 1),
+          records: localReport
+        };
+        await machineMasterAPI.update(mId, payload);
+        
+        setShowSuccess(true);
+        if (refreshData) await refreshData();
+        
+        setTimeout(() => {
+          setSelectedMachine(null);
+          setShowSuccess(false);
+        }, 1500);
+      } catch (err) {
+        toast?.("Failed to save records", "error");
+      } finally {
+        setIsSaving(false);
+      }
+    };
+
+    // Calculations for Summary
+    const stats = daysArray.reduce((acc, date) => {
+      const dayData = localReport[date] || {};
+      acc.totalCap += Number(dayData.capacity || 0);
+      acc.totalPlanned += Number(dayData.planned || 0);
+      acc.totalActual += Number(dayData.actual || 0);
+      return acc;
+    }, { totalCap: 0, totalPlanned: 0, totalActual: 0 });
+
+    return (
+      <>
+        {/* Backdrop */}
+        <div
+          onClick={() => setSelectedMachine(null)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "#00000088",
+            backdropFilter: "blur(4px)",
+            zIndex: 1000,
+          }}
+        />
+        {/* Panel */}
+        <div
+          style={{
+            position: "fixed",
+            right: 0,
+            top: 0,
+            width: 750, 
+            height: "100vh",
+            background: "#121212",
+            borderLeft: `1px solid ${C.border}`,
+            zIndex: 1001,
+            boxShadow: "-20px 0 50px #000000aa",
+            padding: "24px",
+            display: "flex",
+            flexDirection: "column",
+            animation: "slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+            color: "#fff"
+          }}
+        >
+          {showSuccess && (
+            <div style={{
+              position: "absolute",
+              inset: 0,
+              background: "#121212ee",
+              zIndex: 2000,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: "inherit",
+              animation: "fadeIn 0.4s ease-out"
+            }}>
+              <style>{`
+                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                @keyframes bounce { 
+                  0%, 100% { transform: scale(1); } 
+                  50% { transform: scale(1.2); } 
+                }
+              `}</style>
+              <div style={{ fontSize: 64, animation: "bounce 0.8s ease-in-out" }}>✅</div>
+              <h3 style={{ marginTop: 24, fontSize: 24, fontWeight: 900 }}>Record Saved!</h3>
+              <p style={{ color: C.muted, marginTop: 8, fontSize: 14 }}>Database updated successfully.</p>
+            </div>
+          )}
+          <style>{`
+            @keyframes slideIn {
+              from { transform: translateX(100%); }
+              to { transform: translateX(0); }
+            }
+          `}</style>
+          
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <div style={{ fontSize: 28, background: "#ffffff08", padding: 10, borderRadius: 12 }}>🏭</div>
+              <div>
+                <h2 style={{ margin: 0, fontSize: 22, color: "#fff", fontWeight: 900, letterSpacing: "-0.01em" }}>{editData.name}</h2>
+                <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+                   <Badge text={editData.type} color={C.blue} />
+                   <Badge text="Active" color={C.green} />
+                </div>
+              </div>
+            </div>
+            <button 
+              onClick={() => setSelectedMachine(null)}
+              style={{ background: "transparent", border: "none", color: C.muted, fontSize: 32, cursor: "pointer", padding: "0 10px" }}
+            >
+              ×
+            </button>
+          </div>
+
+          <div style={{ fontSize: 11, color: C.muted, marginBottom: 20 }}>
+             No capacity configured — set it in Machine Master
+          </div>
+
+          {/* Stats Bar */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 28 }}>
+             {[
+               ["TOTAL CAPACITY", stats.totalCap, C.muted],
+               ["TOTAL PLANNED", stats.totalPlanned, C.yellow],
+               ["TOTAL ACTUAL", stats.totalActual, C.green]
+             ].map(([label, val, color]) => (
+               <div key={label} style={{ background: "#1a1a1a", padding: "16px", borderRadius: 12, textAlign: "center", border: `1px solid ${C.border}44` }}>
+                  <div style={{ fontSize: 10, fontWeight: 800, color: C.muted, marginBottom: 6, letterSpacing: "0.05em" }}>{label}</div>
+                  <div style={{ fontSize: 24, fontWeight: 900, color: color }}>{val.toLocaleString()}</div>
+               </div>
+             ))}
+          </div>
+
+          <div style={{ flex: 1, overflowY: "auto", border: `1px solid ${C.border}`, borderRadius: 12, background: "#0a0a0a", boxShadow: "inset 0 2px 10px #000" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
+               <thead style={{ position: "sticky", top: 0, background: "#1a1a1a", zIndex: 10, boxShadow: "0 2px 4px #00000044" }}>
+                  <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                    <th style={{...thS, padding: "14px 16px"}}>DATE</th>
+                    <th style={thS}>CAPACITY QTY</th>
+                    <th style={{...thS, color: C.yellow}}>PLANNED QTY</th>
+                    <th style={{...thS, color: C.green}}>ACTUAL QTY</th>
+                    <th style={thS}>OPERATOR NAME</th>
+                  </tr>
+               </thead>
+               <tbody>
+                  {daysArray.map((date) => {
+                    const row = localReport[date] || {};
+                    const dateObj = new Date(date);
+                    const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
+                    const dateFmt = date.split("-").reverse().join("/");
+                    const dayName = DAYS[dateObj.getDay()];
+                    
+                    const pNum = Number(row.planned || 0);
+                    const aNum = Number(row.actual || 0);
+                    const isShort = pNum > 0 && aNum < pNum;
+                    const isOnTarget = pNum > 0 && aNum >= pNum;
+                    
+                    return (
+                      <tr key={date} style={{ borderBottom: "1px solid #ffffff05" }}>
+                        <td style={{...tdS, padding: "14px 16px", color: isWeekend ? C.red : (date === today ? C.yellow : "#fff")}}>
+                          <div style={{ fontWeight: 800, fontSize: 13 }}>{dateFmt}</div>
+                          <div style={{ fontSize: 10, opacity: 0.6, marginTop: 2 }}>{dayName} {isWeekend && "- Off"} {date === today && "(Today)"}</div>
+                        </td>
+                        <td style={tdS}>
+                          <input 
+                            type="number" 
+                            id={`${mId}-${date}-capacity`}
+                            name={`${mId}-${date}-capacity`}
+                            style={{...miniInp, background: "transparent"}} 
+                            placeholder="-"
+                            value={row.capacity || ""} 
+                            onChange={(e) => updateReport(date, "capacity", e.target.value)}
+                          />
+                        </td>
+                        <td style={tdS}>
+                          <div style={{ position: "relative" }}>
+                            <input 
+                              type="number" 
+                              id={`${mId}-${date}-planned`}
+                              name={`${mId}-${date}-planned`}
+                              style={{...miniInp, border: `1px solid ${C.yellow}33`, color: C.yellow, background: `${C.yellow}08`}} 
+                              placeholder="-"
+                              value={row.planned || ""} 
+                              onChange={(e) => updateReport(date, "planned", e.target.value)}
+                            />
+                          </div>
+                        </td>
+                        <td style={tdS}>
+                          <div style={{ position: "relative" }}>
+                            <input 
+                              type="number" 
+                              id={`${mId}-${date}-actual`}
+                              name={`${mId}-${date}-actual`}
+                              style={{
+                                ...miniInp, 
+                                border: `1px solid ${isShort ? C.red : (isOnTarget ? C.green : C.border)}44`, 
+                                color: isShort ? C.red : (isOnTarget ? C.green : "#fff"),
+                                background: isShort ? `${C.red}11` : (isOnTarget ? `${C.green}11` : "transparent")
+                              }} 
+                              placeholder="-"
+                              value={row.actual || ""} 
+                              onChange={(e) => updateReport(date, "actual", e.target.value)}
+                            />
+                            {isShort && (
+                              <div style={{ fontSize: 9, color: C.red, marginTop: 4, textAlign: "center", fontWeight: 700 }}>
+                                 ▼ {(pNum - aNum).toLocaleString()} short
+                              </div>
+                            )}
+                            {isOnTarget && (
+                              <div style={{ fontSize: 9, color: C.green, marginTop: 4, textAlign: "center", fontWeight: 700 }}>
+                                 ✓ on target
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td style={tdS}>
+                          <input 
+                            id={`${mId}-${date}-operator`}
+                            name={`${mId}-${date}-operator`}
+                            style={miniInp} 
+                            placeholder="e.g. Operator"
+                            value={row.operator || ""} 
+                            onChange={(e) => updateReport(date, "operator", e.target.value)}
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })}
+               </tbody>
+            </table>
+          </div>
+
+          <div style={{ padding: "16px 0", fontSize: 11, color: C.muted, display: "flex", justifyContent: "space-between" }}>
+             <span>Capacity auto-filled - enter Planned and Actual manually</span>
+             <span style={{ fontWeight: 800 }}>{displayStart} — {daysArray[daysArray.length-1]}</span>
+          </div>
+
+          <div style={{ display: "flex", gap: 14, marginTop: 8 }}>
+            <button 
+              onClick={() => setSelectedMachine(null)}
+              style={{ flex: 1, padding: "14px", borderRadius: 10, background: "#ffffff11", border: "none", color: "#fff", fontWeight: 700, cursor: "pointer", transition: "all 0.2s" }}
+              onMouseEnter={(e) => e.currentTarget.style.background = "#ffffff18"}
+              onMouseLeave={(e) => e.currentTarget.style.background = "#ffffff11"}
+            >
+              Close
+            </button>
+            <button 
+              onClick={handleSave}
+              disabled={isSaving}
+              style={{ 
+                flex: 2, 
+                padding: "14px", 
+                borderRadius: 10, 
+                background: C.blue, 
+                border: "none", 
+                color: "#fff", 
+                fontWeight: 800, 
+                cursor: "pointer", 
+                boxShadow: `0 4px 15px ${C.blue}44`,
+                opacity: isSaving ? 0.7 : 1 
+              }}
+            >
+              {isSaving ? "Saving..." : "Save Planning Records"}
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  };
 
   return (
     <div className="fade">
@@ -206,7 +490,8 @@ export default function ProductionCalendar({
         sub="Machine-wise schedule — click any job to log actual production"
       />
 
-      {}
+      <MachineSidePanel />
+
       <div
         style={{
           display: "flex",
@@ -216,7 +501,6 @@ export default function ProductionCalendar({
           marginBottom: 16,
         }}
       >
-        {}
         <button
           onClick={() => setMainView("machine")}
           style={tabBtn(mainView === "machine", C.blue)}
@@ -230,7 +514,6 @@ export default function ProductionCalendar({
           📅 Date View
         </button>
 
-        {}
         <div
           style={{
             display: "flex",
@@ -261,7 +544,6 @@ export default function ProductionCalendar({
           ))}
         </div>
 
-        {}
         <button onClick={() => navigate(-1)} style={navBtn()}>
           ‹
         </button>
@@ -280,7 +562,6 @@ export default function ProductionCalendar({
           ›
         </button>
 
-        {}
         <button
           onClick={() =>
             setPivotDate(
@@ -301,7 +582,6 @@ export default function ProductionCalendar({
           Today
         </button>
 
-        {}
         <select
           value={machineTypeFilter}
           onChange={(e) => setMachineTypeFilter(e.target.value)}
@@ -322,7 +602,6 @@ export default function ProductionCalendar({
         </select>
       </div>
 
-      {}
       <div
         style={{
           display: "flex",
@@ -363,7 +642,6 @@ export default function ProductionCalendar({
         </span>
       </div>
 
-      {}
       <div
         style={{
           overflowX: "auto",
@@ -377,7 +655,6 @@ export default function ProductionCalendar({
         >
           <thead>
             <tr>
-              {}
               <th
                 style={{
                   padding: "10px 16px",
@@ -397,7 +674,6 @@ export default function ProductionCalendar({
               >
                 MACHINE
               </th>
-              {}
               {daysArray.map((d) => {
                 const dateObj = new Date(d);
                 const dayName = DAYS[dateObj.getDay()];
@@ -450,8 +726,14 @@ export default function ProductionCalendar({
                       mi % 2 === 0 ? "transparent" : C.inputBg || "#ffffff08",
                   }}
                 >
-                  {}
                   <td
+                    onClick={() => {
+                        // Find full machine details from machineMaster prop if available
+                        const fullMachine = Array.isArray(machineMaster) 
+                            ? machineMaster.find(m => (m._id || m.id) === (machine.id || machine._id))
+                            : machine;
+                        setSelectedMachine({ ...machine, ...fullMachine });
+                    }}
                     style={{
                       padding: "10px 16px",
                       borderBottom: `1px solid ${C.border}22`,
@@ -462,7 +744,11 @@ export default function ProductionCalendar({
                       position: "sticky",
                       left: 0,
                       zIndex: 1,
+                      cursor: "pointer",
+                      transition: "background 0.2s"
                     }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = "#ffffff05"}
+                    onMouseLeave={(e) => e.currentTarget.style.background = mi % 2 === 0 ? C.surface : C.inputBg || C.surface}
                   >
                     <div
                       style={{ display: "flex", alignItems: "center", gap: 8 }}
@@ -489,7 +775,6 @@ export default function ProductionCalendar({
                           {machine.type}
                         </div>
                       </div>
-                      {}
                       <span
                         style={{
                           marginLeft: "auto",
@@ -503,7 +788,6 @@ export default function ProductionCalendar({
                     </div>
                   </td>
 
-                  {}
                   {daysArray.map((d) => {
                     const key = `${machine.id}|${d}`;
                     const nameKey = `${machine.name}|${d}`;
@@ -527,7 +811,6 @@ export default function ProductionCalendar({
                               ? "#ffffff04"
                               : "transparent",
                           minWidth: colW,
-                          cursor: "pointer",
                         }}
                       >
                         {jobs.length === 0 ? (
@@ -583,7 +866,6 @@ export default function ProductionCalendar({
         </table>
       </div>
 
-      {}
       {mainView === "date" && (
         <Card style={{ marginTop: 16 }}>
           <h3
@@ -666,6 +948,46 @@ export default function ProductionCalendar({
     </div>
   );
 }
+
+const modalInputStyle = {
+  width: "100%",
+  padding: "10px 12px",
+  borderRadius: 8,
+  background: "#1a1a1a",
+  border: `1px solid ${C.border}`,
+  color: "#fff",
+  fontSize: 14,
+  marginTop: 4,
+  boxSizing: "border-box",
+  outline: "none",
+};
+
+const thS = {
+  textAlign: "left",
+  padding: "10px 12px",
+  color: "#666",
+  fontWeight: 700,
+  fontSize: 10,
+  letterSpacing: "0.05em",
+  textTransform: "uppercase"
+};
+
+const tdS = {
+  padding: "10px 12px",
+  verticalAlign: "top"
+};
+
+const miniInp = {
+  width: "100%",
+  padding: "8px 10px",
+  background: "#111",
+  border: `1px solid ${C.border}44`,
+  borderRadius: 6,
+  color: "#fff",
+  fontSize: 12,
+  outline: "none",
+  textAlign: "center"
+};
 
 
 function tabBtn(active, color) {

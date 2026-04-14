@@ -46,6 +46,9 @@ export default function ItemMaster({ toast }) {
     total: 0,
     status: "",
   });
+  const [gstRate, setGstRate] = useState("18");
+  const [hsnCode, setHsnCode] = useState("");
+  const [reorderLevel, setReorderLevel] = useState("0");
   const [selectedIds, setSelectedIds] = useState([]);
   const fileInputRef = useRef(null);
 
@@ -185,6 +188,9 @@ export default function ItemMaster({ toast }) {
           width: activeTab === "Raw Material" ? Number(width) : undefined,
           length: activeTab === "Raw Material" ? Number(length) : undefined,
           clientName: activeTab === "Finished Goods" ? clientName : undefined,
+          gstRate: Number(gstRate),
+          hsnCode,
+          reorderLevel: Number(reorderLevel),
           type: activeTab,
         });
         toast("Item updated", "success");
@@ -199,6 +205,9 @@ export default function ItemMaster({ toast }) {
           width: activeTab === "Raw Material" ? Number(width) : undefined,
           length: activeTab === "Raw Material" ? Number(length) : undefined,
           clientName: activeTab === "Finished Goods" ? clientName : undefined,
+          gstRate: Number(gstRate),
+          hsnCode,
+          reorderLevel: Number(reorderLevel),
           code: "",
         });
         toast("Item added successfully", "success");
@@ -210,6 +219,9 @@ export default function ItemMaster({ toast }) {
       setGsm("");
       setWidth("");
       setLength("");
+      setGstRate("18");
+      setHsnCode("");
+      setReorderLevel("0");
       fetchItems();
     } catch (error) {
       toast(error.response?.data?.error || "Failed to save item", "error");
@@ -226,6 +238,10 @@ export default function ItemMaster({ toast }) {
     setGsm(item.gsm || "");
     setWidth(item.width || "");
     setLength(item.length || "");
+    setGstRate(item.gstRate || "18");
+    setHsnCode(item.hsnCode || "");
+    setReorderLevel(item.reorderLevel || "0");
+    setClientName(item.clientName || "");
     // Extract client name if possible or just let it be
     if (item.type === "Finished Goods") {
       // Logic to parse clientName from item.name if it was auto-generated
@@ -763,6 +779,68 @@ export default function ItemMaster({ toast }) {
               onKeyDown={(e) => e.key === "Enter" && handleAddItem()}
             />
           </div>
+          <div>
+            <label
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                color: "#666",
+                display: "block",
+                marginBottom: 6,
+                letterSpacing: "0.5px",
+              }}
+            >
+              GST RATE (%)
+            </label>
+            <input
+              type="number"
+              placeholder="e.g. 18"
+              value={gstRate}
+              onChange={(e) => setGstRate(e.target.value)}
+              style={inputStyle}
+            />
+          </div>
+          <div>
+            <label
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                color: "#666",
+                display: "block",
+                marginBottom: 6,
+                letterSpacing: "0.5px",
+              }}
+            >
+              HSN CODE
+            </label>
+            <input
+              placeholder="e.g. 4819"
+              value={hsnCode}
+              onChange={(e) => setHsnCode(e.target.value)}
+              style={inputStyle}
+            />
+          </div>
+          <div>
+            <label
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                color: "#666",
+                display: "block",
+                marginBottom: 6,
+                letterSpacing: "0.5px",
+              }}
+            >
+              REORDER LEVEL
+            </label>
+            <input
+              type="number"
+              placeholder="e.g. 500"
+              value={reorderLevel}
+              onChange={(e) => setReorderLevel(e.target.value)}
+              style={inputStyle}
+            />
+          </div>
         </div>
 
         {/* Preview and Auto Code Display like screenshot */}
@@ -846,6 +924,9 @@ export default function ItemMaster({ toast }) {
                 setGsm("");
                 setWidth("");
                 setLength("");
+                setGstRate("18");
+                setHsnCode("");
+                setReorderLevel("0");
               }}
               style={{
                 padding: "9px 18px",
@@ -1096,6 +1177,34 @@ export default function ItemMaster({ toast }) {
                 }}
               >
                 {item.subCategory || "-"}
+              </div>
+              <div
+                style={{
+                  padding: "4px 10px",
+                  borderRadius: 6,
+                  background: "#64B5F614",
+                  color: "#64B5F6",
+                  fontSize: 10,
+                  fontWeight: 700,
+                  minWidth: 40,
+                  textAlign: "center",
+                }}
+              >
+                {item.gstRate || 0}%
+              </div>
+              <div
+                style={{
+                  padding: "4px 10px",
+                  borderRadius: 6,
+                  background: "#ff98001a",
+                  color: "#ff9800",
+                  fontSize: 10,
+                  fontWeight: 700,
+                  minWidth: 50,
+                  textAlign: "center",
+                }}
+              >
+                RL: {item.reorderLevel || 0}
               </div>
               <div style={{ color: "#484f58", fontSize: 11, minWidth: 80 }}>
                 {

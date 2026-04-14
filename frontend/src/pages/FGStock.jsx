@@ -1,5 +1,6 @@
 import React, { useState, useRef, useMemo } from "react";
 import * as XLSX from "xlsx";
+import { fgStockAPI } from "../api/auth";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 
@@ -18,6 +19,144 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState("All");
   const fileInputRef = useRef(null);
+
+  const handleUpdateReorder = async (id, newVal) => {
+    try {
+      await fgStockAPI.update(id, { reorder: newVal });
+      setFgStock((prev) =>
+        prev.map((s) => (s._id === id ? { ...s, reorder: newVal } : s)),
+      );
+      toast("Reorder level updated", "success");
+    } catch (err) {
+      toast("Failed to update reorder level", "error");
+    }
+  };
+
+  const handleUpdatePrice = async (id, newVal) => {
+    try {
+      await fgStockAPI.update(id, { price: newVal });
+      setFgStock((prev) =>
+        prev.map((s) => (s._id === id ? { ...s, price: newVal } : s)),
+      );
+      toast("Price updated", "success");
+    } catch (err) {
+      toast("Failed to update price", "error");
+    }
+  };
+
+  const ReorderEdit = ({ item }) => {
+    const [val, setVal] = useState(item.reorder || "");
+    const [saving, setSaving] = useState(false);
+    const hasChanged = val !== (item.reorder || "") && val !== "";
+
+    return (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          justifyContent: "flex-end",
+        }}
+      >
+        <input
+          type="number"
+          value={val}
+          onChange={(e) => setVal(e.target.value)}
+          style={{
+            width: 65,
+            padding: "5px 8px",
+            background: "#0c0c0e",
+            border: `1px solid ${hasChanged ? "#FF9800" : "#2a2a2e"}`,
+            borderRadius: 4,
+            color: "#fff",
+            fontSize: 12,
+            outline: "none",
+            textAlign: "right",
+          }}
+          placeholder="—"
+        />
+        {hasChanged && (
+          <button
+            onClick={async () => {
+              setSaving(true);
+              await handleUpdateReorder(item._id, +val);
+              setSaving(false);
+            }}
+            disabled={saving}
+            style={{
+              background: "#4CAF50",
+              border: "none",
+              borderRadius: 4,
+              color: "#fff",
+              padding: "4px 8px",
+              fontSize: 10,
+              cursor: "pointer",
+            }}
+          >
+            {saving ? "..." : "✓"}
+          </button>
+        )}
+      </div>
+    );
+  };
+
+  const PriceEdit = ({ item }) => {
+    const [val, setVal] = useState(item.price || "");
+    const [saving, setSaving] = useState(false);
+    const hasChanged = val !== (item.price || "") && val !== "";
+
+    return (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          justifyContent: "flex-end",
+        }}
+      >
+        <input
+          type="number"
+          step="0.01"
+          value={val}
+          onChange={(e) => setVal(e.target.value)}
+          style={{
+            width: 75,
+            padding: "5px 8px",
+            background: "#0c0c0e",
+            border: `1px solid ${hasChanged ? "#2196F3" : "#2a2a2e"}`,
+            borderRadius: 4,
+            color: "#2196F3",
+            fontSize: 12,
+            fontWeight: 700,
+            outline: "none",
+            textAlign: "right",
+          }}
+          placeholder="0.00"
+        />
+        {hasChanged && (
+          <button
+            onClick={async () => {
+              setSaving(true);
+              await handleUpdatePrice(item._id, +val);
+              setSaving(false);
+            }}
+            disabled={saving}
+            style={{
+              background: "#2196F3",
+              border: "none",
+              borderRadius: 4,
+              color: "#fff",
+              padding: "4px 8px",
+              fontSize: 10,
+              cursor: "pointer",
+            }}
+          >
+            {saving ? "..." : "✓"}
+          </button>
+        )}
+      </div>
+    );
+  };
 
   const categories = useMemo(
     () => [...new Set((fgStock || []).map((s) => s.category).filter(Boolean))],
@@ -459,7 +598,7 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
                           color: "#555",
                         }}
                       >
-                        {s.reorder || "-"}
+                        <ReorderEdit item={s} />
                       </td>
                       <td
                         style={{
@@ -468,7 +607,7 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
                           color: "#888",
                         }}
                       >
-                        {s.price ? `₹${s.price}` : "-"}
+                        <PriceEdit item={s} />
                       </td>
                       <td
                         style={{
@@ -486,11 +625,9 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
                       <td style={{ padding: "10px 14px" }}>
                         <button
                           onClick={async () => {
-                            if (confirm("Delete this item?")) {
+                            if (confirm("Delete this item from stock?")) {
                               try {
                                 if (s._id) {
-                                  // Call API if item exists in DB
-                                  const { fgStockAPI } = await import("../api/auth");
                                   await fgStockAPI.delete(s._id);
                                 }
                                 setFgStock((prev) =>

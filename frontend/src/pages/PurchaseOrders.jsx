@@ -76,6 +76,8 @@ export default function PurchaseOrders({
     qty: "",
     rate: "",
     amount: "",
+    gstRate: 18,
+    hsnCode: "",
     itemName: "",
     size: "",
   });
@@ -181,7 +183,19 @@ export default function PurchaseOrders({
   };
 
   const generatePOPDF = (po) => {
-    const total = (po.items || []).reduce((s, it) => s + +(it.amount || 0), 0);
+    const itemsArr = (po.items || []).map((it) => {
+      const amt = Number(it.amount || 0);
+      const gst = Number(
+        it.gstRate !== undefined && it.gstRate !== null ? it.gstRate : 18,
+      );
+      const rowTax = (amt * gst) / 100;
+      return { ...it, rowTax, gross: amt + rowTax, usedGst: gst };
+    });
+
+    const subtotal = itemsArr.reduce((s, it) => s + Number(it.amount || 0), 0);
+    const totalTax = itemsArr.reduce((s, it) => s + it.rowTax, 0);
+    const total = subtotal + totalTax;
+
     const fd = (d) => (d ? d.toString().split("T")[0] : "—");
 
     const html = `
@@ -272,33 +286,37 @@ export default function PurchaseOrders({
             <thead>
               <tr>
                 <th style="width: 20%;">Item Name</th>
-                <th style="width: 12%;">RM Item</th>
-                <th style="width: 12%;">Paper Type</th>
-                <th style="width: 6%;">GSM</th>
-                <th style="width: 10%;">Size</th>
-                <th style="width: 10%;">No Of Sheets</th>
-                <th style="width: 12%;" class="col-qty">Weight</th>
+                <th style="width: 10%;">RM Item</th>
+                <th style="width: 10%;">Paper Type</th>
+                <th style="width: 5%;">GSM</th>
+                <th style="width: 8%;">Size</th>
+                <th style="width: 8%;">Sheets</th>
+                <th style="width: 8%;" class="col-qty">Weight</th>
                 <th style="width: 8%;">Rate</th>
-                <th style="width: 10%;" class="col-amt">Amount</th>
+                <th style="width: 5%;">GST(%)</th>
+                <th style="width: 8%;" class="col-amt">Taxable</th>
+                <th style="width: 8%;" class="col-amt">GST</th>
               </tr>
             </thead>
             <tbody>
-              ${(po.items || [])
+              ${itemsArr
                 .map(
                   (it) => `
                 <tr>
                   <td>
                     <div style="font-weight: 700;">${it.itemName}</div>
-                    <div style="font-size: 8px; color: #64748b;">${it.productCode}</div>
+                    <div style="font-size: 8px; color: #64748b;">${it.productCode || ""}</div>
                   </td>
                   <td style="white-space: nowrap;">${it.category || "—"}</td>
                   <td style="white-space: nowrap;">${it.paperType || "—"}</td>
                   <td>${it.gsm ? it.gsm + "gsm" : "—"}</td>
-                  <td style="white-space: nowrap;">${it.sheetSize || (it.width ? it.width + "mm" : "—")}</td>
-                  <td style="text-align: center;">${it.category?.includes("Sheet") && it.noOfSheets ? fmt(it.noOfSheets) : "—"}</td>
-                  <td class="col-qty" style="white-space: nowrap;">${fmt(it.weight || it.qty || 0)} ${it.unit || "kg"}</td>
-                  <td style="white-space: nowrap;">₹${fmt(it.rate)}/${it.unit || "kg"}</td>
+                  <td style="white-space: nowrap;">${it.sheetSize || (it.widthMm ? it.widthMm + (it.lengthMm ? "x" + it.lengthMm : "") + "mm" : "—")}</td>
+                  <td style="text-align: center;">${it.noOfSheets || (it.category?.includes("Sheet") ? fmt(it.qty) : "—") || "—"}</td>
+                  <td class="col-qty" style="white-space: nowrap;">${fmt(it.weight || 0)} kg</td>
+                  <td style="white-space: nowrap;">₹${fmt(it.rate)}</td>
+                  <td style="text-align: center;">${it.usedGst}%</td>
                   <td class="col-amt" style="white-space: nowrap;">₹${fmt(it.amount)}</td>
+                  <td class="col-amt" style="white-space: nowrap;">₹${fmt(it.rowTax)}</td>
                 </tr>
               `,
                 )
@@ -307,9 +325,20 @@ export default function PurchaseOrders({
           </table>
 
           <div class="total-row">
-            <div class="total-box">
-              <label>Total:</label>
-              ₹${fmt(total)}
+            <div style="width: 220px;">
+              <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
+                <label>Taxable Amount:</label>
+                <span>₹${fmt(subtotal)}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
+                <label>Total GST:</label>
+                <span>₹${fmt(totalTax)}</span>
+              </div>
+              <div class="hr"></div>
+              <div class="total-box">
+                <label>Net Total:</label>
+                ₹${fmt(total)}
+              </div>
             </div>
           </div>
 
@@ -379,6 +408,8 @@ export default function PurchaseOrders({
             it.gsm = masterItem.gsm || "";
             it.widthMm = masterItem.width || "";
             it.lengthMm = masterItem.length || "";
+            it.gstRate = masterItem.gstRate || 18;
+            it.hsnCode = masterItem.hsnCode || "";
 
             // Fallback for older items
             if (!it.gsm) {
@@ -431,6 +462,11 @@ export default function PurchaseOrders({
         : qty && rate
           ? (qty * rate).toFixed(2)
           : "";
+
+      const amt = Number(it.amount || 0);
+      const gst = Number(it.gstRate || 0);
+      it.taxAmount = ((amt * gst) / 100).toFixed(2);
+      it.totalWithTax = (amt + Number(it.taxAmount)).toFixed(2);
 
       it.itemName =
         isRM && !it.productCode ? computeRMItemName(it) : it.itemName;
@@ -536,7 +572,10 @@ export default function PurchaseOrders({
             weight: it.weight || null,
             noOfSheets: it.noOfSheets ? Number(it.noOfSheets) : null,
             rate: it.rate,
-            amount: (isRM ? it.weight || 0 : it.qty || 0) * (it.rate || 0),
+            gstRate: it.gstRate,
+            hsnCode: it.hsnCode,
+            taxAmount: Number(it.taxAmount || 0),
+            amount: Number(it.amount || 0),
           };
         }),
         deliveryDate: header.deliveryDate,
@@ -904,16 +943,7 @@ export default function PurchaseOrders({
                       />
                       {EIMsg(idx, "widthMm")}
                     </Field>
-                    <Field label="Length (mm)">
-                      <input
-                        type="number"
-                        placeholder="1000"
-                        value={it.lengthMm}
-                        onChange={(e) =>
-                          setItem(idx, "lengthMm", e.target.value)
-                        }
-                      />
-                    </Field>
+
                     <Field label="GSM *">
                       <input
                         type="number"
@@ -936,17 +966,7 @@ export default function PurchaseOrders({
                         />
                       </Field>
                     )}
-                    {it.category === "Paper Reel" && (
-                      <Field label="No. of Reels *">
-                        <input
-                          type="number"
-                          placeholder="reels count"
-                          value={it.qty}
-                          onChange={(e) => setItem(idx, "qty", e.target.value)}
-                          style={EI(idx, "qty")}
-                        />
-                      </Field>
-                    )}
+
                     <Field label="Weight (kg) *">
                       <input
                         type="number"
@@ -993,7 +1013,22 @@ export default function PurchaseOrders({
                   />
                   {EIMsg(idx, "rate")}
                 </Field>
-                <Field label="Amount (₹)">
+                <Field label="GST (%)">
+                  <input
+                    type="number"
+                    placeholder="18"
+                    value={it.gstRate || 18}
+                    onChange={(e) => setItem(idx, "gstRate", e.target.value)}
+                  />
+                </Field>
+                <Field label="HSN">
+                  <input
+                    placeholder="HSN code"
+                    value={it.hsnCode || ""}
+                    onChange={(e) => setItem(idx, "hsnCode", e.target.value)}
+                  />
+                </Field>
+                <Field label="Total (incl Tax)">
                   <div
                     style={{
                       padding: "9px 12px",
@@ -1001,22 +1036,12 @@ export default function PurchaseOrders({
                       border: `1px solid ${C.border}`,
                       borderRadius: 6,
                       fontSize: 13,
-                      color: it.amount ? C.green : C.muted,
-                      fontWeight: it.amount ? 700 : 400,
+                      color: it.totalWithTax ? C.green : C.muted,
+                      fontWeight: it.totalWithTax ? 700 : 400,
                       fontFamily: "'JetBrains Mono',monospace",
                     }}
                   >
-                    {it.amount ? (
-                      `₹${fmt(+it.amount)}`
-                    ) : (
-                      <span style={{ fontSize: 11, color: C.muted }}>
-                        —{" "}
-                        {it.materialType === "Raw Material" || !it.materialType
-                          ? "Wt"
-                          : "Qty"}{" "}
-                        × Rate —
-                      </span>
-                    )}
+                    {it.totalWithTax ? `₹${fmt(+it.totalWithTax)}` : "—"}
                   </div>
                 </Field>
               </div>
@@ -1091,23 +1116,73 @@ export default function PurchaseOrders({
               <div
                 style={{
                   marginLeft: "auto",
-                  padding: "9px 16px",
-                  background: C.green + "22",
-                  border: `1px solid ${C.green}44`,
-                  borderRadius: 6,
+                  padding: "12px 20px",
+                  background: C.green + "11",
+                  border: `1px solid ${C.green}33`,
+                  borderRadius: 10,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 4,
+                  minWidth: 200,
                 }}
               >
-                <span style={{ fontSize: 12, color: C.muted }}>Total: </span>
-                <span
+                <div
                   style={{
-                    fontFamily: "'JetBrains Mono',monospace",
-                    fontWeight: 700,
-                    color: C.green,
-                    fontSize: 14,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontSize: 11,
+                    color: C.muted,
                   }}
                 >
-                  ₹{fmt(items.reduce((sum, it) => sum + +(it.amount || 0), 0))}
-                </span>
+                  <span>Subtotal:</span>
+                  <span>
+                    ₹
+                    {fmt(items.reduce((sum, it) => sum + +(it.amount || 0), 0))}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontSize: 11,
+                    color: C.muted,
+                  }}
+                >
+                  <span>Total GST:</span>
+                  <span>
+                    ₹
+                    {fmt(
+                      items.reduce((sum, it) => sum + +(it.taxAmount || 0), 0),
+                    )}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    height: 1,
+                    background: C.green + "22",
+                    margin: "4px 0",
+                  }}
+                />
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontWeight: 800,
+                    color: C.green,
+                    fontSize: 15,
+                  }}
+                >
+                  <span>Net Total:</span>
+                  <span>
+                    ₹
+                    {fmt(
+                      items.reduce(
+                        (sum, it) => sum + +(it.totalWithTax || 0),
+                        0,
+                      ),
+                    )}
+                  </span>
+                </div>
               </div>
             )}
           </div>
@@ -1246,6 +1321,24 @@ export default function PurchaseOrders({
                         >
                           🖨️ PDF
                         </button>
+                        <button
+                          onClick={() => handleDelete(r._id)}
+                          style={{
+                            background: "#450a0a",
+                            color: "#ef4444",
+                            border: "1px solid #7f1d1d",
+                            borderRadius: 6,
+                            padding: "4px 14px",
+                            fontSize: 12,
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                          }}
+                        >
+                          🗑️ Delete
+                        </button>
                       </div>
                     </div>
 
@@ -1279,7 +1372,7 @@ export default function PurchaseOrders({
                               {it.uom ||
                                 (it.materialType === "Raw Material"
                                   ? "kg"
-                                  : "nos")}
+                                  : "kg")}
                             </b>
                           </span>
                           <span style={{ color: C.muted }}>

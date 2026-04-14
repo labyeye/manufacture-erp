@@ -166,10 +166,10 @@ exports.delete = async (req, res) => {
     }
 
     
-    if (po.status === "Received") {
+    if (["Received", "Partial"].includes(po.status)) {
       return res
         .status(400)
-        .json({ error: "Cannot delete received purchase orders" });
+        .json({ error: "Cannot delete received or partial purchase orders" });
     }
 
     await PurchaseOrder.findByIdAndDelete(id);

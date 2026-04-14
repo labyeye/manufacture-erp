@@ -45,10 +45,15 @@ async function buildSchedule(jobOrder, machineAssignments) {
 
 async function deductRawMaterialStock(jobOrder) {
   try {
-    // Helper to find stock with flexibility
-    const findStock = (cat, type, gsm) => {
+    const findStock = async (id, cat, type, gsm) => {
+      // 1. Try by ID first (most accurate)
+      if (id) {
+        const byId = await RawMaterialStock.findById(id);
+        if (byId) return byId;
+      }
+
+      // 2. Fallback to fuzzy match
       if (!cat || !type) return null;
-      // Strip trailing 's' for singular comparison
       const normCat = cat.trim().replace(/s$/i, "");
       return RawMaterialStock.findOne({
         category: { $regex: new RegExp(`^${normCat}`, "i") },
@@ -59,24 +64,33 @@ async function deductRawMaterialStock(jobOrder) {
 
     // 1. Process Main Paper
     const rmStock = await findStock(
+      jobOrder.rmStockId,
       jobOrder.paperCategory,
       jobOrder.paperType,
       jobOrder.paperGsm,
     );
+
     if (rmStock) {
       if (rmStock.unit === "kg" || jobOrder.paperCategory === "Paper Reel") {
-        const weightToDeduct = jobOrder.reelWeightKg || 0;
-        rmStock.weight = Math.max(0, rmStock.weight - weightToDeduct);
+        const weightToDeduct = Number(jobOrder.reelWeightKg || 0);
+        if (weightToDeduct > 0) {
+          rmStock.weight = Math.max(0, rmStock.weight - weightToDeduct);
+          // If it's a sheet stock tracked in kg, also adjust qty if possible
+          if (rmStock.unit === "sheets" && rmStock.weightPerSheet > 0) {
+            rmStock.qty = Math.floor(rmStock.weight / rmStock.weightPerSheet);
+          }
+        }
       } else {
-        const qtyToDeduct = jobOrder.noOfSheets || 0;
-        // Calculate per-sheet weight if missing to ensure proportion
-        const wps =
-          rmStock.weightPerSheet ||
-          (rmStock.qty > 0 ? rmStock.weight / rmStock.qty : 0);
+        const qtyToDeduct = Number(jobOrder.noOfSheets || 0);
+        if (qtyToDeduct > 0) {
+          const wps =
+            rmStock.weightPerSheet ||
+            (rmStock.qty > 0 ? rmStock.weight / rmStock.qty : 0);
 
-        rmStock.qty = Math.max(0, rmStock.qty - qtyToDeduct);
-        if (wps > 0) {
-          rmStock.weight = rmStock.qty * wps;
+          rmStock.qty = Math.max(0, rmStock.qty - qtyToDeduct);
+          if (wps > 0) {
+            rmStock.weight = rmStock.qty * wps;
+          }
         }
       }
       await rmStock.save();
@@ -84,28 +98,42 @@ async function deductRawMaterialStock(jobOrder) {
     }
 
     // 2. Handle Second Paper if present
-    if (jobOrder.hasSecondPaper && jobOrder.paperType2) {
+    if (jobOrder.hasSecondPaper && (jobOrder.rmStockId2 || jobOrder.paperType2)) {
       const rmStock2 = await findStock(
+        jobOrder.rmStockId2,
         jobOrder.paperCategory2 || jobOrder.paperCategory,
         jobOrder.paperType2,
         jobOrder.paperGsm2,
       );
-      if (rmStock2) {
-        if (rmStock2.unit === "kg" || jobOrder.paperCategory2 === "Paper Reel") {
-          const weightToDeduct = jobOrder.reelWeightKg || 0; // Or some other weight for 2nd paper?
-          rmStock2.weight = Math.max(0, rmStock2.weight - weightToDeduct);
-        } else {
-          const qtyToDeduct = jobOrder.noOfSheets2 || 0;
-          const wps2 =
-            rmStock2.weightPerSheet ||
-            (rmStock2.qty > 0 ? rmStock2.weight / rmStock2.qty : 0);
 
-          rmStock2.qty = Math.max(0, rmStock2.qty - qtyToDeduct);
-          if (wps2 > 0) {
-            rmStock2.weight = rmStock2.qty * wps2;
+      if (rmStock2) {
+        if (rmStock2.unit === "kg" || (jobOrder.paperCategory2 || jobOrder.paperCategory) === "Paper Reel") {
+          // Weight calculation for second paper - currently assumes same as main reel weight or needs its own field
+          // If it's sheets, it uses noOfSheets2
+          if (rmStock2.unit === "sheets") {
+             const qty2 = Number(jobOrder.noOfSheets2 || 0);
+             const wps2 = rmStock2.weightPerSheet || (rmStock2.qty > 0 ? rmStock2.weight / rmStock2.qty : 0);
+             rmStock2.qty = Math.max(0, rmStock2.qty - qty2);
+             if (wps2 > 0) rmStock2.weight = rmStock2.qty * wps2;
+          } else {
+             const weightToDeduct2 = Number(jobOrder.reelWeightKg || 0); // Logic may vary
+             rmStock2.weight = Math.max(0, rmStock2.weight - weightToDeduct2);
+          }
+        } else {
+          const qtyToDeduct2 = Number(jobOrder.noOfSheets2 || 0);
+          if (qtyToDeduct2 > 0) {
+            const wps2 =
+              rmStock2.weightPerSheet ||
+              (rmStock2.qty > 0 ? rmStock2.weight / rmStock2.qty : 0);
+
+            rmStock2.qty = Math.max(0, rmStock2.qty - qtyToDeduct2);
+            if (wps2 > 0) {
+              rmStock2.weight = rmStock2.qty * wps2;
+            }
           }
         }
         await rmStock2.save();
+        console.log(`✅ Stock 2 Deducted for ${jobOrder.joNo}:`, rmStock2.name);
       }
     }
   } catch (err) {
@@ -310,8 +338,13 @@ exports.addStage = async (req, res) => {
       if (jobOrder.soRef) {
         const so = await SalesOrder.findOne({ soNo: jobOrder.soRef });
         if (so) {
-          const item = so.items.find(i => i.itemName === jobOrder.itemName);
-          if (item) price = item.price || 0;
+          const joName = (jobOrder.itemName || "").trim().toLowerCase();
+          const item = so.items.find(i => (i.itemName || "").trim().toLowerCase() === joName);
+          if (item) {
+            price = item.price || 0;
+          } else {
+            console.log(`⚠️ Item "${jobOrder.itemName}" not found in SO ${jobOrder.soRef}. Items present:`, so.items.map(i => i.itemName));
+          }
         }
       }
 

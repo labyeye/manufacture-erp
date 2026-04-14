@@ -39,6 +39,18 @@ const itemMasterSchema = new mongoose.Schema({
   length: {
     type: Number
   },
+  gstRate: {
+    type: Number,
+    default: 18
+  },
+  hsnCode: {
+    type: String,
+    trim: true
+  },
+  reorderLevel: {
+    type: Number,
+    default: 0
+  },
   status: {
     type: String,
     enum: ['Active', 'Inactive'],

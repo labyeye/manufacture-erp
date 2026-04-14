@@ -76,7 +76,7 @@ const getNextItemCode = async (type) => {
 
 exports.createItem = async (req, res) => {
   try {
-    const { code, name, type, category, subCategory, gsm, width, length, clientCodes, clientName } = req.body;
+    const { code, name, type, category, subCategory, gsm, width, length, clientCodes, clientName, gstRate, hsnCode, reorderLevel } = req.body;
 
 
     if (!name || !type) {
@@ -116,6 +116,9 @@ exports.createItem = async (req, res) => {
       length: length ? Number(length) : undefined,
       clientCodes: clientCodes || {},
       clientName: clientName?.trim(),
+      gstRate: gstRate ? Number(gstRate) : 18,
+      hsnCode: hsnCode?.trim(),
+      reorderLevel: reorderLevel ? Number(reorderLevel) : 0,
       createdBy: req.user?.id
     });
 
@@ -134,7 +137,7 @@ exports.createItem = async (req, res) => {
 
 exports.updateItem = async (req, res) => {
   try {
-    const { name, category, subCategory, gsm, width, length, clientCodes, status, clientName } = req.body;
+    const { name, category, subCategory, gsm, width, length, clientCodes, status, clientName, gstRate, hsnCode, reorderLevel } = req.body;
 
     const item = await ItemMaster.findById(req.params.id);
     if (!item) {
@@ -162,6 +165,9 @@ exports.updateItem = async (req, res) => {
     if (length !== undefined) item.length = length ? Number(length) : undefined;
     if (clientCodes !== undefined) item.clientCodes = clientCodes;
     if (clientName !== undefined) item.clientName = clientName?.trim();
+    if (gstRate !== undefined) item.gstRate = Number(gstRate);
+    if (hsnCode !== undefined) item.hsnCode = hsnCode?.trim();
+    if (reorderLevel !== undefined) item.reorderLevel = Number(reorderLevel);
     if (status) item.status = status;
 
     await item.save();
@@ -255,7 +261,7 @@ exports.bulkImport = async (req, res) => {
 
     for (const itemData of items) {
       try {
-        const { code, name, type, category, subCategory, gsm, width, length, clientName } = itemData;
+        const { code, name, type, category, subCategory, gsm, width, length, clientName, gstRate, hsnCode, reorderLevel } = itemData;
 
         if (!name || !type) {
           results.failed.push({ item: itemData, reason: 'Name and type are required' });
@@ -285,6 +291,9 @@ exports.bulkImport = async (req, res) => {
           width: width ? Number(width) : undefined,
           length: length ? Number(length) : undefined,
           clientName: clientName?.trim(),
+          gstRate: gstRate ? Number(gstRate) : 18,
+          hsnCode: hsnCode?.trim(),
+          reorderLevel: reorderLevel ? Number(reorderLevel) : 0,
           createdBy: req.user?.id
         });
 

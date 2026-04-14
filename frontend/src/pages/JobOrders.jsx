@@ -14,13 +14,21 @@ import {
   DateRangeFilter,
 } from "../components/ui/BasicComponents";
 import { DatePicker } from "../components/ui/DatePicker";
-import { jobOrdersAPI, salesOrdersAPI } from "../api/auth";
+import { jobOrdersAPI, salesOrdersAPI, rawMaterialStockAPI } from "../api/auth";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 const today = () => new Date().toISOString().slice(0, 10);
 const fmt = (n) => (n ?? 0).toLocaleString("en-IN");
 
 const RM_ITEMS = ["Paper Reel", "Paper Sheets"];
+const calcSheets = (q, u) => {
+  const qty = Number(q);
+  const ups = Number(u);
+  if (qty > 0 && ups > 0) {
+    return Math.ceil(Math.ceil(qty / ups) / 100) * 100;
+  }
+  return "";
+};
 const PAPER_TYPES_BY_ITEM = {
   "Paper Reel": ["MG Kraft", "MF Kraft", "Bleached Kraft", "OGR"],
   "Paper Sheets": [
@@ -131,9 +139,10 @@ export default function JobOrders(props) {
     const hType = (header.paperType || "").toLowerCase();
     const hGsm = (header.paperGsm || "").toString();
 
-    // For sheets, we expect dimensions to be entered as per user request
     const isSheet = hCat === "paper sheet";
+    const isReel = hCat === "paper reel";
     if (isSheet && (!header.sheetW || !header.sheetL)) return null;
+    if (isReel && !header.reelWidthMm) return null;
 
     return (rawStock || []).find((s) => {
       const sCat = (s.category || s.paperCategory || "")
@@ -155,6 +164,12 @@ export default function JobOrders(props) {
         return sSize.includes(hSize) || sSize.includes(hSizeAlt);
       }
 
+      if (isReel && header.reelWidthMm) {
+        const sSize = (s.sheetSize || s.name || "").toLowerCase();
+        const hWidth = `${header.reelWidthMm}mm`;
+        return sSize.includes(hWidth);
+      }
+
       return true;
     });
   }, [
@@ -165,6 +180,37 @@ export default function JobOrders(props) {
     header.sheetW,
     header.sheetL,
     header.sheetUom,
+    header.reelWidthMm,
+  ]);
+
+  const matchedStock2 = useMemo(() => {
+    if (
+      !header.hasSecondPaper ||
+      !header.paperCategory2 ||
+      !header.paperType2 ||
+      !header.paperGsm2
+    )
+      return null;
+
+    const hCat = header.paperCategory2.toLowerCase().replace(/s$/, "");
+    const hType = (header.paperType2 || "").toLowerCase();
+    const hGsm = (header.paperGsm2 || "").toString();
+
+    return (rawStock || []).find((s) => {
+      const sCat = (s.category || s.paperCategory || "")
+        .toLowerCase()
+        .replace(/s$/, "");
+      const sType = (s.name || s.paperType || "").toLowerCase();
+      const sGsm = (s.gsm || s.paperGsm || 0).toString();
+
+      return sCat === hCat && sType.includes(hType) && sGsm === hGsm;
+    });
+  }, [
+    rawStock,
+    header.hasSecondPaper,
+    header.paperCategory2,
+    header.paperType2,
+    header.paperGsm2,
   ]);
   const [headerErrors, setHeaderErrors] = useState({});
   const [view, setView] = useState("form");
@@ -224,10 +270,43 @@ export default function JobOrders(props) {
           updated.deliveryDate = so.deliveryDate || "";
           const soItems = so.items || [];
           if (soItems.length > 0) {
-            updated.itemName = soItems[0].itemName || "";
-            updated.size = soItems[0].size || "";
-            updated.orderQty = soItems[0].orderQty || "";
+            // Find first item that doesn't have a JO yet
+            const firstAvailable = soItems.find(
+              (it) =>
+                !jobOrders.some(
+                  (jo) =>
+                    jo.soRef === v &&
+                    jo.itemName === it.itemName &&
+                    jo._id !== editId,
+                ),
+            );
+            const it = firstAvailable || soItems[0]; // fallback to first if all have JOs (e.g. for re-editing)
+
+            updated.itemName = it.itemName || "";
+            updated.size = it.size || "";
+            updated.orderQty = it.orderQty || "";
+            updated.noOfSheets = calcSheets(updated.orderQty, updated.noOfUps);
           }
+        }
+      }
+
+      if (k === "orderQty" || k === "noOfUps") {
+        updated.noOfSheets = calcSheets(
+          k === "orderQty" ? v : updated.orderQty,
+          k === "noOfUps" ? v : updated.noOfUps,
+        );
+      }
+
+      if (
+        ["paperCategory", "paperType", "paperGsm", "reelWidthMm"].includes(k)
+      ) {
+        const pCat = k === "paperCategory" ? v : updated.paperCategory;
+        const pType = k === "paperType" ? v : updated.paperType;
+        const pGsm = k === "paperGsm" ? v : updated.paperGsm;
+        const pWidth = k === "reelWidthMm" ? v : updated.reelWidthMm;
+
+        if (pCat === "Paper Reel" && pType && pGsm && pWidth) {
+          updated.itemName = `${pType} ${pCat} ${pGsm}gsm ${pWidth}mm`;
         }
       }
 
@@ -275,29 +354,20 @@ export default function JobOrders(props) {
     ) : null;
 
   const validateRMStock = () => {
-    if (!header.paperType || !header.paperGsm) return true;
+    if (header.paperCategory && header.paperType && header.paperGsm) {
+      if (!matchedStock || (Number(matchedStock.qty || 0) <= 0 && Number(matchedStock.weight || 0) <= 0)) {
+        const stockName = `${header.paperCategory} | ${header.paperType} | ${header.paperGsm}gsm`;
+        toast(`Insufficient RM stock: ${stockName}`, "error");
+        return false;
+      }
+    }
 
-    // Find stock matching category, type and gsm
-    const stock = (rawStock || []).find((s) => {
-      const sCat = (s.category || s.paperCategory || "")
-        .toLowerCase()
-        .replace(/s$/, "");
-      const sType = (s.name || s.paperType || "").toLowerCase();
-      const sGsm = (s.gsm || s.paperGsm || 0).toString();
-
-      const hCat = (header.paperCategory || "").toLowerCase().replace(/s$/, "");
-
-      return (
-        sCat === hCat &&
-        sType.includes(header.paperType.toLowerCase()) &&
-        sGsm === header.paperGsm.toString()
-      );
-    });
-
-    if (!stock || (stock.qty <= 0 && stock.weight <= 0)) {
-      const stockName = `${header.paperCategory} | ${header.paperType} | ${header.paperGsm}gsm`;
-      toast(`Insufficient RM stock: ${stockName}`, "error");
-      return false;
+    if (header.hasSecondPaper && header.paperCategory2 && header.paperType2 && header.paperGsm2) {
+      if (!matchedStock2 || (Number(matchedStock2.qty || 0) <= 0 && Number(matchedStock2.weight || 0) <= 0)) {
+        const stockName = `${header.paperCategory2} | ${header.paperType2} | ${header.paperGsm2}gsm`;
+        toast(`Insufficient RM stock (Second Paper): ${stockName}`, "error");
+        return false;
+      }
     }
     return true;
   };
@@ -311,10 +381,11 @@ export default function JobOrders(props) {
     if (!header.paperType) he.paperType = true;
     if (!header.paperGsm) he.paperGsm = true;
     if (!header.noOfUps) he.noOfUps = true;
-    if (header.paperCategory !== "Paper Reel" && !header.noOfSheets)
-      he.noOfSheets = true;
-    if (!header.sheetW) he.sheetW = true;
-    if (!header.sheetL) he.sheetL = true;
+    if (header.paperCategory !== "Paper Reel") {
+      if (!header.noOfSheets) he.noOfSheets = true;
+      if (!header.sheetW) he.sheetW = true;
+      if (!header.sheetL) he.sheetL = true;
+    }
     setHeaderErrors(he);
 
     if (Object.keys(he).length > 0) {
@@ -332,6 +403,7 @@ export default function JobOrders(props) {
         clientCategory: header.clientCategory,
         itemName: header.itemName,
         orderQty: Number(header.orderQty),
+        orderDate: header.orderDate ? new Date(header.orderDate) : null,
         deliveryDate: header.deliveryDate
           ? new Date(header.deliveryDate)
           : null,
@@ -362,12 +434,13 @@ export default function JobOrders(props) {
               : null,
         remarks: header.remarks,
         machineAssignments: header.machineAssignments,
-        reelSize: header.reelSize,
         reelWidthMm: header.reelWidthMm ? Number(header.reelWidthMm) : null,
         cuttingLengthMm: header.cuttingLengthMm
           ? Number(header.cuttingLengthMm)
           : null,
         reelWeightKg: header.reelWeightKg ? Number(header.reelWeightKg) : null,
+        rmStockId: matchedStock?._id,
+        rmStockId2: matchedStock2?._id,
       };
 
       if (editId) {
@@ -377,6 +450,53 @@ export default function JobOrders(props) {
       } else {
         const res = await jobOrdersAPI.create(payload);
         toast(`Job Order ${res.joNo} created successfully`, "success");
+
+        // --- STOCK DEDUCTION LOGIC ---
+        const handleDeduction = async (
+          stock,
+          category,
+          issuedQty,
+          issuedWeight,
+        ) => {
+          if (!stock?._id) return;
+          const updateData = { ...stock };
+          if (category === "Paper Reel") {
+            const kgToDeduct = Number(issuedWeight || 0);
+            updateData.weight = Math.max(0, (stock.weight || 0) - kgToDeduct);
+          } else {
+            const sheetsToDeduct = Number(issuedQty || 0);
+            const oldQty = Number(stock.qty || 0);
+            const oldWeight = Number(stock.weight || 0);
+
+            if (oldQty > 0) {
+              const weightPerSheet = oldWeight / oldQty;
+              updateData.qty = Math.max(0, oldQty - sheetsToDeduct);
+              updateData.weight = Math.max(
+                0,
+                oldWeight - sheetsToDeduct * weightPerSheet,
+              );
+            }
+          }
+          await rawMaterialStockAPI.update(stock._id, updateData);
+        };
+
+        // Deduct for Primary Paper
+        await handleDeduction(
+          matchedStock,
+          header.paperCategory,
+          header.noOfSheets,
+          header.reelWeightKg,
+        );
+
+        // Deduct for Second Paper
+        if (header.hasSecondPaper) {
+          await handleDeduction(
+            matchedStock2,
+            header.paperCategory2,
+            header.noOfSheets2,
+            header.reelWeightKg2, // Wait, check if JO has reelWeightKg2
+          );
+        }
       }
 
       setHeader(blankHeader);
@@ -388,6 +508,253 @@ export default function JobOrders(props) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const generateJobCardPDF = (r) => {
+    const fd = (d) => (d ? new Date(d).toLocaleDateString("en-GB") : "—");
+    const html = `
+      <html>
+        <head>
+          <title>JobCard-${r.joNo}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&family=JetBrains+Mono:wght@700&display=swap');
+            body { font-family: 'Inter', sans-serif; padding: 20px 30px; color: #1a1a1a; line-height: 1.4; }
+            .header { text-align: center; border-bottom: 2px solid #1e40af; padding-bottom: 10px; margin-bottom: 20px; }
+            .header h1 { color: #1e3a8a; margin: 0; font-size: 24px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+            .header p { margin: 2px 0; font-size: 11px; color: #475569; font-weight: 500; }
+            
+            .doc-title { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px; }
+            .doc-title h2 { margin: 0; font-size: 20px; font-weight: 700; color: #1e293b; }
+            .status { color: #1e40af; font-weight: 700; font-size: 12px; }
+            
+            .hr { height: 1px; background: #e2e8f0; margin: 10px 0; border: none; }
+            .jo-no { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 800; color: #1e40af; margin: 5px 0; }
+            
+            .section-label { font-size: 10px; color: #64748b; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 15px; margin-top: 25px; background: #f8fafc; padding: 4px 8px; border-radius: 4px; }
+            
+            .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 15px; }
+            .info-item label { display: block; font-size: 9px; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
+            .info-item span { font-size: 12px; font-weight: 600; color: #1e293b; }
+            
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th { background: #f8fafc; border: 1px solid #e2e8f0; padding: 6px; text-align: left; font-size: 9px; font-weight: 800; text-transform: uppercase; color: #475569; }
+            td { border: 1px solid #e2e8f0; padding: 6px; font-size: 11px; color: #1e293b; }
+            
+            .process-tag { display: inline-block; background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; margin-right: 5px; margin-bottom: 5px; border: 1px solid #bfdbfe; }
+            
+            .footer { margin-top: 50px; display: flex; justify-content: space-between; }
+            .signature { border-top: 1px solid #cbd5e1; width: 180px; text-align: center; padding-top: 8px; font-size: 11px; color: #64748b; font-weight: 600; }
+            
+            @media print {
+              body { padding: 0; }
+              @page { margin: 1cm; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <p style="text-align: right; font-size: 9px; margin-bottom: 15px;">Printed on: ${new Date().toLocaleString()}</p>
+            <h1>AARAY PACKAGING PRIVATE LIMITED</h1>
+            <p>Unit I: A7/64 & A7/65, South Side GT Road Industrial Area, Ghaziabad</p>
+            <p>Unit II: 27MI & 28MI, South Side GT Road Industrial Area, Ghaziabad</p>
+          </div>
+
+          <div class="doc-title">
+            <h2>JOB CARD / PRODUCTION ORDER</h2>
+            <div class="status">Status: <span>${r.status || "Open"}</span></div>
+          </div>
+          <div class="jo-no">${r.joNo}</div>
+          <div class="hr"></div>
+
+          <div class="section-label">General Information</div>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Job Date</label>
+              <span>${fd(r.jobcardDate)}</span>
+            </div>
+            <div class="info-item">
+              <label>Order Date</label>
+              <span>${fd(r.orderDate)}</span>
+            </div>
+            <div class="info-item">
+              <label>Delivery Date</label>
+              <span>${fd(r.deliveryDate)}</span>
+            </div>
+          </div>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Client Name</label>
+              <span>${r.clientName}</span>
+            </div>
+            <div class="info-item">
+              <label>SO Reference</label>
+              <span>${r.soRef || "—"}</span>
+            </div>
+            <div class="info-item">
+              <label>Item Name</label>
+              <span>${r.itemName}</span>
+            </div>
+          </div>
+
+          <div class="section-label">Production Specs</div>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Order Qty</label>
+              <span style="font-size: 14px; color: #1e40af;">${(r.orderQty || 0).toLocaleString()} pcs</span>
+            </div>
+            <div class="info-item">
+              <label>No. of Ups</label>
+              <span>${r.noOfUps || "—"}</span>
+            </div>
+            <div class="info-item">
+              <label>Printing Detail</label>
+              <span>${r.printing || "—"}</span>
+            </div>
+          </div>
+          <div class="info-grid">
+             <div class="info-item">
+              <label>Plate Detail</label>
+              <span>${r.plate || "—"}</span>
+            </div>
+             <div class="info-item">
+              <label>Die Detail</label>
+              <span>${r.die || "—"}</span>
+            </div>
+          </div>
+
+          <div class="section-label">Paper Details</div>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Paper Category</label>
+              <span>${r.paperCategory}</span>
+            </div>
+            <div class="info-item">
+              <label>Paper Type</label>
+              <span>${r.paperType}</span>
+            </div>
+            <div class="info-item">
+              <label>GSM</label>
+              <span>${r.paperGsm} gsm</span>
+            </div>
+          </div>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Sheet Size</label>
+              <span>${r.sheetSize || (r.sheetW ? r.sheetW + "x" + r.sheetL + r.sheetUom : "—")}</span>
+            </div>
+            <div class="info-item">
+              <label>Total Sheets</label>
+              <span style="font-weight: 800;">${(r.noOfSheets || 0).toLocaleString()}</span>
+            </div>
+            <div class="info-item">
+              <label>Reel weight (total)</label>
+              <span>${r.reelWeightKg ? r.reelWeightKg + " kg" : "—"}</span>
+            </div>
+          </div>
+
+          ${
+            r.hasSecondPaper
+              ? `
+          <div style="margin-top: 10px; padding: 10px; border: 1px dashed #cbd5e1; border-radius: 6px;">
+            <label style="display: block; font-size: 8px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 5px;">Second Paper Details</label>
+            <div class="info-grid">
+               <div class="info-item">
+                <label>Type</label>
+                <span>${r.paperType2 || "—"}</span>
+              </div>
+               <div class="info-item">
+                <label>GSM</label>
+                <span>${r.paperGsm2 || "—"} gsm</span>
+              </div>
+               <div class="info-item">
+                <label>Sheets/Qty</label>
+                <span>${(r.noOfSheets2 || 0).toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+          `
+              : ""
+          }
+
+          <div class="section-label">Manufacturing Process</div>
+          <div style="margin-top: 10px;">
+            ${(r.process || []).map((p) => `<span class="process-tag">${p}</span>`).join("")}
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 30%;">Process</th>
+                <th style="width: 40%;">Machine Assigned</th>
+                <th style="width: 30%;">Completed Qty</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${(r.process || [])
+                .map((p) => {
+                  const machineId = r.machineAssignments?.[p];
+                  // Resolve machine name from machineMaster
+                  const mList = Array.isArray(machineMaster)
+                    ? machineMaster
+                    : Object.values(machineMaster || {});
+                  const mObj = mList.find(
+                    (m) =>
+                      (m._id || m.id) === machineId || m.name === machineId,
+                  );
+                  const machineName = mObj
+                    ? mObj.name
+                    : machineId || "— Not Assigned —";
+
+                  return `
+                  <tr>
+                    <td style="font-weight: 700;">${p}</td>
+                    <td>${machineName}</td>
+                    <td>${(r.stageQtyMap?.[p] || 0).toLocaleString()}</td>
+                  </tr>
+                `;
+                })
+                .join("")}
+            </tbody>
+          </table>
+
+          <div class="section-label">Special Remarks / Instructions</div>
+          <div style="min-height: 40px; font-size: 11px; font-style: italic; color: #475569;">
+            ${r.remarks || "No special instructions provided."}
+          </div>
+
+          <div class="footer">
+            <div class="signature">Production In-charge</div>
+            <div class="signature">Quality Control</div>
+            <div class="signature">Authorised Signatory</div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    iframe.style.visibility = "hidden";
+    document.body.appendChild(iframe);
+
+    iframe.onload = () => {
+      setTimeout(() => {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        setTimeout(() => {
+          document.body.removeChild(iframe);
+        }, 1500);
+      }, 500);
+    };
+
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(html);
+    doc.close();
   };
 
   return (
@@ -522,11 +889,71 @@ export default function JobOrders(props) {
               </select>
             </Field>
             <Field label="Item Name *">
-              <input
-                placeholder="Enter item name"
-                value={header.itemName}
-                onChange={(e) => setH("itemName", e.target.value)}
-              />
+              {header.soRef ? (
+                <select
+                  value={header.itemName}
+                  onChange={(e) => {
+                    const iName = e.target.value;
+                    const so = soOptions.find((s) => s.soNo === header.soRef);
+                    const it = (so?.items || []).find(
+                      (i) => i.itemName === iName,
+                    );
+                    if (it) {
+                      setHeader((f) => {
+                        const next = {
+                          ...f,
+                          itemName: it.itemName,
+                          size: it.size || "",
+                          orderQty: it.orderQty || "",
+                        };
+                        next.noOfSheets = calcSheets(
+                          next.orderQty,
+                          next.noOfUps,
+                        );
+                        return next;
+                      });
+                    } else {
+                      setH("itemName", iName);
+                    }
+                  }}
+                  style={EH("itemName")}
+                >
+                  <option value="">{`-- Select Item from SO (${(soOptions.find((s) => s.soNo === header.soRef)?.items || []).length} items found) --`}</option>
+                  {(() => {
+                    const so = soOptions.find((s) => s.soNo === header.soRef);
+                    return (so?.items || []).map((it, i) => {
+                      const alreadyHasJO = jobOrders.some(
+                        (jo) =>
+                          jo.soRef === header.soRef &&
+                          jo.itemName === it.itemName &&
+                          jo._id !== editId,
+                      );
+                      return (
+                        <option
+                          key={it._id || i}
+                          value={it.itemName}
+                          disabled={alreadyHasJO}
+                          style={
+                            alreadyHasJO
+                              ? { color: "#888", fontStyle: "italic" }
+                              : {}
+                          }
+                        >
+                          {it.itemName} (Qty: {fmt(it.orderQty)}){" "}
+                          {alreadyHasJO ? "✓ JO DONE" : ""}
+                        </option>
+                      );
+                    });
+                  })()}
+                </select>
+              ) : (
+                <input
+                  placeholder="Enter item name"
+                  value={header.itemName}
+                  onChange={(e) => setH("itemName", e.target.value)}
+                />
+              )}
+              {EHMsg("itemName")}
             </Field>
             <Field label="Size *">
               <input
@@ -769,14 +1196,7 @@ export default function JobOrders(props) {
               />
               {EHMsg("paperGsm")}
             </Field>
-            <Field label="ITEM NAME">
-              <input
-                readOnly
-                placeholder="Auto-matched item"
-                value={matchedStock?.name || ""}
-                style={{ background: "transparent", color: C.muted }}
-              />
-            </Field>
+
             <Field label="# OF UPS *">
               <input
                 type="number"
@@ -797,18 +1217,23 @@ export default function JobOrders(props) {
                   style={EH("noOfSheets")}
                 />
                 {EHMsg("noOfSheets")}
-                {matchedStock?.qty > 0 && (
-                  <div
-                    style={{
-                      fontSize: 10,
-                      color: C.green,
-                      marginTop: 4,
-                      fontWeight: 700,
-                    }}
-                  >
-                    ✓ {fmt(matchedStock.qty)} sheets available
-                  </div>
-                )}
+                {header.paperCategory &&
+                  header.paperType &&
+                  header.paperGsm &&
+                  (header.paperCategory === "Paper Reel" ? !!header.reelWidthMm : !!(header.sheetW && header.sheetL)) && (
+                    <div
+                      style={{
+                        fontSize: 10,
+                        color: matchedStock?.qty > 0 ? C.green : C.red,
+                        marginTop: 4,
+                        fontWeight: 700,
+                      }}
+                    >
+                      {matchedStock?.qty > 0
+                        ? `✓ ${fmt(matchedStock.qty)} sheets available`
+                        : `❌ 0 sheets available`}
+                    </div>
+                  )}
               </Field>
             )}
 
@@ -820,18 +1245,23 @@ export default function JobOrders(props) {
                   value={header.reelWeightKg}
                   onChange={(e) => setH("reelWeightKg", e.target.value)}
                 />
-                {matchedStock?.weight > 0 && (
-                  <div
-                    style={{
-                      fontSize: 10,
-                      color: C.green,
-                      marginTop: 4,
-                      fontWeight: 700,
-                    }}
-                  >
-                    ✓ {fmt(Math.round(matchedStock.weight))} kg available
-                  </div>
-                )}
+                {header.paperCategory &&
+                  header.paperType &&
+                  header.paperGsm &&
+                  (header.paperCategory === "Paper Reel" ? !!header.reelWidthMm : !!(header.sheetW && header.sheetL)) && (
+                    <div
+                      style={{
+                        fontSize: 10,
+                        color: matchedStock?.weight > 0 ? C.green : C.red,
+                        marginTop: 4,
+                        fontWeight: 700,
+                      }}
+                    >
+                      {matchedStock?.weight > 0
+                        ? `✓ ${fmt(Math.round(matchedStock.weight))} kg available`
+                        : `❌ 0 kg available`}
+                    </div>
+                  )}
               </Field>
             )}
           </div>
@@ -840,18 +1270,11 @@ export default function JobOrders(props) {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr 1fr 1fr 1.5fr",
+                gridTemplateColumns: "1fr 1fr 1.5fr",
                 gap: 14,
                 marginBottom: 20,
               }}
             >
-              <Field label="REEL SIZE">
-                <input
-                  placeholder="e.g. 1140mm"
-                  value={header.reelSize}
-                  onChange={(e) => setH("reelSize", e.target.value)}
-                />
-              </Field>
               <Field label="REEL WIDTH (MM)">
                 <input
                   type="number"
@@ -871,59 +1294,61 @@ export default function JobOrders(props) {
             </div>
           )}
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr 1fr 1.5fr",
-              gap: 14,
-              marginBottom: 20,
-            }}
-          >
-            <Field label="SHEET UOM">
-              <select
-                value={header.sheetUom}
-                onChange={(e) => setH("sheetUom", e.target.value)}
-              >
-                <option value="mm">mm</option>
-                <option value="cm">cm</option>
-                <option value="inch">inch</option>
-              </select>
-            </Field>
-            <Field label="SHEET W *">
-              <input
-                type="number"
-                placeholder="Width"
-                value={header.sheetW}
-                onChange={(e) => setH("sheetW", e.target.value)}
-                style={EH("sheetW")}
-              />
-              {EHMsg("sheetW")}
-            </Field>
-            <Field label="SHEET L *">
-              <input
-                type="number"
-                placeholder="Length"
-                value={header.sheetL}
-                onChange={(e) => setH("sheetL", e.target.value)}
-                style={EH("sheetL")}
-              />
-              {EHMsg("sheetL")}
-            </Field>
-            <Field label="SHEET SIZE">
-              <div
-                style={{
-                  padding: "9px 12px",
-                  background: C.inputBg,
-                  border: `1px solid ${C.border}`,
-                  borderRadius: 6,
-                  fontSize: 13,
-                  color: header.sheetSize ? C.text : C.muted,
-                }}
-              >
-                {header.sheetSize || "— Auto from W x L x UOM —"}
-              </div>
-            </Field>
-          </div>
+          {header.paperCategory !== "Paper Reel" && (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr 1fr 1.5fr",
+                gap: 14,
+                marginBottom: 20,
+              }}
+            >
+              <Field label="SHEET UOM">
+                <select
+                  value={header.sheetUom}
+                  onChange={(e) => setH("sheetUom", e.target.value)}
+                >
+                  <option value="mm">mm</option>
+                  <option value="cm">cm</option>
+                  <option value="inch">inch</option>
+                </select>
+              </Field>
+              <Field label="SHEET W *">
+                <input
+                  type="number"
+                  placeholder="Width"
+                  value={header.sheetW}
+                  onChange={(e) => setH("sheetW", e.target.value)}
+                  style={EH("sheetW")}
+                />
+                {EHMsg("sheetW")}
+              </Field>
+              <Field label="SHEET L *">
+                <input
+                  type="number"
+                  placeholder="Length"
+                  value={header.sheetL}
+                  onChange={(e) => setH("sheetL", e.target.value)}
+                  style={EH("sheetL")}
+                />
+                {EHMsg("sheetL")}
+              </Field>
+              <Field label="SHEET SIZE">
+                <div
+                  style={{
+                    padding: "9px 12px",
+                    background: C.inputBg,
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 6,
+                    fontSize: 13,
+                    color: header.sheetSize ? C.text : C.muted,
+                  }}
+                >
+                  {header.sheetSize || "— Auto from W x L x UOM —"}
+                </div>
+              </Field>
+            </div>
+          )}
 
           <div
             style={{
@@ -933,6 +1358,32 @@ export default function JobOrders(props) {
               marginBottom: 20,
             }}
           >
+            <Field label="ITEM NAME">
+              <input
+                readOnly
+                placeholder="Auto-matched item"
+                value={
+                  matchedStock?.name ||
+                  (header.paperCategory &&
+                  header.paperType &&
+                  header.paperGsm &&
+                  (header.paperCategory === "Paper Reel"
+                    ? !!header.reelWidthMm
+                    : !!(header.sheetW && header.sheetL))
+                    ? `${header.paperType} ${header.paperCategory} ${header.paperGsm}gsm ${
+                        header.paperCategory === "Paper Reel"
+                          ? (header.reelWidthMm || 0) + "mm"
+                          : header.sheetSize
+                      }`
+                    : "")
+                }
+                style={{
+                  background: "transparent",
+                  color: matchedStock ? C.green : C.text,
+                  fontWeight: 600,
+                }}
+              />
+            </Field>
             <Field label="REMARKS">
               <input
                 placeholder="Special instructions"
@@ -1125,7 +1576,9 @@ export default function JobOrders(props) {
                   clientCategory: jo.clientCategory || "",
                   itemName: jo.itemName || "",
                   size: "",
-                  orderDate: "",
+                  orderDate: jo.orderDate
+                    ? new Date(jo.orderDate).toISOString().slice(0, 10)
+                    : "",
                   deliveryDate: jo.deliveryDate
                     ? new Date(jo.deliveryDate).toISOString().slice(0, 10)
                     : "",
@@ -1249,6 +1702,21 @@ export default function JobOrders(props) {
                         }}
                       >
                         🗑️
+                      </button>
+                      <button
+                        onClick={() => generateJobCardPDF(r)}
+                        style={{
+                          padding: "5px 12px",
+                          borderRadius: 4,
+                          border: `1px solid ${C.blue}`,
+                          background: C.blue + "22",
+                          color: C.blue,
+                          fontWeight: 600,
+                          fontSize: 12,
+                          cursor: "pointer",
+                        }}
+                      >
+                        🖨️ PDF
                       </button>
                     </div>
                   </div>

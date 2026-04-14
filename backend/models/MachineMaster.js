@@ -31,6 +31,11 @@ const machineMasterSchema = new mongoose.Schema({
     type: Number,
     default: 1
   },
+  records: {
+    type: Map,
+    of: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
   addedOn: {
     type: Date,
     default: Date.now

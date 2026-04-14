@@ -39,6 +39,7 @@ const jobOrderSchema = new mongoose.Schema({
     type: Date,
     required: true
   },
+  orderDate: Date,
   soRef: String,
   clientName: String,
   clientCategory: String,

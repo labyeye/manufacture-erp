@@ -5,7 +5,10 @@ const dispatchItemSchema = new mongoose.Schema({
   qty: Number,
   unit: String,
   rate: Number,
-  amount: Number
+  amount: Number,
+  gstRate: Number,
+  taxAmount: Number,
+  totalWithTax: Number
 }, { _id: false });
 
 const dispatchSchema = new mongoose.Schema({

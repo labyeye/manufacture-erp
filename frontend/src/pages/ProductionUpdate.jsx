@@ -279,6 +279,12 @@ export default function ProductionUpdate({
                 {EMsg("joNo")}
               </Field>
 
+              <Field label="ITEM NAME">
+                <div style={readonlyStyle}>
+                  {selectedJO?.itemName || "—"}
+                </div>
+              </Field>
+
               <Field label="CURRENT STAGE">
                 <div style={readonlyStyle}>
                   {selectedJO?.currentStage || "Not Started"}
@@ -818,7 +824,7 @@ export default function ProductionUpdate({
                       {jo.joNo}
                     </span>
                     <span style={{ fontSize: 13, fontWeight: 600 }}>
-                      {jo.clientName}
+                      {jo.itemName} — {jo.clientName}
                     </span>
                     <Badge
                       text={jo.status}

@@ -101,10 +101,51 @@ export default function SalesOrders(props) {
     orderQty: "",
     price: "",
     amount: "",
+    gstRate: 18,
+    hsnCode: "",
+    taxAmount: "",
+    totalWithTax: "",
     itemName: "",
+    gsm: "",
     clientName: "",
     remarks: "",
   });
+
+  const CATEGORY_CONFIG = {
+    "Cake Box": { layout: "3D", f1: "WIDTH", f2: "LENGTH", f3: "HEIGHT" },
+    "Pastry Box": { layout: "3D", f1: "WIDTH", f2: "LENGTH", f3: "HEIGHT" },
+    "Pizza Box": { layout: "3D", f1: "WIDTH", f2: "LENGTH", f3: "HEIGHT" },
+    "Corrugated Box": { layout: "3D", f1: "WIDTH", f2: "LENGTH", f3: "HEIGHT" },
+    Box: { layout: "3D", f1: "WIDTH", f2: "LENGTH", f3: "HEIGHT" },
+    "Paper Bag with Handle": {
+      layout: "3D",
+      f1: "WIDTH",
+      f2: "GUSSETT",
+      f3: "HEIGHT",
+    },
+    "Paper Bag without Handle": {
+      layout: "3D",
+      f1: "WIDTH",
+      f2: "GUSSETT",
+      f3: "HEIGHT",
+    },
+    "Paper Bag Manual": {
+      layout: "3D",
+      f1: "WIDTH",
+      f2: "GUSSETT",
+      f3: "HEIGHT",
+    },
+    "Wrapping Paper": { layout: "2D", f1: "WIDTH", f2: "HEIGHT" },
+    "Butter Paper": { layout: "2D", f1: "WIDTH", f2: "HEIGHT" },
+    "Tissue Paper": { layout: "2D", f1: "WIDTH", f2: "HEIGHT" },
+    Sleeve: { layout: "2D", f1: "WIDTH", f2: "LENGTH" },
+    Insert: { layout: "2D", f1: "WIDTH", f2: "LENGTH" },
+    Tags: { layout: "2D", f1: "WIDTH", f2: "HEIGHT" },
+    Stickers: { layout: "2D", f1: "WIDTH", f2: "HEIGHT" },
+    "Courier Bag": { layout: "2D", f1: "WIDTH", f2: "HEIGHT" },
+    "Business Card": { layout: "2D", f1: "WIDTH", f2: "HEIGHT" },
+    "Thank You Card": { layout: "2D", f1: "WIDTH", f2: "HEIGHT" },
+  };
 
   const [header, setHeader] = useState(blankHeader);
   const [items, setItems] = useState([blankItem()]);
@@ -159,15 +200,31 @@ export default function SalesOrders(props) {
     const parts = [it.itemCategory];
     const h = overrideHeader || header;
 
-    if (it.size) {
-      parts.push(it.size);
-    } else if (it.width || it.length || it.height || it.gussett) {
+    const isBag = [
+      "Paper Bag with Handle",
+      "Paper Bag without Handle",
+      "Paper Bag Manual",
+    ].includes(it.itemCategory);
+
+    if (isBag && (it.width || it.gussett || it.height)) {
       const dims = [];
       if (it.width) dims.push(it.width);
       if (it.gussett) dims.push(it.gussett);
+      if (it.height) dims.push(it.height);
+      if (dims.length > 0) parts.push(`${dims.join("x")}${it.uom || "inch"}`);
+    } else if (it.size) {
+      parts.push(
+        it.size
+          .toLowerCase()
+          .split(/\s*\d+\s*gsm/)[0]
+          .trim(),
+      );
+    } else if (it.width || it.length || it.height) {
+      const dims = [];
+      if (it.width) dims.push(it.width);
       if (it.length) dims.push(it.length);
       if (it.height) dims.push(it.height);
-      if (dims.length > 0) parts.push(`${dims.join("×")}inch`);
+      if (dims.length > 0) parts.push(`${dims.join("x")}${it.uom || "inch"}`);
     }
 
     if (it.clientName) parts.push(it.clientName);
@@ -227,13 +284,76 @@ export default function SalesOrders(props) {
             uom: found.uom || it.uom || "nos",
             clientName: found.clientName || "",
             itemName: found.name || it.itemName,
+            gstRate: found.gstRate || 18,
+            hsnCode: found.hsnCode || "",
+            gsm: found.gsm || "",
           };
         }
       }
 
-      const orderQty = k === "orderQty" ? +v : +(it.orderQty || 0);
-      const price = k === "price" ? +v : +(it.price || 0);
-      it.amount = orderQty && price ? (orderQty * price).toFixed(2) : "";
+      // Re-calculate math
+      const orderQty = +(it.orderQty || 0);
+      const price = +(it.price || 0);
+      const gstRate = +(it.gstRate || 18);
+
+      const amount = orderQty * price;
+      const taxAmt = (amount * gstRate) / 100;
+
+      it.amount = amount > 0 ? amount.toFixed(2) : "";
+      it.taxAmount = taxAmt > 0 ? taxAmt.toFixed(2) : "";
+      it.totalWithTax = amount > 0 ? (amount + taxAmt).toFixed(2) : "";
+
+      const categorySizes = subTypeMap[it.itemCategory] || [];
+      const isLiquid = categorySizes.some((s) =>
+        s.toLowerCase().includes("ml"),
+      );
+
+      if (k === "size" && v && !isLiquid) {
+        const config = CATEGORY_CONFIG[it.itemCategory];
+        // Try to parse WxGxH (unit) [gsm]
+        const match3D = v
+          .toLowerCase()
+          .match(
+            /^(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)\s*([a-z]+)?\s*(?:(\d+)\s*gsm)?/,
+          );
+        // Try to parse WxL (unit) [gsm]
+        const match2D = v
+          .toLowerCase()
+          .match(
+            /^(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)\s*([a-z]+)?\s*(?:(\d+)\s*gsm)?/,
+          );
+
+        if (match3D) {
+          it.width = match3D[1];
+          // map 2nd dimension based on config
+          if (config?.f2 === "LENGTH") {
+            it.length = match3D[2];
+            it.gussett = "";
+          } else {
+            it.gussett = match3D[2];
+            it.length = "";
+          }
+          it.height = match3D[3];
+          if (match3D[4] && ["mm", "cm", "inch"].includes(match3D[4]))
+            it.uom = match3D[4];
+          if (match3D[5]) it.gsm = match3D[5];
+        } else if (match2D) {
+          it.width = match2D[1];
+          // map 2nd dimension based on config (could be LENGTH or HEIGHT)
+          if (config?.f2 === "HEIGHT") {
+            it.height = match2D[2];
+            it.length = "";
+          } else {
+            it.length = match2D[2];
+            it.height = "";
+          }
+          it.gussett = "";
+          if (match2D[3] && ["mm", "cm", "inch"].includes(match2D[3]))
+            it.uom = match2D[3];
+          if (match2D[4]) it.gsm = match2D[4];
+        }
+      }
+
       it.itemName = generateItemName(it);
       updated[idx] = it;
       return updated;
@@ -294,6 +414,11 @@ export default function SalesOrders(props) {
         orderQty: it.orderQty || 0,
         price: it.price || 0,
         amount: it.amount || 0,
+        gstRate: it.gstRate || 18,
+        hsnCode: it.hsnCode || "",
+        taxAmount: it.taxAmount || 0,
+        totalWithTax: it.totalWithTax || 0,
+        gsm: it.gsm || "",
         remarks: it.remarks || "",
       })),
     );
@@ -355,22 +480,34 @@ export default function SalesOrders(props) {
         clientCategory: header.clientCategory,
         clientName: header.clientName,
         remarks: header.remarks,
-        items: items.map((it) => ({
-          productCode: it.productCode,
-          itemCategory: it.itemCategory,
-          itemName: it.itemName,
-          size: it.size,
-          variant: it.variant,
-          width: it.width ? Number(it.width) : undefined,
-          length: it.length ? Number(it.length) : undefined,
-          height: it.height ? Number(it.height) : undefined,
-          gussett: it.gussett ? Number(it.gussett) : undefined,
-          uom: it.uom,
-          orderQty: Number(it.orderQty),
-          price: Number(it.price),
-          amount: Number(it.amount),
-          remarks: it.remarks,
-        })),
+        items: items.map((it) => {
+          const amount = +(it.amount || 0);
+          const gstRate = +(it.gstRate || 18);
+          const taxAmt = +(it.taxAmount || (amount * gstRate) / 100);
+          const totalWithTax = +(it.totalWithTax || amount + taxAmt);
+
+          return {
+            productCode: it.productCode || "",
+            itemCategory: it.itemCategory || "",
+            itemName: it.itemName || "",
+            size: it.size || "",
+            variant: it.variant || "",
+            width: it.width ? Number(it.width) : undefined,
+            length: it.length ? Number(it.length) : undefined,
+            height: it.height ? Number(it.height) : undefined,
+            gussett: it.gussett ? Number(it.gussett) : undefined,
+            uom: it.uom || "nos",
+            orderQty: Number(it.orderQty || 0),
+            price: Number(it.price || 0),
+            amount: amount,
+            gstRate: gstRate,
+            hsnCode: it.hsnCode || "—",
+            taxAmount: taxAmt,
+            totalWithTax: totalWithTax,
+            gsm: it.gsm ? Number(it.gsm) : undefined,
+            remarks: it.remarks || "",
+          };
+        }),
         status: header.status || "Open",
       };
 
@@ -402,6 +539,178 @@ export default function SalesOrders(props) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const generateSOPDF = (so) => {
+    const subtotal = (so.items || []).reduce(
+      (s, it) => s + +(it.amount || 0),
+      0,
+    );
+    const totalTax = (so.items || []).reduce((s, it) => {
+      const amt = +(it.amount || 0);
+      const rate = +(it.gstRate || 18);
+      const tax = it.taxAmount ? +it.taxAmount : (amt * rate) / 100;
+      return s + tax;
+    }, 0);
+    const total = subtotal + totalTax;
+    const fd = (d) => (d ? new Date(d).toLocaleDateString("en-GB") : "—");
+
+    const html = `
+      <html>
+        <head>
+          <title>SO-${so.soNo}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&family=JetBrains+Mono:wght@700&display=swap');
+            body { font-family: 'Inter', sans-serif; padding: 20px 30px; color: #1a1a1a; line-height: 1.4; }
+            .header { text-align: center; border-bottom: 2px solid #1e40af; padding-bottom: 10px; margin-bottom: 20px; }
+            .header h1 { color: #1e3a8a; margin: 0; font-size: 24px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+            .header p { margin: 2px 0; font-size: 11px; color: #475569; font-weight: 500; }
+            
+            .doc-title { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px; }
+            .doc-title h2 { margin: 0; font-size: 20px; font-weight: 700; color: #1e293b; }
+            .status { color: #1e40af; font-weight: 700; font-size: 12px; }
+            
+            .hr { height: 1px; background: #e2e8f0; margin: 10px 0; border: none; }
+            .so-no { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 800; color: #1e40af; margin: 5px 0; }
+            
+            .section-label { font-size: 10px; color: #64748b; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 15px; margin-top: 25px; background: #f8fafc; padding: 4px 8px; border-radius: 4px; }
+            
+            .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 15px; }
+            .info-item label { display: block; font-size: 9px; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
+            .info-item span { font-size: 12px; font-weight: 600; color: #1e293b; }
+            
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th { background: #f8fafc; border: 1px solid #e2e8f0; padding: 6px; text-align: left; font-size: 9px; font-weight: 800; text-transform: uppercase; color: #475569; }
+            td { border: 1px solid #e2e8f0; padding: 6px; font-size: 11px; color: #1e293b; }
+            .col-qty { text-align: center; }
+            .col-amt { text-align: right; font-weight: 700; }
+            
+            .total-row { display: flex; justify-content: flex-end; margin-top: 25px; }
+            .total-box { display: flex; align-items: center; justify-content: space-between; font-size: 18px; font-weight: 800; color: #1e3a8a; background: #f8fafc; padding: 10px 15px; border-radius: 8px; border: 1px solid #e2e8f0; }
+            .total-box label { font-size: 14px; color: #64748b; font-weight: 700; margin-right: 20px; }
+            
+            .footer { margin-top: 60px; display: flex; justify-content: space-between; }
+            .signature { border-top: 1px solid #cbd5e1; width: 180px; text-align: center; padding-top: 8px; font-size: 11px; color: #64748b; font-weight: 600; }
+            
+            @media print {
+              body { padding: 0; }
+              @page { margin: 1cm; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <p style="text-align: right; font-size: 9px; margin-bottom: 15px;">Printed on: ${new Date().toLocaleString()}</p>
+            <h1>AARAY PACKAGING PRIVATE LIMITED</h1>
+            <p>Unit I: A7/64 & A7/65, South Side GT Road Industrial Area, Ghaziabad</p>
+            <p>Unit II: 27MI & 28MI, South Side GT Road Industrial Area, Ghaziabad</p>
+          </div>
+
+          <div class="doc-title">
+            <h2>SALES ORDER</h2>
+            <div class="status">Status: <span>${so.status || "Open"}</span></div>
+          </div>
+          <div class="so-no">${so.soNo}</div>
+          <div class="hr"></div>
+
+          <div class="section-label">General Information</div>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Order Date</label>
+              <span>${fd(so.orderDate)}</span>
+            </div>
+            <div class="info-item">
+              <label>Delivery Date</label>
+              <span>${fd(so.deliveryDate)}</span>
+            </div>
+            <div class="info-item">
+              <label>Customer Name</label>
+              <span>${so.clientName}</span>
+            </div>
+          </div>
+
+          <div class="section-label">Order Items</div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 35%;">Item Description</th>
+                <th style="width: 15%;">HSN</th>
+                <th style="width: 15%; text-align: center;">Qty</th>
+                <th style="width: 10%; text-align: right;">Rate</th>
+                <th style="width: 10%; text-align: center;">GST(%)</th>
+                <th style="width: 15%;" class="col-amt">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${(so.items || [])
+                .map(
+                  (it) => `
+                <tr>
+                  <td>
+                    <div style="font-weight: 700;">${it.itemName}</div>
+                  </td>
+                  <td>${it.hsnCode || "—"}</td>
+                  <td class="col-qty">${fmt(it.orderQty)} ${it.uom || "pcs"}</td>
+                  <td style="text-align: right;">₹${fmt(it.price)}</td>
+                  <td style="text-align: center;">${it.gstRate || 18}%</td>
+                  <td class="col-amt">₹${fmt(it.amount)}</td>
+                </tr>
+              `,
+                )
+                .join("")}
+            </tbody>
+          </table>
+
+          <div class="total-row">
+            <div style="width: 250px;">
+              <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; padding: 0 5px;">
+                <label style="color: #64748b; font-weight: 600;">Subtotal:</label>
+                <span style="font-weight: 700;">₹${fmt(subtotal)}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; padding: 0 5px;">
+                <label style="color: #64748b; font-weight: 600;">GST Total:</label>
+                <span style="font-weight: 700;">₹${fmt(totalTax)}</span>
+              </div>
+              <div class="hr"></div>
+              <div class="total-box">
+                <label>NET TOTAL</label>
+                <span>₹${fmt(total)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="footer">
+             <div class="signature">Authorized Signatory</div>
+             <div class="signature">Customer Confirmation</div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    iframe.style.visibility = "hidden";
+    document.body.appendChild(iframe);
+
+    iframe.onload = () => {
+      setTimeout(() => {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        setTimeout(() => {
+          document.body.removeChild(iframe);
+        }, 1500);
+      }, 500);
+    };
+
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(html);
+    doc.close();
   };
 
   return (
@@ -635,7 +944,7 @@ export default function SalesOrders(props) {
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "1.2fr 1.5fr 1.2fr 1.5fr 1fr",
+                  gridTemplateColumns: "1fr 1fr 1fr 0.8fr",
                   gap: 12,
                   marginBottom: 12,
                 }}
@@ -644,8 +953,10 @@ export default function SalesOrders(props) {
                   <AutocompleteInput
                     value={it.productCode}
                     onChange={(v) => setItem(idx, "productCode", v)}
-                    suggestions={sortedFGItems.map((f) => `${f.code} — ${f.name}`)}
-                    placeholder="Search FG code..."
+                    suggestions={sortedFGItems.map(
+                      (f) => `${f.code} — ${f.name}`,
+                    )}
+                    placeholder="Type or select code (optional)"
                   />
                 </Field>
                 <Field label="CATEGORY *">
@@ -663,20 +974,13 @@ export default function SalesOrders(props) {
                   </select>
                   {EIMsg(idx, "itemCategory")}
                 </Field>
-                <Field label="SIZE *">
-                  <select
-                    value={it.size}
-                    onChange={(e) => setItem(idx, "size", e.target.value)}
-                    style={EI(idx, "size")}
-                  >
-                    <option value="">-- Select Size --</option>
-                    {(subTypeMap[it.itemCategory] || []).map((s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
-                    ))}
-                  </select>
-                  {EIMsg(idx, "size")}
+                <Field label="GSM">
+                  <input
+                    type="number"
+                    placeholder="e.g. 100"
+                    value={it.gsm}
+                    onChange={(e) => setItem(idx, "gsm", e.target.value)}
+                  />
                 </Field>
                 <Field label="VARIANT / COLOUR">
                   <input
@@ -685,37 +989,230 @@ export default function SalesOrders(props) {
                     onChange={(e) => setItem(idx, "variant", e.target.value)}
                   />
                 </Field>
-                <Field label="ORDER QUANTITY *">
-                  <input
-                    type="number"
-                    placeholder="Qty"
-                    value={it.orderQty}
-                    onChange={(e) => setItem(idx, "orderQty", e.target.value)}
-                    style={EI(idx, "orderQty")}
-                  />
-                  {EIMsg(idx, "orderQty")}
-                </Field>
               </div>
 
-              {/* Row 2: Pricing & Display Name */}
+              {/* Dynamic Dimension Layout based on Category */}
+              {(() => {
+                const categorySizes = subTypeMap[it.itemCategory] || [];
+                const config = CATEGORY_CONFIG[it.itemCategory];
+
+                const isLiquid = categorySizes.some((s) =>
+                  s.toLowerCase().includes("ml"),
+                );
+
+                // Determine layout and labels
+                let layout = config?.layout;
+                let f1 = config?.f1 || "WIDTH";
+                let f2 = config?.f2;
+                let f3 = config?.f3;
+
+                if (!layout && !isLiquid) {
+                  const is3D = categorySizes.some(
+                    (s) => (s.match(/x/g) || []).length >= 2,
+                  );
+                  const is2D =
+                    !is3D &&
+                    categorySizes.some((s) => s.toLowerCase().includes("x"));
+
+                  if (is3D) {
+                    layout = "3D";
+                    f2 = "GUSSETT";
+                    f3 = "HEIGHT";
+                  } else if (is2D) {
+                    layout = "2D";
+                    f2 = "LENGTH";
+                  }
+                }
+
+                const showInputs = layout === "3D" || layout === "2D";
+
+                // Mapping for state keys based on label
+                const getKey = (label) => {
+                  if (label === "WIDTH") return "width";
+                  if (label === "LENGTH") return "length";
+                  if (label === "GUSSETT") return "gussett";
+                  if (label === "HEIGHT") return "height";
+                  return "width";
+                };
+
+                if (showInputs) {
+                  return (
+                    <>
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr 1fr 1fr",
+                          gap: 12,
+                          marginBottom: 12,
+                        }}
+                      >
+                        <Field label="STANDARD SIZE">
+                          <select
+                            value={it.size}
+                            onChange={(e) =>
+                              setItem(idx, "size", e.target.value)
+                            }
+                          >
+                            <option value="">-- Manual / Custom --</option>
+                            {categorySizes.map((s) => (
+                              <option key={s} value={s}>
+                                {s
+                                  .toLowerCase()
+                                  .split(/\s*\d+\s*gsm/)[0]
+                                  .trim()
+                                  .toLowerCase()}
+                              </option>
+                            ))}
+                          </select>
+                        </Field>
+                        <Field label="UOM *">
+                          <select
+                            value={it.uom}
+                            onChange={(e) =>
+                              setItem(idx, "uom", e.target.value)
+                            }
+                          >
+                            <option value="mm">mm</option>
+                            <option value="cm">cm</option>
+                            <option value="inch">inch</option>
+                            <option value="nos">nos</option>
+                            <option value="pcs">pcs</option>
+                          </select>
+                        </Field>
+                        <Field label={`${f1} *`}>
+                          <input
+                            type="number"
+                            placeholder="e.g. 9"
+                            value={it[getKey(f1)]}
+                            onChange={(e) =>
+                              setItem(idx, getKey(f1), e.target.value)
+                            }
+                            style={EI(idx, getKey(f1))}
+                          />
+                        </Field>
+                        {f2 && (
+                          <Field label={`${f2} *`}>
+                            <input
+                              type="number"
+                              placeholder="e.g. 6"
+                              value={it[getKey(f2)]}
+                              onChange={(e) =>
+                                setItem(idx, getKey(f2), e.target.value)
+                              }
+                              style={EI(idx, getKey(f2))}
+                            />
+                          </Field>
+                        )}
+                      </div>
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr 1fr",
+                          gap: 12,
+                          marginBottom: 12,
+                        }}
+                      >
+                        {layout === "3D" && f3 && (
+                          <Field label={`${f3} *`}>
+                            <input
+                              type="number"
+                              placeholder="e.g. 7"
+                              value={it[getKey(f3)]}
+                              onChange={(e) =>
+                                setItem(idx, getKey(f3), e.target.value)
+                              }
+                              style={EI(idx, getKey(f3))}
+                            />
+                          </Field>
+                        )}
+                        <Field label="ORDER QUANTITY *">
+                          <input
+                            type="number"
+                            placeholder="Qty"
+                            value={it.orderQty}
+                            onChange={(e) =>
+                              setItem(idx, "orderQty", e.target.value)
+                            }
+                            style={EI(idx, "orderQty")}
+                          />
+                          {EIMsg(idx, "orderQty")}
+                        </Field>
+                        <Field label="PRICE (₹)">
+                          <input
+                            type="number"
+                            placeholder="Price per unit"
+                            value={it.price}
+                            onChange={(e) =>
+                              setItem(idx, "price", e.target.value)
+                            }
+                            style={EI(idx, "price")}
+                          />
+                          {EIMsg(idx, "price")}
+                        </Field>
+                      </div>
+                    </>
+                  );
+                }
+
+                return (
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr 1fr",
+                      gap: 12,
+                      marginBottom: 12,
+                    }}
+                  >
+                    <Field label="SIZE *">
+                      <select
+                        value={it.size}
+                        onChange={(e) => setItem(idx, "size", e.target.value)}
+                        style={EI(idx, "size")}
+                      >
+                        <option value="">-- Select Size --</option>
+                        {categorySizes.map((s) => (
+                          <option key={s} value={s}>
+                            {s}
+                          </option>
+                        ))}
+                      </select>
+                      {EIMsg(idx, "size")}
+                    </Field>
+                    <Field label="ORDER QUANTITY *">
+                      <input
+                        type="number"
+                        placeholder="Qty"
+                        value={it.orderQty}
+                        onChange={(e) =>
+                          setItem(idx, "orderQty", e.target.value)
+                        }
+                        style={EI(idx, "orderQty")}
+                      />
+                      {EIMsg(idx, "orderQty")}
+                    </Field>
+                    <Field label="PRICE (₹)">
+                      <input
+                        type="number"
+                        placeholder="Price per unit"
+                        value={it.price}
+                        onChange={(e) => setItem(idx, "price", e.target.value)}
+                        style={EI(idx, "price")}
+                      />
+                      {EIMsg(idx, "price")}
+                    </Field>
+                  </div>
+                );
+              })()}
+
+              {/* Row 3: Totals & Tax */}
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "1fr 1fr 2.5fr",
+                  gridTemplateColumns: "1fr 1fr 1fr",
                   gap: 12,
                   marginBottom: 12,
                 }}
               >
-                <Field label="PRICE (₹)">
-                  <input
-                    type="number"
-                    placeholder="Price per unit"
-                    value={it.price}
-                    onChange={(e) => setItem(idx, "price", e.target.value)}
-                    style={EI(idx, "price")}
-                  />
-                  {EIMsg(idx, "price")}
-                </Field>
                 <Field label="AMOUNT (₹)">
                   <div
                     style={{
@@ -740,21 +1237,66 @@ export default function SalesOrders(props) {
                     )}
                   </div>
                 </Field>
-                <Field label="ITEM NAME">
+                <Field label="GST (%)">
                   <input
-                    readOnly
-                    placeholder="— Auto-filled from category + size + client —"
-                    value={it.itemName}
-                    style={{
-                      color: it.itemName ? C.green || "#4ade80" : C.muted,
-                      cursor: "default",
-                      fontWeight: it.itemName ? 600 : 400,
-                    }}
+                    type="number"
+                    placeholder="18"
+                    value={it.gstRate || 18}
+                    onChange={(e) => setItem(idx, "gstRate", e.target.value)}
                   />
+                </Field>
+                <Field label="TOTAL (INCL TAX)">
+                  <div
+                    style={{
+                      padding: "9px 12px",
+                      background: C.inputBg,
+                      border: `1px solid ${C.border}`,
+                      borderRadius: 6,
+                      fontSize: 13,
+                      color: it.totalWithTax ? C.green || "#4ade80" : C.muted,
+                      fontWeight: it.totalWithTax ? 700 : 400,
+                      fontFamily: "'JetBrains Mono', monospace",
+                    }}
+                  >
+                    {it.totalWithTax ? `₹${fmt(+it.totalWithTax)}` : "—"}
+                  </div>
                 </Field>
               </div>
 
-              {/* Row 3: Remarks */}
+              {/* Row 4: HSN & Generated Name */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 2fr",
+                  gap: 12,
+                  marginBottom: 12,
+                }}
+              >
+                <Field label="HSN">
+                  <input
+                    placeholder="HSN"
+                    value={it.hsnCode || ""}
+                    onChange={(e) => setItem(idx, "hsnCode", e.target.value)}
+                  />
+                </Field>
+                <Field label="ITEM NAME">
+                  <div
+                    style={{
+                      padding: "9px 12px",
+                      background: C.inputBg,
+                      border: `1px solid ${C.border}`,
+                      borderRadius: 6,
+                      fontSize: 13,
+                      color: C.green || "#4ade80",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {it.itemName || "— Auto-generated —"}
+                  </div>
+                </Field>
+              </div>
+
+              {/* Row 5: Remarks */}
               <div style={{ marginBottom: 4 }}>
                 <Field label="ITEM REMARKS">
                   <input
@@ -828,23 +1370,73 @@ export default function SalesOrders(props) {
               <div
                 style={{
                   marginLeft: "auto",
-                  padding: "9px 16px",
-                  background: (C.green || "#4ade80") + "22",
-                  border: `1px solid ${C.green || "#4ade80"}44`,
-                  borderRadius: 6,
+                  padding: "12px 20px",
+                  background: (C.green || "#4ade80") + "11",
+                  border: `1px solid ${C.green || "#4ade80"}33`,
+                  borderRadius: 10,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 4,
+                  minWidth: 200,
                 }}
               >
-                <span style={{ fontSize: 12, color: C.muted }}>Total: </span>
-                <span
+                <div
                   style={{
-                    fontFamily: "'JetBrains Mono', monospace",
-                    fontWeight: 700,
-                    color: C.green || "#4ade80",
-                    fontSize: 14,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontSize: 11,
+                    color: C.muted,
                   }}
                 >
-                  ₹{fmt(items.reduce((sum, it) => sum + +(it.amount || 0), 0))}
-                </span>
+                  <span>Subtotal:</span>
+                  <span>
+                    ₹
+                    {fmt(items.reduce((sum, it) => sum + +(it.amount || 0), 0))}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontSize: 11,
+                    color: C.muted,
+                  }}
+                >
+                  <span>Total GST:</span>
+                  <span>
+                    ₹
+                    {fmt(
+                      items.reduce((sum, it) => sum + +(it.taxAmount || 0), 0),
+                    )}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    height: 1,
+                    background: (C.green || "#4ade80") + "22",
+                    margin: "4px 0",
+                  }}
+                />
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontWeight: 800,
+                    color: C.green || "#4ade80",
+                    fontSize: 15,
+                  }}
+                >
+                  <span>Net Total:</span>
+                  <span>
+                    ₹
+                    {fmt(
+                      items.reduce(
+                        (sum, it) => sum + +(it.totalWithTax || 0),
+                        0,
+                      ),
+                    )}
+                  </span>
+                </div>
               </div>
             )}
           </div>
@@ -1013,6 +1605,21 @@ export default function SalesOrders(props) {
                         }}
                       >
                         🗑️
+                      </button>
+                      <button
+                        onClick={() => generateSOPDF(r)}
+                        style={{
+                          background: "#1e293b",
+                          color: C.green || "#4ade80",
+                          border: "1px solid #334155",
+                          borderRadius: 6,
+                          padding: "4px 14px",
+                          fontSize: 12,
+                          fontWeight: 700,
+                          cursor: "pointer",
+                        }}
+                      >
+                        🖨️ PDF
                       </button>
                     </div>
                   </div>

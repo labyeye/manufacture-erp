@@ -14,7 +14,10 @@ const purchaseOrderItemSchema = new mongoose.Schema({
   weight: Number,
   noOfSheets: Number,
   rate: Number,
-  amount: Number
+  amount: Number,
+  gstRate: Number,
+  hsnCode: String,
+  taxAmount: Number
 }, { _id: false });
 
 

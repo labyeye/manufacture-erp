@@ -10,6 +10,7 @@ const salesOrderItemSchema = new mongoose.Schema({
   length: Number,
   height: Number,
   gussett: Number,
+  gsm: Number,
   uom: {
     type: String,
     enum: ['inch', 'mm', 'cm', 'nos', 'pcs', 'kg', 'set'],
@@ -21,6 +22,10 @@ const salesOrderItemSchema = new mongoose.Schema({
   },
   price: Number,
   amount: Number,
+  gstRate: Number,
+  hsnCode: String,
+  taxAmount: Number,
+  totalWithTax: Number,
   remarks: String
 });
 
