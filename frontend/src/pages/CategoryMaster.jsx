@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { categoryMasterAPI } from "../api/auth";
+import { ImportBtn, TemplateBtn } from "../components/ui/BasicComponents";
 import * as XLSX from "xlsx";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
@@ -427,38 +428,8 @@ export default function CategoryMaster({ toast }) {
 
           {}
           <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-            <button
-              onClick={handleTemplate}
-              style={{
-                flex: 1,
-                padding: "6px 0",
-                background: "#1565C0",
-                color: "#fff",
-                border: "none",
-                borderRadius: 5,
-                fontWeight: 700,
-                fontSize: 11,
-                cursor: "pointer",
-              }}
-            >
-              ⬇ Template
-            </button>
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              style={{
-                flex: 1,
-                padding: "6px 0",
-                background: "#1565C0",
-                color: "#fff",
-                border: "none",
-                borderRadius: 5,
-                fontWeight: 700,
-                fontSize: 11,
-                cursor: "pointer",
-              }}
-            >
-              ⬆ Import Excel
-            </button>
+            <TemplateBtn onClick={handleTemplate} style={{ flex: 1, padding: "6px 0", fontSize: 11 }} />
+            <ImportBtn onClick={() => fileInputRef.current?.click()} style={{ flex: 1, padding: "6px 0", fontSize: 11 }} />
             <input
               ref={fileInputRef}
               type="file"

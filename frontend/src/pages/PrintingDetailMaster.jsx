@@ -6,6 +6,8 @@ import {
   Badge,
   Field,
   SubmitBtn,
+  ImportBtn,
+  ExportBtn,
 } from "../components/ui/BasicComponents";
 import { printingDetailMasterAPI, clientMasterAPI } from "../api/auth";
 import * as XLSX from "xlsx";
@@ -17,6 +19,7 @@ export default function PrintingDetailMaster({ toast }) {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [clientMaster, setClientMaster] = useState([]);
+  const fileInputRef = React.useRef(null);
 
   const blankEntry = {
     itemName: "",
@@ -337,40 +340,16 @@ export default function PrintingDetailMaster({ toast }) {
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
-              gap: 8,
-              transition: "all 0.2s",
-              boxShadow: "0 4px 14px 0 rgba(59, 130, 246, 0.39)",
-            }}
-          >
-            <span style={{ fontSize: 16 }}>📥</span> Import Excel
-            <input
-              type="file"
-              hidden
-              accept=".xlsx, .xls"
-              onChange={handleImport}
-            />
-          </label>
+          <ImportBtn onClick={() => fileInputRef.current?.click()} />
+          <input
+            ref={fileInputRef}
+            type="file"
+            hidden
+            accept=".xlsx, .xls"
+            onChange={handleImport}
+          />
 
-          <button
-            onClick={exportToExcel}
-            style={{
-              background: "#22c55e",
-              color: "#fff",
-              border: "none",
-              padding: "10px 18px",
-              borderRadius: 8,
-              fontWeight: 800,
-              fontSize: 13,
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              cursor: "pointer",
-              transition: "all 0.2s",
-              boxShadow: "0 4px 14px 0 rgba(34, 197, 94, 0.39)",
-            }}
-          >
-            <span style={{ fontSize: 16 }}>📤</span> Export Excel
-          </button>
+          <ExportBtn onClick={exportToExcel} />
 
           <button
             onClick={() => setView("form")}

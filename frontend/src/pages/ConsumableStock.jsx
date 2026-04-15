@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef } from "react";
 import { C } from "../constants/colors";
-import { Card, SectionTitle, Badge, Field, SubmitBtn, DateRangeFilter } from "../components/ui/BasicComponents";
+import { Card, SectionTitle, Badge, Field, SubmitBtn, DateRangeFilter, ImportBtn, ExportBtn, TemplateBtn } from "../components/ui/BasicComponents";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 const today = () => new Date().toISOString().slice(0, 10);
@@ -153,12 +153,12 @@ export default function ConsumableStock({
                 style={{ width: "100%", padding: "9px 12px 9px 30px", border: `1px solid ${C.border}`, borderRadius: 6, fontSize: 13, background: C.inputBg, color: C.text || "#e5e7eb", boxSizing: "border-box" }}
               />
             </div>
-            <ActionBtn label="↓ Template" color="#6366f1" onClick={() => {
+            <TemplateBtn onClick={() => {
               const csv = "Code,Name,Category,Type,Qty,Unit,Reorder Level,Rate (₹)\n,,Consumable,Consumable,0,nos,,";
               const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = "consumable_template.csv"; a.click();
             }} />
-            <ActionBtn label="↑ Import Excel" color={C.orange || "#f97316"} onClick={() => fileInputRef.current?.click()} />
-            <ActionBtn label="↓ Export Excel" color={C.green || "#22c55e"} onClick={handleExport} />
+            <ImportBtn onClick={() => fileInputRef.current?.click()} />
+            <ExportBtn onClick={handleExport} />
             <input ref={fileInputRef} type="file" accept=".csv" style={{ display: "none" }} onChange={handleImport} />
 
             {}

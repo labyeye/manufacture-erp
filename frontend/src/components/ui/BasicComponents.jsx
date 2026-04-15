@@ -122,23 +122,77 @@ export function SubmitBtn({
   );
 }
 
-export function ExcelBtn({ onClick, disabled }) {
+export function ImportBtn({ onClick, disabled, label = "Import Excel", style = {} }) {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
       style={{
-        background: disabled ? C.border : C.green + "22",
-        color: disabled ? C.muted : C.green,
-        border: `1px solid ${disabled ? C.border : C.green + "44"}`,
+        padding: "9px 16px",
+        background: disabled ? C.border : "#1976D2",
+        color: "#fff",
+        border: "none",
         borderRadius: 6,
-        padding: "7px 16px",
         fontWeight: 700,
-        fontSize: 12,
+        fontSize: 13,
         cursor: disabled ? "not-allowed" : "pointer",
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+        ...style,
       }}
     >
-      📊 Excel
+      ⬆ {label}
+    </button>
+  );
+}
+
+export function ExportBtn({ onClick, disabled, label = "Export Excel", style = {} }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        padding: "9px 16px",
+        background: disabled ? C.border : "#4CAF50",
+        color: "#fff",
+        border: "none",
+        borderRadius: 6,
+        fontWeight: 700,
+        fontSize: 13,
+        cursor: disabled ? "not-allowed" : "pointer",
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+        ...style,
+      }}
+    >
+      ⬇ {label}
+    </button>
+  );
+}
+
+export function TemplateBtn({ onClick, disabled, label = "Template", style = {} }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        padding: "9px 16px",
+        background: disabled ? C.border : "#1976D2",
+        color: "#fff",
+        border: "none",
+        borderRadius: 6,
+        fontWeight: 700,
+        fontSize: 13,
+        cursor: disabled ? "not-allowed" : "pointer",
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+        ...style,
+      }}
+    >
+      ⬇ {label}
     </button>
   );
 }

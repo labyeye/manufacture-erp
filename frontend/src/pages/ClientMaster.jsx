@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { C } from '../constants/colors';
-import { SectionTitle, Badge } from '../components/ui/BasicComponents';
+import { SectionTitle, Badge, ImportBtn, ExportBtn, TemplateBtn } from '../components/ui/BasicComponents';
 import { clientMasterAPI } from '../api/auth';
 
 const inputStyle = {
@@ -211,16 +211,10 @@ export default function ClientMaster({ toast }) {
               Cancel
             </button>
           )}
-          <button onClick={handleTemplate} style={{ padding: '9px 16px', background: '#1976D2', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
-            ⬇ Template
-          </button>
-          <button onClick={() => fileInputRef.current?.click()} style={{ padding: '9px 16px', background: '#1976D2', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
-            ⬆ Import Excel
-          </button>
+          <TemplateBtn onClick={handleTemplate} />
+          <ImportBtn onClick={() => fileInputRef.current?.click()} />
           <input ref={fileInputRef} type="file" accept=".csv" style={{ display: 'none' }} onChange={handleImportExcel} />
-          <button onClick={handleExportExcel} style={{ padding: '9px 16px', background: '#4CAF50', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
-            ⬇ Export Excel
-          </button>
+          <ExportBtn onClick={handleExportExcel} />
         </div>
       </div>
 

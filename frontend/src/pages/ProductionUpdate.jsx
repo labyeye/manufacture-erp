@@ -6,6 +6,7 @@ import {
   Badge,
   Field,
   SubmitBtn,
+  ExportBtn,
 } from "../components/ui/BasicComponents";
 import { DatePicker } from "../components/ui/DatePicker";
 import { jobOrdersAPI } from "../api/auth";
@@ -687,26 +688,11 @@ export default function ProductionUpdate({
               </div>
             </div>
 
-            <button
-              style={{
-                background: C.green || "#22c55e",
-                color: "#fff",
-                border: "none",
-                borderRadius: 6,
-                padding: "8px 16px",
-                fontSize: 13,
-                fontWeight: 700,
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                cursor: "pointer",
-              }}
+            <ExportBtn
               onClick={() => {
                 toast("Excel Export coming soon...", "info");
               }}
-            >
-              <span>⬇️</span> Export Excel
-            </button>
+            />
           </div>
 
           {}

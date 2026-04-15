@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef } from "react";
 import { C } from "../constants/colors";
-import { Card, SectionTitle, Badge } from "../components/ui/BasicComponents";
+import { Card, SectionTitle, Badge, ImportBtn, ExportBtn, TemplateBtn } from "../components/ui/BasicComponents";
 import { rawMaterialStockAPI } from "../api/auth";
 
 const fmt = (n) => (n ?? 0).toLocaleString("en-IN");
@@ -599,12 +599,7 @@ export default function RMStock({
             }}
           />
         </div>
-        <ActionBtn
-          label="Template"
-          icon="⬇️"
-          color={C.blue + "22"}
-          textColor={C.blue}
-          border={C.blue + "44"}
+        <TemplateBtn
           onClick={() => {
             const csv = "Code,Name,Category,QtySheets,WeightKg,ReorderKg,Rate\n";
             const blob = new Blob([csv], { type: "text/csv" });
@@ -614,20 +609,8 @@ export default function RMStock({
             a.click();
           }}
         />
-        <ActionBtn
-          label="Import Excel"
-          icon="⬆️"
-          color={C.blue}
-          textColor="#fff"
-          onClick={() => fileInputRef.current.click()}
-        />
-        <ActionBtn
-          label="Export Excel"
-          icon="⬇️"
-          color={C.green}
-          textColor="#fff"
-          onClick={handleExport}
-        />
+        <ImportBtn onClick={() => fileInputRef.current.click()} />
+        <ExportBtn onClick={handleExport} />
         <input
           ref={fileInputRef}
           type="file"

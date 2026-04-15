@@ -1,5 +1,6 @@
 import React, { useState, useRef, useMemo, useEffect } from "react";
 import { itemMasterAPI, categoryMasterAPI } from "../api/auth";
+import { ImportBtn, ExportBtn, TemplateBtn } from "../components/ui/BasicComponents";
 import * as XLSX from "xlsx";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
@@ -1014,51 +1015,9 @@ export default function ItemMaster({ toast }) {
               🗑️ Delete {selectedIds.length} Selected
             </button>
           )}
-          <button
-            onClick={handleExport}
-            style={{
-              padding: "8px 14px",
-              background: "#222",
-              color: "#aaa",
-              border: "1px solid #333",
-              borderRadius: 6,
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: "pointer",
-            }}
-          >
-            📤 Export
-          </button>
-          <button
-            onClick={handleTemplate}
-            style={{
-              padding: "8px 14px",
-              background: "#222",
-              color: "#aaa",
-              border: "1px solid #333",
-              borderRadius: 6,
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: "pointer",
-            }}
-          >
-            📄 Template
-          </button>
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            style={{
-              padding: "8px 16px",
-              background: "#4CAF5022",
-              color: "#4CAF50",
-              border: "1px solid #4CAF5044",
-              borderRadius: 6,
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: "pointer",
-            }}
-          >
-            📥 Bulk Import
-          </button>
+          <ExportBtn onClick={handleExport} label="Export" />
+          <TemplateBtn onClick={handleTemplate} />
+          <ImportBtn onClick={() => fileInputRef.current?.click()} label="Bulk Import" />
           <input
             type="file"
             ref={fileInputRef}
