@@ -26,6 +26,7 @@ export default function PrintingDetailMaster({ toast }) {
     itemName: "",
     clientName: "",
     clientCategory: "",
+    itemCategory: "",
     printing: "",
     plate: "",
     process: [],
@@ -45,6 +46,7 @@ export default function PrintingDetailMaster({ toast }) {
   const [errors, setErrors] = useState({});
   const [view, setView] = useState("records"); 
   const [editingId, setEditingId] = useState(null);
+  const [catFilter, setCatFilter] = useState("All");
 
   useEffect(() => {
     fetchPrintingDetails();
@@ -87,12 +89,20 @@ export default function PrintingDetailMaster({ toast }) {
   };
 
   const filteredData = useMemo(() => {
-    return printingMaster.filter(
-      (item) =>
+    return printingMaster.filter((item) => {
+      const matchesSearch =
         item.itemName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.clientName?.toLowerCase().includes(searchTerm.toLowerCase()),
-    );
-  }, [printingMaster, searchTerm]);
+        item.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.itemCategory?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCat = catFilter === "All" || item.itemCategory === catFilter;
+      return matchesSearch && matchesCat;
+    });
+  }, [printingMaster, searchTerm, catFilter]);
+
+  const uniqueCategories = useMemo(() => {
+    const cats = printingMaster.map((i) => i.itemCategory).filter(Boolean);
+    return ["All", ...new Set(cats)];
+  }, [printingMaster]);
 
   const exportToExcel = () => {
     const ws = XLSX.utils.json_to_sheet(
@@ -275,38 +285,57 @@ export default function PrintingDetailMaster({ toast }) {
           gap: 16,
         }}
       >
-        <div style={{ position: "relative", flex: 1, maxWidth: 450 }}>
-          <input
-            placeholder="Search items by name or client..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <div style={{ position: "relative", width: 280 }}>
+            <input
+              placeholder="Search items, clients or sizes..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "10px 14px 10px 38px",
+                background: "#1e293b",
+                border: `1px solid ${C.border}`,
+                borderRadius: 8,
+                fontSize: 13,
+                color: "#e2e8f0",
+                outline: "none",
+              }}
+            />
+            <span
+              style={{
+                position: "absolute",
+                left: 12,
+                top: "50%",
+                transform: "translateY(-50%)",
+                color: "#64748b",
+              }}
+            >
+              🔍
+            </span>
+          </div>
+
+          <select
+            value={catFilter}
+            onChange={(e) => setCatFilter(e.target.value)}
             style={{
-              width: "100%",
-              padding: "12px 16px 12px 42px",
-              background: "#0f172a",
+              padding: "9px 12px",
+              background: "#1e293b",
               border: `1px solid ${C.border}`,
-              borderRadius: 10,
-              fontSize: 14,
-              color: "#fff",
-              boxShadow:
-                "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
-              transition: "all 0.2s",
-              fontFamily: "'Inter', sans-serif",
-            }}
-            onFocus={(e) => (e.target.style.borderColor = "#FF7F11")}
-            onBlur={(e) => (e.target.style.borderColor = C.border)}
-          />
-          <span
-            style={{
-              position: "absolute",
-              left: 16,
-              top: 14,
-              opacity: 0.6,
-              fontSize: 16,
+              borderRadius: 8,
+              fontSize: 13,
+              color: "#e2e8f0",
+              outline: "none",
+              cursor: "pointer",
+              minWidth: 150,
             }}
           >
-            🔍
-          </span>
+            {uniqueCategories.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat === "All" ? "All Categories" : cat}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div style={{ display: "flex", gap: 10 }}>
@@ -411,6 +440,13 @@ export default function PrintingDetailMaster({ toast }) {
                 placeholder="e.g. HP"
                 value={entry.clientCategory}
                 onChange={(e) => setField("clientCategory", e.target.value)}
+              />
+            </Field>
+            <Field label="Item Category">
+              <input
+                placeholder="e.g. Stickers, Labels"
+                value={entry.itemCategory}
+                onChange={(e) => setField("itemCategory", e.target.value)}
               />
             </Field>
             <Field label="Printing">
@@ -618,7 +654,8 @@ export default function PrintingDetailMaster({ toast }) {
             <thead>
               <tr style={{ background: "#0f172a" }}>
                 <th style={TABLE_HEADER_STYLE}>Item Name / Client</th>
-                <th style={TABLE_HEADER_STYLE}>Cat.</th>
+                <th style={TABLE_HEADER_STYLE}>Item Cat.</th>
+                <th style={TABLE_HEADER_STYLE}>Client Cat.</th>
                 <th style={TABLE_HEADER_STYLE}>Printing Plate</th>
                 <th style={TABLE_HEADER_STYLE}>Process</th>
                 <th style={TABLE_HEADER_STYLE}>Paper Type</th>
@@ -686,6 +723,13 @@ export default function PrintingDetailMaster({ toast }) {
                         🗑 Delete
                       </button>
                     </div>
+                  </td>
+                  <td style={CELL_STYLE}>
+                    {item.itemCategory ? (
+                      <Badge text={item.itemCategory} color="#FF7F11" />
+                    ) : (
+                      "—"
+                    )}
                   </td>
                   <td style={CELL_STYLE}>
                     {item.clientCategory ? (

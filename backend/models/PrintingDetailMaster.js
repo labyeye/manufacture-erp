@@ -10,6 +10,7 @@ const printingDetailMasterSchema = new mongoose.Schema({
     required: true
   },
   clientCategory: String,
+  itemCategory: String,
   printing: String,
   plate: String,
   process: [String],

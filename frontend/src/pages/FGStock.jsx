@@ -1,6 +1,7 @@
 import React, { useState, useRef, useMemo } from "react";
 import * as XLSX from "xlsx";
 import { fgStockAPI } from "../api/auth";
+import { ImportBtn, ExportBtn, TemplateBtn } from "../components/ui/BasicComponents";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 
@@ -434,51 +435,9 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <button
-          onClick={handleTemplate}
-          style={{
-            padding: "8px 16px",
-            background: "#7B1FA2",
-            color: "#fff",
-            border: "none",
-            borderRadius: 6,
-            fontWeight: 700,
-            fontSize: 13,
-            cursor: "pointer",
-          }}
-        >
-          ⬇ Template
-        </button>
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          style={{
-            padding: "8px 16px",
-            background: "#7B1FA2",
-            color: "#fff",
-            border: "none",
-            borderRadius: 6,
-            fontWeight: 700,
-            fontSize: 13,
-            cursor: "pointer",
-          }}
-        >
-          ⬆ Import Excel
-        </button>
-        <button
-          onClick={handleExport}
-          style={{
-            padding: "8px 16px",
-            background: "#4CAF50",
-            color: "#fff",
-            border: "none",
-            borderRadius: 6,
-            fontWeight: 700,
-            fontSize: 13,
-            cursor: "pointer",
-          }}
-        >
-          ⬇ Export Excel
-        </button>
+        <TemplateBtn onClick={handleTemplate} />
+        <ImportBtn onClick={() => fileInputRef.current?.click()} />
+        <ExportBtn onClick={handleExport} />
         <input
           ref={fileInputRef}
           type="file"
