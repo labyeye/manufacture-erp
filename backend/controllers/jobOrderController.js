@@ -463,6 +463,7 @@ async function recalculateProductionStats(jobOrder) {
 
   const STAGES_ORDER = [
     "Printing",
+    "Flexo Printing",
     "Varnish",
     "Lamination",
     "Die Cutting",
@@ -531,6 +532,8 @@ async function recalculateProductionStats(jobOrder) {
 
     let price = 0;
     let itemCategory = "";
+    let itemCode = "";
+
     if (jobOrder.soRef) {
       const so = await SalesOrder.findOne({ soNo: jobOrder.soRef });
       if (so) {
@@ -545,10 +548,11 @@ async function recalculateProductionStats(jobOrder) {
       }
     }
 
-    if (!itemCategory) {
-      const ItemMaster = require("../models/ItemMaster");
-      const im = await ItemMaster.findOne({ name: jobOrder.itemName });
-      if (im) itemCategory = im.category || "";
+    const ItemMaster = require("../models/ItemMaster");
+    const im = await ItemMaster.findOne({ name: jobOrder.itemName });
+    if (im) {
+      if (!itemCategory) itemCategory = im.category || "";
+      itemCode = im.code || "";
     }
 
     if (finalQty > 0 || jobOrder.status === "Completed") {
@@ -556,6 +560,7 @@ async function recalculateProductionStats(jobOrder) {
         { itemName: jobOrder.itemName, joNo: jobOrder.joNo },
         {
           itemName: jobOrder.itemName,
+          itemCode,
           joNo: jobOrder.joNo,
           soRef: jobOrder.soRef,
           clientName: jobOrder.clientName,

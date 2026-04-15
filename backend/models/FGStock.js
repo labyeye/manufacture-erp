@@ -6,6 +6,7 @@ const fgStockSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    itemCode: String,
     joNo: String,
     soRef: String,
     clientName: String,

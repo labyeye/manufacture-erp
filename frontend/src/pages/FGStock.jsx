@@ -600,7 +600,7 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
                           fontSize: 11,
                         }}
                       >
-                        {s.joNo || s.code || "-"}
+                        {s.itemCode || s.code || s.joNo || "-"}
                       </td>
                       <td
                         style={{

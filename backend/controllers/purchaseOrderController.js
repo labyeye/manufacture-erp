@@ -1,6 +1,8 @@
 const PurchaseOrder = require("../models/PurchaseOrder");
 const VendorMaster = require("../models/VendorMaster");
 const ItemMaster = require("../models/ItemMaster");
+const MaterialInward = require("../models/MaterialInward");
+const mongoose = require("mongoose");
 const { generatePONo } = require("../utils/counters");
 
 exports.getAll = async (req, res) => {
@@ -146,13 +148,15 @@ exports.update = async (req, res) => {
 exports.deletePurchaseOrder = async (req, res) => {
   try {
     const { id } = req.params;
-    const mongoose = require("mongoose");
+    const cleanId = id ? id.trim() : null;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ error: "Invalid Purchase Order ID" });
+    if (!cleanId || !mongoose.Types.ObjectId.isValid(cleanId)) {
+      return res
+        .status(400)
+        .json({ error: "Invalid Purchase Order ID format" });
     }
 
-    const po = await PurchaseOrder.findById(id);
+    const po = await PurchaseOrder.findById(cleanId);
     if (!po) {
       return res.status(404).json({ error: "Purchase order not found" });
     }
@@ -163,24 +167,32 @@ exports.deletePurchaseOrder = async (req, res) => {
       });
     }
 
-    const MaterialInward = require("../models/MaterialInward");
     const inward = await MaterialInward.findOne({
-      $or: [{ purchaseOrderRef: id }, { poRef: po.poNo }],
+      $or: [{ purchaseOrderRef: cleanId }, { poRef: po.poNo }],
     });
 
     if (inward) {
       return res.status(400).json({
         error:
           "Cannot delete PO because associated Material Inward records exist. Delete those first.",
+        inwardNo: inward.inwardNo,
       });
     }
 
-    await PurchaseOrder.findByIdAndDelete(id);
+    const deleted = await PurchaseOrder.findByIdAndDelete(cleanId);
+    if (!deleted) {
+      return res
+        .status(404)
+        .json({ error: "Purchase order could not be deleted" });
+    }
 
     res.json({ message: "Purchase order deleted successfully" });
   } catch (error) {
     console.error("Delete PO error:", error);
-    res.status(500).json({ error: "Failed to delete purchase order" });
+    res.status(500).json({
+      error: "Failed to delete purchase order due to server error",
+      details: error.message,
+    });
   }
 };
 

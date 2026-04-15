@@ -81,7 +81,10 @@ export default function ProductionUpdate({
   }, []);
 
   const activeJOs = useMemo(
-    () => (jobOrders || []).filter((jo) => jo.status !== "Completed"),
+    () =>
+      (jobOrders || []).filter(
+        (jo) => jo.status !== "Completed" && jo.currentStage !== "Completed",
+      ),
     [jobOrders],
   );
 

@@ -227,6 +227,20 @@ export default function Dispatch({ fgStock = [], toast }) {
       const e = {};
       if (!it.itemName) e.itemName = true;
       if (!it.qty) e.qty = true;
+
+      // FG Stock Check
+      const stockItem = (fgStock || []).find((s) => s.itemName === it.itemName);
+      if (!stockItem) {
+        e.itemName = true;
+        toast(`Item "${it.itemName}" not found in FG Stock`, "error");
+      } else if (Number(it.qty) > (stockItem.qty || 0)) {
+        e.qty = true;
+        toast(
+          `Insufficient stock for "${it.itemName}". Available: ${stockItem.qty || 0}`,
+          "error",
+        );
+      }
+
       return e;
     });
     setItemErrors(allItemErrors);
@@ -235,7 +249,8 @@ export default function Dispatch({ fgStock = [], toast }) {
       Object.keys(he).length > 0 ||
       allItemErrors.some((e) => Object.keys(e).length > 0)
     ) {
-      toast("Please fill all required fields", "error");
+      if (Object.keys(he).length > 0)
+        toast("Please fill all required fields", "error");
       return;
     }
 
@@ -666,6 +681,26 @@ export default function Dispatch({ fgStock = [], toast }) {
                     ))}
                   </select>
                   {EIMsg(idx, "itemName")}
+                  {(() => {
+                    const st = (fgStock || []).find(
+                      (s) => s.itemName === it.itemName,
+                    );
+                    if (!it.itemName || !st) return null;
+                    const isLow = (st.qty || 0) < Number(it.qty || 0);
+                    return (
+                      <div
+                        style={{
+                          fontSize: 10,
+                          color: isLow ? C.red : C.green,
+                          marginTop: 4,
+                          fontWeight: 700,
+                        }}
+                      >
+                        Stock Available: {fmt(st.qty || 0)} {st.unit || ""}
+                        {isLow && " (Insufficient)"}
+                      </div>
+                    );
+                  })()}
                 </Field>
                 <Field label="Product Code">
                   <input
@@ -927,11 +962,24 @@ export default function Dispatch({ fgStock = [], toast }) {
                         {r.clientName}
                       </span>
                       <Badge text={r.status} color={C.green} />
-                      {totalQty > 0 && (
-                        <span style={{ fontSize: 12, color: C.muted }}>
-                          Qty: {fmt(totalQty)}
-                        </span>
-                      )}
+                      {(() => {
+                        const unitSummary = (r.items || []).reduce(
+                          (acc, it) => {
+                            const u = it.unit || "nos";
+                            acc[u] = (acc[u] || 0) + Number(it.qty || 0);
+                            return acc;
+                          },
+                          {},
+                        );
+                        const summaryParts = Object.entries(unitSummary).map(
+                          ([u, q]) => `${fmt(q)} ${u}`,
+                        );
+                        return (
+                          <span style={{ fontSize: 12, color: C.muted }}>
+                            Qty: {summaryParts.join(", ")}
+                          </span>
+                        );
+                      })()}
                     </div>
                     <div style={{ display: "flex", gap: 6 }}>
                       <button
