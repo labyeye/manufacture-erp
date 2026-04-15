@@ -8,6 +8,7 @@ import {
   SubmitBtn,
   ImportBtn,
   ExportBtn,
+  TemplateBtn,
 } from "../components/ui/BasicComponents";
 import { printingDetailMasterAPI, clientMasterAPI } from "../api/auth";
 import * as XLSX from "xlsx";
@@ -309,37 +310,8 @@ export default function PrintingDetailMaster({ toast }) {
         </div>
 
         <div style={{ display: "flex", gap: 10 }}>
-          <button
-            onClick={downloadTemplate}
-            style={{
-              background: "transparent",
-              border: "1px solid #3b82f6",
-              color: "#3b82f6",
-              padding: "10px 18px",
-              borderRadius: 8,
-              fontWeight: 700,
-              fontSize: 13,
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              cursor: "pointer",
-              transition: "all 0.2s",
-            }}
-          >
-            <span style={{ fontSize: 16 }}>📋</span> Template
-          </button>
+          <TemplateBtn onClick={downloadTemplate} />
 
-          <label
-            style={{
-              background: "#3b82f6",
-              color: "#fff",
-              padding: "10px 18px",
-              borderRadius: 8,
-              fontWeight: 800,
-              fontSize: 13,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
           <ImportBtn onClick={() => fileInputRef.current?.click()} />
           <input
             ref={fileInputRef}
