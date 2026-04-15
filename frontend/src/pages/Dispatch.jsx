@@ -130,7 +130,7 @@ export default function Dispatch({ fgStock = [], toast }) {
             itemName: it.itemName || "",
             productCode: it.productCode || "",
             qty: (it.orderQty || 0).toString(),
-            unit: it.uom || "nos",
+            unit: it.qtyUnit || "nos",
             pcsPerBox: "",
             noOfBox: "",
             rate: it.price || 0,
@@ -1052,7 +1052,7 @@ export default function Dispatch({ fgStock = [], toast }) {
                           color: C.muted,
                         }}
                       >
-                        {it.itemName} · {it.qty} {it.unit}
+                        {it.itemName} · {it.qty}
                       </span>
                     ))}
                     {r.vehicleNo && (

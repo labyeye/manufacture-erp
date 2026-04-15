@@ -519,11 +519,26 @@ export default function ProductionUpdate({
                   value={entry.qtyCompleted}
                   onChange={(e) => {
                     const val = Number(e.target.value);
-                    if (val > stageTargetLogic.remain) {
-                      toast(`Cannot exceed remaining target (${stageTargetLogic.remain})`, "error");
+                    const remain = stageTargetLogic.remain;
+                    if (val > remain) {
+                      toast(`Cannot exceed remaining target (${remain})`, "error");
                       return;
                     }
-                    setField("qtyCompleted", e.target.value);
+                    
+                    setEntry(prev => {
+                      const updated = { ...prev, qtyCompleted: e.target.value };
+                      // If completed is max, rejection MUST be 0
+                      if (val === remain) {
+                        updated.qtyRejected = 0;
+                      } else {
+                        // Ensure total doesn't exceed remain
+                        const currentRej = Number(prev.qtyRejected || 0);
+                        if (val + currentRej > remain) {
+                          updated.qtyRejected = remain - val;
+                        }
+                      }
+                      return updated;
+                    });
                   }}
                   style={E("qtyCompleted")}
                 />
@@ -540,7 +555,20 @@ export default function ProductionUpdate({
                   type="number"
                   placeholder="0"
                   value={entry.qtyRejected}
-                  onChange={(e) => setField("qtyRejected", e.target.value)}
+                  disabled={Number(entry.qtyCompleted) === stageTargetLogic.remain}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    const comp = Number(entry.qtyCompleted || 0);
+                    const remain = stageTargetLogic.remain;
+                    
+                    if (comp + val > remain) {
+                      const maxAllowed = remain - comp;
+                      toast(`Total (Completed + Rejected) cannot exceed ${remain}. Max rejection allowed: ${maxAllowed}`, "error");
+                      setField("qtyRejected", maxAllowed);
+                      return;
+                    }
+                    setField("qtyRejected", e.target.value);
+                  }}
                 />
               </Field>
 
