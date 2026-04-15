@@ -18,7 +18,7 @@ const fmt = (n) => (n ?? 0).toLocaleString("en-IN");
 
 const UNIT_OPTIONS = ["pcs", "kg"];
 
-export default function Dispatch({ fgStock = [], toast }) {
+export default function Dispatch({ fgStock = [], itemMasterFG = [], toast }) {
   const [dispatch, setDispatch] = useState([]);
   const [salesOrders, setSalesOrders] = useState([]);
   const [jobOrders, setJobOrders] = useState([]);
@@ -38,6 +38,7 @@ export default function Dispatch({ fgStock = [], toast }) {
     _id: uid(),
     itemName: "",
     productCode: "",
+    clientCode: "",
     qty: "",
     unit: "nos",
     pcsPerBox: "",
@@ -125,20 +126,29 @@ export default function Dispatch({ fgStock = [], toast }) {
             deliveryAddress: so.deliveryAddress || "",
           }));
 
-          const soItems = (so.items || []).map((it) => ({
-            _id: uid(),
-            itemName: it.itemName || "",
-            productCode: it.productCode || "",
-            qty: (it.orderQty || 0).toString(),
-            unit: it.qtyUnit || "nos",
-            pcsPerBox: "",
-            noOfBox: "",
-            rate: it.price || 0,
-            gstRate: it.gstRate || 18,
-            amount: it.amount || 0,
-            taxAmount: it.taxAmount || 0,
-            totalWithTax: it.totalWithTax || 0,
-          }));
+          const soItems = (so.items || []).map((it) => {
+            const masterItem = (itemMasterFG || []).find(
+              (m) => m.name === it.itemName,
+            );
+            return {
+              _id: uid(),
+              itemName: it.itemName || "",
+              productCode: it.productCode || "",
+              clientCode:
+                masterItem && so.clientName
+                  ? masterItem.clientCodes?.[so.clientName] || ""
+                  : "",
+              qty: (it.orderQty || 0).toString(),
+              unit: it.qtyUnit || "nos",
+              pcsPerBox: "",
+              noOfBox: "",
+              rate: it.price || 0,
+              gstRate: it.gstRate || 18,
+              amount: it.amount || 0,
+              taxAmount: it.taxAmount || 0,
+              totalWithTax: it.totalWithTax || 0,
+            };
+          });
 
           if (soItems.length > 0) {
             setItems(soItems);
@@ -157,6 +167,21 @@ export default function Dispatch({ fgStock = [], toast }) {
       }
     } else {
       setHeader((f) => ({ ...f, [k]: v }));
+
+      if (k === "clientName") {
+        setItems((prev) =>
+          prev.map((it) => {
+            const masterItem = (itemMasterFG || []).find(
+              (m) => m.name === it.itemName,
+            );
+            return {
+              ...it,
+              clientCode:
+                masterItem && v ? masterItem.clientCodes?.[v] || "" : "",
+            };
+          }),
+        );
+      }
     }
     setHeaderErrors((e) => ({ ...e, [k]: false }));
   };
@@ -175,6 +200,13 @@ export default function Dispatch({ fgStock = [], toast }) {
       if (k === "itemName") {
         const stock = (fgStock || []).find((s) => s.itemName === v);
         it.productCode = stock?.code || stock?.joNo || "";
+
+        const masterItem = (itemMasterFG || []).find((m) => m.name === v);
+        if (masterItem && header.clientName) {
+          it.clientCode = masterItem.clientCodes?.[header.clientName] || "";
+        } else {
+          it.clientCode = "";
+        }
       }
 
       const qty = k === "qty" ? +v : +(it.qty || 0);
@@ -268,6 +300,7 @@ export default function Dispatch({ fgStock = [], toast }) {
         items: items.map((it) => ({
           itemName: it.itemName,
           productCode: it.productCode,
+          clientCode: it.clientCode,
           qty: Number(it.qty),
           unit: it.unit,
           rate: it.rate ? Number(it.rate) : 0,
@@ -399,7 +432,7 @@ export default function Dispatch({ fgStock = [], toast }) {
             <thead>
               <tr>
                 <th style="width: 50%;">Item Name & Description</th>
-                <th style="width: 15%;">Product Code</th>
+                <th style="width: 15%;">Product Code / Client Code</th>
                 <th style="width: 10%; text-align: center;">Boxes</th>
                 <th style="width: 10%; text-align: center;">Pcs/Box</th>
                 <th style="width: 15%;" class="col-qty">Total Quantity</th>
@@ -413,7 +446,10 @@ export default function Dispatch({ fgStock = [], toast }) {
                   <td>
                     <div style="font-weight: 700;">${it.itemName}</div>
                   </td>
-                  <td>${it.productCode || "—"}</td>
+                  <td>
+                    <div>${it.productCode || "—"}</div>
+                    ${it.clientCode ? `<div style="font-size: 9px; color: #666; margin-top: 2px;">Client: ${it.clientCode}</div>` : ""}
+                  </td>
                   <td style="text-align: center;">${it.noOfBox || "—"}</td>
                   <td style="text-align: center;">${it.pcsPerBox || "—"}</td>
                   <td class="col-qty">${it.qty} ${it.unit || "pcs"}</td>
@@ -661,7 +697,7 @@ export default function Dispatch({ fgStock = [], toast }) {
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "2fr 1.5fr 1fr 1fr 1fr",
+                  gridTemplateColumns: "2.5fr 1.2fr 1.2fr 1fr 0.8fr 1fr",
                   gap: 12,
                   marginBottom: 12,
                 }}
@@ -704,11 +740,18 @@ export default function Dispatch({ fgStock = [], toast }) {
                 </Field>
                 <Field label="Product Code">
                   <input
-                    placeholder="Auto-filled or enter manually"
+                    placeholder="Auto-filled"
                     value={it.productCode}
                     onChange={(e) =>
                       setItem(idx, "productCode", e.target.value)
                     }
+                  />
+                </Field>
+                <Field label="Client Code">
+                  <input
+                    placeholder="From Item Master"
+                    value={it.clientCode}
+                    onChange={(e) => setItem(idx, "clientCode", e.target.value)}
                   />
                 </Field>
                 <Field label="Quantity *">
@@ -894,10 +937,16 @@ export default function Dispatch({ fgStock = [], toast }) {
                     _id: uid(),
                     itemName: it.itemName || "",
                     productCode: it.productCode || "",
+                    clientCode: it.clientCode || "",
                     qty: it.qty?.toString() || "",
                     unit: it.unit || "nos",
                     pcsPerBox: it.pcsPerBox?.toString() || "",
                     noOfBox: it.noOfBox?.toString() || "",
+                    rate: it.rate || "",
+                    gstRate: it.gstRate || 18,
+                    amount: it.amount || "",
+                    taxAmount: it.taxAmount || "",
+                    totalWithTax: it.totalWithTax || "",
                   })),
                 );
                 setView("form");

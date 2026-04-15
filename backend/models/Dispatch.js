@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 
 const dispatchItemSchema = new mongoose.Schema({
   itemName: String,
+  productCode: String,
+  clientCode: String,
   qty: Number,
   unit: String,
   rate: Number,

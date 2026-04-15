@@ -51,7 +51,9 @@ export default function ItemMaster({ toast }) {
   const [hsnCode, setHsnCode] = useState("");
   const [reorderLevel, setReorderLevel] = useState("0");
   const [selectedIds, setSelectedIds] = useState([]);
+  const [showClientCodes, setShowClientCodes] = useState(null); 
   const fileInputRef = useRef(null);
+  const clientCodesFileRef = useRef(null);
 
   useEffect(() => {
     fetchItems();
@@ -426,6 +428,88 @@ export default function ItemMaster({ toast }) {
     a.download = `${activeTab.replace(" ", "_")}_items.csv`;
     a.click();
     toast("Exported!", "success");
+  };
+
+  const handleDownloadClientCodeTemplate = () => {
+    const fgItems = itemMasterFG.filter((i) => i.type === "Finished Goods");
+    if (!fgItems.length) {
+      toast("No Finished Goods items found", "error");
+      return;
+    }
+
+    const uniqueClients = [
+      ...new Set(itemMasterFG.map((i) => i.clientName).filter(Boolean)),
+    ];
+
+    const header = ["Our Product Code", "Item Name", ...uniqueClients];
+    const data = fgItems.map((item) => {
+      const row = [item.code, item.name];
+      uniqueClients.forEach((client) => {
+        row.push(item.clientCodes?.[client] || "");
+      });
+      return row;
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet([header, ...data]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Client Codes");
+    XLSX.writeFile(wb, "Client_Product_Codes_Template.xlsx");
+  };
+
+  const handleImportClientCodes = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      setLoading(true);
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: "array" });
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+      const [header, ...rows] = data;
+      const clientNames = header.slice(2); 
+
+      let successCount = 0;
+      for (const row of rows) {
+        const ourCode = row[0];
+        if (!ourCode) continue;
+
+        const item = itemMasterFG.find((i) => i.code === ourCode);
+        if (!item) continue;
+
+        const newClientCodes = { ...(item.clientCodes || {}) };
+        let hasChanges = false;
+
+        clientNames.forEach((client, idx) => {
+          const clientCode = row[idx + 2];
+          if (clientCode !== undefined) {
+            newClientCodes[client] = String(clientCode).trim();
+            hasChanges = true;
+          }
+        });
+
+        if (hasChanges) {
+          try {
+            await itemMasterAPI.update(item._id, {
+              clientCodes: newClientCodes,
+            });
+            successCount++;
+          } catch (err) {
+            console.error(`Failed to update ${ourCode}:`, err);
+          }
+        }
+      }
+
+      toast(`Successfully updated ${successCount} items`, "success");
+      fetchItems();
+    } catch (err) {
+      console.error("Import client codes logic error:", err);
+      toast("Failed to process file", "error");
+    } finally {
+      setLoading(false);
+      e.target.value = "";
+    }
   };
 
   return (
@@ -954,6 +1038,89 @@ export default function ItemMaster({ toast }) {
         </div>
       </div>
 
+      {activeTab === "Finished Goods" && (
+        <div
+          style={{
+            background: "linear-gradient(135deg, #1e1b4b, #0d0d0d)",
+            border: "1px solid #4f46e544",
+            borderRadius: 10,
+            padding: "16px 20px",
+            marginBottom: 20,
+            display: "flex",
+            flexDirection: "column",
+            gap: 12,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              color: "#818cf8",
+              fontWeight: 700,
+              fontSize: 13,
+            }}
+          >
+            <span style={{ fontSize: 16 }}>🎟️</span> Bulk Import Client Product
+            Codes
+          </div>
+          <div style={{ fontSize: 12, color: "#6366f199", lineHeight: 1.5 }}>
+            Download the template → fill in client codes → re-import. One column
+            per client. Leave blank if that client doesn't have a code for that
+            item.
+          </div>
+          <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+            <button
+              onClick={handleDownloadClientCodeTemplate}
+              style={{
+                padding: "8px 16px",
+                background: "transparent",
+                border: "1px solid #4f46e5",
+                borderRadius: 6,
+                color: "#818cf8",
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              ⬇️ Download Template
+            </button>
+            <button
+              onClick={() => clientCodesFileRef.current.click()}
+              style={{
+                padding: "8px 16px",
+                background: "#4f46e5",
+                border: "none",
+                borderRadius: 6,
+                color: "#fff",
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              ⬆️ Import Codes
+            </button>
+            <input
+              type="file"
+              ref={clientCodesFileRef}
+              hidden
+              accept=".xlsx,.xls"
+              onChange={handleImportClientCodes}
+            />
+          </div>
+          <div style={{ fontSize: 10, color: "#444", fontFamily: "monospace" }}>
+            Template columns: Our Product Code · Item Name · one column per
+            client
+          </div>
+        </div>
+      )}
+
       <div
         style={{
           display: "flex",
@@ -1174,6 +1341,88 @@ export default function ItemMaster({ toast }) {
               >
                 RL: {item.reorderLevel || 0}
               </div>
+
+              {activeTab === "Finished Goods" && (
+                <div style={{ position: "relative" }}>
+                  <button
+                    onClick={() =>
+                      setShowClientCodes(
+                        showClientCodes === item._id ? null : item._id,
+                      )
+                    }
+                    style={{
+                      padding: "4px 8px",
+                      borderRadius: 6,
+                      background: "#4f46e51a",
+                      color: "#818cf8",
+                      border: "1px solid #4f46e544",
+                      fontSize: 10,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                      minWidth: 100,
+                    }}
+                  >
+                    🎟️ Client Codes {showClientCodes === item._id ? "▲" : "▼"}
+                  </button>
+                  {showClientCodes === item._id && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "100%",
+                        right: 0,
+                        zIndex: 100,
+                        background: "#1a1a1a",
+                        border: "1px solid #333",
+                        borderRadius: 8,
+                        padding: 8,
+                        minWidth: 150,
+                        boxShadow: "0 10px 25px rgba(0,0,0,0.5)",
+                        marginTop: 4,
+                      }}
+                    >
+                      {item.clientCodes &&
+                      Object.entries(item.clientCodes).filter(([_, v]) => v)
+                        .length > 0 ? (
+                        Object.entries(item.clientCodes)
+                          .filter(([_, v]) => v)
+                          .map(([client, code]) => (
+                            <div
+                              key={client}
+                              style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                fontSize: 11,
+                                padding: "4px 0",
+                                borderBottom: "1px solid #222",
+                                gap: 10,
+                              }}
+                            >
+                              <span style={{ color: "#666" }}>{client}:</span>
+                              <span
+                                style={{ color: "#e0e0e0", fontWeight: 700 }}
+                              >
+                                {code}
+                              </span>
+                            </div>
+                          ))
+                      ) : (
+                        <div
+                          style={{
+                            fontSize: 10,
+                            color: "#444",
+                            textAlign: "center",
+                          }}
+                        >
+                          No client codes
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
               <div style={{ color: "#484f58", fontSize: 11, minWidth: 80 }}>
                 {
                   new Date(item.addedOn || item.createdAt)
