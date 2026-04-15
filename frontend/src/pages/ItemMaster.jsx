@@ -25,7 +25,7 @@ const inputStyle = {
   boxSizing: "border-box",
 };
 
-export default function ItemMaster({ toast }) {
+export default function ItemMaster({ clientMaster = [], toast }) {
   const [itemMasterFG, setItemMasterFG] = useState([]);
   const [categoryMaster, setCategoryMaster] = useState({});
   const [loading, setLoading] = useState(false);
@@ -51,7 +51,9 @@ export default function ItemMaster({ toast }) {
   const [hsnCode, setHsnCode] = useState("");
   const [reorderLevel, setReorderLevel] = useState("0");
   const [selectedIds, setSelectedIds] = useState([]);
-  const [showClientCodes, setShowClientCodes] = useState(null); 
+  const [showClientCodes, setShowClientCodes] = useState(null);
+  const [manualClient, setManualClient] = useState("");
+  const [manualCode, setManualCode] = useState("");
   const fileInputRef = useRef(null);
   const clientCodesFileRef = useRef(null);
 
@@ -509,6 +511,36 @@ export default function ItemMaster({ toast }) {
     } finally {
       setLoading(false);
       e.target.value = "";
+    }
+  };
+
+  const handleManualClientCodeSave = async (item) => {
+    if (!manualClient || !manualCode) {
+      toast("Select client and enter code", "error");
+      return;
+    }
+
+    try {
+      const newCodes = { ...(item.clientCodes || {}), [manualClient]: manualCode };
+      await itemMasterAPI.update(item._id, { clientCodes: newCodes });
+      toast("Client code updated", "success");
+      setManualClient("");
+      setManualCode("");
+      fetchItems();
+    } catch (err) {
+      toast("Failed to update client code", "error");
+    }
+  };
+
+  const removeClientCode = async (item, client) => {
+    try {
+      const newCodes = { ...(item.clientCodes || {}) };
+      delete newCodes[client];
+      await itemMasterAPI.update(item._id, { clientCodes: newCodes });
+      toast("Client code removed", "success");
+      fetchItems();
+    } catch (err) {
+      toast("Failed to remove code", "error");
     }
   };
 
@@ -1345,11 +1377,13 @@ export default function ItemMaster({ toast }) {
               {activeTab === "Finished Goods" && (
                 <div style={{ position: "relative" }}>
                   <button
-                    onClick={() =>
+                    onClick={() => {
+                      setManualClient("");
+                      setManualCode("");
                       setShowClientCodes(
                         showClientCodes === item._id ? null : item._id,
-                      )
-                    }
+                      );
+                    }}
                     style={{
                       padding: "4px 8px",
                       borderRadius: 6,
@@ -1401,11 +1435,33 @@ export default function ItemMaster({ toast }) {
                               }}
                             >
                               <span style={{ color: "#666" }}>{client}:</span>
-                              <span
-                                style={{ color: "#e0e0e0", fontWeight: 700 }}
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 6,
+                                }}
                               >
-                                {code}
-                              </span>
+                                <span
+                                  style={{ color: "#e0e0e0", fontWeight: 700 }}
+                                >
+                                  {code}
+                                </span>
+                                <button
+                                  onClick={() => removeClientCode(item, client)}
+                                  style={{
+                                    background: "transparent",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    fontSize: 10,
+                                    color: "#ff4444",
+                                    padding: 0,
+                                  }}
+                                  title="Remove"
+                                >
+                                  ✕
+                                </button>
+                              </div>
                             </div>
                           ))
                       ) : (
@@ -1414,11 +1470,85 @@ export default function ItemMaster({ toast }) {
                             fontSize: 10,
                             color: "#444",
                             textAlign: "center",
+                            marginBottom: 8,
                           }}
                         >
                           No client codes
                         </div>
                       )}
+
+                      <div
+                        style={{
+                          marginTop: 10,
+                          borderTop: "1px solid #333",
+                          paddingTop: 8,
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: 9,
+                            color: "#818cf8",
+                            marginBottom: 4,
+                            fontWeight: 700,
+                          }}
+                        >
+                          + ADD CLIENT CODE
+                        </div>
+                        <select
+                          value={manualClient}
+                          onChange={(e) => setManualClient(e.target.value)}
+                          style={{
+                            width: "100%",
+                            background: "#000",
+                            border: "1px solid #333",
+                            borderRadius: 4,
+                            fontSize: 10,
+                            color: "#fff",
+                            padding: 4,
+                            marginBottom: 4,
+                            outline: "none",
+                          }}
+                        >
+                          <option value="">-- Select Client --</option>
+                          {(clientMaster || []).map((c) => (
+                            <option key={c.name} value={c.name}>
+                              {c.name}
+                            </option>
+                          ))}
+                        </select>
+                        <div style={{ display: "flex", gap: 4 }}>
+                          <input
+                            placeholder="Code"
+                            value={manualCode}
+                            onChange={(e) => setManualCode(e.target.value)}
+                            style={{
+                              flex: 1,
+                              background: "#000",
+                              border: "1px solid #333",
+                              borderRadius: 4,
+                              fontSize: 10,
+                              color: "#fff",
+                              padding: 4,
+                              outline: "none",
+                            }}
+                          />
+                          <button
+                            onClick={() => handleManualClientCodeSave(item)}
+                            style={{
+                              background: "#4f46e5",
+                              border: "none",
+                              borderRadius: 4,
+                              color: "#fff",
+                              padding: "4px 8px",
+                              fontSize: 10,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                            }}
+                          >
+                            SAVE
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
