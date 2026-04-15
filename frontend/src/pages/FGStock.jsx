@@ -356,7 +356,7 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
     },
     {
       label: "Total Qty",
-      value: `₹${totalQty.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`,
+      value: `${totalQty.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`,
       color: "#2196F3",
       borderColor: "#2196F3",
     },
