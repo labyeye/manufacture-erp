@@ -9,6 +9,7 @@ const { generateJobCardPDF } = require("../utils/pdf");
 
 const STAGES = [
   "Printing",
+  "Flexo Printing",
   "Varnish",
   "Lamination",
   "Die Cutting",
@@ -489,10 +490,13 @@ async function recalculateProductionStats(jobOrder) {
     const s = orderedProcesses[i];
     const isSheetStage = ["Printing", "Varnish", "Lamination", "Die Cutting"].includes(s);
     const isPcsStage = ["Formation", "Manual Formation"].includes(s);
+    const isKgStage = ["Flexo Printing"].includes(s);
     let target = 0;
 
     if (isPcsStage) {
       target = jobOrder.orderQty || 0;
+    } else if (isKgStage) {
+      target = jobOrder.reelWeightKg || 0;
     } else if (isSheetStage) {
       target = jobOrder.noOfSheets || 0;
     } else if (i === 0) {
