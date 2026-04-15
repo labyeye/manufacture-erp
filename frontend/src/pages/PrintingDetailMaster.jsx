@@ -220,17 +220,20 @@ export default function PrintingDetailMaster({ toast }) {
                   <button
                     onClick={() => handleDelete(t._id)}
                     style={{
-                      background: (C.red || '#ef4444') + '22',
-                      color: C.red || '#ef4444',
-                      border: 'none',
-                      borderRadius: 5,
-                      padding: '4px 12px',
-                      fontWeight: 700,
+                      background: "#450a0a",
+                      color: "#ef4444",
+                      border: "1px solid #7f1d1d",
+                      borderRadius: 6,
+                      padding: "4px 14px",
                       fontSize: 12,
-                      cursor: 'pointer',
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
                     }}
                   >
-                    🗑️
+                    🗑️ Delete
                   </button>
                 </div>
               </div>

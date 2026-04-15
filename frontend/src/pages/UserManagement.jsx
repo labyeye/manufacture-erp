@@ -701,17 +701,20 @@ export default function UserManagement({ currentUser, toast }) {
                 <button
                   onClick={() => handleDelete(user._id)}
                   style={{
-                    padding: "7px 12px",
-                    background: "#f4433611",
-                    color: "#f44336",
-                    border: "1px solid #f4433633",
+                    background: "#450a0a",
+                    color: "#ef4444",
+                    border: "1px solid #7f1d1d",
                     borderRadius: 6,
-                    fontWeight: 700,
+                    padding: "4px 14px",
                     fontSize: 12,
+                    fontWeight: 700,
                     cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
                   }}
                 >
-                  🗑️
+                  🗑️ Delete
                 </button>
               </div>
             </div>

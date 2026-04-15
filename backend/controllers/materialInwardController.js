@@ -45,9 +45,17 @@ exports.create = async (req, res) => {
     } = req.body;
 
     if (invoiceNo) {
-      const existingInward = await MaterialInward.findOne({ invoiceNo: invoiceNo.trim() });
+      let query = { invoiceNo: invoiceNo.trim() };
+      if (vendorName) {
+        query.vendorName = { $regex: new RegExp(`^${vendorName.trim()}$`, "i") };
+      }
+      const existingInward = await MaterialInward.findOne(query);
       if (existingInward) {
-        return res.status(400).json({ message: `Material Inward with Invoice Number '${invoiceNo}' already exists.` });
+        return res.status(400).json({
+          message: vendorName
+            ? `Material Inward with Invoice Number '${invoiceNo}' from Vendor '${vendorName}' already exists.`
+            : `Material Inward with Invoice Number '${invoiceNo}' already exists.`,
+        });
       }
     }
 
@@ -55,32 +63,35 @@ exports.create = async (req, res) => {
       const po = await PurchaseOrder.findOne({ poNo: poRef });
       if (po) {
         const allInwards = await MaterialInward.find({ poRef: poRef });
-        
+
         let orderedMap = {};
-        po.items.forEach(it => {
-          const key = it.itemName || it.productCode || 'unknown';
-          orderedMap[key] = (orderedMap[key] || 0) + (Number(it.weight) || Number(it.qty) || 0);
+        po.items.forEach((it) => {
+          const key = it.itemName || it.productCode || "unknown";
+          orderedMap[key] =
+            (orderedMap[key] || 0) + (Number(it.weight) || Number(it.qty) || 0);
         });
 
         let receivedMap = {};
-        allInwards.forEach(inw => {
-          inw.items.forEach(it => {
-            const key = it.itemName || it.productCode || 'unknown';
-            receivedMap[key] = (receivedMap[key] || 0) + (Number(it.weight) || Number(it.qty) || 0);
+        allInwards.forEach((inw) => {
+          inw.items.forEach((it) => {
+            const key = it.itemName || it.productCode || "unknown";
+            receivedMap[key] =
+              (receivedMap[key] || 0) +
+              (Number(it.weight) || Number(it.qty) || 0);
           });
         });
 
         for (const it of items) {
-          const key = it.itemName || it.productCode || 'unknown';
-          const incoming = (Number(it.weight) || Number(it.qty) || 0);
+          const key = it.itemName || it.productCode || "unknown";
+          const incoming = Number(it.weight) || Number(it.qty) || 0;
           const ordered = orderedMap[key] || 0;
           const previouslyReceived = receivedMap[key] || 0;
-          
+
           if (ordered > 0) {
-            const allowed = ordered * 1.20;
-            if ((previouslyReceived + incoming) > allowed) {
-              return res.status(400).json({ 
-                message: `Excess receiving not allowed for ${key}. Ordered: ${ordered}, Maximum Allowed (20% excess): ${allowed}, Trying to receive: ${previouslyReceived + incoming}`
+            const allowed = ordered * 1.2;
+            if (previouslyReceived + incoming > allowed) {
+              return res.status(400).json({
+                message: `Excess receiving not allowed for ${key}. Ordered: ${ordered}, Maximum Allowed (20% excess): ${allowed}, Trying to receive: ${previouslyReceived + incoming}`,
               });
             }
           }
@@ -105,7 +116,7 @@ exports.create = async (req, res) => {
     });
 
     await inward.save();
-    
+
     // Auto-update RM Stock
     try {
       const RawMaterialStock = require("../models/RawMaterialStock");
@@ -115,13 +126,18 @@ exports.create = async (req, res) => {
             // Normalize product code
             const itemCode = (item.productCode || "").trim() || null;
             const itemCategory = item.category || item.rmItem || "General";
-            const itemSubCategory = item.subCategory || item.paperType || "Standard";
-            
+            const itemSubCategory =
+              item.subCategory || item.paperType || "Standard";
+
             // Build a descriptive name if not provided
-            const itemName = item.itemName || `${itemCategory} | ${itemSubCategory}${item.gsm ? ` | ${item.gsm}gsm` : ""}${item.widthMm ? ` | ${item.widthMm}mm` : ""}`;
+            const itemName =
+              item.itemName ||
+              `${itemCategory} | ${itemSubCategory}${item.gsm ? ` | ${item.gsm}gsm` : ""}${item.widthMm ? ` | ${item.widthMm}mm` : ""}`;
 
             // We only upsert if we have a code, otherwise we might create duplicates
-            const query = itemCode ? { code: itemCode } : { name: itemName, category: itemCategory };
+            const query = itemCode
+              ? { code: itemCode }
+              : { name: itemName, category: itemCategory };
 
             await RawMaterialStock.findOneAndUpdate(
               query,
@@ -131,20 +147,29 @@ exports.create = async (req, res) => {
                   category: itemCategory,
                   paperType: itemSubCategory,
                   gsm: item.gsm || 0,
-                  sheetSize: item.widthMm && item.lengthMm ? `${item.widthMm}x${item.lengthMm}mm` : (item.widthMm ? `${item.widthMm}mm` : ""),
+                  sheetSize:
+                    item.widthMm && item.lengthMm
+                      ? `${item.widthMm}x${item.lengthMm}mm`
+                      : item.widthMm
+                        ? `${item.widthMm}mm`
+                        : "",
                   location: location || "Main Warehouse",
                   rate: item.rate || 0,
-                  lastUpdated: new Date()
+                  lastUpdated: new Date(),
                 },
                 $inc: {
                   weight: +(item.weight || 0),
-                  qty: +(item.noOfSheets || item.qty || 0)
-                }
+                  qty: +(item.noOfSheets || item.qty || 0),
+                },
               },
-              { upsert: true, new: true, setDefaultsOnInsert: true }
+              { upsert: true, new: true, setDefaultsOnInsert: true },
             );
           } catch (itemErr) {
-            console.error("Failed to update stock for item:", item.itemName || item.productCode, itemErr);
+            console.error(
+              "Failed to update stock for item:",
+              item.itemName || item.productCode,
+              itemErr,
+            );
             // We continue with other items
           }
         }
@@ -158,17 +183,17 @@ exports.create = async (req, res) => {
         const po = await PurchaseOrder.findOne({ poNo: poRef });
         if (po) {
           const allInwards = await MaterialInward.find({ poRef: poRef });
-          
+
           let totalOrdered = 0;
           let totalReceived = 0;
 
-          po.items.forEach(item => {
-             totalOrdered += (Number(item.weight) || Number(item.qty) || 0);
+          po.items.forEach((item) => {
+            totalOrdered += Number(item.weight) || Number(item.qty) || 0;
           });
 
-          allInwards.forEach(inw => {
-            inw.items.forEach(item => {
-               totalReceived += (Number(item.weight) || Number(item.qty) || 0);
+          allInwards.forEach((inw) => {
+            inw.items.forEach((item) => {
+              totalReceived += Number(item.weight) || Number(item.qty) || 0;
             });
           });
 
@@ -210,9 +235,17 @@ exports.update = async (req, res) => {
     } = req.body;
 
     if (invoiceNo) {
-      const existingInward = await MaterialInward.findOne({ invoiceNo: invoiceNo.trim(), _id: { $ne: req.params.id } });
+      let query = { invoiceNo: invoiceNo.trim(), _id: { $ne: req.params.id } };
+      if (vendorName) {
+        query.vendorName = { $regex: new RegExp(`^${vendorName.trim()}$`, "i") };
+      }
+      const existingInward = await MaterialInward.findOne(query);
       if (existingInward) {
-        return res.status(400).json({ message: `Material Inward with Invoice Number '${invoiceNo}' already exists.` });
+        return res.status(400).json({
+          message: vendorName
+            ? `Material Inward with Invoice Number '${invoiceNo}' from Vendor '${vendorName}' already exists.`
+            : `Material Inward with Invoice Number '${invoiceNo}' already exists.`,
+        });
       }
     }
 
@@ -222,33 +255,39 @@ exports.update = async (req, res) => {
     if (poRef) {
       const po = await PurchaseOrder.findOne({ poNo: poRef });
       if (po) {
-        const allInwards = await MaterialInward.find({ poRef: poRef, _id: { $ne: req.params.id } });
-        
+        const allInwards = await MaterialInward.find({
+          poRef: poRef,
+          _id: { $ne: req.params.id },
+        });
+
         let orderedMap = {};
-        po.items.forEach(it => {
-          const key = it.itemName || it.productCode || 'unknown';
-          orderedMap[key] = (orderedMap[key] || 0) + (Number(it.weight) || Number(it.qty) || 0);
+        po.items.forEach((it) => {
+          const key = it.itemName || it.productCode || "unknown";
+          orderedMap[key] =
+            (orderedMap[key] || 0) + (Number(it.weight) || Number(it.qty) || 0);
         });
 
         let receivedMap = {};
-        allInwards.forEach(inw => {
-          inw.items.forEach(it => {
-            const key = it.itemName || it.productCode || 'unknown';
-            receivedMap[key] = (receivedMap[key] || 0) + (Number(it.weight) || Number(it.qty) || 0);
+        allInwards.forEach((inw) => {
+          inw.items.forEach((it) => {
+            const key = it.itemName || it.productCode || "unknown";
+            receivedMap[key] =
+              (receivedMap[key] || 0) +
+              (Number(it.weight) || Number(it.qty) || 0);
           });
         });
 
         for (const it of items) {
-          const key = it.itemName || it.productCode || 'unknown';
-          const incoming = (Number(it.weight) || Number(it.qty) || 0);
+          const key = it.itemName || it.productCode || "unknown";
+          const incoming = Number(it.weight) || Number(it.qty) || 0;
           const ordered = orderedMap[key] || 0;
           const previouslyReceived = receivedMap[key] || 0;
-          
+
           if (ordered > 0) {
-            const allowed = ordered * 1.20;
-            if ((previouslyReceived + incoming) > allowed) {
-              return res.status(400).json({ 
-                message: `Excess receiving not allowed for ${key}. Ordered: ${ordered}, Maximum Allowed (20% excess): ${allowed}, Trying to receive: ${previouslyReceived + incoming}`
+            const allowed = ordered * 1.2;
+            if (previouslyReceived + incoming > allowed) {
+              return res.status(400).json({
+                message: `Excess receiving not allowed for ${key}. Ordered: ${ordered}, Maximum Allowed (20% excess): ${allowed}, Trying to receive: ${previouslyReceived + incoming}`,
               });
             }
           }

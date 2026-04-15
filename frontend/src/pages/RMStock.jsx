@@ -819,17 +819,20 @@ export default function RMStock({
                       <button
                         onClick={() => handleDelete(s._id || s.id)}
                         style={{
-                          padding: "6px 10px",
-                          borderRadius: 4,
-                          border: "none",
-                          background: C.red + "22",
-                          color: C.red,
-                          fontSize: 11,
+                          background: "#450a0a",
+                          color: "#ef4444",
+                          border: "1px solid #7f1d1d",
+                          borderRadius: 6,
+                          padding: "4px 14px",
+                          fontSize: 12,
                           fontWeight: 700,
                           cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
                         }}
                       >
-                        🗑️
+                        🗑️ Delete
                       </button>
                     </div>
                   </td>

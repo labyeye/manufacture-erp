@@ -752,17 +752,20 @@ export default function VendorMaster({
                         <button
                           onClick={() => handleDelete(vendor._id)}
                           style={{
-                            padding: "5px 10px",
-                            background: "#f4433622",
-                            color: "#f44336",
-                            border: "none",
-                            borderRadius: 4,
+                            background: "#450a0a",
+                            color: "#ef4444",
+                            border: "1px solid #7f1d1d",
+                            borderRadius: 6,
+                            padding: "4px 14px",
+                            fontSize: 12,
                             fontWeight: 700,
-                            fontSize: 11,
                             cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
                           }}
                         >
-                          🗑️
+                          🗑️ Delete
                         </button>
                       </div>
                     </td>

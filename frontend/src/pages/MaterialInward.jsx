@@ -1767,17 +1767,20 @@ export default function MaterialInward({
                         <button
                           onClick={() => handleDelete(r._id)}
                           style={{
-                            background: "#451a1a",
+                            background: "#450a0a",
                             color: "#ef4444",
                             border: "1px solid #7f1d1d",
                             borderRadius: 6,
-                            padding: "6px 14px",
-                            fontSize: 11,
+                            padding: "4px 14px",
+                            fontSize: 12,
                             fontWeight: 700,
                             cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
                           }}
                         >
-                          ✕
+                          🗑️ Delete
                         </button>
                       </div>
                     </div>

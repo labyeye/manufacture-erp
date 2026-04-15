@@ -1592,17 +1592,20 @@ export default function SalesOrders(props) {
                       <button
                         onClick={() => handleDelete(r._id)}
                         style={{
-                          background: "#3e1a1a",
+                          background: "#450a0a",
                           color: "#ef4444",
                           border: "1px solid #7f1d1d",
                           borderRadius: 6,
-                          padding: "4px 10px",
+                          padding: "4px 14px",
                           fontSize: 12,
                           fontWeight: 700,
                           cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
                         }}
                       >
-                        🗑️
+                        🗑️ Delete
                       </button>
                       <button
                         onClick={() => generateSOPDF(r)}

@@ -1,6 +1,5 @@
-const ItemMaster = require('../models/ItemMaster');
-const Counter = require('../models/Counter');
-
+const ItemMaster = require("../models/ItemMaster");
+const Counter = require("../models/Counter");
 
 exports.getAllItems = async (req, res) => {
   try {
@@ -12,96 +11,107 @@ exports.getAllItems = async (req, res) => {
     if (category) filter.category = category;
 
     const items = await ItemMaster.find(filter)
-      .populate('createdBy', 'name username')
+      .populate("createdBy", "name username")
       .sort({ createdAt: -1 });
 
     res.json({ items });
   } catch (error) {
-    console.error('Get all items error:', error);
-    res.status(500).json({ error: 'Failed to fetch items' });
+    console.error("Get all items error:", error);
+    res.status(500).json({ error: "Failed to fetch items" });
   }
 };
 
-
 exports.getItemById = async (req, res) => {
   try {
-    const item = await ItemMaster.findById(req.params.id)
-      .populate('createdBy', 'name username');
+    const item = await ItemMaster.findById(req.params.id).populate(
+      "createdBy",
+      "name username",
+    );
 
     if (!item) {
-      return res.status(404).json({ error: 'Item not found' });
+      return res.status(404).json({ error: "Item not found" });
     }
 
     res.json(item);
   } catch (error) {
-    console.error('Get item error:', error);
-    res.status(500).json({ error: 'Failed to fetch item' });
+    console.error("Get item error:", error);
+    res.status(500).json({ error: "Failed to fetch item" });
   }
 };
 
-
 const getNextItemCode = async (type) => {
   const prefixMap = {
-    'Raw Material': 'RM',
-    'Consumable': 'CN',
-    'Finished Goods': 'FG',
-    'Machine Spare': 'MS'
+    "Raw Material": "RM",
+    Consumable: "CG",
+    "Finished Goods": "FG",
+    "Machine Spare": "MS",
   };
 
-  const prefix = prefixMap[type] || 'IT';
+  const prefix = prefixMap[type] || "IT";
   const counterName = `itemMaster_${prefix}`;
 
   // Check if any items exist for this prefix. If not, we can reset the counter.
-  const itemCount = await ItemMaster.countDocuments({ 
-    code: { $regex: new RegExp(`^${prefix}`) } 
+  const itemCount = await ItemMaster.countDocuments({
+    code: { $regex: new RegExp(`^${prefix}`) },
   });
 
   if (itemCount === 0) {
     await Counter.findOneAndUpdate(
       { name: counterName },
       { $set: { seq: 0 } },
-      { upsert: true }
+      { upsert: true },
     );
   }
 
   const counter = await Counter.findOneAndUpdate(
     { name: counterName },
     { $inc: { seq: 1 } },
-    { new: true, upsert: true }
+    { new: true, upsert: true },
   );
 
-  return `${prefix}${String(counter.seq).padStart(4, '0')}`;
+  return `${prefix}${String(counter.seq).padStart(4, "0")}`;
 };
-
 
 exports.createItem = async (req, res) => {
   try {
-    const { code, name, type, category, subCategory, gsm, width, length, clientCodes, clientName, gstRate, hsnCode, reorderLevel } = req.body;
-
+    const {
+      code,
+      name,
+      type,
+      category,
+      subCategory,
+      gsm,
+      width,
+      length,
+      clientCodes,
+      clientName,
+      gstRate,
+      hsnCode,
+      reorderLevel,
+    } = req.body;
 
     if (!name || !type) {
-      return res.status(400).json({ error: 'Name and type are required' });
+      return res.status(400).json({ error: "Name and type are required" });
     }
 
-
     const existingItem = await ItemMaster.findOne({
-      name: { $regex: new RegExp(`^${name.trim()}$`, 'i') },
-      type
+      name: { $regex: new RegExp(`^${name.trim()}$`, "i") },
+      type,
     });
 
     if (existingItem) {
-      return res.status(400).json({ error: 'Item with this name already exists in this type' });
+      return res
+        .status(400)
+        .json({ error: "Item with this name already exists in this type" });
     }
-
 
     let itemCode = code?.trim()?.toUpperCase();
     if (!itemCode) {
       itemCode = await getNextItemCode(type);
     } else {
-
       const existingCode = await ItemMaster.findOne({ code: itemCode });
       if (existingCode) {
-        return res.status(400).json({ error: 'Item code already exists' });
+        return res.status(400).json({ error: "Item code already exists" });
       }
     }
 
@@ -119,41 +129,56 @@ exports.createItem = async (req, res) => {
       gstRate: gstRate ? Number(gstRate) : 18,
       hsnCode: hsnCode?.trim(),
       reorderLevel: reorderLevel ? Number(reorderLevel) : 0,
-      createdBy: req.user?.id
+      createdBy: req.user?.id,
     });
 
     await item.save();
 
-    const populatedItem = await ItemMaster.findById(item._id)
-      .populate('createdBy', 'name username');
+    const populatedItem = await ItemMaster.findById(item._id).populate(
+      "createdBy",
+      "name username",
+    );
 
     res.status(201).json({ item: populatedItem });
   } catch (error) {
-    console.error('Create item error:', error);
-    res.status(500).json({ error: 'Failed to create item' });
+    console.error("Create item error:", error);
+    res.status(500).json({ error: "Failed to create item" });
   }
 };
 
-
 exports.updateItem = async (req, res) => {
   try {
-    const { name, category, subCategory, gsm, width, length, clientCodes, status, clientName, gstRate, hsnCode, reorderLevel } = req.body;
+    const {
+      name,
+      category,
+      subCategory,
+      gsm,
+      width,
+      length,
+      clientCodes,
+      status,
+      clientName,
+      gstRate,
+      hsnCode,
+      reorderLevel,
+    } = req.body;
 
     const item = await ItemMaster.findById(req.params.id);
     if (!item) {
-      return res.status(404).json({ error: 'Item not found' });
+      return res.status(404).json({ error: "Item not found" });
     }
-
 
     if (name && name !== item.name) {
       const existingItem = await ItemMaster.findOne({
-        name: { $regex: new RegExp(`^${name.trim()}$`, 'i') },
+        name: { $regex: new RegExp(`^${name.trim()}$`, "i") },
         type: item.type,
-        _id: { $ne: req.params.id }
+        _id: { $ne: req.params.id },
       });
 
       if (existingItem) {
-        return res.status(400).json({ error: 'Item with this name already exists in this type' });
+        return res
+          .status(400)
+          .json({ error: "Item with this name already exists in this type" });
       }
       item.name = name.trim();
     }
@@ -172,32 +197,32 @@ exports.updateItem = async (req, res) => {
 
     await item.save();
 
-    const updatedItem = await ItemMaster.findById(item._id)
-      .populate('createdBy', 'name username');
+    const updatedItem = await ItemMaster.findById(item._id).populate(
+      "createdBy",
+      "name username",
+    );
 
     res.json({ item: updatedItem });
   } catch (error) {
-    console.error('Update item error:', error);
-    res.status(500).json({ error: 'Failed to update item' });
+    console.error("Update item error:", error);
+    res.status(500).json({ error: "Failed to update item" });
   }
 };
-
 
 exports.deleteItem = async (req, res) => {
   try {
     const item = await ItemMaster.findByIdAndDelete(req.params.id);
 
     if (!item) {
-      return res.status(404).json({ error: 'Item not found' });
+      return res.status(404).json({ error: "Item not found" });
     }
 
-    res.json({ message: 'Item deleted successfully' });
+    res.json({ message: "Item deleted successfully" });
   } catch (error) {
-    console.error('Delete item error:', error);
-    res.status(500).json({ error: 'Failed to delete item' });
+    console.error("Delete item error:", error);
+    res.status(500).json({ error: "Failed to delete item" });
   }
 };
-
 
 exports.bulkDelete = async (req, res) => {
   try {
@@ -219,65 +244,80 @@ exports.bulkDelete = async (req, res) => {
   }
 };
 
-
 exports.updateItemStatus = async (req, res) => {
   try {
     const { status } = req.body;
 
-    if (!status || !['Active', 'Inactive'].includes(status)) {
-      return res.status(400).json({ error: 'Invalid status' });
+    if (!status || !["Active", "Inactive"].includes(status)) {
+      return res.status(400).json({ error: "Invalid status" });
     }
 
     const item = await ItemMaster.findByIdAndUpdate(
       req.params.id,
       { status },
-      { new: true }
-    ).populate('createdBy', 'name username');
+      { new: true },
+    ).populate("createdBy", "name username");
 
     if (!item) {
-      return res.status(404).json({ error: 'Item not found' });
+      return res.status(404).json({ error: "Item not found" });
     }
 
     res.json({ item });
   } catch (error) {
-    console.error('Update status error:', error);
-    res.status(500).json({ error: 'Failed to update status' });
+    console.error("Update status error:", error);
+    res.status(500).json({ error: "Failed to update status" });
   }
 };
-
 
 exports.bulkImport = async (req, res) => {
   try {
     const { items } = req.body;
 
     if (!Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({ error: 'Items array is required' });
+      return res.status(400).json({ error: "Items array is required" });
     }
 
     const results = {
       success: [],
-      failed: []
+      failed: [],
     };
 
     for (const itemData of items) {
       try {
-        const { code, name, type, category, subCategory, gsm, width, length, clientName, gstRate, hsnCode, reorderLevel } = itemData;
+        const {
+          code,
+          name,
+          type,
+          category,
+          subCategory,
+          gsm,
+          width,
+          length,
+          clientName,
+          gstRate,
+          hsnCode,
+          reorderLevel,
+        } = itemData;
 
         if (!name || !type) {
-          results.failed.push({ item: itemData, reason: 'Name and type are required' });
+          results.failed.push({
+            item: itemData,
+            reason: "Name and type are required",
+          });
           continue;
         }
 
-        
         let itemCode = code?.trim()?.toUpperCase();
         if (!itemCode) {
           itemCode = await getNextItemCode(type);
         }
 
-        
         const existing = await ItemMaster.findOne({ code: itemCode });
         if (existing) {
-          results.failed.push({ item: itemData, reason: 'Code already exists' });
+          results.failed.push({
+            item: itemData,
+            reason: "Code already exists",
+          });
           continue;
         }
 
@@ -294,7 +334,7 @@ exports.bulkImport = async (req, res) => {
           gstRate: gstRate ? Number(gstRate) : 18,
           hsnCode: hsnCode?.trim(),
           reorderLevel: reorderLevel ? Number(reorderLevel) : 0,
-          createdBy: req.user?.id
+          createdBy: req.user?.id,
         });
 
         await item.save();
@@ -306,10 +346,10 @@ exports.bulkImport = async (req, res) => {
 
     res.json({
       message: `Imported ${results.success.length} items, ${results.failed.length} failed`,
-      results
+      results,
     });
   } catch (error) {
-    console.error('Bulk import error:', error);
-    res.status(500).json({ error: 'Failed to import items' });
+    console.error("Bulk import error:", error);
+    res.status(500).json({ error: "Failed to import items" });
   }
 };

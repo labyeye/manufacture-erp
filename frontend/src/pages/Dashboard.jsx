@@ -81,6 +81,7 @@ export function Dashboard({ data }) {
 
   const [selectedOperator, setSelectedOperator] = useState("");
   const [selectedMachine, setSelectedMachine] = useState("");
+  const [selectedProcessPending, setSelectedProcessPending] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -568,14 +569,20 @@ export function Dashboard({ data }) {
           >
             {STAGES.map((proc) => {
               const count = processPendingMap[proc]?.length || 0;
+              const isSelected = selectedProcessPending === proc;
               return (
                 <div
                   key={proc}
+                  onClick={() => setSelectedProcessPending(isSelected ? null : proc)}
                   style={{
-                    background: "#141416",
-                    border: `1px solid ${count > 0 ? C.blue + "55" : "#2a2a2e"}`,
+                    background: isSelected ? "#1a1a20" : "#141416",
+                    border: `1px solid ${isSelected ? C.blue : count > 0 ? C.blue + "55" : "#2a2a2e"}`,
                     borderRadius: 8,
                     padding: 14,
+                    cursor: count > 0 ? "pointer" : "default",
+                    boxShadow: isSelected ? `0 0 10px ${C.blue}44` : "none",
+                    transform: isSelected ? "scale(1.02)" : "scale(1)",
+                    transition: "all 0.2s ease",
                   }}
                 >
                   <div
@@ -599,6 +606,52 @@ export function Dashboard({ data }) {
               );
             })}
           </div>
+
+          {selectedProcessPending && processPendingMap[selectedProcessPending]?.length > 0 && (
+            <div
+              style={{
+                marginTop: 20,
+                borderRadius: 8,
+                overflow: "hidden",
+                border: "1px solid #2a2a2e",
+                background: "#141416",
+              }}
+            >
+              <div style={{ padding: "12px 16px", borderBottom: "1px solid #2a2a2e", fontWeight: 700, color: C.blue }}>
+                Jobs Pending for {selectedProcessPending}
+              </div>
+              <table style={TABLE}>
+                <colgroup>
+                  <col style={{ width: 120 }} />
+                  <col style={{ width: 140 }} />
+                  <col style={{ width: "auto" }} />
+                  <col style={{ width: 100 }} />
+                  <col style={{ width: 120 }} />
+                </colgroup>
+                <thead>
+                  <tr>
+                    {["Job Order #", "Sales Order / Client", "Item Name", "Order Qty", "Prod Qty"].map((h) => (
+                      <th key={h} style={TH}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {processPendingMap[selectedProcessPending].map((jo, i) => (
+                    <tr key={jo._id || i} style={{ background: i % 2 === 0 ? "#0e0e12" : "#121216" }}>
+                      <td style={{ ...TD, color: C.yellow, fontWeight: 700 }}>{jo.joNo}</td>
+                      <td style={TD}>
+                        <div style={{ color: C.green, fontSize: 12 }}>{jo.soRef}</div>
+                        <div style={{ color: "#aaa", fontSize: 12, marginTop: 4 }}>{jo.clientName}</div>
+                      </td>
+                      <td style={{ ...TD, color: "#ccc", whiteSpace: "normal" }}>{jo.itemName}</td>
+                      <td style={{ ...TD, fontWeight: 700 }}>{fmt(jo.orderQty)}</td>
+                      <td style={{ ...TD, color: C.green }}>{fmt(jo.producedQty)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 

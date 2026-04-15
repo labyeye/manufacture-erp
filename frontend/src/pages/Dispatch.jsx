@@ -105,45 +105,50 @@ export default function Dispatch({ fgStock = [], toast }) {
   );
 
   const setH = (k, v) => {
-    setHeader((f) => {
-      const updated = { ...f, [k]: v };
-      if (k === "soRef") {
-        if (v) {
-          const so = activeSOList.find((s) => s.soNo === v);
-          if (so) {
-            updated.clientName = so.clientName || "";
-            updated.deliveryAddress = so.deliveryAddress || "";
+    if (k === "soRef") {
+      if (v) {
+        const so = activeSOList.find((s) => s.soNo === v);
+        if (so) {
+          setHeader((f) => ({
+            ...f,
+            [k]: v,
+            clientName: so.clientName || "",
+            deliveryAddress: so.deliveryAddress || "",
+          }));
 
-            // Auto-populate items from Sales Order
-            const soItems = (so.items || []).map((it) => ({
-              _id: uid(),
-              itemName: it.itemName || "",
-              productCode: it.productCode || "",
-              qty: (it.qty || 0).toString(),
-              unit: it.unit || "nos",
-              pcsPerBox: "",
-              noOfBox: "",
-              rate: it.price || 0,
-              gstRate: it.gstRate || 18,
-              amount: it.amount || 0,
-              taxAmount: it.taxAmount || 0,
-              totalWithTax: it.totalWithTax || 0,
-            }));
+          const soItems = (so.items || []).map((it) => ({
+            _id: uid(),
+            itemName: it.itemName || "",
+            productCode: it.productCode || "",
+            qty: (it.orderQty || 0).toString(),
+            unit: it.uom || "nos",
+            pcsPerBox: "",
+            noOfBox: "",
+            rate: it.price || 0,
+            gstRate: it.gstRate || 18,
+            amount: it.amount || 0,
+            taxAmount: it.taxAmount || 0,
+            totalWithTax: it.totalWithTax || 0,
+          }));
 
-            if (soItems.length > 0) {
-              setItems(soItems);
-              setItemErrors(soItems.map(() => ({})));
-            }
+          if (soItems.length > 0) {
+            setItems(soItems);
+            setItemErrors(soItems.map(() => ({})));
           }
-        } else {
-          updated.clientName = "";
-          updated.deliveryAddress = "";
-          setItems([blankItem()]);
-          setItemErrors([{}]);
         }
+      } else {
+        setHeader((f) => ({
+          ...f,
+          [k]: v,
+          clientName: "",
+          deliveryAddress: "",
+        }));
+        setItems([blankItem()]);
+        setItemErrors([{}]);
       }
-      return updated;
-    });
+    } else {
+      setHeader((f) => ({ ...f, [k]: v }));
+    }
     setHeaderErrors((e) => ({ ...e, [k]: false }));
   };
 
@@ -170,9 +175,9 @@ export default function Dispatch({ fgStock = [], toast }) {
 
       it.noOfBox = qty && ppb ? Math.ceil(qty / ppb).toString() : "";
       it.amount = qty && rate ? (qty * rate).toFixed(2) : "";
-      
+
       const amt = Number(it.amount || 0);
-      it.taxAmount = (amt * gst / 100).toFixed(2);
+      it.taxAmount = ((amt * gst) / 100).toFixed(2);
       it.totalWithTax = (amt + Number(it.taxAmount)).toFixed(2);
 
       updated[idx] = it;
@@ -275,7 +280,8 @@ export default function Dispatch({ fgStock = [], toast }) {
   };
 
   const generateDispatchPDF = (d) => {
-    const fd = (date) => (date ? new Date(date).toLocaleDateString("en-GB") : "—");
+    const fd = (date) =>
+      date ? new Date(date).toLocaleDateString("en-GB") : "—";
 
     const html = `
       <html>
@@ -643,6 +649,9 @@ export default function Dispatch({ fgStock = [], toast }) {
                     style={EI(idx, "itemName")}
                   >
                     <option value="">-- Select FG Item --</option>
+                    {it.itemName && !fgStockOptions.includes(it.itemName) && (
+                      <option value={it.itemName}>{it.itemName}</option>
+                    )}
                     {fgStockOptions.map((item) => (
                       <option key={item}>{item}</option>
                     ))}
@@ -693,7 +702,8 @@ export default function Dispatch({ fgStock = [], toast }) {
                   />
                 </Field>
                 <Field label="Total (incl Tax)">
-                   <div style={{
+                  <div
+                    style={{
                       padding: "9px 12px",
                       background: C.inputBg,
                       border: `1px solid ${C.border}`,
@@ -701,9 +711,10 @@ export default function Dispatch({ fgStock = [], toast }) {
                       fontSize: 13,
                       color: it.totalWithTax ? C.green : C.muted,
                       fontWeight: it.totalWithTax ? 700 : 400,
-                    }}>
-                      {it.totalWithTax ? `₹${fmt(+it.totalWithTax)}` : "—"}
-                   </div>
+                    }}
+                  >
+                    {it.totalWithTax ? `₹${fmt(+it.totalWithTax)}` : "—"}
+                  </div>
                 </Field>
               </div>
 
@@ -947,17 +958,20 @@ export default function Dispatch({ fgStock = [], toast }) {
                       <button
                         onClick={handleDelete}
                         style={{
-                          background: (C.red || "#ef4444") + "22",
-                          color: C.red || "#ef4444",
-                          border: "none",
-                          borderRadius: 5,
-                          padding: "4px 12px",
-                          fontWeight: 700,
+                          background: "#450a0a",
+                          color: "#ef4444",
+                          border: "1px solid #7f1d1d",
+                          borderRadius: 6,
+                          padding: "4px 14px",
                           fontSize: 12,
+                          fontWeight: 700,
                           cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
                         }}
                       >
-                        🗑️
+                        🗑️ Delete
                       </button>
                     </div>
                   </div>

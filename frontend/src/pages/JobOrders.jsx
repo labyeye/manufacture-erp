@@ -300,14 +300,8 @@ export default function JobOrders(props) {
       if (
         ["paperCategory", "paperType", "paperGsm", "reelWidthMm"].includes(k)
       ) {
-        const pCat = k === "paperCategory" ? v : updated.paperCategory;
-        const pType = k === "paperType" ? v : updated.paperType;
-        const pGsm = k === "paperGsm" ? v : updated.paperGsm;
-        const pWidth = k === "reelWidthMm" ? v : updated.reelWidthMm;
-
-        if (pCat === "Paper Reel" && pType && pGsm && pWidth) {
-          updated.itemName = `${pType} ${pCat} ${pGsm}gsm ${pWidth}mm`;
-        }
+        // We intentionally do not overwrite updated.itemName anymore
+        // It stays mapped to the Selection from Sales Orders (FG Item).
       }
 
       if (["sheetW", "sheetL", "sheetUom"].includes(k)) {
@@ -1691,17 +1685,20 @@ export default function JobOrders(props) {
                       <button
                         onClick={() => handleDelete(r._id || r.id)}
                         style={{
-                          padding: "5px 12px",
-                          borderRadius: 4,
-                          border: `1px solid ${C.red}`,
-                          background: C.red + "22",
-                          color: C.red,
-                          fontWeight: 600,
+                          background: "#450a0a",
+                          color: "#ef4444",
+                          border: "1px solid #7f1d1d",
+                          borderRadius: 6,
+                          padding: "4px 14px",
                           fontSize: 12,
+                          fontWeight: 700,
                           cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
                         }}
                       >
-                        🗑️
+                        🗑️ Delete
                       </button>
                       <button
                         onClick={() => generateJobCardPDF(r)}

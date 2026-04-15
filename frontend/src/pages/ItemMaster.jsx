@@ -6,7 +6,7 @@ const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 
 const ITEM_TABS = [
   { key: "Raw Material", label: "Raw Material", prefix: "RM" },
-  { key: "Consumable", label: "Consumable", prefix: "CN" },
+  { key: "Consumable", label: "Consumable", prefix: "CG" },
   { key: "Finished Goods", label: "Finished Goods", prefix: "FG" },
   { key: "Machine Spare", label: "Machine Spare", prefix: "MS" },
 ];
@@ -251,9 +251,7 @@ export default function ItemMaster({ toast }) {
 
   const handleBulkDelete = async () => {
     if (!selectedIds.length) return;
-    if (
-      !window.confirm(`Delete ${selectedIds.length} items permanently?`)
-    )
+    if (!window.confirm(`Delete ${selectedIds.length} items permanently?`))
       return;
 
     try {
@@ -285,10 +283,20 @@ export default function ItemMaster({ toast }) {
 
   const handleTemplate = () => {
     const tab = ITEM_TABS.find((t) => t.key === activeTab);
-    const header = ["Product Code", "Item Name", "Category", activeTab === "Finished Goods" ? "Size" : "Type"];
+    const header = [
+      "Product Code",
+      "Item Name",
+      "Category",
+      activeTab === "Finished Goods" ? "Size" : "Type",
+    ];
     if (activeTab === "Finished Goods") header.push("Client");
 
-    const row = ["", "Example", tabCategories[0] || "Cat", tabSubCategories[0] || "Sub"];
+    const row = [
+      "",
+      "Example",
+      tabCategories[0] || "Cat",
+      tabSubCategories[0] || "Sub",
+    ];
     if (activeTab === "Finished Goods") row.push("Customer Name");
 
     const csv = [header, row]
@@ -642,7 +650,9 @@ export default function ItemMaster({ toast }) {
                   letterSpacing: "0.5px",
                 }}
               >
-                {activeTab === "Finished Goods" ? "SIZE *" : "SUB-CATEGORY / TYPE *"}
+                {activeTab === "Finished Goods"
+                  ? "SIZE *"
+                  : "SUB-CATEGORY / TYPE *"}
               </label>
               <select
                 value={selectedSubCategory}
@@ -989,14 +999,17 @@ export default function ItemMaster({ toast }) {
             <button
               onClick={handleBulkDelete}
               style={{
-                padding: "8px 16px",
-                background: "#f8514922",
-                color: "#f85149",
-                border: "1px solid #f8514944",
+                background: "#450a0a",
+                color: "#ef4444",
+                border: "1px solid #7f1d1d",
                 borderRadius: 6,
+                padding: "6px 16px",
                 fontSize: 12,
                 fontWeight: 700,
                 cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
                 marginRight: 10,
               }}
             >
@@ -1073,9 +1086,7 @@ export default function ItemMaster({ toast }) {
         >
           <input
             type="checkbox"
-            checked={
-              sorted.length > 0 && selectedIds.length === sorted.length
-            }
+            checked={sorted.length > 0 && selectedIds.length === sorted.length}
             onChange={toggleSelectAll}
             style={{ cursor: "pointer", width: 16, height: 16 }}
           />
@@ -1216,23 +1227,20 @@ export default function ItemMaster({ toast }) {
               <button
                 onClick={() => handleDelete(item)}
                 style={{
-                  background: "transparent",
-                  border: "none",
-                  color: "#f85149",
+                  background: "#450a0a",
+                  color: "#ef4444",
+                  border: "1px solid #7f1d1d",
+                  borderRadius: 6,
+                  padding: "4px 14px",
                   fontSize: 12,
                   fontWeight: 700,
                   cursor: "pointer",
-                  padding: "6px 12px",
-                  borderRadius: 6,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
                 }}
-                onMouseOver={(e) =>
-                  (e.currentTarget.style.background = "#f8514911")
-                }
-                onMouseOut={(e) =>
-                  (e.currentTarget.style.background = "transparent")
-                }
               >
-                Remove
+                🗑️ Delete
               </button>
             </div>
           ))

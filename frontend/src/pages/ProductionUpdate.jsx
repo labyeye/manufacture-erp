@@ -800,17 +800,17 @@ export default function ProductionUpdate({
                           <button
                             onClick={() => handleDelete(jo._id, r._id)}
                             style={{
-                              background: C.card,
-                              border: `1px solid ${C.red}44`,
-                              color: C.red,
-                              padding: "6px 12px",
+                              background: "#450a0a",
+                              color: "#ef4444",
+                              border: "1px solid #7f1d1d",
                               borderRadius: 6,
-                              fontSize: 11,
+                              padding: "4px 14px",
+                              fontSize: 12,
                               fontWeight: 700,
                               cursor: "pointer",
                               display: "flex",
                               alignItems: "center",
-                              gap: 4,
+                              gap: 6,
                             }}
                           >
                             🗑️ Delete

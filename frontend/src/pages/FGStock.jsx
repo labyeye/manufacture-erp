@@ -721,17 +721,20 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
                               }
                             }}
                             style={{
-                              padding: "4px 9px",
-                              background: "#f4433622",
-                              color: "#f44336",
-                              border: "none",
-                              borderRadius: 4,
-                              fontSize: 11,
-                              cursor: "pointer",
+                              background: "#450a0a",
+                              color: "#ef4444",
+                              border: "1px solid #7f1d1d",
+                              borderRadius: 6,
+                              padding: "4px 14px",
+                              fontSize: 12,
                               fontWeight: 700,
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 6,
                             }}
                           >
-                            🗑️
+                            🗑️ Delete
                           </button>
                         </div>
                       </td>
