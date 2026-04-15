@@ -487,11 +487,14 @@ async function recalculateProductionStats(jobOrder) {
 
   for (let i = 0; i < orderedProcesses.length; i++) {
     const s = orderedProcesses[i];
-    const isFormation = s.includes("Formation");
+    const isSheetStage = ["Printing", "Varnish", "Lamination", "Die Cutting"].includes(s);
+    const isPcsStage = ["Formation", "Manual Formation"].includes(s);
     let target = 0;
 
-    if (isFormation) {
+    if (isPcsStage) {
       target = jobOrder.orderQty || 0;
+    } else if (isSheetStage) {
+      target = jobOrder.noOfSheets || 0;
     } else if (i === 0) {
       target = isSheet ? jobOrder.noOfSheets || 0 : jobOrder.reelWeightKg || 0;
     } else {
