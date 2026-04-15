@@ -1052,7 +1052,7 @@ export default function Dispatch({ fgStock = [], toast }) {
                           color: C.muted,
                         }}
                       >
-                        {it.itemName} · {it.qty}
+                        {it.itemName} · {it.qty} {it.unit}
                       </span>
                     ))}
                     {r.vehicleNo && (
