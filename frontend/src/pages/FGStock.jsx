@@ -488,28 +488,26 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
         />
       </div>
 
-      {}
-      <div
-        style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}
-      >
-        {["All", ...categories].map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setFilterCat(cat)}
-            style={{
-              padding: "5px 16px",
-              borderRadius: 5,
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: "pointer",
-              background: filterCat === cat ? "#2196F3" : "transparent",
-              color: filterCat === cat ? "#fff" : "#888",
-              border: `1px solid ${filterCat === cat ? "#2196F3" : "#333"}`,
-            }}
-          >
-            {cat}
-          </button>
-        ))}
+      <div style={{ marginBottom: 14 }}>
+        <select
+          value={filterCat}
+          onChange={(e) => setFilterCat(e.target.value)}
+          style={{
+            ...inputStyle,
+            width: 250,
+            cursor: "pointer",
+            fontWeight: 700,
+            background: filterCat !== "All" ? "#2196F311" : "#141414",
+            borderColor: filterCat !== "All" ? "#2196F3" : "#2a2a2a",
+          }}
+        >
+          <option value="All">All Categories ({fgStock.length})</option>
+          {categories.map((cat) => (
+            <option key={cat} value={cat}>
+              {cat}
+            </option>
+          ))}
+        </select>
       </div>
 
       {}
@@ -600,7 +598,7 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
                           fontSize: 11,
                         }}
                       >
-                        {s.itemCode || s.code || s.joNo || "-"}
+                        {s.itemCode || (s.code && !s.code.startsWith("JO-") ? s.code : "-")}
                       </td>
                       <td
                         style={{
