@@ -1,40 +1,44 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const fgStockSchema = new mongoose.Schema({
-  itemName: {
-    type: String,
-    required: true
+const fgStockSchema = new mongoose.Schema(
+  {
+    itemName: {
+      type: String,
+      required: true,
+    },
+    joNo: String,
+    soRef: String,
+    clientName: String,
+    qty: {
+      type: Number,
+      default: 0,
+    },
+    unit: String,
+    price: Number,
+    category: String,
+    reorder: {
+      type: Number,
+      default: 0,
+    },
+    addedOn: {
+      type: Date,
+      default: Date.now,
+    },
+    lastUpdated: {
+      type: Date,
+      default: Date.now,
+    },
   },
-  joNo: String,
-  soRef: String,
-  clientName: String,
-  qty: {
-    type: Number,
-    default: 0
+  {
+    timestamps: true,
   },
-  unit: String,
-  price: Number,
-  category: String,
-  reorder: {
-    type: Number,
-    default: 0
-  },
-  addedOn: {
-    type: Date,
-    default: Date.now
-  },
-  lastUpdated: {
-    type: Date,
-    default: Date.now
-  }
-}, {
-  timestamps: true
-});
+);
 
+fgStockSchema.index({ itemName: 1 }, { unique: true });
 
-fgStockSchema.pre('save', function(next) {
+fgStockSchema.pre("save", function (next) {
   this.lastUpdated = new Date();
   next();
 });
 
-module.exports = mongoose.model('FGStock', fgStockSchema);
+module.exports = mongoose.model("FGStock", fgStockSchema);

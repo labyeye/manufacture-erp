@@ -47,7 +47,9 @@ exports.create = async (req, res) => {
     if (invoiceNo) {
       let query = { invoiceNo: invoiceNo.trim() };
       if (vendorName) {
-        query.vendorName = { $regex: new RegExp(`^${vendorName.trim()}$`, "i") };
+        query.vendorName = {
+          $regex: new RegExp(`^${vendorName.trim()}$`, "i"),
+        };
       }
       const existingInward = await MaterialInward.findOne(query);
       if (existingInward) {
@@ -94,6 +96,19 @@ exports.create = async (req, res) => {
                 message: `Excess receiving not allowed for ${key}. Ordered: ${ordered}, Maximum Allowed (20% excess): ${allowed}, Trying to receive: ${previouslyReceived + incoming}`,
               });
             }
+
+            const incomingRate = Number(it.rate) || Number(it.price) || 0;
+            const poItem = po.items.find(
+              (pi) => (pi.itemName || pi.productCode || "unknown") === key,
+            );
+            if (poItem) {
+              const poRate = Number(poItem.rate) || Number(poItem.price) || 0;
+              if (poRate > 0 && incomingRate > poRate) {
+                return res.status(400).json({
+                  message: `Material Inward price (${incomingRate}) cannot be higher than Purchase Order price (${poRate}) for ${key}.`,
+                });
+              }
+            }
           }
         }
       }
@@ -117,24 +132,20 @@ exports.create = async (req, res) => {
 
     await inward.save();
 
-    // Auto-update RM Stock
     try {
       const RawMaterialStock = require("../models/RawMaterialStock");
       for (const item of items) {
         if (item.materialType === "Raw Material" || !item.materialType) {
           try {
-            // Normalize product code
             const itemCode = (item.productCode || "").trim() || null;
             const itemCategory = item.category || item.rmItem || "General";
             const itemSubCategory =
               item.subCategory || item.paperType || "Standard";
 
-            // Build a descriptive name if not provided
             const itemName =
               item.itemName ||
               `${itemCategory} | ${itemSubCategory}${item.gsm ? ` | ${item.gsm}gsm` : ""}${item.widthMm ? ` | ${item.widthMm}mm` : ""}`;
 
-            // We only upsert if we have a code, otherwise we might create duplicates
             const query = itemCode
               ? { code: itemCode }
               : { name: itemName, category: itemCategory };
@@ -170,7 +181,6 @@ exports.create = async (req, res) => {
               item.itemName || item.productCode,
               itemErr,
             );
-            // We continue with other items
           }
         }
       }
@@ -237,7 +247,9 @@ exports.update = async (req, res) => {
     if (invoiceNo) {
       let query = { invoiceNo: invoiceNo.trim(), _id: { $ne: req.params.id } };
       if (vendorName) {
-        query.vendorName = { $regex: new RegExp(`^${vendorName.trim()}$`, "i") };
+        query.vendorName = {
+          $regex: new RegExp(`^${vendorName.trim()}$`, "i"),
+        };
       }
       const existingInward = await MaterialInward.findOne(query);
       if (existingInward) {
@@ -289,6 +301,19 @@ exports.update = async (req, res) => {
               return res.status(400).json({
                 message: `Excess receiving not allowed for ${key}. Ordered: ${ordered}, Maximum Allowed (20% excess): ${allowed}, Trying to receive: ${previouslyReceived + incoming}`,
               });
+            }
+
+            const incomingRate = Number(it.rate) || Number(it.price) || 0;
+            const poItem = po.items.find(
+              (pi) => (pi.itemName || pi.productCode || "unknown") === key,
+            );
+            if (poItem) {
+              const poRate = Number(poItem.rate) || Number(poItem.price) || 0;
+              if (poRate > 0 && incomingRate > poRate) {
+                return res.status(400).json({
+                  message: `Material Inward price (${incomingRate}) cannot be higher than Purchase Order price (${poRate}) for ${key}.`,
+                });
+              }
             }
           }
         }

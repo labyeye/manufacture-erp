@@ -1,32 +1,36 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const consumableStockSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true
+const consumableStockSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+    },
+    category: String,
+    qty: {
+      type: Number,
+      default: 0,
+    },
+    unit: String,
+    reorderLevel: {
+      type: Number,
+      default: 10,
+    },
+    lastUpdated: {
+      type: Date,
+      default: Date.now,
+    },
   },
-  category: String,
-  qty: {
-    type: Number,
-    default: 0
+  {
+    timestamps: true,
   },
-  unit: String,
-  reorderLevel: {
-    type: Number,
-    default: 10
-  },
-  lastUpdated: {
-    type: Date,
-    default: Date.now
-  }
-}, {
-  timestamps: true
-});
+);
 
+consumableStockSchema.index({ name: 1 }, { unique: true });
 
-consumableStockSchema.pre('save', function(next) {
+consumableStockSchema.pre("save", function (next) {
   this.lastUpdated = new Date();
   next();
 });
 
-module.exports = mongoose.model('ConsumableStock', consumableStockSchema);
+module.exports = mongoose.model("ConsumableStock", consumableStockSchema);

@@ -49,7 +49,7 @@ export default function MaterialInward({
   const uid = () => Math.random().toString(36).substr(2, 9);
   const fmt = (n) => (+n || 0).toLocaleString("en-IN");
 
-  // Removed static constants - now using CategoryMaster API data
+  
 
   const blankHeader = {
     date: today(),
@@ -99,7 +99,7 @@ export default function MaterialInward({
   const [drDateFrom, setDrDateFrom] = useState("");
   const [drDateTo, setDrDateTo] = useState("");
 
-  // Get Raw Material items from CategoryMaster + ItemMaster
+  
   const rmItems = useMemo(() => {
     const rmCat = Object.values(categoryMaster || {}).find(
       (c) => (c.type || "").trim().toLowerCase() === "raw material",
@@ -115,7 +115,7 @@ export default function MaterialInward({
     return [...new Set([...fromMaster, ...fromItems])].map((k) => k.trim());
   }, [categoryMaster, itemMasterItems]);
 
-  // Get paper types (subtypes) for selected RM Item
+  
   const subCategoriesByItem = useMemo(() => {
     const result = {};
     const rmCat = Object.values(categoryMaster || {}).find(

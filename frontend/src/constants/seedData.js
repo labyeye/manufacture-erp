@@ -200,6 +200,7 @@ export const DEFAULT_ROLES = {
       "sales",
       "jobs",
       "production",
+      "printingmaster",
       "calendar",
       "dispatch",
       "rawstock",
@@ -217,7 +218,7 @@ export const DEFAULT_ROLES = {
   Production: {
     label: "Production",
     color: "#f59e0b",
-    tabs: ["dashboard", "production", "calendar", "jobs"],
+    tabs: ["dashboard", "production", "printingmaster", "calendar", "jobs"],
   },
   Store: {
     label: "Store",
@@ -239,23 +240,27 @@ export const DEFAULT_ROLES = {
 export const TABS = [
   { id: "dashboard", icon: "📊", label: "Dashboard" },
   { id: "search", icon: "🔍", label: "Global Search" },
-  { id: "purchase", icon: "🛒", label: "Purchase Orders" },
-  { id: "inward", icon: "🚚", label: "Material Inward" },
+
   { id: "sales", icon: "🧾", label: "Sales Orders" },
   { id: "jobs", icon: "⚙️", label: "Job Orders" },
-  { id: "production", icon: "🔧", label: "Production" },
+  { id: "production", icon: "🔧", label: "Production Update" },
   { id: "printingmaster", icon: "🖨️", label: "Printing Detail Master" },
   { id: "calendar", icon: "📅", label: "Production Calendar" },
   { id: "dispatch", icon: "🚛", label: "Dispatch" },
+  { id: "inward", icon: "🚚", label: "Material Inward" },
+  { id: "purchase", icon: "🛒", label: "Purchase Orders" },
+
   { id: "rawstock", icon: "📦", label: "RM Stock" },
   { id: "fg", icon: "🏭", label: "FG Stock" },
   { id: "consumablestock", icon: "🗂️", label: "Consumable Stock" },
+
   { id: "vendormaster", icon: "🏪", label: "Vendor Master" },
   { id: "clientmaster", icon: "👥", label: "Client Master" },
   { id: "sizemaster", icon: "📐", label: "Category Master" },
   { id: "itemmaster", icon: "📋", label: "Item Master" },
   { id: "machinemaster", icon: "🏗️", label: "Machine Master" },
   { id: "companymaster", icon: "🏢", label: "Company Master" },
+
   { id: "users", icon: "👥", label: "User Management" },
 ];
 

@@ -1,5 +1,4 @@
-const RawMaterialStock = require('../models/RawMaterialStock');
-
+const RawMaterialStock = require("../models/RawMaterialStock");
 
 exports.getAllStock = async (req, res) => {
   try {
@@ -13,27 +12,25 @@ exports.getAllStock = async (req, res) => {
 
     res.json({ stock });
   } catch (error) {
-    console.error('Get all raw material stock error:', error);
-    res.status(500).json({ error: 'Failed to fetch raw material stock' });
+    console.error("Get all raw material stock error:", error);
+    res.status(500).json({ error: "Failed to fetch raw material stock" });
   }
 };
-
 
 exports.getStockById = async (req, res) => {
   try {
     const stock = await RawMaterialStock.findById(req.params.id);
 
     if (!stock) {
-      return res.status(404).json({ error: 'Stock item not found' });
+      return res.status(404).json({ error: "Stock item not found" });
     }
 
     res.json(stock);
   } catch (error) {
-    console.error('Get stock item error:', error);
-    res.status(500).json({ error: 'Failed to fetch stock item' });
+    console.error("Get stock item error:", error);
+    res.status(500).json({ error: "Failed to fetch stock item" });
   }
 };
-
 
 exports.createStock = async (req, res) => {
   try {
@@ -49,18 +46,30 @@ exports.createStock = async (req, res) => {
       weightPerSheet,
       sheetSize,
       location,
-      reorderLevel
+      reorderLevel,
     } = req.body;
 
     if (!name) {
-      return res.status(400).json({ error: 'Name is required' });
+      return res.status(400).json({ error: "Name is required" });
     }
 
-    
     if (code) {
       const existing = await RawMaterialStock.findOne({ code });
       if (existing) {
-        return res.status(400).json({ error: 'Stock item with this code already exists' });
+        return res
+          .status(400)
+          .json({ error: "Stock item with this code already exists" });
+      }
+    }
+
+    if (name) {
+      const existingName = await RawMaterialStock.findOne({
+        name: { $regex: new RegExp(`^${name.trim()}$`, "i") },
+      });
+      if (existingName) {
+        return res
+          .status(400)
+          .json({ error: "Stock item with this name already exists" });
       }
     }
 
@@ -76,18 +85,17 @@ exports.createStock = async (req, res) => {
       weightPerSheet,
       sheetSize,
       location,
-      reorderLevel: reorderLevel || 50
+      reorderLevel: reorderLevel || 50,
     });
 
     await stock.save();
 
     res.status(201).json({ stock });
   } catch (error) {
-    console.error('Create stock error:', error);
-    res.status(500).json({ error: 'Failed to create stock item' });
+    console.error("Create stock error:", error);
+    res.status(500).json({ error: "Failed to create stock item" });
   }
 };
-
 
 exports.updateStock = async (req, res) => {
   try {
@@ -103,26 +111,38 @@ exports.updateStock = async (req, res) => {
       weightPerSheet,
       sheetSize,
       location,
-      reorderLevel
+      reorderLevel,
     } = req.body;
 
     const stock = await RawMaterialStock.findById(req.params.id);
     if (!stock) {
-      return res.status(404).json({ error: 'Stock item not found' });
+      return res.status(404).json({ error: "Stock item not found" });
     }
 
-    
     if (code && code !== stock.code) {
       const existing = await RawMaterialStock.findOne({
         code,
-        _id: { $ne: req.params.id }
+        _id: { $ne: req.params.id },
       });
       if (existing) {
-        return res.status(400).json({ error: 'Stock item with this code already exists' });
+        return res
+          .status(400)
+          .json({ error: "Stock item with this code already exists" });
       }
     }
 
-    
+    if (name && name !== stock.name) {
+      const existingName = await RawMaterialStock.findOne({
+        name: { $regex: new RegExp(`^${name.trim()}$`, "i") },
+        _id: { $ne: req.params.id },
+      });
+      if (existingName) {
+        return res
+          .status(400)
+          .json({ error: "Stock item with this name already exists" });
+      }
+    }
+
     if (name !== undefined) stock.name = name;
     if (code !== undefined) stock.code = code;
     if (category !== undefined) stock.category = category;
@@ -140,70 +160,66 @@ exports.updateStock = async (req, res) => {
 
     res.json({ stock });
   } catch (error) {
-    console.error('Update stock error:', error);
-    res.status(500).json({ error: 'Failed to update stock item' });
+    console.error("Update stock error:", error);
+    res.status(500).json({ error: "Failed to update stock item" });
   }
 };
-
 
 exports.adjustStock = async (req, res) => {
   try {
     const { adjustment, reason } = req.body;
 
     if (adjustment === undefined) {
-      return res.status(400).json({ error: 'Adjustment amount is required' });
+      return res.status(400).json({ error: "Adjustment amount is required" });
     }
 
     const stock = await RawMaterialStock.findById(req.params.id);
     if (!stock) {
-      return res.status(404).json({ error: 'Stock item not found' });
+      return res.status(404).json({ error: "Stock item not found" });
     }
 
     stock.qty = (stock.qty || 0) + adjustment;
 
-    
     if (stock.qty < 0) {
-      return res.status(400).json({ error: 'Insufficient stock' });
+      return res.status(400).json({ error: "Insufficient stock" });
     }
 
     await stock.save();
 
     res.json({
-      message: 'Stock adjusted successfully',
-      stock
+      message: "Stock adjusted successfully",
+      stock,
     });
   } catch (error) {
-    console.error('Adjust stock error:', error);
-    res.status(500).json({ error: 'Failed to adjust stock' });
+    console.error("Adjust stock error:", error);
+    res.status(500).json({ error: "Failed to adjust stock" });
   }
 };
-
 
 exports.deleteStock = async (req, res) => {
   try {
     const stock = await RawMaterialStock.findByIdAndDelete(req.params.id);
 
     if (!stock) {
-      return res.status(404).json({ error: 'Stock item not found' });
+      return res.status(404).json({ error: "Stock item not found" });
     }
 
-    res.json({ message: 'Stock item deleted successfully' });
+    res.json({ message: "Stock item deleted successfully" });
   } catch (error) {
-    console.error('Delete stock error:', error);
-    res.status(500).json({ error: 'Failed to delete stock item' });
+    console.error("Delete stock error:", error);
+    res.status(500).json({ error: "Failed to delete stock item" });
   }
 };
-
 
 exports.getLowStock = async (req, res) => {
   try {
     const lowStock = await RawMaterialStock.find({
-      $expr: { $lte: ['$qty', '$reorderLevel'] }
+      $expr: { $lte: ["$qty", "$reorderLevel"] },
     }).sort({ qty: 1 });
 
     res.json({ stock: lowStock });
   } catch (error) {
-    console.error('Get low stock error:', error);
-    res.status(500).json({ error: 'Failed to fetch low stock items' });
+    console.error("Get low stock error:", error);
+    res.status(500).json({ error: "Failed to fetch low stock items" });
   }
 };

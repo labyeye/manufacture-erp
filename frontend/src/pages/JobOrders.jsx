@@ -14,7 +14,12 @@ import {
   DateRangeFilter,
 } from "../components/ui/BasicComponents";
 import { DatePicker } from "../components/ui/DatePicker";
-import { jobOrdersAPI, salesOrdersAPI, rawMaterialStockAPI } from "../api/auth";
+import {
+  jobOrdersAPI,
+  salesOrdersAPI,
+  rawMaterialStockAPI,
+  printingDetailMasterAPI,
+} from "../api/auth";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 const today = () => new Date().toISOString().slice(0, 10);
@@ -60,7 +65,7 @@ const SubLabel = ({ text }) => (
     style={{
       fontSize: 11,
       fontWeight: 700,
-      letterSpacing: "0.09em",
+      letterSpacing: "normal",
       color: C.yellow || "#facc15",
       textTransform: "uppercase",
       marginBottom: 14,
@@ -157,10 +162,10 @@ export default function JobOrders(props) {
       if (!basicMatch) return false;
 
       if (isSheet) {
-        // Match dimensions if it's a sheet (e.g. "370x652mm")
+        
         const sSize = (s.sheetSize || "").toLowerCase();
         const hSize = `${header.sheetW}x${header.sheetL}${header.sheetUom || "mm"}`;
-        const hSizeAlt = `${header.sheetW}x${header.sheetL}`; // fallback without uom
+        const hSizeAlt = `${header.sheetW}x${header.sheetL}`; 
         return sSize.includes(hSize) || sSize.includes(hSizeAlt);
       }
 
@@ -239,16 +244,59 @@ export default function JobOrders(props) {
   const fetchSalesOrders = async () => {
     try {
       const res = await salesOrdersAPI.getAll();
-      setSalesOrders(res.salesOrders || []);
+      const list = res.salesOrders || res.data || (Array.isArray(res) ? res : []);
+      setSalesOrders(list);
     } catch (error) {
       console.error("Failed to fetch sales orders:", error);
     }
   };
+
+  useEffect(() => {
+    if (header.itemName && header.clientName && view === "form" && !editId) {
+      const fetchPrintingDetails = async () => {
+        try {
+          const res = await printingDetailMasterAPI.getByItemAndClient(
+            header.itemName,
+            header.clientName,
+          );
+          if (res) {
+            setHeader((h) => ({
+              ...h,
+              printing: res.printing || h.printing,
+              plate: res.plate || h.plate,
+              processes:
+                res.process && res.process.length > 0
+                  ? res.process
+                  : h.processes,
+              paperCategory: res.paperCategory || h.paperCategory,
+              paperType: res.paperType || h.paperType,
+              paperGsm: res.paperGsm || h.paperGsm,
+              noOfUps: res.noOfUps || h.noOfUps,
+              sheetUom: res.sheetUom || h.sheetUom,
+              sheetW: res.sheetW || h.sheetW,
+              sheetL: res.sheetL || h.sheetL,
+              reelWidthMm: res.reelWidthMm || h.reelWidthMm,
+              cuttingLengthMm: res.cuttingLengthMm || h.cuttingLengthMm,
+              noOfSheets: calcSheets(h.orderQty, res.noOfUps || h.noOfUps),
+            }));
+          }
+        } catch (err) {
+          
+        }
+      };
+      fetchPrintingDetails();
+    }
+  }, [header.itemName, header.clientName, view, editId]);
+
   const [drDateFrom, setDrDateFrom] = useState("");
   const [drDateTo, setDrDateTo] = useState("");
 
   const soOptions = useMemo(
-    () => (salesOrders || []).filter((s) => !["Issued", "Completed", "Closed", "Cancelled"].includes(s.status)),
+    () =>
+      (salesOrders || []).filter(
+        (s) =>
+          !["Issued", "Completed", "Closed", "Cancelled"].includes(s.status),
+      ),
     [salesOrders],
   );
 
@@ -270,7 +318,7 @@ export default function JobOrders(props) {
           updated.deliveryDate = so.deliveryDate || "";
           const soItems = so.items || [];
           if (soItems.length > 0) {
-            // Find first item that doesn't have a JO yet
+            
             const firstAvailable = soItems.find(
               (it) =>
                 !jobOrders.some(
@@ -280,7 +328,7 @@ export default function JobOrders(props) {
                     jo._id !== editId,
                 ),
             );
-            const it = firstAvailable || soItems[0]; // fallback to first if all have JOs (e.g. for re-editing)
+            const it = firstAvailable || soItems[0]; 
 
             updated.itemName = it.itemName || "";
             updated.size = it.size || "";
@@ -300,8 +348,8 @@ export default function JobOrders(props) {
       if (
         ["paperCategory", "paperType", "paperGsm", "reelWidthMm"].includes(k)
       ) {
-        // We intentionally do not overwrite updated.itemName anymore
-        // It stays mapped to the Selection from Sales Orders (FG Item).
+        
+        
       }
 
       if (["sheetW", "sheetL", "sheetUom"].includes(k)) {
@@ -349,15 +397,28 @@ export default function JobOrders(props) {
 
   const validateRMStock = () => {
     if (header.paperCategory && header.paperType && header.paperGsm) {
-      if (!matchedStock || (Number(matchedStock.qty || 0) <= 0 && Number(matchedStock.weight || 0) <= 0)) {
+      if (
+        !matchedStock ||
+        (Number(matchedStock.qty || 0) <= 0 &&
+          Number(matchedStock.weight || 0) <= 0)
+      ) {
         const stockName = `${header.paperCategory} | ${header.paperType} | ${header.paperGsm}gsm`;
         toast(`Insufficient RM stock: ${stockName}`, "error");
         return false;
       }
     }
 
-    if (header.hasSecondPaper && header.paperCategory2 && header.paperType2 && header.paperGsm2) {
-      if (!matchedStock2 || (Number(matchedStock2.qty || 0) <= 0 && Number(matchedStock2.weight || 0) <= 0)) {
+    if (
+      header.hasSecondPaper &&
+      header.paperCategory2 &&
+      header.paperType2 &&
+      header.paperGsm2
+    ) {
+      if (
+        !matchedStock2 ||
+        (Number(matchedStock2.qty || 0) <= 0 &&
+          Number(matchedStock2.weight || 0) <= 0)
+      ) {
         const stockName = `${header.paperCategory2} | ${header.paperType2} | ${header.paperGsm2}gsm`;
         toast(`Insufficient RM stock (Second Paper): ${stockName}`, "error");
         return false;
@@ -445,7 +506,7 @@ export default function JobOrders(props) {
         const res = await jobOrdersAPI.create(payload);
         toast(`Job Order ${res.joNo} created successfully`, "success");
 
-        // --- STOCK DEDUCTION LOGIC ---
+        
         const handleDeduction = async (
           stock,
           category,
@@ -474,7 +535,7 @@ export default function JobOrders(props) {
           await rawMaterialStockAPI.update(stock._id, updateData);
         };
 
-        // Deduct for Primary Paper
+        
         await handleDeduction(
           matchedStock,
           header.paperCategory,
@@ -482,13 +543,13 @@ export default function JobOrders(props) {
           header.reelWeightKg,
         );
 
-        // Deduct for Second Paper
+        
         if (header.hasSecondPaper) {
           await handleDeduction(
             matchedStock2,
             header.paperCategory2,
             header.noOfSheets2,
-            header.reelWeightKg2, // Wait, check if JO has reelWeightKg2
+            header.reelWeightKg2, 
           );
         }
       }
@@ -1037,7 +1098,7 @@ export default function JobOrders(props) {
             </Field>
           </div>
 
-          {/* Machine Assignment Section */}
+          {}
           {(header.processes || []).length > 0 && (
             <div style={{ marginBottom: 24 }}>
               <SubLabel text="Machine Assignment" />
@@ -1137,7 +1198,7 @@ export default function JobOrders(props) {
           <SubLabel text="Sheet / Reel Details" />
 
           {}
-          {/* Row 1: 5 Columns */}
+          {}
           <div
             style={{
               display: "grid",
@@ -1214,7 +1275,9 @@ export default function JobOrders(props) {
                 {header.paperCategory &&
                   header.paperType &&
                   header.paperGsm &&
-                  (header.paperCategory === "Paper Reel" ? !!header.reelWidthMm : !!(header.sheetW && header.sheetL)) && (
+                  (header.paperCategory === "Paper Reel"
+                    ? !!header.reelWidthMm
+                    : !!(header.sheetW && header.sheetL)) && (
                     <div
                       style={{
                         fontSize: 10,
@@ -1242,7 +1305,9 @@ export default function JobOrders(props) {
                 {header.paperCategory &&
                   header.paperType &&
                   header.paperGsm &&
-                  (header.paperCategory === "Paper Reel" ? !!header.reelWidthMm : !!(header.sheetW && header.sheetL)) && (
+                  (header.paperCategory === "Paper Reel"
+                    ? !!header.reelWidthMm
+                    : !!(header.sheetW && header.sheetL)) && (
                     <div
                       style={{
                         fontSize: 10,
@@ -1390,7 +1455,7 @@ export default function JobOrders(props) {
                 style={{
                   fontSize: 11,
                   fontWeight: 700,
-                  letterSpacing: "0.09em",
+                  letterSpacing: "normal",
                   color: C.muted,
                   textTransform: "uppercase",
                   marginBottom: 6,

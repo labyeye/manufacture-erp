@@ -539,7 +539,7 @@ export default function RMStock({
         Live inventory of all raw materials
       </p>
 
-      {/* Stats row */}
+      {}
       <div
         style={{
           display: "grid",
@@ -563,7 +563,7 @@ export default function RMStock({
         />
       </div>
 
-      {/* Action bar */}
+      {}
       <div
         style={{
           display: "flex",
@@ -637,7 +637,7 @@ export default function RMStock({
         />
       </div>
 
-      {/* Tabs */}
+      {}
       <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
         {categories.map((cat) => (
           <button
@@ -659,7 +659,7 @@ export default function RMStock({
         ))}
       </div>
 
-      {/* Table Section */}
+      {}
       <div
         style={{
           background: "#141416",
@@ -842,7 +842,7 @@ export default function RMStock({
           </tbody>
         </table>
 
-        {/* Legend */}
+        {}
         <div style={{ padding: "12px 16px", borderTop: "1px solid #2a2a2e", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontSize: 11, color: "#666" }}>{filtered.length} items</span>
           <div style={{ display: "flex", gap: 16 }}>

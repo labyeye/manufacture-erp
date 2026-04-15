@@ -197,7 +197,9 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
               try {
                 await fgStockAPI.update(item._id, { qty: +val });
                 setFgStock((prev) =>
-                  prev.map((s) => (s._id === item._id ? { ...s, qty: +val } : s)),
+                  prev.map((s) =>
+                    s._id === item._id ? { ...s, qty: +val } : s,
+                  ),
                 );
                 toast("Quantity updated", "success");
               } catch (err) {
@@ -307,7 +309,7 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
         const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
         const imported = [];
-        // Skip header row
+
         for (let i = 1; i < json.length; i++) {
           const row = json[i];
           if (row && (row[0] || row[1])) {
@@ -763,13 +765,17 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
         </div>
       </div>
       {editingItem && (
-        <EditModal 
-          item={editingItem} 
-          onClose={() => setEditingItem(null)} 
+        <EditModal
+          item={editingItem}
+          onClose={() => setEditingItem(null)}
           onSave={async (updatedData) => {
             try {
               await fgStockAPI.update(editingItem._id, updatedData);
-              setFgStock(prev => prev.map(s => s._id === editingItem._id ? { ...s, ...updatedData } : s));
+              setFgStock((prev) =>
+                prev.map((s) =>
+                  s._id === editingItem._id ? { ...s, ...updatedData } : s,
+                ),
+              );
               setEditingItem(null);
               toast("Stock item updated", "success");
             } catch (err) {
@@ -796,7 +802,7 @@ function EditModal({ item, onClose, onSave }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const modalStyle = {
@@ -850,61 +856,119 @@ function EditModal({ item, onClose, onSave }) {
   return (
     <div style={modalStyle}>
       <div style={contentStyle} className="fade-in">
-        <h3 style={{ margin: "0 0 20px 0", color: "#2196F3", fontSize: 18 }}>Edit Stock Item</h3>
-        
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <h3 style={{ margin: "0 0 20px 0", color: "#2196F3", fontSize: 18 }}>
+          Edit Stock Item
+        </h3>
+
+        <div
+          style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}
+        >
           <div style={fieldStyle}>
             <label style={labelStyle}>Item Name</label>
-            <input name="itemName" value={formData.itemName} onChange={handleChange} style={inputStyle} />
+            <input
+              name="itemName"
+              value={formData.itemName}
+              onChange={handleChange}
+              style={inputStyle}
+            />
           </div>
           <div style={fieldStyle}>
             <label style={labelStyle}>Client Name</label>
-            <input name="clientName" value={formData.clientName} onChange={handleChange} style={inputStyle} />
+            <input
+              name="clientName"
+              value={formData.clientName}
+              onChange={handleChange}
+              style={inputStyle}
+            />
           </div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div
+          style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}
+        >
           <div style={fieldStyle}>
             <label style={labelStyle}>Category</label>
-            <input name="category" value={formData.category} onChange={handleChange} style={inputStyle} />
+            <input
+              name="category"
+              value={formData.category}
+              onChange={handleChange}
+              style={inputStyle}
+            />
           </div>
           <div style={fieldStyle}>
             <label style={labelStyle}>Job Order #</label>
-            <input name="joNo" value={formData.joNo} onChange={handleChange} style={inputStyle} />
+            <input
+              name="joNo"
+              value={formData.joNo}
+              onChange={handleChange}
+              style={inputStyle}
+            />
           </div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr 1fr",
+            gap: 16,
+          }}
+        >
           <div style={fieldStyle}>
             <label style={labelStyle}>Quantity</label>
-            <input type="number" name="qty" value={formData.qty} onChange={handleChange} style={inputStyle} />
+            <input
+              type="number"
+              name="qty"
+              value={formData.qty}
+              onChange={handleChange}
+              style={inputStyle}
+            />
           </div>
           <div style={fieldStyle}>
             <label style={labelStyle}>Price (₹)</label>
-            <input type="number" step="0.01" name="price" value={formData.price} onChange={handleChange} style={inputStyle} />
+            <input
+              type="number"
+              step="0.01"
+              name="price"
+              value={formData.price}
+              onChange={handleChange}
+              style={inputStyle}
+            />
           </div>
           <div style={fieldStyle}>
             <label style={labelStyle}>Reorder Level</label>
-            <input type="number" name="reorder" value={formData.reorder} onChange={handleChange} style={inputStyle} />
+            <input
+              type="number"
+              name="reorder"
+              value={formData.reorder}
+              onChange={handleChange}
+              style={inputStyle}
+            />
           </div>
         </div>
 
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginTop: 10 }}>
-          <button 
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: 12,
+            marginTop: 10,
+          }}
+        >
+          <button
             onClick={onClose}
-            style={{ 
-              padding: "10px 20px", 
-              background: "transparent", 
-              border: "1px solid #333", 
-              color: "#888", 
-              borderRadius: 6, 
+            style={{
+              padding: "10px 20px",
+              background: "transparent",
+              border: "1px solid #333",
+              color: "#888",
+              borderRadius: 6,
               cursor: "pointer",
-              fontWeight: 600
+              fontWeight: 600,
             }}
           >
             Cancel
           </button>
-          <button 
+          <button
             onClick={() => {
               const cleaned = { ...formData };
               cleaned.qty = Number(cleaned.qty);
@@ -912,14 +976,14 @@ function EditModal({ item, onClose, onSave }) {
               cleaned.reorder = Number(cleaned.reorder);
               onSave(cleaned);
             }}
-            style={{ 
-              padding: "10px 24px", 
-              background: "#2196F3", 
-              border: "none", 
-              color: "#fff", 
-              borderRadius: 6, 
+            style={{
+              padding: "10px 24px",
+              background: "#2196F3",
+              border: "none",
+              color: "#fff",
+              borderRadius: 6,
               cursor: "pointer",
-              fontWeight: 700
+              fontWeight: 700,
             }}
           >
             Save Changes

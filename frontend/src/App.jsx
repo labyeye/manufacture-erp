@@ -195,28 +195,28 @@ function AppInner({ session, onLogout, allowedTabs }) {
 
   useEffect(() => {
     fetchMasters();
-  }, []); // ✅ FIX: was [currentTab] — now fetches once on mount, not on every tab switch
+  }, []); 
 
-  // ✅ FIX: robust unwrap handles any API response shape
+  
   const unwrap = (val, ...keys) => {
     if (!val) return [];
     if (Array.isArray(val)) return val;
-    // Try each provided key
+    
     for (const key of keys) {
       if (val[key] && Array.isArray(val[key])) return val[key];
     }
-    // Try common wrapper keys
+    
     for (const key of ["data", "records", "result", "results", "list"]) {
       if (val[key] && Array.isArray(val[key])) return val[key];
     }
-    // Last resort: first array value in object
+    
     const firstArr = Object.values(val).find((v) => Array.isArray(v));
     if (firstArr) return firstArr;
     return [];
   };
 
   const fetchMasters = async () => {
-    // Helper to fetch and set state immediately after each API call finishes
+    
     const run = async (apiCall, setter, ...keys) => {
       try {
         const res = await apiCall();
@@ -227,21 +227,64 @@ function AppInner({ session, onLogout, allowedTabs }) {
       }
     };
 
-    // Trigger all fetches and await them all
+    
     await Promise.all([
       run(vendorMasterAPI.getAll, setVendorMaster, "vendors", "vendor"),
       run(clientMasterAPI.getAll, setClientMaster, "clients", "client"),
-      run(categoryMasterAPI.getAll, setCategoryMaster, "categories", "category"),
+      run(
+        categoryMasterAPI.getAll,
+        setCategoryMaster,
+        "categories",
+        "category",
+      ),
       run(itemMasterAPI.getAll, setItemMasterFG, "items", "item"),
-      run(rawMaterialStockAPI.getAll, setRawStock, "stock", "stocks", "rawStock"),
+      run(
+        rawMaterialStockAPI.getAll,
+        setRawStock,
+        "stock",
+        "stocks",
+        "rawStock",
+      ),
       run(machineMasterAPI.getAll, setMachineMaster, "machines", "machine"),
       run(fgStockAPI.getAll, setFgStock, "stock", "stocks", "fgStock"),
       run(jobOrdersAPI.getAll, setJobOrders, "jobOrders", "jobs", "job_orders"),
-      run(salesOrdersAPI.getAll, setSalesOrders, "salesOrders", "orders", "sales_orders", "so"),
-      run(purchaseOrdersAPI.getAll, setPurchaseOrders, "purchaseOrders", "orders", "purchase_orders"),
-      run(dispatchAPI.getAll, setDispatches, "dispatches", "dispatch", "deliveries"),
-      run(materialInwardAPI.getAll, setInward, "inwards", "inward", "grn", "material_inward"),
-      run(companyMasterAPI.getAll, setCompanyMaster, "companies", "company", "entities"),
+      run(
+        salesOrdersAPI.getAll,
+        setSalesOrders,
+        "salesOrders",
+        "orders",
+        "sales_orders",
+        "so",
+      ),
+      run(
+        purchaseOrdersAPI.getAll,
+        setPurchaseOrders,
+        "purchaseOrders",
+        "orders",
+        "purchase_orders",
+      ),
+      run(
+        dispatchAPI.getAll,
+        setDispatches,
+        "dispatches",
+        "dispatch",
+        "deliveries",
+      ),
+      run(
+        materialInwardAPI.getAll,
+        setInward,
+        "inwards",
+        "inward",
+        "grn",
+        "material_inward",
+      ),
+      run(
+        companyMasterAPI.getAll,
+        setCompanyMaster,
+        "companies",
+        "company",
+        "entities",
+      ),
     ]);
   };
 
@@ -381,127 +424,88 @@ function AppInner({ session, onLogout, allowedTabs }) {
         background: C.bg,
         color: C.text,
         overflow: "hidden",
+        fontFamily: "'Inter', sans-serif",
       }}
     >
-      {/* Header */}
-      <div
-        style={{
-          background: C.card,
-          borderBottom: `1px solid ${C.border}`,
-          padding: "16px 24px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          position: "sticky",
-          top: 0,
-          zIndex: 100,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ fontSize: 24 }}>🏭</span>
-          <div>
-            <h1 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>
-              Manufacturing ERP
-            </h1>
-            <p
-              style={{ fontSize: 11, color: C.muted, margin: 0, marginTop: 2 }}
-            >
-              Production & Inventory
-            </p>
-          </div>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <span style={{ fontSize: 12, color: C.muted }}>
-            👤 {session.username}{" "}
-            <span style={{ color: C.accent, fontWeight: 700 }}>
-              ({session.role})
-            </span>
-          </span>
-          <button
-            onClick={onLogout}
-            style={{
-              background: C.red + "22",
-              color: C.red,
-              border: `1px solid ${C.red}44`,
-              borderRadius: 6,
-              padding: "6px 14px",
-              fontWeight: 700,
-              fontSize: 12,
-              cursor: "pointer",
-            }}
-          >
-            Logout
-          </button>
-        </div>
-      </div>
-
-      {/* Body */}
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-        {/* Sidebar */}
+        {}
         <div
           style={{
-            background: C.surface,
+            background: "#0a0a0a",
             borderRight: `1px solid ${C.border}`,
             width: 240,
-            padding: "16px 0",
-            overflowY: "auto",
             display: "flex",
             flexDirection: "column",
             flexShrink: 0,
             maxHeight: "100%",
           }}
         >
-          {TABS.filter((tab) => allowedTabs.includes(tab.id)).map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setCurrentTab(tab.id)}
-              style={{
-                width: "100%",
-                padding: "12px 16px",
-                textAlign: "left",
-                border: "none",
-                background: currentTab === tab.id ? C.card : "transparent",
-                color: currentTab === tab.id ? C.accent : C.muted,
-                borderLeft:
-                  currentTab === tab.id
-                    ? `3px solid ${C.accent}`
-                    : "3px solid transparent",
-                cursor: "pointer",
-                transition: "all .15s",
-                fontSize: 13,
-                fontWeight: 600,
-              }}
-              onMouseEnter={(e) => {
-                if (currentTab !== tab.id)
-                  e.currentTarget.style.background = C.border + "22";
-              }}
-              onMouseLeave={(e) => {
-                if (currentTab !== tab.id)
-                  e.currentTarget.style.background = "transparent";
-              }}
-            >
-              <span
+          {}
+          <div style={{ padding: "24px 20px", borderBottom: `1px solid ${C.border}44` }}>
+            <div style={{ color: C.accent, fontWeight: 900, fontSize: 13, letterSpacing: 'normal', textTransform: 'uppercase' }}>MANUFACTUREIQ</div>
+            <div style={{ color: "#fff", fontWeight: 800, fontSize: 22, marginTop: -2 }}>ERP System</div>
+            <div style={{ color: C.muted, fontSize: 10, marginTop: 4 }}>Manufacturing Suite</div>
+          </div>
+
+          <div style={{ flex: 1, overflowY: "auto", padding: "10px 0" }}>
+            {TABS.filter((tab) => allowedTabs.includes(tab.id)).map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setCurrentTab(tab.id)}
                 style={{
-                  marginRight: 12,
-                  width: 20,
-                  textAlign: "center",
-                  fontSize: 16,
+                  width: "100%",
+                  padding: "12px 20px",
+                  textAlign: "left",
+                  border: "none",
+                  background: currentTab === tab.id ? "#1e293b66" : "transparent",
+                  color: currentTab === tab.id ? "#fff" : "#94a3b8",
+                  borderLeft: currentTab === tab.id ? `3px solid ${C.accent}` : "3px solid transparent",
+                  cursor: "pointer",
+                  transition: "all .15s",
+                  fontSize: 13,
+                  fontWeight: currentTab === tab.id ? 600 : 500,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
                 }}
               >
-                {tab.icon}
-              </span>
-              {tab.label}
+                <span style={{ fontSize: 18, opacity: currentTab === tab.id ? 1 : 0.7 }}>{tab.icon}</span>
+                <span style={{ letterSpacing: "normal" }}>{tab.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {}
+          <div style={{ padding: 16, borderTop: `1px solid ${C.border}44`, background: "#0a0a0a" }}>
+             <div style={{ fontSize: 11, color: C.muted, marginBottom: 8 }}>
+                👤 {session.username} ({session.role})
+             </div>
+             <button
+              onClick={onLogout}
+              style={{
+                width: "100%",
+                background: "#450a0a",
+                color: "#ef4444",
+                border: "1px solid #7f1d1d",
+                borderRadius: 6,
+                padding: "8px",
+                fontWeight: 700,
+                fontSize: 11,
+                cursor: "pointer",
+              }}
+            >
+              Logout System
             </button>
-          ))}
+          </div>
         </div>
 
-        {/* Main content */}
-        <div style={{ flex: 1, padding: 24, overflowY: "auto" }}>
+        {}
+        <div style={{ flex: 1, padding: 24, overflowY: "auto", position: "relative" }}>
           {renderPage()}
         </div>
       </div>
 
-      {/* Toast */}
+      {}
       {toast && (
         <Toast
           msg={toast.msg}

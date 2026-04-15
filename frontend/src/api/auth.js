@@ -1,25 +1,25 @@
-import api from './client';
+import api from "./client";
 
 export const authAPI = {
   login: async (username, password) => {
-    const response = await api.post('/auth/login', { username, password });
+    const response = await api.post("/auth/login", { username, password });
     return response.data;
   },
 
   me: async () => {
-    const response = await api.get('/auth/me');
+    const response = await api.get("/auth/me");
     return response.data;
   },
 
   logout: async () => {
-    const response = await api.post('/auth/logout');
+    const response = await api.post("/auth/logout");
     return response.data;
-  }
+  },
 };
 
 export const jobOrdersAPI = {
   getAll: async () => {
-    const response = await api.get('/job-orders');
+    const response = await api.get("/job-orders");
     return response.data;
   },
 
@@ -29,7 +29,7 @@ export const jobOrdersAPI = {
   },
 
   create: async (data) => {
-    const response = await api.post('/job-orders', data);
+    const response = await api.post("/job-orders", data);
     return response.data;
   },
 
@@ -49,7 +49,10 @@ export const jobOrdersAPI = {
   },
 
   updateStage: async (id, stageId, stageData) => {
-    const response = await api.put(`/job-orders/${id}/stage/${stageId}`, stageData);
+    const response = await api.put(
+      `/job-orders/${id}/stage/${stageId}`,
+      stageData,
+    );
     return response.data;
   },
 
@@ -60,15 +63,15 @@ export const jobOrdersAPI = {
 
   getJobCardPDF: async (id) => {
     const response = await api.get(`/job-orders/${id}/jobcard-pdf`, {
-      responseType: 'blob'
+      responseType: "blob",
     });
     return response.data;
-  }
+  },
 };
 
 export const dispatchAPI = {
   getAll: async () => {
-    const response = await api.get('/dispatch');
+    const response = await api.get("/dispatch");
     return response.data;
   },
 
@@ -78,7 +81,7 @@ export const dispatchAPI = {
   },
 
   create: async (data) => {
-    const response = await api.post('/dispatch', data);
+    const response = await api.post("/dispatch", data);
     return response.data;
   },
 
@@ -90,13 +93,12 @@ export const dispatchAPI = {
   delete: async (id) => {
     const response = await api.delete(`/dispatch/${id}`);
     return response.data;
-  }
+  },
 };
-
 
 export const salesOrdersAPI = {
   getAll: async () => {
-    const response = await api.get('/sales-orders');
+    const response = await api.get("/sales-orders");
     return response.data;
   },
 
@@ -106,7 +108,7 @@ export const salesOrdersAPI = {
   },
 
   create: async (data) => {
-    const response = await api.post('/sales-orders', data);
+    const response = await api.post("/sales-orders", data);
     return response.data;
   },
 
@@ -123,12 +125,12 @@ export const salesOrdersAPI = {
   updateStatus: async (id, status) => {
     const response = await api.patch(`/sales-orders/${id}/status`, { status });
     return response.data;
-  }
+  },
 };
 
 export const purchaseOrdersAPI = {
   getAll: async () => {
-    const response = await api.get('/purchase-orders');
+    const response = await api.get("/purchase-orders");
     return response.data;
   },
 
@@ -138,7 +140,7 @@ export const purchaseOrdersAPI = {
   },
 
   create: async (data) => {
-    const response = await api.post('/purchase-orders', data);
+    const response = await api.post("/purchase-orders", data);
     return response.data;
   },
 
@@ -153,14 +155,16 @@ export const purchaseOrdersAPI = {
   },
 
   updateStatus: async (id, status) => {
-    const response = await api.patch(`/purchase-orders/${id}/status`, { status });
+    const response = await api.patch(`/purchase-orders/${id}/status`, {
+      status,
+    });
     return response.data;
-  }
+  },
 };
 
 export const materialInwardAPI = {
   getAll: async () => {
-    const response = await api.get('/material-inward');
+    const response = await api.get("/material-inward");
     return response.data;
   },
 
@@ -170,7 +174,7 @@ export const materialInwardAPI = {
   },
 
   create: async (data) => {
-    const response = await api.post('/material-inward', data);
+    const response = await api.post("/material-inward", data);
     return response.data;
   },
 
@@ -185,14 +189,16 @@ export const materialInwardAPI = {
   },
 
   updateStatus: async (id, status) => {
-    const response = await api.patch(`/material-inward/${id}/status`, { status });
+    const response = await api.patch(`/material-inward/${id}/status`, {
+      status,
+    });
     return response.data;
-  }
+  },
 };
 
 export const categoryMasterAPI = {
   getAll: async () => {
-    const response = await api.get('/category-master');
+    const response = await api.get("/category-master");
     return response.data;
   },
 
@@ -202,7 +208,7 @@ export const categoryMasterAPI = {
   },
 
   create: async (data) => {
-    const response = await api.post('/category-master', data);
+    const response = await api.post("/category-master", data);
     return response.data;
   },
 
@@ -214,12 +220,12 @@ export const categoryMasterAPI = {
   delete: async (id) => {
     const response = await api.delete(`/category-master/${id}`);
     return response.data;
-  }
+  },
 };
 
 export const clientMasterAPI = {
   getAll: async () => {
-    const response = await api.get('/client-master');
+    const response = await api.get("/client-master");
     return response.data;
   },
 
@@ -229,7 +235,7 @@ export const clientMasterAPI = {
   },
 
   create: async (data) => {
-    const response = await api.post('/client-master', data);
+    const response = await api.post("/client-master", data);
     return response.data;
   },
 
@@ -246,12 +252,12 @@ export const clientMasterAPI = {
   updateStatus: async (id, status) => {
     const response = await api.patch(`/client-master/${id}/status`, { status });
     return response.data;
-  }
+  },
 };
 
 export const companyMasterAPI = {
   getAll: async () => {
-    const response = await api.get('/company-master');
+    const response = await api.get("/company-master");
     return response.data;
   },
 
@@ -261,7 +267,7 @@ export const companyMasterAPI = {
   },
 
   create: async (data) => {
-    const response = await api.post('/company-master', data);
+    const response = await api.post("/company-master", data);
     return response.data;
   },
 
@@ -276,14 +282,16 @@ export const companyMasterAPI = {
   },
 
   updateStatus: async (id, status) => {
-    const response = await api.patch(`/company-master/${id}/status`, { status });
+    const response = await api.patch(`/company-master/${id}/status`, {
+      status,
+    });
     return response.data;
-  }
+  },
 };
 
 export const vendorMasterAPI = {
   getAll: async () => {
-    const response = await api.get('/vendor-master');
+    const response = await api.get("/vendor-master");
     return response.data;
   },
 
@@ -293,7 +301,7 @@ export const vendorMasterAPI = {
   },
 
   create: async (data) => {
-    const response = await api.post('/vendor-master', data);
+    const response = await api.post("/vendor-master", data);
     return response.data;
   },
 
@@ -310,12 +318,12 @@ export const vendorMasterAPI = {
   updateStatus: async (id, status) => {
     const response = await api.patch(`/vendor-master/${id}/status`, { status });
     return response.data;
-  }
+  },
 };
 
 export const usersAPI = {
   getAll: async () => {
-    const response = await api.get('/auth/users');
+    const response = await api.get("/auth/users");
     return response.data;
   },
 
@@ -325,7 +333,7 @@ export const usersAPI = {
   },
 
   create: async (data) => {
-    const response = await api.post('/auth/users', data);
+    const response = await api.post("/auth/users", data);
     return response.data;
   },
 
@@ -337,12 +345,12 @@ export const usersAPI = {
   delete: async (id) => {
     const response = await api.delete(`/auth/users/${id}`);
     return response.data;
-  }
+  },
 };
 
 export const itemMasterAPI = {
   getAll: async (params) => {
-    const response = await api.get('/item-master', { params });
+    const response = await api.get("/item-master", { params });
     return response.data;
   },
 
@@ -352,7 +360,7 @@ export const itemMasterAPI = {
   },
 
   create: async (data) => {
-    const response = await api.post('/item-master', data);
+    const response = await api.post("/item-master", data);
     return response.data;
   },
 
@@ -377,14 +385,14 @@ export const itemMasterAPI = {
   },
 
   bulkImport: async (items) => {
-    const response = await api.post('/item-master/bulk-import', { items });
+    const response = await api.post("/item-master/bulk-import", { items });
     return response.data;
-  }
+  },
 };
 
 export const machineMasterAPI = {
   getAll: async (params) => {
-    const response = await api.get('/machine-master', { params });
+    const response = await api.get("/machine-master", { params });
     return response.data;
   },
 
@@ -394,7 +402,7 @@ export const machineMasterAPI = {
   },
 
   create: async (data) => {
-    const response = await api.post('/machine-master', data);
+    const response = await api.post("/machine-master", data);
     return response.data;
   },
 
@@ -409,14 +417,16 @@ export const machineMasterAPI = {
   },
 
   updateStatus: async (id, status) => {
-    const response = await api.patch(`/machine-master/${id}/status`, { status });
+    const response = await api.patch(`/machine-master/${id}/status`, {
+      status,
+    });
     return response.data;
-  }
+  },
 };
 
 export const sizeMasterAPI = {
   getAll: async () => {
-    const response = await api.get('/size-master');
+    const response = await api.get("/size-master");
     return response.data;
   },
 
@@ -426,29 +436,35 @@ export const sizeMasterAPI = {
   },
 
   addSize: async (category, size) => {
-    const response = await api.post('/size-master/add', { category, size });
+    const response = await api.post("/size-master/add", { category, size });
     return response.data;
   },
 
   updateSize: async (category, oldSize, newSize) => {
-    const response = await api.put('/size-master/update', { category, oldSize, newSize });
+    const response = await api.put("/size-master/update", {
+      category,
+      oldSize,
+      newSize,
+    });
     return response.data;
   },
 
   deleteSize: async (category, size) => {
-    const response = await api.delete('/size-master/delete', { data: { category, size } });
+    const response = await api.delete("/size-master/delete", {
+      data: { category, size },
+    });
     return response.data;
   },
 
   deleteCategory: async (category) => {
     const response = await api.delete(`/size-master/category/${category}`);
     return response.data;
-  }
+  },
 };
 
 export const printingDetailMasterAPI = {
   getAll: async (params) => {
-    const response = await api.get('/printing-detail-master', { params });
+    const response = await api.get("/printing-detail-master", { params });
     return response.data;
   },
 
@@ -458,12 +474,14 @@ export const printingDetailMasterAPI = {
   },
 
   getByItemAndClient: async (itemName, clientName) => {
-    const response = await api.get(`/printing-detail-master/item/${itemName}/client/${clientName}`);
+    const response = await api.get(
+      `/printing-detail-master/item/${itemName}/client/${clientName}`,
+    );
     return response.data;
   },
 
   create: async (data) => {
-    const response = await api.post('/printing-detail-master', data);
+    const response = await api.post("/printing-detail-master", data);
     return response.data;
   },
 
@@ -475,12 +493,19 @@ export const printingDetailMasterAPI = {
   delete: async (id) => {
     const response = await api.delete(`/printing-detail-master/${id}`);
     return response.data;
-  }
+  },
+
+  bulkImport: async (details) => {
+    const response = await api.post("/printing-detail-master/bulk-import", {
+      details,
+    });
+    return response.data;
+  },
 };
 
 export const rawMaterialStockAPI = {
   getAll: async (params) => {
-    const response = await api.get('/raw-material-stock', { params });
+    const response = await api.get("/raw-material-stock", { params });
     return response.data;
   },
 
@@ -490,12 +515,12 @@ export const rawMaterialStockAPI = {
   },
 
   getLowStock: async () => {
-    const response = await api.get('/raw-material-stock/low-stock');
+    const response = await api.get("/raw-material-stock/low-stock");
     return response.data;
   },
 
   create: async (data) => {
-    const response = await api.post('/raw-material-stock', data);
+    const response = await api.post("/raw-material-stock", data);
     return response.data;
   },
 
@@ -505,19 +530,22 @@ export const rawMaterialStockAPI = {
   },
 
   adjustStock: async (id, adjustment, reason) => {
-    const response = await api.patch(`/raw-material-stock/${id}/adjust`, { adjustment, reason });
+    const response = await api.patch(`/raw-material-stock/${id}/adjust`, {
+      adjustment,
+      reason,
+    });
     return response.data;
   },
 
   delete: async (id) => {
     const response = await api.delete(`/raw-material-stock/${id}`);
     return response.data;
-  }
+  },
 };
 
 export const fgStockAPI = {
   getAll: async (params) => {
-    const response = await api.get('/fg-stock', { params });
+    const response = await api.get("/fg-stock", { params });
     return response.data;
   },
 
@@ -527,7 +555,7 @@ export const fgStockAPI = {
   },
 
   create: async (data) => {
-    const response = await api.post('/fg-stock', data);
+    const response = await api.post("/fg-stock", data);
     return response.data;
   },
 
@@ -544,12 +572,12 @@ export const fgStockAPI = {
   delete: async (id) => {
     const response = await api.delete(`/fg-stock/${id}`);
     return response.data;
-  }
+  },
 };
 
 export const consumableStockAPI = {
   getAll: async (params) => {
-    const response = await api.get('/consumable-stock', { params });
+    const response = await api.get("/consumable-stock", { params });
     return response.data;
   },
 
@@ -559,12 +587,12 @@ export const consumableStockAPI = {
   },
 
   getLowStock: async () => {
-    const response = await api.get('/consumable-stock/low-stock');
+    const response = await api.get("/consumable-stock/low-stock");
     return response.data;
   },
 
   create: async (data) => {
-    const response = await api.post('/consumable-stock', data);
+    const response = await api.post("/consumable-stock", data);
     return response.data;
   },
 
@@ -574,14 +602,16 @@ export const consumableStockAPI = {
   },
 
   adjustStock: async (id, adjustment) => {
-    const response = await api.patch(`/consumable-stock/${id}/adjust`, { adjustment });
+    const response = await api.patch(`/consumable-stock/${id}/adjust`, {
+      adjustment,
+    });
     return response.data;
   },
 
   delete: async (id) => {
     const response = await api.delete(`/consumable-stock/${id}`);
     return response.data;
-  }
+  },
 };
 
 export default api;

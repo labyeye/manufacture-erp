@@ -62,7 +62,7 @@ export default function ProductionUpdate({
   const [searchTerm, setSearchTerm] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [editingEntry, setEditingEntry] = useState(null); // { joId, stageId }
+  const [editingEntry, setEditingEntry] = useState(null); 
 
   const fetchJobOrders = async () => {
     try {
@@ -85,7 +85,7 @@ export default function ProductionUpdate({
     [jobOrders],
   );
 
-  // Derive production records from all job orders' stage history
+  
   const allProductionRecords = useMemo(() => {
     const records = [];
     (jobOrders || []).forEach((jo) => {
@@ -163,7 +163,7 @@ export default function ProductionUpdate({
       setEntry(blankEntry);
       setEditingEntry(null);
       setErrors({});
-      fetchJobOrders(); // Refresh data to see new history and status
+      fetchJobOrders(); 
     } catch (error) {
       console.error("Production update error:", error);
       toast(error.response?.data?.error || "Failed to update production", "error");
@@ -241,16 +241,16 @@ export default function ProductionUpdate({
   const availableQty = useMemo(() => {
     if (!selectedJO || !entry.productionStage) return null;
     
-    // Sort process list according to standard STAGES workflow to ensure correct indexing
+    
     const STAGES_ORDER = ["Printing", "Varnish", "Lamination", "Die Cutting", "Formation", "Manual Formation"];
     const proc = [...(selectedJO.process || [])].sort((a, b) => STAGES_ORDER.indexOf(a) - STAGES_ORDER.indexOf(b));
     
     const idx = proc.indexOf(entry.productionStage);
     if (idx === -1) return null;
-    if (idx === 0) return null; // Hide available qty for the starting stage
+    if (idx === 0) return null; 
 
     
-    // stageQtyMap from backend is often an object after JSON serialization
+    
     const prevStage = proc[idx - 1];
     const qtyDoneInPrev = selectedJO.stageQtyMap?.[prevStage] || 
                          (selectedJO.stageHistory || [])
@@ -402,7 +402,7 @@ export default function ProductionUpdate({
                     } else if (idx === 0) {
                       target = isSheet ? (selectedJO?.noOfSheets || 0) : (selectedJO?.reelWeightKg || 0);
                     } else {
-                      // Target for next stage is the yield (good qty) of the previous stage
+                      
                       const prevS = arr[idx-1];
                       target = selectedJO?.stageQtyMap?.[prevS] || 0;
                     }
@@ -410,7 +410,7 @@ export default function ProductionUpdate({
                     const done = selectedJO?.stageTotalMap?.[s] || 0;
                     const unit = isFormation ? "" : (isSheet ? "" : " kg");
                     
-                    // Strict sequential lock: disable if ANY previous stage is incomplete
+                    
                     let disabled = false;
                     for (let i = 0; i < idx; i++) {
                       const prevS = arr[i];
@@ -426,15 +426,15 @@ export default function ProductionUpdate({
                         prevTarget = selectedJO?.stageQtyMap?.[beforePrevS] || 0;
                       }
                       
-                      // If the previous stage has no target (meaning the one before it hasn't produced yield)
-                      // OR the previous stage hasn't hit its target, lock this stage.
+                      
+                      
                       if (prevTarget <= 0 || prevDone < prevTarget) {
                         disabled = true;
                         break;
                       }
                     }
 
-                    // Strict auto-lock: disable this stage entirely if it's already fully completed!
+                    
                     if (!disabled && target > 0 && done >= target && (!editingEntry || entry.productionStage !== s)) {
                       disabled = true;
                     }

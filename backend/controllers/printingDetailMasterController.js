@@ -1,39 +1,38 @@
-const PrintingDetailMaster = require('../models/PrintingDetailMaster');
-
+const PrintingDetailMaster = require("../models/PrintingDetailMaster");
 
 exports.getAllPrintingDetails = async (req, res) => {
   try {
     const { itemName, clientName } = req.query;
 
     const filter = {};
-    if (itemName) filter.itemName = { $regex: itemName, $options: 'i' };
-    if (clientName) filter.clientName = { $regex: clientName, $options: 'i' };
+    if (itemName) filter.itemName = { $regex: itemName, $options: "i" };
+    if (clientName) filter.clientName = { $regex: clientName, $options: "i" };
 
-    const details = await PrintingDetailMaster.find(filter).sort({ updatedAt: -1 });
+    const details = await PrintingDetailMaster.find(filter).sort({
+      updatedAt: -1,
+    });
 
     res.json({ printingDetails: details });
   } catch (error) {
-    console.error('Get all printing details error:', error);
-    res.status(500).json({ error: 'Failed to fetch printing details' });
+    console.error("Get all printing details error:", error);
+    res.status(500).json({ error: "Failed to fetch printing details" });
   }
 };
-
 
 exports.getPrintingDetailById = async (req, res) => {
   try {
     const detail = await PrintingDetailMaster.findById(req.params.id);
 
     if (!detail) {
-      return res.status(404).json({ error: 'Printing detail not found' });
+      return res.status(404).json({ error: "Printing detail not found" });
     }
 
     res.json(detail);
   } catch (error) {
-    console.error('Get printing detail error:', error);
-    res.status(500).json({ error: 'Failed to fetch printing detail' });
+    console.error("Get printing detail error:", error);
+    res.status(500).json({ error: "Failed to fetch printing detail" });
   }
 };
-
 
 exports.getPrintingDetailByItemAndClient = async (req, res) => {
   try {
@@ -42,16 +41,15 @@ exports.getPrintingDetailByItemAndClient = async (req, res) => {
     const detail = await PrintingDetailMaster.findOne({ itemName, clientName });
 
     if (!detail) {
-      return res.status(404).json({ error: 'Printing detail not found' });
+      return res.status(404).json({ error: "Printing detail not found" });
     }
 
     res.json(detail);
   } catch (error) {
-    console.error('Get printing detail error:', error);
-    res.status(500).json({ error: 'Failed to fetch printing detail' });
+    console.error("Get printing detail error:", error);
+    res.status(500).json({ error: "Failed to fetch printing detail" });
   }
 };
-
 
 exports.createPrintingDetail = async (req, res) => {
   try {
@@ -71,18 +69,23 @@ exports.createPrintingDetail = async (req, res) => {
       sheetL,
       reelSize,
       reelWidthMm,
-      cuttingLengthMm
+      cuttingLengthMm,
     } = req.body;
 
-    
     if (!itemName || !clientName) {
-      return res.status(400).json({ error: 'Item name and client name are required' });
+      return res
+        .status(400)
+        .json({ error: "Item name and client name are required" });
     }
 
-    
-    const existing = await PrintingDetailMaster.findOne({ itemName, clientName });
+    const existing = await PrintingDetailMaster.findOne({
+      itemName,
+      clientName,
+    });
     if (existing) {
-      return res.status(400).json({ error: 'Printing detail for this item and client already exists' });
+      return res.status(400).json({
+        error: "Printing detail for this item and client already exists",
+      });
     }
 
     const detail = new PrintingDetailMaster({
@@ -101,18 +104,17 @@ exports.createPrintingDetail = async (req, res) => {
       sheetL,
       reelSize,
       reelWidthMm,
-      cuttingLengthMm
+      cuttingLengthMm,
     });
 
     await detail.save();
 
     res.status(201).json({ printingDetail: detail });
   } catch (error) {
-    console.error('Create printing detail error:', error);
-    res.status(500).json({ error: 'Failed to create printing detail' });
+    console.error("Create printing detail error:", error);
+    res.status(500).json({ error: "Failed to create printing detail" });
   }
 };
-
 
 exports.updatePrintingDetail = async (req, res) => {
   try {
@@ -132,27 +134,31 @@ exports.updatePrintingDetail = async (req, res) => {
       sheetL,
       reelSize,
       reelWidthMm,
-      cuttingLengthMm
+      cuttingLengthMm,
     } = req.body;
 
     const detail = await PrintingDetailMaster.findById(req.params.id);
     if (!detail) {
-      return res.status(404).json({ error: 'Printing detail not found' });
+      return res.status(404).json({ error: "Printing detail not found" });
     }
 
-    
-    if (itemName && clientName && (itemName !== detail.itemName || clientName !== detail.clientName)) {
+    if (
+      itemName &&
+      clientName &&
+      (itemName !== detail.itemName || clientName !== detail.clientName)
+    ) {
       const existing = await PrintingDetailMaster.findOne({
         itemName,
         clientName,
-        _id: { $ne: req.params.id }
+        _id: { $ne: req.params.id },
       });
       if (existing) {
-        return res.status(400).json({ error: 'Printing detail for this item and client already exists' });
+        return res.status(400).json({
+          error: "Printing detail for this item and client already exists",
+        });
       }
     }
 
-    
     if (itemName !== undefined) detail.itemName = itemName;
     if (clientName !== undefined) detail.clientName = clientName;
     if (clientCategory !== undefined) detail.clientCategory = clientCategory;
@@ -174,23 +180,74 @@ exports.updatePrintingDetail = async (req, res) => {
 
     res.json({ printingDetail: detail });
   } catch (error) {
-    console.error('Update printing detail error:', error);
-    res.status(500).json({ error: 'Failed to update printing detail' });
+    console.error("Update printing detail error:", error);
+    res.status(500).json({ error: "Failed to update printing detail" });
   }
 };
-
 
 exports.deletePrintingDetail = async (req, res) => {
   try {
     const detail = await PrintingDetailMaster.findByIdAndDelete(req.params.id);
 
     if (!detail) {
-      return res.status(404).json({ error: 'Printing detail not found' });
+      return res.status(404).json({ error: "Printing detail not found" });
     }
 
-    res.json({ message: 'Printing detail deleted successfully' });
+    res.json({ message: "Printing detail deleted successfully" });
   } catch (error) {
-    console.error('Delete printing detail error:', error);
-    res.status(500).json({ error: 'Failed to delete printing detail' });
+    console.error("Delete printing detail error:", error);
+    res.status(500).json({ error: "Failed to delete printing detail" });
+  }
+};
+exports.bulkImport = async (req, res) => {
+  try {
+    const { details } = req.body;
+
+    if (!Array.isArray(details) || details.length === 0) {
+      return res.status(400).json({ error: "Details array is required" });
+    }
+
+    const results = {
+      success: [],
+      failed: [],
+    };
+
+    for (const data of details) {
+      try {
+        const { itemName, clientName } = data;
+
+        if (!itemName || !clientName) {
+          results.failed.push({
+            item: data,
+            reason: "Item name and client name are required",
+          });
+          continue;
+        }
+
+        const existing = await PrintingDetailMaster.findOne({
+          itemName,
+          clientName,
+        });
+        if (existing) {
+          Object.assign(existing, data);
+          await existing.save();
+          results.success.push(existing);
+        } else {
+          const detail = new PrintingDetailMaster(data);
+          await detail.save();
+          results.success.push(detail);
+        }
+      } catch (error) {
+        results.failed.push({ item: data, reason: error.message });
+      }
+    }
+
+    res.json({
+      message: `Imported ${results.success.length} details, ${results.failed.length} failed`,
+      results,
+    });
+  } catch (error) {
+    console.error("Bulk import error:", error);
+    res.status(500).json({ error: "Failed to import details" });
   }
 };

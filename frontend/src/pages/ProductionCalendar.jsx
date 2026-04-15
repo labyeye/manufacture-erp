@@ -190,7 +190,7 @@ export default function ProductionCalendar({
 
   const colW = rangeView === "week" ? 110 : 36;
 
-  // Machine Side Panel Component
+  
   const MachineSidePanel = () => {
     if (!selectedMachine) return null;
 
@@ -235,7 +235,7 @@ export default function ProductionCalendar({
       }
     };
 
-    // Calculations for Summary
+    
     const stats = daysArray.reduce((acc, date) => {
       const dayData = localReport[date] || {};
       acc.totalCap += Number(dayData.capacity || 0);
@@ -246,7 +246,7 @@ export default function ProductionCalendar({
 
     return (
       <>
-        {/* Backdrop */}
+        {}
         <div
           onClick={() => setSelectedMachine(null)}
           style={{
@@ -257,7 +257,7 @@ export default function ProductionCalendar({
             zIndex: 1000,
           }}
         />
-        {/* Panel */}
+        {}
         <div
           style={{
             position: "fixed",
@@ -331,7 +331,7 @@ export default function ProductionCalendar({
              No capacity configured — set it in Machine Master
           </div>
 
-          {/* Stats Bar */}
+          {}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 28 }}>
              {[
                ["TOTAL CAPACITY", stats.totalCap, C.muted],
@@ -728,7 +728,7 @@ export default function ProductionCalendar({
                 >
                   <td
                     onClick={() => {
-                        // Find full machine details from machineMaster prop if available
+                        
                         const fullMachine = Array.isArray(machineMaster) 
                             ? machineMaster.find(m => (m._id || m.id) === (machine.id || machine._id))
                             : machine;

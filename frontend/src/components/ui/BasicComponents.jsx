@@ -1,21 +1,23 @@
 import React from "react";
 import { C } from "../../constants/colors";
 
-export function Badge({ label, color = C.accent }) {
+export function Badge({ label, text, color = C.accent }) {
+  const content = label || text;
   return (
     <span
       style={{
-        background: color + "22",
-        color,
-        border: `1px solid ${color}55`,
+        background: "#1e293b",
+        color: color === C.accent ? "#fff" : color,
+        border: `1px solid ${color}44`,
         borderRadius: 4,
         padding: "2px 8px",
-        fontSize: 11,
-        fontWeight: 600,
+        fontSize: 10,
+        fontWeight: 800,
         whiteSpace: "nowrap",
+        letterSpacing: "normal",
       }}
     >
-      {label}
+      {content}
     </span>
   );
 }
@@ -44,9 +46,7 @@ export function SectionTitle({ icon, title, sub }) {
         <span style={{ fontSize: 22, filter: "brightness(1) invert(0)" }}>
           {icon}
         </span>
-        <h2 style={{ fontSize: 20, fontWeight: 800, color: C.text }}>
-          {title}
-        </h2>
+        <h2 style={{ fontSize: 20, color: C.text }}>{title}</h2>
       </div>
       {sub && (
         <p
@@ -84,7 +84,7 @@ export function Field({ label, children, span }) {
           marginBottom: 5,
           fontWeight: 600,
           textTransform: "uppercase",
-          letterSpacing: 1,
+          letterSpacing: "normal",
         }}
       >
         {label}
@@ -142,10 +142,6 @@ export function ExcelBtn({ onClick, disabled }) {
     </button>
   );
 }
-
-
-
-
 
 export function AutocompleteInput({
   value,
@@ -236,10 +232,6 @@ export function AutocompleteInput({
   );
 }
 
-
-
-
-
 export function DatePicker({ value, onChange, style = {} }) {
   return (
     <input
@@ -261,10 +253,6 @@ export function DatePicker({ value, onChange, style = {} }) {
   );
 }
 
-
-
-
-
 export function DateRangeFilter({ dateFrom, setDateFrom, dateTo, setDateTo }) {
   return (
     <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -284,7 +272,17 @@ export function DateRangeFilter({ dateFrom, setDateFrom, dateTo, setDateTo }) {
             accentColor: "white",
           }}
         />
-        <span style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", fontSize: 12 }}>📅</span>
+        <span
+          style={{
+            position: "absolute",
+            left: 8,
+            top: "50%",
+            transform: "translateY(-50%)",
+            fontSize: 12,
+          }}
+        >
+          📅
+        </span>
       </div>
       <span style={{ color: C.muted, fontSize: 12 }}>to</span>
       <div style={{ position: "relative" }}>
@@ -303,7 +301,17 @@ export function DateRangeFilter({ dateFrom, setDateFrom, dateTo, setDateTo }) {
             accentColor: "white",
           }}
         />
-        <span style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", fontSize: 12 }}>📅</span>
+        <span
+          style={{
+            position: "absolute",
+            left: 8,
+            top: "50%",
+            transform: "translateY(-50%)",
+            fontSize: 12,
+          }}
+        >
+          📅
+        </span>
       </div>
     </div>
   );

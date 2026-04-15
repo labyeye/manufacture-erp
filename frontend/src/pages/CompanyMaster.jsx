@@ -77,7 +77,13 @@ export default function CompanyMaster({ toast }) {
         await companyMasterAPI.create(formData);
         toast("Company added successfully", "success");
       }
-      setFormData({ name: "", contact: "", email: "", gstin: "", category: "" });
+      setFormData({
+        name: "",
+        contact: "",
+        email: "",
+        gstin: "",
+        category: "",
+      });
       fetchCompanies();
     } catch (error) {
       toast(error.response?.data?.error || "Failed to save company", "error");
@@ -161,7 +167,7 @@ export default function CompanyMaster({ toast }) {
         sub="Manage multiple operating companies or entities"
       />
 
-      {/* Form */}
+      {}
       <div style={cardStyle}>
         <div
           style={{
@@ -342,7 +348,7 @@ export default function CompanyMaster({ toast }) {
         </div>
       </div>
 
-      {/* List */}
+      {}
       <div style={cardStyle}>
         <div
           style={{
@@ -366,14 +372,23 @@ export default function CompanyMaster({ toast }) {
 
         {filtered.length === 0 ? (
           <div
-            style={{ textAlign: "center", color: "#555", padding: 40, fontSize: 13 }}
+            style={{
+              textAlign: "center",
+              color: "#555",
+              padding: 40,
+              fontSize: 13,
+            }}
           >
             {searchTerm ? "No results found" : "No companies added yet."}
           </div>
         ) : (
           <div style={{ overflowX: "auto" }}>
             <table
-              style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                fontSize: 13,
+              }}
             >
               <thead>
                 <tr style={{ borderBottom: "1px solid #2a2a2a" }}>
@@ -409,7 +424,11 @@ export default function CompanyMaster({ toast }) {
                     style={{ borderBottom: "1px solid #222" }}
                   >
                     <td
-                      style={{ padding: "12px", fontWeight: 600, color: "#e0e0e0" }}
+                      style={{
+                        padding: "12px",
+                        fontWeight: 600,
+                        color: "#e0e0e0",
+                      }}
                     >
                       {company.name}
                     </td>

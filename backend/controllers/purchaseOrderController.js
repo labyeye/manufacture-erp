@@ -3,10 +3,6 @@ const VendorMaster = require("../models/VendorMaster");
 const ItemMaster = require("../models/ItemMaster");
 const { generatePONo } = require("../utils/counters");
 
-
-
-
-
 exports.getAll = async (req, res) => {
   try {
     const pos = await PurchaseOrder.find()
@@ -18,9 +14,6 @@ exports.getAll = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch purchase orders" });
   }
 };
-
-
-
 
 exports.getOne = async (req, res) => {
   try {
@@ -35,9 +28,6 @@ exports.getOne = async (req, res) => {
   }
 };
 
-
-
-
 exports.create = async (req, res) => {
   try {
     const { poNo, poDate, vendor, items, deliveryDate, remarks } = req.body;
@@ -46,20 +36,22 @@ exports.create = async (req, res) => {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // Verify all items have valid product codes
     for (const item of items) {
       if (!item.productCode) {
-        return res.status(400).json({ error: `Product code is required for item: ${item.itemName || 'Unnamed Item'}` });
+        return res.status(400).json({
+          error: `Product code is required for item: ${item.itemName || "Unnamed Item"}`,
+        });
       }
-      const masterItem = await ItemMaster.findOne({ 
-        code: { $regex: new RegExp(`^${item.productCode}$`, 'i') } 
+      const masterItem = await ItemMaster.findOne({
+        code: { $regex: new RegExp(`^${item.productCode}$`, "i") },
       });
       if (!masterItem) {
-        return res.status(400).json({ error: `Invalid or unregistered product code: ${item.productCode}` });
+        return res.status(400).json({
+          error: `Invalid or unregistered product code: ${item.productCode}`,
+        });
       }
     }
 
-    // Generate PO number if not provided or if it's the old/temp format
     let finalPoNo = poNo;
     if (!finalPoNo || finalPoNo.startsWith("PO-")) {
       finalPoNo = await generatePONo();
@@ -81,7 +73,6 @@ exports.create = async (req, res) => {
       status: "Open",
     });
 
-
     await po.save();
     await po.populate("createdBy", "name username");
 
@@ -95,9 +86,6 @@ exports.create = async (req, res) => {
   }
 };
 
-
-
-
 exports.update = async (req, res) => {
   try {
     const { poNo, poDate, vendor, items, deliveryDate, remarks, status } =
@@ -109,22 +97,24 @@ exports.update = async (req, res) => {
       return res.status(404).json({ error: "Purchase order not found" });
     }
 
-    // Verify all items have valid product codes if items are being updated
     if (items && items.length > 0) {
       for (const item of items) {
         if (!item.productCode) {
-          return res.status(400).json({ error: `Product code is required for item: ${item.itemName || 'Unnamed Item'}` });
+          return res.status(400).json({
+            error: `Product code is required for item: ${item.itemName || "Unnamed Item"}`,
+          });
         }
-        const masterItem = await ItemMaster.findOne({ 
-          code: { $regex: new RegExp(`^${item.productCode}$`, 'i') } 
+        const masterItem = await ItemMaster.findOne({
+          code: { $regex: new RegExp(`^${item.productCode}$`, "i") },
         });
         if (!masterItem) {
-          return res.status(400).json({ error: `Invalid or unregistered product code: ${item.productCode}` });
+          return res.status(400).json({
+            error: `Invalid or unregistered product code: ${item.productCode}`,
+          });
         }
       }
     }
 
-    
     if (poNo && poNo !== po.poNo) {
       const existingPO = await PurchaseOrder.findOne({ poNo });
       if (existingPO) {
@@ -153,9 +143,6 @@ exports.update = async (req, res) => {
   }
 };
 
-
-
-
 exports.delete = async (req, res) => {
   try {
     const { id } = req.params;
@@ -165,7 +152,6 @@ exports.delete = async (req, res) => {
       return res.status(404).json({ error: "Purchase order not found" });
     }
 
-    
     if (["Received", "Partial"].includes(po.status)) {
       return res
         .status(400)
@@ -180,9 +166,6 @@ exports.delete = async (req, res) => {
     res.status(500).json({ error: "Failed to delete purchase order" });
   }
 };
-
-
-
 
 exports.updateStatus = async (req, res) => {
   try {

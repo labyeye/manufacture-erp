@@ -50,7 +50,6 @@ const getNextItemCode = async (type) => {
   const prefix = prefixMap[type] || "IT";
   const counterName = `itemMaster_${prefix}`;
 
-  // Check if any items exist for this prefix. If not, we can reset the counter.
   const itemCount = await ItemMaster.countDocuments({
     code: { $regex: new RegExp(`^${prefix}`) },
   });
@@ -312,11 +311,23 @@ exports.bulkImport = async (req, res) => {
           itemCode = await getNextItemCode(type);
         }
 
-        const existing = await ItemMaster.findOne({ code: itemCode });
-        if (existing) {
+        const existingCode = await ItemMaster.findOne({ code: itemCode });
+        if (existingCode) {
           results.failed.push({
             item: itemData,
             reason: "Code already exists",
+          });
+          continue;
+        }
+
+        const existingName = await ItemMaster.findOne({
+          name: { $regex: new RegExp(`^${name.trim()}$`, "i") },
+          type,
+        });
+        if (existingName) {
+          results.failed.push({
+            item: itemData,
+            reason: `Item with name '${name}' already exists in ${type}`,
           });
           continue;
         }

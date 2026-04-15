@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const salesOrderItemSchema = new mongoose.Schema({
   productCode: String,
@@ -13,12 +13,16 @@ const salesOrderItemSchema = new mongoose.Schema({
   gsm: Number,
   uom: {
     type: String,
-    enum: ['inch', 'mm', 'cm', 'nos', 'pcs', 'kg', 'set'],
-    default: 'nos'
+    enum: ["inch", "mm", "cm", "nos", "pcs", "kg", "set"],
+    default: "inch",
+  },
+  qtyUnit: {
+    type: String,
+    default: "nos",
   },
   orderQty: {
     type: Number,
-    required: true
+    required: true,
   },
   price: Number,
   amount: Number,
@@ -26,49 +30,61 @@ const salesOrderItemSchema = new mongoose.Schema({
   hsnCode: String,
   taxAmount: Number,
   totalWithTax: Number,
-  remarks: String
-});
-
-const salesOrderSchema = new mongoose.Schema({
-  soNo: {
-    type: String,
-    required: true,
-    unique: true
-  },
-  orderDate: {
-    type: Date,
-    required: true
-  },
-  deliveryDate: Date,
-  salesPerson: String,
-  clientCategory: String,
-  clientName: {
-    type: String,
-    required: true
-  },
-  status: {
-    type: String,
-    enum: ['Open', 'Issued', 'In Production', 'Dispatched', 'Closed', 'Cancelled'],
-    default: 'Open'
-  },
   remarks: String,
-  items: [salesOrderItemSchema],
-  totalAmount: {
-    type: Number,
-    default: 0
-  },
-  createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  }
-}, {
-  timestamps: true
 });
 
+const salesOrderSchema = new mongoose.Schema(
+  {
+    soNo: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    orderDate: {
+      type: Date,
+      required: true,
+    },
+    deliveryDate: Date,
+    salesPerson: String,
+    clientCategory: String,
+    clientName: {
+      type: String,
+      required: true,
+    },
+    status: {
+      type: String,
+      enum: [
+        "Open",
+        "Issued",
+        "In Production",
+        "Dispatched",
+        "Closed",
+        "Cancelled",
+      ],
+      default: "Open",
+    },
+    remarks: String,
+    items: [salesOrderItemSchema],
+    totalAmount: {
+      type: Number,
+      default: 0,
+    },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+  },
+  {
+    timestamps: true,
+  },
+);
 
-salesOrderSchema.pre('save', function(next) {
-  this.totalAmount = this.items.reduce((sum, item) => sum + (item.amount || 0), 0);
+salesOrderSchema.pre("save", function (next) {
+  this.totalAmount = this.items.reduce(
+    (sum, item) => sum + (item.amount || 0),
+    0,
+  );
   next();
 });
 
-module.exports = mongoose.model('SalesOrder', salesOrderSchema);
+module.exports = mongoose.model("SalesOrder", salesOrderSchema);

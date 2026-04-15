@@ -242,10 +242,8 @@ export default function ItemMaster({ toast }) {
     setHsnCode(item.hsnCode || "");
     setReorderLevel(item.reorderLevel || "0");
     setClientName(item.clientName || "");
-    // Extract client name if possible or just let it be
+
     if (item.type === "Finished Goods") {
-      // Logic to parse clientName from item.name if it was auto-generated
-      // For now, we'll leave it to manual correction on edit since it's in the name anyway
     }
   };
 
@@ -853,7 +851,7 @@ export default function ItemMaster({ toast }) {
           </div>
         </div>
 
-        {/* Preview and Auto Code Display like screenshot */}
+        {}
         {(activeTab === "Raw Material" || activeTab === "Finished Goods") && (
           <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
             <div

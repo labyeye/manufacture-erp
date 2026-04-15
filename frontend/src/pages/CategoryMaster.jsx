@@ -33,7 +33,6 @@ export default function CategoryMaster({ toast }) {
   const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
 
-  
   useEffect(() => {
     loadCategories();
   }, []);
@@ -54,48 +53,43 @@ export default function CategoryMaster({ toast }) {
     }
   };
 
-  
-  const typeData = categories.find(c => c.type === activeTab);
+  const typeData = categories.find((c) => c.type === activeTab);
   const tabData = typeData?.subTypes || {};
   const categoryNames = Object.keys(tabData);
 
-  
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    const typeDoc = categories.find(c => c.type === tab);
+    const typeDoc = categories.find((c) => c.type === tab);
     const names = Object.keys(typeDoc?.subTypes || {});
     setSelectedCategory(names[0] || null);
     setNewCatName("");
     setNewSubType("");
   };
 
-  
   const handleAddCategory = async () => {
     if (!newCatName.trim()) {
       toast("Enter category name", "error");
       return;
     }
-    
+
     try {
-      let typeDoc = categories.find(c => c.type === activeTab);
-      
+      let typeDoc = categories.find((c) => c.type === activeTab);
+
       if (!typeDoc) {
-        
         const created = await categoryMasterAPI.create({
           type: activeTab,
           categories: [newCatName.trim()],
-          subTypes: { [newCatName.trim()]: [] }
+          subTypes: { [newCatName.trim()]: [] },
         });
         await loadCategories();
       } else {
-        
         const newCategories = typeDoc.categories || [];
-        
+
         if (newCategories.includes(newCatName.trim())) {
           toast("Category already exists", "error");
           return;
         }
-        
+
         const updated = {
           ...typeDoc,
           name: newCatName.trim(),
@@ -103,14 +97,14 @@ export default function CategoryMaster({ toast }) {
           categories: [...newCategories, newCatName.trim()],
           subTypes: {
             ...typeDoc.subTypes,
-            [newCatName.trim()]: []
-          }
+            [newCatName.trim()]: [],
+          },
         };
-        
+
         await categoryMasterAPI.update(typeDoc._id, updated);
         await loadCategories();
       }
-      
+
       setSelectedCategory(newCatName.trim());
       setNewCatName("");
       toast("Category added successfully", "success");
@@ -120,17 +114,16 @@ export default function CategoryMaster({ toast }) {
     }
   };
 
-  
   const handleDeleteCategory = async (catName) => {
     if (!confirm(`Delete "${catName}" and all its sub-types?`)) return;
-    
+
     try {
-      const typeDoc = categories.find(c => c.type === activeTab);
+      const typeDoc = categories.find((c) => c.type === activeTab);
       if (!typeDoc) {
         toast("Type not found", "error");
         return;
       }
-      
+
       const newSubTypes = { ...(typeDoc.subTypes || {}) };
       delete newSubTypes[catName];
 
@@ -142,9 +135,11 @@ export default function CategoryMaster({ toast }) {
 
       await categoryMasterAPI.update(typeDoc._id, updated);
       await loadCategories();
-      
+
       if (selectedCategory === catName) {
-        const remaining = (typeDoc.categories || []).filter(c => c !== catName);
+        const remaining = (typeDoc.categories || []).filter(
+          (c) => c !== catName,
+        );
         setSelectedCategory(remaining[0] || null);
       }
       toast("Category deleted successfully", "success");
@@ -154,35 +149,34 @@ export default function CategoryMaster({ toast }) {
     }
   };
 
-  
   const handleAddSubType = async () => {
     if (!selectedCategory) return;
     if (!newSubType.trim()) {
       toast("Enter sub-type name", "error");
       return;
     }
-    
+
     try {
-      const typeDoc = categories.find(c => c.type === activeTab);
+      const typeDoc = categories.find((c) => c.type === activeTab);
       if (!typeDoc) {
         toast("Type not found", "error");
         return;
       }
-      
+
       const currentSubTypes = typeDoc.subTypes?.[selectedCategory] || [];
       if (currentSubTypes.includes(newSubType.trim())) {
         toast("Sub-type already exists", "error");
         return;
       }
-      
+
       const updated = {
         ...typeDoc,
         subTypes: {
           ...typeDoc.subTypes,
-          [selectedCategory]: [...currentSubTypes, newSubType.trim()]
-        }
+          [selectedCategory]: [...currentSubTypes, newSubType.trim()],
+        },
       };
-      
+
       await categoryMasterAPI.update(typeDoc._id, updated);
       await loadCategories();
       setNewSubType("");
@@ -193,27 +187,26 @@ export default function CategoryMaster({ toast }) {
     }
   };
 
-  
   const handleRemoveSubType = async (subType) => {
     try {
-      const typeDoc = categories.find(c => c.type === activeTab);
+      const typeDoc = categories.find((c) => c.type === activeTab);
       if (!typeDoc) {
         toast("Type not found", "error");
         return;
       }
-      
-      const currentSubTypes = (typeDoc.subTypes?.[selectedCategory] || []).filter(
-        s => s !== subType
-      );
-      
+
+      const currentSubTypes = (
+        typeDoc.subTypes?.[selectedCategory] || []
+      ).filter((s) => s !== subType);
+
       const updated = {
         ...typeDoc,
         subTypes: {
           ...typeDoc.subTypes,
-          [selectedCategory]: currentSubTypes
-        }
+          [selectedCategory]: currentSubTypes,
+        },
       };
-      
+
       await categoryMasterAPI.update(typeDoc._id, updated);
       await loadCategories();
       toast("Sub-type removed", "success");
@@ -223,7 +216,6 @@ export default function CategoryMaster({ toast }) {
     }
   };
 
-  
   const handleTemplate = () => {
     const csv =
       '"Category Name","Sub-Type 1","Sub-Type 2","Sub-Type 3"\n"Paper Reel","MG Kraft","MF Kraft","Bleached Kraft"\n"Paper Sheet","Art Paper","Duplex Board",""';
@@ -234,7 +226,6 @@ export default function CategoryMaster({ toast }) {
     a.click();
   };
 
-  
   const handleImport = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -258,7 +249,6 @@ export default function CategoryMaster({ toast }) {
 
           const newCategories = { ...typeDoc.subTypes };
 
-          // Skip header row
           for (let i = 1; i < json.length; i++) {
             const row = json[i];
             if (!row || row.length === 0) continue;
@@ -266,7 +256,10 @@ export default function CategoryMaster({ toast }) {
             const catName = String(row[0] || "").trim();
             if (!catName) continue;
 
-            const subTypes = row.slice(1).filter(Boolean).map(s => String(s).trim());
+            const subTypes = row
+              .slice(1)
+              .filter(Boolean)
+              .map((s) => String(s).trim());
 
             if (!newCategories[catName]) {
               newCategories[catName] = [];
@@ -303,7 +296,9 @@ export default function CategoryMaster({ toast }) {
   };
 
   const selectedSubTypes = selectedCategory
-    ? (categories.find(c => c.type === activeTab)?.subTypes?.[selectedCategory] || [])
+    ? categories.find((c) => c.type === activeTab)?.subTypes?.[
+        selectedCategory
+      ] || []
     : [];
   const totalCats = categoryNames.length;
 

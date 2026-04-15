@@ -7,24 +7,24 @@ const materialInwardItemSchema = new mongoose.Schema(
       enum: ["Raw Material", "Consumable"],
       default: "Raw Material",
     },
-    
+
     productCode: String,
-    rmItem: String, 
-    paperType: String, 
+    rmItem: String,
+    paperType: String,
     widthMm: Number,
     lengthMm: Number,
     gsm: Number,
     noOfSheets: Number,
     noOfReels: Number,
-    weight: Number, 
-    
+    weight: Number,
+
     itemName: String,
     category: String,
     size: String,
     qty: Number,
     unit: String,
     uom: String,
-    
+
     rate: Number,
     amount: Number,
   },
@@ -41,7 +41,7 @@ const materialInwardSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
-    poRef: String, 
+    poRef: String,
     purchaseOrderRef: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "PurchaseOrder",
@@ -49,7 +49,7 @@ const materialInwardSchema = new mongoose.Schema(
     vendorName: String,
     invoiceNo: String,
     vehicleNo: String,
-    location: String, 
+    location: String,
     receivedBy: String,
     remarks: String,
     vendor: {
@@ -90,8 +90,7 @@ materialInwardSchema.pre("save", async function (next) {
     );
     this.inwardNo = `GRN-${year}${String(counter.seq).padStart(3, "0")}`;
   }
-  
-  // Keep grnNo in sync for legacy database indexes
+
   if (!this.grnNo) {
     this.grnNo = this.inwardNo;
   }

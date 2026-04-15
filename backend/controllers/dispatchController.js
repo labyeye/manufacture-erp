@@ -4,31 +4,25 @@ const FGStock = require("../models/FGStock");
 
 const adjustFGStock = async (items, direction = -1) => {
   for (const item of items) {
-    // Attempt to find the best matching FG Stock entry
-    // Usually, we match by itemName. In a multi-JO environment, we'd pick the first available.
-    const stockItem = await FGStock.findOne({ itemName: item.itemName }).sort({ createdAt: 1 });
+    const stockItem = await FGStock.findOne({ itemName: item.itemName }).sort({
+      createdAt: 1,
+    });
     if (stockItem) {
-      stockItem.qty += (item.qty * direction);
+      stockItem.qty += item.qty * direction;
       if (stockItem.qty < 0) stockItem.qty = 0;
       await stockItem.save();
     }
   }
 };
 
-
-
-
 const getNextDispatchNo = async () => {
   const counter = await Counter.findOneAndUpdate(
     { name: "dispatch" },
     { $inc: { seq: 1 } },
-    { new: true, upsert: true }
+    { new: true, upsert: true },
   );
   return `DIS-${String(counter.seq).padStart(5, "0")}`;
 };
-
-
-
 
 exports.getAll = async (req, res) => {
   try {
@@ -42,13 +36,12 @@ exports.getAll = async (req, res) => {
   }
 };
 
-
-
-
 exports.getOne = async (req, res) => {
   try {
-    const dispatch = await Dispatch.findById(req.params.id)
-      .populate("createdBy", "name username");
+    const dispatch = await Dispatch.findById(req.params.id).populate(
+      "createdBy",
+      "name username",
+    );
     if (!dispatch) {
       return res.status(404).json({ error: "Dispatch not found" });
     }
@@ -58,9 +51,6 @@ exports.getOne = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch dispatch" });
   }
 };
-
-
-
 
 exports.create = async (req, res) => {
   try {
@@ -76,12 +66,10 @@ exports.create = async (req, res) => {
       remarks,
     } = req.body;
 
-    
     if (!date || !clientName || !items || items.length === 0) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    
     const dispatchNo = await getNextDispatchNo();
 
     const dispatch = new Dispatch({
@@ -101,7 +89,6 @@ exports.create = async (req, res) => {
     await dispatch.save();
     await dispatch.populate("createdBy", "name username");
 
-    // Deduct from FG Stock
     await adjustFGStock(items, -1);
 
     res.status(201).json({
@@ -113,9 +100,6 @@ exports.create = async (req, res) => {
     res.status(500).json({ error: "Failed to create dispatch" });
   }
 };
-
-
-
 
 exports.update = async (req, res) => {
   try {
@@ -144,11 +128,11 @@ exports.update = async (req, res) => {
     if (vehicleNo !== undefined) dispatch.vehicleNo = vehicleNo?.trim();
     if (driverName !== undefined) dispatch.driverName = driverName?.trim();
     if (lrNo !== undefined) dispatch.lrNo = lrNo?.trim();
-    // Handle stock reversal for old items and deduction for new items
+
     if (items) {
-      await adjustFGStock(dispatch.items, 1); // Reverse old
+      await adjustFGStock(dispatch.items, 1);
       dispatch.items = items;
-      await adjustFGStock(items, -1); // Apply new
+      await adjustFGStock(items, -1);
     }
 
     await dispatch.save();
@@ -164,9 +148,6 @@ exports.update = async (req, res) => {
   }
 };
 
-
-
-
 exports.delete = async (req, res) => {
   try {
     const { id } = req.params;
@@ -176,7 +157,6 @@ exports.delete = async (req, res) => {
       return res.status(404).json({ error: "Dispatch not found" });
     }
 
-    // Restore stock before deleting
     await adjustFGStock(dispatch.items, 1);
 
     await Dispatch.findByIdAndDelete(id);

@@ -24,7 +24,6 @@ const ReportTabs = [
   { id: "vendor", label: "Vendor Performance", icon: "🏪" },
 ];
 
-// Shared table styles - fixed, non-stretched
 const TH = {
   padding: "10px 12px",
   background: "#1a1a1e",
@@ -180,7 +179,6 @@ export function Dashboard({ data }) {
     return map;
   }, [activeJOs]);
 
-  // SO dispatch map - robust matching
   const dispMap = useMemo(() => {
     const map = {};
     dispatches.forEach((d) => {
@@ -244,17 +242,14 @@ export function Dashboard({ data }) {
           0,
         );
 
-        // Calculate production qty from job orders
         const joForSO = jobOrders.filter((jo) => jo.soRef === soKey);
         const producedQty = joForSO.reduce((s, jo) => {
-          // Last stage completion is the best indicator of finished production
           const lastStage = (jo.process || []).slice(-1)[0];
           return s + +(jo.stageQtyMap?.[lastStage] || 0);
         }, 0);
 
         const disp = dispMap[soKey] || 0;
 
-        // Reconciliation Logic: Complete if 95% of ordered OR everything produced is dispatched
         const thresh = Math.max(0.95 * ord, producedQty);
         const isComplete = ord > 0 && disp >= thresh;
 
@@ -337,7 +332,7 @@ export function Dashboard({ data }) {
         fontStyle: "normal",
       }}
     >
-      {/* Header */}
+      {}
       <div
         style={{
           display: "flex",
@@ -364,7 +359,7 @@ export function Dashboard({ data }) {
         </div>
       </div>
 
-      {/* Summary Cards Row */}
+      {}
       <div
         style={{
           display: "grid",
@@ -468,7 +463,7 @@ export function Dashboard({ data }) {
         ))}
       </div>
 
-      {/* Tab buttons - 2 rows of 6 */}
+      {}
       <div style={{ marginBottom: 24 }}>
         {[ReportTabs.slice(0, 6), ReportTabs.slice(6)].map((row, ri) => (
           <div
@@ -515,7 +510,7 @@ export function Dashboard({ data }) {
         ))}
       </div>
 
-      {/* ── PRODUCTION ── */}
+      {}
       {reportTab === "production" && (
         <div>
           <div
@@ -573,7 +568,9 @@ export function Dashboard({ data }) {
               return (
                 <div
                   key={proc}
-                  onClick={() => setSelectedProcessPending(isSelected ? null : proc)}
+                  onClick={() =>
+                    setSelectedProcessPending(isSelected ? null : proc)
+                  }
                   style={{
                     background: isSelected ? "#1a1a20" : "#141416",
                     border: `1px solid ${isSelected ? C.blue : count > 0 ? C.blue + "55" : "#2a2a2e"}`,
@@ -607,55 +604,96 @@ export function Dashboard({ data }) {
             })}
           </div>
 
-          {selectedProcessPending && processPendingMap[selectedProcessPending]?.length > 0 && (
-            <div
-              style={{
-                marginTop: 20,
-                borderRadius: 8,
-                overflow: "hidden",
-                border: "1px solid #2a2a2e",
-                background: "#141416",
-              }}
-            >
-              <div style={{ padding: "12px 16px", borderBottom: "1px solid #2a2a2e", fontWeight: 700, color: C.blue }}>
-                Jobs Pending for {selectedProcessPending}
-              </div>
-              <table style={TABLE}>
-                <colgroup>
-                  <col style={{ width: 120 }} />
-                  <col style={{ width: 140 }} />
-                  <col style={{ width: "auto" }} />
-                  <col style={{ width: 100 }} />
-                  <col style={{ width: 120 }} />
-                </colgroup>
-                <thead>
-                  <tr>
-                    {["Job Order #", "Sales Order / Client", "Item Name", "Order Qty", "Prod Qty"].map((h) => (
-                      <th key={h} style={TH}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {processPendingMap[selectedProcessPending].map((jo, i) => (
-                    <tr key={jo._id || i} style={{ background: i % 2 === 0 ? "#0e0e12" : "#121216" }}>
-                      <td style={{ ...TD, color: C.yellow, fontWeight: 700 }}>{jo.joNo}</td>
-                      <td style={TD}>
-                        <div style={{ color: C.green, fontSize: 12 }}>{jo.soRef}</div>
-                        <div style={{ color: "#aaa", fontSize: 12, marginTop: 4 }}>{jo.clientName}</div>
-                      </td>
-                      <td style={{ ...TD, color: "#ccc", whiteSpace: "normal" }}>{jo.itemName}</td>
-                      <td style={{ ...TD, fontWeight: 700 }}>{fmt(jo.orderQty)}</td>
-                      <td style={{ ...TD, color: C.green }}>{fmt(jo.producedQty)}</td>
+          {selectedProcessPending &&
+            processPendingMap[selectedProcessPending]?.length > 0 && (
+              <div
+                style={{
+                  marginTop: 20,
+                  borderRadius: 8,
+                  overflow: "hidden",
+                  border: "1px solid #2a2a2e",
+                  background: "#141416",
+                }}
+              >
+                <div
+                  style={{
+                    padding: "12px 16px",
+                    borderBottom: "1px solid #2a2a2e",
+                    fontWeight: 700,
+                    color: C.blue,
+                  }}
+                >
+                  Jobs Pending for {selectedProcessPending}
+                </div>
+                <table style={TABLE}>
+                  <colgroup>
+                    <col style={{ width: 120 }} />
+                    <col style={{ width: 140 }} />
+                    <col style={{ width: "auto" }} />
+                    <col style={{ width: 100 }} />
+                    <col style={{ width: 120 }} />
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      {[
+                        "Job Order #",
+                        "Sales Order / Client",
+                        "Item Name",
+                        "Order Qty",
+                        "Prod Qty",
+                      ].map((h) => (
+                        <th key={h} style={TH}>
+                          {h}
+                        </th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                  </thead>
+                  <tbody>
+                    {processPendingMap[selectedProcessPending].map((jo, i) => (
+                      <tr
+                        key={jo._id || i}
+                        style={{
+                          background: i % 2 === 0 ? "#0e0e12" : "#121216",
+                        }}
+                      >
+                        <td style={{ ...TD, color: C.yellow, fontWeight: 700 }}>
+                          {jo.joNo}
+                        </td>
+                        <td style={TD}>
+                          <div style={{ color: C.green, fontSize: 12 }}>
+                            {jo.soRef}
+                          </div>
+                          <div
+                            style={{
+                              color: "#aaa",
+                              fontSize: 12,
+                              marginTop: 4,
+                            }}
+                          >
+                            {jo.clientName}
+                          </div>
+                        </td>
+                        <td
+                          style={{ ...TD, color: "#ccc", whiteSpace: "normal" }}
+                        >
+                          {jo.itemName}
+                        </td>
+                        <td style={{ ...TD, fontWeight: 700 }}>
+                          {fmt(jo.orderQty)}
+                        </td>
+                        <td style={{ ...TD, color: C.green }}>
+                          {fmt(jo.producedQty)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
         </div>
       )}
 
-      {/* ── OPERATOR / MACHINE ── */}
+      {}
       {(reportTab === "operator" || reportTab === "machine") && (
         <div>
           <div
@@ -731,7 +769,6 @@ export function Dashboard({ data }) {
                 {reportTab === "machine" && (
                   <button
                     onClick={() => {
-                      // Switch to Production Calendar tab if it exists, or just show a message
                       toast?.(
                         "Open 'Production Calendar' from the sidebar for full machine planning",
                         "info",
@@ -841,8 +878,8 @@ export function Dashboard({ data }) {
         </div>
       )}
 
-      {/* ── PO RECONCILIATION ── */}
-      {/* ── PO RECONCILIATION ── */}
+      {}
+      {}
       {reportTab === "po_recon" &&
         (() => {
           const rows = purchaseOrders.map((po) => {
@@ -1120,7 +1157,9 @@ export function Dashboard({ data }) {
                         </td>
                         <td style={TD}>
                           <div style={{ fontWeight: 600 }}>
-                            {r.orderedQty > 0 ? `${fmt(r.orderedQty)} sheets / ` : ""}
+                            {r.orderedQty > 0
+                              ? `${fmt(r.orderedQty)} sheets / `
+                              : ""}
                             {fmt(r.orderedWt)} kg
                           </div>
                           <div style={{ fontSize: 9, color: "#666" }}>
@@ -1129,7 +1168,9 @@ export function Dashboard({ data }) {
                         </td>
                         <td style={TD}>
                           <div style={{ fontWeight: 600, color: C.green }}>
-                            {r.receivedQty > 0 ? `${fmt(r.receivedQty)} sheets / ` : ""}
+                            {r.receivedQty > 0
+                              ? `${fmt(r.receivedQty)} sheets / `
+                              : ""}
                             {fmt(r.receivedWt)} kg
                           </div>
                           {r.pendingWt > 0 && (
@@ -1140,7 +1181,10 @@ export function Dashboard({ data }) {
                                 marginTop: 4,
                               }}
                             >
-                              ▼ {r.pendingQty > 0 ? `${fmt(r.pendingQty)} sheets / ` : ""}
+                              ▼{" "}
+                              {r.pendingQty > 0
+                                ? `${fmt(r.pendingQty)} sheets / `
+                                : ""}
                               {fmt(r.pendingWt)} kg pending
                             </div>
                           )}
@@ -1193,7 +1237,7 @@ export function Dashboard({ data }) {
           );
         })()}
 
-      {/* ── SO RECONCILIATION — directly from salesOrders ── */}
+      {}
       {reportTab === "so_recon" &&
         (() => {
           const rows = soRows;
@@ -1216,11 +1260,27 @@ export function Dashboard({ data }) {
                 }}
               >
                 {[
-                  { label: "Total Sales Orders", val: stats.total, color: C.blue },
-                  { label: "Fully Dispatched", val: stats.fully, color: C.green },
-                  { label: "Partially Dispatched", val: stats.partial, color: C.yellow },
+                  {
+                    label: "Total Sales Orders",
+                    val: stats.total,
+                    color: C.blue,
+                  },
+                  {
+                    label: "Fully Dispatched",
+                    val: stats.fully,
+                    color: C.green,
+                  },
+                  {
+                    label: "Partially Dispatched",
+                    val: stats.partial,
+                    color: C.yellow,
+                  },
                   { label: "Not Dispatched", val: stats.none, color: C.red },
-                  { label: "Total Pending (pcs)", val: fmt(stats.totalPend), color: C.red },
+                  {
+                    label: "Total Pending (pcs)",
+                    val: fmt(stats.totalPend),
+                    color: C.red,
+                  },
                 ].map((s) => (
                   <div
                     key={s.label}
@@ -1232,16 +1292,39 @@ export function Dashboard({ data }) {
                       padding: 16,
                     }}
                   >
-                    <div style={{ fontSize: 26, fontWeight: 900, color: s.color }}>{s.val}</div>
-                    <div style={{ fontSize: 11, fontWeight: 600, marginTop: 4, color: "#bbb" }}>{s.label}</div>
+                    <div
+                      style={{ fontSize: 26, fontWeight: 900, color: s.color }}
+                    >
+                      {s.val}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        marginTop: 4,
+                        color: "#bbb",
+                      }}
+                    >
+                      {s.label}
+                    </div>
                   </div>
                 ))}
               </div>
 
               {rows.length === 0 ? (
-                <div style={{ textAlign: "center", padding: 60, color: "#555" }}>No Sales Orders found.</div>
+                <div
+                  style={{ textAlign: "center", padding: 60, color: "#555" }}
+                >
+                  No Sales Orders found.
+                </div>
               ) : (
-                <div style={{ borderRadius: 8, overflow: "hidden", border: "1px solid #2a2a2e" }}>
+                <div
+                  style={{
+                    borderRadius: 8,
+                    overflow: "hidden",
+                    border: "1px solid #2a2a2e",
+                  }}
+                >
                   <table style={TABLE}>
                     <colgroup>
                       <col style={{ width: 110 }} />
@@ -1255,34 +1338,105 @@ export function Dashboard({ data }) {
                     </colgroup>
                     <thead>
                       <tr>
-                        {["SO #", "Client", "Items", "S.O. Date", "Ordered", "Produced", "Dispatched", "Status"].map((h) => (
-                          <th key={h} style={TH}>{h}</th>
+                        {[
+                          "SO #",
+                          "Client",
+                          "Items",
+                          "S.O. Date",
+                          "Ordered",
+                          "Produced",
+                          "Dispatched",
+                          "Status",
+                        ].map((h) => (
+                          <th key={h} style={TH}>
+                            {h}
+                          </th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {rows.map((r, i) => (
-                        <tr key={r.soKey + i} style={{ background: i % 2 === 0 ? "#0e0e12" : "#121216" }}>
+                        <tr
+                          key={r.soKey + i}
+                          style={{
+                            background: i % 2 === 0 ? "#0e0e12" : "#121216",
+                          }}
+                        >
                           <td style={TD}>
-                            <div style={{ color: C.green, fontWeight: 700 }}>{r.soNo}</div>
-                            <div style={{ fontSize: 9, color: "#666", marginTop: 2 }}>{r.so.status}</div>
-                          </td>
-                          <td style={{ ...TD, fontWeight: 600 }}>{r.so.clientName || r.so.client || "—"}</td>
-                          <td style={{ ...TD, color: "#888", whiteSpace: "normal", wordBreak: "break-word", maxWidth: 0 }}>{r.itemsStr}</td>
-                          <td style={{ ...TD, color: "#888" }}>{(r.so.orderDate || "").slice(0, 10) || "—"}</td>
-                          <td style={TD}>{r.ord > 0 ? fmt(r.ord) : "—"}</td>
-                          <td style={{ ...TD, color: C.yellow }}>{r.producedQty > 0 ? fmt(r.producedQty) : "—"}</td>
-                          <td style={{ ...TD, color: C.green }}>{r.disp > 0 ? fmt(r.disp) : "—"}</td>
-                          <td style={TD}>
-                            <div style={{ fontSize: 11, fontWeight: 700, color: statusColor(r.status), marginBottom: 4 }}>
-                              {r.status}
-                              {r.ord > 0 && r.status !== "Fully Dispatched" ? ` (${r.pct}%)` : ""}
+                            <div style={{ color: C.green, fontWeight: 700 }}>
+                              {r.soNo}
                             </div>
-                            {r.status === "Fully Dispatched" && r.disp < r.ord && (
-                                <div style={{ fontSize: 9, color: C.green }}>Reconciled @ {r.pct}%</div>
-                            )}
-                            <div style={{ width: "100%", height: 3, background: "#1e1e22", borderRadius: 2, marginTop: 4 }}>
-                              <div style={{ width: Math.min(r.pct, 100) + "%", height: "100%", background: statusColor(r.status), borderRadius: 2 }} />
+                            <div
+                              style={{
+                                fontSize: 9,
+                                color: "#666",
+                                marginTop: 2,
+                              }}
+                            >
+                              {r.so.status}
+                            </div>
+                          </td>
+                          <td style={{ ...TD, fontWeight: 600 }}>
+                            {r.so.clientName || r.so.client || "—"}
+                          </td>
+                          <td
+                            style={{
+                              ...TD,
+                              color: "#888",
+                              whiteSpace: "normal",
+                              wordBreak: "break-word",
+                              maxWidth: 0,
+                            }}
+                          >
+                            {r.itemsStr}
+                          </td>
+                          <td style={{ ...TD, color: "#888" }}>
+                            {(r.so.orderDate || "").slice(0, 10) || "—"}
+                          </td>
+                          <td style={TD}>{r.ord > 0 ? fmt(r.ord) : "—"}</td>
+                          <td style={{ ...TD, color: C.yellow }}>
+                            {r.producedQty > 0 ? fmt(r.producedQty) : "—"}
+                          </td>
+                          <td style={{ ...TD, color: C.green }}>
+                            {r.disp > 0 ? fmt(r.disp) : "—"}
+                          </td>
+                          <td style={TD}>
+                            <div
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 700,
+                                color: statusColor(r.status),
+                                marginBottom: 4,
+                              }}
+                            >
+                              {r.status}
+                              {r.ord > 0 && r.status !== "Fully Dispatched"
+                                ? ` (${r.pct}%)`
+                                : ""}
+                            </div>
+                            {r.status === "Fully Dispatched" &&
+                              r.disp < r.ord && (
+                                <div style={{ fontSize: 9, color: C.green }}>
+                                  Reconciled @ {r.pct}%
+                                </div>
+                              )}
+                            <div
+                              style={{
+                                width: "100%",
+                                height: 3,
+                                background: "#1e1e22",
+                                borderRadius: 2,
+                                marginTop: 4,
+                              }}
+                            >
+                              <div
+                                style={{
+                                  width: Math.min(r.pct, 100) + "%",
+                                  height: "100%",
+                                  background: statusColor(r.status),
+                                  borderRadius: 2,
+                                }}
+                              />
                             </div>
                           </td>
                         </tr>
@@ -1295,10 +1449,9 @@ export function Dashboard({ data }) {
           );
         })()}
 
-      {/* ── DELIVERY STATUS — directly from dispatches ── */}
+      {}
       {reportTab === "delivery" &&
         (() => {
-          // Each row = one dispatch record
           const rows = dispatches.map((d, idx) => {
             const dispNo =
               d.dispatchNo ||
@@ -1516,7 +1669,7 @@ export function Dashboard({ data }) {
           );
         })()}
 
-      {/* ── SO AGEING ── */}
+      {}
       {reportTab === "so_ageing" &&
         (() => {
           const rows = salesOrders
@@ -1686,7 +1839,7 @@ export function Dashboard({ data }) {
           );
         })()}
 
-      {/* ── PROD VS TARGET ── */}
+      {}
       {reportTab === "prod_target" &&
         (() => {
           const dates = [];
@@ -1785,7 +1938,7 @@ export function Dashboard({ data }) {
           );
         })()}
 
-      {/* ── YIELD TRACKING ── */}
+      {}
       {reportTab === "yield" &&
         (() => {
           const ySummary = STAGES.map((stage) => {
@@ -1855,7 +2008,7 @@ export function Dashboard({ data }) {
                 ))}
               </div>
 
-              {/* Yield detail table */}
+              {}
               <div
                 style={{
                   borderRadius: 8,
@@ -1918,7 +2071,7 @@ export function Dashboard({ data }) {
           );
         })()}
 
-      {/* ── LOW STOCK ── */}
+      {}
       {reportTab === "low_stock" &&
         (() => {
           const low = lowStockItems;
@@ -1965,13 +2118,17 @@ export function Dashboard({ data }) {
                   </colgroup>
                   <thead>
                     <tr>
-                      {["Item Name", "Category", "Current Stock", "Reorder Level", "Status"].map(
-                        (h) => (
-                          <th key={h} style={TH}>
-                            {h}
-                          </th>
-                        ),
-                      )}
+                      {[
+                        "Item Name",
+                        "Category",
+                        "Current Stock",
+                        "Reorder Level",
+                        "Status",
+                      ].map((h) => (
+                        <th key={h} style={TH}>
+                          {h}
+                        </th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody>
@@ -1982,12 +2139,8 @@ export function Dashboard({ data }) {
                           background: i % 2 === 0 ? "#0e0e12" : "#121216",
                         }}
                       >
-                        <td style={{ ...TD, fontWeight: 700 }}>
-                          {f.name}
-                        </td>
-                        <td style={{ ...TD, color: "#888" }}>
-                          {f.category}
-                        </td>
+                        <td style={{ ...TD, fontWeight: 700 }}>{f.name}</td>
+                        <td style={{ ...TD, color: "#888" }}>{f.category}</td>
                         <td style={{ ...TD, color: C.red, fontWeight: 800 }}>
                           {fmt(f.stock)} {f.unit}
                         </td>
@@ -2018,7 +2171,7 @@ export function Dashboard({ data }) {
           );
         })()}
 
-      {/* ── MONTHLY SUMMARY ── */}
+      {}
       {reportTab === "monthly" &&
         (() => {
           const monthStr = selectedMonth;
@@ -2223,7 +2376,7 @@ export function Dashboard({ data }) {
                 </table>
               </div>
 
-              {/* Active JOs */}
+              {}
               {mJOs.length > 0 && (
                 <div
                   style={{
@@ -2303,10 +2456,9 @@ export function Dashboard({ data }) {
           );
         })()}
 
-      {/* ── VENDOR PERFORMANCE ── built directly from purchaseOrders ── */}
+      {}
       {reportTab === "vendor" &&
         (() => {
-          // Group purchaseOrders by vendor name (whatever field is present)
           const vendorMap = {};
           purchaseOrders.forEach((po) => {
             const vName =
@@ -2317,7 +2469,6 @@ export function Dashboard({ data }) {
             vendorMap[vName].pos.push(po);
           });
 
-          // Attach inward GRNs to each vendor
           inward.forEach((grn) => {
             const vName =
               grn.vendorName ||
@@ -2328,7 +2479,6 @@ export function Dashboard({ data }) {
             if (vName && vendorMap[vName]) {
               vendorMap[vName].grns.push(grn);
             } else if (vName) {
-              // GRN exists but no PO yet for this vendor — still show
               if (!vendorMap[vName])
                 vendorMap[vName] = { name: vName, pos: [], grns: [] };
               vendorMap[vName].grns.push(grn);

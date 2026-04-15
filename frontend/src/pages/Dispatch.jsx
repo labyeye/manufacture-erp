@@ -76,7 +76,9 @@ export default function Dispatch({ fgStock = [], toast }) {
   const fetchSalesOrders = async () => {
     try {
       const res = await salesOrdersAPI.getAll();
-      setSalesOrders(res.salesOrders || []);
+      const list =
+        res.salesOrders || res.data || (Array.isArray(res) ? res : []);
+      setSalesOrders(list);
     } catch (error) {
       console.error("Failed to fetch sales orders:", error);
     }
@@ -93,8 +95,15 @@ export default function Dispatch({ fgStock = [], toast }) {
 
   const activeSOList = useMemo(
     () =>
-      (salesOrders || []).filter(
-        (s) => s.status === "Open" || s.status === "In Progress",
+      (salesOrders || []).filter((s) =>
+        [
+          "Open",
+          "In Production",
+          "Issued",
+          "Partial",
+          "Completed",
+          "In Progress",
+        ].includes(s.status),
       ),
     [salesOrders],
   );

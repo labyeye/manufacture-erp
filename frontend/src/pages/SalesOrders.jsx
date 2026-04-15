@@ -24,7 +24,7 @@ const fmt = (n) => (n ?? 0).toLocaleString("en-IN");
 const sectionLabelStyle = {
   fontSize: 11,
   fontWeight: 700,
-  letterSpacing: "0.08em",
+  letterSpacing: "normal",
   color: C.green || "#4ade80",
   textTransform: "uppercase",
   marginBottom: 14,
@@ -97,7 +97,8 @@ export default function SalesOrders(props) {
     length: "",
     height: "",
     gussett: "",
-    uom: "nos",
+    uom: "inch",
+    qtyUnit: "pcs",
     orderQty: "",
     price: "",
     amount: "",
@@ -281,7 +282,8 @@ export default function SalesOrders(props) {
             itemCategory: found.category || it.itemCategory,
             size: found.subCategory || it.size,
             variant: found.variant || it.variant,
-            uom: found.uom || it.uom || "nos",
+            uom: found.uom || it.uom || "inch",
+            qtyUnit: found.qtyUnit || it.qtyUnit || "pcs",
             clientName: header.clientName ? "" : found.clientName || "",
             itemName: found.name || it.itemName,
             gstRate: found.gstRate || 18,
@@ -291,7 +293,7 @@ export default function SalesOrders(props) {
         }
       }
 
-      // Re-calculate math
+      
       const orderQty = +(it.orderQty || 0);
       const price = +(it.price || 0);
       const gstRate = +(it.gstRate || 18);
@@ -310,13 +312,13 @@ export default function SalesOrders(props) {
 
       if (k === "size" && v && !isLiquid) {
         const config = CATEGORY_CONFIG[it.itemCategory];
-        // Try to parse WxGxH (unit) [gsm]
+        
         const match3D = v
           .toLowerCase()
           .match(
             /^(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)\s*([a-z]+)?\s*(?:(\d+)\s*gsm)?/,
           );
-        // Try to parse WxL (unit) [gsm]
+        
         const match2D = v
           .toLowerCase()
           .match(
@@ -325,7 +327,7 @@ export default function SalesOrders(props) {
 
         if (match3D) {
           it.width = match3D[1];
-          // map 2nd dimension based on config
+          
           if (config?.f2 === "LENGTH") {
             it.length = match3D[2];
             it.gussett = "";
@@ -339,7 +341,7 @@ export default function SalesOrders(props) {
           if (match3D[5]) it.gsm = match3D[5];
         } else if (match2D) {
           it.width = match2D[1];
-          // map 2nd dimension based on config (could be LENGTH or HEIGHT)
+          
           if (config?.f2 === "HEIGHT") {
             it.height = match2D[2];
             it.length = "";
@@ -410,7 +412,8 @@ export default function SalesOrders(props) {
         length: it.length || "",
         height: it.height || "",
         gussett: it.gussett || "",
-        uom: it.uom || "nos",
+        uom: it.uom || "inch",
+        qtyUnit: it.qtyUnit || "pcs",
         orderQty: it.orderQty || 0,
         price: it.price || 0,
         amount: it.amount || 0,
@@ -448,6 +451,7 @@ export default function SalesOrders(props) {
     if (!header.orderDate) he.orderDate = true;
     if (!header.deliveryDate) he.deliveryDate = true;
     if (!header.clientName) he.clientName = true;
+    if (!header.clientCategory) he.clientCategory = true;
     setHeaderErrors(he);
 
     const allItemErrors = items.map((it) => {
@@ -496,7 +500,8 @@ export default function SalesOrders(props) {
             length: it.length ? Number(it.length) : undefined,
             height: it.height ? Number(it.height) : undefined,
             gussett: it.gussett ? Number(it.gussett) : undefined,
-            uom: it.uom || "nos",
+            uom: it.uom || "inch",
+            qtyUnit: it.qtyUnit || "pcs",
             orderQty: Number(it.orderQty || 0),
             price: Number(it.price || 0),
             amount: amount,
@@ -650,7 +655,12 @@ export default function SalesOrders(props) {
                     <div style="font-weight: 700;">${it.itemName}</div>
                   </td>
                   <td>${it.hsnCode || "—"}</td>
-                  <td class="col-qty">${fmt(it.orderQty)} ${it.uom || "pcs"}</td>
+                  <td class="col-qty">
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
+                      <span>${fmt(it.orderQty)}</span>
+                      <span style="font-size: 9px; color: #64748b;">${it.qtyUnit || "pcs"}</span>
+                    </div>
+                  </td>
                   <td style="text-align: right;">₹${fmt(it.price)}</td>
                   <td style="text-align: center;">${it.gstRate || 18}%</td>
                   <td class="col-amt">₹${fmt(it.amount)}</td>
@@ -812,10 +822,11 @@ export default function SalesOrders(props) {
                 gap: 14,
               }}
             >
-              <Field label="Client Category">
+              <Field label="Client Category *">
                 <select
                   value={header.clientCategory}
                   onChange={(e) => setH("clientCategory", e.target.value)}
+                  style={EH("clientCategory")}
                 >
                   <option value="">-- All Categories --</option>
                   {uniqueClientCategories.map((cat) => (
@@ -824,6 +835,7 @@ export default function SalesOrders(props) {
                     </option>
                   ))}
                 </select>
+                {EHMsg("clientCategory")}
               </Field>
               <Field label="Client Name *">
                 <AutocompleteInput
@@ -940,7 +952,7 @@ export default function SalesOrders(props) {
                 )}
               </div>
 
-              {/* Row 1: Core Identifiers */}
+              {}
               <div
                 style={{
                   display: "grid",
@@ -991,7 +1003,7 @@ export default function SalesOrders(props) {
                 </Field>
               </div>
 
-              {/* Dynamic Dimension Layout based on Category */}
+              {}
               {(() => {
                 const categorySizes = subTypeMap[it.itemCategory] || [];
                 const config = CATEGORY_CONFIG[it.itemCategory];
@@ -1000,7 +1012,7 @@ export default function SalesOrders(props) {
                   s.toLowerCase().includes("ml"),
                 );
 
-                // Determine layout and labels
+                
                 let layout = config?.layout;
                 let f1 = config?.f1 || "WIDTH";
                 let f2 = config?.f2;
@@ -1026,7 +1038,7 @@ export default function SalesOrders(props) {
 
                 const showInputs = layout === "3D" || layout === "2D";
 
-                // Mapping for state keys based on label
+                
                 const getKey = (label) => {
                   if (label === "WIDTH") return "width";
                   if (label === "LENGTH") return "length";
@@ -1123,16 +1135,35 @@ export default function SalesOrders(props) {
                             />
                           </Field>
                         )}
-                        <Field label="ORDER QUANTITY *">
-                          <input
-                            type="number"
-                            placeholder="Qty"
-                            value={it.orderQty}
-                            onChange={(e) =>
-                              setItem(idx, "orderQty", e.target.value)
-                            }
-                            style={EI(idx, "orderQty")}
-                          />
+                        <Field label="ORDER QTY & UNIT *">
+                          <div style={{ display: "flex", gap: 6 }}>
+                            <input
+                              type="number"
+                              placeholder="Qty"
+                              value={it.orderQty}
+                              onChange={(e) =>
+                                setItem(idx, "orderQty", e.target.value)
+                              }
+                              style={{ ...EI(idx, "orderQty"), flex: 1 }}
+                            />
+                            <select
+                              value={it.qtyUnit || "pcs"}
+                              onChange={(e) =>
+                                setItem(idx, "qtyUnit", e.target.value)
+                              }
+                              style={{
+                                padding: "8px 12px",
+                                borderRadius: 6,
+                                border: `1px solid ${C.border}`,
+                                background: C.inputBg,
+                                color: C.text,
+                                width: 80,
+                              }}
+                            >
+                              <option value="pcs">pcs</option>
+                              <option value="kg">kg</option>
+                            </select>
+                          </div>
                           {EIMsg(idx, "orderQty")}
                         </Field>
                         <Field label="PRICE (₹)">
@@ -1176,16 +1207,35 @@ export default function SalesOrders(props) {
                       </select>
                       {EIMsg(idx, "size")}
                     </Field>
-                    <Field label="ORDER QUANTITY *">
-                      <input
-                        type="number"
-                        placeholder="Qty"
-                        value={it.orderQty}
-                        onChange={(e) =>
-                          setItem(idx, "orderQty", e.target.value)
-                        }
-                        style={EI(idx, "orderQty")}
-                      />
+                    <Field label="ORDER QTY & UNIT *">
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <input
+                          type="number"
+                          placeholder="Qty"
+                          value={it.orderQty}
+                          onChange={(e) =>
+                            setItem(idx, "orderQty", e.target.value)
+                          }
+                          style={{ ...EI(idx, "orderQty"), flex: 1 }}
+                        />
+                        <select
+                          value={it.qtyUnit || "pcs"}
+                          onChange={(e) =>
+                            setItem(idx, "qtyUnit", e.target.value)
+                          }
+                          style={{
+                            padding: "8px 12px",
+                            borderRadius: 6,
+                            border: `1px solid ${C.border}`,
+                            background: C.inputBg,
+                            color: C.text,
+                            width: 80,
+                          }}
+                        >
+                          <option value="pcs">pcs</option>
+                          <option value="kg">kg</option>
+                        </select>
+                      </div>
                       {EIMsg(idx, "orderQty")}
                     </Field>
                     <Field label="PRICE (₹)">
@@ -1202,7 +1252,7 @@ export default function SalesOrders(props) {
                 );
               })()}
 
-              {/* Row 3: Totals & Tax */}
+              {}
               <div
                 style={{
                   display: "grid",
@@ -1261,7 +1311,7 @@ export default function SalesOrders(props) {
                 </Field>
               </div>
 
-              {/* Row 4: HSN & Generated Name */}
+              {}
               <div
                 style={{
                   display: "grid",
@@ -1294,7 +1344,7 @@ export default function SalesOrders(props) {
                 </Field>
               </div>
 
-              {/* Row 5: Remarks */}
+              {}
               <div style={{ marginBottom: 4 }}>
                 <Field label="ITEM REMARKS">
                   <input
@@ -1510,7 +1560,7 @@ export default function SalesOrders(props) {
                     background: "#161b22",
                   }}
                 >
-                  {/* Card Header */}
+                  {}
                   <div
                     style={{
                       display: "flex",
@@ -1625,7 +1675,7 @@ export default function SalesOrders(props) {
                     </div>
                   </div>
 
-                  {/* Items List Table-like */}
+                  {}
                   <div
                     style={{
                       display: "flex",
@@ -1656,7 +1706,7 @@ export default function SalesOrders(props) {
                         <span style={{ flex: 1, color: "#8b949e" }}>
                           Qty:{" "}
                           <b style={{ color: "#e6edf3" }}>
-                            {fmt(it.orderQty)} {it.uom}
+                            {fmt(it.orderQty)} {it.qtyUnit || "pcs"}
                           </b>
                         </span>
                         <span style={{ flex: 1, color: "#8b949e" }}>
@@ -1677,7 +1727,7 @@ export default function SalesOrders(props) {
                     ))}
                   </div>
 
-                  {/* Footer Info */}
+                  {}
                   <div
                     style={{
                       display: "flex",

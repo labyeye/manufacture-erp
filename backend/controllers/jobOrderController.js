@@ -1,13 +1,20 @@
-const JobOrder = require('../models/JobOrder');
-const RawMaterialStock = require('../models/RawMaterialStock');
-const FGStock = require('../models/FGStock');
-const PrintingDetailMaster = require('../models/PrintingDetailMaster');
-const MachineMaster = require('../models/MachineMaster');
-const SalesOrder = require('../models/SalesOrder');
-const { generateJONo } = require('../utils/counters');
-const { generateJobCardPDF } = require('../utils/pdf');
+const JobOrder = require("../models/JobOrder");
+const RawMaterialStock = require("../models/RawMaterialStock");
+const FGStock = require("../models/FGStock");
+const PrintingDetailMaster = require("../models/PrintingDetailMaster");
+const MachineMaster = require("../models/MachineMaster");
+const SalesOrder = require("../models/SalesOrder");
+const { generateJONo } = require("../utils/counters");
+const { generateJobCardPDF } = require("../utils/pdf");
 
-const STAGES = ["Printing", "Varnish", "Lamination", "Die Cutting", "Formation", "Manual Formation"];
+const STAGES = [
+  "Printing",
+  "Varnish",
+  "Lamination",
+  "Die Cutting",
+  "Formation",
+  "Manual Formation",
+];
 
 async function buildSchedule(jobOrder, machineAssignments) {
   const schedule = [];
@@ -18,10 +25,12 @@ async function buildSchedule(jobOrder, machineAssignments) {
     if (!machineId) continue;
 
     const machine = await MachineMaster.findById(machineId);
-    if (!machine || machine.status !== 'Active') continue;
+    if (!machine || machine.status !== "Active") continue;
 
-    const capacityPerDay = machine.capacity * machine.workingHours * machine.shiftsPerDay;
-    const duration = capacityPerDay > 0 ? Math.ceil(jobOrder.orderQty / capacityPerDay) : 1;
+    const capacityPerDay =
+      machine.capacity * machine.workingHours * machine.shiftsPerDay;
+    const duration =
+      capacityPerDay > 0 ? Math.ceil(jobOrder.orderQty / capacityPerDay) : 1;
 
     const startDate = new Date(currentDate);
     const endDate = new Date(currentDate);
@@ -34,7 +43,7 @@ async function buildSchedule(jobOrder, machineAssignments) {
       machineName: machine.name,
       startDate,
       endDate,
-      duration
+      duration,
     });
 
     currentDate = endDate;
@@ -46,13 +55,11 @@ async function buildSchedule(jobOrder, machineAssignments) {
 async function deductRawMaterialStock(jobOrder) {
   try {
     const findStock = async (id, cat, type, gsm) => {
-      // 1. Try by ID first (most accurate)
       if (id) {
         const byId = await RawMaterialStock.findById(id);
         if (byId) return byId;
       }
 
-      // 2. Fallback to fuzzy match
       if (!cat || !type) return null;
       const normCat = cat.trim().replace(/s$/i, "");
       return RawMaterialStock.findOne({
@@ -62,7 +69,6 @@ async function deductRawMaterialStock(jobOrder) {
       });
     };
 
-    // 1. Process Main Paper
     const rmStock = await findStock(
       jobOrder.rmStockId,
       jobOrder.paperCategory,
@@ -75,7 +81,7 @@ async function deductRawMaterialStock(jobOrder) {
         const weightToDeduct = Number(jobOrder.reelWeightKg || 0);
         if (weightToDeduct > 0) {
           rmStock.weight = Math.max(0, rmStock.weight - weightToDeduct);
-          // If it's a sheet stock tracked in kg, also adjust qty if possible
+
           if (rmStock.unit === "sheets" && rmStock.weightPerSheet > 0) {
             rmStock.qty = Math.floor(rmStock.weight / rmStock.weightPerSheet);
           }
@@ -97,8 +103,10 @@ async function deductRawMaterialStock(jobOrder) {
       console.log(`✅ Stock Deducted for ${jobOrder.joNo}:`, rmStock.name);
     }
 
-    // 2. Handle Second Paper if present
-    if (jobOrder.hasSecondPaper && (jobOrder.rmStockId2 || jobOrder.paperType2)) {
+    if (
+      jobOrder.hasSecondPaper &&
+      (jobOrder.rmStockId2 || jobOrder.paperType2)
+    ) {
       const rmStock2 = await findStock(
         jobOrder.rmStockId2,
         jobOrder.paperCategory2 || jobOrder.paperCategory,
@@ -107,17 +115,20 @@ async function deductRawMaterialStock(jobOrder) {
       );
 
       if (rmStock2) {
-        if (rmStock2.unit === "kg" || (jobOrder.paperCategory2 || jobOrder.paperCategory) === "Paper Reel") {
-          // Weight calculation for second paper - currently assumes same as main reel weight or needs its own field
-          // If it's sheets, it uses noOfSheets2
+        if (
+          rmStock2.unit === "kg" ||
+          (jobOrder.paperCategory2 || jobOrder.paperCategory) === "Paper Reel"
+        ) {
           if (rmStock2.unit === "sheets") {
-             const qty2 = Number(jobOrder.noOfSheets2 || 0);
-             const wps2 = rmStock2.weightPerSheet || (rmStock2.qty > 0 ? rmStock2.weight / rmStock2.qty : 0);
-             rmStock2.qty = Math.max(0, rmStock2.qty - qty2);
-             if (wps2 > 0) rmStock2.weight = rmStock2.qty * wps2;
+            const qty2 = Number(jobOrder.noOfSheets2 || 0);
+            const wps2 =
+              rmStock2.weightPerSheet ||
+              (rmStock2.qty > 0 ? rmStock2.weight / rmStock2.qty : 0);
+            rmStock2.qty = Math.max(0, rmStock2.qty - qty2);
+            if (wps2 > 0) rmStock2.weight = rmStock2.qty * wps2;
           } else {
-             const weightToDeduct2 = Number(jobOrder.reelWeightKg || 0); // Logic may vary
-             rmStock2.weight = Math.max(0, rmStock2.weight - weightToDeduct2);
+            const weightToDeduct2 = Number(jobOrder.reelWeightKg || 0);
+            rmStock2.weight = Math.max(0, rmStock2.weight - weightToDeduct2);
           }
         } else {
           const qtyToDeduct2 = Number(jobOrder.noOfSheets2 || 0);
@@ -147,7 +158,7 @@ async function upsertPrintingMaster(jobOrder) {
   await PrintingDetailMaster.findOneAndUpdate(
     {
       itemName: jobOrder.itemName,
-      clientName: jobOrder.clientName
+      clientName: jobOrder.clientName,
     },
     {
       itemName: jobOrder.itemName,
@@ -166,38 +177,40 @@ async function upsertPrintingMaster(jobOrder) {
       reelSize: jobOrder.reelSize,
       reelWidthMm: jobOrder.reelWidthMm,
       cuttingLengthMm: jobOrder.cuttingLengthMm,
-      updatedAt: new Date()
+      updatedAt: new Date(),
     },
-    { upsert: true, new: true }
+    { upsert: true, new: true },
   );
 }
 
 exports.getAll = async (req, res) => {
   try {
     const jobOrders = await JobOrder.find()
-      .populate('createdBy', 'name username')
+      .populate("createdBy", "name username")
       .sort({ createdAt: -1 });
 
     res.json(jobOrders);
   } catch (error) {
-    console.error('Get job orders error:', error);
-    res.status(500).json({ error: 'Failed to fetch job orders' });
+    console.error("Get job orders error:", error);
+    res.status(500).json({ error: "Failed to fetch job orders" });
   }
 };
 
 exports.getOne = async (req, res) => {
   try {
-    const jobOrder = await JobOrder.findById(req.params.id)
-      .populate('createdBy', 'name username');
+    const jobOrder = await JobOrder.findById(req.params.id).populate(
+      "createdBy",
+      "name username",
+    );
 
     if (!jobOrder) {
-      return res.status(404).json({ error: 'Job order not found' });
+      return res.status(404).json({ error: "Job order not found" });
     }
 
     res.json(jobOrder);
   } catch (error) {
-    console.error('Get job order error:', error);
-    res.status(500).json({ error: 'Failed to fetch job order' });
+    console.error("Get job order error:", error);
+    res.status(500).json({ error: "Failed to fetch job order" });
   }
 };
 
@@ -205,10 +218,19 @@ exports.create = async (req, res) => {
   try {
     const joNo = await generateJONo();
 
-    const STAGES_ORDER = ["Printing", "Varnish", "Lamination", "Die Cutting", "Formation", "Manual Formation"];
+    const STAGES_ORDER = [
+      "Printing",
+      "Varnish",
+      "Lamination",
+      "Die Cutting",
+      "Formation",
+      "Manual Formation",
+    ];
     let sortedProcess = req.body.process || [];
     if (Array.isArray(sortedProcess)) {
-      sortedProcess.sort((a, b) => STAGES_ORDER.indexOf(a) - STAGES_ORDER.indexOf(b));
+      sortedProcess.sort(
+        (a, b) => STAGES_ORDER.indexOf(a) - STAGES_ORDER.indexOf(b),
+      );
     }
 
     const jobOrderData = {
@@ -216,16 +238,21 @@ exports.create = async (req, res) => {
       process: sortedProcess,
       joNo,
       createdBy: req.userId,
-      status: 'Open',
+      status: "Open",
       completedProcesses: [],
       stageQtyMap: new Map(),
       stageTotalMap: new Map(),
-      stageHistory: []
+      stageHistory: [],
     };
 
     if (req.body.machineAssignments) {
-      jobOrderData.machineAssignments = new Map(Object.entries(req.body.machineAssignments));
-      jobOrderData.schedule = await buildSchedule(jobOrderData, req.body.machineAssignments);
+      jobOrderData.machineAssignments = new Map(
+        Object.entries(req.body.machineAssignments),
+      );
+      jobOrderData.schedule = await buildSchedule(
+        jobOrderData,
+        req.body.machineAssignments,
+      );
     }
 
     const jobOrder = new JobOrder(jobOrderData);
@@ -241,19 +268,19 @@ exports.create = async (req, res) => {
         const allJOs = await JobOrder.find({ soRef: jobOrderData.soRef });
         let allScheduled = true;
 
-        so.items.forEach(soItem => {
+        so.items.forEach((soItem) => {
           const orderedForThisItem = soItem.orderQty || 0;
           const scheduledQty = allJOs
-            .filter(jo => jo.itemName === soItem.itemName)
+            .filter((jo) => jo.itemName === soItem.itemName)
             .reduce((sum, jo) => sum + (jo.orderQty || 0), 0);
-            
+
           if (scheduledQty < orderedForThisItem) {
             allScheduled = false;
           }
         });
 
-        if (allScheduled && so.status !== 'Issued') {
-          so.status = 'Issued';
+        if (allScheduled && so.status !== "Issued") {
+          so.status = "Issued";
           await so.save();
         }
       }
@@ -261,8 +288,10 @@ exports.create = async (req, res) => {
 
     res.status(201).json(jobOrder);
   } catch (error) {
-    console.error('Create job order error:', error);
-    res.status(500).json({ error: 'Failed to create job order', details: error.message });
+    console.error("Create job order error:", error);
+    res
+      .status(500)
+      .json({ error: "Failed to create job order", details: error.message });
   }
 };
 
@@ -270,25 +299,39 @@ exports.update = async (req, res) => {
   try {
     const jobOrder = await JobOrder.findById(req.params.id);
     if (!jobOrder) {
-      return res.status(404).json({ error: 'Job order not found' });
+      return res.status(404).json({ error: "Job order not found" });
     }
 
-    const STAGES_ORDER = ["Printing", "Varnish", "Lamination", "Die Cutting", "Formation", "Manual Formation"];
+    const STAGES_ORDER = [
+      "Printing",
+      "Varnish",
+      "Lamination",
+      "Die Cutting",
+      "Formation",
+      "Manual Formation",
+    ];
     if (req.body.process && Array.isArray(req.body.process)) {
-      req.body.process.sort((a, b) => STAGES_ORDER.indexOf(a) - STAGES_ORDER.indexOf(b));
+      req.body.process.sort(
+        (a, b) => STAGES_ORDER.indexOf(a) - STAGES_ORDER.indexOf(b),
+      );
     }
     Object.assign(jobOrder, req.body);
 
     if (req.body.machineAssignments) {
-      jobOrder.machineAssignments = new Map(Object.entries(req.body.machineAssignments));
-      jobOrder.schedule = await buildSchedule(jobOrder, req.body.machineAssignments);
+      jobOrder.machineAssignments = new Map(
+        Object.entries(req.body.machineAssignments),
+      );
+      jobOrder.schedule = await buildSchedule(
+        jobOrder,
+        req.body.machineAssignments,
+      );
     }
 
     await jobOrder.save();
     res.json(jobOrder);
   } catch (error) {
-    console.error('Update job order error:', error);
-    res.status(500).json({ error: 'Failed to update job order' });
+    console.error("Update job order error:", error);
+    res.status(500).json({ error: "Failed to update job order" });
   }
 };
 
@@ -296,22 +339,31 @@ exports.delete = async (req, res) => {
   try {
     const jobOrder = await JobOrder.findByIdAndDelete(req.params.id);
     if (!jobOrder) {
-      return res.status(404).json({ error: 'Job order not found' });
+      return res.status(404).json({ error: "Job order not found" });
     }
-    res.json({ message: 'Job order deleted successfully' });
+    res.json({ message: "Job order deleted successfully" });
   } catch (error) {
-    console.error('Delete job order error:', error);
-    res.status(500).json({ error: 'Failed to delete job order' });
+    console.error("Delete job order error:", error);
+    res.status(500).json({ error: "Failed to delete job order" });
   }
 };
 
 exports.addStage = async (req, res) => {
   try {
-    const { stage, qtyCompleted, qtyRejected, operator, machine, shift, date, remarks } = req.body;
+    const {
+      stage,
+      qtyCompleted,
+      qtyRejected,
+      operator,
+      machine,
+      shift,
+      date,
+      remarks,
+    } = req.body;
     const jobOrder = await JobOrder.findById(req.params.id);
 
     if (!jobOrder) {
-      return res.status(404).json({ error: 'Job order not found' });
+      return res.status(404).json({ error: "Job order not found" });
     }
 
     jobOrder.stageHistory.push({
@@ -324,7 +376,7 @@ exports.addStage = async (req, res) => {
       date: date || new Date(),
       remarks,
       enteredBy: req.userId,
-      enteredAt: new Date()
+      enteredAt: new Date(),
     });
 
     await recalculateProductionStats(jobOrder);
@@ -332,8 +384,8 @@ exports.addStage = async (req, res) => {
     await jobOrder.save();
     res.json(jobOrder);
   } catch (error) {
-    console.error('Add stage error:', error);
-    res.status(500).json({ error: 'Failed to add stage entry' });
+    console.error("Add stage error:", error);
+    res.status(500).json({ error: "Failed to add stage entry" });
   }
 };
 
@@ -344,30 +396,28 @@ exports.updateStage = async (req, res) => {
     const jobOrder = await JobOrder.findById(id);
 
     if (!jobOrder) {
-      return res.status(404).json({ error: 'Job order not found' });
+      return res.status(404).json({ error: "Job order not found" });
     }
 
     const stageEntry = jobOrder.stageHistory.id(stageId);
     if (!stageEntry) {
-      return res.status(404).json({ error: 'Stage record not found' });
+      return res.status(404).json({ error: "Stage record not found" });
     }
 
-    // Update the stage entry
     Object.assign(stageEntry, {
       ...updateData,
       date: updateData.date ? new Date(updateData.date) : stageEntry.date,
       qtyCompleted: Number(updateData.qtyCompleted),
-      qtyRejected: Number(updateData.qtyRejected || 0)
+      qtyRejected: Number(updateData.qtyRejected || 0),
     });
 
-    // Helper function to recalculate all stats (similar to addStage logic)
     await recalculateProductionStats(jobOrder);
 
     await jobOrder.save();
     res.json(jobOrder);
   } catch (error) {
-    console.error('Update stage error:', error);
-    res.status(500).json({ error: 'Failed to update stage entry' });
+    console.error("Update stage error:", error);
+    res.status(500).json({ error: "Failed to update stage entry" });
   }
 };
 
@@ -377,19 +427,18 @@ exports.deleteStage = async (req, res) => {
     const jobOrder = await JobOrder.findById(id);
 
     if (!jobOrder) {
-      return res.status(404).json({ error: 'Job order not found' });
+      return res.status(404).json({ error: "Job order not found" });
     }
 
     jobOrder.stageHistory.pull({ _id: stageId });
 
-    // Helper function to recalculate all stats
     await recalculateProductionStats(jobOrder);
 
     await jobOrder.save();
     res.json(jobOrder);
   } catch (error) {
-    console.error('Delete stage error:', error);
-    res.status(500).json({ error: 'Failed to delete stage entry' });
+    console.error("Delete stage error:", error);
+    res.status(500).json({ error: "Failed to delete stage entry" });
   }
 };
 
@@ -411,39 +460,91 @@ async function recalculateProductionStats(jobOrder) {
   jobOrder.stageQtyMap = stageQtyMap;
   jobOrder.stageTotalMap = stageTotalMap;
 
-  const orderedProcesses = jobOrder.process || [];
-  const completedProcesses = orderedProcesses.filter(p => completedProcessesSet.has(p));
+  const STAGES_ORDER = [
+    "Printing",
+    "Varnish",
+    "Lamination",
+    "Die Cutting",
+    "Formation",
+    "Manual Formation",
+  ];
+  const orderedProcesses = [...(jobOrder.process || [])].sort(
+    (a, b) => STAGES_ORDER.indexOf(a) - STAGES_ORDER.indexOf(b),
+  );
 
+  const completedProcesses = orderedProcesses.filter((p) =>
+    completedProcessesSet.has(p),
+  );
   jobOrder.completedProcesses = completedProcesses;
-  jobOrder.currentStage = orderedProcesses.find(p => !completedProcessesSet.has(p)) || 'Completed';
-  
-  jobOrder.status = completedProcesses.length === orderedProcesses.length
-    ? 'Completed'
-    : completedProcesses.length > 0
-    ? 'In Progress'
-    : 'Open';
+  jobOrder.currentStage =
+    orderedProcesses.find((p) => !completedProcessesSet.has(p)) || "Completed";
 
-  // FG Stock Update Logic
-  const formationStages = jobOrder.stageHistory.filter(h => h.stage.includes('Formation'));
-  if (formationStages.length > 0 || jobOrder.status === 'Completed') {
+  let allCompleted = true;
+  let started = false;
+  const isSheet = (jobOrder.paperCategory || "")
+    .toLowerCase()
+    .includes("sheet");
+
+  for (let i = 0; i < orderedProcesses.length; i++) {
+    const s = orderedProcesses[i];
+    const isFormation = s.includes("Formation");
+    let target = 0;
+
+    if (isFormation) {
+      target = jobOrder.orderQty || 0;
+    } else if (i === 0) {
+      target = isSheet ? jobOrder.noOfSheets || 0 : jobOrder.reelWeightKg || 0;
+    } else {
+      const prevS = orderedProcesses[i - 1];
+      target = stageQtyMap.get(prevS) || 0;
+    }
+
+    const done = stageTotalMap.get(s) || 0;
+    if (done > 0) started = true;
+    if (target > 0 && done < target) {
+      allCompleted = false;
+    } else if (target === 0 && !started) {
+      allCompleted = false;
+    }
+  }
+
+  jobOrder.status =
+    allCompleted && started ? "Completed" : started ? "In Progress" : "Open";
+
+  const formationStages = jobOrder.stageHistory.filter((h) =>
+    h.stage.includes("Formation"),
+  );
+  if (formationStages.length > 0 || jobOrder.status === "Completed") {
     const formationQty = Array.from(stageQtyMap.entries())
-      .filter(([s]) => s.includes('Formation'))
+      .filter(([s]) => s.includes("Formation"))
       .reduce((sum, [_, q]) => sum + q, 0);
 
     const lastOrderedStage = orderedProcesses[orderedProcesses.length - 1];
     const finalQty = formationQty || stageQtyMap.get(lastOrderedStage) || 0;
 
     let price = 0;
+    let itemCategory = "";
     if (jobOrder.soRef) {
       const so = await SalesOrder.findOne({ soNo: jobOrder.soRef });
       if (so) {
         const joName = (jobOrder.itemName || "").trim().toLowerCase();
-        const item = so.items.find(i => (i.itemName || "").trim().toLowerCase() === joName);
-        if (item) price = item.price || 0;
+        const item = so.items.find(
+          (i) => (i.itemName || "").trim().toLowerCase() === joName,
+        );
+        if (item) {
+          price = item.price || 0;
+          itemCategory = item.itemCategory || "";
+        }
       }
     }
 
-    if (finalQty > 0 || jobOrder.status === 'Completed') {
+    if (!itemCategory) {
+      const ItemMaster = require("../models/ItemMaster");
+      const im = await ItemMaster.findOne({ name: jobOrder.itemName });
+      if (im) itemCategory = im.category || "";
+    }
+
+    if (finalQty > 0 || jobOrder.status === "Completed") {
       await FGStock.findOneAndUpdate(
         { itemName: jobOrder.itemName, joNo: jobOrder.joNo },
         {
@@ -451,23 +552,22 @@ async function recalculateProductionStats(jobOrder) {
           joNo: jobOrder.joNo,
           soRef: jobOrder.soRef,
           clientName: jobOrder.clientName,
+          clientCat: jobOrder.clientCategory,
+          category: itemCategory,
           qty: finalQty,
           price,
-          lastUpdated: new Date()
+          lastUpdated: new Date(),
         },
-        { upsert: true }
+        { upsert: true },
       );
     } else {
-        // If final qty drop to 0 and not completed, maybe remove from FG stock?
-        // For now, just set to 0.
-        await FGStock.updateOne(
-            { itemName: jobOrder.itemName, joNo: jobOrder.joNo },
-            { qty: 0 }
-        );
+      await FGStock.updateOne(
+        { itemName: jobOrder.itemName, joNo: jobOrder.joNo },
+        { qty: 0 },
+      );
     }
   } else {
-      // If no formation stage and not completed, remove from FG stock if it exists
-      await FGStock.deleteOne({ joNo: jobOrder.joNo });
+    await FGStock.deleteOne({ joNo: jobOrder.joNo });
   }
 }
 
@@ -475,15 +575,18 @@ exports.getJobCardPDF = async (req, res) => {
   try {
     const jobOrder = await JobOrder.findById(req.params.id).lean();
     if (!jobOrder) {
-      return res.status(404).json({ error: 'Job order not found' });
+      return res.status(404).json({ error: "Job order not found" });
     }
     const pdf = await generateJobCardPDF(jobOrder);
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="JobCard_${jobOrder.joNo}.pdf"`);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="JobCard_${jobOrder.joNo}.pdf"`,
+    );
     res.send(pdf);
   } catch (error) {
-    console.error('Generate job card PDF error:', error);
-    res.status(500).json({ error: 'Failed to generate PDF' });
+    console.error("Generate job card PDF error:", error);
+    res.status(500).json({ error: "Failed to generate PDF" });
   }
 };
 

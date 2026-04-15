@@ -127,7 +127,7 @@ export default function PurchaseOrders({
     }
   };
 
-  // Get Raw Material items from CategoryMaster + ItemMaster items
+  
   const rmItems = useMemo(() => {
     const rmCat = Object.values(categoryMaster || {}).find(
       (c) => (c.type || "").trim().toLowerCase() === "raw material",
@@ -156,7 +156,7 @@ export default function PurchaseOrders({
     return [...new Set([...baseline, ...fromMaster])];
   }, [categoryMaster]);
 
-  // Get paper types (subtypes) for selected RM Item
+  
   const subCategoriesByItem = useMemo(() => {
     const result = {};
     const rmCat = Object.values(categoryMaster || {}).find(
@@ -426,7 +426,7 @@ export default function PurchaseOrders({
             it.gstRate = masterItem.gstRate || 18;
             it.hsnCode = masterItem.hsnCode || "";
 
-            // Fallback for older items
+            
             if (!it.gsm) {
               const gsmMatch = it.itemName.match(/(\d+)[\s-]*gsm/i);
               if (gsmMatch) it.gsm = gsmMatch[1];
@@ -451,19 +451,19 @@ export default function PurchaseOrders({
             else if (name.includes("tape")) it.category = "Tape";
             else if (name.includes("glue")) it.category = "Glue";
 
-            // Extract dimensions like 13x19inch or 24x18x18nos
+            
             const consDimMatch = it.itemName.match(
               /(\d+)[\s-]*x[\s-]*(\d+)(?:[\s-]*x[\s-]*(\d+))?[\s-]*(\w+)/i,
             );
             if (consDimMatch) {
               it.width = consDimMatch[1];
               if (consDimMatch[3]) {
-                // 3D dims: W x L x H
+                
                 it.length = consDimMatch[2];
                 it.height = consDimMatch[3];
                 it.uom = consDimMatch[4];
               } else {
-                // 2D dims: W x H
+                
                 it.height = consDimMatch[2];
                 it.uom = consDimMatch[4];
               }
@@ -571,7 +571,7 @@ export default function PurchaseOrders({
       const e = {};
       const isRM = it.materialType === "Raw Material" || !it.materialType;
 
-      // Check if valid product code exists in master list
+      
       const masterItem = itemMasterItems.find(
         (x) =>
           (x.code || "").trim().toLowerCase() ===
@@ -610,7 +610,7 @@ export default function PurchaseOrders({
       let result;
 
       const poData = {
-        poNo: header.poNumber, // Backend will auto-generate if empty or old format
+        poNo: header.poNumber, 
         poDate: header.poDate,
         vendor: header.vendorName,
         items: items.map((it) => {
@@ -1488,10 +1488,10 @@ export default function PurchaseOrders({
                     style={{
                       padding: "16px 20px",
                       borderLeft: `4px solid ${C.blue}`,
-                      background: "#161b22", // Darker background as per screenshot
+                      background: "#161b22", 
                     }}
                   >
-                    {/* Header Row */}
+                    {}
                     <div
                       style={{
                         display: "flex",
@@ -1594,7 +1594,7 @@ export default function PurchaseOrders({
                       </div>
                     </div>
 
-                    {/* Items List */}
+                    {}
                     <div
                       style={{
                         display: "flex",
@@ -1645,7 +1645,7 @@ export default function PurchaseOrders({
                       ))}
                     </div>
 
-                    {/* Footer Info */}
+                    {}
                     <div
                       style={{
                         display: "flex",
