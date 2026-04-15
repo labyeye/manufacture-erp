@@ -8,7 +8,7 @@ router.get('/', auth, poController.getAll);
 router.get('/:id', auth, poController.getOne);
 router.post('/', auth, poController.create);
 router.put('/:id', auth, poController.update);
-router.delete('/:id', auth, poController.delete);
+router.delete('/:id', auth, poController.deletePurchaseOrder);
 router.patch('/:id/status', auth, poController.updateStatus);
 
 module.exports = router;

@@ -143,9 +143,14 @@ exports.update = async (req, res) => {
   }
 };
 
-exports.delete = async (req, res) => {
+exports.deletePurchaseOrder = async (req, res) => {
   try {
     const { id } = req.params;
+    const mongoose = require("mongoose");
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: "Invalid Purchase Order ID" });
+    }
 
     const po = await PurchaseOrder.findById(id);
     if (!po) {
@@ -153,9 +158,21 @@ exports.delete = async (req, res) => {
     }
 
     if (["Received", "Partial"].includes(po.status)) {
-      return res
-        .status(400)
-        .json({ error: "Cannot delete received or partial purchase orders" });
+      return res.status(400).json({
+        error: `Cannot delete purchase order with status: ${po.status}`,
+      });
+    }
+
+    const MaterialInward = require("../models/MaterialInward");
+    const inward = await MaterialInward.findOne({
+      $or: [{ purchaseOrderRef: id }, { poRef: po.poNo }],
+    });
+
+    if (inward) {
+      return res.status(400).json({
+        error:
+          "Cannot delete PO because associated Material Inward records exist. Delete those first.",
+      });
     }
 
     await PurchaseOrder.findByIdAndDelete(id);
