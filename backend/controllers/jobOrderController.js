@@ -544,15 +544,19 @@ async function recalculateProductionStats(jobOrder) {
         if (item) {
           price = item.price || 0;
           itemCategory = item.itemCategory || "";
+          itemCode = item.productCode || "";
         }
       }
     }
 
     const ItemMaster = require("../models/ItemMaster");
-    const im = await ItemMaster.findOne({ name: jobOrder.itemName });
+    // Fallback or override if ItemMaster has a more definitive code
+    const im = await ItemMaster.findOne({
+      $or: [{ name: jobOrder.itemName }, { code: itemCode }],
+    });
     if (im) {
       if (!itemCategory) itemCategory = im.category || "";
-      itemCode = im.code || "";
+      if (im.code) itemCode = im.code;
     }
 
     if (finalQty > 0 || jobOrder.status === "Completed") {
