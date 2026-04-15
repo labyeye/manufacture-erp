@@ -53,7 +53,7 @@ async function buildSchedule(jobOrder, machineAssignments) {
   return schedule;
 }
 
-async function deductRawMaterialStock(jobOrder) {
+async function adjustRMStock(jobOrder, direction = -1) {
   try {
     const findStock = async (id, cat, type, gsm) => {
       if (id) {
@@ -79,35 +79,21 @@ async function deductRawMaterialStock(jobOrder) {
 
     if (rmStock) {
       if (rmStock.unit === "kg" || jobOrder.paperCategory === "Paper Reel") {
-        const weightToDeduct = Number(jobOrder.reelWeightKg || 0);
-        if (weightToDeduct > 0) {
-          rmStock.weight = Math.max(0, rmStock.weight - weightToDeduct);
-
-          if (rmStock.unit === "sheets" && rmStock.weightPerSheet > 0) {
-            rmStock.qty = Math.floor(rmStock.weight / rmStock.weightPerSheet);
-          }
+        const weightToAdjust = Number(jobOrder.reelWeightKg || 0) * (-direction); // direction -1 means deduct
+        rmStock.weight = Math.max(0, rmStock.weight + weightToAdjust);
+        if (rmStock.unit === "sheets" && rmStock.weightPerSheet > 0) {
+          rmStock.qty = Math.floor(rmStock.weight / rmStock.weightPerSheet);
         }
       } else {
-        const qtyToDeduct = Number(jobOrder.noOfSheets || 0);
-        if (qtyToDeduct > 0) {
-          const wps =
-            rmStock.weightPerSheet ||
-            (rmStock.qty > 0 ? rmStock.weight / rmStock.qty : 0);
-
-          rmStock.qty = Math.max(0, rmStock.qty - qtyToDeduct);
-          if (wps > 0) {
-            rmStock.weight = rmStock.qty * wps;
-          }
-        }
+        const qtyToAdjust = Number(jobOrder.noOfSheets || 0) * (-direction);
+        const wps = rmStock.weightPerSheet || (rmStock.qty > 0 ? rmStock.weight / rmStock.qty : 0);
+        rmStock.qty = Math.max(0, rmStock.qty + qtyToAdjust);
+        if (wps > 0) rmStock.weight = rmStock.qty * wps;
       }
       await rmStock.save();
-      console.log(`✅ Stock Deducted for ${jobOrder.joNo}:`, rmStock.name);
     }
 
-    if (
-      jobOrder.hasSecondPaper &&
-      (jobOrder.rmStockId2 || jobOrder.paperType2)
-    ) {
+    if (jobOrder.hasSecondPaper && (jobOrder.rmStockId2 || jobOrder.paperType2)) {
       const rmStock2 = await findStock(
         jobOrder.rmStockId2,
         jobOrder.paperCategory2 || jobOrder.paperCategory,
@@ -116,40 +102,24 @@ async function deductRawMaterialStock(jobOrder) {
       );
 
       if (rmStock2) {
-        if (
-          rmStock2.unit === "kg" ||
-          (jobOrder.paperCategory2 || jobOrder.paperCategory) === "Paper Reel"
-        ) {
-          if (rmStock2.unit === "sheets") {
-            const qty2 = Number(jobOrder.noOfSheets2 || 0);
-            const wps2 =
-              rmStock2.weightPerSheet ||
-              (rmStock2.qty > 0 ? rmStock2.weight / rmStock2.qty : 0);
-            rmStock2.qty = Math.max(0, rmStock2.qty - qty2);
-            if (wps2 > 0) rmStock2.weight = rmStock2.qty * wps2;
-          } else {
-            const weightToDeduct2 = Number(jobOrder.reelWeightKg || 0);
-            rmStock2.weight = Math.max(0, rmStock2.weight - weightToDeduct2);
+        const cat2 = jobOrder.paperCategory2 || jobOrder.paperCategory;
+        if (rmStock2.unit === "kg" || cat2 === "Paper Reel") {
+          const weight2 = Number(jobOrder.reelWeightKg || 0) * (-direction);
+          rmStock2.weight = Math.max(0, rmStock2.weight + weight2);
+          if (rmStock2.unit === "sheets" && rmStock2.weightPerSheet > 0) {
+            rmStock2.qty = Math.floor(rmStock2.weight / rmStock2.weightPerSheet);
           }
         } else {
-          const qtyToDeduct2 = Number(jobOrder.noOfSheets2 || 0);
-          if (qtyToDeduct2 > 0) {
-            const wps2 =
-              rmStock2.weightPerSheet ||
-              (rmStock2.qty > 0 ? rmStock2.weight / rmStock2.qty : 0);
-
-            rmStock2.qty = Math.max(0, rmStock2.qty - qtyToDeduct2);
-            if (wps2 > 0) {
-              rmStock2.weight = rmStock2.qty * wps2;
-            }
-          }
+          const qty2 = Number(jobOrder.noOfSheets2 || 0) * (-direction);
+          const wps2 = rmStock2.weightPerSheet || (rmStock2.qty > 0 ? rmStock2.weight / rmStock2.qty : 0);
+          rmStock2.qty = Math.max(0, rmStock2.qty + qty2);
+          if (wps2 > 0) rmStock2.weight = rmStock2.qty * wps2;
         }
         await rmStock2.save();
-        console.log(`✅ Stock 2 Deducted for ${jobOrder.joNo}:`, rmStock2.name);
       }
     }
   } catch (err) {
-    console.error("❌ Stock Deduction Error:", err);
+    console.error("❌ Stock Adjustment Error:", err);
   }
 }
 
@@ -259,7 +229,7 @@ exports.create = async (req, res) => {
     const jobOrder = new JobOrder(jobOrderData);
     await jobOrder.save();
 
-    await deductRawMaterialStock(jobOrder);
+    await adjustRMStock(jobOrder, -1);
 
     await upsertPrintingMaster(jobOrder);
 
@@ -316,6 +286,9 @@ exports.update = async (req, res) => {
         (a, b) => STAGES_ORDER.indexOf(a) - STAGES_ORDER.indexOf(b),
       );
     }
+    // REVERT OLD STOCK
+    await adjustRMStock(jobOrder, 1);
+
     Object.assign(jobOrder, req.body);
 
     if (req.body.machineAssignments) {
@@ -329,6 +302,10 @@ exports.update = async (req, res) => {
     }
 
     await jobOrder.save();
+
+    // APPLY NEW STOCK
+    await adjustRMStock(jobOrder, -1);
+
     res.json(jobOrder);
   } catch (error) {
     console.error("Update job order error:", error);
@@ -338,10 +315,15 @@ exports.update = async (req, res) => {
 
 exports.delete = async (req, res) => {
   try {
-    const jobOrder = await JobOrder.findByIdAndDelete(req.params.id);
+    const jobOrder = await JobOrder.findById(req.params.id);
     if (!jobOrder) {
       return res.status(404).json({ error: "Job order not found" });
     }
+
+    // REVERT STOCK
+    await adjustRMStock(jobOrder, 1);
+
+    await JobOrder.findByIdAndDelete(req.params.id);
     res.json({ message: "Job order deleted successfully" });
   } catch (error) {
     console.error("Delete job order error:", error);

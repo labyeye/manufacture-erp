@@ -4,13 +4,40 @@ const FGStock = require("../models/FGStock");
 
 const adjustFGStock = async (items, direction = -1) => {
   for (const item of items) {
-    const stockItem = await FGStock.findOne({ itemName: item.itemName }).sort({
-      createdAt: 1,
-    });
-    if (stockItem) {
-      stockItem.qty += item.qty * direction;
-      if (stockItem.qty < 0) stockItem.qty = 0;
-      await stockItem.save();
+    let remainingToAdjust = Number(item.qty || 0);
+    if (remainingToAdjust <= 0) continue;
+
+    // We use direction to determine if we are deducting (-1) or adding back (1)
+    if (direction === -1) {
+      // DEDUCTION: Find records with qty > 0 first, using FIFO
+      const stockItems = await FGStock.find({ 
+        itemName: item.itemName,
+        qty: { $gt: 0 } 
+      }).sort({ createdAt: 1 });
+
+      for (const stock of stockItems) {
+        if (remainingToAdjust <= 0) break;
+        const deduct = Math.min(stock.qty, remainingToAdjust);
+        stock.qty -= deduct;
+        remainingToAdjust -= deduct;
+        await stock.save();
+      }
+
+      // If still remaining, deduct from the very last record even if it goes negative (to show over-dispatch)
+      if (remainingToAdjust > 0) {
+        const lastStock = await FGStock.findOne({ itemName: item.itemName }).sort({ createdAt: -1 });
+        if (lastStock) {
+          lastStock.qty -= remainingToAdjust;
+          await lastStock.save();
+        }
+      }
+    } else {
+      // ADDING BACK: Just add to the latest record
+      const latestStock = await FGStock.findOne({ itemName: item.itemName }).sort({ createdAt: -1 });
+      if (latestStock) {
+        latestStock.qty += remainingToAdjust;
+        await latestStock.save();
+      }
     }
   }
 };
