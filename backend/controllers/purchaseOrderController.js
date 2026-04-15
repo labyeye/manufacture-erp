@@ -161,20 +161,21 @@ exports.deletePurchaseOrder = async (req, res) => {
       return res.status(404).json({ error: "Purchase order not found" });
     }
 
+    // Status check
     if (["Received", "Partial"].includes(po.status)) {
       return res.status(400).json({
-        error: `Cannot delete purchase order with status: ${po.status}`,
+        error: `Deletion blocked: This PO is currently '${po.status}'. Orders that have been partially or fully received cannot be deleted for audit reasons. Cancel the order first if not needed.`,
       });
     }
 
+    // Association check
     const inward = await MaterialInward.findOne({
       $or: [{ purchaseOrderRef: cleanId }, { poRef: po.poNo }],
     });
 
     if (inward) {
       return res.status(400).json({
-        error:
-          "Cannot delete PO because associated Material Inward records exist. Delete those first.",
+        error: `Deletion blocked: Associated Material Inward found (${inward.inwardNo}). You must delete all linked Material Inward records before this PO can be removed.`,
         inwardNo: inward.inwardNo,
       });
     }
