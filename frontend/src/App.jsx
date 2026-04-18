@@ -589,23 +589,41 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
                 onClick={() => setCurrentTab(tab.id)}
                 style={{
                   width: "100%",
-                  padding: "12px 20px",
+                  padding: "14px 24px",
                   textAlign: "left",
                   border: "none",
-                  background: currentTab === tab.id ? "#1e293b66" : "transparent",
-                  color: currentTab === tab.id ? "#fff" : "#94a3b8",
-                  borderLeft: currentTab === tab.id ? `3px solid ${C.accent}` : "3px solid transparent",
+                  background: currentTab === tab.id ? "rgba(255, 120, 0, 0.08)" : "transparent",
+                  color: currentTab === tab.id ? "#ff7800" : "#94a3b8",
+                  borderLeft: `4px solid ${currentTab === tab.id ? "#ff7800" : "transparent"}`,
                   cursor: "pointer",
-                  transition: "all .15s",
+                  transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
                   fontSize: 13,
-                  fontWeight: currentTab === tab.id ? 600 : 500,
+                  fontWeight: currentTab === tab.id ? 700 : 500,
                   display: "flex",
                   alignItems: "center",
-                  gap: 12,
+                  gap: 14,
+                }}
+                onMouseEnter={(e) => {
+                  if (currentTab !== tab.id) {
+                    e.currentTarget.style.background = "rgba(255, 255, 255, 0.03)";
+                    e.currentTarget.style.color = "#fff";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (currentTab !== tab.id) {
+                    e.currentTarget.style.background = "transparent";
+                    e.currentTarget.style.color = "#94a3b8";
+                  }
                 }}
               >
-                <span style={{ fontSize: 18, opacity: currentTab === tab.id ? 1 : 0.7 }}>{tab.icon}</span>
-                <span style={{ letterSpacing: "normal" }}>{tab.label}</span>
+                <span style={{ 
+                  fontSize: 20, 
+                  opacity: currentTab === tab.id ? 1 : 0.6,
+                  filter: currentTab === tab.id ? "drop-shadow(0 0 5px #ff780044)" : "none"
+                }}>
+                  {tab.icon}
+                </span>
+                <span style={{ letterSpacing: "0.02em" }}>{tab.label}</span>
               </button>
             ))}
           </div>

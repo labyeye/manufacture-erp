@@ -460,76 +460,99 @@ export function Dashboard({ data, session }) {
               key={card.label}
               onClick={() => setReportTab(card.tab)}
               style={{
-                background: "#141416",
-                border: `1px solid ${reportTab === card.tab ? card.color : "#2a2a2e"}`,
-                borderRadius: 12,
-                padding: "16px 20px",
+                background: "rgba(20, 20, 22, 0.7)",
+                backdropFilter: "blur(10px)",
+                border: `1px solid ${reportTab === card.tab ? card.color : "rgba(255, 255, 255, 0.05)"}`,
+                borderRadius: 16,
+                padding: "20px",
                 cursor: "pointer",
-                transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                 position: "relative",
-                overflow: "hidden"
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                boxShadow: reportTab === card.tab ? `0 0 20px ${card.color}22` : "none",
               }}
               onMouseOver={(e) => {
-                e.currentTarget.style.transform = "translateY(-4px)";
-                e.currentTarget.style.boxShadow = `0 10px 20px -10px ${card.color}44`;
+                e.currentTarget.style.transform = "translateY(-6px)";
+                e.currentTarget.style.boxShadow = `0 15px 30px -10px ${card.color}44`;
+                e.currentTarget.style.borderColor = card.color + "66";
               }}
               onMouseOut={(e) => {
                 e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "none";
+                e.currentTarget.style.boxShadow = reportTab === card.tab ? `0 0 20px ${card.color}22` : "none";
+                e.currentTarget.style.borderColor = reportTab === card.tab ? card.color : "rgba(255, 255, 255, 0.05)";
               }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  marginBottom: 10,
-                  alignItems: "center"
-                }}
-              >
-                <span style={{ fontSize: 18, opacity: 0.8 }}>{card.icon}</span>
-                {card.trend && (
-                  <div style={{ 
-                    fontSize: 10, 
-                    fontWeight: 800, 
-                    color: card.inverse ? (card.trend.isUp ? C.red : C.green) : card.trend.color,
-                    background: (card.inverse ? (card.trend.isUp ? C.red : C.green) : card.trend.color) + "15",
-                    padding: "2px 6px",
-                    borderRadius: 4,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 2
-                  }}>
-                    {card.trend.isUp ? "▲" : "▼"} {card.trend.val}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+                <span style={{ fontSize: 24, padding: 10, borderRadius: 12, background: card.color + "11" }}>{card.icon}</span>
+                <div style={{ textAlign: "right" }}>
+                  {card.trend && (
+                    <div style={{ 
+                      fontSize: 11, 
+                      fontWeight: 700, 
+                      color: card.inverse ? (card.trend.isUp ? C.red : C.green) : card.trend.color,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "flex-end",
+                      gap: 2
+                    }}>
+                      <span style={{ fontSize: 10 }}>{card.trend.isUp ? "▲" : "▼"}</span>
+                      {card.trend.val}
+                    </div>
+                  )}
+                  <div style={{ fontSize: 9, color: "#666", fontWeight: 700, textTransform: "uppercase", marginTop: 2 }}>
+                    vs last week
                   </div>
-                )}
-              </div>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-                <div style={{ fontSize: 24, fontWeight: 900, color: "#fff" }}>
-                  {card.val}
                 </div>
-                {card.unit && <span style={{ fontSize: 10, color: "#666", fontWeight: 700 }}>{card.unit}</span>}
               </div>
-              <div
-                style={{
-                  fontSize: 10,
-                  fontWeight: 800,
-                  color: "#666",
-                  textTransform: "uppercase",
-                  marginTop: 6,
-                  letterSpacing: "0.05em"
-                }}
-              >
-                {card.label}
+
+              <div>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 3 }}>
+                  <div style={{ fontSize: 32, fontWeight: 900, color: "#fff", letterSpacing: "-0.02em" }}>
+                    {card.val}
+                  </div>
+                  {card.unit && <span style={{ fontSize: 12, color: "#666", fontWeight: 600 }}>{card.unit}</span>}
+                </div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#999", marginTop: 2 }}>
+                  {card.label}
+                </div>
               </div>
+
+              <div style={{ 
+                marginTop: 15, 
+                display: "flex", 
+                alignItems: "center", 
+                justifyContent: "space-between",
+                paddingTop: 12,
+                borderTop: "1px solid rgba(255, 255, 255, 0.03)"
+              }}>
+                <div style={{ fontSize: 10, color: "#555", fontStyle: "italic" }}>
+                  {card.label === "Low Stock" ? "items below min" : "In production"}
+                </div>
+                <div style={{ 
+                  fontSize: 11, 
+                  fontWeight: 700, 
+                  color: card.color, 
+                  display: "flex", 
+                  alignItems: "center", 
+                  gap: 4,
+                  opacity: 0.8
+                }}>
+                  Details <span style={{ fontSize: 14 }}>→</span>
+                </div>
+              </div>
+              
               {reportTab === card.tab && (
                 <div style={{ 
                   position: "absolute", 
-                  bottom: 0, 
+                  top: 0, 
                   left: 0, 
                   right: 0, 
-                  height: 3, 
-                  background: card.color,
-                  boxShadow: `0 0 10px ${card.color}`
+                  bottom: 0,
+                  borderRadius: 16,
+                  boxShadow: `inset 0 0 15px ${card.color}11`,
+                  pointerEvents: "none"
                 }} />
               )}
             </div>
@@ -550,8 +573,8 @@ export function Dashboard({ data, session }) {
               style={{
                 display: "grid",
                 gridTemplateColumns: `repeat(${row.length}, 1fr)`,
-                gap: 8,
-                marginBottom: 8,
+                gap: 10,
+                marginBottom: 10,
               }}
             >
               {row.map((t) => (
@@ -562,41 +585,39 @@ export function Dashboard({ data, session }) {
                     setDrill(null);
                   }}
                   style={{
-                    padding: "9px 10px",
-                    borderRadius: 8,
-                    background: reportTab === t.id ? "rgba(255, 193, 7, 0.1)" : "rgba(255, 255, 255, 0.03)",
-                    border: `1px solid ${reportTab === t.id ? "#ffc107" : "rgba(255, 255, 255, 0.08)"}`,
-                    color: reportTab === t.id ? "#ffc107" : "#888",
+                    padding: "12px 14px",
+                    borderRadius: 12,
+                    background: reportTab === t.id ? "rgba(255, 120, 0, 0.15)" : "rgba(255, 255, 255, 0.02)",
+                    border: `1px solid ${reportTab === t.id ? "#ff7800" : "rgba(255, 255, 255, 0.1)"}`,
+                    color: reportTab === t.id ? "#ff7800" : "#999",
                     cursor: "pointer",
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: reportTab === t.id ? 700 : 500,
                     display: "flex",
                     alignItems: "center",
-                    gap: 8,
-                    fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
-                    fontStretch: "normal",
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
+                    justifyContent: "center",
+                    gap: 10,
+                    fontFamily: "'Inter', sans-serif",
                     transition: "all 0.2s ease",
-                    boxShadow: reportTab === t.id ? "0 4px 12px rgba(255, 193, 7, 0.1)" : "none",
+                    boxShadow: reportTab === t.id ? "0 4px 15px rgba(255, 120, 0, 0.1)" : "none",
                   }}
                   onMouseEnter={(e) => {
                     if (reportTab !== t.id) {
-                      e.currentTarget.style.background = "rgba(255, 255, 255, 0.06)";
-                      e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.15)";
+                      e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+                      e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.2)";
+                      e.currentTarget.style.color = "#fff";
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (reportTab !== t.id) {
-                      e.currentTarget.style.background = "rgba(255, 255, 255, 0.03)";
-                      e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.08)";
+                      e.currentTarget.style.background = "rgba(255, 255, 255, 0.02)";
+                      e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.1)";
+                      e.currentTarget.style.color = "#999";
                     }
                   }}
                 >
-                  <span style={{ fontSize: 13, flexShrink: 0 }}>{t.icon}</span>
-                  <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {t.label}
-                  </span>
+                  <span style={{ fontSize: 16 }}>{t.icon}</span>
+                  <span style={{ whiteSpace: "nowrap" }}>{t.label} Report</span>
                 </button>
               ))}
             </div>
