@@ -12,6 +12,17 @@ const ITEM_TABS = [
   { key: "Machine Spare", label: "Machine Spare", prefix: "MS" },
 ];
 
+const CATEGORY_CONFIG = {
+  "Paper Bag": { layout: "3D", f1: "WIDTH", f2: "GUSSETT", f3: "HEIGHT" },
+  "Paper Pouch": { layout: "2D", f1: "WIDTH", f2: "LENGTH" },
+  "Paper Box": { layout: "3D", f1: "WIDTH", f2: "LENGTH", f3: "HEIGHT" },
+  "Corrugated Box": { layout: "3D", f1: "WIDTH", f2: "LENGTH", f3: "HEIGHT" },
+  "Mono Carton": { layout: "3D", f1: "WIDTH", f2: "LENGTH", f3: "HEIGHT" },
+  "Laminated Pouch": { layout: "2D", f1: "WIDTH", f2: "LENGTH" },
+  "Sticker": { layout: "2D", f1: "WIDTH", f2: "LENGTH" },
+  "Label": { layout: "2D", f1: "WIDTH", f2: "LENGTH" },
+};
+
 const inputStyle = {
   width: "100%",
   padding: "9px 12px",
@@ -37,8 +48,12 @@ export default function ItemMaster({ clientMaster = [], toast }) {
   const [gsm, setGsm] = useState("");
   const [width, setWidth] = useState("");
   const [length, setLength] = useState("");
+  const [gussett, setGussett] = useState("");
+  const [height, setHeight] = useState("");
+  const [uom, setUom] = useState("mm");
   const [newItemName, setNewItemName] = useState("");
   const [clientName, setClientName] = useState("");
+  const [clientCategory, setClientCategory] = useState("");
   const [editingItem, setEditingItem] = useState(null);
   const [rawCategories, setRawCategories] = useState([]);
   const [importProgress, setImportProgress] = useState({
@@ -71,7 +86,12 @@ export default function ItemMaster({ clientMaster = [], toast }) {
 
       setNewItemName(parts.filter(Boolean).join(" "));
     } else if (activeTab === "Finished Goods" && selectedCategory) {
-      const parts = [selectedCategory, selectedSubCategory, clientName];
+      let sizeStr = "";
+      if (width && length && height) sizeStr = `${width}x${length}x${height}${uom}`;
+      else if (width && length) sizeStr = `${width}x${length}${uom}`;
+      else if (width) sizeStr = `${width}${uom}`;
+
+      const parts = [selectedCategory, selectedSubCategory, sizeStr, clientName];
       setNewItemName(parts.filter(Boolean).join(" "));
     }
   }, [
@@ -80,6 +100,9 @@ export default function ItemMaster({ clientMaster = [], toast }) {
     gsm,
     width,
     length,
+    gussett,
+    height,
+    uom,
     activeTab,
     clientName,
   ]);
@@ -189,10 +212,14 @@ export default function ItemMaster({ clientMaster = [], toast }) {
           name: newItemName,
           category: selectedCategory,
           subCategory: selectedSubCategory,
-          gsm: activeTab === "Raw Material" ? Number(gsm) : undefined,
-          width: activeTab === "Raw Material" ? Number(width) : undefined,
-          length: activeTab === "Raw Material" ? Number(length) : undefined,
+          gsm: (activeTab === "Raw Material" || activeTab === "Finished Goods") ? Number(gsm) : undefined,
+          width: Number(width) || undefined,
+          length: Number(length) || undefined,
+          gussett: Number(gussett) || undefined,
+          height: Number(height) || undefined,
+          uom: uom,
           clientName: activeTab === "Finished Goods" ? clientName : undefined,
+          clientCategory: activeTab === "Finished Goods" ? clientCategory : undefined,
           gstRate: Number(gstRate),
           hsnCode,
           reorderLevel: Number(reorderLevel),
@@ -206,10 +233,14 @@ export default function ItemMaster({ clientMaster = [], toast }) {
           type: activeTab,
           category: selectedCategory,
           subCategory: selectedSubCategory,
-          gsm: activeTab === "Raw Material" ? Number(gsm) : undefined,
-          width: activeTab === "Raw Material" ? Number(width) : undefined,
-          length: activeTab === "Raw Material" ? Number(length) : undefined,
+          gsm: (activeTab === "Raw Material" || activeTab === "Finished Goods") ? Number(gsm) : undefined,
+          width: Number(width) || undefined,
+          length: Number(length) || undefined,
+          gussett: Number(gussett) || undefined,
+          height: Number(height) || undefined,
+          uom: uom,
           clientName: activeTab === "Finished Goods" ? clientName : undefined,
+          clientCategory: activeTab === "Finished Goods" ? clientCategory : undefined,
           gstRate: Number(gstRate),
           hsnCode,
           reorderLevel: Number(reorderLevel),
@@ -219,6 +250,7 @@ export default function ItemMaster({ clientMaster = [], toast }) {
       }
       setNewItemName("");
       setClientName("");
+      setClientCategory("");
       setSelectedCategory("");
       setSelectedSubCategory("");
       setGsm("");
@@ -236,20 +268,24 @@ export default function ItemMaster({ clientMaster = [], toast }) {
   };
 
   const handleEdit = (item) => {
+    setActiveTab(item.type);
     setEditingItem(item);
-    setNewItemName(item.name);
+    setNewItemName(item.name || "");
     setSelectedCategory(item.category || "");
     setSelectedSubCategory(item.subCategory || "");
     setGsm(item.gsm || "");
     setWidth(item.width || "");
     setLength(item.length || "");
+    setGussett(item.gussett || "");
+    setHeight(item.height || "");
+    setUom(item.uom || "mm");
     setGstRate(item.gstRate || "18");
     setHsnCode(item.hsnCode || "");
     setReorderLevel(item.reorderLevel || "0");
     setClientName(item.clientName || "");
+    setClientCategory(item.clientCategory || "");
 
-    if (item.type === "Finished Goods") {
-    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleBulkDelete = async () => {
@@ -267,6 +303,51 @@ export default function ItemMaster({ clientMaster = [], toast }) {
       toast("Bulk delete failed", "error");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSizeChange = (v) => {
+    setSelectedSubCategory(v);
+    if (activeTab !== "Finished Goods" || !v) return;
+
+    const config = CATEGORY_CONFIG[selectedCategory] || { layout: "2D", f1: "WIDTH", f2: "LENGTH" };
+
+    const match3D = v
+      .toLowerCase()
+      .match(
+        /^(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)\s*([a-z]+)?\s*(?:(\d+)\s*gsm)?/,
+      );
+
+    const match2D = v
+      .toLowerCase()
+      .match(
+        /^(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)\s*([a-z]+)?\s*(?:(\d+)\s*gsm)?/,
+      );
+
+    if (match3D) {
+      setWidth(match3D[1]);
+      if (config?.f2 === "LENGTH") {
+        setLength(match3D[2]);
+        setGussett("");
+      } else {
+        setGussett(match3D[2]);
+        setLength("");
+      }
+      setHeight(match3D[3]);
+      if (match3D[4] && ["mm", "cm", "inch"].includes(match3D[4])) setUom(match3D[4]);
+      if (match3D[5]) setGsm(match3D[5]);
+    } else if (match2D) {
+      setWidth(match2D[1]);
+      if (config?.f2 === "HEIGHT") {
+        setHeight(match2D[2]);
+        setLength("");
+      } else {
+        setLength(match2D[2]);
+        setHeight("");
+      }
+      setGussett("");
+      if (match2D[3] && ["mm", "cm", "inch"].includes(match2D[3])) setUom(match2D[3]);
+      if (match2D[4]) setGsm(match2D[4]);
     }
   };
 
@@ -771,10 +852,10 @@ export default function ItemMaster({ clientMaster = [], toast }) {
               </label>
               <select
                 value={selectedSubCategory}
-                onChange={(e) => setSelectedSubCategory(e.target.value)}
+                onChange={(e) => handleSizeChange(e.target.value)}
                 style={inputStyle}
               >
-                <option value="">-- Select Sub-Category --</option>
+                <option value="">-- Manual / Custom --</option>
                 {tabSubCategories.map((sc) => (
                   <option key={sc} value={sc}>
                     {sc}
@@ -805,6 +886,88 @@ export default function ItemMaster({ clientMaster = [], toast }) {
               />
             </div>
           )}
+          {activeTab === "Finished Goods" && (
+            <div>
+              <label
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: "#666",
+                  display: "block",
+                  marginBottom: 6,
+                  letterSpacing: "0.5px",
+                }}
+              >
+                CLIENT CATEGORY
+              </label>
+              <input
+                style={inputStyle}
+                placeholder="e.g. Modern Trade"
+                value={clientCategory}
+                onChange={(e) => setClientCategory(e.target.value)}
+              />
+            </div>
+          )}
+          {activeTab === "Finished Goods" && selectedCategory && (
+            <>
+              {(() => {
+                const config = CATEGORY_CONFIG[selectedCategory] || { layout: "2D", f1: "WIDTH", f2: "LENGTH" };
+                const f1 = config.f1;
+                const f2 = config.f2;
+                const f3 = config.f3;
+                
+                return (
+                  <>
+                    <div>
+                      <label style={{ fontSize: 11, fontWeight: 600, color: "#666", display: "block", marginBottom: 6, letterSpacing: "0.5px" }}>
+                        UOM
+                      </label>
+                      <select value={uom} onChange={(e) => setUom(e.target.value)} style={inputStyle}>
+                        <option value="mm">mm</option>
+                        <option value="cm">cm</option>
+                        <option value="inch">inch</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 11, fontWeight: 600, color: "#666", display: "block", marginBottom: 6, letterSpacing: "0.5px" }}>
+                        GSM
+                      </label>
+                      <input type="number" placeholder="e.g. 100" value={gsm} onChange={(e) => setGsm(e.target.value)} style={inputStyle} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 11, fontWeight: 600, color: "#666", display: "block", marginBottom: 6, letterSpacing: "0.5px" }}>
+                        {f1} ({uom})
+                      </label>
+                      <input type="number" placeholder={`e.g. 10`} value={width} onChange={(e) => setWidth(e.target.value)} style={inputStyle} />
+                    </div>
+                    {f2 && (
+                      <div>
+                        <label style={{ fontSize: 11, fontWeight: 600, color: "#666", display: "block", marginBottom: 6, letterSpacing: "0.5px" }}>
+                          {f2} ({uom})
+                        </label>
+                        <input
+                          type="number"
+                          placeholder={`e.g. 10`}
+                          value={f2 === "GUSSETT" ? gussett : length}
+                          onChange={(e) => f2 === "GUSSETT" ? setGussett(e.target.value) : setLength(e.target.value)}
+                          style={inputStyle}
+                        />
+                      </div>
+                    )}
+                    {f3 && (
+                      <div>
+                        <label style={{ fontSize: 11, fontWeight: 600, color: "#666", display: "block", marginBottom: 6, letterSpacing: "0.5px" }}>
+                          {f3} ({uom})
+                        </label>
+                        <input type="number" placeholder={`e.g. 10`} value={height} onChange={(e) => setHeight(e.target.value)} style={inputStyle} />
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+            </>
+          )}
+
           {activeTab === "Raw Material" && (
             <>
               <div>
@@ -1321,6 +1484,20 @@ export default function ItemMaster({ clientMaster = [], toast }) {
               >
                 {item.name}
               </div>
+              {activeTab === "Finished Goods" && (
+                <div
+                  style={{
+                    padding: "4px 12px",
+                    borderRadius: 6,
+                    background: "#9c27b01a",
+                    color: "#ba68c8",
+                    fontSize: 11,
+                    fontWeight: 600,
+                  }}
+                >
+                  {item.clientCategory || "-"}
+                </div>
+              )}
               <div
                 style={{
                   padding: "4px 12px",
@@ -1373,6 +1550,22 @@ export default function ItemMaster({ clientMaster = [], toast }) {
               >
                 RL: {item.reorderLevel || 0}
               </div>
+
+              <button
+                onClick={() => handleEdit(item)}
+                style={{
+                  background: "#1e293b",
+                  color: "#60a5fa",
+                  border: "1px solid #334155",
+                  borderRadius: 6,
+                  padding: "6px 12px",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                ✏️ Edit
+              </button>
 
               {activeTab === "Finished Goods" && (
                 <div style={{ position: "relative" }}>
@@ -1560,6 +1753,24 @@ export default function ItemMaster({ clientMaster = [], toast }) {
                     .split("T")[0]
                 }
               </div>
+              <button
+                onClick={() => handleEdit(item)}
+                style={{
+                  background: "#1e293b",
+                  color: "#64b5f6",
+                  border: "1px solid #334155",
+                  borderRadius: 6,
+                  padding: "4px 14px",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                ✏️ Edit
+              </button>
               <button
                 onClick={() => handleDelete(item)}
                 style={{

@@ -123,6 +123,123 @@ async function adjustRMStock(jobOrder, direction = -1) {
   }
 }
 
+async function checkRMStockSufficiency(jobOrder, existingJOId = null) {
+  try {
+    const findStock = async (id, cat, type, gsm) => {
+      if (id) {
+        const byId = await RawMaterialStock.findById(id);
+        if (byId) return byId;
+      }
+
+      if (!cat || !type) return null;
+      const normCat = cat.trim().replace(/s$/i, "");
+      return RawMaterialStock.findOne({
+        category: { $regex: new RegExp(`^${normCat}`, "i") },
+        paperType: { $regex: new RegExp(`${type.trim()}`, "i") },
+        gsm: gsm,
+      });
+    };
+
+    const rmStock = await findStock(
+      jobOrder.rmStockId,
+      jobOrder.paperCategory,
+      jobOrder.paperType,
+      jobOrder.paperGsm,
+    );
+
+    if (!rmStock) return { sufficient: false, message: `Raw material not found for ${jobOrder.paperType}` };
+
+    let currentWeight = Number(rmStock.weight || 0);
+    let currentQty = Number(rmStock.qty || 0);
+
+    // If update, add back the old JO's stock to current stock for the check
+    if (existingJOId) {
+      const oldJO = await JobOrder.findById(existingJOId);
+      if (oldJO) {
+        // Only if it's the same stock item
+        if (String(oldJO.rmStockId) === String(rmStock._id) || 
+            (oldJO.paperType === jobOrder.paperType && oldJO.paperGsm === jobOrder.paperGsm)) {
+          if (rmStock.unit === "kg" || oldJO.paperCategory === "Paper Reel") {
+            currentWeight += Number(oldJO.reelWeightKg || 0);
+          } else {
+            currentQty += Number(oldJO.noOfSheets || 0);
+          }
+        }
+      }
+    }
+
+    if (rmStock.unit === "kg" || jobOrder.paperCategory === "Paper Reel") {
+      const requiredWeight = Number(jobOrder.reelWeightKg || 0);
+      if (currentWeight < requiredWeight) {
+        return { 
+          sufficient: false, 
+          message: `Insufficient weight for ${rmStock.name || jobOrder.paperType}. Available: ${currentWeight}kg, Required: ${requiredWeight}kg` 
+        };
+      }
+    } else {
+      const requiredQty = Number(jobOrder.noOfSheets || 0);
+      if (currentQty < requiredQty) {
+        return { 
+          sufficient: false, 
+          message: `Insufficient sheets for ${rmStock.name || jobOrder.paperType}. Available: ${currentQty}, Required: ${requiredQty}` 
+        };
+      }
+    }
+
+    if (jobOrder.hasSecondPaper && (jobOrder.rmStockId2 || jobOrder.paperType2)) {
+      const rmStock2 = await findStock(
+        jobOrder.rmStockId2,
+        jobOrder.paperCategory2 || jobOrder.paperCategory,
+        jobOrder.paperType2,
+        jobOrder.paperGsm2,
+      );
+      if (!rmStock2) return { sufficient: false, message: `Second raw material not found for ${jobOrder.paperType2}` };
+
+      let currentWeight2 = Number(rmStock2.weight || 0);
+      let currentQty2 = Number(rmStock2.qty || 0);
+
+      if (existingJOId) {
+        const oldJO = await JobOrder.findById(existingJOId);
+        if (oldJO && oldJO.hasSecondPaper) {
+           if (String(oldJO.rmStockId2) === String(rmStock2._id) || 
+               (oldJO.paperType2 === jobOrder.paperType2 && oldJO.paperGsm2 === jobOrder.paperGsm2)) {
+             const cat2 = oldJO.paperCategory2 || oldJO.paperCategory;
+             if (rmStock2.unit === "kg" || cat2 === "Paper Reel") {
+               currentWeight2 += Number(oldJO.reelWeightKg || 0);
+             } else {
+               currentQty2 += Number(oldJO.noOfSheets2 || 0);
+             }
+           }
+        }
+      }
+
+      const cat2 = jobOrder.paperCategory2 || jobOrder.paperCategory;
+      if (rmStock2.unit === "kg" || cat2 === "Paper Reel") {
+        const requiredWeight2 = Number(jobOrder.reelWeightKg || 0);
+        if (currentWeight2 < requiredWeight2) {
+          return { 
+            sufficient: false, 
+            message: `Insufficient weight for second material ${rmStock2.name || jobOrder.paperType2}. Available: ${currentWeight2}kg, Required: ${requiredWeight2}kg` 
+          };
+        }
+      } else {
+        const requiredQty2 = Number(jobOrder.noOfSheets2 || 0);
+        if (currentQty2 < requiredQty2) {
+          return { 
+            sufficient: false, 
+            message: `Insufficient sheets for second material ${rmStock2.name || jobOrder.paperType2}. Available: ${currentQty2}, Required: ${requiredQty2}` 
+          };
+        }
+      }
+    }
+
+    return { sufficient: true };
+  } catch (err) {
+    console.error("❌ Stock Sufficiency Check Error:", err);
+    return { sufficient: true }; // Default to true if check fails to not block production? Or false? Choosing true to be safe but console error.
+  }
+}
+
 async function upsertPrintingMaster(jobOrder) {
   if (!jobOrder.printing && !jobOrder.plate) return;
 
@@ -227,6 +344,13 @@ exports.create = async (req, res) => {
     }
 
     const jobOrder = new JobOrder(jobOrderData);
+
+    // CHECK STOCK SUFFICIENCY
+    const stockCheck = await checkRMStockSufficiency(jobOrder);
+    if (!stockCheck.sufficient) {
+      return res.status(400).json({ error: stockCheck.message });
+    }
+
     await jobOrder.save();
 
     await adjustRMStock(jobOrder, -1);
@@ -286,6 +410,13 @@ exports.update = async (req, res) => {
         (a, b) => STAGES_ORDER.indexOf(a) - STAGES_ORDER.indexOf(b),
       );
     }
+
+    // CHECK STOCK SUFFICIENCY
+    const stockCheck = await checkRMStockSufficiency(req.body, req.params.id);
+    if (!stockCheck.sufficient) {
+      return res.status(400).json({ error: stockCheck.message });
+    }
+
     // REVERT OLD STOCK
     await adjustRMStock(jobOrder, 1);
 

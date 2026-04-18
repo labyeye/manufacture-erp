@@ -87,6 +87,10 @@ exports.createItem = async (req, res) => {
       gstRate,
       hsnCode,
       reorderLevel,
+      gussett,
+      height,
+      uom,
+      clientCategory,
     } = req.body;
 
     if (!name || !type) {
@@ -128,6 +132,10 @@ exports.createItem = async (req, res) => {
       gstRate: gstRate ? Number(gstRate) : 18,
       hsnCode: hsnCode?.trim(),
       reorderLevel: reorderLevel ? Number(reorderLevel) : 0,
+      gussett: gussett ? Number(gussett) : undefined,
+      height: height ? Number(height) : undefined,
+      uom: uom || "mm",
+      clientCategory: clientCategory?.trim(),
       createdBy: req.user?.id,
     });
 
@@ -160,6 +168,10 @@ exports.updateItem = async (req, res) => {
       gstRate,
       hsnCode,
       reorderLevel,
+      gussett,
+      height,
+      uom,
+      clientCategory,
     } = req.body;
 
     const item = await ItemMaster.findById(req.params.id);
@@ -192,6 +204,10 @@ exports.updateItem = async (req, res) => {
     if (gstRate !== undefined) item.gstRate = Number(gstRate);
     if (hsnCode !== undefined) item.hsnCode = hsnCode?.trim();
     if (reorderLevel !== undefined) item.reorderLevel = Number(reorderLevel);
+    if (gussett !== undefined) item.gussett = gussett ? Number(gussett) : undefined;
+    if (height !== undefined) item.height = height ? Number(height) : undefined;
+    if (uom !== undefined) item.uom = uom;
+    if (clientCategory !== undefined) item.clientCategory = clientCategory?.trim();
     if (status) item.status = status;
 
     await item.save();
@@ -296,6 +312,10 @@ exports.bulkImport = async (req, res) => {
           gstRate,
           hsnCode,
           reorderLevel,
+          gussett,
+          height,
+          uom,
+          clientCategory,
         } = itemData;
 
         if (!name || !type) {
@@ -345,6 +365,10 @@ exports.bulkImport = async (req, res) => {
           gstRate: gstRate ? Number(gstRate) : 18,
           hsnCode: hsnCode?.trim(),
           reorderLevel: reorderLevel ? Number(reorderLevel) : 0,
+          gussett: gussett ? Number(gussett) : undefined,
+          height: height ? Number(height) : undefined,
+          uom: uom || "mm",
+          clientCategory: clientCategory?.trim(),
           createdBy: req.user?.id,
         });
 

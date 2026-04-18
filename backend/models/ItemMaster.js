@@ -32,6 +32,10 @@ const itemMasterSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    clientCategory: {
+      type: String,
+      trim: true,
+    },
     gsm: {
       type: Number,
     },
@@ -40,6 +44,16 @@ const itemMasterSchema = new mongoose.Schema(
     },
     length: {
       type: Number,
+    },
+    gussett: {
+      type: Number,
+    },
+    height: {
+      type: Number,
+    },
+    uom: {
+      type: String,
+      default: "mm",
     },
     gstRate: {
       type: Number,

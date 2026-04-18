@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { GLOBAL_STYLE } from "./constants/styles";
 import { C } from "./constants/colors";
 import {
@@ -108,14 +108,35 @@ function AppContent() {
   }
 
   const userRole = DEFAULT_ROLES[user.role] || DEFAULT_ROLES["Sales"];
-  const allowedTabs = userRole.tabs;
+  let allowedTabs = userRole.tabs;
+  let editableTabs = userRole.tabs;
+
+  // Custom overrides for non-Admins
+  if (user.role !== "Admin") {
+    if (user.allowedTabs && user.allowedTabs.length > 0) {
+      allowedTabs = user.allowedTabs;
+    }
+    if (user.editableTabs && user.editableTabs.length > 0) {
+      editableTabs = user.editableTabs;
+    } else {
+      // Fallback: If allowedTabs used but no editableTabs defined,
+      // non-admins shouldn't implicitly get edit rights to everything in their role.
+      // But for simplicity, we keep it as role tabs if nulled.
+      editableTabs = user.editableTabs || userRole.tabs;
+    }
+  }
 
   return (
-    <AppInner session={user} onLogout={logout} allowedTabs={allowedTabs} />
+    <AppInner
+      session={user}
+      onLogout={logout}
+      allowedTabs={allowedTabs}
+      editableTabs={editableTabs}
+    />
   );
 }
 
-function AppInner({ session, onLogout, allowedTabs }) {
+function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
   const [currentTab, setCurrentTab] = useState(() => {
     const lastTab = localStorage.getItem("erp_lastTab");
     return lastTab || "dashboard";
@@ -285,6 +306,13 @@ function AppInner({ session, onLogout, allowedTabs }) {
         "company",
         "entities",
       ),
+      run(
+        consumableStockAPI.getAll,
+        setConsumableStock,
+        "stock",
+        "stocks",
+        "consumableStock",
+      ),
     ]);
   };
 
@@ -293,53 +321,148 @@ function AppInner({ session, onLogout, allowedTabs }) {
     setToast({ id, msg, type });
   };
 
-  const data = {
-    salesOrders,
-    setSalesOrders,
-    jobOrders,
-    setJobOrders,
-    purchaseOrders,
-    setPurchaseOrders,
-    inward,
-    setInward,
-    rawStock,
-    setRawStock,
-    wipStock,
-    setWipStock,
-    fgStock,
-    setFgStock,
-    consumableStock,
-    setConsumableStock,
-    dispatches,
-    setDispatches,
-    itemMasterFG,
-    setItemMasterFG,
-    vendorMaster,
-    setVendorMaster,
-    clientMaster,
-    setClientMaster,
-    machineMaster,
-    setMachineMaster,
-    categoryMaster,
-    setCategoryMaster,
-    sizeMaster,
-    setSizeMaster,
-    printingMaster,
-    setPrintingMaster,
-    soCounter,
-    setSoCounter,
-    joCounter,
-    setJoCounter,
-    dispatchCounter,
-    setDispatchCounter,
-    itemCounters,
-    setItemCounters,
-    machineReportData,
-    setMachineReportData,
-    companyMaster,
-    setCompanyMaster,
-    refreshData: fetchMasters,
+  const matchesClient = (itemCode, tag) => {
+    if (!tag) return true;
+    const item = itemMasterFG.find((i) => i.code === itemCode);
+    return item?.clientCategory === tag;
   };
+
+  const filteredData = useMemo(() => {
+    const isClient = session.role === "Client";
+    const tag = session.clientTag;
+
+    if (!isClient || !tag) {
+      return {
+        salesOrders,
+        setSalesOrders,
+        jobOrders,
+        setJobOrders,
+        purchaseOrders,
+        setPurchaseOrders,
+        inward,
+        setInward,
+        rawStock,
+        setRawStock,
+        wipStock,
+        setWipStock,
+        fgStock,
+        setFgStock,
+        consumableStock,
+        setConsumableStock,
+        dispatches,
+        setDispatches,
+        itemMasterFG,
+        setItemMasterFG,
+        vendorMaster,
+        setVendorMaster,
+        clientMaster,
+        setClientMaster,
+        machineMaster,
+        setMachineMaster,
+        categoryMaster,
+        setCategoryMaster,
+        sizeMaster,
+        setSizeMaster,
+        printingMaster,
+        setPrintingMaster,
+        soCounter,
+        setSoCounter,
+        joCounter,
+        setJoCounter,
+        dispatchCounter,
+        setDispatchCounter,
+        itemCounters,
+        setItemCounters,
+        machineReportData,
+        setMachineReportData,
+        companyMaster,
+        setCompanyMaster,
+        editableTabs,
+        allowedTabs,
+        currentTab,
+        refreshData: fetchMasters,
+      };
+    }
+
+    // Client filtering based on clientCategory in ItemMaster
+    const filteredFG = fgStock.filter((s) => matchesClient(s.itemCode, tag));
+    const filteredItemMaster = itemMasterFG.filter((i) => i.clientCategory === tag);
+    const filteredCodes = new Set(filteredItemMaster.map((i) => i.code));
+
+    return {
+      salesOrders: salesOrders.filter((so) =>
+        (so.items || []).some((it) => filteredCodes.has(it.productCode)),
+      ),
+      jobOrders: jobOrders.filter((jo) => filteredCodes.has(jo.productCode)),
+      purchaseOrders: [],
+      setPurchaseOrders,
+      inward: [],
+      setInward,
+      rawStock: [],
+      setRawStock,
+      wipStock: [],
+      setWipStock,
+      fgStock: filteredFG,
+      setFgStock,
+      consumableStock: [],
+      setConsumableStock,
+      dispatches: dispatches.filter((d) =>
+        (d.items || []).some((it) => filteredCodes.has(it.productCode || it.code)),
+      ),
+      setDispatches,
+      itemMasterFG: filteredItemMaster,
+      setItemMasterFG,
+      vendorMaster: [],
+      setVendorMaster,
+      clientMaster: [],
+      setClientMaster,
+      machineMaster,
+      setMachineMaster,
+      categoryMaster,
+      setCategoryMaster,
+      sizeMaster,
+      setSizeMaster,
+      printingMaster: [],
+      setPrintingMaster,
+      soCounter,
+      setSoCounter,
+      joCounter,
+      setJoCounter,
+      dispatchCounter,
+      setDispatchCounter,
+      itemCounters,
+      setItemCounters,
+      machineReportData,
+      setMachineReportData,
+      companyMaster,
+      setCompanyMaster,
+      editableTabs,
+      allowedTabs,
+      currentTab,
+      refreshData: fetchMasters,
+    };
+  }, [
+    session,
+    salesOrders,
+    jobOrders,
+    purchaseOrders,
+    inward,
+    rawStock,
+    wipStock,
+    fgStock,
+    consumableStock,
+    dispatches,
+    itemMasterFG,
+    vendorMaster,
+    clientMaster,
+    machineMaster,
+    categoryMaster,
+    sizeMaster,
+    printingMaster,
+    companyMaster,
+  ]);
+
+  const data = filteredData;
 
   const renderPage = () => {
     switch (currentTab) {
@@ -347,6 +470,7 @@ function AppInner({ session, onLogout, allowedTabs }) {
         return (
           <Dashboard
             data={data}
+            session={session}
             onNavigate={setCurrentTab}
             machineReportData={machineReportData}
             setMachineReportData={setMachineReportData}
@@ -355,14 +479,14 @@ function AppInner({ session, onLogout, allowedTabs }) {
       case "search":
         return (
           <GlobalSearch
-            salesOrders={salesOrders}
-            jobOrders={jobOrders}
-            purchaseOrders={purchaseOrders}
-            inward={inward}
-            fgStock={fgStock}
-            rawStock={rawStock}
-            dispatches={dispatches}
-            clientMaster={clientMaster}
+            salesOrders={data.salesOrders}
+            jobOrders={data.jobOrders}
+            purchaseOrders={data.purchaseOrders}
+            inward={data.inward}
+            fgStock={data.fgStock}
+            rawStock={data.rawStock}
+            dispatches={data.dispatches}
+            clientMaster={data.clientMaster}
           />
         );
       case "purchase":
@@ -407,6 +531,7 @@ function AppInner({ session, onLogout, allowedTabs }) {
         return (
           <Dashboard
             data={data}
+            session={session}
             onNavigate={setCurrentTab}
             machineReportData={machineReportData}
             setMachineReportData={setMachineReportData}

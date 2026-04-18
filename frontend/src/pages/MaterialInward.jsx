@@ -41,15 +41,15 @@ export default function MaterialInward({
   itemCounters = {},
   setItemCounters,
   toast,
+  editableTabs = [],
   props = {},
 }) {
+  const canEdit = editableTabs.includes("inward");
   const [loading, setLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const today = () => new Date().toISOString().split("T")[0];
   const uid = () => Math.random().toString(36).substr(2, 9);
   const fmt = (n) => (+n || 0).toLocaleString("en-IN");
-
-  
 
   const blankHeader = {
     date: today(),
@@ -99,7 +99,6 @@ export default function MaterialInward({
   const [drDateFrom, setDrDateFrom] = useState("");
   const [drDateTo, setDrDateTo] = useState("");
 
-  
   const rmItems = useMemo(() => {
     const rmCat = Object.values(categoryMaster || {}).find(
       (c) => (c.type || "").trim().toLowerCase() === "raw material",
@@ -115,7 +114,6 @@ export default function MaterialInward({
     return [...new Set([...fromMaster, ...fromItems])].map((k) => k.trim());
   }, [categoryMaster, itemMasterItems]);
 
-  
   const subCategoriesByItem = useMemo(() => {
     const result = {};
     const rmCat = Object.values(categoryMaster || {}).find(
@@ -231,7 +229,7 @@ export default function MaterialInward({
                 uom: pit.unit || pit.uom || "nos",
                 unit: pit.unit || "nos",
                 gsm: pit.gsm || "",
-                weight: isConsumable ? "" : "",
+                weight: "",
                 rate: pit.rate || "",
                 itemName: pit.itemName || "",
                 qty: "",
@@ -241,6 +239,7 @@ export default function MaterialInward({
                 hsnCode: pit.hsnCode || "",
                 taxAmount: pit.taxAmount || "",
                 totalWithTax: pit.totalWithTax || "",
+                poRemarks: pit.remarks || "",
               };
             });
             setItems(newItems);
@@ -1258,6 +1257,9 @@ export default function MaterialInward({
                             <option value="set">set</option>
                             <option value="pcs">pcs</option>
                             <option value="pkt">pkt</option>
+                            <option value="mm">mm</option>
+                            <option value="cm">cm</option>
+                            <option value="inch">inch</option>
                           </select>
                         </Field>
                         {it.category === "Corrugated Box" && (
@@ -1350,6 +1352,18 @@ export default function MaterialInward({
                             }}
                           >
                             {it.itemName}
+                            {it.poRemarks && (
+                              <div
+                                style={{
+                                  fontSize: 10,
+                                  color: "#3b82f6",
+                                  marginTop: 4,
+                                  fontStyle: "italic",
+                                }}
+                              >
+                                PO Note: {it.poRemarks}
+                              </div>
+                            )}
                           </div>
                         </Field>
                         <Field label="QUANTITY *">
@@ -1373,6 +1387,9 @@ export default function MaterialInward({
                             <option value="nos">nos</option>
                             <option value="kg">kg</option>
                             <option value="pcs">pcs</option>
+                            <option value="mm">mm</option>
+                            <option value="cm">cm</option>
+                            <option value="inch">inch</option>
                           </select>
                         </Field>
                         <Field label="RATE (₹/NOS) *">
@@ -1456,6 +1473,9 @@ export default function MaterialInward({
                             <option value="nos">nos</option>
                             <option value="kg">kg</option>
                             <option value="pcs">pcs</option>
+                            <option value="mm">mm</option>
+                            <option value="cm">cm</option>
+                            <option value="inch">inch</option>
                           </select>
                         </Field>
                         <Field label="RATE (₹/NOS) *">
@@ -1734,21 +1754,23 @@ export default function MaterialInward({
                         </span>
                       </div>
                       <div style={{ display: "flex", gap: 8 }}>
-                        <button
-                          onClick={() => handleEdit(r)}
-                          style={{
-                            background: "#1e293b",
-                            color: C.blue,
-                            border: "1px solid #334155",
-                            borderRadius: 6,
-                            padding: "6px 14px",
-                            fontSize: 11,
-                            fontWeight: 700,
-                            cursor: "pointer",
-                          }}
-                        >
-                          ✏️ Edit
-                        </button>
+                        {canEdit && (
+                          <button
+                            onClick={() => handleEdit(r)}
+                            style={{
+                              background: "#1e293b",
+                              color: C.blue,
+                              border: "1px solid #334155",
+                              borderRadius: 6,
+                              padding: "6px 14px",
+                              fontSize: 11,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                            }}
+                          >
+                            ✏️ Edit
+                          </button>
+                        )}
                         <button
                           onClick={() => generateGRNPDF(r)}
                           style={{
@@ -1764,24 +1786,23 @@ export default function MaterialInward({
                         >
                           🖨️ PDF
                         </button>
-                        <button
-                          onClick={() => handleDelete(r._id)}
-                          style={{
-                            background: "#450a0a",
-                            color: "#ef4444",
-                            border: "1px solid #7f1d1d",
-                            borderRadius: 6,
-                            padding: "4px 14px",
-                            fontSize: 12,
-                            fontWeight: 700,
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 6,
-                          }}
-                        >
-                          🗑️ Delete
-                        </button>
+                        {canEdit && (
+                          <button
+                            onClick={() => handleDelete(r._id)}
+                            style={{
+                              background: "#450a0a",
+                              color: "#ef4444",
+                              border: "1px solid #7f1d1d",
+                              borderRadius: 6,
+                              padding: "6px 14px",
+                              fontSize: 11,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                            }}
+                          >
+                            🗑️ Delete
+                          </button>
+                        )}
                       </div>
                     </div>
 

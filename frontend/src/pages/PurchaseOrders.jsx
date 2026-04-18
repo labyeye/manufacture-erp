@@ -49,9 +49,10 @@ export default function PurchaseOrders({
   vendorMaster = [],
   categoryMaster = {},
   sizeMaster = {},
-  itemMasterFG = {},
   toast,
+  editableTabs = [],
 }) {
+  const canEdit = editableTabs.includes("purchase");
   const blankHeader = {
     poDate: today(),
     deliveryDate: "",
@@ -85,6 +86,7 @@ export default function PurchaseOrders({
     height: "",
     uom: "nos",
     unit: "nos",
+    remarks: "",
   });
 
   const [header, setHeader] = useState(blankHeader);
@@ -321,6 +323,7 @@ export default function PurchaseOrders({
                   <td>
                     <div style="font-weight: 700;">${it.itemName}</div>
                     <div style="font-size: 8px; color: #64748b;">${it.productCode || ""}</div>
+                    ${it.remarks ? `<div style="font-size: 8px; color: #1e40af; font-style: italic; margin-top: 2px;">Note: ${it.remarks}</div>` : ""}
                   </td>
                   <td style="white-space: nowrap;">${it.category || "—"}</td>
                   <td style="white-space: nowrap;">${it.paperType || "—"}</td>
@@ -637,6 +640,7 @@ export default function PurchaseOrders({
             hsnCode: it.hsnCode,
             taxAmount: Number(it.taxAmount || 0),
             amount: Number(it.amount || 0),
+            remarks: it.remarks,
           };
         }),
         deliveryDate: header.deliveryDate,
@@ -716,6 +720,7 @@ export default function PurchaseOrders({
         noOfReels: "",
         size: "",
         unit: it.unit || "nos",
+        remarks: it.remarks || "",
       })),
     );
     setEditingId(po._id);
@@ -872,20 +877,22 @@ export default function PurchaseOrders({
             <h3 style={{ fontSize: 14, fontWeight: 700, color: C.blue }}>
               Items ({items.length})
             </h3>
-            <button
-              onClick={addItem}
-              style={{
-                background: C.blue,
-                color: "#fff",
-                border: "none",
-                borderRadius: 6,
-                padding: "8px 18px",
-                fontWeight: 700,
-                fontSize: 13,
-              }}
-            >
-              + Add Item
-            </button>
+            {canEdit && (
+              <button
+                onClick={addItem}
+                style={{
+                  background: C.blue,
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 6,
+                  padding: "8px 18px",
+                  fontWeight: 700,
+                  fontSize: 13,
+                }}
+              >
+                + Add Item
+              </button>
+            )}
           </div>
 
           {items.map((it, idx) => (
@@ -1296,6 +1303,13 @@ export default function PurchaseOrders({
                     {it.totalWithTax ? `₹${fmt(+it.totalWithTax)}` : "—"}
                   </div>
                 </Field>
+                <Field label="Item Remarks" style={{ gridColumn: "span 2" }}>
+                  <input
+                    placeholder="Specification/Instructions for this item..."
+                    value={it.remarks || ""}
+                    onChange={(e) => setItem(idx, "remarks", e.target.value)}
+                  />
+                </Field>
               </div>
               <Field label="Item Name">
                 <input
@@ -1537,24 +1551,26 @@ export default function PurchaseOrders({
                         >
                           {r.status || "Open"}
                         </div>
-                        <button
-                          onClick={() => handleEdit(r)}
-                          style={{
-                            background: "#1e293b",
-                            color: C.blue,
-                            border: "1px solid #334155",
-                            borderRadius: 6,
-                            padding: "4px 14px",
-                            fontSize: 12,
-                            fontWeight: 700,
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 6,
-                          }}
-                        >
-                          ✏️ Edit
-                        </button>
+                        {canEdit && (
+                          <button
+                            onClick={() => handleEdit(r)}
+                            style={{
+                              background: "#1e293b",
+                              color: C.blue,
+                              border: "1px solid #334155",
+                              borderRadius: 6,
+                              padding: "4px 14px",
+                              fontSize: 12,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 6,
+                            }}
+                          >
+                            ✏️ Edit
+                          </button>
+                        )}
                         <button
                           onClick={() => generatePOPDF(r)}
                           style={{
@@ -1573,24 +1589,26 @@ export default function PurchaseOrders({
                         >
                           🖨️ PDF
                         </button>
-                        <button
-                          onClick={() => handleDelete(r._id)}
-                          style={{
-                            background: "#450a0a",
-                            color: "#ef4444",
-                            border: "1px solid #7f1d1d",
-                            borderRadius: 6,
-                            padding: "4px 14px",
-                            fontSize: 12,
-                            fontWeight: 700,
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 6,
-                          }}
-                        >
-                          🗑️ Delete
-                        </button>
+                        {canEdit && (
+                          <button
+                            onClick={() => handleDelete(r._id)}
+                            style={{
+                              background: "#450a0a",
+                              color: "#ef4444",
+                              border: "1px solid #7f1d1d",
+                              borderRadius: 6,
+                              padding: "4px 14px",
+                              fontSize: 12,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 6,
+                            }}
+                          >
+                            🗑️ Delete
+                          </button>
+                        )}
                       </div>
                     </div>
 

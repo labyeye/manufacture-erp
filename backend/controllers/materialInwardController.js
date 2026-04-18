@@ -141,6 +141,11 @@ exports.create = async (req, res) => {
     await inward.populate("createdBy", "name email");
 
     res.status(201).json(inward);
+    
+    // Update PO Status
+    if (poRef) {
+      await updatePurchaseOrderStatus(poRef);
+    }
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -261,6 +266,11 @@ exports.update = async (req, res) => {
     await inward.populate("createdBy", "name email");
 
     res.json(inward);
+
+    // Update PO Status
+    if (inward.poRef) {
+      await updatePurchaseOrderStatus(inward.poRef);
+    }
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -276,6 +286,11 @@ exports.delete = async (req, res) => {
 
     await MaterialInward.findByIdAndDelete(req.params.id);
     res.json({ message: "Inward deleted successfully" });
+
+    // Update PO Status
+    if (inward.poRef) {
+      await updatePurchaseOrderStatus(inward.poRef);
+    }
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -299,3 +314,40 @@ exports.updateStatus = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
+
+const updatePurchaseOrderStatus = async (poRef) => {
+  try {
+    const po = await PurchaseOrder.findOne({ poNo: poRef });
+    if (!po) return;
+
+    const allInwards = await MaterialInward.find({ poRef: poRef });
+
+    let orderedQty = 0;
+    po.items.forEach((it) => {
+      orderedQty += Number(it.weight) || Number(it.qty) || 0;
+    });
+
+    let receivedQty = 0;
+    allInwards.forEach((inw) => {
+      (inw.items || []).forEach((it) => {
+        receivedQty += Number(it.weight || it.qty || 0);
+      });
+    });
+
+    let newStatus = "Open";
+    if (receivedQty >= orderedQty) {
+      newStatus = "Received";
+    } else if (receivedQty > 0) {
+      newStatus = "Partial";
+    }
+
+    if (po.status !== newStatus) {
+      po.status = newStatus;
+      await po.save();
+    }
+  } catch (err) {
+    console.error("Failed to update PO status:", poRef, err);
+  }
+};
+
+module.exports = exports;

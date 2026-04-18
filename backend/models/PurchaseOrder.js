@@ -18,7 +18,8 @@ const purchaseOrderItemSchema = new mongoose.Schema({
   amount: Number,
   gstRate: Number,
   hsnCode: String,
-  taxAmount: Number
+  taxAmount: Number,
+  remarks: String
 }, { _id: false });
 
 

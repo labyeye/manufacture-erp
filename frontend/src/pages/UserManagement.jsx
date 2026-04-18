@@ -3,24 +3,25 @@ import { usersAPI } from "../api/auth";
 
 const ALL_MODULES = [
   { key: "dashboard", label: "Dashboard", icon: "📊" },
-  { key: "globalSearch", label: "Global Search", icon: "🔍" },
-  { key: "purchaseOrders", label: "Purchase Orders", icon: "🛒" },
-  { key: "materialInward", label: "Material Inward", icon: "📥" },
-  { key: "salesOrders", label: "Sales Orders", icon: "📋" },
-  { key: "jobOrders", label: "Job Orders", icon: "⚙️" },
+  { key: "search", label: "Global Search", icon: "🔍" },
+  { key: "purchase", label: "Purchase Orders", icon: "🛒" },
+  { key: "inward", label: "Material Inward", icon: "📥" },
+  { key: "sales", label: "Sales Orders", icon: "📋" },
+  { key: "jobs", label: "Job Orders", icon: "⚙️" },
   { key: "production", label: "Production", icon: "🔧" },
-  { key: "printingDetailMaster", label: "Printing Detail Master", icon: "🖨️" },
-  { key: "productionCalendar", label: "Production Calendar", icon: "📅" },
+  { key: "printingmaster", label: "Printing Detail Master", icon: "🖨️" },
+  { key: "calendar", label: "Production Calendar", icon: "📅" },
   { key: "dispatch", label: "Dispatch", icon: "🚚" },
-  { key: "rmStock", label: "RM Stock", icon: "🏗️" },
-  { key: "fgStock", label: "FG Stock", icon: "🎪" },
-  { key: "consumableStock", label: "Consumable Stock", icon: "📦" },
-  { key: "vendorMaster", label: "Vendor Master", icon: "🏪" },
-  { key: "clientMaster", label: "Client Master", icon: "👥" },
-  { key: "categoryMaster", label: "Category Master", icon: "📂" },
-  { key: "itemMaster", label: "Item Master", icon: "📋" },
-  { key: "machineMaster", label: "Machine Master", icon: "🏭" },
-  { key: "userManagement", label: "User Management", icon: "👤" },
+  { key: "rawstock", label: "RM Stock", icon: "🏗️" },
+  { key: "fg", label: "FG Stock", icon: "🎪" },
+  { key: "consumablestock", label: "Consumable Stock", icon: "📦" },
+  { key: "vendormaster", label: "Vendor Master", icon: "🏪" },
+  { key: "clientmaster", label: "Client Master", icon: "👥" },
+  { key: "sizemaster", label: "Category Master", icon: "📂" },
+  { key: "itemmaster", label: "Item Master", icon: "📋" },
+  { key: "machinemaster", label: "Machine Master", icon: "🏭" },
+  { key: "companymaster", label: "Company Master", icon: "🏢" },
+  { key: "users", label: "User Management", icon: "👤" },
 ];
 
 const ROLE_COLORS = {
@@ -74,11 +75,12 @@ export default function UserManagement({ currentUser, toast }) {
     username: "",
     password: "",
     role: "Viewer",
+    clientTag: "",
     allowedTabs: [],
+    editableTabs: [],
   };
   const [form, setForm] = useState(emptyForm);
 
-  
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -98,12 +100,37 @@ export default function UserManagement({ currentUser, toast }) {
 
   const handleModuleToggle = (moduleKey, type) => {
     setForm((prev) => {
-      const current = prev.allowedTabs || [];
+      const currentAllowed = prev.allowedTabs || [];
+      const currentEditable = prev.editableTabs || [];
+
       if (type === "view") {
-        if (current.includes(moduleKey)) {
-          return { ...prev, allowedTabs: current.filter(m => m !== moduleKey) };
+        if (currentAllowed.includes(moduleKey)) {
+          // Removing view auto removes edit
+          return {
+            ...prev,
+            allowedTabs: currentAllowed.filter((m) => m !== moduleKey),
+            editableTabs: currentEditable.filter((m) => m !== moduleKey),
+          };
         } else {
-          return { ...prev, allowedTabs: [...current, moduleKey] };
+          return { ...prev, allowedTabs: [...currentAllowed, moduleKey] };
+        }
+      }
+
+      if (type === "edit") {
+        if (currentEditable.includes(moduleKey)) {
+          return {
+            ...prev,
+            editableTabs: currentEditable.filter((m) => m !== moduleKey),
+          };
+        } else {
+          // Adding edit auto adds view
+          return {
+            ...prev,
+            allowedTabs: currentAllowed.includes(moduleKey)
+              ? currentAllowed
+              : [...currentAllowed, moduleKey],
+            editableTabs: [...currentEditable, moduleKey],
+          };
         }
       }
       return prev;
@@ -111,12 +138,15 @@ export default function UserManagement({ currentUser, toast }) {
   };
 
   const handleAllAccess = () =>
-    setForm((prev) => ({ ...prev, allowedTabs: ALL_MODULES.map(m => m.key) }));
+    setForm((prev) => ({
+      ...prev,
+      allowedTabs: ALL_MODULES.map((m) => m.key),
+      editableTabs: ALL_MODULES.map((m) => m.key),
+    }));
   const handleNoneAccess = () =>
-    setForm((prev) => ({ ...prev, allowedTabs: [] }));
+    setForm((prev) => ({ ...prev, allowedTabs: [], editableTabs: [] }));
 
-  const countModules = (allowedTabs) =>
-    (allowedTabs || []).length;
+  const countModules = (allowedTabs) => (allowedTabs || []).length;
 
   const handleSubmit = async () => {
     if (!form.name.trim()) {
@@ -140,6 +170,8 @@ export default function UserManagement({ currentUser, toast }) {
           name: form.name,
           role: form.role,
           allowedTabs: form.allowedTabs,
+          editableTabs: form.editableTabs,
+          clientTag: form.clientTag,
         };
         if (form.password && form.password !== "••••••") {
           updateData.password = form.password;
@@ -153,6 +185,8 @@ export default function UserManagement({ currentUser, toast }) {
           password: form.password,
           role: form.role,
           allowedTabs: form.allowedTabs,
+          editableTabs: form.editableTabs,
+          clientTag: form.clientTag,
         });
         toast("User created successfully", "success");
       }
@@ -176,6 +210,8 @@ export default function UserManagement({ currentUser, toast }) {
       password: "••••••",
       role: user.role,
       allowedTabs: user.allowedTabs || [],
+      editableTabs: user.editableTabs || [],
+      clientTag: user.clientTag || "",
     });
     setEditingId(user._id);
     setShowForm(true);
@@ -363,7 +399,9 @@ export default function UserManagement({ currentUser, toast }) {
               <input
                 style={inputStyle}
                 type="password"
-                placeholder={editingId ? "Leave blank to keep current" : "Min 6 chars"}
+                placeholder={
+                  editingId ? "Leave blank to keep current" : "Min 6 chars"
+                }
                 value={form.password}
                 onChange={(e) =>
                   setForm((p) => ({ ...p, password: e.target.value }))
@@ -396,9 +434,34 @@ export default function UserManagement({ currentUser, toast }) {
                 <option value="Production">Production</option>
                 <option value="Sales">Sales</option>
                 <option value="Store">Store</option>
+                <option value="Client">Client</option>
                 <option value="Admin">Admin</option>
               </select>
             </div>
+            {form.role === "Client" && (
+              <div>
+                <label
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: "#666",
+                    display: "block",
+                    marginBottom: 6,
+                    letterSpacing: "0.5px",
+                  }}
+                >
+                  CLIENT TAG (e.g. HP, ZPL)
+                </label>
+                <input
+                  style={inputStyle}
+                  placeholder="e.g. HP or Hyperpure"
+                  value={form.clientTag}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, clientTag: e.target.value }))
+                  }
+                />
+              </div>
+            )}
           </div>
 
           {}
@@ -458,58 +521,102 @@ export default function UserManagement({ currentUser, toast }) {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-                gap: 8,
+                gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+                gap: 10,
               }}
             >
               {ALL_MODULES.map((mod) => {
                 const hasAccess = form.allowedTabs?.includes(mod.key) || false;
+                const canEdit = form.editableTabs?.includes(mod.key) || false;
                 return (
                   <div
                     key={mod.key}
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      gap: 10,
-                      padding: "8px 12px",
+                      justifyContent: "space-between",
+                      padding: "10px 14px",
                       background: "#111",
-                      borderRadius: 6,
-                      border: `1px solid ${hasAccess ? "#4CAF5044" : "#222"}`,
-                      cursor: "pointer",
-                      transition: "all 0.2s"
+                      borderRadius: 8,
+                      border: "1px solid #222",
                     }}
-                    onClick={() => handleModuleToggle(mod.key, "view")}
                   >
-                    {}
-                    <div
-                      style={{
-                        width: 16,
-                        height: 16,
-                        border: `1px solid ${hasAccess ? "#4CAF50" : "#444"}`,
-                        borderRadius: 3,
-                        background: hasAccess ? "#4CAF5022" : "#0a0a0a",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                      }}
-                    >
-                      {hasAccess && (
-                        <span style={{ fontSize: 10, color: "#4CAF50" }}>
-                          ✓
-                        </span>
-                      )}
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <span style={{ fontSize: 16 }}>{mod.icon}</span>
+                      <span
+                        style={{
+                          fontSize: 12,
+                          color: hasAccess ? "#fff" : "#555",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {mod.label}
+                      </span>
                     </div>
-                    <span style={{ fontSize: 12 }}>{mod.icon}</span>
-                    <span
-                      style={{
-                        fontSize: 12,
-                        color: hasAccess ? "#e0e0e0" : "#555",
-                        fontWeight: hasAccess ? 500 : 400,
-                      }}
-                    >
-                      {mod.label}
-                    </span>
+
+                    <div style={{ display: "flex", gap: 15 }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          gap: 4,
+                          cursor: "pointer",
+                        }}
+                        onClick={() => handleModuleToggle(mod.key, "view")}
+                      >
+                        <div
+                          style={{
+                            width: 18,
+                            height: 18,
+                            border: `2px solid ${hasAccess ? "#4CAF50" : "#444"}`,
+                            borderRadius: 4,
+                            background: hasAccess ? "#4CAF5022" : "#000",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          {hasAccess && (
+                            <span style={{ fontSize: 11, color: "#4CAF50" }}>
+                              ✓
+                            </span>
+                          )}
+                        </div>
+                        <span style={{ fontSize: 9, color: "#666" }}>VIEW</span>
+                      </div>
+
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          gap: 4,
+                          cursor: "pointer",
+                        }}
+                        onClick={() => handleModuleToggle(mod.key, "edit")}
+                      >
+                        <div
+                          style={{
+                            width: 18,
+                            height: 18,
+                            border: `2px solid ${canEdit ? "#FF9800" : "#444"}`,
+                            borderRadius: 4,
+                            background: canEdit ? "#FF980022" : "#000",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          {canEdit && (
+                            <span style={{ fontSize: 11, color: "#FF9800" }}>
+                              ✓
+                            </span>
+                          )}
+                        </div>
+                        <span style={{ fontSize: 9, color: "#666" }}>EDIT</span>
+                      </div>
+                    </div>
                   </div>
                 );
               })}
@@ -570,7 +677,13 @@ export default function UserManagement({ currentUser, toast }) {
 
       {}
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {loading && <div style={{ color: "#666", textAlign: "center", padding: "20px 0" }}>Loading...</div>}
+        {loading && (
+          <div
+            style={{ color: "#666", textAlign: "center", padding: "20px 0" }}
+          >
+            Loading...
+          </div>
+        )}
         {filteredUsers.map((user) => {
           const modCount = countModules(user.allowedTabs);
           const roleColor = ROLE_COLORS[user.role] || "#888";
@@ -686,8 +799,7 @@ export default function UserManagement({ currentUser, toast }) {
                   onClick={() => handleToggleStatus(user._id, user.isActive)}
                   style={{
                     padding: "7px 18px",
-                    background:
-                      user.isActive ? "#f4433611" : "#4CAF5011",
+                    background: user.isActive ? "#f4433611" : "#4CAF5011",
                     color: user.isActive ? "#f44336" : "#4CAF50",
                     border: `1px solid ${user.isActive ? "#f4433633" : "#4CAF5033"}`,
                     borderRadius: 6,

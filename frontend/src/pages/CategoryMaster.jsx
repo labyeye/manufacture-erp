@@ -32,6 +32,8 @@ export default function CategoryMaster({ toast }) {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [editingCategory, setEditingCategory] = useState(null); // {oldName, newName}
+  const [editingSubType, setEditingSubType] = useState(null); // {oldName, newName}
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -150,6 +152,40 @@ export default function CategoryMaster({ toast }) {
     }
   };
 
+  const handleUpdateCategoryName = async () => {
+    if (!editingCategory || !editingCategory.newName.trim()) return;
+    const { oldName, newName } = editingCategory;
+    if (oldName === newName) {
+      setEditingCategory(null);
+      return;
+    }
+
+    try {
+      const typeDoc = categories.find((c) => c.type === activeTab);
+      if (!typeDoc) return;
+
+      const newSubTypes = { ...(typeDoc.subTypes || {}) };
+      newSubTypes[newName.trim()] = newSubTypes[oldName];
+      delete newSubTypes[oldName];
+
+      const updated = {
+        ...typeDoc,
+        categories: (typeDoc.categories || []).map((c) =>
+          c === oldName ? newName.trim() : c,
+        ),
+        subTypes: newSubTypes,
+      };
+
+      await categoryMasterAPI.update(typeDoc._id, updated);
+      await loadCategories();
+      if (selectedCategory === oldName) setSelectedCategory(newName.trim());
+      setEditingCategory(null);
+      toast("Category updated", "success");
+    } catch (err) {
+      toast("Failed to update category", "error");
+    }
+  };
+
   const handleAddSubType = async () => {
     if (!selectedCategory) return;
     if (!newSubType.trim()) {
@@ -214,6 +250,40 @@ export default function CategoryMaster({ toast }) {
     } catch (err) {
       console.error("Failed to remove sub-type:", err);
       toast(err.response?.data?.error || "Failed to remove sub-type", "error");
+    }
+  };
+
+  const handleUpdateSubType = async () => {
+    if (!editingSubType || !editingSubType.newName.trim()) return;
+    const { oldName, newName } = editingSubType;
+    if (oldName === newName) {
+      setEditingSubType(null);
+      return;
+    }
+
+    try {
+      const typeDoc = categories.find((c) => c.type === activeTab);
+      if (!typeDoc) return;
+
+      const currentSubTypes = typeDoc.subTypes?.[selectedCategory] || [];
+      const updatedSubTypes = currentSubTypes.map((s) =>
+        s === oldName ? newName.trim() : s,
+      );
+
+      const updated = {
+        ...typeDoc,
+        subTypes: {
+          ...typeDoc.subTypes,
+          [selectedCategory]: updatedSubTypes,
+        },
+      };
+
+      await categoryMasterAPI.update(typeDoc._id, updated);
+      await loadCategories();
+      setEditingSubType(null);
+      toast("Sub-type updated", "success");
+    } catch (err) {
+      toast("Failed to update sub-type", "error");
     }
   };
 
@@ -456,65 +526,105 @@ export default function CategoryMaster({ toast }) {
               categoryNames.map((cat) => {
                 const isSelected = selectedCategory === cat;
                 const subCount = (tabData[cat] || []).length;
+                const isEditing = editingCategory?.oldName === cat;
+
                 return (
                   <div
                     key={cat}
-                    onClick={() => setSelectedCategory(cat)}
+                    onClick={() => !isEditing && setSelectedCategory(cat)}
                     style={{
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
-                      padding: "9px 12px",
+                      padding: "7px 10px",
                       borderRadius: 7,
-                      cursor: "pointer",
+                      cursor: isEditing ? "default" : "pointer",
                       background: isSelected ? "#2196F322" : "transparent",
                       border: isSelected
                         ? "1px solid #2196F355"
                         : "1px solid transparent",
+                      gap: 8,
                     }}
                   >
-                    <span
-                      style={{
-                        fontSize: 13,
-                        fontWeight: isSelected ? 700 : 400,
-                        color: isSelected ? "#64B5F6" : "#aaa",
-                      }}
-                    >
-                      {cat}
-                    </span>
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 6 }}
-                    >
+                    {isEditing ? (
+                      <input
+                        autoFocus
+                        style={{
+                          ...inputStyle,
+                          padding: "4px 8px",
+                          fontSize: 12,
+                          flex: 1,
+                        }}
+                        value={editingCategory.newName}
+                        onChange={(e) =>
+                          setEditingCategory((prev) => ({
+                            ...prev,
+                            newName: e.target.value,
+                          }))
+                        }
+                        onBlur={handleUpdateCategoryName}
+                        onKeyDown={(e) =>
+                          e.key === "Enter" && handleUpdateCategoryName()
+                        }
+                      />
+                    ) : (
                       <span
                         style={{
-                          fontSize: 11,
-                          fontWeight: 700,
-                          color: isSelected ? "#2196F3" : "#555",
-                          background: isSelected ? "#2196F322" : "#222",
-                          padding: "1px 7px",
-                          borderRadius: 20,
+                          fontSize: 13,
+                          fontWeight: isSelected ? 700 : 400,
+                          color: isSelected ? "#64B5F6" : "#aaa",
+                          flex: 1,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
                         }}
                       >
-                        {subCount}
+                        {cat}
                       </span>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteCategory(cat);
-                        }}
+                    )}
+
+                    {!isEditing && (
+                      <div
                         style={{
-                          background: "none",
-                          border: "none",
-                          color: "#444",
-                          fontSize: 14,
-                          cursor: "pointer",
-                          padding: "0 2px",
-                          lineHeight: 1,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 4,
                         }}
                       >
-                        ×
-                      </button>
-                    </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingCategory({ oldName: cat, newName: cat });
+                          }}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            color: "#555",
+                            fontSize: 10,
+                            cursor: "pointer",
+                            padding: "4px",
+                          }}
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteCategory(cat);
+                          }}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            color: "#555",
+                            fontSize: 12,
+                            cursor: "pointer",
+                            padding: "4px",
+                          }}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    )}
                   </div>
                 );
               })
@@ -619,38 +729,79 @@ export default function CategoryMaster({ toast }) {
                 </div>
               ) : (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                  {selectedSubTypes.map((sub) => (
-                    <div
-                      key={sub}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                        padding: "6px 12px",
-                        background: "#222",
-                        border: "1px solid #333",
-                        borderRadius: 6,
-                        fontSize: 13,
-                        color: "#ccc",
-                      }}
-                    >
-                      <span>{sub}</span>
-                      <button
-                        onClick={() => handleRemoveSubType(sub)}
+                  {selectedSubTypes.map((sub) => {
+                    const isEditing = editingSubType?.oldName === sub;
+                    return (
+                      <div
+                        key={sub}
                         style={{
-                          background: "none",
-                          border: "none",
-                          color: "#f44336",
-                          cursor: "pointer",
-                          fontSize: 14,
-                          lineHeight: 1,
-                          padding: "0 2px",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                          padding: isEditing ? "4px 8px" : "6px 12px",
+                          background: "#222",
+                          border: "1px solid #333",
+                          borderRadius: 6,
+                          fontSize: 13,
+                          color: "#ccc",
                         }}
                       >
-                        ×
-                      </button>
-                    </div>
-                  ))}
+                        {isEditing ? (
+                          <input
+                            autoFocus
+                            style={{
+                              ...inputStyle,
+                              padding: "2px 6px",
+                              fontSize: 13,
+                              width: 120,
+                            }}
+                            value={editingSubType.newName}
+                            onChange={(e) =>
+                              setEditingSubType((prev) => ({
+                                ...prev,
+                                newName: e.target.value,
+                              }))
+                            }
+                            onBlur={handleUpdateSubType}
+                            onKeyDown={(e) =>
+                              e.key === "Enter" && handleUpdateSubType()
+                            }
+                          />
+                        ) : (
+                          <>
+                            <span
+                              onClick={() =>
+                                setEditingSubType({
+                                  oldName: sub,
+                                  newName: sub,
+                                })
+                              }
+                              style={{ cursor: "pointer" }}
+                            >
+                              {sub}
+                            </span>
+                            <button
+                              onClick={() => handleRemoveSubType(sub)}
+                              style={{
+                                background: "none",
+                                border: "none",
+                                color: "#f44336",
+                                cursor: "pointer",
+                                fontSize: 12,
+                                lineHeight: 1,
+                                padding: "0 2px",
+                                marginLeft: 4,
+                                opacity: 0.6,
+                              }}
+                              title="Remove"
+                            >
+                              ×
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </>

@@ -19,8 +19,12 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ["Admin", "Manager", "Operator", "Viewer", "Sales", "Production", "Store"],
+    enum: ["Admin", "Manager", "Operator", "Viewer", "Sales", "Production", "Store", "Client"],
     default: "Viewer"
+  },
+  clientTag: {
+    type: String, // e.g., "HP", "ZPL", or "Other"
+    default: null
   },
   editableTabs: {
     type: [String],

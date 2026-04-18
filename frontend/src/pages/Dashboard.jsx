@@ -4,24 +4,24 @@ import {
   Badge,
   Card,
   SectionTitle,
-  ExcelBtn,
+  ExportBtn,
 } from "../components/ui/BasicComponents";
 import { fmt, today, xlsxDownload, daysSince } from "../utils/helpers";
 import * as XLSX from "xlsx";
 
-const ReportTabs = [
-  { id: "production", label: "Production Report", icon: "⚙️" },
-  { id: "operator", label: "Operator Report", icon: "👤" },
-  { id: "machine", label: "Machine Report", icon: "🏗️" },
-  { id: "po_recon", label: "PO Reconciliation", icon: "🛒" },
-  { id: "so_recon", label: "SO Reconciliation", icon: "📋" },
-  { id: "so_ageing", label: "SO Ageing", icon: "⌛" },
-  { id: "prod_target", label: "Prod vs Target", icon: "🎯" },
-  { id: "yield", label: "Yield Tracking", icon: "📝" },
-  { id: "delivery", label: "Delivery Status", icon: "🚚" },
-  { id: "low_stock", label: "Low Stock", icon: "⚠️" },
-  { id: "monthly", label: "Monthly Summary", icon: "📅" },
-  { id: "vendor", label: "Vendor Performance", icon: "🏪" },
+const ALL_REPORT_TABS = [
+  { id: "production", label: "Production Report", icon: "⚙️", roles: ["Admin", "Manager", "Operator", "Production", "Client"] },
+  { id: "operator", label: "Operator Report", icon: "👤", roles: ["Admin", "Manager", "Production"] },
+  { id: "machine", label: "Machine Report", icon: "🏗️", roles: ["Admin", "Manager", "Production"] },
+  { id: "po_recon", label: "PO Reconciliation", icon: "🛒", roles: ["Admin", "Manager", "Store"] },
+  { id: "so_recon", label: "SO Reconciliation", icon: "📋", roles: ["Admin", "Manager", "Sales"] },
+  { id: "so_ageing", label: "SO Ageing", icon: "⌛", roles: ["Admin", "Manager", "Sales", "Client"] },
+  { id: "prod_target", label: "Prod vs Target", icon: "🎯", roles: ["Admin", "Manager", "Production"] },
+  { id: "yield", label: "Yield Tracking", icon: "📝", roles: ["Admin", "Manager", "Production"] },
+  { id: "delivery", label: "Delivery Status", icon: "🚚", roles: ["Admin", "Manager", "Sales"] },
+  { id: "low_stock", label: "Low Stock", icon: "⚠️", roles: ["Admin", "Manager", "Store", "Client"] },
+  { id: "monthly", label: "Monthly Summary", icon: "📅", roles: ["Admin", "Manager"] },
+  { id: "vendor", label: "Vendor Performance", icon: "🏪", roles: ["Admin", "Manager", "Store"] },
 ];
 
 const TH = {
@@ -55,7 +55,12 @@ const TABLE = {
   fontStretch: "normal",
 };
 
-export function Dashboard({ data }) {
+export function Dashboard({ data, session }) {
+  const userRole = session?.role || "Viewer";
+  
+  const reportTabs = useMemo(() => {
+    return ALL_REPORT_TABS.filter(t => !t.roles || t.roles.includes(userRole));
+  }, [userRole]);
   const {
     jobOrders = [],
     salesOrders = [],
@@ -66,6 +71,7 @@ export function Dashboard({ data }) {
     dispatches = [],
     inward = [],
     vendorMaster = [],
+    consumableStock = [],
     refreshData,
   } = data;
 
@@ -97,6 +103,8 @@ export function Dashboard({ data }) {
   useEffect(() => {
     localStorage.setItem("erp_pvtTargets", JSON.stringify(pvtTargets));
   }, [pvtTargets]);
+ 
+  const [lowStockFilter, setLowStockFilter] = useState("All");
 
   const allEntries = useMemo(() => {
     const list = [];
@@ -223,8 +231,23 @@ export function Dashboard({ data }) {
         type: "FG",
       }));
 
-    return [...raw, ...fg];
-  }, [rawStock, fgStock]);
+    const cg = (consumableStock || [])
+      .filter((s) => {
+        const current = +(s.qty || 0);
+        const thresh = +(s.reorderLevel || 0);
+        return thresh > 0 && current < thresh;
+      })
+      .map((s) => ({
+        name: s.name || "Unnamed CG",
+        category: s.category || "Consumable",
+        stock: s.qty || 0,
+        reorder: s.reorderLevel || 0,
+        unit: s.unit || "nos",
+        type: "CG",
+      }));
+
+    return [...raw, ...fg, ...cg];
+  }, [rawStock, fgStock, consumableStock]);
 
   const soRows = useMemo(() => {
     return salesOrders
@@ -465,49 +488,69 @@ export function Dashboard({ data }) {
 
       {}
       <div style={{ marginBottom: 24 }}>
-        {[ReportTabs.slice(0, 6), ReportTabs.slice(6)].map((row, ri) => (
-          <div
-            key={ri}
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(6, 1fr)",
-              gap: 8,
-              marginBottom: 8,
-            }}
-          >
-            {row.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => {
-                  setReportTab(t.id);
-                  setDrill(null);
-                }}
-                style={{
-                  padding: "9px 10px",
-                  borderRadius: 6,
-                  background: reportTab === t.id ? "#1a1a1e" : "transparent",
-                  border: `1px solid ${reportTab === t.id ? C.yellow : "#2a2a2e"}`,
-                  color: reportTab === t.id ? C.yellow : "#888",
-                  cursor: "pointer",
-                  fontSize: 11,
-                  fontWeight: reportTab === t.id ? 700 : 500,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
-                  fontStretch: "normal",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                }}
-              >
-                <span style={{ fontSize: 13, flexShrink: 0 }}>{t.icon}</span>
-                <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {t.label}
-                </span>
-              </button>
-            ))}
-          </div>
-        ))}
+        {(() => {
+          const rows = [];
+          for (let i = 0; i < reportTabs.length; i += 6) {
+            rows.push(reportTabs.slice(i, i + 6));
+          }
+          return rows.map((row, ri) => (
+            <div
+              key={ri}
+              style={{
+                display: "grid",
+                gridTemplateColumns: `repeat(${row.length}, 1fr)`,
+                gap: 8,
+                marginBottom: 8,
+              }}
+            >
+              {row.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => {
+                    setReportTab(t.id);
+                    setDrill(null);
+                  }}
+                  style={{
+                    padding: "9px 10px",
+                    borderRadius: 8,
+                    background: reportTab === t.id ? "rgba(255, 193, 7, 0.1)" : "rgba(255, 255, 255, 0.03)",
+                    border: `1px solid ${reportTab === t.id ? "#ffc107" : "rgba(255, 255, 255, 0.08)"}`,
+                    color: reportTab === t.id ? "#ffc107" : "#888",
+                    cursor: "pointer",
+                    fontSize: 11,
+                    fontWeight: reportTab === t.id ? 700 : 500,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
+                    fontStretch: "normal",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    transition: "all 0.2s ease",
+                    boxShadow: reportTab === t.id ? "0 4px 12px rgba(255, 193, 7, 0.1)" : "none",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (reportTab !== t.id) {
+                      e.currentTarget.style.background = "rgba(255, 255, 255, 0.06)";
+                      e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.15)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (reportTab !== t.id) {
+                      e.currentTarget.style.background = "rgba(255, 255, 255, 0.03)";
+                      e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.08)";
+                    }
+                  }}
+                >
+                  <span style={{ fontSize: 13, flexShrink: 0 }}>{t.icon}</span>
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {t.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+          ));
+        })()}
       </div>
 
       {}
@@ -2101,6 +2144,28 @@ export function Dashboard({ data }) {
               >
                 {low.length} items below reorder level
               </div>
+              
+              <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+                {["All", "RM", "CG", "FG"].map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setLowStockFilter(f)}
+                    style={{
+                      padding: "6px 16px",
+                      borderRadius: 6,
+                      border: `1px solid ${lowStockFilter === f ? C.red : "#2a2a2e"}`,
+                      background: lowStockFilter === f ? C.red + "22" : "transparent",
+                      color: lowStockFilter === f ? C.red : "#888",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {f === "All" ? "View All" : f === "RM" ? "Raw Material" : f === "CG" ? "Consumables" : "Finished Goods"}
+                  </button>
+                ))}
+              </div>
+
               <div
                 style={{
                   borderRadius: 8,
@@ -2132,7 +2197,9 @@ export function Dashboard({ data }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {low.map((f, i) => (
+                    {low
+                      .filter(item => lowStockFilter === "All" || item.type === lowStockFilter)
+                      .map((f, i) => (
                       <tr
                         key={i}
                         style={{

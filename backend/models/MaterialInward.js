@@ -27,6 +27,7 @@ const materialInwardItemSchema = new mongoose.Schema(
 
     rate: Number,
     amount: Number,
+    poRemarks: String
   },
   { _id: false },
 );
@@ -52,6 +53,7 @@ const materialInwardSchema = new mongoose.Schema(
     location: String,
     receivedBy: String,
     remarks: String,
+    poRemarks: String,
     vendor: {
       id: {
         type: mongoose.Schema.Types.ObjectId,

@@ -303,6 +303,8 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], toast }) {
           clientCode: it.clientCode,
           qty: Number(it.qty),
           unit: it.unit,
+          pcsPerBox: Number(it.pcsPerBox || 0),
+          noOfBox: Number(it.noOfBox || 0),
           rate: it.rate ? Number(it.rate) : 0,
           amount: it.amount ? Number(it.amount) : 0,
           gstRate: it.gstRate ? Number(it.gstRate) : 0,
@@ -697,8 +699,8 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], toast }) {
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "2.5fr 1.2fr 1.2fr 1fr 0.8fr 1fr",
-                  gap: 12,
+                  gridTemplateColumns: "1.8fr 0.8fr 0.8fr 0.7fr 0.5fr 0.6fr 0.6fr 0.7fr 0.5fr 1fr",
+                  gap: 10,
                   marginBottom: 12,
                 }}
               >
@@ -774,6 +776,22 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], toast }) {
                     ))}
                   </select>
                 </Field>
+                <Field label="Pcs/Box">
+                  <input
+                    type="number"
+                    placeholder="Pcs/Box"
+                    value={it.pcsPerBox}
+                    onChange={(e) => setItem(idx, "pcsPerBox", e.target.value)}
+                  />
+                </Field>
+                <Field label="Boxes">
+                  <input
+                    type="number"
+                    placeholder="Boxes"
+                    value={it.noOfBox}
+                    onChange={(e) => setItem(idx, "noOfBox", e.target.value)}
+                  />
+                </Field>
                 <Field label="Rate (₹)">
                   <input
                     type="number"
@@ -805,31 +823,6 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], toast }) {
                 </Field>
               </div>
 
-              {}
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 3fr",
-                  gap: 12,
-                }}
-              >
-                <Field label="No. of Box">
-                  <div
-                    style={{
-                      padding: "9px 12px",
-                      background: C.inputBg,
-                      border: `1px solid ${C.border}`,
-                      borderRadius: 6,
-                      fontSize: 13,
-                      color: it.noOfBox ? C.text || "#e5e7eb" : C.muted,
-                    }}
-                  >
-                    {it.noOfBox
-                      ? `${it.noOfBox} boxes`
-                      : "— Auto from Qty ÷ Pcs/Box —"}
-                  </div>
-                </Field>
-              </div>
             </Card>
           ))}
 
