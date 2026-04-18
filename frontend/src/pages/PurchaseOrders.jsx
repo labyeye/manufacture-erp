@@ -692,36 +692,50 @@ export default function PurchaseOrders({
       poDate: formatDateForInput(po.poDate),
       deliveryDate: formatDateForInput(po.deliveryDate),
       vendorName: vendorName,
-      vendorContact: typeof po.vendor === "object" ? po.vendor.contact : "",
+      vendorContact: po.vendorContact || "",
       poStatus: po.status || "Open",
       remarks: po.remarks || "",
     });
+
     setItems(
-      (po.items || []).map((it) => ({
-        _id: uid(),
-        materialType: "Raw Material",
-        itemName: it.itemName || "",
-        productCode: it.productCode || "",
-        category: it.category || "",
-        subCategory: it.paperType || "",
-        gsm: it.gsm || "",
-        splitSize: it.sheetSize || "",
-        widthMm:
-          it.width ||
-          (it.sheetSize ? it.sheetSize.split("x")[0].replace("mm", "") : ""),
-        lengthMm:
-          it.length ||
-          (it.sheetSize ? it.sheetSize.split("x")[1]?.replace("mm", "") : ""),
-        qty: it.qty || "",
-        weight: it.weight || "",
-        rate: it.rate || "",
-        amount: it.amount || "",
-        noOfSheets: it.qty || "",
-        noOfReels: "",
-        size: "",
-        unit: it.unit || "nos",
-        remarks: it.remarks || "",
-      })),
+      (po.items || []).map((it) => {
+        const masterItem = itemMasterItems.find(
+          (x) =>
+            (x.code || "").trim().toLowerCase() ===
+            (it.productCode || "").trim().toLowerCase(),
+        );
+
+        return {
+          _id: uid(),
+          materialType:
+            it.category === "Machine Spare" || it.category === "Consumable"
+              ? it.category
+              : masterItem?.type || "Raw Material",
+          itemName: it.itemName || masterItem?.name || "",
+          productCode: it.productCode || "",
+          category: it.category || masterItem?.category || "",
+          subCategory: it.paperType || masterItem?.subCategory || "",
+          gsm: it.gsm || masterItem?.gsm || "",
+          size: it.sheetSize || masterItem?.size || "",
+          widthMm: it.width || masterItem?.width || "",
+          lengthMm: it.length || masterItem?.length || "",
+          width: it.width || masterItem?.width || "",
+          length: it.length || masterItem?.length || "",
+          height: it.height || masterItem?.height || "",
+          qty: it.qty || "",
+          weight: it.weight || "",
+          rate: it.rate || "",
+          amount: it.amount || "",
+          gstRate: it.gstRate !== undefined ? it.gstRate : masterItem?.gstRate || 18,
+          hsnCode: it.hsnCode || masterItem?.hsnCode || "",
+          taxAmount: it.taxAmount || 0,
+          noOfSheets: it.noOfSheets || "",
+          noOfReels: it.noOfReels || "",
+          unit: it.unit || masterItem?.unit || "nos",
+          uom: it.unit || masterItem?.unit || "nos",
+          remarks: it.remarks || "",
+        };
+      }),
     );
     setEditingId(po._id);
     setView("form");
