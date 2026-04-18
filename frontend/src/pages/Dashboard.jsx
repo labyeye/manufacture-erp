@@ -10,18 +10,22 @@ import { fmt, today, xlsxDownload, daysSince } from "../utils/helpers";
 import * as XLSX from "xlsx";
 
 const ALL_REPORT_TABS = [
-  { id: "production", label: "Production Report", icon: "⚙️", roles: ["Admin", "Manager", "Operator", "Production", "Client"] },
-  { id: "operator", label: "Operator Report", icon: "👤", roles: ["Admin", "Manager", "Production"] },
-  { id: "machine", label: "Machine Report", icon: "🏗️", roles: ["Admin", "Manager", "Production"] },
-  { id: "po_recon", label: "PO Reconciliation", icon: "🛒", roles: ["Admin", "Manager", "Store"] },
-  { id: "so_recon", label: "SO Reconciliation", icon: "📋", roles: ["Admin", "Manager", "Sales"] },
-  { id: "so_ageing", label: "SO Ageing", icon: "⌛", roles: ["Admin", "Manager", "Sales", "Client"] },
+  { id: "production", label: "Production", icon: "⚙️", roles: ["Admin", "Manager", "Operator", "Production", "Client"] },
+  { id: "oee", label: "OEE", icon: "🏭", roles: ["Admin", "Manager", "Production"] },
+  { id: "operator", label: "Operator", icon: "👤", roles: ["Admin", "Manager", "Production"] },
+  { id: "machine", label: "Machine", icon: "🏭", roles: ["Admin", "Manager", "Production"] },
+  { id: "po_recon", label: "PO Recon", icon: "🛒", roles: ["Admin", "Manager", "Store"] },
+  { id: "so_recon", label: "SO Recon", icon: "📋", roles: ["Admin", "Manager", "Sales"] },
+  { id: "so_ageing", label: "SO Ageing", icon: "⏳", roles: ["Admin", "Manager", "Sales", "Client"] },
   { id: "prod_target", label: "Prod vs Target", icon: "🎯", roles: ["Admin", "Manager", "Production"] },
-  { id: "yield", label: "Yield Tracking", icon: "📝", roles: ["Admin", "Manager", "Production"] },
-  { id: "delivery", label: "Delivery Status", icon: "🚚", roles: ["Admin", "Manager", "Sales"] },
+  { id: "yield", label: "Yield", icon: "📈", roles: ["Admin", "Manager", "Production"] },
+  { id: "delivery", label: "Delivery", icon: "🚛", roles: ["Admin", "Manager", "Sales"] },
   { id: "low_stock", label: "Low Stock", icon: "⚠️", roles: ["Admin", "Manager", "Store", "Client"] },
-  { id: "monthly", label: "Monthly Summary", icon: "📅", roles: ["Admin", "Manager"] },
-  { id: "vendor", label: "Vendor Performance", icon: "🏪", roles: ["Admin", "Manager", "Store"] },
+  { id: "monthly", label: "Monthly", icon: "📅", roles: ["Admin", "Manager"] },
+  { id: "vendor", label: "Vendor", icon: "🏭", roles: ["Admin", "Manager", "Store"] },
+  { id: "pipeline", label: "Pipeline", icon: "🔄", roles: ["Admin", "Manager", "Production"] },
+  { id: "profitability", label: "Profitability", icon: "💰", roles: ["Admin", "Manager", "Sales"] },
+  { id: "downtime", label: "Downtime", icon: "⏱️", roles: ["Admin", "Manager", "Production"] },
 ];
 
 const TH = {
@@ -383,107 +387,154 @@ export function Dashboard({ data, session }) {
       </div>
 
       {}
+      {}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(5, 1fr)",
+          gridTemplateColumns: "repeat(6, 1fr)",
           gap: 12,
           marginBottom: 24,
         }}
       >
-        {[
-          {
-            label: "Active Jobs",
-            val: activeJOs.length,
-            icon: "⚙️",
-            tab: "production",
-            color: C.yellow,
-          },
-          {
-            label: "Daily Output",
-            val: fmt(
-              allEntries
-                .filter((e) => e.date === today())
-                .reduce((s, e) => s + +(e.qtyCompleted || 0), 0),
-            ),
-            icon: "🎯",
-            tab: "prod_target",
-            color: C.green,
-          },
-          {
-            label: "Pending SOs",
-            val: soRows.filter((r) => r.status !== "Fully Dispatched").length,
-            icon: "📋",
-            tab: "so_recon",
-            color: C.blue,
-          },
-          {
-            label: "Deliveries",
-            val: dispatches.filter((d) => d.date?.slice(0, 10) === today())
-              .length,
-            icon: "🚚",
-            tab: "delivery",
-            color: C.purple,
-          },
-          {
-            label: "Low Stock",
-            val: lowStockItems.length,
-            icon: "⚠️",
-            tab: "low_stock",
-            color: C.red,
-          },
-        ].map((card) => (
-          <div
-            key={card.label}
-            onClick={() => setReportTab(card.tab)}
-            style={{
-              background: "#141416",
-              border: `1px solid ${reportTab === card.tab ? card.color : "#2a2a2e"}`,
-              borderRadius: 12,
-              padding: "16px 20px",
-              cursor: "pointer",
-              transition: "transform 0.2s",
-            }}
-            onMouseOver={(e) =>
-              (e.currentTarget.style.transform = "translateY(-4px)")
-            }
-            onMouseOut={(e) =>
-              (e.currentTarget.style.transform = "translateY(0)")
-            }
-          >
+        {(() => {
+          
+          const startOfWeek = (d) => {
+            const date = new Date(d);
+            const day = date.getDay();
+            const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+            return new Date(date.setDate(diff));
+          };
+
+          const isThisWeek = (dateStr) => {
+            if (!dateStr) return false;
+            const d = new Date(dateStr.slice(0, 10));
+            const now = new Date();
+            const start = startOfWeek(now);
+            start.setHours(0, 0, 0, 0);
+            return d >= start;
+          };
+
+          const isLastWeek = (dateStr) => {
+            if (!dateStr) return false;
+            const d = new Date(dateStr.slice(0, 10));
+            const now = new Date();
+            const startThis = startOfWeek(now);
+            const startLast = new Date(startThis);
+            startLast.setDate(startLast.getDate() - 7);
+            startThis.setHours(0, 0, 0, 0);
+            startLast.setHours(0, 0, 0, 0);
+            return d >= startLast && d < startThis;
+          };
+
+          const prodThis = allEntries.filter(e => isThisWeek(e.date)).reduce((s, e) => s + +(e.qtyCompleted || 0), 0);
+          const prodLast = allEntries.filter(e => isLastWeek(e.date)).reduce((s, e) => s + +(e.qtyCompleted || 0), 0);
+
+          const soThis = salesOrders.filter(so => isThisWeek(so.orderDate || so.createdAt)).length;
+          const soLast = salesOrders.filter(so => isLastWeek(so.orderDate || so.createdAt)).length;
+
+          const dispThis = dispatches.filter(d => isThisWeek(d.date)).reduce((s, d) => s + (d.items || []).reduce((ss, i) => ss + +(i.qty || 0), 0), 0);
+          const dispLast = dispatches.filter(d => isLastWeek(d.date)).reduce((s, d) => s + (d.items || []).reduce((ss, i) => ss + +(i.qty || 0), 0), 0);
+
+          const rejThis = allEntries.filter(e => isThisWeek(e.date)).reduce((s, e) => s + +(e.qtyRejected || 0), 0);
+          const rejLast = allEntries.filter(e => isLastWeek(e.date)).reduce((s, e) => s + +(e.qtyRejected || 0), 0);
+
+          const trend = (curr, prev) => {
+            if (!prev) return null;
+            const diff = ((curr - prev) / prev) * 100;
+            return {
+               val: `${diff > 0 ? "+" : ""}${diff.toFixed(0)}%`,
+               isUp: diff > 0,
+               color: diff > 0 ? C.green : C.red
+            };
+          };
+
+          return [
+            { label: "Production", val: fmt(prodThis), icon: "⚙️", tab: "production", color: C.yellow, trend: trend(prodThis, prodLast), unit: "pcs" },
+            { label: "New Orders", val: soThis, icon: "🧾", tab: "so_recon", color: C.blue, trend: trend(soThis, soLast) },
+            { label: "Dispatched", val: fmt(dispThis), icon: "🚛", tab: "delivery", color: C.purple, trend: trend(dispThis, dispLast) },
+            { label: "Active JOs", val: activeJOs.length, icon: "📋", tab: "production", color: C.yellow },
+            { label: "Rejections", val: fmt(rejThis), icon: "✕", tab: "yield", color: C.red, trend: trend(rejThis, rejLast), inverse: true },
+            { label: "Low Stock", val: lowStockItems.length, icon: "⚠️", tab: "low_stock", color: C.red },
+          ].map((card) => (
             <div
+              key={card.label}
+              onClick={() => setReportTab(card.tab)}
               style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginBottom: 10,
+                background: "#141416",
+                border: `1px solid ${reportTab === card.tab ? card.color : "#2a2a2e"}`,
+                borderRadius: 12,
+                padding: "16px 20px",
+                cursor: "pointer",
+                transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                position: "relative",
+                overflow: "hidden"
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = "translateY(-4px)";
+                e.currentTarget.style.boxShadow = `0 10px 20px -10px ${card.color}44`;
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "none";
               }}
             >
-              <span style={{ fontSize: 18 }}>{card.icon}</span>
               <div
                 style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: "50%",
-                  background: card.color,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginBottom: 10,
+                  alignItems: "center"
                 }}
-              />
+              >
+                <span style={{ fontSize: 18, opacity: 0.8 }}>{card.icon}</span>
+                {card.trend && (
+                  <div style={{ 
+                    fontSize: 10, 
+                    fontWeight: 800, 
+                    color: card.inverse ? (card.trend.isUp ? C.red : C.green) : card.trend.color,
+                    background: (card.inverse ? (card.trend.isUp ? C.red : C.green) : card.trend.color) + "15",
+                    padding: "2px 6px",
+                    borderRadius: 4,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 2
+                  }}>
+                    {card.trend.isUp ? "▲" : "▼"} {card.trend.val}
+                  </div>
+                )}
+              </div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+                <div style={{ fontSize: 24, fontWeight: 900, color: "#fff" }}>
+                  {card.val}
+                </div>
+                {card.unit && <span style={{ fontSize: 10, color: "#666", fontWeight: 700 }}>{card.unit}</span>}
+              </div>
+              <div
+                style={{
+                  fontSize: 10,
+                  fontWeight: 800,
+                  color: "#666",
+                  textTransform: "uppercase",
+                  marginTop: 6,
+                  letterSpacing: "0.05em"
+                }}
+              >
+                {card.label}
+              </div>
+              {reportTab === card.tab && (
+                <div style={{ 
+                  position: "absolute", 
+                  bottom: 0, 
+                  left: 0, 
+                  right: 0, 
+                  height: 3, 
+                  background: card.color,
+                  boxShadow: `0 0 10px ${card.color}`
+                }} />
+              )}
             </div>
-            <div style={{ fontSize: 24, fontWeight: 900, color: card.color }}>
-              {card.val}
-            </div>
-            <div
-              style={{
-                fontSize: 10,
-                fontWeight: 700,
-                color: "#888",
-                textTransform: "uppercase",
-                marginTop: 4,
-              }}
-            >
-              {card.label}
-            </div>
-          </div>
-        ))}
+          ));
+        })()}
       </div>
 
       {}

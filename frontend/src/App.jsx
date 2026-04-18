@@ -317,9 +317,19 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
   };
 
   const showToast = (msg, type = "success") => {
-    const id = Math.random();
     setToast({ id, msg, type });
   };
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        setCurrentTab("search");
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const matchesClient = (itemCode, tag) => {
     if (!tag) return true;
@@ -625,8 +635,55 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
         </div>
 
         {}
-        <div style={{ flex: 1, padding: 24, overflowY: "auto", position: "relative" }}>
-          {renderPage()}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          {}
+          <div style={{ 
+            height: 60, 
+            background: "#0d0d0d", 
+            borderBottom: `1px solid ${C.border}44`,
+            display: "flex",
+            alignItems: "center",
+            padding: "0 24px",
+            justifyContent: "space-between"
+          }}>
+             <div style={{ 
+               background: "#1a1a1a", 
+               borderRadius: 8, 
+               padding: "8px 16px", 
+               display: "flex", 
+               alignItems: "center", 
+               gap: 10,
+               width: 300,
+               color: "#555",
+               fontSize: 13,
+               cursor: "pointer"
+             }} onClick={() => setCurrentTab("search")}>
+                <span>🔍</span> Search anything...
+                <span style={{ marginLeft: "auto", fontSize: 10, background: "#333", padding: "2px 6px", borderRadius: 4 }}>Ctrl+K</span>
+             </div>
+
+             <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+                <div style={{ position: "relative", cursor: "pointer", fontSize: 20 }}>
+                   🔔
+                   <div style={{ 
+                     position: "absolute", 
+                     top: -2, 
+                     right: -2, 
+                     width: 8, 
+                     height: 8, 
+                     background: C.red, 
+                     borderRadius: "50%",
+                     border: "2px solid #0d0d0d"
+                   }} />
+                </div>
+                <div style={{ cursor: "pointer", fontSize: 18 }}>🌙</div>
+             </div>
+          </div>
+
+          {}
+          <div style={{ flex: 1, padding: 24, overflowY: "auto", position: "relative" }}>
+            {renderPage()}
+          </div>
         </div>
       </div>
 
