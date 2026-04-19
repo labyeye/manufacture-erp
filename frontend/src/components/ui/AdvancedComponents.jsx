@@ -66,39 +66,231 @@ export function AutocompleteInput({ value, onChange, suggestions = [], placehold
   );
 }
 
+const ALERT_DURATION = 2800;
+const VALIDATION_DURATION = 5500;
+
+const alertKeyframes = `
+@keyframes alertScaleIn {
+  0% { opacity: 0; transform: scale(0.7) translateY(30px); }
+  60% { transform: scale(1.04) translateY(-4px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes alertScaleOut {
+  0% { opacity: 1; transform: scale(1) translateY(0); }
+  100% { opacity: 0; transform: scale(0.85) translateY(20px); }
+}
+@keyframes progressShrink {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+@keyframes iconPop {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.25); }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes ringPulse {
+  0% { box-shadow: 0 0 0 0 currentColor; opacity: 0.6; }
+  70% { box-shadow: 0 0 0 16px transparent; opacity: 0; }
+  100% { box-shadow: 0 0 0 0 transparent; opacity: 0; }
+}
+`;
+
 export function Toast({ msg, onClose, type = "success" }) {
+  const [exiting, setExiting] = useState(false);
+  const duration = type === "validation" ? VALIDATION_DURATION : ALERT_DURATION;
+
   useEffect(() => {
-    const t = setTimeout(onClose, type === "validation" ? 6000 : 2800);
-    return () => clearTimeout(t);
+    const exitTimer = setTimeout(() => setExiting(true), duration - 300);
+    const closeTimer = setTimeout(onClose, duration);
+    return () => { clearTimeout(exitTimer); clearTimeout(closeTimer); };
   }, []);
-  const bg = type === "error" ? C.red : type === "validation" ? C.red : C.green;
-  const icon = type === "error" || type === "validation" ? "✕" : "✓";
+
+  const handleClose = () => {
+    setExiting(true);
+    setTimeout(onClose, 280);
+  };
+
   const msgs = Array.isArray(msg) ? msg : [msg];
+
+  const config = {
+    success: {
+      color: "#10b981",
+      bgGlow: "rgba(16,185,129,0.12)",
+      border: "rgba(16,185,129,0.35)",
+      title: "Success",
+      icon: (
+        <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+          <circle cx="18" cy="18" r="17" stroke="#10b981" strokeWidth="2" fill="rgba(16,185,129,0.1)" />
+          <path d="M11 18l5 5 9-9" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      ),
+    },
+    error: {
+      color: "#ef4444",
+      bgGlow: "rgba(239,68,68,0.12)",
+      border: "rgba(239,68,68,0.35)",
+      title: "Error",
+      icon: (
+        <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+          <circle cx="18" cy="18" r="17" stroke="#ef4444" strokeWidth="2" fill="rgba(239,68,68,0.1)" />
+          <path d="M13 13l10 10M23 13l-10 10" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" />
+        </svg>
+      ),
+    },
+    warning: {
+      color: "#f97316",
+      bgGlow: "rgba(249,115,22,0.12)",
+      border: "rgba(249,115,22,0.35)",
+      title: "Warning",
+      icon: (
+        <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+          <circle cx="18" cy="18" r="17" stroke="#f97316" strokeWidth="2" fill="rgba(249,115,22,0.1)" />
+          <path d="M18 11v8M18 24v1" stroke="#f97316" strokeWidth="2.5" strokeLinecap="round" />
+        </svg>
+      ),
+    },
+    validation: {
+      color: "#ef4444",
+      bgGlow: "rgba(239,68,68,0.12)",
+      border: "rgba(239,68,68,0.35)",
+      title: "Please fill required fields",
+      icon: (
+        <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+          <circle cx="18" cy="18" r="17" stroke="#ef4444" strokeWidth="2" fill="rgba(239,68,68,0.1)" />
+          <path d="M18 11v8M18 24v1" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" />
+        </svg>
+      ),
+    },
+    info: {
+      color: "#3b82f6",
+      bgGlow: "rgba(59,130,246,0.12)",
+      border: "rgba(59,130,246,0.35)",
+      title: "Info",
+      icon: (
+        <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+          <circle cx="18" cy="18" r="17" stroke="#3b82f6" strokeWidth="2" fill="rgba(59,130,246,0.1)" />
+          <path d="M18 15v10M18 11v1" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" />
+        </svg>
+      ),
+    },
+  };
+
+  const c = config[type] || config.info;
+
   return (
-    <div style={{
-      position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)",
-      zIndex: 9999, background: bg, color: "#fff", borderRadius: 8,
-      padding: "12px 20px", fontWeight: 600, fontSize: 13,
-      boxShadow: "0 4px 20px #0008", animation: "fadeIn .2s ease",
-      maxWidth: 520, width: "90vw",
-    }}>
-      {type === "validation" ? (
-        <>
-          <div style={{ fontWeight: 800, fontSize: 14, marginBottom: msgs.length > 1 ? 8 : 0 }}>
-            ⚠ Please fill in the required fields:
+    <>
+      <style>{alertKeyframes}</style>
+      {/* Backdrop */}
+      <div
+        onClick={handleClose}
+        style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+          background: "rgba(0,0,0,0.55)",
+          backdropFilter: "blur(3px)",
+          zIndex: 9990,
+          animation: exiting ? "alertScaleOut 0.28s ease forwards" : "fadeIn 0.2s ease",
+        }}
+      />
+      {/* Modal */}
+      <div
+        style={{
+          position: "fixed",
+          top: "50%", left: "50%",
+          transform: "translate(-50%, -50%)",
+          zIndex: 9999,
+          width: "90vw",
+          maxWidth: 400,
+          background: "#161b22",
+          border: `1px solid ${c.border}`,
+          borderRadius: 16,
+          boxShadow: `0 0 0 1px ${c.border}, 0 24px 60px rgba(0,0,0,0.7), 0 0 40px ${c.bgGlow}`,
+          overflow: "hidden",
+          animation: exiting
+            ? "alertScaleOut 0.28s ease forwards"
+            : "alertScaleIn 0.38s cubic-bezier(0.34,1.56,0.64,1)",
+        }}
+      >
+        {/* Top accent line */}
+        <div style={{ height: 3, background: c.color, width: "100%" }} />
+
+        {/* Content */}
+        <div style={{ padding: "28px 28px 20px", textAlign: "center" }}>
+          {/* Icon with pulse ring */}
+          <div style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: 16,
+            position: "relative",
+            animation: "iconPop 0.4s cubic-bezier(0.34,1.56,0.64,1) 0.1s both",
+          }}>
+            <div style={{
+              position: "absolute",
+              inset: -6,
+              borderRadius: "50%",
+              color: c.color,
+              animation: "ringPulse 1.2s ease-out 0.2s",
+            }} />
+            {c.icon}
           </div>
-          {msgs.length > 1 ? (
-            <ul style={{ margin: "4px 0 0 0", paddingLeft: 18, lineHeight: 1.7 }}>
+
+          {/* Title */}
+          <div style={{
+            fontSize: 17,
+            fontWeight: 700,
+            color: c.color,
+            marginBottom: type === "validation" && msgs.length > 1 ? 8 : 4,
+            letterSpacing: "0.01em",
+          }}>
+            {c.title}
+          </div>
+
+          {/* Message */}
+          {type === "validation" && msgs.length > 1 ? (
+            <ul style={{
+              margin: "8px 0 0 0",
+              paddingLeft: 20,
+              textAlign: "left",
+              fontSize: 13,
+              color: "#a0a0a0",
+              lineHeight: 1.8,
+            }}>
               {msgs.map((m, i) => <li key={i}>{m}</li>)}
             </ul>
           ) : (
-            <div style={{ marginTop: 2 }}>{msgs[0]}</div>
+            <div style={{
+              fontSize: 13,
+              color: "#a0a0a0",
+              lineHeight: 1.6,
+              maxHeight: 120,
+              overflowY: "auto",
+            }}>
+              {msgs[0]}
+            </div>
           )}
-        </>
-      ) : (
-        <span>{icon} {msgs[0]}</span>
-      )}
-    </div>
+
+          {/* Dismiss hint */}
+          <div style={{
+            marginTop: 18,
+            fontSize: 11,
+            color: "#444",
+            letterSpacing: "0.03em",
+          }}>
+            Click anywhere to dismiss
+          </div>
+        </div>
+
+        {/* Progress bar */}
+        <div style={{ height: 3, background: "#1e2530", width: "100%" }}>
+          <div style={{
+            height: "100%",
+            background: c.color,
+            animation: `progressShrink ${duration}ms linear`,
+            transformOrigin: "left",
+          }} />
+        </div>
+      </div>
+    </>
   );
 }
 

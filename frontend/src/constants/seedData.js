@@ -252,7 +252,6 @@ export const TABS = [
   { id: "fg", icon: "🏭", label: "FG Stock" },
   { id: "consumablestock", icon: "🗂️", label: "Consumable Stock" },
   { id: "vendormaster", icon: "🏪", label: "Vendor Master" },
-  { id: "clientmaster", icon: "👥", label: "Client Master" },
   { id: "sizemaster", icon: "📐", label: "Category Master" },
   { id: "itemmaster", icon: "📋", label: "Item Master" },
   { id: "machinemaster", icon: "🏗️", label: "Machine Master" },

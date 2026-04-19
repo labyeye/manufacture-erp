@@ -97,7 +97,7 @@ export default function ProductionUpdate({
         records.push({
           ...sh,
           joNo: jo.joNo,
-          clientName: jo.clientName,
+          companyName: jo.companyName,
           pudNo: `PUD-${sh._id?.slice(-5).toUpperCase() || "NEW"}`,
           id: sh._id || Math.random(),
         });
@@ -349,7 +349,7 @@ export default function ProductionUpdate({
                   <option value="">-- Select Job Order --</option>
                   {activeJOs.map((jo) => (
                     <option key={jo.joNo} value={jo.joNo}>
-                      {jo.joNo} — {jo.clientName}
+                      {jo.joNo} — {jo.companyName}
                     </option>
                   ))}
                 </select>
@@ -704,7 +704,7 @@ export default function ProductionUpdate({
             .filter((jo) => {
               const matchesSearch =
                 jo.joNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                jo.clientName.toLowerCase().includes(searchTerm.toLowerCase());
+                jo.companyName.toLowerCase().includes(searchTerm.toLowerCase());
               return matchesSearch;
             })
             .map((jo) => {
@@ -735,7 +735,7 @@ export default function ProductionUpdate({
                         {jo.joNo}
                       </span>
                       <span style={{ fontSize: 14, color: C.muted, marginLeft: 12 }}>
-                        {jo.itemName} {jo.clientName}
+                        {jo.itemName} {jo.companyName}
                       </span>
                     </div>
                     <Badge
@@ -970,7 +970,7 @@ export default function ProductionUpdate({
                       {jo.joNo}
                     </span>
                     <span style={{ fontSize: 13, fontWeight: 600 }}>
-                      {jo.itemName} — {jo.clientName}
+                      {jo.itemName} — {jo.companyName}
                     </span>
                     <Badge
                       text={jo.status}

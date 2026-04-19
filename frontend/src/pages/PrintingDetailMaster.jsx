@@ -10,7 +10,7 @@ import {
   ExportBtn,
   TemplateBtn,
 } from "../components/ui/BasicComponents";
-import { printingDetailMasterAPI, clientMasterAPI } from "../api/auth";
+import { printingDetailMasterAPI, companyMasterAPI } from "../api/auth";
 import * as XLSX from "xlsx";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
@@ -19,13 +19,13 @@ export default function PrintingDetailMaster({ toast }) {
   const [printingMaster, setPrintingMaster] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [clientMaster, setClientMaster] = useState([]);
+  const [companyMaster, setCompanyMaster] = useState([]);
   const fileInputRef = React.useRef(null);
 
   const blankEntry = {
     itemName: "",
-    clientName: "",
-    clientCategory: "",
+    companyName: "",
+    companyCategory: "",
     itemCategory: "",
     printing: "",
     plate: "",
@@ -50,7 +50,7 @@ export default function PrintingDetailMaster({ toast }) {
 
   useEffect(() => {
     fetchPrintingDetails();
-    fetchClients();
+    fetchCompanies();
   }, []);
 
   const fetchPrintingDetails = async () => {
@@ -65,12 +65,12 @@ export default function PrintingDetailMaster({ toast }) {
     }
   };
 
-  const fetchClients = async () => {
+  const fetchCompanies = async () => {
     try {
-      const res = await clientMasterAPI.getAll();
-      setClientMaster(res || []);
+      const res = await companyMasterAPI.getAll();
+      setCompanyMaster(res || []);
     } catch (error) {
-      console.error("Fetch clients error:", error);
+      console.error("Fetch companies error:", error);
     }
   };
 
@@ -108,8 +108,8 @@ export default function PrintingDetailMaster({ toast }) {
     const ws = XLSX.utils.json_to_sheet(
       printingMaster.map((item) => ({
         "Item Name": item.itemName,
-        "Client Name": item.clientName,
-        "Client Category": item.clientCategory,
+        "Company Name": item.companyName,
+        "Company Category": item.companyCategory,
         Printing: item.printing,
         Plate: item.plate,
         Process: item.process?.join(", "),
@@ -133,8 +133,8 @@ export default function PrintingDetailMaster({ toast }) {
     const template = [
       {
         "Item Name": "Paper Soup Bowl 250ml",
-        "Client Name": "Kanak",
-        "Client Category": "HP",
+        "Company Name": "Kanak",
+        "Company Category": "HP",
         Printing: "4",
         Plate: "Old",
         Process: "Printing, Die Cutting, Formation",
@@ -170,8 +170,8 @@ export default function PrintingDetailMaster({ toast }) {
 
         const details = data.map((row) => ({
           itemName: row["Item Name"],
-          clientName: row["Client Name"],
-          clientCategory: row["Client Category"],
+          companyName: row["Company Name"],
+          companyCategory: row["Company Category"],
           printing: row["Printing"],
           plate: row["Plate"],
           process: row["Process"]
@@ -205,11 +205,11 @@ export default function PrintingDetailMaster({ toast }) {
   const submit = async () => {
     const err = {};
     if (!entry.itemName) err.itemName = true;
-    if (!entry.clientName) err.clientName = true;
+    if (!entry.companyName) err.companyName = true;
     setErrors(err);
 
     if (Object.keys(err).length > 0) {
-      toast("Item Name and Client Name are required", "error");
+      toast("Item Name and Company Name are required", "error");
       return;
     }
 
@@ -427,19 +427,19 @@ export default function PrintingDetailMaster({ toast }) {
                 style={{ border: errors.itemName ? "1px solid red" : "" }}
               />
             </Field>
-            <Field label="Client Name *">
+            <Field label="Company Name *">
               <input
-                placeholder="Client name"
-                value={entry.clientName}
-                onChange={(e) => setField("clientName", e.target.value)}
-                style={{ border: errors.clientName ? "1px solid red" : "" }}
+                placeholder="Company name"
+                value={entry.companyName}
+                onChange={(e) => setField("companyName", e.target.value)}
+                style={{ border: errors.companyName ? "1px solid red" : "" }}
               />
             </Field>
-            <Field label="Client Category">
+            <Field label="Company Category">
               <input
                 placeholder="e.g. HP"
-                value={entry.clientCategory}
-                onChange={(e) => setField("clientCategory", e.target.value)}
+                value={entry.companyCategory}
+                onChange={(e) => setField("companyCategory", e.target.value)}
               />
             </Field>
             <Field label="Item Category">
@@ -653,9 +653,9 @@ export default function PrintingDetailMaster({ toast }) {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: "#0f172a" }}>
-                <th style={TABLE_HEADER_STYLE}>Item Name / Client</th>
+                <th style={TABLE_HEADER_STYLE}>Item Name / Company</th>
                 <th style={TABLE_HEADER_STYLE}>Item Cat.</th>
-                <th style={TABLE_HEADER_STYLE}>Client Cat.</th>
+                <th style={TABLE_HEADER_STYLE}>Company Cat.</th>
                 <th style={TABLE_HEADER_STYLE}>Printing Plate</th>
                 <th style={TABLE_HEADER_STYLE}>Process</th>
                 <th style={TABLE_HEADER_STYLE}>Paper Type</th>
@@ -690,7 +690,7 @@ export default function PrintingDetailMaster({ toast }) {
                       }}
                     >
                       <span style={{ fontSize: 11, color: "#94a3b8" }}>
-                        {item.clientName}
+                        {item.companyName}
                       </span>
                     </div>
                     <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
@@ -732,8 +732,8 @@ export default function PrintingDetailMaster({ toast }) {
                     )}
                   </td>
                   <td style={CELL_STYLE}>
-                    {item.clientCategory ? (
-                      <Badge text={item.clientCategory} color="#3b82f6" />
+                    {item.companyCategory ? (
+                      <Badge text={item.companyCategory} color="#3b82f6" />
                     ) : (
                       "—"
                     )}

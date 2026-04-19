@@ -98,7 +98,7 @@ export default function JobOrders(props) {
     rawStock = [],
     setRawStock,
     toast,
-    clientMaster = [],
+    companyMaster = [],
   } = props;
   const [jobOrders, setJobOrders] = useState([]);
   const [salesOrders, setSalesOrders] = useState([]);
@@ -106,8 +106,8 @@ export default function JobOrders(props) {
   const blankHeader = {
     joDate: today(),
     soRef: "",
-    clientName: "",
-    clientCategory: "",
+    companyName: "",
+    companyCategory: "",
     itemName: "",
     size: "",
     orderDate: "",
@@ -162,17 +162,22 @@ export default function JobOrders(props) {
       if (!basicMatch) return false;
 
       if (isSheet) {
-        
-        const sSize = (s.sheetSize || "").toLowerCase();
-        const hSize = `${header.sheetW}x${header.sheetL}${header.sheetUom || "mm"}`;
-        const hSizeAlt = `${header.sheetW}x${header.sheetL}`; 
-        return sSize.includes(hSize) || sSize.includes(hSizeAlt);
+        const sSize = (s.sheetSize || "").toLowerCase().replace(/\s+/g, "");
+        const hSize = `${header.sheetW}x${header.sheetL}`.replace(/\s+/g, "");
+        const hSizeWithUom =
+          `${header.sheetW}x${header.sheetL}${header.sheetUom || "mm"}`
+            .toLowerCase()
+            .replace(/\s+/g, "");
+        return sSize.includes(hSize) || sSize.includes(hSizeWithUom);
       }
 
       if (isReel && header.reelWidthMm) {
-        const sSize = (s.sheetSize || s.name || "").toLowerCase();
+        const sSize = (s.sheetSize || s.name || "")
+          .toLowerCase()
+          .replace(/\s+/g, "");
         const hWidth = `${header.reelWidthMm}mm`;
-        return sSize.includes(hWidth);
+        const hWidthAlt = `${header.reelWidthMm}`;
+        return sSize.includes(hWidth) || sSize.includes(hWidthAlt);
       }
 
       return true;
@@ -208,7 +213,28 @@ export default function JobOrders(props) {
       const sType = (s.name || s.paperType || "").toLowerCase();
       const sGsm = (s.gsm || s.paperGsm || 0).toString();
 
-      return sCat === hCat && sType.includes(hType) && sGsm === hGsm;
+      const basicMatch =
+        sCat === hCat && sType.includes(hType) && sGsm === hGsm;
+      if (!basicMatch) return false;
+
+      const isSheet = hCat === "paper sheet";
+      const isReel = hCat === "paper reel";
+
+      if (isSheet && header.sheetW2 && header.sheetL2) {
+        const sSize = (s.sheetSize || "").toLowerCase().replace(/\s+/g, "");
+        const hSize = `${header.sheetW2}x${header.sheetL2}`.replace(/\s+/g, "");
+        return sSize.includes(hSize);
+      }
+
+      if (isReel && header.reelWidthMm2) {
+        const sSize = (s.sheetSize || s.name || "")
+          .toLowerCase()
+          .replace(/\s+/g, "");
+        const hWidth = `${header.reelWidthMm2}mm`.replace(/\s+/g, "");
+        return sSize.includes(hWidth);
+      }
+
+      return true;
     });
   }, [
     rawStock,
@@ -221,11 +247,11 @@ export default function JobOrders(props) {
   const [view, setView] = useState("form");
   const [editId, setEditId] = useState(null);
 
-  const uniqueClientCategories = useMemo(() => {
+  const uniqueCompanyCategories = useMemo(() => {
     return [
-      ...new Set((clientMaster || []).map((c) => c.category).filter(Boolean)),
+      ...new Set((companyMaster || []).map((c) => c.category).filter(Boolean)),
     ];
-  }, [clientMaster]);
+  }, [companyMaster]);
 
   useEffect(() => {
     fetchJobOrders();
@@ -244,7 +270,8 @@ export default function JobOrders(props) {
   const fetchSalesOrders = async () => {
     try {
       const res = await salesOrdersAPI.getAll();
-      const list = res.salesOrders || res.data || (Array.isArray(res) ? res : []);
+      const list =
+        res.salesOrders || res.data || (Array.isArray(res) ? res : []);
       setSalesOrders(list);
     } catch (error) {
       console.error("Failed to fetch sales orders:", error);
@@ -252,12 +279,12 @@ export default function JobOrders(props) {
   };
 
   useEffect(() => {
-    if (header.itemName && header.clientName && view === "form" && !editId) {
+    if (header.itemName && header.companyName && view === "form" && !editId) {
       const fetchPrintingDetails = async () => {
         try {
           const res = await printingDetailMasterAPI.getByItemAndClient(
             header.itemName,
-            header.clientName,
+            header.companyName,
           );
           if (res) {
             setHeader((h) => ({
@@ -280,13 +307,11 @@ export default function JobOrders(props) {
               noOfSheets: calcSheets(h.orderQty, res.noOfUps || h.noOfUps),
             }));
           }
-        } catch (err) {
-          
-        }
+        } catch (err) {}
       };
       fetchPrintingDetails();
     }
-  }, [header.itemName, header.clientName, view, editId]);
+  }, [header.itemName, header.companyName, view, editId]);
 
   const [drDateFrom, setDrDateFrom] = useState("");
   const [drDateTo, setDrDateTo] = useState("");
@@ -312,13 +337,12 @@ export default function JobOrders(props) {
       if (k === "soRef" && v) {
         const so = soOptions.find((s) => s.soNo === v);
         if (so) {
-          updated.clientName = so.clientName || "";
-          updated.clientCategory = so.clientCategory || "";
+          updated.companyName = so.companyName || "";
+          updated.companyCategory = so.companyCategory || "";
           updated.orderDate = so.orderDate || "";
           updated.deliveryDate = so.deliveryDate || "";
           const soItems = so.items || [];
           if (soItems.length > 0) {
-            
             const firstAvailable = soItems.find(
               (it) =>
                 !jobOrders.some(
@@ -328,7 +352,7 @@ export default function JobOrders(props) {
                     jo._id !== editId,
                 ),
             );
-            const it = firstAvailable || soItems[0]; 
+            const it = firstAvailable || soItems[0];
 
             updated.itemName = it.itemName || "";
             updated.size = it.size || "";
@@ -348,8 +372,6 @@ export default function JobOrders(props) {
       if (
         ["paperCategory", "paperType", "paperGsm", "reelWidthMm"].includes(k)
       ) {
-        
-        
       }
 
       if (["sheetW", "sheetL", "sheetUom"].includes(k)) {
@@ -454,8 +476,8 @@ export default function JobOrders(props) {
       const payload = {
         jobcardDate: new Date(header.joDate),
         soRef: header.soRef,
-        clientName: header.clientName,
-        clientCategory: header.clientCategory,
+        companyName: header.companyName,
+        companyCategory: header.companyCategory,
         itemName: header.itemName,
         orderQty: Number(header.orderQty),
         orderDate: header.orderDate ? new Date(header.orderDate) : null,
@@ -506,7 +528,6 @@ export default function JobOrders(props) {
         const res = await jobOrdersAPI.create(payload);
         toast(`Job Order ${res.joNo} created successfully`, "success");
 
-        
         const handleDeduction = async (
           stock,
           category,
@@ -535,7 +556,6 @@ export default function JobOrders(props) {
           await rawMaterialStockAPI.update(stock._id, updateData);
         };
 
-        
         await handleDeduction(
           matchedStock,
           header.paperCategory,
@@ -543,13 +563,12 @@ export default function JobOrders(props) {
           header.reelWeightKg,
         );
 
-        
         if (header.hasSecondPaper) {
           await handleDeduction(
             matchedStock2,
             header.paperCategory2,
             header.noOfSheets2,
-            header.reelWeightKg2, 
+            header.reelWeightKg2,
           );
         }
       }
@@ -639,7 +658,7 @@ export default function JobOrders(props) {
           <div class="info-grid">
             <div class="info-item">
               <label>Client Name</label>
-              <span>${r.clientName}</span>
+              <span>${r.companyName}</span>
             </div>
             <div class="info-item">
               <label>SO Reference</label>
@@ -886,7 +905,7 @@ export default function JobOrders(props) {
                 <option value="">-- Select Sales Order --</option>
                 {soOptions.map((s) => (
                   <option key={s.soNo} value={s.soNo}>
-                    {s.soNo} — {s.clientName}
+                    {s.soNo} — {s.companyName}
                   </option>
                 ))}
               </select>
@@ -926,17 +945,17 @@ export default function JobOrders(props) {
           >
             <Field label="Client Name">
               <AutoField
-                value={header.clientName}
+                value={header.companyName}
                 placeholder="Enter client name"
               />
             </Field>
             <Field label="Client Category *">
               <select
-                value={header.clientCategory}
-                onChange={(e) => setH("clientCategory", e.target.value)}
+                value={header.companyCategory}
+                onChange={(e) => setH("companyCategory", e.target.value)}
               >
                 <option value="">-- Select --</option>
-                {uniqueClientCategories.map((c) => (
+                {uniqueCompanyCategories.map((c) => (
                   <option key={c} value={c}>
                     {c}
                   </option>
@@ -1631,8 +1650,8 @@ export default function JobOrders(props) {
                 setHeader({
                   joDate: new Date(jo.jobcardDate).toISOString().slice(0, 10),
                   soRef: jo.soRef || "",
-                  clientName: jo.clientName || "",
-                  clientCategory: jo.clientCategory || "",
+                  companyName: jo.companyName || "",
+                  companyCategory: jo.companyCategory || "",
                   itemName: jo.itemName || "",
                   size: "",
                   orderDate: jo.orderDate
@@ -1720,7 +1739,7 @@ export default function JobOrders(props) {
                           : "N/A"}
                       </span>
                       <span style={{ fontSize: 13, fontWeight: 600 }}>
-                        {r.clientName}
+                        {r.companyName}
                       </span>
                       <Badge text={r.itemName} color={C.blue} />
                       <span style={{ fontSize: 13, color: C.muted }}>

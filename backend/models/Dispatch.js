@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const dispatchItemSchema = new mongoose.Schema({
   itemName: String,
   productCode: String,
-  clientCode: String,
+  companyCode: String,
   qty: Number,
   unit: String,
   rate: Number,
@@ -23,7 +23,7 @@ const dispatchSchema = new mongoose.Schema({
     type: Date,
     required: true
   },
-  clientName: {
+  companyName: {
     type: String,
     required: true
   },

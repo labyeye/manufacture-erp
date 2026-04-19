@@ -5,11 +5,11 @@ const printingDetailMasterSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  clientName: {
+  companyName: {
     type: String,
     required: true
   },
-  clientCategory: String,
+  companyCategory: String,
   itemCategory: String,
   printing: String,
   plate: String,
@@ -38,7 +38,7 @@ const printingDetailMasterSchema = new mongoose.Schema({
 });
 
 
-printingDetailMasterSchema.index({ itemName: 1, clientName: 1 }, { unique: true });
+printingDetailMasterSchema.index({ itemName: 1, companyName: 1 }, { unique: true });
 
 
 printingDetailMasterSchema.pre('save', function(next) {

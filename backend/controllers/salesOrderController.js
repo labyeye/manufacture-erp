@@ -1,21 +1,15 @@
 const SalesOrder = require("../models/SalesOrder");
 const Counter = require("../models/Counter");
-const ClientMaster = require("../models/ClientMaster");
-
-
-
+const CompanyMaster = require("../models/CompanyMaster");
 
 const getNextSONumber = async () => {
   const counter = await Counter.findOneAndUpdate(
     { name: "salesOrder" },
     { $inc: { seq: 1 } },
-    { new: true, upsert: true }
+    { new: true, upsert: true },
   );
   return `SO-${String(counter.seq).padStart(5, "0")}`;
 };
-
-
-
 
 exports.getAll = async (req, res) => {
   try {
@@ -29,13 +23,12 @@ exports.getAll = async (req, res) => {
   }
 };
 
-
-
-
 exports.getOne = async (req, res) => {
   try {
-    const salesOrder = await SalesOrder.findById(req.params.id)
-      .populate("createdBy", "name username");
+    const salesOrder = await SalesOrder.findById(req.params.id).populate(
+      "createdBy",
+      "name username",
+    );
     if (!salesOrder) {
       return res.status(404).json({ error: "Sales order not found" });
     }
@@ -46,31 +39,31 @@ exports.getOne = async (req, res) => {
   }
 };
 
-
-
-
 exports.create = async (req, res) => {
   try {
     const {
       orderDate,
       deliveryDate,
       salesPerson,
-      clientCategory,
-      clientName,
+      companyCategory,
+      companyName,
       remarks,
       items,
       status,
     } = req.body;
 
-    
-    if (!orderDate || !deliveryDate || !clientName || !items || items.length === 0) {
+    if (
+      !orderDate ||
+      !deliveryDate ||
+      !companyName ||
+      !items ||
+      items.length === 0
+    ) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    
     const soNo = await getNextSONumber();
 
-    
     const existingSO = await SalesOrder.findOne({ soNo });
     if (existingSO) {
       return res.status(400).json({ error: "SO number already exists" });
@@ -81,8 +74,8 @@ exports.create = async (req, res) => {
       orderDate: new Date(orderDate),
       deliveryDate: new Date(deliveryDate),
       salesPerson: salesPerson?.trim(),
-      clientCategory: clientCategory?.trim(),
-      clientName: clientName.trim(),
+      companyCategory: companyCategory?.trim(),
+      companyName: companyName.trim(),
       remarks: remarks?.trim(),
       items,
       status: status || "Open",
@@ -92,16 +85,15 @@ exports.create = async (req, res) => {
     await salesOrder.save();
     await salesOrder.populate("createdBy", "name username");
 
-    
-    if (clientName && clientName.trim()) {
-      const existingClient = await ClientMaster.findOne({
-        name: { $regex: new RegExp(`^${clientName.trim()}$`, 'i') }
+    if (companyName && companyName.trim()) {
+      const existingClient = await CompanyMaster.findOne({
+        name: { $regex: new RegExp(`^${companyName.trim()}$`, "i") },
       });
 
       if (!existingClient) {
-        const newClient = new ClientMaster({
-          name: clientName.trim(),
-          category: clientCategory?.trim(),
+        const newClient = new CompanyMaster({
+          name: companyName.trim(),
+          category: companyCategory?.trim(),
           status: "Active",
           createdBy: req.user._id,
         });
@@ -119,17 +111,14 @@ exports.create = async (req, res) => {
   }
 };
 
-
-
-
 exports.update = async (req, res) => {
   try {
     const {
       orderDate,
       deliveryDate,
       salesPerson,
-      clientCategory,
-      clientName,
+      companyCategory,
+      companyName,
       remarks,
       items,
       status,
@@ -144,8 +133,9 @@ exports.update = async (req, res) => {
     if (orderDate) salesOrder.orderDate = new Date(orderDate);
     if (deliveryDate) salesOrder.deliveryDate = new Date(deliveryDate);
     if (salesPerson !== undefined) salesOrder.salesPerson = salesPerson?.trim();
-    if (clientCategory !== undefined) salesOrder.clientCategory = clientCategory?.trim();
-    if (clientName) salesOrder.clientName = clientName.trim();
+    if (companyCategory !== undefined)
+      salesOrder.companyCategory = companyCategory?.trim();
+    if (companyName) salesOrder.companyName = companyName.trim();
     if (remarks !== undefined) salesOrder.remarks = remarks?.trim();
     if (items) salesOrder.items = items;
     if (status) salesOrder.status = status;
@@ -163,9 +153,6 @@ exports.update = async (req, res) => {
   }
 };
 
-
-
-
 exports.delete = async (req, res) => {
   try {
     const { id } = req.params;
@@ -175,7 +162,6 @@ exports.delete = async (req, res) => {
       return res.status(404).json({ error: "Sales order not found" });
     }
 
-    
     if (["Dispatched", "Closed"].includes(salesOrder.status)) {
       return res
         .status(400)
@@ -191,22 +177,23 @@ exports.delete = async (req, res) => {
   }
 };
 
-
-
-
 exports.updateStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
 
-    if (!["Open", "In Production", "Dispatched", "Closed", "Cancelled"].includes(status)) {
+    if (
+      !["Open", "In Production", "Dispatched", "Closed", "Cancelled"].includes(
+        status,
+      )
+    ) {
       return res.status(400).json({ error: "Invalid status" });
     }
 
     const salesOrder = await SalesOrder.findByIdAndUpdate(
       id,
       { status },
-      { new: true }
+      { new: true },
     ).populate("createdBy", "name username");
 
     if (!salesOrder) {

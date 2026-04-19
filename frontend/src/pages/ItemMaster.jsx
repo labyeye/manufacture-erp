@@ -1,6 +1,15 @@
 import React, { useState, useRef, useMemo, useEffect } from "react";
-import { itemMasterAPI, categoryMasterAPI } from "../api/auth";
-import { ImportBtn, ExportBtn, TemplateBtn } from "../components/ui/BasicComponents";
+import {
+  itemMasterAPI,
+  categoryMasterAPI,
+  companyMasterAPI,
+} from "../api/auth";
+import {
+  ImportBtn,
+  ExportBtn,
+  TemplateBtn,
+} from "../components/ui/BasicComponents";
+import ConfirmModal from "../components/ConfirmModal";
 import * as XLSX from "xlsx";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
@@ -19,8 +28,8 @@ const CATEGORY_CONFIG = {
   "Corrugated Box": { layout: "3D", f1: "WIDTH", f2: "LENGTH", f3: "HEIGHT" },
   "Mono Carton": { layout: "3D", f1: "WIDTH", f2: "LENGTH", f3: "HEIGHT" },
   "Laminated Pouch": { layout: "2D", f1: "WIDTH", f2: "LENGTH" },
-  "Sticker": { layout: "2D", f1: "WIDTH", f2: "LENGTH" },
-  "Label": { layout: "2D", f1: "WIDTH", f2: "LENGTH" },
+  Sticker: { layout: "2D", f1: "WIDTH", f2: "LENGTH" },
+  Label: { layout: "2D", f1: "WIDTH", f2: "LENGTH" },
 };
 
 const inputStyle = {
@@ -52,8 +61,8 @@ export default function ItemMaster({ clientMaster = [], toast }) {
   const [height, setHeight] = useState("");
   const [uom, setUom] = useState("mm");
   const [newItemName, setNewItemName] = useState("");
-  const [clientName, setClientName] = useState("");
-  const [clientCategory, setClientCategory] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [companyCategory, setCompanyCategory] = useState("");
   const [editingItem, setEditingItem] = useState(null);
   const [rawCategories, setRawCategories] = useState([]);
   const [importProgress, setImportProgress] = useState({
@@ -69,8 +78,9 @@ export default function ItemMaster({ clientMaster = [], toast }) {
   const [showClientCodes, setShowClientCodes] = useState(null);
   const [manualClient, setManualClient] = useState("");
   const [manualCode, setManualCode] = useState("");
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, count: 0 });
   const fileInputRef = useRef(null);
-  const clientCodesFileRef = useRef(null);
+  const companyCodesFileRef = useRef(null);
 
   useEffect(() => {
     fetchItems();
@@ -87,11 +97,17 @@ export default function ItemMaster({ clientMaster = [], toast }) {
       setNewItemName(parts.filter(Boolean).join(" "));
     } else if (activeTab === "Finished Goods" && selectedCategory) {
       let sizeStr = "";
-      if (width && length && height) sizeStr = `${width}x${length}x${height}${uom}`;
+      if (width && length && height)
+        sizeStr = `${width}x${length}x${height}${uom}`;
       else if (width && length) sizeStr = `${width}x${length}${uom}`;
       else if (width) sizeStr = `${width}${uom}`;
 
-      const parts = [selectedCategory, selectedSubCategory, sizeStr, clientName];
+      const parts = [
+        selectedCategory,
+        selectedSubCategory,
+        sizeStr,
+        companyName,
+      ];
       setNewItemName(parts.filter(Boolean).join(" "));
     }
   }, [
@@ -104,7 +120,7 @@ export default function ItemMaster({ clientMaster = [], toast }) {
     height,
     uom,
     activeTab,
-    clientName,
+    companyName,
   ]);
 
   const fetchItems = async () => {
@@ -212,14 +228,18 @@ export default function ItemMaster({ clientMaster = [], toast }) {
           name: newItemName,
           category: selectedCategory,
           subCategory: selectedSubCategory,
-          gsm: (activeTab === "Raw Material" || activeTab === "Finished Goods") ? Number(gsm) : undefined,
+          gsm:
+            activeTab === "Raw Material" || activeTab === "Finished Goods"
+              ? Number(gsm)
+              : undefined,
           width: Number(width) || undefined,
           length: Number(length) || undefined,
           gussett: Number(gussett) || undefined,
           height: Number(height) || undefined,
           uom: uom,
-          clientName: activeTab === "Finished Goods" ? clientName : undefined,
-          clientCategory: activeTab === "Finished Goods" ? clientCategory : undefined,
+          clientName: activeTab === "Finished Goods" ? companyName : undefined,
+          companyCategory:
+            activeTab === "Finished Goods" ? companyCategory : undefined,
           gstRate: Number(gstRate),
           hsnCode,
           reorderLevel: Number(reorderLevel),
@@ -233,14 +253,18 @@ export default function ItemMaster({ clientMaster = [], toast }) {
           type: activeTab,
           category: selectedCategory,
           subCategory: selectedSubCategory,
-          gsm: (activeTab === "Raw Material" || activeTab === "Finished Goods") ? Number(gsm) : undefined,
+          gsm:
+            activeTab === "Raw Material" || activeTab === "Finished Goods"
+              ? Number(gsm)
+              : undefined,
           width: Number(width) || undefined,
           length: Number(length) || undefined,
           gussett: Number(gussett) || undefined,
           height: Number(height) || undefined,
           uom: uom,
-          clientName: activeTab === "Finished Goods" ? clientName : undefined,
-          clientCategory: activeTab === "Finished Goods" ? clientCategory : undefined,
+          clientName: activeTab === "Finished Goods" ? companyName : undefined,
+          companyCategory:
+            activeTab === "Finished Goods" ? companyCategory : undefined,
           gstRate: Number(gstRate),
           hsnCode,
           reorderLevel: Number(reorderLevel),
@@ -249,8 +273,8 @@ export default function ItemMaster({ clientMaster = [], toast }) {
         toast("Item added successfully", "success");
       }
       setNewItemName("");
-      setClientName("");
-      setClientCategory("");
+      setCompanyName("");
+      setCompanyCategory("");
       setSelectedCategory("");
       setSelectedSubCategory("");
       setGsm("");
@@ -282,21 +306,17 @@ export default function ItemMaster({ clientMaster = [], toast }) {
     setGstRate(item.gstRate || "18");
     setHsnCode(item.hsnCode || "");
     setReorderLevel(item.reorderLevel || "0");
-    setClientName(item.clientName || "");
-    setClientCategory(item.clientCategory || "");
+    setCompanyName(item.clientName || "");
+    setCompanyCategory(item.companyCategory || "");
 
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleBulkDelete = async () => {
-    if (!selectedIds.length) return;
-    if (!window.confirm(`Delete ${selectedIds.length} items permanently?`))
-      return;
-
     try {
       setLoading(true);
       await itemMasterAPI.bulkDelete(selectedIds);
-      toast(`Successfully deleted ${selectedIds.length} items`, "success");
+      toast(`Successfully deleted ${confirmModal.count} items`, "success");
       setSelectedIds([]);
       fetchItems();
     } catch (error) {
@@ -310,7 +330,11 @@ export default function ItemMaster({ clientMaster = [], toast }) {
     setSelectedSubCategory(v);
     if (activeTab !== "Finished Goods" || !v) return;
 
-    const config = CATEGORY_CONFIG[selectedCategory] || { layout: "2D", f1: "WIDTH", f2: "LENGTH" };
+    const config = CATEGORY_CONFIG[selectedCategory] || {
+      layout: "2D",
+      f1: "WIDTH",
+      f2: "LENGTH",
+    };
 
     const match3D = v
       .toLowerCase()
@@ -334,7 +358,8 @@ export default function ItemMaster({ clientMaster = [], toast }) {
         setLength("");
       }
       setHeight(match3D[3]);
-      if (match3D[4] && ["mm", "cm", "inch"].includes(match3D[4])) setUom(match3D[4]);
+      if (match3D[4] && ["mm", "cm", "inch"].includes(match3D[4]))
+        setUom(match3D[4]);
       if (match3D[5]) setGsm(match3D[5]);
     } else if (match2D) {
       setWidth(match2D[1]);
@@ -346,7 +371,8 @@ export default function ItemMaster({ clientMaster = [], toast }) {
         setHeight("");
       }
       setGussett("");
-      if (match2D[3] && ["mm", "cm", "inch"].includes(match2D[3])) setUom(match2D[3]);
+      if (match2D[3] && ["mm", "cm", "inch"].includes(match2D[3]))
+        setUom(match2D[3]);
       if (match2D[4]) setGsm(match2D[4]);
     }
   };
@@ -365,33 +391,90 @@ export default function ItemMaster({ clientMaster = [], toast }) {
     }
   };
 
+  const getTabColumns = () => {
+    const common = [
+      { header: "Product Code", key: (i) => i.code || "" },
+      { header: "Item Name", key: (i) => i.name || "" },
+      { header: "Category", key: (i) => i.category || "" },
+      { header: "Sub Category", key: (i) => i.subCategory || "" },
+    ];
+
+    const dims = [
+      { header: "GSM", key: (i) => i.gsm ?? "" },
+      { header: "Width (mm)", key: (i) => i.width ?? "" },
+      { header: "Length (mm)", key: (i) => i.length ?? "" },
+    ];
+
+    const tail = [
+      { header: "GST Rate (%)", key: (i) => i.gstRate ?? "" },
+      { header: "HSN Code", key: (i) => i.hsnCode || "" },
+      { header: "Reorder Level", key: (i) => i.reorderLevel ?? "" },
+      { header: "Status", key: (i) => i.status || "Active" },
+      {
+        header: "Date Added",
+        key: (i) =>
+          i.addedOn || i.createdAt
+            ? new Date(i.addedOn || i.createdAt).toISOString().split("T")[0]
+            : "",
+      },
+    ];
+
+    if (activeTab === "Finished Goods") {
+      return [
+        ...common,
+        { header: "Client Name", key: (i) => i.clientName || "" },
+        { header: "Client Category", key: (i) => i.companyCategory || "" },
+        { header: "UOM", key: (i) => i.uom || "mm" },
+        { header: "GSM", key: (i) => i.gsm ?? "" },
+        { header: "Width", key: (i) => i.width ?? "" },
+        { header: "Length", key: (i) => i.length ?? "" },
+        { header: "Gussett", key: (i) => i.gussett ?? "" },
+        { header: "Height", key: (i) => i.height ?? "" },
+        ...tail,
+      ];
+    }
+
+    if (activeTab === "Raw Material") {
+      return [...common, ...dims, ...tail];
+    }
+
+    // Consumable / Machine Spare
+    return [...common, ...tail];
+  };
+
   const handleTemplate = () => {
     const tab = ITEM_TABS.find((t) => t.key === activeTab);
-    const header = [
-      "Product Code",
-      "Item Name",
-      "Category",
-      activeTab === "Finished Goods" ? "Size" : "Type",
-    ];
-    if (activeTab === "Finished Goods") header.push("Client");
+    const cols = getTabColumns();
+    const header = cols.map((c) => c.header);
 
-    const row = [
-      "",
-      "Example",
-      tabCategories[0] || "Cat",
-      tabSubCategories[0] || "Sub",
-    ];
-    if (activeTab === "Finished Goods") row.push("Customer Name");
+    const exampleItem = {
+      code: "",
+      name: "Example Item Name",
+      category: tabCategories[0] || "Category",
+      subCategory: tabSubCategories[0] || "Sub Category",
+      clientName: "Client Name",
+      companyCategory: "Modern Trade",
+      uom: "mm",
+      gsm: 100,
+      width: 200,
+      length: 300,
+      gussett: 50,
+      height: 150,
+      gstRate: 18,
+      hsnCode: "4819",
+      reorderLevel: 0,
+      status: "Active",
+      addedOn: "",
+    };
 
-    const csv = [header, row]
-      .map((r) => r.map((v) => `"${v}"`).join(","))
-      .join("\n");
+    const row = cols.map((c) => c.key(exampleItem));
 
-    const blob = new Blob([csv], { type: "text/csv" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `${tab.prefix}_template.csv`;
-    a.click();
+    const ws = XLSX.utils.aoa_to_sheet([header, row]);
+    // Style header row width
+    ws["!cols"] = header.map(() => ({ wch: 18 }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, `${activeTab} Template`);
+    XLSX.writeFile(wb, `${tab.prefix}_template.xlsx`);
   };
 
   const handleImport = async (e) => {
@@ -399,44 +482,86 @@ export default function ItemMaster({ clientMaster = [], toast }) {
     if (!file) return;
 
     try {
-      let lines = [];
+      let rawData = [];
       if (file.name.endsWith(".xlsx") || file.name.endsWith(".xls")) {
         const arrayBuffer = await file.arrayBuffer();
         const workbook = XLSX.read(arrayBuffer, { type: "array" });
         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-        const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-        lines = data.map((row) => row.map((v) => `"${v ?? ""}"`).join(","));
+        rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
       } else {
         const text = await file.text();
-        lines = text.split("\n").filter(Boolean);
+        rawData = text
+          .split("\n")
+          .filter(Boolean)
+          .map((line) =>
+            line.split(",").map((v) => v.replace(/^"|"$/g, "").trim()),
+          );
       }
 
+      if (rawData.length < 2) {
+        toast("No data found in file", "error");
+        return;
+      }
+
+      const [headers, ...rows] = rawData;
+      const colsDef = getTabColumns();
+
       const imported = [];
-      for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i]
-          .split(",")
-          .map((v) => v.replace(/^"|"$/g, "").trim());
+      for (const rowData of rows) {
+        if (!rowData || rowData.length === 0) continue;
 
-        if (cols[1] || cols[2]) {
-          const category = cols[2] || "";
-          const subCategory = cols[3] || "";
-          const client = activeTab === "Finished Goods" ? cols[4] || "" : "";
+        // Skip if row is mostly empty
+        if (!rowData[1] && !rowData[2]) continue;
 
-          let itemName = cols[1];
-          if (activeTab === "Finished Goods" && !itemName && category) {
-            itemName = [category, subCategory, client]
-              .filter(Boolean)
-              .join(" ");
-          }
+        const item = { type: activeTab };
 
-          imported.push({
-            name: itemName,
-            type: activeTab,
-            category: category,
-            subCategory: subCategory,
-            clientName: client,
-            code: cols[0] || "",
-          });
+        // Map columns based on template order (same as getTabColumns)
+        colsDef.forEach((col, idx) => {
+          const val = rowData[idx];
+          if (val === undefined || val === null) return;
+
+          // Reverse mapping: we need to know which property to set
+          // Since we can't easily get the property name from the key function (i) => i.prop
+          // Let's manually map the most important ones or use a smarter approach
+
+          const header = col.header.toLowerCase();
+          if (header.includes("product code")) item.code = String(val).trim();
+          else if (header.includes("item name")) item.name = String(val).trim();
+          else if (header.includes("category") && !header.includes("client"))
+            item.category = String(val).trim();
+          else if (header.includes("sub category"))
+            item.subCategory = String(val).trim();
+          else if (header.includes("client name"))
+            item.clientName = String(val).trim();
+          else if (header.includes("client category"))
+            item.companyCategory = String(val).trim();
+          else if (header.includes("uom")) item.uom = String(val).trim();
+          else if (header.includes("gsm")) item.gsm = Number(val) || undefined;
+          else if (header.includes("width"))
+            item.width = Number(val) || undefined;
+          else if (header.includes("length"))
+            item.length = Number(val) || undefined;
+          else if (header.includes("gussett"))
+            item.gussett = Number(val) || undefined;
+          else if (header.includes("height"))
+            item.height = Number(val) || undefined;
+          else if (header.includes("gst rate"))
+            item.gstRate = Number(val) || undefined;
+          else if (header.includes("hsn code"))
+            item.hsnCode = String(val).trim();
+          else if (header.includes("reorder level"))
+            item.reorderLevel = Number(val) || 0;
+          else if (header.includes("status")) item.status = String(val).trim();
+        });
+
+        if (!item.name && item.category) {
+          item.name = [item.category, item.subCategory, item.clientName]
+            .filter(Boolean)
+            .join(" ");
+        }
+
+        if (item.name) {
+          imported.push(item);
         }
       }
 
@@ -494,22 +619,15 @@ export default function ItemMaster({ clientMaster = [], toast }) {
       toast("No items to export", "error");
       return;
     }
-    const header = ["Product Code", "Item Name", "Category", "Type", "Status"];
-    const rows = tabItems.map((i) => [
-      i.code || "",
-      i.name,
-      i.category || "",
-      i.subCategory || "",
-      i.status || "Active",
-    ]);
-    const csv = [header, ...rows]
-      .map((r) => r.map((v) => `"${v ?? ""}"`).join(","))
-      .join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `${activeTab.replace(" ", "_")}_items.csv`;
-    a.click();
+    const cols = getTabColumns();
+    const header = cols.map((c) => c.header);
+    const rows = tabItems.map((item) => cols.map((c) => c.key(item)));
+
+    const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+    ws["!cols"] = header.map(() => ({ wch: 20 }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, activeTab);
+    XLSX.writeFile(wb, `${activeTab.replace(/ /g, "_")}_items.xlsx`);
     toast("Exported!", "success");
   };
 
@@ -528,7 +646,7 @@ export default function ItemMaster({ clientMaster = [], toast }) {
     const data = fgItems.map((item) => {
       const row = [item.code, item.name];
       uniqueClients.forEach((client) => {
-        row.push(item.clientCodes?.[client] || "");
+        row.push(item.companyCodes?.[client] || "");
       });
       return row;
     });
@@ -551,7 +669,7 @@ export default function ItemMaster({ clientMaster = [], toast }) {
       const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
       const [header, ...rows] = data;
-      const clientNames = header.slice(2); 
+      const clientNames = header.slice(2);
 
       let successCount = 0;
       for (const row of rows) {
@@ -561,7 +679,7 @@ export default function ItemMaster({ clientMaster = [], toast }) {
         const item = itemMasterFG.find((i) => i.code === ourCode);
         if (!item) continue;
 
-        const newClientCodes = { ...(item.clientCodes || {}) };
+        const newClientCodes = { ...(item.companyCodes || {}) };
         let hasChanges = false;
 
         clientNames.forEach((client, idx) => {
@@ -575,7 +693,7 @@ export default function ItemMaster({ clientMaster = [], toast }) {
         if (hasChanges) {
           try {
             await itemMasterAPI.update(item._id, {
-              clientCodes: newClientCodes,
+              companyCodes: newClientCodes,
             });
             successCount++;
           } catch (err) {
@@ -602,8 +720,11 @@ export default function ItemMaster({ clientMaster = [], toast }) {
     }
 
     try {
-      const newCodes = { ...(item.clientCodes || {}), [manualClient]: manualCode };
-      await itemMasterAPI.update(item._id, { clientCodes: newCodes });
+      const newCodes = {
+        ...(item.companyCodes || {}),
+        [manualClient]: manualCode,
+      };
+      await itemMasterAPI.update(item._id, { companyCodes: newCodes });
       toast("Client code updated", "success");
       setManualClient("");
       setManualCode("");
@@ -615,9 +736,9 @@ export default function ItemMaster({ clientMaster = [], toast }) {
 
   const removeClientCode = async (item, client) => {
     try {
-      const newCodes = { ...(item.clientCodes || {}) };
+      const newCodes = { ...(item.companyCodes || {}) };
       delete newCodes[client];
-      await itemMasterAPI.update(item._id, { clientCodes: newCodes });
+      await itemMasterAPI.update(item._id, { companyCodes: newCodes });
       toast("Client code removed", "success");
       fetchItems();
     } catch (err) {
@@ -756,7 +877,7 @@ export default function ItemMaster({ clientMaster = [], toast }) {
               setGsm("");
               setWidth("");
               setLength("");
-              setClientName("");
+              setCompanyName("");
             }}
             style={{
               flex: 1,
@@ -881,8 +1002,8 @@ export default function ItemMaster({ clientMaster = [], toast }) {
               <input
                 style={inputStyle}
                 placeholder="e.g. RDBD"
-                value={clientName}
-                onChange={(e) => setClientName(e.target.value)}
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
               />
             </div>
           )}
@@ -903,63 +1024,138 @@ export default function ItemMaster({ clientMaster = [], toast }) {
               <input
                 style={inputStyle}
                 placeholder="e.g. Modern Trade"
-                value={clientCategory}
-                onChange={(e) => setClientCategory(e.target.value)}
+                value={companyCategory}
+                onChange={(e) => setCompanyCategory(e.target.value)}
               />
             </div>
           )}
           {activeTab === "Finished Goods" && selectedCategory && (
             <>
               {(() => {
-                const config = CATEGORY_CONFIG[selectedCategory] || { layout: "2D", f1: "WIDTH", f2: "LENGTH" };
+                const config = CATEGORY_CONFIG[selectedCategory] || {
+                  layout: "2D",
+                  f1: "WIDTH",
+                  f2: "LENGTH",
+                };
                 const f1 = config.f1;
                 const f2 = config.f2;
                 const f3 = config.f3;
-                
+
                 return (
                   <>
                     <div>
-                      <label style={{ fontSize: 11, fontWeight: 600, color: "#666", display: "block", marginBottom: 6, letterSpacing: "0.5px" }}>
+                      <label
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 600,
+                          color: "#666",
+                          display: "block",
+                          marginBottom: 6,
+                          letterSpacing: "0.5px",
+                        }}
+                      >
                         UOM
                       </label>
-                      <select value={uom} onChange={(e) => setUom(e.target.value)} style={inputStyle}>
+                      <select
+                        value={uom}
+                        onChange={(e) => setUom(e.target.value)}
+                        style={inputStyle}
+                      >
                         <option value="mm">mm</option>
                         <option value="cm">cm</option>
                         <option value="inch">inch</option>
                       </select>
                     </div>
                     <div>
-                      <label style={{ fontSize: 11, fontWeight: 600, color: "#666", display: "block", marginBottom: 6, letterSpacing: "0.5px" }}>
+                      <label
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 600,
+                          color: "#666",
+                          display: "block",
+                          marginBottom: 6,
+                          letterSpacing: "0.5px",
+                        }}
+                      >
                         GSM
                       </label>
-                      <input type="number" placeholder="e.g. 100" value={gsm} onChange={(e) => setGsm(e.target.value)} style={inputStyle} />
+                      <input
+                        type="number"
+                        placeholder="e.g. 100"
+                        value={gsm}
+                        onChange={(e) => setGsm(e.target.value)}
+                        style={inputStyle}
+                      />
                     </div>
                     <div>
-                      <label style={{ fontSize: 11, fontWeight: 600, color: "#666", display: "block", marginBottom: 6, letterSpacing: "0.5px" }}>
+                      <label
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 600,
+                          color: "#666",
+                          display: "block",
+                          marginBottom: 6,
+                          letterSpacing: "0.5px",
+                        }}
+                      >
                         {f1} ({uom})
                       </label>
-                      <input type="number" placeholder={`e.g. 10`} value={width} onChange={(e) => setWidth(e.target.value)} style={inputStyle} />
+                      <input
+                        type="number"
+                        placeholder={`e.g. 10`}
+                        value={width}
+                        onChange={(e) => setWidth(e.target.value)}
+                        style={inputStyle}
+                      />
                     </div>
                     {f2 && (
                       <div>
-                        <label style={{ fontSize: 11, fontWeight: 600, color: "#666", display: "block", marginBottom: 6, letterSpacing: "0.5px" }}>
+                        <label
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color: "#666",
+                            display: "block",
+                            marginBottom: 6,
+                            letterSpacing: "0.5px",
+                          }}
+                        >
                           {f2} ({uom})
                         </label>
                         <input
                           type="number"
                           placeholder={`e.g. 10`}
                           value={f2 === "GUSSETT" ? gussett : length}
-                          onChange={(e) => f2 === "GUSSETT" ? setGussett(e.target.value) : setLength(e.target.value)}
+                          onChange={(e) =>
+                            f2 === "GUSSETT"
+                              ? setGussett(e.target.value)
+                              : setLength(e.target.value)
+                          }
                           style={inputStyle}
                         />
                       </div>
                     )}
                     {f3 && (
                       <div>
-                        <label style={{ fontSize: 11, fontWeight: 600, color: "#666", display: "block", marginBottom: 6, letterSpacing: "0.5px" }}>
+                        <label
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color: "#666",
+                            display: "block",
+                            marginBottom: 6,
+                            letterSpacing: "0.5px",
+                          }}
+                        >
                           {f3} ({uom})
                         </label>
-                        <input type="number" placeholder={`e.g. 10`} value={height} onChange={(e) => setHeight(e.target.value)} style={inputStyle} />
+                        <input
+                          type="number"
+                          placeholder={`e.g. 10`}
+                          value={height}
+                          onChange={(e) => setHeight(e.target.value)}
+                          style={inputStyle}
+                        />
                       </div>
                     )}
                   </>
@@ -1284,7 +1480,7 @@ export default function ItemMaster({ clientMaster = [], toast }) {
               ⬇️ Download Template
             </button>
             <button
-              onClick={() => clientCodesFileRef.current.click()}
+              onClick={() => companyCodesFileRef.current.click()}
               style={{
                 padding: "8px 16px",
                 background: "#4f46e5",
@@ -1303,7 +1499,7 @@ export default function ItemMaster({ clientMaster = [], toast }) {
             </button>
             <input
               type="file"
-              ref={clientCodesFileRef}
+              ref={companyCodesFileRef}
               hidden
               accept=".xlsx,.xls"
               onChange={handleImportClientCodes}
@@ -1358,7 +1554,9 @@ export default function ItemMaster({ clientMaster = [], toast }) {
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {selectedIds.length > 0 && (
             <button
-              onClick={handleBulkDelete}
+              onClick={() =>
+                setConfirmModal({ isOpen: true, count: selectedIds.length })
+              }
               style={{
                 background: "#450a0a",
                 color: "#ef4444",
@@ -1379,7 +1577,10 @@ export default function ItemMaster({ clientMaster = [], toast }) {
           )}
           <ExportBtn onClick={handleExport} label="Export" />
           <TemplateBtn onClick={handleTemplate} />
-          <ImportBtn onClick={() => fileInputRef.current?.click()} label="Bulk Import" />
+          <ImportBtn
+            onClick={() => fileInputRef.current?.click()}
+            label="Bulk Import"
+          />
           <input
             type="file"
             ref={fileInputRef}
@@ -1437,362 +1638,392 @@ export default function ItemMaster({ clientMaster = [], toast }) {
             No items found.
           </div>
         ) : (
-          sorted.map((item, idx) => (
+          <>
             <div
-              key={item._id}
               style={{
                 display: "flex",
                 alignItems: "center",
-                padding: "10px 16px",
-                background: idx % 2 === 0 ? "#0d1117" : "#11151c",
-                borderBottom:
-                  idx === sorted.length - 1 ? "none" : "1px solid #21262d",
+                padding: "8px 16px",
+                background: "#0a0a0a",
+                borderBottom: "1px solid #2a2a2a",
                 gap: 16,
+                fontSize: 10,
+                fontWeight: 800,
+                color: "#555",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
               }}
             >
-              <input
-                type="checkbox"
-                checked={selectedIds.includes(item._id)}
-                onChange={() => toggleSelect(item._id)}
-                style={{ cursor: "pointer", width: 16, height: 16 }}
-              />
-              <div
-                style={{
-                  minWidth: 70,
-                  padding: "6px 0",
-                  border: "1px solid #2196F344",
-                  borderRadius: 6,
-                  textAlign: "center",
-                  color: "#2196F3",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  background: "#2196F30a",
-                  fontFamily: "monospace",
-                  cursor: "pointer",
-                }}
-                onClick={() => handleEdit(item)}
-              >
-                {item.code}
-              </div>
-              <div
-                style={{
-                  flex: 1,
-                  color: "#e6edf3",
-                  fontSize: 13,
-                  fontWeight: 600,
-                }}
-              >
-                {item.name}
-              </div>
+              <div style={{ width: 16 }} />
+              <div style={{ minWidth: 70, textAlign: "left" }}>Code</div>
+              <div style={{ minWidth: 260, textAlign: "left" }}>Item Name</div>
               {activeTab === "Finished Goods" && (
+                <div style={{ width: 70, textAlign: "left" }}>Client Cat</div>
+              )}
+              <div style={{ width: 90, textAlign: "left" }}>Category</div>
+
+              <div style={{ width: 60, textAlign: "left" }}>Sub-Category</div>
+              <div style={{ minWidth: 40, textAlign: "center" }}>GST</div>
+              <div style={{ minWidth: 130, textAlign: "left" }}>Reorder</div>
+              <div style={{ width: 220, textAlign: "right" }}>Actions</div>
+            </div>
+            {sorted.map((item, idx) => (
+              <div
+                key={item._id}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  padding: "10px 16px",
+                  background: idx % 2 === 0 ? "#0d1117" : "#11151c",
+                  borderBottom:
+                    idx === sorted.length - 1 ? "none" : "1px solid #21262d",
+                  gap: 16,
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedIds.includes(item._id)}
+                  onChange={() => toggleSelect(item._id)}
+                  style={{ cursor: "pointer", width: 16, height: 16 }}
+                />
+                <div
+                  style={{
+                    minWidth: 70,
+                    padding: "6px 0",
+                    border: "1px solid #2196F344",
+                    borderRadius: 6,
+                    textAlign: "center",
+                    color: "#2196F3",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    background: "#2196F30a",
+                    fontFamily: "monospace",
+                    cursor: "pointer",
+                  }}
+                  onClick={() => handleEdit(item)}
+                >
+                  {item.code}
+                </div>
+                <div
+                  style={{
+                    flex: 1,
+                    color: "#e6edf3",
+                    fontSize: 13,
+                    fontWeight: 600,
+                  }}
+                >
+                  {item.name}
+                </div>
+                {activeTab === "Finished Goods" && (
+                  <div
+                    style={{
+                      padding: "4px 12px",
+                      borderRadius: 6,
+                      background: "#9c27b01a",
+                      color: "#ba68c8",
+                      fontSize: 11,
+                      fontWeight: 600,
+                    }}
+                  >
+                    {item.companyCategory || "-"}
+                  </div>
+                )}
                 <div
                   style={{
                     padding: "4px 12px",
                     borderRadius: 6,
-                    background: "#9c27b01a",
-                    color: "#ba68c8",
+                    background: "#1565C022",
+                    color: "#64B5F6",
                     fontSize: 11,
                     fontWeight: 600,
                   }}
                 >
-                  {item.clientCategory || "-"}
+                  {item.category || "-"}
                 </div>
-              )}
-              <div
-                style={{
-                  padding: "4px 12px",
-                  borderRadius: 6,
-                  background: "#1565C022",
-                  color: "#64B5F6",
-                  fontSize: 11,
-                  fontWeight: 600,
-                }}
-              >
-                {item.category || "-"}
-              </div>
-              <div
-                style={{
-                  padding: "4px 12px",
-                  borderRadius: 6,
-                  background: "#4CAF501a",
-                  color: "#4CAF50",
-                  fontSize: 11,
-                  fontWeight: 600,
-                }}
-              >
-                {item.subCategory || "-"}
-              </div>
-              <div
-                style={{
-                  padding: "4px 10px",
-                  borderRadius: 6,
-                  background: "#64B5F614",
-                  color: "#64B5F6",
-                  fontSize: 10,
-                  fontWeight: 700,
-                  minWidth: 40,
-                  textAlign: "center",
-                }}
-              >
-                {item.gstRate || 0}%
-              </div>
-              <div
-                style={{
-                  padding: "4px 10px",
-                  borderRadius: 6,
-                  background: "#ff98001a",
-                  color: "#ff9800",
-                  fontSize: 10,
-                  fontWeight: 700,
-                  minWidth: 50,
-                  textAlign: "center",
-                }}
-              >
-                RL: {item.reorderLevel || 0}
-              </div>
+                <div
+                  style={{
+                    padding: "4px 12px",
+                    borderRadius: 6,
+                    background: "#4CAF501a",
+                    color: "#4CAF50",
+                    fontSize: 11,
+                    fontWeight: 600,
+                  }}
+                >
+                  {item.subCategory || "-"}
+                </div>
+                <div
+                  style={{
+                    padding: "4px 10px",
+                    borderRadius: 6,
+                    background: "#64B5F614",
+                    color: "#64B5F6",
+                    fontSize: 10,
+                    fontWeight: 700,
+                    minWidth: 40,
+                    textAlign: "center",
+                  }}
+                >
+                  {item.gstRate || 0}%
+                </div>
+                <div
+                  style={{
+                    padding: "4px 10px",
+                    borderRadius: 6,
+                    background: "#ff98001a",
+                    color: "#ff9800",
+                    fontSize: 10,
+                    fontWeight: 700,
+                    minWidth: 50,
+                    textAlign: "center",
+                  }}
+                >
+                  RL: {item.reorderLevel || 0}
+                </div>
 
-              <button
-                onClick={() => handleEdit(item)}
-                style={{
-                  background: "#1e293b",
-                  color: "#60a5fa",
-                  border: "1px solid #334155",
-                  borderRadius: 6,
-                  padding: "6px 12px",
-                  fontSize: 11,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                }}
-              >
-                ✏️ Edit
-              </button>
-
-              {activeTab === "Finished Goods" && (
-                <div style={{ position: "relative" }}>
-                  <button
-                    onClick={() => {
-                      setManualClient("");
-                      setManualCode("");
-                      setShowClientCodes(
-                        showClientCodes === item._id ? null : item._id,
-                      );
-                    }}
-                    style={{
-                      padding: "4px 8px",
-                      borderRadius: 6,
-                      background: "#4f46e51a",
-                      color: "#818cf8",
-                      border: "1px solid #4f46e544",
-                      fontSize: 10,
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 4,
-                      minWidth: 100,
-                    }}
-                  >
-                    🎟️ Client Codes {showClientCodes === item._id ? "▲" : "▼"}
-                  </button>
-                  {showClientCodes === item._id && (
-                    <div
+                {activeTab === "Finished Goods" && (
+                  <div style={{ position: "relative" }}>
+                    <button
+                      onClick={() => {
+                        setManualClient("");
+                        setManualCode("");
+                        setShowClientCodes(
+                          showClientCodes === item._id ? null : item._id,
+                        );
+                      }}
                       style={{
-                        position: "absolute",
-                        top: "100%",
-                        right: 0,
-                        zIndex: 100,
-                        background: "#1a1a1a",
-                        border: "1px solid #333",
-                        borderRadius: 8,
-                        padding: 8,
-                        minWidth: 150,
-                        boxShadow: "0 10px 25px rgba(0,0,0,0.5)",
-                        marginTop: 4,
+                        padding: "4px 8px",
+                        borderRadius: 6,
+                        background: "#4f46e51a",
+                        color: "#818cf8",
+                        border: "1px solid #4f46e544",
+                        fontSize: 10,
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 4,
+                        minWidth: 100,
                       }}
                     >
-                      {item.clientCodes &&
-                      Object.entries(item.clientCodes).filter(([_, v]) => v)
-                        .length > 0 ? (
-                        Object.entries(item.clientCodes)
-                          .filter(([_, v]) => v)
-                          .map(([client, code]) => (
-                            <div
-                              key={client}
-                              style={{
-                                display: "flex",
-                                justifyContent: "space-between",
-                                fontSize: 11,
-                                padding: "4px 0",
-                                borderBottom: "1px solid #222",
-                                gap: 10,
-                              }}
-                            >
-                              <span style={{ color: "#666" }}>{client}:</span>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: 6,
-                                }}
-                              >
-                                <span
-                                  style={{ color: "#e0e0e0", fontWeight: 700 }}
-                                >
-                                  {code}
-                                </span>
-                                <button
-                                  onClick={() => removeClientCode(item, client)}
-                                  style={{
-                                    background: "transparent",
-                                    border: "none",
-                                    cursor: "pointer",
-                                    fontSize: 10,
-                                    color: "#ff4444",
-                                    padding: 0,
-                                  }}
-                                  title="Remove"
-                                >
-                                  ✕
-                                </button>
-                              </div>
-                            </div>
-                          ))
-                      ) : (
-                        <div
-                          style={{
-                            fontSize: 10,
-                            color: "#444",
-                            textAlign: "center",
-                            marginBottom: 8,
-                          }}
-                        >
-                          No client codes
-                        </div>
-                      )}
-
+                      🎟️ Client Codes {showClientCodes === item._id ? "▲" : "▼"}
+                    </button>
+                    {showClientCodes === item._id && (
                       <div
                         style={{
-                          marginTop: 10,
-                          borderTop: "1px solid #333",
-                          paddingTop: 8,
+                          position: "absolute",
+                          top: "100%",
+                          right: 0,
+                          zIndex: 100,
+                          background: "#1a1a1a",
+                          border: "1px solid #333",
+                          borderRadius: 8,
+                          padding: 8,
+                          minWidth: 150,
+                          boxShadow: "0 10px 25px rgba(0,0,0,0.5)",
+                          marginTop: 4,
                         }}
                       >
+                        {item.companyCodes &&
+                        Object.entries(item.companyCodes).filter(([_, v]) => v)
+                          .length > 0 ? (
+                          Object.entries(item.companyCodes)
+                            .filter(([_, v]) => v)
+                            .map(([client, code]) => (
+                              <div
+                                key={client}
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  fontSize: 11,
+                                  padding: "4px 0",
+                                  borderBottom: "1px solid #222",
+                                  gap: 10,
+                                }}
+                              >
+                                <span style={{ color: "#666" }}>{client}:</span>
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 6,
+                                  }}
+                                >
+                                  <span
+                                    style={{
+                                      color: "#e0e0e0",
+                                      fontWeight: 700,
+                                    }}
+                                  >
+                                    {code}
+                                  </span>
+                                  <button
+                                    onClick={() =>
+                                      removeClientCode(item, client)
+                                    }
+                                    style={{
+                                      background: "transparent",
+                                      border: "none",
+                                      cursor: "pointer",
+                                      fontSize: 10,
+                                      color: "#ff4444",
+                                      padding: 0,
+                                    }}
+                                    title="Remove"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              </div>
+                            ))
+                        ) : (
+                          <div
+                            style={{
+                              fontSize: 10,
+                              color: "#444",
+                              textAlign: "center",
+                              marginBottom: 8,
+                            }}
+                          >
+                            No client codes
+                          </div>
+                        )}
+
                         <div
                           style={{
-                            fontSize: 9,
-                            color: "#818cf8",
-                            marginBottom: 4,
-                            fontWeight: 700,
+                            marginTop: 10,
+                            borderTop: "1px solid #333",
+                            paddingTop: 8,
                           }}
                         >
-                          + ADD CLIENT CODE
-                        </div>
-                        <select
-                          value={manualClient}
-                          onChange={(e) => setManualClient(e.target.value)}
-                          style={{
-                            width: "100%",
-                            background: "#000",
-                            border: "1px solid #333",
-                            borderRadius: 4,
-                            fontSize: 10,
-                            color: "#fff",
-                            padding: 4,
-                            marginBottom: 4,
-                            outline: "none",
-                          }}
-                        >
-                          <option value="">-- Select Client --</option>
-                          {(clientMaster || []).map((c) => (
-                            <option key={c.name} value={c.name}>
-                              {c.name}
-                            </option>
-                          ))}
-                        </select>
-                        <div style={{ display: "flex", gap: 4 }}>
-                          <input
-                            placeholder="Code"
-                            value={manualCode}
-                            onChange={(e) => setManualCode(e.target.value)}
+                          <div
                             style={{
-                              flex: 1,
+                              fontSize: 9,
+                              color: "#818cf8",
+                              marginBottom: 4,
+                              fontWeight: 700,
+                            }}
+                          >
+                            + ADD CLIENT CODE
+                          </div>
+                          <select
+                            value={manualClient}
+                            onChange={(e) => setManualClient(e.target.value)}
+                            style={{
+                              width: "100%",
                               background: "#000",
                               border: "1px solid #333",
                               borderRadius: 4,
                               fontSize: 10,
                               color: "#fff",
                               padding: 4,
+                              marginBottom: 4,
                               outline: "none",
                             }}
-                          />
-                          <button
-                            onClick={() => handleManualClientCodeSave(item)}
-                            style={{
-                              background: "#4f46e5",
-                              border: "none",
-                              borderRadius: 4,
-                              color: "#fff",
-                              padding: "4px 8px",
-                              fontSize: 10,
-                              fontWeight: 700,
-                              cursor: "pointer",
-                            }}
                           >
-                            SAVE
-                          </button>
+                            <option value="">-- Select Client --</option>
+                            {(clientMaster || []).map((c) => (
+                              <option key={c.name} value={c.name}>
+                                {c.name}
+                              </option>
+                            ))}
+                          </select>
+                          <div style={{ display: "flex", gap: 4 }}>
+                            <input
+                              placeholder="Code"
+                              value={manualCode}
+                              onChange={(e) => setManualCode(e.target.value)}
+                              style={{
+                                flex: 1,
+                                background: "#000",
+                                border: "1px solid #333",
+                                borderRadius: 4,
+                                fontSize: 10,
+                                color: "#fff",
+                                padding: 4,
+                                outline: "none",
+                              }}
+                            />
+                            <button
+                              onClick={() => handleManualClientCodeSave(item)}
+                              style={{
+                                background: "#4f46e5",
+                                border: "none",
+                                borderRadius: 4,
+                                color: "#fff",
+                                padding: "4px 8px",
+                                fontSize: 10,
+                                fontWeight: 700,
+                                cursor: "pointer",
+                              }}
+                            >
+                              SAVE
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
+                )}
+                <div style={{ color: "#484f58", fontSize: 11, minWidth: 80 }}>
+                  {
+                    new Date(item.addedOn || item.createdAt)
+                      .toISOString()
+                      .split("T")[0]
+                  }
                 </div>
-              )}
-              <div style={{ color: "#484f58", fontSize: 11, minWidth: 80 }}>
-                {
-                  new Date(item.addedOn || item.createdAt)
-                    .toISOString()
-                    .split("T")[0]
-                }
+                <button
+                  onClick={() => handleEdit(item)}
+                  style={{
+                    background: "#1e293b",
+                    color: "#64b5f6",
+                    border: "1px solid #334155",
+                    borderRadius: 6,
+                    padding: "4px 14px",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  ✏️ Edit
+                </button>
+                <button
+                  onClick={() => handleDelete(item)}
+                  style={{
+                    background: "#450a0a",
+                    color: "#ef4444",
+                    border: "1px solid #7f1d1d",
+                    borderRadius: 6,
+                    padding: "4px 14px",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  🗑️ Delete
+                </button>
               </div>
-              <button
-                onClick={() => handleEdit(item)}
-                style={{
-                  background: "#1e293b",
-                  color: "#64b5f6",
-                  border: "1px solid #334155",
-                  borderRadius: 6,
-                  padding: "4px 14px",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
-              >
-                ✏️ Edit
-              </button>
-              <button
-                onClick={() => handleDelete(item)}
-                style={{
-                  background: "#450a0a",
-                  color: "#ef4444",
-                  border: "1px solid #7f1d1d",
-                  borderRadius: 6,
-                  padding: "4px 14px",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
-              >
-                🗑️ Delete
-              </button>
-            </div>
-          ))
+            ))}
+          </>
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, count: 0 })}
+        onConfirm={handleBulkDelete}
+        title="Delete Items"
+        message={`Are you sure you want to delete ${confirmModal.count} item${confirmModal.count !== 1 ? "s" : ""}? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+      />
     </div>
   );
 }

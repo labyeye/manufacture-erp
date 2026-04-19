@@ -82,15 +82,15 @@ exports.createItem = async (req, res) => {
       gsm,
       width,
       length,
-      clientCodes,
-      clientName,
+      companyCodes,
+      companyName,
       gstRate,
       hsnCode,
       reorderLevel,
       gussett,
       height,
       uom,
-      clientCategory,
+      companyCategory,
     } = req.body;
 
     if (!name || !type) {
@@ -127,15 +127,15 @@ exports.createItem = async (req, res) => {
       gsm: gsm ? Number(gsm) : undefined,
       width: width ? Number(width) : undefined,
       length: length ? Number(length) : undefined,
-      clientCodes: clientCodes || {},
-      clientName: clientName?.trim(),
+      companyCodes: companyCodes || {},
+      companyName: companyName?.trim(),
       gstRate: gstRate ? Number(gstRate) : 18,
       hsnCode: hsnCode?.trim(),
       reorderLevel: reorderLevel ? Number(reorderLevel) : 0,
       gussett: gussett ? Number(gussett) : undefined,
       height: height ? Number(height) : undefined,
       uom: uom || "mm",
-      clientCategory: clientCategory?.trim(),
+      companyCategory: companyCategory?.trim(),
       createdBy: req.user?.id,
     });
 
@@ -162,16 +162,16 @@ exports.updateItem = async (req, res) => {
       gsm,
       width,
       length,
-      clientCodes,
+      companyCodes,
       status,
-      clientName,
+      companyName,
       gstRate,
       hsnCode,
       reorderLevel,
       gussett,
       height,
       uom,
-      clientCategory,
+      companyCategory,
     } = req.body;
 
     const item = await ItemMaster.findById(req.params.id);
@@ -199,15 +199,15 @@ exports.updateItem = async (req, res) => {
     if (gsm !== undefined) item.gsm = gsm ? Number(gsm) : undefined;
     if (width !== undefined) item.width = width ? Number(width) : undefined;
     if (length !== undefined) item.length = length ? Number(length) : undefined;
-    if (clientCodes !== undefined) item.clientCodes = clientCodes;
-    if (clientName !== undefined) item.clientName = clientName?.trim();
+    if (companyCodes !== undefined) item.companyCodes = companyCodes;
+    if (companyName !== undefined) item.companyName = companyName?.trim();
     if (gstRate !== undefined) item.gstRate = Number(gstRate);
     if (hsnCode !== undefined) item.hsnCode = hsnCode?.trim();
     if (reorderLevel !== undefined) item.reorderLevel = Number(reorderLevel);
     if (gussett !== undefined) item.gussett = gussett ? Number(gussett) : undefined;
     if (height !== undefined) item.height = height ? Number(height) : undefined;
     if (uom !== undefined) item.uom = uom;
-    if (clientCategory !== undefined) item.clientCategory = clientCategory?.trim();
+    if (companyCategory !== undefined) item.companyCategory = companyCategory?.trim();
     if (status) item.status = status;
 
     await item.save();

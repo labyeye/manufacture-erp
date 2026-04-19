@@ -28,11 +28,11 @@ const itemMasterSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
-    clientName: {
+    companyName: {
       type: String,
       trim: true,
     },
-    clientCategory: {
+    companyCategory: {
       type: String,
       trim: true,
     },
@@ -72,7 +72,7 @@ const itemMasterSchema = new mongoose.Schema(
       enum: ["Active", "Inactive"],
       default: "Active",
     },
-    clientCodes: {
+    companyCodes: {
       type: Map,
       of: String,
       default: {},

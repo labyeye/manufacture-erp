@@ -46,8 +46,8 @@ const salesOrderSchema = new mongoose.Schema(
     },
     deliveryDate: Date,
     salesPerson: String,
-    clientCategory: String,
-    clientName: {
+    companyCategory: String,
+    companyName: {
       type: String,
       required: true,
     },

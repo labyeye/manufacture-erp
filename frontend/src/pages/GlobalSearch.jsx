@@ -21,7 +21,7 @@ export function GlobalSearch({
   fgStock,
   rawStock,
   dispatches,
-  clientMaster,
+  companyMaster,
 }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]);

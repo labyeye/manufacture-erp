@@ -223,38 +223,6 @@ export const categoryMasterAPI = {
   },
 };
 
-export const clientMasterAPI = {
-  getAll: async () => {
-    const response = await api.get("/client-master");
-    return response.data;
-  },
-
-  getOne: async (id) => {
-    const response = await api.get(`/client-master/${id}`);
-    return response.data;
-  },
-
-  create: async (data) => {
-    const response = await api.post("/client-master", data);
-    return response.data;
-  },
-
-  update: async (id, data) => {
-    const response = await api.put(`/client-master/${id}`, data);
-    return response.data;
-  },
-
-  delete: async (id) => {
-    const response = await api.delete(`/client-master/${id}`);
-    return response.data;
-  },
-
-  updateStatus: async (id, status) => {
-    const response = await api.patch(`/client-master/${id}/status`, { status });
-    return response.data;
-  },
-};
-
 export const companyMasterAPI = {
   getAll: async () => {
     const response = await api.get("/company-master");

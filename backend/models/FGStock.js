@@ -9,7 +9,8 @@ const fgStockSchema = new mongoose.Schema(
     itemCode: String,
     joNo: String,
     soRef: String,
-    clientName: String,
+    companyName: String,
+    companyCat: String,
     qty: {
       type: Number,
       default: 0,

@@ -55,7 +55,7 @@ async function buildSchedule(jobOrder, machineAssignments) {
 
 async function adjustRMStock(jobOrder, direction = -1) {
   try {
-    const findStock = async (id, cat, type, gsm) => {
+    const findStock = async (id, cat, type, gsm, sheetSize, sheetW, sheetL) => {
       if (id) {
         const byId = await RawMaterialStock.findById(id);
         if (byId) return byId;
@@ -63,11 +63,21 @@ async function adjustRMStock(jobOrder, direction = -1) {
 
       if (!cat || !type) return null;
       const normCat = cat.trim().replace(/s$/i, "");
-      return RawMaterialStock.findOne({
+      const query = {
         category: { $regex: new RegExp(`^${normCat}`, "i") },
         paperType: { $regex: new RegExp(`${type.trim()}`, "i") },
         gsm: gsm,
-      });
+      };
+
+      if (sheetSize) {
+        query.sheetSize = {
+          $regex: new RegExp(sheetSize.replace(/\s+/g, ".*"), "i"),
+        };
+      } else if (sheetW && sheetL) {
+        query.sheetSize = { $regex: new RegExp(`${sheetW}.*${sheetL}`, "i") };
+      }
+
+      return RawMaterialStock.findOne(query);
     };
 
     const rmStock = await findStock(
@@ -75,43 +85,58 @@ async function adjustRMStock(jobOrder, direction = -1) {
       jobOrder.paperCategory,
       jobOrder.paperType,
       jobOrder.paperGsm,
+      jobOrder.sheetSize,
+      jobOrder.sheetW,
+      jobOrder.sheetL,
     );
 
     if (rmStock) {
       if (rmStock.unit === "kg" || jobOrder.paperCategory === "Paper Reel") {
-        const weightToAdjust = Number(jobOrder.reelWeightKg || 0) * (-direction); // direction -1 means deduct
+        const weightToAdjust = Number(jobOrder.reelWeightKg || 0) * direction; // direction -1 means deduct
         rmStock.weight = Math.max(0, rmStock.weight + weightToAdjust);
         if (rmStock.unit === "sheets" && rmStock.weightPerSheet > 0) {
           rmStock.qty = Math.floor(rmStock.weight / rmStock.weightPerSheet);
         }
       } else {
-        const qtyToAdjust = Number(jobOrder.noOfSheets || 0) * (-direction);
-        const wps = rmStock.weightPerSheet || (rmStock.qty > 0 ? rmStock.weight / rmStock.qty : 0);
+        const qtyToAdjust = Number(jobOrder.noOfSheets || 0) * direction;
+        const wps =
+          rmStock.weightPerSheet ||
+          (rmStock.qty > 0 ? rmStock.weight / rmStock.qty : 0);
         rmStock.qty = Math.max(0, rmStock.qty + qtyToAdjust);
         if (wps > 0) rmStock.weight = rmStock.qty * wps;
       }
       await rmStock.save();
     }
 
-    if (jobOrder.hasSecondPaper && (jobOrder.rmStockId2 || jobOrder.paperType2)) {
+    if (
+      jobOrder.hasSecondPaper &&
+      (jobOrder.rmStockId2 || jobOrder.paperType2)
+    ) {
       const rmStock2 = await findStock(
         jobOrder.rmStockId2,
         jobOrder.paperCategory2 || jobOrder.paperCategory,
         jobOrder.paperType2,
         jobOrder.paperGsm2,
+        jobOrder.sheetSize2 || jobOrder.sheetSize,
+        jobOrder.sheetW2 || jobOrder.sheetW,
+        jobOrder.sheetL2 || jobOrder.sheetL,
       );
 
       if (rmStock2) {
         const cat2 = jobOrder.paperCategory2 || jobOrder.paperCategory;
         if (rmStock2.unit === "kg" || cat2 === "Paper Reel") {
-          const weight2 = Number(jobOrder.reelWeightKg || 0) * (-direction);
+          const weight2 = Number(jobOrder.reelWeightKg || 0) * direction;
           rmStock2.weight = Math.max(0, rmStock2.weight + weight2);
           if (rmStock2.unit === "sheets" && rmStock2.weightPerSheet > 0) {
-            rmStock2.qty = Math.floor(rmStock2.weight / rmStock2.weightPerSheet);
+            rmStock2.qty = Math.floor(
+              rmStock2.weight / rmStock2.weightPerSheet,
+            );
           }
         } else {
-          const qty2 = Number(jobOrder.noOfSheets2 || 0) * (-direction);
-          const wps2 = rmStock2.weightPerSheet || (rmStock2.qty > 0 ? rmStock2.weight / rmStock2.qty : 0);
+          const qty2 = Number(jobOrder.noOfSheets2 || 0) * direction;
+          const wps2 =
+            rmStock2.weightPerSheet ||
+            (rmStock2.qty > 0 ? rmStock2.weight / rmStock2.qty : 0);
           rmStock2.qty = Math.max(0, rmStock2.qty + qty2);
           if (wps2 > 0) rmStock2.weight = rmStock2.qty * wps2;
         }
@@ -125,7 +150,7 @@ async function adjustRMStock(jobOrder, direction = -1) {
 
 async function checkRMStockSufficiency(jobOrder, existingJOId = null) {
   try {
-    const findStock = async (id, cat, type, gsm) => {
+    const findStock = async (id, cat, type, gsm, sheetSize, sheetW, sheetL) => {
       if (id) {
         const byId = await RawMaterialStock.findById(id);
         if (byId) return byId;
@@ -133,11 +158,21 @@ async function checkRMStockSufficiency(jobOrder, existingJOId = null) {
 
       if (!cat || !type) return null;
       const normCat = cat.trim().replace(/s$/i, "");
-      return RawMaterialStock.findOne({
+      const query = {
         category: { $regex: new RegExp(`^${normCat}`, "i") },
         paperType: { $regex: new RegExp(`${type.trim()}`, "i") },
         gsm: gsm,
-      });
+      };
+
+      if (sheetSize) {
+        query.sheetSize = {
+          $regex: new RegExp(sheetSize.replace(/\s+/g, ".*"), "i"),
+        };
+      } else if (sheetW && sheetL) {
+        query.sheetSize = { $regex: new RegExp(`${sheetW}.*${sheetL}`, "i") };
+      }
+
+      return RawMaterialStock.findOne(query);
     };
 
     const rmStock = await findStock(
@@ -145,9 +180,16 @@ async function checkRMStockSufficiency(jobOrder, existingJOId = null) {
       jobOrder.paperCategory,
       jobOrder.paperType,
       jobOrder.paperGsm,
+      jobOrder.sheetSize,
+      jobOrder.sheetW,
+      jobOrder.sheetL,
     );
 
-    if (!rmStock) return { sufficient: false, message: `Raw material not found for ${jobOrder.paperType}` };
+    if (!rmStock)
+      return {
+        sufficient: false,
+        message: `Raw material not found for ${jobOrder.paperType}`,
+      };
 
     let currentWeight = Number(rmStock.weight || 0);
     let currentQty = Number(rmStock.qty || 0);
@@ -157,8 +199,11 @@ async function checkRMStockSufficiency(jobOrder, existingJOId = null) {
       const oldJO = await JobOrder.findById(existingJOId);
       if (oldJO) {
         // Only if it's the same stock item
-        if (String(oldJO.rmStockId) === String(rmStock._id) || 
-            (oldJO.paperType === jobOrder.paperType && oldJO.paperGsm === jobOrder.paperGsm)) {
+        if (
+          String(oldJO.rmStockId) === String(rmStock._id) ||
+          (oldJO.paperType === jobOrder.paperType &&
+            oldJO.paperGsm === jobOrder.paperGsm)
+        ) {
           if (rmStock.unit === "kg" || oldJO.paperCategory === "Paper Reel") {
             currentWeight += Number(oldJO.reelWeightKg || 0);
           } else {
@@ -171,29 +216,39 @@ async function checkRMStockSufficiency(jobOrder, existingJOId = null) {
     if (rmStock.unit === "kg" || jobOrder.paperCategory === "Paper Reel") {
       const requiredWeight = Number(jobOrder.reelWeightKg || 0);
       if (currentWeight < requiredWeight) {
-        return { 
-          sufficient: false, 
-          message: `Insufficient weight for ${rmStock.name || jobOrder.paperType}. Available: ${currentWeight}kg, Required: ${requiredWeight}kg` 
+        return {
+          sufficient: false,
+          message: `Insufficient weight for ${rmStock.name || jobOrder.paperType}. Available: ${currentWeight}kg, Required: ${requiredWeight}kg`,
         };
       }
     } else {
       const requiredQty = Number(jobOrder.noOfSheets || 0);
       if (currentQty < requiredQty) {
-        return { 
-          sufficient: false, 
-          message: `Insufficient sheets for ${rmStock.name || jobOrder.paperType}. Available: ${currentQty}, Required: ${requiredQty}` 
+        return {
+          sufficient: false,
+          message: `Insufficient sheets for ${rmStock.name || jobOrder.paperType}. Available: ${currentQty}, Required: ${requiredQty}`,
         };
       }
     }
 
-    if (jobOrder.hasSecondPaper && (jobOrder.rmStockId2 || jobOrder.paperType2)) {
+    if (
+      jobOrder.hasSecondPaper &&
+      (jobOrder.rmStockId2 || jobOrder.paperType2)
+    ) {
       const rmStock2 = await findStock(
         jobOrder.rmStockId2,
         jobOrder.paperCategory2 || jobOrder.paperCategory,
         jobOrder.paperType2,
         jobOrder.paperGsm2,
+        jobOrder.sheetSize2 || jobOrder.sheetSize,
+        jobOrder.sheetW2 || jobOrder.sheetW,
+        jobOrder.sheetL2 || jobOrder.sheetL,
       );
-      if (!rmStock2) return { sufficient: false, message: `Second raw material not found for ${jobOrder.paperType2}` };
+      if (!rmStock2)
+        return {
+          sufficient: false,
+          message: `Second raw material not found for ${jobOrder.paperType2}`,
+        };
 
       let currentWeight2 = Number(rmStock2.weight || 0);
       let currentQty2 = Number(rmStock2.qty || 0);
@@ -201,15 +256,18 @@ async function checkRMStockSufficiency(jobOrder, existingJOId = null) {
       if (existingJOId) {
         const oldJO = await JobOrder.findById(existingJOId);
         if (oldJO && oldJO.hasSecondPaper) {
-           if (String(oldJO.rmStockId2) === String(rmStock2._id) || 
-               (oldJO.paperType2 === jobOrder.paperType2 && oldJO.paperGsm2 === jobOrder.paperGsm2)) {
-             const cat2 = oldJO.paperCategory2 || oldJO.paperCategory;
-             if (rmStock2.unit === "kg" || cat2 === "Paper Reel") {
-               currentWeight2 += Number(oldJO.reelWeightKg || 0);
-             } else {
-               currentQty2 += Number(oldJO.noOfSheets2 || 0);
-             }
-           }
+          if (
+            String(oldJO.rmStockId2) === String(rmStock2._id) ||
+            (oldJO.paperType2 === jobOrder.paperType2 &&
+              oldJO.paperGsm2 === jobOrder.paperGsm2)
+          ) {
+            const cat2 = oldJO.paperCategory2 || oldJO.paperCategory;
+            if (rmStock2.unit === "kg" || cat2 === "Paper Reel") {
+              currentWeight2 += Number(oldJO.reelWeightKg || 0);
+            } else {
+              currentQty2 += Number(oldJO.noOfSheets2 || 0);
+            }
+          }
         }
       }
 
@@ -217,17 +275,17 @@ async function checkRMStockSufficiency(jobOrder, existingJOId = null) {
       if (rmStock2.unit === "kg" || cat2 === "Paper Reel") {
         const requiredWeight2 = Number(jobOrder.reelWeightKg || 0);
         if (currentWeight2 < requiredWeight2) {
-          return { 
-            sufficient: false, 
-            message: `Insufficient weight for second material ${rmStock2.name || jobOrder.paperType2}. Available: ${currentWeight2}kg, Required: ${requiredWeight2}kg` 
+          return {
+            sufficient: false,
+            message: `Insufficient weight for second material ${rmStock2.name || jobOrder.paperType2}. Available: ${currentWeight2}kg, Required: ${requiredWeight2}kg`,
           };
         }
       } else {
         const requiredQty2 = Number(jobOrder.noOfSheets2 || 0);
         if (currentQty2 < requiredQty2) {
-          return { 
-            sufficient: false, 
-            message: `Insufficient sheets for second material ${rmStock2.name || jobOrder.paperType2}. Available: ${currentQty2}, Required: ${requiredQty2}` 
+          return {
+            sufficient: false,
+            message: `Insufficient sheets for second material ${rmStock2.name || jobOrder.paperType2}. Available: ${currentQty2}, Required: ${requiredQty2}`,
           };
         }
       }
@@ -246,12 +304,12 @@ async function upsertPrintingMaster(jobOrder) {
   await PrintingDetailMaster.findOneAndUpdate(
     {
       itemName: jobOrder.itemName,
-      clientName: jobOrder.clientName,
+      companyName: jobOrder.companyName,
     },
     {
       itemName: jobOrder.itemName,
-      clientName: jobOrder.clientName,
-      clientCategory: jobOrder.clientCategory,
+      companyName: jobOrder.companyName,
+      companyCategory: jobOrder.companyCategory,
       printing: jobOrder.printing,
       plate: jobOrder.plate,
       process: jobOrder.process,
@@ -602,7 +660,12 @@ async function recalculateProductionStats(jobOrder) {
 
   for (let i = 0; i < orderedProcesses.length; i++) {
     const s = orderedProcesses[i];
-    const isSheetStage = ["Printing", "Varnish", "Lamination", "Die Cutting"].includes(s);
+    const isSheetStage = [
+      "Printing",
+      "Varnish",
+      "Lamination",
+      "Die Cutting",
+    ].includes(s);
     const isPcsStage = ["Formation", "Manual Formation"].includes(s);
     const isKgStage = ["Flexo Printing"].includes(s);
     let target = 0;
@@ -680,8 +743,8 @@ async function recalculateProductionStats(jobOrder) {
           itemCode,
           joNo: jobOrder.joNo,
           soRef: jobOrder.soRef,
-          clientName: jobOrder.clientName,
-          clientCat: jobOrder.clientCategory,
+          companyName: jobOrder.companyName,
+          companyCat: jobOrder.companyCategory,
           category: itemCategory,
           qty: finalQty,
           price,

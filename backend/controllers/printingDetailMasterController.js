@@ -2,11 +2,11 @@ const PrintingDetailMaster = require("../models/PrintingDetailMaster");
 
 exports.getAllPrintingDetails = async (req, res) => {
   try {
-    const { itemName, clientName } = req.query;
+    const { itemName, companyName } = req.query;
 
     const filter = {};
     if (itemName) filter.itemName = { $regex: itemName, $options: "i" };
-    if (clientName) filter.clientName = { $regex: clientName, $options: "i" };
+    if (companyName) filter.companyName = { $regex: companyName, $options: "i" };
 
     const details = await PrintingDetailMaster.find(filter).sort({
       updatedAt: -1,
@@ -36,9 +36,9 @@ exports.getPrintingDetailById = async (req, res) => {
 
 exports.getPrintingDetailByItemAndClient = async (req, res) => {
   try {
-    const { itemName, clientName } = req.params;
+    const { itemName, companyName } = req.params;
 
-    const detail = await PrintingDetailMaster.findOne({ itemName, clientName });
+    const detail = await PrintingDetailMaster.findOne({ itemName, companyName });
 
     if (!detail) {
       return res.status(404).json({ error: "Printing detail not found" });
@@ -55,8 +55,8 @@ exports.createPrintingDetail = async (req, res) => {
   try {
     const {
       itemName,
-      clientName,
-      clientCategory,
+      companyName,
+      companyCategory,
       printing,
       plate,
       process,
@@ -72,7 +72,7 @@ exports.createPrintingDetail = async (req, res) => {
       cuttingLengthMm,
     } = req.body;
 
-    if (!itemName || !clientName) {
+    if (!itemName || !companyName) {
       return res
         .status(400)
         .json({ error: "Item name and client name are required" });
@@ -80,7 +80,7 @@ exports.createPrintingDetail = async (req, res) => {
 
     const existing = await PrintingDetailMaster.findOne({
       itemName,
-      clientName,
+      companyName,
     });
     if (existing) {
       return res.status(400).json({
@@ -90,8 +90,8 @@ exports.createPrintingDetail = async (req, res) => {
 
     const detail = new PrintingDetailMaster({
       itemName,
-      clientName,
-      clientCategory,
+      companyName,
+      companyCategory,
       printing,
       plate,
       process: process || [],
@@ -120,8 +120,8 @@ exports.updatePrintingDetail = async (req, res) => {
   try {
     const {
       itemName,
-      clientName,
-      clientCategory,
+      companyName,
+      companyCategory,
       printing,
       plate,
       process,
@@ -144,12 +144,12 @@ exports.updatePrintingDetail = async (req, res) => {
 
     if (
       itemName &&
-      clientName &&
-      (itemName !== detail.itemName || clientName !== detail.clientName)
+      companyName &&
+      (itemName !== detail.itemName || companyName !== detail.companyName)
     ) {
       const existing = await PrintingDetailMaster.findOne({
         itemName,
-        clientName,
+        companyName,
         _id: { $ne: req.params.id },
       });
       if (existing) {
@@ -160,8 +160,8 @@ exports.updatePrintingDetail = async (req, res) => {
     }
 
     if (itemName !== undefined) detail.itemName = itemName;
-    if (clientName !== undefined) detail.clientName = clientName;
-    if (clientCategory !== undefined) detail.clientCategory = clientCategory;
+    if (companyName !== undefined) detail.companyName = companyName;
+    if (companyCategory !== undefined) detail.companyCategory = companyCategory;
     if (printing !== undefined) detail.printing = printing;
     if (plate !== undefined) detail.plate = plate;
     if (process !== undefined) detail.process = process;
@@ -214,9 +214,9 @@ exports.bulkImport = async (req, res) => {
 
     for (const data of details) {
       try {
-        const { itemName, clientName } = data;
+        const { itemName, companyName } = data;
 
-        if (!itemName || !clientName) {
+        if (!itemName || !companyName) {
           results.failed.push({
             item: data,
             reason: "Item name and client name are required",
@@ -226,7 +226,7 @@ exports.bulkImport = async (req, res) => {
 
         const existing = await PrintingDetailMaster.findOne({
           itemName,
-          clientName,
+          companyName,
         });
         if (existing) {
           Object.assign(existing, data);

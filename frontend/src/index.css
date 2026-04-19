@@ -79,8 +79,13 @@ button {
   }
 }
 
-.fade {
+.fade,
+.fade-in {
   animation: fadeIn 0.25s ease;
+}
+
+.modal-backdrop {
+  animation: fadeIn 0.2s ease;
 }
 
 .loading {

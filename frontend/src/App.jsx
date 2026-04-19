@@ -22,7 +22,6 @@ import {
   rawMaterialStockAPI,
   fgStockAPI,
   vendorMasterAPI,
-  clientMasterAPI,
   categoryMasterAPI,
   itemMasterAPI,
   machineMasterAPI,
@@ -31,6 +30,7 @@ import {
   purchaseOrdersAPI,
   dispatchAPI,
   companyMasterAPI,
+  consumableStockAPI,
 } from "./api/auth";
 import { AuthContext, AuthProvider, useAuth } from "./context/AuthContext";
 import { Toast } from "./components/ui/AdvancedComponents";
@@ -44,7 +44,6 @@ import Dispatch from "./pages/Dispatch";
 import ConsumableStock from "./pages/ConsumableStock";
 import PurchaseOrders from "./pages/PurchaseOrders";
 import VendorMaster from "./pages/VendorMaster";
-import ClientMaster from "./pages/ClientMaster";
 import CategoryMaster from "./pages/CategoryMaster";
 import MachineMaster from "./pages/MachineMaster";
 import ItemMasterFG from "./pages/ItemMaster";
@@ -173,10 +172,6 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
     "erp_vendorMaster",
     [],
   );
-  const [clientMaster, setClientMaster] = usePersistedState(
-    "erp_clientMaster",
-    [],
-  );
   const [machineMaster, setMachineMaster] = usePersistedState(
     "erp_machineMaster",
     SEED_MACHINES,
@@ -216,28 +211,26 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
 
   useEffect(() => {
     fetchMasters();
-  }, []); 
+  }, []);
 
-  
   const unwrap = (val, ...keys) => {
     if (!val) return [];
     if (Array.isArray(val)) return val;
-    
+
     for (const key of keys) {
       if (val[key] && Array.isArray(val[key])) return val[key];
     }
-    
+
     for (const key of ["data", "records", "result", "results", "list"]) {
       if (val[key] && Array.isArray(val[key])) return val[key];
     }
-    
+
     const firstArr = Object.values(val).find((v) => Array.isArray(v));
     if (firstArr) return firstArr;
     return [];
   };
 
   const fetchMasters = async () => {
-    
     const run = async (apiCall, setter, ...keys) => {
       try {
         const res = await apiCall();
@@ -248,10 +241,8 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
       }
     };
 
-    
     await Promise.all([
       run(vendorMasterAPI.getAll, setVendorMaster, "vendors", "vendor"),
-      run(clientMasterAPI.getAll, setClientMaster, "clients", "client"),
       run(
         categoryMasterAPI.getAll,
         setCategoryMaster,
@@ -317,7 +308,7 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
   };
 
   const showToast = (msg, type = "success") => {
-    setToast({ id, msg, type });
+    setToast({ id: Date.now(), msg, type });
   };
 
   useEffect(() => {
@@ -365,8 +356,6 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
         setItemMasterFG,
         vendorMaster,
         setVendorMaster,
-        clientMaster,
-        setClientMaster,
         machineMaster,
         setMachineMaster,
         categoryMaster,
@@ -396,7 +385,9 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
 
     // Client filtering based on clientCategory in ItemMaster
     const filteredFG = fgStock.filter((s) => matchesClient(s.itemCode, tag));
-    const filteredItemMaster = itemMasterFG.filter((i) => i.clientCategory === tag);
+    const filteredItemMaster = itemMasterFG.filter(
+      (i) => i.clientCategory === tag,
+    );
     const filteredCodes = new Set(filteredItemMaster.map((i) => i.code));
 
     return {
@@ -417,15 +408,15 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
       consumableStock: [],
       setConsumableStock,
       dispatches: dispatches.filter((d) =>
-        (d.items || []).some((it) => filteredCodes.has(it.productCode || it.code)),
+        (d.items || []).some((it) =>
+          filteredCodes.has(it.productCode || it.code),
+        ),
       ),
       setDispatches,
       itemMasterFG: filteredItemMaster,
       setItemMasterFG,
       vendorMaster: [],
       setVendorMaster,
-      clientMaster: [],
-      setClientMaster,
       machineMaster,
       setMachineMaster,
       categoryMaster,
@@ -464,7 +455,6 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
     dispatches,
     itemMasterFG,
     vendorMaster,
-    clientMaster,
     machineMaster,
     categoryMaster,
     sizeMaster,
@@ -496,7 +486,6 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
             fgStock={data.fgStock}
             rawStock={data.rawStock}
             dispatches={data.dispatches}
-            clientMaster={data.clientMaster}
           />
         );
       case "purchase":
@@ -523,8 +512,6 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
         return <ConsumableStock {...data} toast={showToast} />;
       case "vendormaster":
         return <VendorMaster {...data} toast={showToast} />;
-      case "clientmaster":
-        return <ClientMaster {...data} toast={showToast} />;
       case "sizemaster":
         return <CategoryMaster {...data} toast={showToast} />;
       case "itemmaster":
@@ -576,10 +563,36 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
           }}
         >
           {}
-          <div style={{ padding: "24px 20px", borderBottom: `1px solid ${C.border}44` }}>
-            <div style={{ color: C.accent, fontWeight: 900, fontSize: 13, letterSpacing: 'normal', textTransform: 'uppercase' }}>MANUFACTUREIQ</div>
-            <div style={{ color: "#fff", fontWeight: 800, fontSize: 22, marginTop: -2 }}>ERP System</div>
-            <div style={{ color: C.muted, fontSize: 10, marginTop: 4 }}>Manufacturing Suite</div>
+          <div
+            style={{
+              padding: "24px 20px",
+              borderBottom: `1px solid ${C.border}44`,
+            }}
+          >
+            <div
+              style={{
+                color: C.accent,
+                fontWeight: 900,
+                fontSize: 13,
+                letterSpacing: "normal",
+                textTransform: "uppercase",
+              }}
+            >
+              MANUFACTUREIQ
+            </div>
+            <div
+              style={{
+                color: "#fff",
+                fontWeight: 800,
+                fontSize: 22,
+                marginTop: -2,
+              }}
+            >
+              ERP System
+            </div>
+            <div style={{ color: C.muted, fontSize: 10, marginTop: 4 }}>
+              Manufacturing Suite
+            </div>
           </div>
 
           <div style={{ flex: 1, overflowY: "auto", padding: "10px 0" }}>
@@ -592,7 +605,10 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
                   padding: "14px 24px",
                   textAlign: "left",
                   border: "none",
-                  background: currentTab === tab.id ? "rgba(255, 120, 0, 0.08)" : "transparent",
+                  background:
+                    currentTab === tab.id
+                      ? "rgba(255, 120, 0, 0.08)"
+                      : "transparent",
                   color: currentTab === tab.id ? "#ff7800" : "#94a3b8",
                   borderLeft: `4px solid ${currentTab === tab.id ? "#ff7800" : "transparent"}`,
                   cursor: "pointer",
@@ -605,7 +621,8 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
                 }}
                 onMouseEnter={(e) => {
                   if (currentTab !== tab.id) {
-                    e.currentTarget.style.background = "rgba(255, 255, 255, 0.03)";
+                    e.currentTarget.style.background =
+                      "rgba(255, 255, 255, 0.03)";
                     e.currentTarget.style.color = "#fff";
                   }
                 }}
@@ -616,11 +633,16 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
                   }
                 }}
               >
-                <span style={{ 
-                  fontSize: 20, 
-                  opacity: currentTab === tab.id ? 1 : 0.6,
-                  filter: currentTab === tab.id ? "drop-shadow(0 0 5px #ff780044)" : "none"
-                }}>
+                <span
+                  style={{
+                    fontSize: 20,
+                    opacity: currentTab === tab.id ? 1 : 0.6,
+                    filter:
+                      currentTab === tab.id
+                        ? "drop-shadow(0 0 5px #ff780044)"
+                        : "none",
+                  }}
+                >
                   {tab.icon}
                 </span>
                 <span style={{ letterSpacing: "0.02em" }}>{tab.label}</span>
@@ -629,11 +651,17 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
           </div>
 
           {}
-          <div style={{ padding: 16, borderTop: `1px solid ${C.border}44`, background: "#0a0a0a" }}>
-             <div style={{ fontSize: 11, color: C.muted, marginBottom: 8 }}>
-                👤 {session.username} ({session.role})
-             </div>
-             <button
+          <div
+            style={{
+              padding: 16,
+              borderTop: `1px solid ${C.border}44`,
+              background: "#0a0a0a",
+            }}
+          >
+            <div style={{ fontSize: 11, color: C.muted, marginBottom: 8 }}>
+              👤 {session.username} ({session.role})
+            </div>
+            <button
               onClick={onLogout}
               style={{
                 width: "100%",
@@ -653,53 +681,90 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
         </div>
 
         {}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          {}
-          <div style={{ 
-            height: 60, 
-            background: "#0d0d0d", 
-            borderBottom: `1px solid ${C.border}44`,
+        <div
+          style={{
+            flex: 1,
             display: "flex",
-            alignItems: "center",
-            padding: "0 24px",
-            justifyContent: "space-between"
-          }}>
-             <div style={{ 
-               background: "#1a1a1a", 
-               borderRadius: 8, 
-               padding: "8px 16px", 
-               display: "flex", 
-               alignItems: "center", 
-               gap: 10,
-               width: 300,
-               color: "#555",
-               fontSize: 13,
-               cursor: "pointer"
-             }} onClick={() => setCurrentTab("search")}>
-                <span>🔍</span> Search anything...
-                <span style={{ marginLeft: "auto", fontSize: 10, background: "#333", padding: "2px 6px", borderRadius: 4 }}>Ctrl+K</span>
-             </div>
+            flexDirection: "column",
+            overflow: "hidden",
+          }}
+        >
+          {}
+          <div
+            style={{
+              height: 60,
+              background: "#0d0d0d",
+              borderBottom: `1px solid ${C.border}44`,
+              display: "flex",
+              alignItems: "center",
+              padding: "0 24px",
+              justifyContent: "space-between",
+            }}
+          >
+            <div
+              style={{
+                background: "#1a1a1a",
+                borderRadius: 8,
+                padding: "8px 16px",
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                width: 300,
+                color: "#555",
+                fontSize: 13,
+                cursor: "pointer",
+              }}
+              onClick={() => setCurrentTab("search")}
+            >
+              <span>🔍</span> Search anything...
+              <span
+                style={{
+                  marginLeft: "auto",
+                  fontSize: 10,
+                  background: "#333",
+                  padding: "2px 6px",
+                  borderRadius: 4,
+                }}
+              >
+                Ctrl+K
+              </span>
+            </div>
 
-             <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-                <div style={{ position: "relative", cursor: "pointer", fontSize: 20 }}>
-                   🔔
-                   <div style={{ 
-                     position: "absolute", 
-                     top: -2, 
-                     right: -2, 
-                     width: 8, 
-                     height: 8, 
-                     background: C.red, 
-                     borderRadius: "50%",
-                     border: "2px solid #0d0d0d"
-                   }} />
-                </div>
-                <div style={{ cursor: "pointer", fontSize: 18 }}>🌙</div>
-             </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+              <div
+                style={{
+                  position: "relative",
+                  cursor: "pointer",
+                  fontSize: 20,
+                }}
+              >
+                🔔
+                <div
+                  style={{
+                    position: "absolute",
+                    top: -2,
+                    right: -2,
+                    width: 8,
+                    height: 8,
+                    background: C.red,
+                    borderRadius: "50%",
+                    border: "2px solid #0d0d0d",
+                  }}
+                />
+              </div>
+              <div style={{ cursor: "pointer", fontSize: 18 }}>🌙</div>
+            </div>
           </div>
 
           {}
-          <div style={{ flex: 1, padding: 24, overflowY: "auto", position: "relative" }}>
+          <div
+            style={{
+              flex: 1,
+              padding: 24,
+              overflowY: "auto",
+              position: "relative",
+            }}
+          >
             {renderPage()}
           </div>
         </div>
@@ -708,6 +773,7 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
       {}
       {toast && (
         <Toast
+          key={toast.id}
           msg={toast.msg}
           type={toast.type}
           onClose={() => setToast(null)}

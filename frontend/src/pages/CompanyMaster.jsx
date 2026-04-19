@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { C } from "../constants/colors";
 import { SectionTitle } from "../components/ui/BasicComponents";
 import { companyMasterAPI } from "../api/auth";
+import ConfirmModal from "../components/ConfirmModal";
 
 const inputStyle = {
   width: "100%",
@@ -36,6 +37,7 @@ export default function CompanyMaster({ toast }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, id: null });
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -104,11 +106,9 @@ export default function CompanyMaster({ toast }) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm("Delete this company?")) return;
-
+  const handleDelete = async () => {
     try {
-      await companyMasterAPI.delete(id);
+      await companyMasterAPI.delete(confirmModal.id);
       toast("Company deleted", "success");
       fetchCompanies();
     } catch (error) {
@@ -502,7 +502,7 @@ export default function CompanyMaster({ toast }) {
                           {company.status === "Active" ? "⏸" : "▶"}
                         </button>
                         <button
-                          onClick={() => handleDelete(company._id)}
+                          onClick={() => setConfirmModal({ isOpen: true, id: company._id })}
                           style={{
                             background: "#450a0a",
                             color: "#ef4444",
@@ -528,6 +528,17 @@ export default function CompanyMaster({ toast }) {
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, id: null })}
+        onConfirm={handleDelete}
+        title="Delete Company"
+        message="Are you sure you want to delete this company? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+      />
     </div>
   );
 }

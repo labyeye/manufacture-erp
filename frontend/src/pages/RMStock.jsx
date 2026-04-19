@@ -115,6 +115,9 @@ export default function RMStock({
       s.category || "",
       s.qty || 0,
       s.weight || 0,
+      s.reorderLevel || 0,
+      s.rate || 0,
+      ((s.weight || 0) * (s.rate || 0)).toFixed(2),
     ]);
     const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -210,6 +213,7 @@ export default function RMStock({
     <div style={{ paddingBottom: 40 }}>
       {editingItem && (
         <div
+          className="modal-backdrop"
           style={{
             position: "fixed",
             top: 0,
@@ -226,6 +230,7 @@ export default function RMStock({
           }}
         >
           <div
+            className="fade-in"
             style={{
               background: "#141416",
               border: "1px solid #2a2a2e",
@@ -601,7 +606,8 @@ export default function RMStock({
         </div>
         <TemplateBtn
           onClick={() => {
-            const csv = "Code,Name,Category,QtySheets,WeightKg,ReorderKg,Rate\n";
+            const csv = "Code,Name,Category,QtySheets,WeightKg,ReorderKg,Rate\n" +
+                        "RM001,Sample Paper,Paper Reel,1000,500,100,50";
             const blob = new Blob([csv], { type: "text/csv" });
             const a = document.createElement("a");
             a.href = URL.createObjectURL(blob);

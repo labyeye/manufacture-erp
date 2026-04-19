@@ -117,7 +117,7 @@ export function Dashboard({ data, session }) {
         list.push({
           ...h,
           joNo: jo.joNo,
-          clientName: jo.clientName,
+          companyName: jo.companyName,
           itemName: jo.itemName,
         });
       });
@@ -785,7 +785,7 @@ export function Dashboard({ data, session }) {
                               marginTop: 4,
                             }}
                           >
-                            {jo.clientName}
+                            {jo.companyName}
                           </div>
                         </td>
                         <td
@@ -1492,7 +1492,7 @@ export function Dashboard({ data, session }) {
                             </div>
                           </td>
                           <td style={{ ...TD, fontWeight: 600 }}>
-                            {r.so.clientName || r.so.client || "—"}
+                            {r.so.companyName || r.so.company || "—"}
                           </td>
                           <td
                             style={{
@@ -1575,7 +1575,7 @@ export function Dashboard({ data, session }) {
               d._id ||
               `DISP-${idx + 1}`;
             const soRef = d.soRef || d.soNo || d.so || "—";
-            const client = d.clientName || d.client || d.customerName || "—";
+            const client = d.companyName || d.company || d.customerName || "—";
             const dispDate = d.dispatchDate || d.date || d.createdAt || "";
             const vehicle = d.vehicleNo || d.vehicle || d.transport || "—";
             const carrier =
@@ -1911,7 +1911,7 @@ export function Dashboard({ data, session }) {
                               {r.s.soNo || "—"}
                             </td>
                             <td style={{ ...TD, fontWeight: 600 }}>
-                              {r.s.clientName || "—"}
+                              {r.s.companyName || "—"}
                             </td>
                             <td
                               style={{

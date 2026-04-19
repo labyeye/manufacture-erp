@@ -832,11 +832,11 @@ export default function ProductionCalendar({
                                 onClick={() =>
                                   toast &&
                                   toast(
-                                    `Job: ${jo.joNo} — ${jo.clientName || ""}`,
+                                    `Job: ${jo.joNo} — ${jo.companyName || ""}`,
                                     "info",
                                   )
                                 }
-                                title={`${jo.joNo} · ${jo.clientName || ""} · ${jo.status || ""}`}
+                                title={`${jo.joNo} · ${jo.companyName || ""} · ${jo.status || ""}`}
                                 style={{
                                   fontSize: 10,
                                   padding: "3px 5px",
@@ -925,7 +925,7 @@ export default function ProductionCalendar({
                       {jo.joNo}
                     </span>
                     <span style={{ fontSize: 13, fontWeight: 600 }}>
-                      {jo.clientName}
+                      {jo.companyName}
                     </span>
                     <Badge
                       text={jo.status || "Not Started"}

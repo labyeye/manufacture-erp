@@ -83,7 +83,7 @@ exports.create = async (req, res) => {
   try {
     const {
       date,
-      clientName,
+      companyName,
       soRef,
       joRef,
       vehicleNo,
@@ -93,7 +93,7 @@ exports.create = async (req, res) => {
       remarks,
     } = req.body;
 
-    if (!date || !clientName || !items || items.length === 0) {
+    if (!date || !companyName || !items || items.length === 0) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
@@ -102,7 +102,7 @@ exports.create = async (req, res) => {
     const dispatch = new Dispatch({
       dispatchNo,
       date: new Date(date),
-      clientName: clientName.trim(),
+      companyName: companyName.trim(),
       soRef: soRef?.trim(),
       joRef: joRef?.trim(),
       vehicleNo: vehicleNo?.trim(),
@@ -132,7 +132,7 @@ exports.update = async (req, res) => {
   try {
     const {
       date,
-      clientName,
+      companyName,
       soRef,
       joRef,
       vehicleNo,
@@ -149,7 +149,7 @@ exports.update = async (req, res) => {
     }
 
     if (date) dispatch.date = new Date(date);
-    if (clientName) dispatch.clientName = clientName.trim();
+    if (companyName) dispatch.companyName = companyName.trim();
     if (soRef !== undefined) dispatch.soRef = soRef?.trim();
     if (joRef !== undefined) dispatch.joRef = joRef?.trim();
     if (vehicleNo !== undefined) dispatch.vehicleNo = vehicleNo?.trim();

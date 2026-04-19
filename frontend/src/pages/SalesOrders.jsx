@@ -12,7 +12,7 @@ import {
 import { DatePicker } from "../components/ui/DatePicker";
 import {
   salesOrdersAPI,
-  clientMasterAPI,
+  companyMasterAPI,
   usersAPI,
   categoryMasterAPI,
 } from "../api/auth";
@@ -37,12 +37,12 @@ export default function SalesOrders(props) {
     categoryMaster = {},
     itemMasterFG = [],
     refreshData,
-    clientMaster = [],
+    companyMaster = [],
   } = props;
   const [salesOrders, setSalesOrders] = useState([]);
-  const [clients, setClients] = useState([]);
+  const [companies, setCompanies] = useState([]);
   const [users, setUsers] = useState([]);
-  const [clientCategories, setClientCategories] = useState([]);
+  const [companyCategories, setCompanyCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const today_val = today();
 
@@ -80,8 +80,8 @@ export default function SalesOrders(props) {
     orderDate: today_val,
     deliveryDate: "",
     salesPerson: "",
-    clientCategory: "",
-    clientName: "",
+    companyCategory: "",
+    companyName: "",
     clientContact: "",
     remarks: "",
     status: "Open",
@@ -108,7 +108,7 @@ export default function SalesOrders(props) {
     totalWithTax: "",
     itemName: "",
     gsm: "",
-    clientName: "",
+    companyName: "",
     remarks: "",
   });
 
@@ -161,7 +161,7 @@ export default function SalesOrders(props) {
 
   useEffect(() => {
     fetchSalesOrders();
-    fetchClients();
+    fetchCompanies();
     fetchUsers();
   }, []);
 
@@ -174,15 +174,15 @@ export default function SalesOrders(props) {
     }
   };
 
-  const fetchClients = async () => {
+  const fetchCompanies = async () => {
     try {
-      const res = await clientMasterAPI.getAll();
-      setClients(res.clients || []);
+      const res = await companyMasterAPI.getAll();
+      setCompanies(res.companies || res.clients || []);
 
-      setClientCategories(["HP", "ZPL", "Others"]);
+      setCompanyCategories(["HP", "ZPL", "Others"]);
     } catch (error) {
       console.error("Failed to fetch clients:", error);
-      setClientCategories(["HP", "ZPL", "Others"]);
+      setCompanyCategories(["HP", "ZPL", "Others"]);
     }
   };
 
@@ -228,8 +228,8 @@ export default function SalesOrders(props) {
       if (dims.length > 0) parts.push(`${dims.join("x")}${it.uom || "inch"}`);
     }
 
-    if (it.clientName) parts.push(it.clientName);
-    else if (h.clientName) parts.push(h.clientName);
+    if (it.companyName) parts.push(it.companyName);
+    else if (h.companyName) parts.push(h.companyName);
 
     if (it.variant) parts.push(it.variant);
 
@@ -240,8 +240,8 @@ export default function SalesOrders(props) {
     let nextH;
     setHeader((f) => {
       const next = { ...f, [k]: v };
-      if (k === "clientName") {
-        const found = clientMaster.find((c) => c.name === v);
+      if (k === "companyName") {
+        const found = companyMaster.find((c) => c.name === v);
         if (found) {
           next.clientContact = found.phone || found.whatsapp || "";
         }
@@ -251,7 +251,7 @@ export default function SalesOrders(props) {
     });
     setHeaderErrors((e) => ({ ...e, [k]: false }));
 
-    if (k === "clientName") {
+    if (k === "companyName") {
       setItems((prev) =>
         prev.map((it) => ({
           ...it,
@@ -284,7 +284,7 @@ export default function SalesOrders(props) {
             variant: found.variant || it.variant,
             uom: found.uom || it.uom || "inch",
             qtyUnit: found.qtyUnit || it.qtyUnit || "pcs",
-            clientName: header.clientName ? "" : found.clientName || "",
+            companyName: header.companyName ? "" : found.companyName || "",
             itemName: found.name || it.itemName,
             gstRate: found.gstRate || 18,
             hsnCode: found.hsnCode || "",
@@ -395,8 +395,8 @@ export default function SalesOrders(props) {
         ? new Date(so.deliveryDate).toISOString().slice(0, 10)
         : "",
       salesPerson: so.salesPerson || "",
-      clientCategory: so.clientCategory || "",
-      clientName: so.clientName,
+      companyCategory: so.companyCategory || "",
+      companyName: so.companyName,
       remarks: so.remarks || "",
       status: so.status || "Open",
     });
@@ -450,8 +450,8 @@ export default function SalesOrders(props) {
     const he = {};
     if (!header.orderDate) he.orderDate = true;
     if (!header.deliveryDate) he.deliveryDate = true;
-    if (!header.clientName) he.clientName = true;
-    if (!header.clientCategory) he.clientCategory = true;
+    if (!header.companyName) he.companyName = true;
+    if (!header.companyCategory) he.companyCategory = true;
     setHeaderErrors(he);
 
     const allItemErrors = items.map((it) => {
@@ -481,8 +481,8 @@ export default function SalesOrders(props) {
         orderDate: header.orderDate,
         deliveryDate: header.deliveryDate,
         salesPerson: header.salesPerson,
-        clientCategory: header.clientCategory,
-        clientName: header.clientName,
+        companyCategory: header.companyCategory,
+        companyName: header.companyName,
         remarks: header.remarks,
         items: items.map((it) => {
           const amount = +(it.amount || 0);
@@ -534,7 +534,7 @@ export default function SalesOrders(props) {
       setItemErrors([{}]);
       setView("records");
       fetchSalesOrders();
-      fetchClients();
+      fetchCompanies();
       if (refreshData) refreshData();
     } catch (error) {
       toast(
@@ -630,7 +630,7 @@ export default function SalesOrders(props) {
             </div>
             <div class="info-item">
               <label>Customer Name</label>
-              <span>${so.clientName}</span>
+              <span>${so.companyName}</span>
             </div>
           </div>
 
@@ -824,9 +824,9 @@ export default function SalesOrders(props) {
             >
               <Field label="Client Category *">
                 <select
-                  value={header.clientCategory}
-                  onChange={(e) => setH("clientCategory", e.target.value)}
-                  style={EH("clientCategory")}
+                  value={header.companyCategory}
+                  onChange={(e) => setH("companyCategory", e.target.value)}
+                  style={EH("companyCategory")}
                 >
                   <option value="">-- All Categories --</option>
                   {uniqueClientCategories.map((cat) => (
@@ -835,23 +835,23 @@ export default function SalesOrders(props) {
                     </option>
                   ))}
                 </select>
-                {EHMsg("clientCategory")}
+                {EHMsg("companyCategory")}
               </Field>
               <Field label="Client Name *">
                 <AutocompleteInput
-                  value={header.clientName}
-                  onChange={(v) => setH("clientName", v)}
+                  value={header.companyName}
+                  onChange={(v) => setH("companyName", v)}
                   suggestions={
-                    header.clientCategory
-                      ? clientMaster
-                          .filter((c) => c.category === header.clientCategory)
+                    header.companyCategory
+                      ? companyMaster
+                          .filter((c) => c.category === header.companyCategory)
                           .map((c) => c.name)
-                      : clientMaster.map((c) => c.name)
+                      : companyMaster.map((c) => c.name)
                   }
                   placeholder="Type to search..."
-                  inputStyle={EH("clientName")}
+                  inputStyle={EH("companyName")}
                 />
-                {EHMsg("clientName")}
+                {EHMsg("companyName")}
               </Field>
               <Field label="Client Contact">
                 <input
@@ -1593,7 +1593,7 @@ export default function SalesOrders(props) {
                           fontWeight: 600,
                         }}
                       >
-                        {r.clientName} ·{" "}
+                        {r.companyName} ·{" "}
                         {r.orderDate
                           ? new Date(r.orderDate).toLocaleDateString("en-GB")
                           : "N/A"}

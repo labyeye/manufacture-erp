@@ -261,7 +261,7 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
       "Code",
       "Item Name",
       "Category",
-      "Client Category",
+      "Company Category",
       "Qty",
       "Reorder Level",
       "Price (Rs)",
@@ -270,7 +270,7 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
       s.code || "",
       s.itemName,
       s.category || "",
-      s.clientCat || "",
+      s.companyCat || "",
       s.qty || 0,
       s.reorder || 0,
       s.price || 0,
@@ -288,7 +288,7 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
 
   const handleTemplate = () => {
     const csv =
-      '"Code","Item Name","Category","Client Category","Qty","Reorder Level","Price (Rs)"\n"","Example Product","HP","HP",100,50,25';
+      '"Code","Item Name","Category","Company Category","Qty","Reorder Level","Price (Rs)"\n"","Example Product","HP","HP",100,50,25';
     const blob = new Blob([csv], { type: "text/csv" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -319,7 +319,7 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
               code: row[0] || `FG${String(i).padStart(3, "0")}`,
               itemName: row[1] || "Unnamed Item",
               category: row[2] || "",
-              clientCat: row[3] || "",
+              companyCat: row[3] || "",
               qty: parseFloat(row[4]) || 0,
               reorder: parseFloat(row[5]) || 0,
               price: parseFloat(row[6]) || 0,
@@ -493,7 +493,7 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
                   "CODE",
                   "ITEM NAME",
                   "CATEGORY",
-                  "CLIENT CAT.",
+                  "COMPANY CAT.",
                   "IN STOCK",
                   "QTY",
                   "REORDER",
@@ -588,7 +588,7 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
                           fontSize: 11,
                         }}
                       >
-                        {s.clientName || s.clientCat || "-"}
+                        {s.companyCat || "-"}
                       </td>
                       <td style={{ padding: "10px 14px" }}>
                         <span
@@ -750,7 +750,7 @@ function EditModal({ item, onClose, onSave }) {
     itemName: item.itemName || "",
     joNo: item.joNo || "",
     soRef: item.soRef || "",
-    clientName: item.clientName || "",
+    companyName: item.companyName || "",
     category: item.category || "",
     qty: item.qty || 0,
     price: item.price || 0,
@@ -811,7 +811,7 @@ function EditModal({ item, onClose, onSave }) {
   };
 
   return (
-    <div style={modalStyle}>
+    <div style={modalStyle} className="modal-backdrop">
       <div style={contentStyle} className="fade-in">
         <h3 style={{ margin: "0 0 20px 0", color: "#2196F3", fontSize: 18 }}>
           Edit Stock Item
@@ -830,10 +830,10 @@ function EditModal({ item, onClose, onSave }) {
             />
           </div>
           <div style={fieldStyle}>
-            <label style={labelStyle}>Client Name</label>
+            <label style={labelStyle}>Company Name</label>
             <input
-              name="clientName"
-              value={formData.clientName}
+              name="companyName"
+              value={formData.companyName}
               onChange={handleChange}
               style={inputStyle}
             />

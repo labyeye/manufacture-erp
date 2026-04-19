@@ -26,7 +26,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], toast }) {
   const blankHeader = {
     dispatchDate: today(),
     soRef: "",
-    clientName: "",
+    companyName: "",
     deliveryAddress: "",
     vehicleNo: "",
     driverName: "",
@@ -38,7 +38,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], toast }) {
     _id: uid(),
     itemName: "",
     productCode: "",
-    clientCode: "",
+    companyCode: "",
     qty: "",
     unit: "nos",
     pcsPerBox: "",
@@ -122,7 +122,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], toast }) {
           setHeader((f) => ({
             ...f,
             [k]: v,
-            clientName: so.clientName || "",
+            companyName: so.companyName || "",
             deliveryAddress: so.deliveryAddress || "",
           }));
 
@@ -134,9 +134,9 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], toast }) {
               _id: uid(),
               itemName: it.itemName || "",
               productCode: it.productCode || "",
-              clientCode:
-                masterItem && so.clientName
-                  ? masterItem.clientCodes?.[so.clientName] || ""
+              companyCode:
+                masterItem && so.companyName
+                  ? masterItem.companyCodes?.[so.companyName] || ""
                   : "",
               qty: (it.orderQty || 0).toString(),
               unit: it.qtyUnit || "nos",
@@ -159,7 +159,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], toast }) {
         setHeader((f) => ({
           ...f,
           [k]: v,
-          clientName: "",
+          companyName: "",
           deliveryAddress: "",
         }));
         setItems([blankItem()]);
@@ -168,7 +168,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], toast }) {
     } else {
       setHeader((f) => ({ ...f, [k]: v }));
 
-      if (k === "clientName") {
+      if (k === "companyName") {
         setItems((prev) =>
           prev.map((it) => {
             const masterItem = (itemMasterFG || []).find(
@@ -176,8 +176,8 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], toast }) {
             );
             return {
               ...it,
-              clientCode:
-                masterItem && v ? masterItem.clientCodes?.[v] || "" : "",
+              companyCode:
+                masterItem && v ? masterItem.companyCodes?.[v] || "" : "",
             };
           }),
         );
@@ -252,7 +252,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], toast }) {
   const submit = async () => {
     const he = {};
     if (!header.dispatchDate) he.dispatchDate = true;
-    if (!header.clientName) he.clientName = true;
+    if (!header.companyName) he.companyName = true;
     setHeaderErrors(he);
 
     const allItemErrors = items.map((it) => {
@@ -290,7 +290,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], toast }) {
     try {
       const payload = {
         date: new Date(header.dispatchDate),
-        clientName: header.clientName,
+        companyName: header.companyName,
         soRef: header.soRef,
         joRef: header.joRef,
         vehicleNo: header.vehicleNo,
@@ -300,7 +300,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], toast }) {
         items: items.map((it) => ({
           itemName: it.itemName,
           productCode: it.productCode,
-          clientCode: it.clientCode,
+          companyCode: it.companyCode,
           qty: Number(it.qty),
           unit: it.unit,
           pcsPerBox: Number(it.pcsPerBox || 0),
@@ -399,7 +399,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], toast }) {
               <div class="section-label">Consignee Details</div>
               <div class="info-item">
                 <label>Customer Name</label>
-                <span style="font-size: 14px; font-weight: 800; color: #1e3a8a;">${d.clientName}</span>
+                <span style="font-size: 14px; font-weight: 800; color: #1e3a8a;">${d.companyName}</span>
               </div>
               <div class="info-item" style="margin-top: 10px;">
                 <label>Delivery Address</label>
@@ -450,7 +450,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], toast }) {
                   </td>
                   <td>
                     <div>${it.productCode || "—"}</div>
-                    ${it.clientCode ? `<div style="font-size: 9px; color: #666; margin-top: 2px;">Client: ${it.clientCode}</div>` : ""}
+                    ${it.companyCode ? `<div style="font-size: 9px; color: #666; margin-top: 2px;">Company: ${it.companyCode}</div>` : ""}
                   </td>
                   <td style="text-align: center;">${it.noOfBox || "—"}</td>
                   <td style="text-align: center;">${it.pcsPerBox || "—"}</td>
@@ -578,11 +578,11 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], toast }) {
                   ))}
                 </select>
               </Field>
-              <Field label="Client Name *">
+              <Field label="Company Name *">
                 <input
-                  placeholder="Client name"
-                  value={header.clientName}
-                  onChange={(e) => setH("clientName", e.target.value)}
+                  placeholder="Company name"
+                  value={header.companyName}
+                  onChange={(e) => setH("companyName", e.target.value)}
                 />
               </Field>
               <Field label="Delivery Address">
@@ -749,11 +749,11 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], toast }) {
                     }
                   />
                 </Field>
-                <Field label="Client Code">
+                <Field label="Company Code">
                   <input
                     placeholder="From Item Master"
-                    value={it.clientCode}
-                    onChange={(e) => setItem(idx, "clientCode", e.target.value)}
+                    value={it.companyCode}
+                    onChange={(e) => setItem(idx, "companyCode", e.target.value)}
                   />
                 </Field>
                 <Field label="Quantity *">
@@ -1001,7 +1001,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], toast }) {
                         {r.dispatchDate}
                       </span>
                       <span style={{ fontSize: 13, fontWeight: 600 }}>
-                        {r.clientName}
+                        {r.companyName}
                       </span>
                       <Badge text={r.status} color={C.green} />
                       {(() => {

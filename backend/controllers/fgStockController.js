@@ -2,11 +2,11 @@ const FGStock = require("../models/FGStock");
 
 exports.getAllStock = async (req, res) => {
   try {
-    const { itemName, clientName } = req.query;
+    const { itemName, companyName } = req.query;
 
     const filter = {};
     if (itemName) filter.itemName = { $regex: itemName, $options: "i" };
-    if (clientName) filter.clientName = { $regex: clientName, $options: "i" };
+    if (companyName) filter.companyName = { $regex: companyName, $options: "i" };
 
     const stock = await FGStock.find(filter).sort({ lastUpdated: -1 });
 
@@ -38,7 +38,7 @@ exports.createStock = async (req, res) => {
       itemName,
       joNo,
       soRef,
-      clientName,
+      companyName,
       qty,
       unit,
       price,
@@ -63,7 +63,7 @@ exports.createStock = async (req, res) => {
       itemName,
       joNo,
       soRef,
-      clientName,
+      companyName,
       qty: qty || 0,
       unit,
       price,
@@ -86,7 +86,7 @@ exports.updateStock = async (req, res) => {
       itemName,
       joNo,
       soRef,
-      clientName,
+      companyName,
       qty,
       unit,
       price,
@@ -115,7 +115,7 @@ exports.updateStock = async (req, res) => {
     }
     if (joNo !== undefined) stock.joNo = joNo;
     if (soRef !== undefined) stock.soRef = soRef;
-    if (clientName !== undefined) stock.clientName = clientName;
+    if (companyName !== undefined) stock.companyName = companyName;
     if (qty !== undefined) stock.qty = qty;
     if (unit !== undefined) stock.unit = unit;
     if (price !== undefined) stock.price = price;
