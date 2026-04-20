@@ -32,8 +32,13 @@ exports.getStockById = async (req, res) => {
 };
 
 exports.createStock = async (req, res) => {
+  if (req.user && req.user.role === "Client") {
+    return res
+      .status(403)
+      .json({ error: "Clients are not allowed to create consumable stock" });
+  }
   try {
-    const { name, category, qty, unit, reorderLevel } = req.body;
+    const { name, code, category, qty, unit, reorderLevel } = req.body;
 
     if (!name) {
       return res.status(400).json({ error: "Name is required" });
@@ -41,6 +46,7 @@ exports.createStock = async (req, res) => {
 
     const stock = new ConsumableStock({
       name,
+      code,
       category,
       qty: qty || 0,
       unit,
@@ -57,8 +63,13 @@ exports.createStock = async (req, res) => {
 };
 
 exports.updateStock = async (req, res) => {
+  if (req.user && req.user.role === "Client") {
+    return res
+      .status(403)
+      .json({ error: "Clients are not allowed to update consumable stock" });
+  }
   try {
-    const { name, category, qty, unit, reorderLevel } = req.body;
+    const { name, code, category, qty, unit, reorderLevel } = req.body;
 
     const stock = await ConsumableStock.findById(req.params.id);
     if (!stock) {
@@ -66,6 +77,7 @@ exports.updateStock = async (req, res) => {
     }
 
     if (name !== undefined) stock.name = name;
+    if (code !== undefined) stock.code = code;
     if (category !== undefined) stock.category = category;
     if (qty !== undefined) stock.qty = qty;
     if (unit !== undefined) stock.unit = unit;
@@ -81,6 +93,11 @@ exports.updateStock = async (req, res) => {
 };
 
 exports.adjustStock = async (req, res) => {
+  if (req.user && req.user.role === "Client") {
+    return res
+      .status(403)
+      .json({ error: "Clients are not allowed to adjust consumable stock" });
+  }
   try {
     const { adjustment } = req.body;
 
@@ -109,6 +126,11 @@ exports.adjustStock = async (req, res) => {
 };
 
 exports.deleteStock = async (req, res) => {
+  if (req.user && req.user.role === "Client") {
+    return res
+      .status(403)
+      .json({ error: "Clients are not allowed to delete consumable stock" });
+  }
   try {
     const stock = await ConsumableStock.findByIdAndDelete(req.params.id);
 

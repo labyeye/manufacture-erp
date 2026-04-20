@@ -199,6 +199,66 @@ const adjustStock = async (items, direction, location) => {
       } catch (itemErr) {
         console.error("Failed to update stock for item:", item.itemName || item.productCode, itemErr);
       }
+    } else if (item.materialType === "Consumable") {
+      const ConsumableStock = require("../models/ConsumableStock");
+      try {
+        const itemCode = (item.productCode || "").trim() || null;
+        const itemName = item.itemName || "Unknown Consumable";
+        const itemCategory = item.category || "General";
+
+        const query = itemCode
+          ? { code: itemCode }
+          : { name: { $regex: new RegExp(`^${itemName.trim()}$`, "i") } };
+
+        const qtyChange = (Number(item.qty) || 0) * direction;
+
+        await ConsumableStock.findOneAndUpdate(
+          query,
+          {
+            $set: {
+              name: itemName,
+              code: itemCode,
+              category: itemCategory,
+              unit: item.unit || "nos",
+              lastUpdated: new Date(),
+            },
+            $inc: { qty: qtyChange },
+          },
+          { upsert: true, new: true, setDefaultsOnInsert: true },
+        );
+      } catch (err) {
+        console.error(
+          "Failed to update consumable stock for item:",
+          item.itemName,
+          err,
+        );
+      }
+    } else if (
+      item.materialType === "Finished Good" ||
+      item.materialType === "Finished Goods"
+    ) {
+      const FGStock = require("../models/FGStock");
+      try {
+        const itemCode = (item.productCode || "").trim();
+        if (!itemCode) return;
+
+        const qtyChange = (Number(item.qty) || 0) * direction;
+
+        await FGStock.findOneAndUpdate(
+          { itemCode },
+          {
+            $set: {
+              itemName: item.itemName,
+              category: item.category || "Finished Goods",
+              lastUpdated: new Date(),
+            },
+            $inc: { qty: qtyChange },
+          },
+          { upsert: true, new: true, setDefaultsOnInsert: true },
+        );
+      } catch (err) {
+        console.error("Failed to update FG stock for item:", itemCode, err);
+      }
     }
   }
 };

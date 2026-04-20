@@ -55,7 +55,7 @@ async function buildSchedule(jobOrder, machineAssignments) {
 
 async function adjustRMStock(jobOrder, direction = -1) {
   try {
-    const findStock = async (id, cat, type, gsm, sheetSize, sheetW, sheetL) => {
+    const findStock = async (id, cat, type, gsm, sheetSize, sheetW, sheetL, reelWidth) => {
       if (id) {
         const byId = await RawMaterialStock.findById(id);
         if (byId) return byId;
@@ -70,11 +70,11 @@ async function adjustRMStock(jobOrder, direction = -1) {
       };
 
       if (sheetSize) {
-        query.sheetSize = {
-          $regex: new RegExp(sheetSize.replace(/\s+/g, ".*"), "i"),
-        };
+        query.sheetSize = { $regex: new RegExp(sheetSize.replace(/\s+/g, ".*"), "i") };
       } else if (sheetW && sheetL) {
         query.sheetSize = { $regex: new RegExp(`${sheetW}.*${sheetL}`, "i") };
+      } else if (reelWidth) {
+        query.sheetSize = { $regex: new RegExp(`${reelWidth}`, "i") };
       }
 
       return RawMaterialStock.findOne(query);
@@ -88,6 +88,7 @@ async function adjustRMStock(jobOrder, direction = -1) {
       jobOrder.sheetSize,
       jobOrder.sheetW,
       jobOrder.sheetL,
+      jobOrder.reelWidthMm
     );
 
     if (rmStock) {
@@ -120,6 +121,7 @@ async function adjustRMStock(jobOrder, direction = -1) {
         jobOrder.sheetSize2 || jobOrder.sheetSize,
         jobOrder.sheetW2 || jobOrder.sheetW,
         jobOrder.sheetL2 || jobOrder.sheetL,
+        jobOrder.reelWidthMm2 || jobOrder.reelWidthMm
       );
 
       if (rmStock2) {
@@ -150,7 +152,7 @@ async function adjustRMStock(jobOrder, direction = -1) {
 
 async function checkRMStockSufficiency(jobOrder, existingJOId = null) {
   try {
-    const findStock = async (id, cat, type, gsm, sheetSize, sheetW, sheetL) => {
+    const findStock = async (id, cat, type, gsm, sheetSize, sheetW, sheetL, reelWidth) => {
       if (id) {
         const byId = await RawMaterialStock.findById(id);
         if (byId) return byId;
@@ -165,11 +167,11 @@ async function checkRMStockSufficiency(jobOrder, existingJOId = null) {
       };
 
       if (sheetSize) {
-        query.sheetSize = {
-          $regex: new RegExp(sheetSize.replace(/\s+/g, ".*"), "i"),
-        };
+        query.sheetSize = { $regex: new RegExp(sheetSize.replace(/\s+/g, ".*"), "i") };
       } else if (sheetW && sheetL) {
         query.sheetSize = { $regex: new RegExp(`${sheetW}.*${sheetL}`, "i") };
+      } else if (reelWidth) {
+        query.sheetSize = { $regex: new RegExp(`${reelWidth}`, "i") };
       }
 
       return RawMaterialStock.findOne(query);
@@ -183,6 +185,7 @@ async function checkRMStockSufficiency(jobOrder, existingJOId = null) {
       jobOrder.sheetSize,
       jobOrder.sheetW,
       jobOrder.sheetL,
+      jobOrder.reelWidthMm
     );
 
     if (!rmStock)
@@ -243,6 +246,7 @@ async function checkRMStockSufficiency(jobOrder, existingJOId = null) {
         jobOrder.sheetSize2 || jobOrder.sheetSize,
         jobOrder.sheetW2 || jobOrder.sheetW,
         jobOrder.sheetL2 || jobOrder.sheetL,
+        jobOrder.reelWidthMm2 || jobOrder.reelWidthMm
       );
       if (!rmStock2)
         return {

@@ -497,9 +497,10 @@ export const rawMaterialStockAPI = {
     return response.data;
   },
 
-  adjustStock: async (id, adjustment, reason) => {
+  adjustStock: async (id, adjustment, weightAdjustment, reason) => {
     const response = await api.patch(`/raw-material-stock/${id}/adjust`, {
       adjustment,
+      weightAdjustment,
       reason,
     });
     return response.data;

@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useRef } from "react";
+import * as XLSX from "xlsx";
 import { C } from "../constants/colors";
 import { Card, SectionTitle, Badge, Field, SubmitBtn, DateRangeFilter, ImportBtn, ExportBtn, TemplateBtn } from "../components/ui/BasicComponents";
+import { consumableStockAPI } from "../api/auth";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 const today = () => new Date().toISOString().slice(0, 10);
@@ -13,8 +15,11 @@ export default function ConsumableStock({
   setConsumableStock,
   categoryMaster = {},
   itemMasterFG = {},
+  session,
   toast,
+  refreshData,
 }) {
+  const isClient = session?.role === "Client";
   const [view, setView] = useState("stock");
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("All");
@@ -51,52 +56,158 @@ export default function ConsumableStock({
   }, [consumableStock, search, typeFilter]);
 
   
-  const handleIssue = () => {
-    if (!selectedStock || !issueQty) { toast("Please select item and enter quantity", "error"); return; }
+  const handleIssue = async () => {
+    if (!selectedStock || !issueQty) {
+      toast("Please select item and enter quantity", "error");
+      return;
+    }
     const qty = +issueQty;
-    if (qty <= 0) { toast("Quantity must be > 0", "error"); return; }
-    if (qty > (selectedStock.qty || 0)) { toast(`Insufficient qty. Available: ${selectedStock.qty}`, "error"); return; }
+    if (qty <= 0) {
+      toast("Quantity must be > 0", "error");
+      return;
+    }
+    if (qty > (selectedStock.qty || 0)) {
+      toast(`Insufficient qty. Available: ${selectedStock.qty}`, "error");
+      return;
+    }
 
-    setConsumableStock((prev) =>
-      prev.map((s) => s.id === selectedStock.id ? { ...s, qty: (s.qty || 0) - qty } : s),
-    );
-    setIssueLog((prev) => [
-      { id: uid(), date: today(), itemId: selectedStock.id, itemName: selectedStock.name, qty, category: selectedStock.category || "", issuedBy: "User" },
-      ...prev,
-    ]);
-    toast(`Issued ${qty} units of ${selectedStock.name}`, "success");
-    setSelectedStock(null);
-    setIssueQty("");
+    try {
+      // Persist to database
+      await consumableStockAPI.adjustStock(
+        selectedStock._id || selectedStock.id,
+        -qty,
+      );
+
+      // Update local state
+      setConsumableStock((prev) =>
+        prev.map((s) =>
+          (s._id || s.id) === (selectedStock._id || selectedStock.id)
+            ? { ...s, qty: (s.qty || 0) - qty }
+            : s,
+        ),
+      );
+
+      setIssueLog((prev) => [
+        {
+          _id: uid(),
+          date: today(),
+          itemId: selectedStock._id || selectedStock.id,
+          itemName: selectedStock.name,
+          qty,
+          category: selectedStock.category || "",
+          issuedBy: "User",
+        },
+        ...prev,
+      ]);
+
+      toast(`Issued ${qty} units of ${selectedStock.name}`, "success");
+      setSelectedStock(null);
+      setIssueQty("");
+    } catch (error) {
+      toast("Failed to update stock in database", "error");
+      console.error(error);
+    }
   };
 
   
   const handleExport = () => {
-    const headers = ["Code", "Name", "Category", "Type", "Qty", "Unit", "Reorder Level", "Rate (₹)"];
-    const rows = (consumableStock || []).map((s) => [s.code || "", s.name || "", s.category || "", s.type || "", s.qty || 0, s.unit || "nos", s.reorderLevel || "", s.rate || ""]);
-    const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "consumable_stock.csv"; a.click();
-    toast && toast("Exported", "success");
+    const headers = [
+      "Code",
+      "Name",
+      "Category",
+      "Type",
+      "Qty",
+      "Unit",
+      "Reorder Level",
+      "Rate (₹)",
+    ];
+    const rows = (consumableStock || []).map((s) => [
+      s.code || "",
+      s.name || "",
+      s.category || "",
+      s.type || "",
+      s.qty || 0,
+      s.unit || "nos",
+      s.reorderLevel || "",
+      s.rate || "",
+    ]);
+
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Consumables");
+    XLSX.writeFile(workbook, "consumable_stock.xlsx");
+    toast && toast("Exported as Excel successfully", "success");
   };
 
   
   const handleImport = (e) => {
-    const file = e.target.files[0]; if (!file) return;
+    const file = e.target.files[0];
+    if (!file) return;
     const reader = new FileReader();
     reader.onload = (ev) => {
       try {
-        const [header, ...rows] = ev.target.result.split("\n").filter(Boolean);
-        const keys = header.split(",").map((k) => k.trim().toLowerCase());
-        const imported = rows.map((row) => {
-          const vals = row.split(",");
-          const obj = {}; keys.forEach((k, i) => { obj[k] = vals[i]?.trim() || ""; });
-          return { id: uid(), code: obj.code || "", name: obj.name || "", category: obj.category || "", type: obj.type || "Consumable", qty: parseFloat(obj.qty || 0), unit: obj.unit || "nos", reorderLevel: parseFloat(obj["reorder level"] || 0), rate: parseFloat(obj["rate (₹)"] || 0) };
-        }).filter((r) => r.name);
-        setConsumableStock((prev) => [...prev, ...imported]);
-        toast && toast(`Imported ${imported.length} items`, "success");
-      } catch { toast && toast("Import failed", "error"); }
+        const data = new Uint8Array(ev.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+        const imported = [];
+        for (let i = 1; i < json.length; i++) {
+          const row = json[i];
+          if (row && (row[0] || row[1])) {
+            imported.push({
+              id: uid(),
+              code: (row[0] || "").toString(),
+              name: (row[1] || "").toString(),
+              category: (row[2] || "").toString(),
+              type: (row[3] || "Consumable").toString(),
+              qty: parseFloat(row[4] || 0),
+              unit: (row[5] || "nos").toString(),
+              reorderLevel: parseFloat(row[6] || 0),
+              rate: parseFloat(row[7] || 0),
+            });
+          }
+        }
+
+        if (imported.length > 0) {
+          toast(`Processing ${imported.length} items...`, "info");
+          (async () => {
+            let successCount = 0;
+            let updateCount = 0;
+
+            for (const item of imported) {
+              const existing = (consumableStock || []).find(
+                (s) =>
+                  s.name.toLowerCase().trim() === item.name.toLowerCase().trim(),
+              );
+
+              try {
+                if (existing) {
+                  await consumableStockAPI.adjustStock(existing._id, item.qty);
+                  updateCount++;
+                } else {
+                  await consumableStockAPI.create(item);
+                  successCount++;
+                }
+              } catch (err) {
+                console.error(`Failed to process ${item.name}:`, err);
+              }
+            }
+
+            toast(
+              `Import complete: ${successCount} new, ${updateCount} updated`,
+              "success",
+            );
+            if (refreshData) refreshData();
+          })();
+        }
+      } catch (err) {
+        console.error("Import error:", err);
+        toast && toast("Failed to parse Excel file", "error");
+      }
     };
-    reader.readAsText(file);
+    reader.readAsArrayBuffer(file);
     e.target.value = "";
   };
 
@@ -154,12 +265,18 @@ export default function ConsumableStock({
               />
             </div>
             <TemplateBtn onClick={() => {
-              const csv = "Code,Name,Category,Type,Qty,Unit,Reorder Level,Rate (₹)\n,,Consumable,Consumable,0,nos,,";
-              const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = "consumable_template.csv"; a.click();
+              const headers = ["Code", "Name", "Category", "Type", "Qty", "Unit", "Reorder Level", "Rate (₹)"];
+              const example = ["CS001", "Example Item", "General", "Consumable", "0", "nos", "10", "100"];
+              const worksheet = XLSX.utils.aoa_to_sheet([headers, example]);
+              const workbook = XLSX.utils.book_new();
+              XLSX.utils.book_append_sheet(workbook, worksheet, "Template");
+              XLSX.writeFile(workbook, "consumable_template.xlsx");
             }} />
-            <ImportBtn onClick={() => fileInputRef.current?.click()} />
+            {!isClient && (
+              <ImportBtn onClick={() => fileInputRef.current?.click()} />
+            )}
             <ExportBtn onClick={handleExport} />
-            <input ref={fileInputRef} type="file" accept=".csv" style={{ display: "none" }} onChange={handleImport} />
+            <input ref={fileInputRef} type="file" accept=".xlsx" style={{ display: "none" }} onChange={handleImport} />
 
             {}
             <div style={{ display: "flex", gap: 0, borderRadius: 6, overflow: "hidden", border: `1px solid ${C.border}`, marginLeft: 4 }}>
@@ -238,14 +355,69 @@ export default function ConsumableStock({
                               {statusLabel}
                             </span>
                           </td>
-                          <td style={{ padding: "10px 14px" }}>
+                          <td style={{ padding: "12px 14px" }}>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          {!isClient && (
+                            <>
+                              <button
+                                onClick={() => {
+                                  setSelectedStock(s);
+                                  setView("form");
+                                  setEditId(s._id || s.id);
+                                  setEditData(s);
+                                }}
+                                style={{
+                                  padding: "5px 10px",
+                                  borderRadius: 4,
+                                  border: "none",
+                                  background: C.blue + "22",
+                                  color: C.blue,
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  cursor: "pointer",
+                                }}
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                onClick={() => handleDelete(s._id || s.id)}
+                                style={{
+                                  background: "#450a0a",
+                                  color: "#ef4444",
+                                  border: "1px solid #7f1d1d",
+                                  borderRadius: 6,
+                                  padding: "5px 14px",
+                                  fontSize: 12,
+                                  fontWeight: 700,
+                                  cursor: "pointer",
+                                }}
+                              >
+                                🗑️ Delete
+                              </button>
+                            </>
+                          )}
+                          {!isClient && (
                             <button
-                              onClick={() => { setSelectedStock(s); setView("issue"); }}
-                              style={{ padding: "4px 10px", borderRadius: 4, border: `1px solid ${C.blue || "#3b82f6"}44`, background: (C.blue || "#3b82f6") + "11", color: C.blue || "#3b82f6", fontSize: 11, fontWeight: 700, cursor: "pointer" }}
+                              onClick={() => {
+                                setSelectedStock(s);
+                                setView("issue");
+                              }}
+                              style={{
+                                padding: "4px 10px",
+                                borderRadius: 4,
+                                border: `1px solid ${C.blue || "#3b82f6"}44`,
+                                background: (C.blue || "#3b82f6") + "11",
+                                color: C.blue || "#3b82f6",
+                                fontSize: 11,
+                                fontWeight: 700,
+                                cursor: "pointer",
+                              }}
                             >
                               Issue
                             </button>
-                          </td>
+                          )}
+                        </div>
+                      </td>
                         </tr>
                       );
                     })}

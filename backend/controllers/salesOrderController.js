@@ -112,6 +112,11 @@ exports.create = async (req, res) => {
 };
 
 exports.update = async (req, res) => {
+  if (req.user && req.user.role === "Client") {
+    return res
+      .status(403)
+      .json({ error: "Clients are not allowed to update sales orders" });
+  }
   try {
     const {
       orderDate,
@@ -154,6 +159,11 @@ exports.update = async (req, res) => {
 };
 
 exports.delete = async (req, res) => {
+  if (req.user && req.user.role === "Client") {
+    return res
+      .status(403)
+      .json({ error: "Clients are not allowed to delete sales orders" });
+  }
   try {
     const { id } = req.params;
 
@@ -178,6 +188,11 @@ exports.delete = async (req, res) => {
 };
 
 exports.updateStatus = async (req, res) => {
+  if (req.user && req.user.role === "Client") {
+    return res
+      .status(403)
+      .json({ error: "Clients are not allowed to update order status" });
+  }
   try {
     const { id } = req.params;
     const { status } = req.body;

@@ -38,7 +38,9 @@ export default function SalesOrders(props) {
     itemMasterFG = [],
     refreshData,
     companyMaster = [],
+    session,
   } = props;
+  const isClient = session?.role === "Client";
   const [salesOrders, setSalesOrders] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [users, setUsers] = useState([]);
@@ -1624,39 +1626,43 @@ export default function SalesOrders(props) {
                       >
                         {r.status || "Open"}
                       </div>
-                      <button
-                        onClick={() => handleEdit(r)}
-                        style={{
-                          background: "#1e293b",
-                          color: C.green || "#4ade80",
-                          border: "1px solid #334155",
-                          borderRadius: 6,
-                          padding: "4px 14px",
-                          fontSize: 12,
-                          fontWeight: 700,
-                          cursor: "pointer",
-                        }}
-                      >
-                        ✏️ Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(r._id)}
-                        style={{
-                          background: "#450a0a",
-                          color: "#ef4444",
-                          border: "1px solid #7f1d1d",
-                          borderRadius: 6,
-                          padding: "4px 14px",
-                          fontSize: 12,
-                          fontWeight: 700,
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 6,
-                        }}
-                      >
-                        🗑️ Delete
-                      </button>
+                      {!isClient && (
+                        <>
+                          <button
+                            onClick={() => handleEdit(r)}
+                            style={{
+                              background: "#1e293b",
+                              color: C.green || "#4ade80",
+                              border: "1px solid #334155",
+                              borderRadius: 6,
+                              padding: "4px 14px",
+                              fontSize: 12,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                            }}
+                          >
+                            ✏️ Edit
+                          </button>
+                          <button
+                            onClick={() => handleDelete(r._id)}
+                            style={{
+                              background: "#450a0a",
+                              color: "#ef4444",
+                              border: "1px solid #7f1d1d",
+                              borderRadius: 6,
+                              padding: "4px 14px",
+                              fontSize: 12,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 6,
+                            }}
+                          >
+                            🗑️ Delete
+                          </button>
+                        </>
+                      )}
                       <button
                         onClick={() => generateSOPDF(r)}
                         style={{

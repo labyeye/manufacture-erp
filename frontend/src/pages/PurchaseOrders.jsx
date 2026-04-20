@@ -971,6 +971,7 @@ export default function PurchaseOrders({
                   >
                     <option value="Raw Material">Raw Material</option>
                     <option value="Consumable">Consumable</option>
+                    <option value="Finished Goods">Finished Goods</option>
                   </select>
                 </Field>
                 {(it.materialType === "Raw Material" || !it.materialType) && (
@@ -1059,6 +1060,28 @@ export default function PurchaseOrders({
                         style={EI(idx, "weight")}
                       />
                       {EIMsg(idx, "weight")}
+                    </Field>
+                  </>
+                )}
+                {it.materialType === "Finished Goods" && (
+                  <>
+                    <Field label="Category">
+                      <input
+                        placeholder="e.g. Corrugated Box"
+                        value={it.category}
+                        onChange={(e) =>
+                          setItem(idx, "category", e.target.value)
+                        }
+                      />
+                    </Field>
+                    <Field label="Qty *">
+                      <input
+                        type="number"
+                        placeholder="0"
+                        value={it.qty}
+                        onChange={(e) => setItem(idx, "qty", e.target.value)}
+                        style={EI(idx, "qty")}
+                      />
                     </Field>
                   </>
                 )}

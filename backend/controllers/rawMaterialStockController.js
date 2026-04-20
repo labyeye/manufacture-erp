@@ -98,6 +98,11 @@ exports.createStock = async (req, res) => {
 };
 
 exports.updateStock = async (req, res) => {
+  if (req.user && req.user.role === "Client") {
+    return res
+      .status(403)
+      .json({ error: "Clients are not allowed to update RM stock" });
+  }
   try {
     const {
       name,
@@ -166,11 +171,18 @@ exports.updateStock = async (req, res) => {
 };
 
 exports.adjustStock = async (req, res) => {
+  if (req.user && req.user.role === "Client") {
+    return res
+      .status(403)
+      .json({ error: "Clients are not allowed to adjust RM stock" });
+  }
   try {
-    const { adjustment, reason } = req.body;
+    const { adjustment, weightAdjustment, reason } = req.body;
 
-    if (adjustment === undefined) {
-      return res.status(400).json({ error: "Adjustment amount is required" });
+    if (adjustment === undefined && weightAdjustment === undefined) {
+      return res
+        .status(400)
+        .json({ error: "Adjustment or weight adjustment is required" });
     }
 
     const stock = await RawMaterialStock.findById(req.params.id);
@@ -178,9 +190,11 @@ exports.adjustStock = async (req, res) => {
       return res.status(404).json({ error: "Stock item not found" });
     }
 
-    stock.qty = (stock.qty || 0) + adjustment;
+    if (adjustment !== undefined) stock.qty = (stock.qty || 0) + adjustment;
+    if (weightAdjustment !== undefined)
+      stock.weight = (stock.weight || 0) + weightAdjustment;
 
-    if (stock.qty < 0) {
+    if (stock.qty < 0 || stock.weight < 0) {
       return res.status(400).json({ error: "Insufficient stock" });
     }
 
@@ -197,6 +211,11 @@ exports.adjustStock = async (req, res) => {
 };
 
 exports.deleteStock = async (req, res) => {
+  if (req.user && req.user.role === "Client") {
+    return res
+      .status(403)
+      .json({ error: "Clients are not allowed to delete RM stock" });
+  }
   try {
     const stock = await RawMaterialStock.findByIdAndDelete(req.params.id);
 

@@ -1,9 +1,14 @@
 import React, { useState, useRef, useMemo } from "react";
 import * as XLSX from "xlsx";
 import { fgStockAPI } from "../api/auth";
-import { ImportBtn, ExportBtn, TemplateBtn } from "../components/ui/BasicComponents";
+import {
+  ImportBtn,
+  ExportBtn,
+  TemplateBtn,
+} from "../components/ui/BasicComponents";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
+const today = () => new Date().toISOString().slice(0, 10);
 
 const inputStyle = {
   padding: "8px 12px",
@@ -16,7 +21,14 @@ const inputStyle = {
   outline: "none",
 };
 
-export default function FGStock({ fgStock = [], setFgStock, toast }) {
+export default function FGStock({
+  fgStock = [],
+  setFgStock,
+  session,
+  toast,
+  refreshData,
+}) {
+  const isClient = session?.role === "Client";
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState("All");
   const [editingItem, setEditingItem] = useState(null);
@@ -64,11 +76,12 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
           type="number"
           value={val}
           onChange={(e) => setVal(e.target.value)}
+          readOnly={isClient}
           style={{
             width: 65,
             padding: "5px 8px",
             background: "#0c0c0e",
-            border: `1px solid ${hasChanged ? "#FF9800" : "#2a2a2e"}`,
+            border: `1px solid ${hasChanged && !isClient ? "#FF9800" : "#2a2a2e"}`,
             borderRadius: 4,
             color: "#fff",
             fontSize: 12,
@@ -77,7 +90,7 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
           }}
           placeholder="—"
         />
-        {hasChanged && (
+        {!isClient && hasChanged && (
           <button
             onClick={async () => {
               setSaving(true);
@@ -121,11 +134,12 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
           step="0.01"
           value={val}
           onChange={(e) => setVal(e.target.value)}
+          readOnly={isClient}
           style={{
             width: 75,
             padding: "5px 8px",
             background: "#0c0c0e",
-            border: `1px solid ${hasChanged ? "#2196F3" : "#2a2a2e"}`,
+            border: `1px solid ${hasChanged && !isClient ? "#2196F3" : "#2a2a2e"}`,
             borderRadius: 4,
             color: "#2196F3",
             fontSize: 12,
@@ -135,7 +149,7 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
           }}
           placeholder="0.00"
         />
-        {hasChanged && (
+        {!isClient && hasChanged && (
           <button
             onClick={async () => {
               setSaving(true);
@@ -178,20 +192,21 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
           type="number"
           value={val}
           onChange={(e) => setVal(e.target.value)}
+          readOnly={isClient}
           style={{
             width: 80,
             padding: "5px 8px",
             background: "#0c0c0e",
-            border: `1px solid ${hasChanged ? "#4CAF50" : "#2a2a2e"}`,
+            border: `1px solid ${hasChanged && !isClient ? "#4CAF50" : "#2a2a2e"}`,
             borderRadius: 4,
-            color: hasChanged ? "#4CAF50" : "#e0e0e0",
+            color: hasChanged && !isClient ? "#4CAF50" : "#e0e0e0",
             fontSize: 12,
             fontWeight: 700,
             outline: "none",
             textAlign: "right",
           }}
         />
-        {hasChanged && (
+        {!isClient && hasChanged && (
           <button
             onClick={async () => {
               setSaving(true);
@@ -261,39 +276,57 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
       "Code",
       "Item Name",
       "Category",
-      "Company Category",
+      "Company Cat",
       "Qty",
-      "Reorder Level",
-      "Price (Rs)",
+      "Reorder",
+      "Price",
+      "Value",
     ];
     const rows = fgStock.map((s) => [
-      s.code || "",
-      s.itemName,
+      s.itemCode || s.code || "",
+      s.itemName || "",
       s.category || "",
       s.companyCat || "",
       s.qty || 0,
       s.reorder || 0,
       s.price || 0,
+      (s.qty || 0) * (s.price || 0),
     ]);
-    const csv = [header, ...rows]
-      .map((r) => r.map((v) => `"${v ?? ""}"`).join(","))
-      .join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "fg_stock.csv";
-    a.click();
-    toast("Exported!", "success");
+
+    const worksheet = XLSX.utils.aoa_to_sheet([header, ...rows]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "FG Stock");
+    XLSX.writeFile(workbook, `fg_stock_${today().slice(0, 10)}.xlsx`);
+
+    toast("Exported as Excel successfully", "success");
   };
 
   const handleTemplate = () => {
-    const csv =
-      '"Code","Item Name","Category","Company Category","Qty","Reorder Level","Price (Rs)"\n"","Example Product","HP","HP",100,50,25';
-    const blob = new Blob([csv], { type: "text/csv" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "fg_stock_template.csv";
-    a.click();
+    const header = [
+      "Code",
+      "Item Name",
+      "Category",
+      "Company Cat",
+      "Qty",
+      "Reorder",
+      "Price",
+      "Value",
+    ];
+    const example = [
+      "FG001",
+      "Example Finished Good",
+      "Category Name",
+      "Company Name",
+      "1000",
+      "100",
+      "2.50",
+      "2500",
+    ];
+
+    const worksheet = XLSX.utils.aoa_to_sheet([header, example]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Template");
+    XLSX.writeFile(workbook, "fg_stock_template.xlsx");
   };
 
   const handleImport = (e) => {
@@ -301,7 +334,7 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
       try {
         const data = new Uint8Array(ev.target.result);
         const workbook = XLSX.read(data, { type: "array" });
@@ -309,27 +342,53 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
         const worksheet = workbook.Sheets[firstSheetName];
         const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-        const imported = [];
+        const importedItems = [];
 
         for (let i = 1; i < json.length; i++) {
           const row = json[i];
           if (row && (row[0] || row[1])) {
-            imported.push({
-              _id: uid(),
-              code: row[0] || `FG${String(i).padStart(3, "0")}`,
-              itemName: row[1] || "Unnamed Item",
-              category: row[2] || "",
-              companyCat: row[3] || "",
-              qty: parseFloat(row[4]) || 0,
-              reorder: parseFloat(row[5]) || 0,
-              price: parseFloat(row[6]) || 0,
+            importedItems.push({
+              code: (row[0] || "").toString(),
+              itemName: (row[1] || "").toString(),
+              category: (row[2] || "").toString(),
+              companyCat: (row[3] || "").toString(),
+              qty: parseFloat(row[4] || 0),
+              reorder: parseFloat(row[5] || 0),
+              price: parseFloat(row[6] || 0),
             });
           }
         }
 
-        if (imported.length > 0) {
-          setFgStock((prev) => [...prev, ...imported]);
-          toast(`Successfully imported ${imported.length} items`, "success");
+        if (importedItems.length > 0) {
+          toast(`Processing ${importedItems.length} items...`, "info");
+          let successCount = 0;
+          let updateCount = 0;
+
+          for (const item of importedItems) {
+            const existing = (fgStock || []).find(
+              (s) =>
+                s.itemName.toLowerCase().trim() ===
+                item.itemName.toLowerCase().trim(),
+            );
+
+            try {
+              if (existing) {
+                await fgStockAPI.adjustStock(existing._id, item.qty);
+                updateCount++;
+              } else {
+                await fgStockAPI.create(item);
+                successCount++;
+              }
+            } catch (err) {
+              console.error(`Failed to process ${item.itemName}:`, err);
+            }
+          }
+
+          toast(
+            `Import complete: ${successCount} new, ${updateCount} updated`,
+            "success",
+          );
+          if (refreshData) refreshData();
         } else {
           toast("No valid data found in file", "error");
         }
@@ -436,7 +495,9 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
           onChange={(e) => setSearch(e.target.value)}
         />
         <TemplateBtn onClick={handleTemplate} />
-        <ImportBtn onClick={() => fileInputRef.current?.click()} />
+        {!isClient && (
+          <ImportBtn onClick={() => fileInputRef.current?.click()} />
+        )}
         <ExportBtn onClick={handleExport} />
         <input
           ref={fileInputRef}
@@ -499,7 +560,7 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
                   "REORDER",
                   "PRICE (₹)",
                   "VALUE (₹)",
-                  "ACTION",
+                  ...(!isClient ? ["ACTION"] : []),
                 ].map((h) => (
                   <th
                     key={h}
@@ -557,7 +618,8 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
                           fontSize: 11,
                         }}
                       >
-                        {s.itemCode || (s.code && !s.code.startsWith("JO-") ? s.code : "-")}
+                        {s.itemCode ||
+                          (s.code && !s.code.startsWith("JO-") ? s.code : "-")}
                       </td>
                       <td
                         style={{
@@ -646,57 +708,59 @@ export default function FGStock({ fgStock = [], setFgStock, toast }) {
                           maximumFractionDigits: 0,
                         })}
                       </td>
-                      <td style={{ padding: "10px 14px" }}>
-                        <div style={{ display: "flex", gap: 6 }}>
-                          <button
-                            onClick={() => setEditingItem(s)}
-                            style={{
-                              padding: "4px 9px",
-                              background: "#2196F322",
-                              color: "#2196F3",
-                              border: "none",
-                              borderRadius: 4,
-                              fontSize: 11,
-                              cursor: "pointer",
-                              fontWeight: 700,
-                            }}
-                          >
-                            ✏️
-                          </button>
-                          <button
-                            onClick={async () => {
-                              if (confirm("Delete this item from stock?")) {
-                                try {
-                                  if (s._id) {
-                                    await fgStockAPI.delete(s._id);
+                      {!isClient && (
+                        <td style={{ padding: "10px 14px" }}>
+                          <div style={{ display: "flex", gap: 6 }}>
+                            <button
+                              onClick={() => setEditingItem(s)}
+                              style={{
+                                padding: "4px 9px",
+                                background: "#2196F322",
+                                color: "#2196F3",
+                                border: "none",
+                                borderRadius: 4,
+                                fontSize: 11,
+                                cursor: "pointer",
+                                fontWeight: 700,
+                              }}
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              onClick={async () => {
+                                if (confirm("Delete this item from stock?")) {
+                                  try {
+                                    if (s._id) {
+                                      await fgStockAPI.delete(s._id);
+                                    }
+                                    setFgStock((prev) =>
+                                      prev.filter((item) => item._id !== s._id),
+                                    );
+                                    toast("Deleted successfully", "success");
+                                  } catch (err) {
+                                    toast("Failed to delete", "error");
                                   }
-                                  setFgStock((prev) =>
-                                    prev.filter((item) => item._id !== s._id),
-                                  );
-                                  toast("Deleted successfully", "success");
-                                } catch (err) {
-                                  toast("Failed to delete", "error");
                                 }
-                              }
-                            }}
-                            style={{
-                              background: "#450a0a",
-                              color: "#ef4444",
-                              border: "1px solid #7f1d1d",
-                              borderRadius: 6,
-                              padding: "4px 14px",
-                              fontSize: 12,
-                              fontWeight: 700,
-                              cursor: "pointer",
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 6,
-                            }}
-                          >
-                            🗑️ Delete
-                          </button>
-                        </div>
-                      </td>
+                              }}
+                              style={{
+                                background: "#450a0a",
+                                color: "#ef4444",
+                                border: "1px solid #7f1d1d",
+                                borderRadius: 6,
+                                padding: "4px 14px",
+                                fontSize: 12,
+                                fontWeight: 700,
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                              }}
+                            >
+                              🗑️ Delete
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   );
                 })

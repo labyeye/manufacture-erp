@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import * as XLSX from "xlsx";
 import { C } from "../constants/colors";
 import {
   Card,
@@ -391,19 +392,20 @@ export default function MaterialInward({
       it.taxAmount = tax.toFixed(2);
       it.totalWithTax = (amt + tax).toFixed(2);
 
-      if (it.materialType === "Consumable") {
-        const uom = it.uom || "nos";
+      if (it.materialType === "Consumable" && !it.productCode) {
+        const uom = it.uom || "";
+        const uomPart = uom ? ` ${uom}` : "";
         if (it.category === "Corrugated Box") {
           const dims = [it.widthMm, it.lengthMm, it.height].filter(Boolean);
           const sizePart = it.size || (dims.length > 0 ? dims.join("x") : "");
-          it.itemName = `Corrugated Box ${sizePart}${uom}`;
+          it.itemName = `Corrugated Box ${sizePart}${uomPart}`.trim();
         } else if (it.category === "LDPE Polybag") {
           const dims = [it.widthMm, it.height].filter(Boolean);
           const sizePart = it.size || (dims.length > 0 ? dims.join("x") : "");
-          it.itemName = `LDPE Polybag ${sizePart}${uom}`;
+          it.itemName = `LDPE Polybag ${sizePart}${uomPart}`.trim();
         } else if (it.category === "Tape" || it.category === "Glue") {
           const sizePart = it.size ? ` ${it.size}` : "";
-          it.itemName = `${it.category}${sizePart}${uom}`;
+          it.itemName = `${it.category}${sizePart}${uomPart}`.trim();
         }
       }
 
@@ -604,7 +606,7 @@ export default function MaterialInward({
     return list;
   }, [inward, search, drDateFrom, drDateTo]);
 
-  const handleExportCSV = () => {
+  const handleExportExcel = () => {
     const headers = [
       "GRN No",
       "Date",
@@ -652,19 +654,13 @@ export default function MaterialInward({
       });
     });
 
-    const csvContent =
-      "data:text/csv;charset=utf-8," +
-      [headers, ...rows].map((e) => e.join(",")).join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute(
-      "download",
-      `GRN_Records_${new Date().toISOString().slice(0, 10)}.csv`,
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "GRN Records");
+    XLSX.writeFile(
+      workbook,
+      `GRN_Records_${new Date().toISOString().slice(0, 10)}.xlsx`,
     );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   const generateGRNPDF = (r) => {
@@ -1087,6 +1083,7 @@ export default function MaterialInward({
                   >
                     <option value="Raw Material">Raw Material</option>
                     <option value="Consumable">Consumable</option>
+                    <option value="Finished Goods">Finished Goods</option>
                   </select>
                 </Field>
                 {(it.materialType === "Raw Material" || !it.materialType) && (
@@ -1201,6 +1198,29 @@ export default function MaterialInward({
                           color: it.amount ? C.green : C.muted,
                           fontFamily: "'JetBrains Mono', monospace",
                         }}
+                      />
+                    </Field>
+                    <div style={{ gridColumn: "span 3" }} />
+                  </>
+                )}
+                {it.materialType === "Finished Goods" && (
+                  <>
+                    <Field label="Category">
+                      <input
+                        placeholder="e.g. Corrugated Box"
+                        value={it.category}
+                        onChange={(e) =>
+                          setItem(idx, "category", e.target.value)
+                        }
+                      />
+                    </Field>
+                    <Field label="Qty *">
+                      <input
+                        type="number"
+                        placeholder="0"
+                        value={it.qty}
+                        onChange={(e) => setItem(idx, "qty", e.target.value)}
+                        style={EI(idx, "qty")}
                       />
                     </Field>
                     <div style={{ gridColumn: "span 3" }} />
@@ -1665,7 +1685,7 @@ export default function MaterialInward({
             </div>
             <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
               <button
-                onClick={handleExportCSV}
+                onClick={handleExportExcel}
                 style={{
                   background: "#141416",
                   color: C.green,
@@ -1680,7 +1700,7 @@ export default function MaterialInward({
                   gap: 8,
                 }}
               >
-                📥 Export CSV
+                📥 Export Excel
               </button>
               <span style={{ fontSize: 12, color: C.muted }}>
                 {filteredInwards.length} records found

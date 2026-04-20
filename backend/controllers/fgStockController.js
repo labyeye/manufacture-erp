@@ -6,7 +6,13 @@ exports.getAllStock = async (req, res) => {
 
     const filter = {};
     if (itemName) filter.itemName = { $regex: itemName, $options: "i" };
-    if (companyName) filter.companyName = { $regex: companyName, $options: "i" };
+    if (companyName)
+      filter.companyName = { $regex: companyName, $options: "i" };
+
+    // Multi-tenant filtering for Client users
+    if (req.user && req.user.role === "Client" && req.user.clientTag) {
+      filter.companyCat = req.user.clientTag;
+    }
 
     const stock = await FGStock.find(filter).sort({ lastUpdated: -1 });
 
@@ -33,12 +39,19 @@ exports.getStockById = async (req, res) => {
 };
 
 exports.createStock = async (req, res) => {
+  if (req.user && req.user.role === "Client") {
+    return res
+      .status(403)
+      .json({ error: "Clients are not allowed to create stock" });
+  }
   try {
     const {
       itemName,
+      itemCode,
       joNo,
       soRef,
       companyName,
+      companyCat,
       qty,
       unit,
       price,
@@ -61,9 +74,11 @@ exports.createStock = async (req, res) => {
 
     const stock = new FGStock({
       itemName,
+      itemCode,
       joNo,
       soRef,
       companyName,
+      companyCat,
       qty: qty || 0,
       unit,
       price,
@@ -81,12 +96,19 @@ exports.createStock = async (req, res) => {
 };
 
 exports.updateStock = async (req, res) => {
+  if (req.user && req.user.role === "Client") {
+    return res
+      .status(403)
+      .json({ error: "Clients are not allowed to update stock" });
+  }
   try {
     const {
       itemName,
+      itemCode,
       joNo,
       soRef,
       companyName,
+      companyCat,
       qty,
       unit,
       price,
@@ -113,9 +135,11 @@ exports.updateStock = async (req, res) => {
       }
       stock.itemName = itemName;
     }
+    if (itemCode !== undefined) stock.itemCode = itemCode;
     if (joNo !== undefined) stock.joNo = joNo;
     if (soRef !== undefined) stock.soRef = soRef;
     if (companyName !== undefined) stock.companyName = companyName;
+    if (companyCat !== undefined) stock.companyCat = companyCat;
     if (qty !== undefined) stock.qty = qty;
     if (unit !== undefined) stock.unit = unit;
     if (price !== undefined) stock.price = price;
@@ -132,6 +156,11 @@ exports.updateStock = async (req, res) => {
 };
 
 exports.adjustStock = async (req, res) => {
+  if (req.user && req.user.role === "Client") {
+    return res
+      .status(403)
+      .json({ error: "Clients are not allowed to adjust stock" });
+  }
   try {
     const { adjustment } = req.body;
 
@@ -160,6 +189,11 @@ exports.adjustStock = async (req, res) => {
 };
 
 exports.deleteStock = async (req, res) => {
+  if (req.user && req.user.role === "Client") {
+    return res
+      .status(403)
+      .json({ error: "Clients are not allowed to delete stock" });
+  }
   try {
     const stock = await FGStock.findByIdAndDelete(req.params.id);
 

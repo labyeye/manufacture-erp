@@ -15,7 +15,7 @@ const ALL_REPORT_TABS = [
   { id: "operator", label: "Operator", icon: "👤", roles: ["Admin", "Manager", "Production"] },
   { id: "machine", label: "Machine", icon: "🏭", roles: ["Admin", "Manager", "Production"] },
   { id: "po_recon", label: "PO Recon", icon: "🛒", roles: ["Admin", "Manager", "Store"] },
-  { id: "so_recon", label: "SO Recon", icon: "📋", roles: ["Admin", "Manager", "Sales"] },
+  { id: "so_recon", label: "SO Recon", icon: "📋", roles: ["Admin", "Manager", "Sales", "Client"] },
   { id: "so_ageing", label: "SO Ageing", icon: "⏳", roles: ["Admin", "Manager", "Sales", "Client"] },
   { id: "prod_target", label: "Prod vs Target", icon: "🎯", roles: ["Admin", "Manager", "Production"] },
   { id: "yield", label: "Yield", icon: "📈", roles: ["Admin", "Manager", "Production"] },
@@ -125,13 +125,20 @@ export function Dashboard({ data, session }) {
     return list.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
   }, [jobOrders]);
 
-  const activeJOs = useMemo(
-    () =>
-      jobOrders.filter(
-        (j) => j.status !== "Completed" && j.status !== "Cancelled",
-      ),
-    [jobOrders],
-  );
+  const activeJOs = useMemo(() => {
+    return jobOrders.filter((j) => {
+      // Exclude Completed/Cancelled
+      if (j.status === "Completed" || j.status === "Cancelled") return false;
+
+      // Also exclude if all processes are done or no processes assigned
+      const jobProcs = j.process || [];
+      if (jobProcs.length === 0) return false;
+
+      const completed = j.completedProcesses || [];
+      const hasPending = jobProcs.some((p) => !completed.includes(p));
+      return hasPending;
+    });
+  }, [jobOrders]);
 
   const activeMachines = useMemo(() => {
     const usedIds = new Set(
@@ -250,8 +257,11 @@ export function Dashboard({ data, session }) {
         type: "CG",
       }));
 
+    if (userRole === "Client") {
+      return fg;
+    }
     return [...raw, ...fg, ...cg];
-  }, [rawStock, fgStock, consumableStock]);
+  }, [rawStock, fgStock, consumableStock, userRole]);
 
   const soRows = useMemo(() => {
     return salesOrders

@@ -1,6 +1,14 @@
 import React, { useState, useMemo, useRef } from "react";
+import * as XLSX from "xlsx";
 import { C } from "../constants/colors";
-import { Card, SectionTitle, Badge, ImportBtn, ExportBtn, TemplateBtn } from "../components/ui/BasicComponents";
+import {
+  Card,
+  SectionTitle,
+  Badge,
+  ImportBtn,
+  ExportBtn,
+  TemplateBtn,
+} from "../components/ui/BasicComponents";
 import { rawMaterialStockAPI } from "../api/auth";
 
 const fmt = (n) => (n ?? 0).toLocaleString("en-IN");
@@ -8,16 +16,19 @@ const fmt = (n) => (n ?? 0).toLocaleString("en-IN");
 export default function RMStock({
   rawStock = [],
   setRawStock,
+  session,
   toast,
   refreshData,
 }) {
+  const isClient = session?.role === "Client";
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
   const [editingItem, setEditingItem] = useState(null);
   const fileInputRef = useRef(null);
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this stock item?")) return;
+    if (!window.confirm("Are you sure you want to delete this stock item?"))
+      return;
     try {
       await rawMaterialStockAPI.delete(id);
       setRawStock((prev) => prev.filter((s) => s._id !== id && s.id !== id));
@@ -103,8 +114,8 @@ export default function RMStock({
       "Code",
       "Material Name",
       "Category",
-      "Qty (Sheets)",
-      "Qty (KG)",
+      "Qty (Sheets/Nos)",
+      "Weight (KG)",
       "Reorder (KG)",
       "Rate (₹/KG)",
       "Value (₹)",
@@ -119,13 +130,14 @@ export default function RMStock({
       s.rate || 0,
       ((s.weight || 0) * (s.rate || 0)).toFixed(2),
     ]);
-    const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `RM_Stock_${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
+
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "RM Stock");
+    XLSX.writeFile(
+      workbook,
+      `RM_Stock_${new Date().toISOString().slice(0, 10)}.xlsx`,
+    );
   };
 
   const handleImport = (e) => {
@@ -134,30 +146,76 @@ export default function RMStock({
     const reader = new FileReader();
     reader.onload = (ev) => {
       try {
-        const lines = ev.target.result.split("\n").filter(Boolean);
-        const [header, ...rows] = lines;
-        const imported = rows
-          .map((row) => {
-            const vals = row.split(",");
-            return {
-              id: Math.random().toString(36).slice(2, 9),
-              code: vals[0] || "",
-              name: vals[1] || "",
-              category: vals[2] || "",
-              qty: parseFloat(vals[3] || 0),
-              weight: parseFloat(vals[4] || 0),
-              reorderLevel: parseFloat(vals[5] || 0),
-              rate: parseFloat(vals[6] || 0),
-            };
-          })
-          .filter((r) => r.name);
-        setRawStock((prev) => [...prev, ...imported]);
-        toast?.("Imported items successfully", "success");
-      } catch {
-        toast?.("Import failed", "error");
+        const data = new Uint8Array(ev.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+        const imported = [];
+        for (let i = 1; i < json.length; i++) {
+          const row = json[i];
+          if (row && (row[0] || row[1])) {
+            imported.push({
+              code: (row[0] || "").toString(),
+              name: (row[1] || "").toString(),
+              category: (row[2] || "").toString(),
+              qty: parseFloat(row[3] || 0),
+              weight: parseFloat(row[4] || 0),
+              reorderLevel: parseFloat(row[5] || 0),
+              rate: parseFloat(row[6] || 0),
+            });
+          }
+        }
+
+        if (imported.length > 0) {
+          toast(`Processing ${imported.length} items...`, "info");
+          (async () => {
+            let successCount = 0;
+            let updateCount = 0;
+
+            for (const item of imported) {
+              const existing = (rawStock || []).find(
+                (s) =>
+                  (item.code && s.code === item.code) ||
+                  s.name.toLowerCase().trim() === item.name.toLowerCase().trim(),
+              );
+
+              try {
+                if (existing) {
+                  // Adjust weight since RM Stock is often weight-based
+                  // But the user said "qty should be increase"
+                  // Let's adjust both qty and weight if they are provided
+                  // Backend adjustStock currently only adjusts qty? Let's check backend
+                  await rawMaterialStockAPI.adjustStock(
+                    existing._id,
+                    item.qty,
+                    item.weight,
+                    "Import Update",
+                  );
+                  updateCount++;
+                } else {
+                  await rawMaterialStockAPI.create(item);
+                  successCount++;
+                }
+              } catch (err) {
+                console.error(`Failed to process ${item.name}:`, err);
+              }
+            }
+
+            toast(
+              `Import complete: ${successCount} new, ${updateCount} updated`,
+              "success",
+            );
+            if (refreshData) refreshData();
+          })();
+        }
+      } catch (err) {
+        console.error("Parse error:", err);
+        toast("Failed to parse Excel file", "error");
       }
     };
-    reader.readAsText(file);
+    reader.readAsArrayBuffer(file);
     e.target.value = "";
   };
 
@@ -328,7 +386,9 @@ export default function RMStock({
                     CATEGORY
                   </label>
                   <input
-                    value={editingItem.category || editingItem.paperCategory || ""}
+                    value={
+                      editingItem.category || editingItem.paperCategory || ""
+                    }
                     onChange={(e) =>
                       setEditingItem({
                         ...editingItem,
@@ -540,7 +600,14 @@ export default function RMStock({
           Raw Material Stock
         </h1>
       </div>
-      <p style={{ color: "#888", fontSize: 13, marginBottom: 24, marginLeft: 36 }}>
+      <p
+        style={{
+          color: "#888",
+          fontSize: 13,
+          marginBottom: 24,
+          marginLeft: 36,
+        }}
+      >
         Live inventory of all raw materials
       </p>
 
@@ -606,21 +673,38 @@ export default function RMStock({
         </div>
         <TemplateBtn
           onClick={() => {
-            const csv = "Code,Name,Category,QtySheets,WeightKg,ReorderKg,Rate\n" +
-                        "RM001,Sample Paper,Paper Reel,1000,500,100,50";
-            const blob = new Blob([csv], { type: "text/csv" });
-            const a = document.createElement("a");
-            a.href = URL.createObjectURL(blob);
-            a.download = "rm_template.csv";
-            a.click();
+            const headers = [
+              "Code",
+              "Material Name",
+              "Category",
+              "QtySheets",
+              "WeightKg",
+              "ReorderKg",
+              "Rate",
+            ];
+            const example = [
+              "RM001",
+              "Sample Paper",
+              "Paper Reel",
+              "1000",
+              "500",
+              "100",
+              "50",
+            ];
+            const worksheet = XLSX.utils.aoa_to_sheet([headers, example]);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Template");
+            XLSX.writeFile(workbook, "rm_template.xlsx");
           }}
         />
-        <ImportBtn onClick={() => fileInputRef.current.click()} />
+        {!isClient && (
+          <ImportBtn onClick={() => fileInputRef.current?.click()} />
+        )}
         <ExportBtn onClick={handleExport} />
         <input
           ref={fileInputRef}
           type="file"
-          accept=".csv"
+          accept=".xlsx"
           style={{ display: "none" }}
           onChange={handleImport}
         />
@@ -658,7 +742,11 @@ export default function RMStock({
         }}
       >
         <table
-          style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}
+          style={{
+            width: "100%",
+            borderCollapse: "collapse",
+            tableLayout: "fixed",
+          }}
         >
           <thead>
             <tr style={{ borderBottom: "1px solid #2a2a2e" }}>
@@ -714,7 +802,9 @@ export default function RMStock({
                     {s.code || "—"}
                   </td>
                   <td style={{ padding: "16px" }}>
-                    <div style={{ fontWeight: 600, fontSize: 13, color: "#eee" }}>
+                    <div
+                      style={{ fontWeight: 600, fontSize: 13, color: "#eee" }}
+                    >
                       {s.name || s.paperType}
                     </div>
                     <div
@@ -788,41 +878,42 @@ export default function RMStock({
                   >
                     {val > 0 ? `₹${fmt(Math.round(val))}` : "—"}
                   </td>
-                  <td style={{ padding: "16px" }}>
+                  <td style={{ padding: "10px 14px" }}>
                     <div style={{ display: "flex", gap: 6 }}>
-                      <button
-                        onClick={() => setEditingItem(s)}
-                        style={{
-                          padding: "6px 10px",
-                          borderRadius: 4,
-                          border: "none",
-                          background: C.blue + "22",
-                          color: C.blue,
-                          fontSize: 11,
-                          fontWeight: 700,
-                          cursor: "pointer",
-                        }}
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        onClick={() => handleDelete(s._id || s.id)}
-                        style={{
-                          background: "#450a0a",
-                          color: "#ef4444",
-                          border: "1px solid #7f1d1d",
-                          borderRadius: 6,
-                          padding: "4px 14px",
-                          fontSize: 12,
-                          fontWeight: 700,
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 6,
-                        }}
-                      >
-                        🗑️ Delete
-                      </button>
+                      {!isClient && (
+                        <>
+                          <button
+                            onClick={() => setEditingItem(s)}
+                            style={{
+                              padding: "4px 9px",
+                              background: "#2196F322",
+                              color: "#2196F3",
+                              border: "none",
+                              borderRadius: 4,
+                              fontSize: 11,
+                              cursor: "pointer",
+                              fontWeight: 700,
+                            }}
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            onClick={() => handleDelete(s._id || s.id)}
+                            style={{
+                              background: "#450a0a",
+                              color: "#ef4444",
+                              border: "1px solid #7f1d1d",
+                              borderRadius: 6,
+                              padding: "4px 14px",
+                              fontSize: 12,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                            }}
+                          >
+                            🗑️ Delete
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -832,16 +923,36 @@ export default function RMStock({
         </table>
 
         {}
-        <div style={{ padding: "12px 16px", borderTop: "1px solid #2a2a2e", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontSize: 11, color: "#666" }}>{filtered.length} items</span>
+        <div
+          style={{
+            padding: "12px 16px",
+            borderTop: "1px solid #2a2a2e",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <span style={{ fontSize: 11, color: "#666" }}>
+            {filtered.length} items
+          </span>
           <div style={{ display: "flex", gap: 16 }}>
             {[
               { c: C.red, l: "Low" },
               { c: C.yellow, l: "Moderate" },
-              { c: C.green, l: "Adequate" }
-            ].map(x => (
-              <div key={x.l} style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                <div style={{ width: 8, height: 8, borderRadius: "50%", background: x.c }} />
+              { c: C.green, l: "Adequate" },
+            ].map((x) => (
+              <div
+                key={x.l}
+                style={{ display: "flex", alignItems: "center", gap: 5 }}
+              >
+                <div
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    background: x.c,
+                  }}
+                />
                 <span style={{ fontSize: 11, color: "#888" }}>{x.l}</span>
               </div>
             ))}
@@ -854,23 +965,61 @@ export default function RMStock({
 
 function StatCard({ label, val, color, prefix = "", suffix = "" }) {
   return (
-    <div style={{
-      background: "#141416", border: `1px solid ${color}44`, borderLeft: `4px solid ${color}`,
-      padding: "16px 20px", borderRadius: 8
-    }}>
-      <div style={{ fontSize: 24, fontWeight: 900, color, fontFamily: "monospace" }}>{prefix}{val}{suffix}</div>
-      <div style={{ fontSize: 11, fontWeight: 600, color: "#666", marginTop: 4, textTransform: "uppercase" }}>{label}</div>
+    <div
+      style={{
+        background: "#141416",
+        border: `1px solid ${color}44`,
+        borderLeft: `4px solid ${color}`,
+        padding: "16px 20px",
+        borderRadius: 8,
+      }}
+    >
+      <div
+        style={{
+          fontSize: 24,
+          fontWeight: 900,
+          color,
+          fontFamily: "monospace",
+        }}
+      >
+        {prefix}
+        {val}
+        {suffix}
+      </div>
+      <div
+        style={{
+          fontSize: 11,
+          fontWeight: 600,
+          color: "#666",
+          marginTop: 4,
+          textTransform: "uppercase",
+        }}
+      >
+        {label}
+      </div>
     </div>
   );
 }
 
 function ActionBtn({ label, icon, color, textColor, border, onClick }) {
   return (
-    <button onClick={onClick} style={{
-      background: color, color: textColor, border: border ? `1px solid ${border}` : "none",
-      padding: "8px 16px", borderRadius: 6, fontWeight: 700, fontSize: 12, cursor: "pointer",
-      display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap"
-    }}>
+    <button
+      onClick={onClick}
+      style={{
+        background: color,
+        color: textColor,
+        border: border ? `1px solid ${border}` : "none",
+        padding: "8px 16px",
+        borderRadius: 6,
+        fontWeight: 700,
+        fontSize: 12,
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+        whiteSpace: "nowrap",
+      }}
+    >
       <span style={{ fontSize: 14 }}>{icon}</span>
       {label}
     </button>

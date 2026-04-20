@@ -322,9 +322,12 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const matchesClient = (itemCode, tag) => {
+  const matchesClient = (stockItem, tag) => {
     if (!tag) return true;
-    const item = itemMasterFG.find((i) => i.code === itemCode);
+    // Direct check on stock item's companyCat
+    if (stockItem.companyCat === tag) return true;
+    // Fallback: check Item Master for the itemCode
+    const item = itemMasterFG.find((i) => i.code === stockItem.itemCode);
     return item?.clientCategory === tag;
   };
 
@@ -383,8 +386,8 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
       };
     }
 
-    // Client filtering based on clientCategory in ItemMaster
-    const filteredFG = fgStock.filter((s) => matchesClient(s.itemCode, tag));
+    // Client filtering based on clientCategory in ItemMaster or companyCat in FGStock
+    const filteredFG = fgStock.filter((s) => matchesClient(s, tag));
     const filteredItemMaster = itemMasterFG.filter(
       (i) => i.clientCategory === tag,
     );
@@ -493,7 +496,7 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
       case "inward":
         return <MaterialInward {...data} toast={showToast} />;
       case "sales":
-        return <SalesOrders {...data} toast={showToast} />;
+        return <SalesOrders {...data} session={session} toast={showToast} />;
       case "jobs":
         return <JobOrders {...data} toast={showToast} />;
       case "production":
@@ -505,11 +508,13 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
       case "dispatch":
         return <Dispatch {...data} toast={showToast} />;
       case "rawstock":
-        return <RMStock {...data} toast={showToast} />;
+        return <RMStock {...data} session={session} toast={showToast} />;
       case "fg":
-        return <FGStock {...data} toast={showToast} />;
+        return <FGStock {...data} session={session} toast={showToast} />;
       case "consumablestock":
-        return <ConsumableStock {...data} toast={showToast} />;
+        return (
+          <ConsumableStock {...data} session={session} toast={showToast} />
+        );
       case "vendormaster":
         return <VendorMaster {...data} toast={showToast} />;
       case "sizemaster":

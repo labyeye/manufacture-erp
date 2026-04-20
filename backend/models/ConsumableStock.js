@@ -6,6 +6,7 @@ const consumableStockSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    code: String,
     category: String,
     qty: {
       type: Number,
