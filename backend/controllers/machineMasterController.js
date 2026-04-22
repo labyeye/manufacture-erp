@@ -90,9 +90,10 @@ exports.updateMachine = async (req, res) => {
       machine.name = name.trim();
     }
 
-    // Bulk update all fields from body
+    // Bulk update all fields from body, excluding internal Mongoose fields
+    const excludeFields = ['_id', 'name', 'records', '__v', 'createdAt', 'updatedAt'];
     Object.keys(req.body).forEach(key => {
-      if (key !== '_id' && key !== 'name' && key !== 'records') {
+      if (!excludeFields.includes(key)) {
         machine[key] = req.body[key];
       }
     });

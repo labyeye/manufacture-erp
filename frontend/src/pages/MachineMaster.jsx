@@ -136,8 +136,11 @@ export default function MachineMaster({ toast }) {
         type: machineType,
         capacity: 0,
         capacityUnit: "pcs/hr",
-        workingHours: 8,
-        shiftsPerDay: 1,
+        standardShiftHours: 8,
+        maxShiftsAllowed: 1,
+        overtimeAllowed: false,
+        practicalRunRate: 0,
+        division: 'Reel'
       });
       toast(`Machine "${machineName}" added to ${machineType}`, "success");
       setMachineName("");
@@ -629,10 +632,10 @@ export default function MachineMaster({ toast }) {
                             fontSize: 11,
                             fontWeight: 700,
                             background:
-                              m.status === "Active"
+                              data.status === "Active"
                                 ? "#4CAF5022"
                                 : "#f4433622",
-                            color: m.status === "Active" ? "#4CAF50" : "#f44336",
+                            color: data.status === "Active" ? "#4CAF50" : "#f44336",
                             cursor: isEditing ? "pointer" : "default",
                           }}
                           onClick={() => {

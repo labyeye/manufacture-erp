@@ -83,7 +83,7 @@ const machineMasterSchema = new mongoose.Schema({
   
   capacityUnit: {
     type: String,
-    enum: ['Sheets', 'Kg', 'Pcs'],
+    enum: ['Sheets', 'Kg', 'Pcs', 'pcs/hr', 'Units'],
     default: 'Pcs'
   },
   
