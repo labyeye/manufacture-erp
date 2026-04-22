@@ -37,11 +37,13 @@ const jobOrderRoutes = require('./routes/jobOrders');
 const dispatchRoutes = require('./routes/dispatch');
 const itemMasterRoutes = require('./routes/itemMaster');
 const machineMasterRoutes = require('./routes/machineMaster');
+const planningRoutes = require('./routes/planning');
 const sizeMasterRoutes = require('./routes/sizeMaster');
 const printingDetailMasterRoutes = require('./routes/printingDetailMaster');
 const rawMaterialStockRoutes = require('./routes/rawMaterialStock');
 const fgStockRoutes = require('./routes/fgStock');
 const consumableStockRoutes = require('./routes/consumableStock');
+const brandMasterRoutes = require('./routes/brandMaster');
 
 
 app.use('/api/auth', authRoutes);
@@ -55,11 +57,13 @@ app.use('/api/job-orders', jobOrderRoutes);
 app.use('/api/dispatch', dispatchRoutes);
 app.use('/api/item-master', itemMasterRoutes);
 app.use('/api/machine-master', machineMasterRoutes);
+app.use('/api/planning', planningRoutes);
 app.use('/api/size-master', sizeMasterRoutes);
 app.use('/api/printing-detail-master', printingDetailMasterRoutes);
 app.use('/api/raw-material-stock', rawMaterialStockRoutes);
 app.use('/api/fg-stock', fgStockRoutes);
 app.use('/api/consumable-stock', consumableStockRoutes);
+app.use('/api/brand-master', brandMasterRoutes);
 
 
 app.get('/api/health', (req, res) => {

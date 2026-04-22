@@ -212,6 +212,7 @@ export const DEFAULT_ROLES = {
       "itemmaster",
       "machinemaster",
       "companymaster",
+      "brandmaster",
       "users",
     ],
   },
@@ -228,7 +229,7 @@ export const DEFAULT_ROLES = {
   Sales: {
     label: "Sales",
     color: "#22c55e",
-    tabs: ["dashboard", "sales", "dispatch", "fg", "clientmaster", "search"],
+    tabs: ["dashboard", "sales", "dispatch", "fg", "clientmaster", "brandmaster", "search"],
   },
   Accounts: {
     label: "Accounts",
@@ -257,6 +258,7 @@ export const TABS = [
   { id: "machinemaster", icon: "🏗️", label: "Machine Master" },
   { id: "companymaster", icon: "🏢", label: "Company Master" },
 
+  { id: "brandmaster", icon: "🏷️", label: "Brand Master" },
   { id: "users", icon: "👥", label: "User Management" },
 ];
 

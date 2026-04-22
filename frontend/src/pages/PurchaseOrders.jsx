@@ -137,16 +137,8 @@ export default function PurchaseOrders({
     const fromMaster =
       rmCat && rmCat.subTypes ? Object.keys(rmCat.subTypes) : [];
 
-    const fromItems = itemMasterItems
-      .filter(
-        (it) =>
-          it.type === "Raw Material" || it.materialType === "Raw Material",
-      )
-      .map((it) => it.category)
-      .filter(Boolean);
-
-    return [...new Set([...fromMaster, ...fromItems])].map((k) => k.trim());
-  }, [categoryMaster, itemMasterItems]);
+    return [...new Set(fromMaster)].map((k) => k.trim());
+  }, [categoryMaster]);
 
   const consumableCategories = useMemo(() => {
     const consCat = Object.values(categoryMaster || {}).find(
@@ -168,23 +160,11 @@ export default function PurchaseOrders({
     rmItems.forEach((item) => {
       const fromMaster =
         (rmCat && rmCat.subTypes ? rmCat.subTypes[item] : []) || [];
-      const fromItems = itemMasterItems
-        .filter(
-          (it) =>
-            (it.type === "Raw Material" ||
-              it.materialType === "Raw Material") &&
-            it.category === item,
-        )
-        .map((it) => it.subCategory)
-        .filter(Boolean);
-
-      result[item] = [...new Set([...fromMaster, ...fromItems])].map((p) =>
-        p.trim(),
-      );
+      result[item] = [...new Set(fromMaster)].map((p) => p.trim());
     });
 
     return result;
-  }, [categoryMaster, rmItems, itemMasterItems]);
+  }, [categoryMaster, rmItems]);
 
   const sortedItemMasterItems = useMemo(() => {
     return [...itemMasterItems].sort((a, b) => {
@@ -1027,6 +1007,22 @@ export default function PurchaseOrders({
                       />
                       {EIMsg(idx, "widthMm")}
                     </Field>
+
+                    {(it.category === "Paper Sheets" ||
+                      it.category === "Paper Sheet") && (
+                      <Field label="Length (mm) *">
+                        <input
+                          type="number"
+                          placeholder="Length"
+                          value={it.lengthMm}
+                          onChange={(e) =>
+                            setItem(idx, "lengthMm", e.target.value)
+                          }
+                          style={EI(idx, "lengthMm")}
+                        />
+                        {EIMsg(idx, "lengthMm")}
+                      </Field>
+                    )}
 
                     <Field label="GSM *">
                       <input

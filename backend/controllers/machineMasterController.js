@@ -54,12 +54,8 @@ exports.createMachine = async (req, res) => {
     }
 
     const machine = new MachineMaster({
-      name: name.trim(),
-      type,
-      capacity: capacity || 0,
-      capacityUnit: capacityUnit || 'pcs/hr',
-      workingHours: workingHours || 8,
-      shiftsPerDay: shiftsPerDay || 1
+      ...req.body,
+      name: name.trim()
     });
 
     await machine.save();
@@ -94,12 +90,13 @@ exports.updateMachine = async (req, res) => {
       machine.name = name.trim();
     }
 
-    if (type) machine.type = type;
-    if (capacity !== undefined) machine.capacity = capacity;
-    if (capacityUnit) machine.capacityUnit = capacityUnit;
-    if (workingHours !== undefined) machine.workingHours = workingHours;
-    if (shiftsPerDay !== undefined) machine.shiftsPerDay = shiftsPerDay;
-    if (status) machine.status = status;
+    // Bulk update all fields from body
+    Object.keys(req.body).forEach(key => {
+      if (key !== '_id' && key !== 'name' && key !== 'records') {
+        machine[key] = req.body[key];
+      }
+    });
+
     if (req.body.records) {
       console.log('Saving records for machine:', machine.name, JSON.stringify(req.body.records));
       machine.set("records", req.body.records || {});

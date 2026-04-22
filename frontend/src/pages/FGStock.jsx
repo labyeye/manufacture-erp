@@ -5,6 +5,7 @@ import {
   ImportBtn,
   ExportBtn,
   TemplateBtn,
+  ImportModal,
 } from "../components/ui/BasicComponents";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
@@ -24,6 +25,7 @@ const inputStyle = {
 export default function FGStock({
   fgStock = [],
   setFgStock,
+  itemMasterFG = [],
   session,
   toast,
   refreshData,
@@ -32,26 +34,56 @@ export default function FGStock({
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState("All");
   const [editingItem, setEditingItem] = useState(null);
+  const [showZeroStock, setShowZeroStock] = useState(false);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [importProgress, setImportProgress] = useState({
+    show: false,
+    current: 0,
+    total: 0,
+    status: "",
+  });
   const fileInputRef = useRef(null);
 
-  const handleUpdateReorder = async (id, newVal) => {
+  const handleUpdateReorder = async (item, newVal) => {
     try {
-      await fgStockAPI.update(id, { reorder: newVal });
-      setFgStock((prev) =>
-        prev.map((s) => (s._id === id ? { ...s, reorder: newVal } : s)),
-      );
+      const id = item._id;
+      if (item.isFromMaster) {
+        await fgStockAPI.create({
+          itemName: item.itemName,
+          itemCode: item.itemCode,
+          category: item.category,
+          companyCat: item.companyCat,
+          reorder: newVal,
+          qty: 0,
+          price: item.price || 0,
+        });
+      } else {
+        await fgStockAPI.update(id, { reorder: newVal });
+      }
+      if (refreshData) await refreshData();
       toast("Reorder level updated", "success");
     } catch (err) {
       toast("Failed to update reorder level", "error");
     }
   };
 
-  const handleUpdatePrice = async (id, newVal) => {
+  const handleUpdatePrice = async (item, newVal) => {
     try {
-      await fgStockAPI.update(id, { price: newVal });
-      setFgStock((prev) =>
-        prev.map((s) => (s._id === id ? { ...s, price: newVal } : s)),
-      );
+      const id = item._id;
+      if (item.isFromMaster) {
+        await fgStockAPI.create({
+          itemName: item.itemName,
+          itemCode: item.itemCode,
+          category: item.category,
+          companyCat: item.companyCat,
+          reorder: item.reorder || 0,
+          qty: 0,
+          price: newVal,
+        });
+      } else {
+        await fgStockAPI.update(id, { price: newVal });
+      }
+      if (refreshData) await refreshData();
       toast("Price updated", "success");
     } catch (err) {
       toast("Failed to update price", "error");
@@ -94,7 +126,7 @@ export default function FGStock({
           <button
             onClick={async () => {
               setSaving(true);
-              await handleUpdateReorder(item._id, +val);
+              await handleUpdateReorder(item, +val);
               setSaving(false);
             }}
             disabled={saving}
@@ -153,7 +185,7 @@ export default function FGStock({
           <button
             onClick={async () => {
               setSaving(true);
-              await handleUpdatePrice(item._id, +val);
+              await handleUpdatePrice(item, +val);
               setSaving(false);
             }}
             disabled={saving}
@@ -211,12 +243,20 @@ export default function FGStock({
             onClick={async () => {
               setSaving(true);
               try {
-                await fgStockAPI.update(item._id, { qty: +val });
-                setFgStock((prev) =>
-                  prev.map((s) =>
-                    s._id === item._id ? { ...s, qty: +val } : s,
-                  ),
-                );
+                if (item.isFromMaster) {
+                  await fgStockAPI.create({
+                    itemName: item.itemName,
+                    itemCode: item.itemCode,
+                    category: item.category,
+                    companyCat: item.companyCat,
+                    qty: +val,
+                    price: item.price || 0,
+                    reorder: item.reorder || 0,
+                  });
+                } else {
+                  await fgStockAPI.update(item._id, { qty: +val });
+                }
+                if (refreshData) await refreshData();
                 toast("Quantity updated", "success");
               } catch (err) {
                 toast("Failed to update qty", "error");
@@ -241,22 +281,48 @@ export default function FGStock({
     );
   };
 
+  const allItems = useMemo(() => {
+    const masterItems = itemMasterFG.filter((i) => i.type === "Finished Goods");
+    const stockMap = new Map();
+    (fgStock || []).forEach((s) => {
+      const code = s.itemCode || s.code;
+      if (code) stockMap.set(code, s);
+    });
+
+    return masterItems.map((m) => {
+      const s = stockMap.get(m.code);
+      return {
+        ...m,
+        _id: s?._id || m._id,
+        isFromMaster: !s,
+        qty: s?.qty || 0,
+        price: s?.price || m.price || 0,
+        reorder: s?.reorder || m.reorderLevel || 0,
+        itemName: m.name,
+        itemCode: m.code,
+        category: m.category || "",
+        companyCat: m.companyCategory || s?.companyCat || "",
+      };
+    });
+  }, [itemMasterFG, fgStock]);
+
   const categories = useMemo(
-    () => [...new Set((fgStock || []).map((s) => s.category).filter(Boolean))],
-    [fgStock],
+    () => [...new Set(allItems.map((s) => s.category).filter(Boolean))],
+    [allItems],
   );
 
   const filtered = useMemo(
     () =>
-      (fgStock || []).filter((s) => {
+      allItems.filter((s) => {
         const matchSearch =
           !search ||
           s.itemName?.toLowerCase().includes(search.toLowerCase()) ||
-          s.code?.toLowerCase().includes(search.toLowerCase());
+          s.itemCode?.toLowerCase().includes(search.toLowerCase());
         const matchCat = filterCat === "All" || s.category === filterCat;
-        return matchSearch && matchCat;
+        const matchZero = showZeroStock || (s.qty || 0) > 0;
+        return matchSearch && matchCat && matchZero;
       }),
-    [fgStock, search, filterCat],
+    [allItems, search, filterCat, showZeroStock],
   );
 
   const totalItems = filtered.length;
@@ -268,7 +334,7 @@ export default function FGStock({
   );
 
   const handleExport = () => {
-    if (!fgStock.length) {
+    if (!filtered.length) {
       toast("No data to export", "error");
       return;
     }
@@ -282,7 +348,7 @@ export default function FGStock({
       "Price",
       "Value",
     ];
-    const rows = fgStock.map((s) => [
+    const rows = filtered.map((s) => [
       s.itemCode || s.code || "",
       s.itemName || "",
       s.category || "",
@@ -360,11 +426,24 @@ export default function FGStock({
         }
 
         if (importedItems.length > 0) {
-          toast(`Processing ${importedItems.length} items...`, "info");
+          setImportProgress({
+            show: true,
+            current: 0,
+            total: importedItems.length,
+            status: "Starting import...",
+          });
+
           let successCount = 0;
           let updateCount = 0;
 
-          for (const item of importedItems) {
+          for (let i = 0; i < importedItems.length; i++) {
+            const item = importedItems[i];
+            setImportProgress((p) => ({
+              ...p,
+              current: i + 1,
+              status: `Processing: ${item.itemName}`,
+            }));
+
             const existing = (fgStock || []).find(
               (s) =>
                 s.itemName.toLowerCase().trim() ===
@@ -388,6 +467,7 @@ export default function FGStock({
             `Import complete: ${successCount} new, ${updateCount} updated`,
             "success",
           );
+          setImportProgress({ show: false, current: 0, total: 0, status: "" });
           if (refreshData) refreshData();
         } else {
           toast("No valid data found in file", "error");
@@ -430,16 +510,47 @@ export default function FGStock({
 
   return (
     <div className="fade">
-      <div style={{ marginBottom: 20 }}>
-        <h2
-          style={{ fontSize: 22, fontWeight: 700, color: "#e0e0e0", margin: 0 }}
-        >
-          🎪 FG Stock
-        </h2>
-        <p style={{ fontSize: 13, color: "#777", margin: "4px 0 0" }}>
-          Finished goods inventory — all items from Item Master
-        </p>
-      </div>
+      <ImportModal
+        show={importProgress.show}
+        current={importProgress.current}
+        total={importProgress.total}
+        status={importProgress.status}
+        title="Importing Finished Goods Stock"
+      />
+      <div style={{ display: "flex", alignItems: "center" }}>
+          <div>
+            <h2
+              style={{
+                fontSize: 22,
+                fontWeight: 700,
+                color: "#e0e0e0",
+                margin: 0,
+              }}
+            >
+              🎪 FG Stock
+            </h2>
+            <p style={{ fontSize: 13, color: "#777", margin: "4px 0 0" }}>
+              Finished goods inventory — all items from Item Master
+            </p>
+          </div>
+          <button
+            onClick={() => setShowZeroStock(!showZeroStock)}
+            style={{
+              marginLeft: "auto",
+              padding: "8px 16px",
+              borderRadius: 8,
+              fontSize: 13,
+              fontWeight: 700,
+              background: showZeroStock ? "#2196F3" : "#1a1a1a",
+              color: "#fff",
+              border: `1px solid ${showZeroStock ? "#2196F3" : "#2a2a2a"}`,
+              cursor: "pointer",
+              transition: "all 0.2s",
+            }}
+          >
+            {showZeroStock ? "Hide Zero Stock" : "Show Zero Stock"}
+          </button>
+        </div>
 
       {}
       <div
@@ -550,6 +661,22 @@ export default function FGStock({
                   background: "#111",
                 }}
               >
+                <th style={{ width: 40, padding: "10px 14px" }}>
+                  <input
+                    type="checkbox"
+                    checked={
+                      filtered.length > 0 &&
+                      selectedIds.length === filtered.length
+                    }
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedIds(filtered.map((s) => s._id || s.id));
+                      } else {
+                        setSelectedIds([]);
+                      }
+                    }}
+                  />
+                </th>
                 {[
                   "CODE",
                   "ITEM NAME",
@@ -609,7 +736,30 @@ export default function FGStock({
                   const isLow =
                     (s.reorder || 0) > 0 && (s.qty || 0) <= (s.reorder || 0);
                   return (
-                    <tr key={i} style={{ borderBottom: "1px solid #1e1e1e" }}>
+                    <tr
+                      key={i}
+                      style={{
+                        borderBottom: "1px solid #1e1e1e",
+                        background: selectedIds.includes(s._id || s.id)
+                          ? "rgba(33, 150, 243, 0.05)"
+                          : "transparent",
+                      }}
+                    >
+                      <td style={{ padding: "10px 14px" }}>
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(s._id || s.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedIds((prev) => [...prev, s._id || s.id]);
+                            } else {
+                              setSelectedIds((prev) =>
+                                prev.filter((id) => id !== (s._id || s.id)),
+                              );
+                            }
+                          }}
+                        />
+                      </td>
                       <td
                         style={{
                           padding: "10px 14px",
@@ -791,12 +941,16 @@ export default function FGStock({
           onClose={() => setEditingItem(null)}
           onSave={async (updatedData) => {
             try {
-              await fgStockAPI.update(editingItem._id, updatedData);
-              setFgStock((prev) =>
-                prev.map((s) =>
-                  s._id === editingItem._id ? { ...s, ...updatedData } : s,
-                ),
-              );
+              if (editingItem.isFromMaster) {
+                await fgStockAPI.create({
+                  ...updatedData,
+                  itemCode: editingItem.itemCode,
+                  itemName: editingItem.itemName,
+                });
+              } else {
+                await fgStockAPI.update(editingItem._id, updatedData);
+              }
+              if (refreshData) await refreshData();
               setEditingItem(null);
               toast("Stock item updated", "success");
             } catch (err) {

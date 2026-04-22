@@ -5,27 +5,74 @@ import {
   Card,
   SectionTitle,
   ExportBtn,
+  DatePicker,
 } from "../components/ui/BasicComponents";
 import { fmt, today, xlsxDownload, daysSince } from "../utils/helpers";
 import * as XLSX from "xlsx";
+import { salesOrdersAPI } from "../api/auth";
 
 const ALL_REPORT_TABS = [
-  { id: "production", label: "Production", icon: "⚙️", roles: ["Admin", "Manager", "Operator", "Production", "Client"] },
-  { id: "oee", label: "OEE", icon: "🏭", roles: ["Admin", "Manager", "Production"] },
-  { id: "operator", label: "Operator", icon: "👤", roles: ["Admin", "Manager", "Production"] },
-  { id: "machine", label: "Machine", icon: "🏭", roles: ["Admin", "Manager", "Production"] },
-  { id: "po_recon", label: "PO Recon", icon: "🛒", roles: ["Admin", "Manager", "Store"] },
-  { id: "so_recon", label: "SO Recon", icon: "📋", roles: ["Admin", "Manager", "Sales", "Client"] },
-  { id: "so_ageing", label: "SO Ageing", icon: "⏳", roles: ["Admin", "Manager", "Sales", "Client"] },
-  { id: "prod_target", label: "Prod vs Target", icon: "🎯", roles: ["Admin", "Manager", "Production"] },
-  { id: "yield", label: "Yield", icon: "📈", roles: ["Admin", "Manager", "Production"] },
-  { id: "delivery", label: "Delivery", icon: "🚛", roles: ["Admin", "Manager", "Sales"] },
-  { id: "low_stock", label: "Low Stock", icon: "⚠️", roles: ["Admin", "Manager", "Store", "Client"] },
+  {
+    id: "production",
+    label: "Production",
+    icon: "⚙️",
+    roles: ["Admin", "Manager", "Operator", "Production", "Client"],
+  },
+  {
+    id: "operator",
+    label: "Operator",
+    icon: "👤",
+    roles: ["Admin", "Manager", "Production"],
+  },
+  {
+    id: "machine",
+    label: "Machine",
+    icon: "🏭",
+    roles: ["Admin", "Manager", "Production"],
+  },
+  {
+    id: "po_recon",
+    label: "PO Recon",
+    icon: "🛒",
+    roles: ["Admin", "Manager", "Store"],
+  },
+  {
+    id: "so_recon",
+    label: "SO Recon",
+    icon: "📋",
+    roles: ["Admin", "Manager", "Sales", "Client"],
+  },
+  {
+    id: "so_ageing",
+    label: "SO Ageing",
+    icon: "⏳",
+    roles: ["Admin", "Manager", "Sales", "Client"],
+  },
+  {
+    id: "yield",
+    label: "Yield",
+    icon: "📈",
+    roles: ["Admin", "Manager", "Production"],
+  },
+  {
+    id: "delivery",
+    label: "Delivery",
+    icon: "🚛",
+    roles: ["Admin", "Manager", "Sales", "Client"],
+  },
+  {
+    id: "low_stock",
+    label: "Low Stock",
+    icon: "⚠️",
+    roles: ["Admin", "Manager", "Store", "Client"],
+  },
   { id: "monthly", label: "Monthly", icon: "📅", roles: ["Admin", "Manager"] },
-  { id: "vendor", label: "Vendor", icon: "🏭", roles: ["Admin", "Manager", "Store"] },
-  { id: "pipeline", label: "Pipeline", icon: "🔄", roles: ["Admin", "Manager", "Production"] },
-  { id: "profitability", label: "Profitability", icon: "💰", roles: ["Admin", "Manager", "Sales"] },
-  { id: "downtime", label: "Downtime", icon: "⏱️", roles: ["Admin", "Manager", "Production"] },
+  {
+    id: "vendor",
+    label: "Vendor",
+    icon: "🏭",
+    roles: ["Admin", "Manager", "Store"],
+  },
 ];
 
 const TH = {
@@ -59,11 +106,29 @@ const TABLE = {
   fontStretch: "normal",
 };
 
-export function Dashboard({ data, session }) {
+export function Dashboard({ data, session, toast }) {
   const userRole = session?.role || "Viewer";
-  
+
+  const handleCloseSO = async (soId) => {
+    if (
+      !window.confirm(
+        "Are you sure you want to mark this Sales Order as Completed? This will reconcile it manually.",
+      )
+    )
+      return;
+    try {
+      await salesOrdersAPI.update(soId, { status: "Completed" });
+      toast?.("Sales Order marked as Completed", "success");
+      if (refreshData) refreshData();
+    } catch (err) {
+      toast?.("Failed to update Sales Order", "error");
+    }
+  };
+
   const reportTabs = useMemo(() => {
-    return ALL_REPORT_TABS.filter(t => !t.roles || t.roles.includes(userRole));
+    return ALL_REPORT_TABS.filter(
+      (t) => !t.roles || t.roles.includes(userRole),
+    );
   }, [userRole]);
   const {
     jobOrders = [],
@@ -90,6 +155,12 @@ export function Dashboard({ data, session }) {
 
   const [selectedOperator, setSelectedOperator] = useState("");
   const [selectedMachine, setSelectedMachine] = useState("");
+  const [appliedFilters, setAppliedFilters] = useState({
+    operator: "",
+    machine: "",
+    dateFrom: "",
+    dateTo: "",
+  });
   const [selectedProcessPending, setSelectedProcessPending] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const d = new Date();
@@ -107,8 +178,21 @@ export function Dashboard({ data, session }) {
   useEffect(() => {
     localStorage.setItem("erp_pvtTargets", JSON.stringify(pvtTargets));
   }, [pvtTargets]);
- 
+
+  useEffect(() => {
+    setAppliedFilters({
+      operator: "",
+      machine: "",
+      dateFrom: "",
+      dateTo: "",
+    });
+    setSelectedOperator("");
+    setSelectedMachine("");
+  }, [reportTab]);
+
   const [lowStockFilter, setLowStockFilter] = useState("All");
+  const [poReconStatus, setPoReconStatus] = useState("All");
+  const [soReconStatus, setSoReconStatus] = useState("All");
 
   const allEntries = useMemo(() => {
     const list = [];
@@ -119,6 +203,9 @@ export function Dashboard({ data, session }) {
           joNo: jo.joNo,
           companyName: jo.companyName,
           itemName: jo.itemName,
+          machineId:
+            h.machineId ||
+            (jo.machineAssignments && jo.machineAssignments[h.stage]),
         });
       });
     });
@@ -154,31 +241,36 @@ export function Dashboard({ data, session }) {
 
   const filteredEntries = useMemo(() => {
     return allEntries.filter((e) => {
-      if (dateFrom && e.date < dateFrom) return false;
-      if (dateTo && e.date > dateTo) return false;
-      if (
-        reportTab === "operator" &&
-        selectedOperator &&
-        e.operator !== selectedOperator
-      )
-        return false;
-      if (reportTab === "machine" && selectedMachine) {
-        const mid = String(selectedMachine);
-        const m = machineMaster.find((mm) => String(mm._id) === mid);
-        const match = String(e.machineId) === mid || e.machine === m?.name;
-        if (!match) return false;
+      if (reportTab === "operator") {
+        if (appliedFilters.dateFrom && e.date < appliedFilters.dateFrom)
+          return false;
+        if (appliedFilters.dateTo && e.date > appliedFilters.dateTo)
+          return false;
+        if (appliedFilters.operator && e.operator !== appliedFilters.operator)
+          return false;
+      } else if (reportTab === "machine") {
+        if (appliedFilters.dateFrom && e.date < appliedFilters.dateFrom)
+          return false;
+        if (appliedFilters.dateTo && e.date > appliedFilters.dateTo)
+          return false;
+        if (appliedFilters.machine) {
+          const mid = String(appliedFilters.machine);
+          const m = machineMaster.find(
+            (mm) => String(mm._id) === mid || mm.name === mid,
+          );
+          const match =
+            String(e.machineId) === mid ||
+            e.machine === mid ||
+            e.machine === m?.name;
+          if (!match) return false;
+        }
+      } else {
+        if (dateFrom && e.date < dateFrom) return false;
+        if (dateTo && e.date > dateTo) return false;
       }
       return true;
     });
-  }, [
-    allEntries,
-    dateFrom,
-    dateTo,
-    reportTab,
-    selectedOperator,
-    selectedMachine,
-    machineMaster,
-  ]);
+  }, [allEntries, dateFrom, dateTo, reportTab, appliedFilters, machineMaster]);
 
   const processPendingMap = useMemo(() => {
     const map = {};
@@ -264,7 +356,7 @@ export function Dashboard({ data, session }) {
   }, [rawStock, fgStock, consumableStock, userRole]);
 
   const soRows = useMemo(() => {
-    return salesOrders
+    const list = salesOrders
       .filter((so) => {
         if (!dateFrom && !dateTo) return true;
         const d = (so.orderDate || so.createdAt || "").slice(0, 10);
@@ -287,17 +379,19 @@ export function Dashboard({ data, session }) {
 
         const disp = dispMap[soKey] || 0;
 
-        const thresh = Math.max(0.95 * ord, producedQty);
-        const isComplete = ord > 0 && disp >= thresh;
+        let status = "";
+        if (so.status === "Completed" || so.status === "Closed") {
+          status = "Complete";
+        } else if (producedQty < 0.95 * ord) {
+          status = "Production Pending";
+        } else if (disp < 0.98 * producedQty) {
+          status = "Dispatch Pending";
+        } else {
+          status = "Complete";
+        }
 
         const pend = Math.max(0, ord - disp);
         const pct = ord > 0 ? Math.round((disp / ord) * 100) : 0;
-
-        const status = isComplete
-          ? "Fully Dispatched"
-          : pct > 0
-            ? "Partial"
-            : "Pending";
 
         const itemsStr =
           (so.items || [])
@@ -314,10 +408,12 @@ export function Dashboard({ data, session }) {
           itemsStr,
           soKey,
           producedQty,
-          thresh,
         };
       });
-  }, [salesOrders, dispMap, jobOrders, dateFrom, dateTo]);
+
+    if (soReconStatus === "All") return list;
+    return list.filter((r) => r.status === soReconStatus);
+  }, [salesOrders, dispMap, jobOrders, dateFrom, dateTo, soReconStatus]);
 
   const DateFilter = () => (
     <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
@@ -407,7 +503,6 @@ export function Dashboard({ data, session }) {
         }}
       >
         {(() => {
-          
           const startOfWeek = (d) => {
             const date = new Date(d);
             const day = date.getDay();
@@ -436,137 +531,296 @@ export function Dashboard({ data, session }) {
             return d >= startLast && d < startThis;
           };
 
-          const prodThis = allEntries.filter(e => isThisWeek(e.date)).reduce((s, e) => s + +(e.qtyCompleted || 0), 0);
-          const prodLast = allEntries.filter(e => isLastWeek(e.date)).reduce((s, e) => s + +(e.qtyCompleted || 0), 0);
+          const prodThis = allEntries
+            .filter((e) => isThisWeek(e.date))
+            .reduce((s, e) => s + +(e.qtyCompleted || 0), 0);
+          const prodLast = allEntries
+            .filter((e) => isLastWeek(e.date))
+            .reduce((s, e) => s + +(e.qtyCompleted || 0), 0);
 
-          const soThis = salesOrders.filter(so => isThisWeek(so.orderDate || so.createdAt)).length;
-          const soLast = salesOrders.filter(so => isLastWeek(so.orderDate || so.createdAt)).length;
+          const soThis = salesOrders.filter((so) =>
+            isThisWeek(so.orderDate || so.createdAt),
+          ).length;
+          const soLast = salesOrders.filter((so) =>
+            isLastWeek(so.orderDate || so.createdAt),
+          ).length;
 
-          const dispThis = dispatches.filter(d => isThisWeek(d.date)).reduce((s, d) => s + (d.items || []).reduce((ss, i) => ss + +(i.qty || 0), 0), 0);
-          const dispLast = dispatches.filter(d => isLastWeek(d.date)).reduce((s, d) => s + (d.items || []).reduce((ss, i) => ss + +(i.qty || 0), 0), 0);
+          const dispThis = dispatches
+            .filter((d) => isThisWeek(d.date))
+            .reduce(
+              (s, d) =>
+                s + (d.items || []).reduce((ss, i) => ss + +(i.qty || 0), 0),
+              0,
+            );
+          const dispLast = dispatches
+            .filter((d) => isLastWeek(d.date))
+            .reduce(
+              (s, d) =>
+                s + (d.items || []).reduce((ss, i) => ss + +(i.qty || 0), 0),
+              0,
+            );
 
-          const rejThis = allEntries.filter(e => isThisWeek(e.date)).reduce((s, e) => s + +(e.qtyRejected || 0), 0);
-          const rejLast = allEntries.filter(e => isLastWeek(e.date)).reduce((s, e) => s + +(e.qtyRejected || 0), 0);
+          const rejThis = allEntries
+            .filter((e) => isThisWeek(e.date))
+            .reduce((s, e) => s + +(e.qtyRejected || 0), 0);
+          const rejLast = allEntries
+            .filter((e) => isLastWeek(e.date))
+            .reduce((s, e) => s + +(e.qtyRejected || 0), 0);
 
           const trend = (curr, prev) => {
             if (!prev) return null;
             const diff = ((curr - prev) / prev) * 100;
             return {
-               val: `${diff > 0 ? "+" : ""}${diff.toFixed(0)}%`,
-               isUp: diff > 0,
-               color: diff > 0 ? C.green : C.red
+              val: `${diff > 0 ? "+" : ""}${diff.toFixed(0)}%`,
+              isUp: diff > 0,
+              color: diff > 0 ? C.green : C.red,
             };
           };
 
+          const agedOrders = salesOrders.filter((so) => {
+            const age = daysSince(so.orderDate || so.createdAt);
+            return (
+              age > 7 && so.status !== "Closed" && so.status !== "Cancelled"
+            );
+          }).length;
+
           return [
-            { label: "Production", val: fmt(prodThis), icon: "⚙️", tab: "production", color: C.yellow, trend: trend(prodThis, prodLast), unit: "pcs" },
-            { label: "New Orders", val: soThis, icon: "🧾", tab: "so_recon", color: C.blue, trend: trend(soThis, soLast) },
-            { label: "Dispatched", val: fmt(dispThis), icon: "🚛", tab: "delivery", color: C.purple, trend: trend(dispThis, dispLast) },
-            { label: "Active JOs", val: activeJOs.length, icon: "📋", tab: "production", color: C.yellow },
-            { label: "Rejections", val: fmt(rejThis), icon: "✕", tab: "yield", color: C.red, trend: trend(rejThis, rejLast), inverse: true },
-            { label: "Low Stock", val: lowStockItems.length, icon: "⚠️", tab: "low_stock", color: C.red },
-          ].map((card) => (
-            <div
-              key={card.label}
-              onClick={() => setReportTab(card.tab)}
-              style={{
-                background: "rgba(20, 20, 22, 0.7)",
-                backdropFilter: "blur(10px)",
-                border: `1px solid ${reportTab === card.tab ? card.color : "rgba(255, 255, 255, 0.05)"}`,
-                borderRadius: 16,
-                padding: "20px",
-                cursor: "pointer",
-                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                position: "relative",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                boxShadow: reportTab === card.tab ? `0 0 20px ${card.color}22` : "none",
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.transform = "translateY(-6px)";
-                e.currentTarget.style.boxShadow = `0 15px 30px -10px ${card.color}44`;
-                e.currentTarget.style.borderColor = card.color + "66";
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = reportTab === card.tab ? `0 0 20px ${card.color}22` : "none";
-                e.currentTarget.style.borderColor = reportTab === card.tab ? card.color : "rgba(255, 255, 255, 0.05)";
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
-                <span style={{ fontSize: 24, padding: 10, borderRadius: 12, background: card.color + "11" }}>{card.icon}</span>
-                <div style={{ textAlign: "right" }}>
-                  {card.trend && (
-                    <div style={{ 
-                      fontSize: 11, 
-                      fontWeight: 700, 
-                      color: card.inverse ? (card.trend.isUp ? C.red : C.green) : card.trend.color,
+            {
+              label: "Production",
+              val: fmt(prodThis),
+              icon: "⚙️",
+              tab: "production",
+              color: C.yellow,
+              trend: trend(prodThis, prodLast),
+              unit: "pcs",
+            },
+            {
+              label: "Sales Orders",
+              val: soThis,
+              icon: "🧾",
+              tab: "so_recon",
+              color: C.blue,
+              trend: trend(soThis, soLast),
+              roles: ["Admin", "Manager", "Sales", "Client"],
+            },
+            {
+              label: "Dispatched",
+              val: fmt(dispThis),
+              icon: "🚛",
+              tab: "delivery",
+              color: C.purple,
+              trend: trend(dispThis, dispLast),
+            },
+            {
+              label: "Active Jobs",
+              val: activeJOs.length,
+              icon: "📋",
+              tab: "production",
+              color: C.yellow,
+              roles: ["Admin", "Manager", "Production", "Client"],
+            },
+            {
+              label: "Aged Orders",
+              val: agedOrders,
+              icon: "⏳",
+              tab: "so_ageing",
+              color: C.orange || "#f97316",
+              roles: ["Admin", "Manager", "Sales", "Client"],
+            },
+            {
+              label: "Rejections",
+              val: fmt(rejThis),
+              icon: "✕",
+              tab: "yield",
+              color: C.red,
+              trend: trend(rejThis, rejLast),
+              inverse: true,
+              roles: ["Admin", "Manager", "Production"],
+            },
+            {
+              label: "Low Stock",
+              val: lowStockItems.length,
+              icon: "⚠️",
+              tab: "low_stock",
+              color: C.red,
+            },
+          ]
+            .filter((card) => !card.roles || card.roles.includes(userRole))
+            .map((card) => (
+              <div
+                key={card.label}
+                onClick={() => setReportTab(card.tab)}
+                style={{
+                  background: "rgba(20, 20, 22, 0.7)",
+                  backdropFilter: "blur(10px)",
+                  border: `1px solid ${reportTab === card.tab ? card.color : "rgba(255, 255, 255, 0.05)"}`,
+                  borderRadius: 16,
+                  padding: "20px",
+                  cursor: "pointer",
+                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                  position: "relative",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  boxShadow:
+                    reportTab === card.tab
+                      ? `0 0 20px ${card.color}22`
+                      : "none",
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = "translateY(-6px)";
+                  e.currentTarget.style.boxShadow = `0 15px 30px -10px ${card.color}44`;
+                  e.currentTarget.style.borderColor = card.color + "66";
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow =
+                    reportTab === card.tab
+                      ? `0 0 20px ${card.color}22`
+                      : "none";
+                  e.currentTarget.style.borderColor =
+                    reportTab === card.tab
+                      ? card.color
+                      : "rgba(255, 255, 255, 0.05)";
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                    marginBottom: 12,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: 24,
+                      padding: 10,
+                      borderRadius: 12,
+                      background: card.color + "11",
+                    }}
+                  >
+                    {card.icon}
+                  </span>
+                  <div style={{ textAlign: "right" }}>
+                    {card.trend && (
+                      <div
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 700,
+                          color: card.inverse
+                            ? card.trend.isUp
+                              ? C.red
+                              : C.green
+                            : card.trend.color,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "flex-end",
+                          gap: 2,
+                        }}
+                      >
+                        <span style={{ fontSize: 10 }}>
+                          {card.trend.isUp ? "▲" : "▼"}
+                        </span>
+                        {card.trend.val}
+                      </div>
+                    )}
+                    <div
+                      style={{
+                        fontSize: 9,
+                        color: "#666",
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        marginTop: 2,
+                      }}
+                    >
+                      vs last week
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <div
+                    style={{ display: "flex", alignItems: "baseline", gap: 3 }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 32,
+                        fontWeight: 900,
+                        color: "#fff",
+                        letterSpacing: "-0.02em",
+                      }}
+                    >
+                      {card.val}
+                    </div>
+                    {card.unit && (
+                      <span
+                        style={{ fontSize: 12, color: "#666", fontWeight: 600 }}
+                      >
+                        {card.unit}
+                      </span>
+                    )}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: "#999",
+                      marginTop: 2,
+                    }}
+                  >
+                    {card.label}
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 15,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    paddingTop: 12,
+                    borderTop: "1px solid rgba(255, 255, 255, 0.03)",
+                  }}
+                >
+                  <div
+                    style={{ fontSize: 10, color: "#555", fontStyle: "italic" }}
+                  >
+                    {card.label === "Low Stock"
+                      ? "items below min"
+                      : "In production"}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: card.color,
                       display: "flex",
                       alignItems: "center",
-                      justifyContent: "flex-end",
-                      gap: 2
-                    }}>
-                      <span style={{ fontSize: 10 }}>{card.trend.isUp ? "▲" : "▼"}</span>
-                      {card.trend.val}
-                    </div>
-                  )}
-                  <div style={{ fontSize: 9, color: "#666", fontWeight: 700, textTransform: "uppercase", marginTop: 2 }}>
-                    vs last week
+                      gap: 4,
+                      opacity: 0.8,
+                    }}
+                  >
+                    Details <span style={{ fontSize: 14 }}>→</span>
                   </div>
                 </div>
-              </div>
 
-              <div>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 3 }}>
-                  <div style={{ fontSize: 32, fontWeight: 900, color: "#fff", letterSpacing: "-0.02em" }}>
-                    {card.val}
-                  </div>
-                  {card.unit && <span style={{ fontSize: 12, color: "#666", fontWeight: 600 }}>{card.unit}</span>}
-                </div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: "#999", marginTop: 2 }}>
-                  {card.label}
-                </div>
+                {reportTab === card.tab && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      borderRadius: 16,
+                      boxShadow: `inset 0 0 15px ${card.color}11`,
+                      pointerEvents: "none",
+                    }}
+                  />
+                )}
               </div>
-
-              <div style={{ 
-                marginTop: 15, 
-                display: "flex", 
-                alignItems: "center", 
-                justifyContent: "space-between",
-                paddingTop: 12,
-                borderTop: "1px solid rgba(255, 255, 255, 0.03)"
-              }}>
-                <div style={{ fontSize: 10, color: "#555", fontStyle: "italic" }}>
-                  {card.label === "Low Stock" ? "items below min" : "In production"}
-                </div>
-                <div style={{ 
-                  fontSize: 11, 
-                  fontWeight: 700, 
-                  color: card.color, 
-                  display: "flex", 
-                  alignItems: "center", 
-                  gap: 4,
-                  opacity: 0.8
-                }}>
-                  Details <span style={{ fontSize: 14 }}>→</span>
-                </div>
-              </div>
-              
-              {reportTab === card.tab && (
-                <div style={{ 
-                  position: "absolute", 
-                  top: 0, 
-                  left: 0, 
-                  right: 0, 
-                  bottom: 0,
-                  borderRadius: 16,
-                  boxShadow: `inset 0 0 15px ${card.color}11`,
-                  pointerEvents: "none"
-                }} />
-              )}
-            </div>
-          ));
+            ));
         })()}
       </div>
 
@@ -597,7 +851,10 @@ export function Dashboard({ data, session }) {
                   style={{
                     padding: "12px 14px",
                     borderRadius: 12,
-                    background: reportTab === t.id ? "rgba(255, 120, 0, 0.15)" : "rgba(255, 255, 255, 0.02)",
+                    background:
+                      reportTab === t.id
+                        ? "rgba(255, 120, 0, 0.15)"
+                        : "rgba(255, 255, 255, 0.02)",
                     border: `1px solid ${reportTab === t.id ? "#ff7800" : "rgba(255, 255, 255, 0.1)"}`,
                     color: reportTab === t.id ? "#ff7800" : "#999",
                     cursor: "pointer",
@@ -609,19 +866,26 @@ export function Dashboard({ data, session }) {
                     gap: 10,
                     fontFamily: "'Inter', sans-serif",
                     transition: "all 0.2s ease",
-                    boxShadow: reportTab === t.id ? "0 4px 15px rgba(255, 120, 0, 0.1)" : "none",
+                    boxShadow:
+                      reportTab === t.id
+                        ? "0 4px 15px rgba(255, 120, 0, 0.1)"
+                        : "none",
                   }}
                   onMouseEnter={(e) => {
                     if (reportTab !== t.id) {
-                      e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
-                      e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.2)";
+                      e.currentTarget.style.background =
+                        "rgba(255, 255, 255, 0.05)";
+                      e.currentTarget.style.borderColor =
+                        "rgba(255, 255, 255, 0.2)";
                       e.currentTarget.style.color = "#fff";
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (reportTab !== t.id) {
-                      e.currentTarget.style.background = "rgba(255, 255, 255, 0.02)";
-                      e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.1)";
+                      e.currentTarget.style.background =
+                        "rgba(255, 255, 255, 0.02)";
+                      e.currentTarget.style.borderColor =
+                        "rgba(255, 255, 255, 0.1)";
                       e.currentTarget.style.color = "#999";
                     }
                   }}
@@ -891,34 +1155,74 @@ export function Dashboard({ data, session }) {
                         </option>
                       ))}
                 </select>
-                {reportTab === "machine" && (
-                  <button
-                    onClick={() => {
-                      toast?.(
-                        "Open 'Production Calendar' from the sidebar for full machine planning",
-                        "info",
-                      );
-                    }}
-                    style={{
-                      background: (C.blue || "#3b82f6") + "22",
-                      color: C.blue || "#3b82f6",
-                      border: `1px solid ${C.blue || "#3b82f6"}44`,
-                      borderRadius: 6,
-                      padding: "0 14px",
-                      fontSize: 12,
-                      fontWeight: 700,
-                      cursor: "pointer",
-                    }}
-                  >
-                    🗓️ Open Calendar
-                  </button>
-                )}
               </div>
             </div>
+
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: "#888",
+                  textTransform: "uppercase",
+                  marginBottom: 6,
+                }}
+              >
+                Date From
+              </div>
+              <DatePicker
+                value={dateFrom}
+                onChange={(v) => setDateFrom(v)}
+                style={{ background: "#0c0c0e", border: "1px solid #3a3a3e" }}
+              />
+            </div>
+
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: "#888",
+                  textTransform: "uppercase",
+                  marginBottom: 6,
+                }}
+              >
+                Date To
+              </div>
+              <DatePicker
+                value={dateTo}
+                onChange={(v) => setDateTo(v)}
+                style={{ background: "#0c0c0e", border: "1px solid #3a3a3e" }}
+              />
+            </div>
+
+            <button
+              onClick={() => {
+                setAppliedFilters({
+                  operator: selectedOperator,
+                  machine: selectedMachine,
+                  dateFrom,
+                  dateTo,
+                });
+              }}
+              style={{
+                padding: "10px 24px",
+                background: C.accent || "#4CAF50",
+                color: "#000",
+                border: "none",
+                borderRadius: 6,
+                fontWeight: 700,
+                fontSize: 13,
+                cursor: "pointer",
+                height: 38,
+              }}
+            >
+              Generate Report
+            </button>
           </div>
 
-          {(reportTab === "operator" && selectedOperator) ||
-          (reportTab === "machine" && selectedMachine) ? (
+          {(reportTab === "operator" && appliedFilters.operator) ||
+          (reportTab === "machine" && appliedFilters.machine) ? (
             filteredEntries.length === 0 ? (
               <div style={{ textAlign: "center", padding: 60, color: "#555" }}>
                 No entries found for selected filters.
@@ -1007,7 +1311,14 @@ export function Dashboard({ data, session }) {
       {}
       {reportTab === "po_recon" &&
         (() => {
-          const rows = purchaseOrders.map((po) => {
+          const filteredPOs = purchaseOrders.filter((po) => {
+            const d = po.poDate || po.createdAt || "";
+            if (dateFrom && d < dateFrom) return false;
+            if (dateTo && d > dateTo) return false;
+            return true;
+          });
+
+          const allRows = filteredPOs.map((po) => {
             const items = po.items || [];
             const orderedQty = items.reduce((s, it) => {
               if (it.category === "Paper Reel") return s;
@@ -1067,6 +1378,12 @@ export function Dashboard({ data, session }) {
             };
           });
 
+          const rows = allRows.filter((r) => {
+            if (poReconStatus !== "All" && r.status !== poReconStatus)
+              return false;
+            return true;
+          });
+
           const stats = {
             total: rows.length,
             notOpen: rows.filter((r) => r.status !== "Open").length,
@@ -1090,6 +1407,79 @@ export function Dashboard({ data, session }) {
 
           return (
             <div>
+              <div
+                style={{
+                  display: "flex",
+                  gap: 16,
+                  marginBottom: 20,
+                  alignItems: "flex-end",
+                  background: "#141416",
+                  padding: 16,
+                  borderRadius: 8,
+                  border: "1px solid #2a2a2e",
+                }}
+              >
+                <div style={{ flex: 1 }}>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: "#888",
+                      marginBottom: 6,
+                    }}
+                  >
+                    DATE FROM
+                  </div>
+                  <DatePicker
+                    value={dateFrom}
+                    onChange={(v) => setDateFrom(v)}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: "#888",
+                      marginBottom: 6,
+                    }}
+                  >
+                    DATE TO
+                  </div>
+                  <DatePicker value={dateTo} onChange={(v) => setDateTo(v)} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: "#888",
+                      marginBottom: 6,
+                    }}
+                  >
+                    STATUS
+                  </div>
+                  <select
+                    value={poReconStatus}
+                    onChange={(e) => setPoReconStatus(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "8px 10px",
+                      background: "#0c0c0e",
+                      border: "1px solid #3a3a3e",
+                      color: "#e0e0e0",
+                      borderRadius: 6,
+                      fontSize: 13,
+                    }}
+                  >
+                    <option value="All">All Statuses</option>
+                    <option value="Open">Open</option>
+                    <option value="Partial">Partial</option>
+                    <option value="Received">Received</option>
+                  </select>
+                </div>
+              </div>
+
               <div
                 style={{
                   display: "grid",
@@ -1368,14 +1758,91 @@ export function Dashboard({ data, session }) {
           const rows = soRows;
           const stats = {
             total: rows.length,
-            fully: rows.filter((r) => r.status === "Fully Dispatched").length,
-            partial: rows.filter((r) => r.status === "Partial").length,
-            none: rows.filter((r) => r.status === "Pending").length,
+            productionPending: rows.filter(
+              (r) => r.status === "Production Pending",
+            ).length,
+            dispatchPending: rows.filter((r) => r.status === "Dispatch Pending")
+              .length,
+            complete: rows.filter((r) => r.status === "Complete").length,
             totalPend: rows.reduce((s, r) => s + r.pend, 0),
           };
 
           return (
             <div>
+              <div
+                style={{
+                  display: "flex",
+                  gap: 16,
+                  marginBottom: 20,
+                  alignItems: "flex-end",
+                  background: "#141416",
+                  padding: 16,
+                  borderRadius: 8,
+                  border: "1px solid #2a2a2e",
+                }}
+              >
+                <div style={{ flex: 1 }}>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: "#888",
+                      marginBottom: 6,
+                    }}
+                  >
+                    DATE FROM
+                  </div>
+                  <DatePicker
+                    value={dateFrom}
+                    onChange={(v) => setDateFrom(v)}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: "#888",
+                      marginBottom: 6,
+                    }}
+                  >
+                    DATE TO
+                  </div>
+                  <DatePicker value={dateTo} onChange={(v) => setDateTo(v)} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: "#888",
+                      marginBottom: 6,
+                    }}
+                  >
+                    STATUS
+                  </div>
+                  <select
+                    value={soReconStatus}
+                    onChange={(e) => setSoReconStatus(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "8px 10px",
+                      background: "#0c0c0e",
+                      border: "1px solid #3a3a3e",
+                      color: "#e0e0e0",
+                      borderRadius: 6,
+                      fontSize: 13,
+                    }}
+                  >
+                    <option value="All">All Statuses</option>
+                    <option value="Production Pending">
+                      Production Pending
+                    </option>
+                    <option value="Dispatch Pending">Dispatch Pending</option>
+                    <option value="Complete">Complete</option>
+                  </select>
+                </div>
+              </div>
               <div
                 style={{
                   display: "grid",
@@ -1391,16 +1858,16 @@ export function Dashboard({ data, session }) {
                     color: C.blue,
                   },
                   {
-                    label: "Fully Dispatched",
-                    val: stats.fully,
-                    color: C.green,
-                  },
-                  {
-                    label: "Partially Dispatched",
-                    val: stats.partial,
+                    label: "Production Pending",
+                    val: stats.productionPending,
                     color: C.yellow,
                   },
-                  { label: "Not Dispatched", val: stats.none, color: C.red },
+                  {
+                    label: "Dispatch Pending",
+                    val: stats.dispatchPending,
+                    color: C.blue,
+                  },
+                  { label: "Complete", val: stats.complete, color: C.green },
                   {
                     label: "Total Pending (pcs)",
                     val: fmt(stats.totalPend),
@@ -1460,6 +1927,7 @@ export function Dashboard({ data, session }) {
                       <col style={{ width: 85 }} />
                       <col style={{ width: 85 }} />
                       <col style={{ width: 130 }} />
+                      <col style={{ width: 100 }} />
                     </colgroup>
                     <thead>
                       <tr>
@@ -1472,6 +1940,7 @@ export function Dashboard({ data, session }) {
                           "Produced",
                           "Dispatched",
                           "Status",
+                          "Actions",
                         ].map((h) => (
                           <th key={h} style={TH}>
                             {h}
@@ -1564,6 +2033,25 @@ export function Dashboard({ data, session }) {
                               />
                             </div>
                           </td>
+                          <td style={TD}>
+                            {r.status !== "Complete" && (
+                              <button
+                                onClick={() => handleCloseSO(r.so._id)}
+                                style={{
+                                  padding: "4px 8px",
+                                  background: C.green + "22",
+                                  color: C.green,
+                                  border: `1px solid ${C.green}44`,
+                                  borderRadius: 4,
+                                  fontSize: 10,
+                                  fontWeight: 700,
+                                  cursor: "pointer",
+                                }}
+                              >
+                                ✓ Close SO
+                              </button>
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -1577,7 +2065,13 @@ export function Dashboard({ data, session }) {
       {}
       {reportTab === "delivery" &&
         (() => {
-          const rows = dispatches.map((d, idx) => {
+          const filteredDispatches = dispatches.filter((d) => {
+            const dDate = d.dispatchDate || d.date || d.createdAt || "";
+            if (dateFrom && dDate < dateFrom) return false;
+            if (dateTo && dDate > dateTo) return false;
+            return true;
+          });
+          const rows = filteredDispatches.map((d, idx) => {
             const dispNo =
               d.dispatchNo ||
               d.dispNo ||
@@ -1626,6 +2120,49 @@ export function Dashboard({ data, session }) {
 
           return (
             <div>
+              <div
+                style={{
+                  display: "flex",
+                  gap: 16,
+                  marginBottom: 20,
+                  alignItems: "flex-end",
+                  background: "#141416",
+                  padding: 16,
+                  borderRadius: 8,
+                  border: "1px solid #2a2a2e",
+                }}
+              >
+                <div style={{ flex: 1 }}>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: "#888",
+                      marginBottom: 6,
+                    }}
+                  >
+                    DATE FROM
+                  </div>
+                  <DatePicker
+                    value={dateFrom}
+                    onChange={(v) => setDateFrom(v)}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: "#888",
+                      marginBottom: 6,
+                    }}
+                  >
+                    DATE TO
+                  </div>
+                  <DatePicker value={dateTo} onChange={(v) => setDateTo(v)} />
+                </div>
+              </div>
+
               <div
                 style={{
                   display: "grid",
@@ -2067,7 +2604,7 @@ export function Dashboard({ data, session }) {
       {reportTab === "yield" &&
         (() => {
           const ySummary = STAGES.map((stage) => {
-            const logs = allEntries.filter((e) => e.stage === stage);
+            const logs = filteredEntries.filter((e) => e.stage === stage);
             const ok = logs.reduce((s, l) => s + +(l.qtyCompleted || 0), 0);
             const rj = logs.reduce((s, l) => s + +(l.qtyRejected || 0), 0);
             const tot = ok + rj;
@@ -2077,6 +2614,49 @@ export function Dashboard({ data, session }) {
 
           return (
             <div>
+              <div
+                style={{
+                  display: "flex",
+                  gap: 16,
+                  marginBottom: 20,
+                  alignItems: "flex-end",
+                  background: "#141416",
+                  padding: 16,
+                  borderRadius: 8,
+                  border: "1px solid #2a2a2e",
+                }}
+              >
+                <div style={{ flex: 1 }}>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: "#888",
+                      marginBottom: 6,
+                    }}
+                  >
+                    DATE FROM
+                  </div>
+                  <DatePicker
+                    value={dateFrom}
+                    onChange={(v) => setDateFrom(v)}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: "#888",
+                      marginBottom: 6,
+                    }}
+                  >
+                    DATE TO
+                  </div>
+                  <DatePicker value={dateTo} onChange={(v) => setDateTo(v)} />
+                </div>
+              </div>
+
               <div
                 style={{
                   display: "grid",
@@ -2226,7 +2806,7 @@ export function Dashboard({ data, session }) {
               >
                 {low.length} items below reorder level
               </div>
-              
+
               <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
                 {["All", "RM", "CG", "FG"].map((f) => (
                   <button
@@ -2236,14 +2816,21 @@ export function Dashboard({ data, session }) {
                       padding: "6px 16px",
                       borderRadius: 6,
                       border: `1px solid ${lowStockFilter === f ? C.red : "#2a2a2e"}`,
-                      background: lowStockFilter === f ? C.red + "22" : "transparent",
+                      background:
+                        lowStockFilter === f ? C.red + "22" : "transparent",
                       color: lowStockFilter === f ? C.red : "#888",
                       fontSize: 12,
                       fontWeight: 700,
                       cursor: "pointer",
                     }}
                   >
-                    {f === "All" ? "View All" : f === "RM" ? "Raw Material" : f === "CG" ? "Consumables" : "Finished Goods"}
+                    {f === "All"
+                      ? "View All"
+                      : f === "RM"
+                        ? "Raw Material"
+                        : f === "CG"
+                          ? "Consumables"
+                          : "Finished Goods"}
                   </button>
                 ))}
               </div>
@@ -2280,39 +2867,43 @@ export function Dashboard({ data, session }) {
                   </thead>
                   <tbody>
                     {low
-                      .filter(item => lowStockFilter === "All" || item.type === lowStockFilter)
+                      .filter(
+                        (item) =>
+                          lowStockFilter === "All" ||
+                          item.type === lowStockFilter,
+                      )
                       .map((f, i) => (
-                      <tr
-                        key={i}
-                        style={{
-                          background: i % 2 === 0 ? "#0e0e12" : "#121216",
-                        }}
-                      >
-                        <td style={{ ...TD, fontWeight: 700 }}>{f.name}</td>
-                        <td style={{ ...TD, color: "#888" }}>{f.category}</td>
-                        <td style={{ ...TD, color: C.red, fontWeight: 800 }}>
-                          {fmt(f.stock)} {f.unit}
-                        </td>
-                        <td style={{ ...TD, color: "#888" }}>
-                          {fmt(f.reorder)} {f.unit}
-                        </td>
-                        <td style={TD}>
-                          <span
-                            style={{
-                              padding: "2px 8px",
-                              borderRadius: 4,
-                              background: C.red + "22",
-                              color: C.red,
-                              fontSize: 10,
-                              fontWeight: 800,
-                              textTransform: "uppercase",
-                            }}
-                          >
-                            Critical
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
+                        <tr
+                          key={i}
+                          style={{
+                            background: i % 2 === 0 ? "#0e0e12" : "#121216",
+                          }}
+                        >
+                          <td style={{ ...TD, fontWeight: 700 }}>{f.name}</td>
+                          <td style={{ ...TD, color: "#888" }}>{f.category}</td>
+                          <td style={{ ...TD, color: C.red, fontWeight: 800 }}>
+                            {fmt(f.stock)} {f.unit}
+                          </td>
+                          <td style={{ ...TD, color: "#888" }}>
+                            {fmt(f.reorder)} {f.unit}
+                          </td>
+                          <td style={TD}>
+                            <span
+                              style={{
+                                padding: "2px 8px",
+                                borderRadius: 4,
+                                background: C.red + "22",
+                                color: C.red,
+                                fontSize: 10,
+                                fontWeight: 800,
+                                textTransform: "uppercase",
+                              }}
+                            >
+                              Critical
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
                   </tbody>
                 </table>
               </div>
@@ -2608,8 +3199,21 @@ export function Dashboard({ data, session }) {
       {}
       {reportTab === "vendor" &&
         (() => {
+          const filteredPOs = purchaseOrders.filter((po) => {
+            const d = po.poDate || po.createdAt || "";
+            if (dateFrom && d < dateFrom) return false;
+            if (dateTo && d > dateTo) return false;
+            return true;
+          });
+          const filteredInward = inward.filter((grn) => {
+            const d = grn.date || grn.createdAt || "";
+            if (dateFrom && d < dateFrom) return false;
+            if (dateTo && d > dateTo) return false;
+            return true;
+          });
+
           const vendorMap = {};
-          purchaseOrders.forEach((po) => {
+          filteredPOs.forEach((po) => {
             const vName =
               po.vendor || po.vendorName || po.supplierName || "Unknown";
             if (!vendorMap[vName]) {
@@ -2618,7 +3222,7 @@ export function Dashboard({ data, session }) {
             vendorMap[vName].pos.push(po);
           });
 
-          inward.forEach((grn) => {
+          filteredInward.forEach((grn) => {
             const vName =
               grn.vendorName ||
               grn.vendor?.name ||
@@ -2681,9 +3285,9 @@ export function Dashboard({ data, session }) {
             })
             .sort((a, b) => b.poCount - a.poCount);
 
-          const totalPOs = purchaseOrders.length;
-          const totalGRNs = inward.length;
-          const pendingPOs = purchaseOrders.filter(
+          const totalPOs = filteredPOs.length;
+          const totalGRNs = filteredInward.length;
+          const pendingPOs = filteredPOs.filter(
             (p) =>
               p.status !== "Received" &&
               p.status !== "Closed" &&
@@ -2693,6 +3297,48 @@ export function Dashboard({ data, session }) {
 
           return (
             <div>
+              <div
+                style={{
+                  display: "flex",
+                  gap: 16,
+                  marginBottom: 20,
+                  alignItems: "flex-end",
+                  background: "#141416",
+                  padding: 16,
+                  borderRadius: 8,
+                  border: "1px solid #2a2a2e",
+                }}
+              >
+                <div style={{ flex: 1 }}>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: "#888",
+                      marginBottom: 6,
+                    }}
+                  >
+                    DATE FROM
+                  </div>
+                  <DatePicker
+                    value={dateFrom}
+                    onChange={(v) => setDateFrom(v)}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: "#888",
+                      marginBottom: 6,
+                    }}
+                  >
+                    DATE TO
+                  </div>
+                  <DatePicker value={dateTo} onChange={(v) => setDateTo(v)} />
+                </div>
+              </div>
               <div
                 style={{
                   display: "grid",

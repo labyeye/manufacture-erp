@@ -15,6 +15,7 @@ import {
   companyMasterAPI,
   usersAPI,
   categoryMasterAPI,
+  brandMasterAPI,
 } from "../api/auth";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
@@ -43,6 +44,7 @@ export default function SalesOrders(props) {
   const isClient = session?.role === "Client";
   const [salesOrders, setSalesOrders] = useState([]);
   const [companies, setCompanies] = useState([]);
+  const [brands, setBrands] = useState([]);
   const [users, setUsers] = useState([]);
   const [companyCategories, setCompanyCategories] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -164,8 +166,18 @@ export default function SalesOrders(props) {
   useEffect(() => {
     fetchSalesOrders();
     fetchCompanies();
+    fetchBrands();
     fetchUsers();
   }, []);
+
+  const fetchBrands = async () => {
+    try {
+      const res = await brandMasterAPI.getAll();
+      setBrands(res.brands || []);
+    } catch (error) {
+      console.error("Failed to fetch brands:", error);
+    }
+  };
 
   const fetchSalesOrders = async () => {
     try {
@@ -243,9 +255,14 @@ export default function SalesOrders(props) {
     setHeader((f) => {
       const next = { ...f, [k]: v };
       if (k === "companyName") {
-        const found = companyMaster.find((c) => c.name === v);
-        if (found) {
-          next.clientContact = found.phone || found.whatsapp || "";
+        const foundBrand = brands.find((b) => b.name === v);
+        if (foundBrand) {
+          next.companyCategory = foundBrand.companyName || "";
+          // Find company to get contact
+          const foundCo = companyMaster.find(c => c.name === foundBrand.companyName);
+          if (foundCo) {
+            next.clientContact = foundCo.contact || foundCo.phone || "";
+          }
         }
       }
       nextH = next;
@@ -738,24 +755,26 @@ export default function SalesOrders(props) {
         {[
           ["form", "📝 New Order"],
           ["records", `📋 Records (${salesOrders.length})`],
-        ].map(([v, l]) => (
-          <button
-            key={v}
-            onClick={() => setView(v)}
-            style={{
-              padding: "8px 20px",
-              borderRadius: 6,
-              border: `1px solid ${view === v ? C.green : C.border}`,
-              background: view === v ? C.green : "transparent",
-              color: view === v ? "#000" : C.muted,
-              fontWeight: 700,
-              fontSize: 13,
-              cursor: "pointer",
-            }}
-          >
-            {l}
-          </button>
-        ))}
+        ]
+          .filter(([v]) => !(isClient && v === "records"))
+          .map(([v, l]) => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              style={{
+                padding: "8px 20px",
+                borderRadius: 6,
+                border: `1px solid ${view === v ? C.green : C.border}`,
+                background: view === v ? C.green : "transparent",
+                color: view === v ? "#000" : C.muted,
+                fontWeight: 700,
+                fontSize: 13,
+                cursor: "pointer",
+              }}
+            >
+              {l}
+            </button>
+          ))}
       </div>
 
       {}
@@ -816,7 +835,7 @@ export default function SalesOrders(props) {
             </div>
 
             {}
-            <div style={sectionLabelStyle}>Client Details</div>
+            <div style={sectionLabelStyle}>Brand Details</div>
             <div
               style={{
                 display: "grid",
@@ -839,23 +858,25 @@ export default function SalesOrders(props) {
                 </select>
                 {EHMsg("companyCategory")}
               </Field>
-              <Field label="Client Name *">
+              <Field label="Brand Name *">
                 <AutocompleteInput
                   value={header.companyName}
                   onChange={(v) => setH("companyName", v)}
-                  suggestions={
-                    header.companyCategory
-                      ? companyMaster
-                          .filter((c) => c.category === header.companyCategory)
-                          .map((c) => c.name)
-                      : companyMaster.map((c) => c.name)
-                  }
+                  suggestions={brands.map((b) => b.name)}
                   placeholder="Type to search..."
                   inputStyle={EH("companyName")}
                 />
                 {EHMsg("companyName")}
               </Field>
-              <Field label="Client Contact">
+              <Field label="Company Name">
+                <input
+                  readOnly
+                  placeholder="— Auto-filled —"
+                  value={header.companyCategory || ""}
+                  style={{ background: "#0a0a0a" }}
+                />
+              </Field>
+              <Field label="Contact Details">
                 <input
                   readOnly
                   placeholder="— Auto-filled —"

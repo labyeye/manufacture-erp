@@ -29,6 +29,7 @@ export default function ProductionUpdate({
   setFgStock,
   pudCounter = 0,
   setPudCounter,
+  machineMaster = [],
   toast,
 }) {
   const readonlyStyle = {
@@ -52,6 +53,7 @@ export default function ProductionUpdate({
     date: today(),
     qtyCompleted: "",
     qtyRejected: 0,
+    machineId: "",
     remarks: "",
     shift: "",
   };
@@ -151,6 +153,7 @@ export default function ProductionUpdate({
         qtyCompleted: Number(entry.qtyCompleted),
         qtyRejected: Number(entry.qtyRejected),
         operator: entry.operator,
+        machineId: entry.machineId,
         date: entry.date,
         shift: entry.shift,
         remarks: entry.remarks,
@@ -182,6 +185,7 @@ export default function ProductionUpdate({
       date: record.date ? record.date.slice(0, 10) : today(),
       qtyCompleted: record.qtyCompleted,
       qtyRejected: record.qtyRejected || 0,
+      machineId: record.machineId || "",
       remarks: record.remarks || "",
       shift: record.shift || "",
     });
@@ -502,6 +506,20 @@ export default function ProductionUpdate({
                 />
                 {EMsg("operator")}
               </Field>
+ 
+              <Field label="MACHINE">
+                <select
+                  value={entry.machineId}
+                  onChange={(e) => setField("machineId", e.target.value)}
+                >
+                  <option value="">-- Select Machine --</option>
+                  {machineMaster.map((m) => (
+                    <option key={m._id} value={m._id}>
+                      {m.name} ({m.type})
+                    </option>
+                  ))}
+                </select>
+              </Field>
 
               <Field label="DATE *">
                 <DatePicker
@@ -789,6 +807,11 @@ export default function ProductionUpdate({
                             <span style={{ color: C.muted, display: "flex", alignItems: "center", gap: 4 }}>
                               🕒 {r.shift}
                             </span>
+                            {r.machineId && (
+                              <span style={{ color: C.muted, display: "flex", alignItems: "center", gap: 4 }}>
+                                🏭 {machineMaster.find(m => m._id === r.machineId)?.name || r.machineId}
+                              </span>
+                            )}
                             <span style={{ color: C.muted, fontSize: 12 }}>
                               {r.date}
                             </span>

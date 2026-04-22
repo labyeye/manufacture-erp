@@ -80,6 +80,15 @@ const jobOrderSchema = new mongoose.Schema({
   cuttingLengthMm: Number,
   reelWeightKg: Number,
   
+  materialReady: {
+    type: Boolean,
+    default: false
+  },
+  artworkApproved: {
+    type: Boolean,
+    default: false
+  },
+  
   status: {
     type: String,
     enum: ['Open', 'In Progress', 'Partially Done', 'Completed', 'Cancelled'],

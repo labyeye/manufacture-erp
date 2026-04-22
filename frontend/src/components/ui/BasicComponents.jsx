@@ -122,7 +122,12 @@ export function SubmitBtn({
   );
 }
 
-export function ImportBtn({ onClick, disabled, label = "Import Excel", style = {} }) {
+export function ImportBtn({
+  onClick,
+  disabled,
+  label = "Import Excel",
+  style = {},
+}) {
   return (
     <button
       onClick={onClick}
@@ -147,7 +152,12 @@ export function ImportBtn({ onClick, disabled, label = "Import Excel", style = {
   );
 }
 
-export function ExportBtn({ onClick, disabled, label = "Export Excel", style = {} }) {
+export function ExportBtn({
+  onClick,
+  disabled,
+  label = "Export Excel",
+  style = {},
+}) {
   return (
     <button
       onClick={onClick}
@@ -172,7 +182,12 @@ export function ExportBtn({ onClick, disabled, label = "Export Excel", style = {
   );
 }
 
-export function TemplateBtn({ onClick, disabled, label = "Template", style = {} }) {
+export function TemplateBtn({
+  onClick,
+  disabled,
+  label = "Template",
+  style = {},
+}) {
   return (
     <button
       onClick={onClick}
@@ -366,6 +381,99 @@ export function DateRangeFilter({ dateFrom, setDateFrom, dateTo, setDateTo }) {
         >
           📅
         </span>
+      </div>
+    </div>
+  );
+}
+export function ImportModal({
+  show,
+  current,
+  total,
+  status,
+  title = "Importing Data",
+}) {
+  if (!show) return null;
+  const progress = total > 0 ? (current / total) * 100 : 0;
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "100%",
+        background: "rgba(0,0,0,0.85)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 10000,
+        backdropFilter: "blur(4px)",
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 400,
+          background: "#1a1a1a",
+          border: "1px solid #333",
+          borderRadius: 16,
+          padding: 30,
+          textAlign: "center",
+          boxShadow: "0 20px 50px rgba(0,0,0,0.5)",
+        }}
+      >
+        <div
+          style={{
+            fontSize: 18,
+            fontWeight: 700,
+            color: "#e0e0e0",
+            marginBottom: 8,
+          }}
+        >
+          🚀 {title}
+        </div>
+        <div style={{ fontSize: 13, color: "#666", marginBottom: 24 }}>
+          {status || `Processing ${current} of ${total}...`}
+        </div>
+
+        <div
+          style={{
+            height: 8,
+            width: "100%",
+            background: "#0d0d0d",
+            borderRadius: 10,
+            overflow: "hidden",
+            marginBottom: 16,
+          }}
+        >
+          <div
+            style={{
+              height: "100%",
+              width: `${progress}%`,
+              background: "linear-gradient(90deg, #2196F3, #64B5F6)",
+              transition: "width 0.3s ease",
+              boxShadow: "0 0 10px #2196F388",
+            }}
+          />
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            fontSize: 11,
+            fontWeight: 700,
+            color: "#444",
+            textTransform: "uppercase",
+            letterSpacing: "0.05em",
+          }}
+        >
+          <span>Progress</span>
+          <span style={{ color: "#2196F3" }}>
+            {current} / {total} items
+          </span>
+        </div>
       </div>
     </div>
   );

@@ -1,6 +1,8 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import moment from "moment";
 import { C } from "../constants/colors";
 import { Card, SectionTitle, Badge } from "../components/ui/BasicComponents";
+import { planningAPI } from "../api/auth";
 
 
 const fmt = (n) => (n ?? 0).toLocaleString("en-IN");
@@ -115,6 +117,8 @@ export default function ProductionCalendar({
   const [machineTypeFilter, setMachineTypeFilter] = useState("All Machine Types");
   const [selectedMachine, setSelectedMachine] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [calendarData, setCalendarData] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const machines = useMemo(() => {
     if (Array.isArray(machineMaster) && machineMaster.length > 0) {
@@ -144,6 +148,41 @@ export default function ProductionCalendar({
     [displayStart, days],
   );
 
+  const fetchCalendar = async () => {
+    try {
+      setLoading(true);
+      const data = await planningAPI.getCalendar({
+        startDate: displayStart,
+        endDate: daysArray[daysArray.length - 1],
+      });
+      setCalendarData(data);
+    } catch (err) {
+      toast?.("Failed to fetch calendar", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGenerate = async () => {
+    try {
+      setLoading(true);
+      const data = await planningAPI.generate();
+      if (data.success) {
+        toast?.(data.message, "success");
+        fetchCalendar();
+      }
+    } catch (err) {
+      toast?.("Failed to generate plan", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCalendar();
+  }, [displayStart, days]);
+
+
   const navigate = (dir) => {
     const step = rangeView === "week" ? 7 : 30;
     setPivotDate(addDays(pivotDate, dir * step));
@@ -151,29 +190,14 @@ export default function ProductionCalendar({
 
   const jobIndex = useMemo(() => {
     const idx = {};
-    (jobOrders || []).forEach((jo) => {
-      if (Array.isArray(jo.schedule) && jo.schedule.length > 0) {
-        jo.schedule.forEach((slot) => {
-          let date = slot.startDate || slot.date || jo.date || today;
-          if (typeof date === "string") date = date.slice(0, 10);
-          const mKey = slot.machineId || slot.machineName || "";
-          if (!mKey) return;
-          const key = `${mKey}|${date}`;
-          if (!idx[key]) idx[key] = [];
-          idx[key].push({ ...jo, currentSlot: slot });
-        });
-      } else {
-        let date = jo.date || jo.jobcardDate || today;
-        if (typeof date === "string") date = date.slice(0, 10);
-        const machine = jo.machine || jo.assignedMachine || "";
-        if (!machine) return;
-        const key = `${machine}|${date}`;
-        if (!idx[key]) idx[key] = [];
-        idx[key].push(jo);
-      }
+    (calendarData || []).forEach((entry) => {
+      const date = moment(entry.date).format('YYYY-MM-DD');
+      const key = `${entry.machineId._id}|${date}`;
+      if (!idx[key]) idx[key] = [];
+      idx[key].push(entry);
     });
     return idx;
-  }, [jobOrders, today]);
+  }, [calendarData]);
 
   const visibleMachines = useMemo(
     () =>
@@ -488,7 +512,25 @@ export default function ProductionCalendar({
         icon="📅"
         title="Production Calendar"
         sub="Machine-wise schedule — click any job to log actual production"
-      />
+      >
+        <button 
+          onClick={handleGenerate}
+          disabled={loading}
+          style={{
+            padding: "8px 16px",
+            background: C.accent || "#4CAF50",
+            color: "#000",
+            border: "none",
+            borderRadius: 6,
+            fontWeight: 700,
+            fontSize: 12,
+            cursor: "pointer",
+            marginLeft: "auto"
+          }}
+        >
+          {loading ? "Planning..." : "⚡ Regenerate Rolling Plan"}
+        </button>
+      </SectionTitle>
 
       <MachineSidePanel />
 
@@ -824,34 +866,43 @@ export default function ProductionCalendar({
                             OFF
                           </span>
                         ) : (
-                          jobs.map((jo) => {
-                            const jc = jobColor(jo, today);
+                          jobs.map((entry) => {
+                            const jo = entry.jobOrderId;
+                            const jc = entry.isOvertime ? C.red : C.blue;
                             return (
                               <div
-                                key={jo.joNo || jo.id}
+                                key={entry._id}
                                 onClick={() =>
                                   toast &&
                                   toast(
-                                    `Job: ${jo.joNo} — ${jo.companyName || ""}`,
+                                    `Job: ${entry.jobCardNo} — ${entry.startTime} to ${entry.endTime}`,
                                     "info",
                                   )
                                 }
-                                title={`${jo.joNo} · ${jo.companyName || ""} · ${jo.status || ""}`}
+                                title={`${entry.jobCardNo} · ${jo?.companyName || ""} · ${entry.startTime}-${entry.endTime}`}
                                 style={{
                                   fontSize: 10,
-                                  padding: "3px 5px",
+                                  padding: "4px 6px",
                                   background: jc + "22",
                                   border: `1px solid ${jc}44`,
                                   borderRadius: 4,
                                   color: jc,
                                   fontWeight: 700,
-                                  marginBottom: 3,
+                                  marginBottom: 4,
                                   cursor: "pointer",
-                                  wordBreak: "break-all",
                                   textAlign: "left",
                                 }}
                               >
-                                {jo.joNo} {jo.currentSlot?.process && `· ${jo.currentSlot.process}`}
+                                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                  <span>{entry.jobCardNo}</span>
+                                  <span style={{ opacity: 0.7 }}>{entry.startTime}</span>
+                                </div>
+                                <div style={{ fontSize: 9, opacity: 0.8, marginTop: 2, fontWeight: 500 }}>
+                                  {entry.scheduledQty.toLocaleString()} units
+                                </div>
+                                {entry.isOvertime && (
+                                  <div style={{ fontSize: 8, color: C.red, marginTop: 2 }}>⚡ OVERTIME</div>
+                                )}
                               </div>
                             );
                           })

@@ -55,9 +55,9 @@ export default function MachineMaster({ toast }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("All Types");
   const [filterStatus, setFilterStatus] = useState("All Status");
-  const [viewMode, setViewMode] = useState("grid");
-  const [editingMachine, setEditingMachine] = useState(null);
-  const [editName, setEditName] = useState("");
+  const [viewMode, setViewMode] = useState("list");
+  const [editingMachineId, setEditingMachineId] = useState(null);
+  const [editForm, setEditForm] = useState({});
 
   useEffect(() => {
     fetchMachines();
@@ -171,13 +171,17 @@ export default function MachineMaster({ toast }) {
     }
   };
 
-  const handleEditSave = async (machine) => {
-    if (!editName.trim()) return;
+  const handleEditSave = async () => {
+    if (!editForm.name?.trim()) {
+      toast("Machine name is required", "error");
+      return;
+    }
 
     try {
-      await machineMasterAPI.update(machine._id, { name: editName.trim() });
-      setEditingMachine(null);
-      toast("Machine updated", "success");
+      await machineMasterAPI.update(editingMachineId, editForm);
+      setEditingMachineId(null);
+      setEditForm({});
+      toast("Machine updated successfully", "success");
       fetchMachines();
     } catch (error) {
       toast(error.response?.data?.error || "Failed to update machine", "error");
@@ -408,415 +412,61 @@ export default function MachineMaster({ toast }) {
           <option>Active</option>
           <option>Inactive</option>
         </select>
-        <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
-          {[
-            { key: "grid", icon: "⊞", label: "Grid" },
-            { key: "list", icon: "≡", label: "List" },
-            { key: "capacity", icon: "📊", label: "Capacity" },
-          ].map((v) => (
-            <button
-              key={v.key}
-              onClick={() => setViewMode(v.key)}
-              style={{
-                padding: "7px 14px",
-                borderRadius: 6,
-                fontSize: 12,
-                fontWeight: 700,
-                cursor: "pointer",
-                background: viewMode === v.key ? "#FF9800" : "#1a1a1a",
-                color: viewMode === v.key ? "#fff" : "#888",
-                border: `1px solid ${viewMode === v.key ? "#FF9800" : "#2a2a2a"}`,
-              }}
-            >
-              {v.icon} {v.label}
-            </button>
-          ))}
-          <span
-            style={{
-              fontSize: 12,
-              color: "#555",
-              alignSelf: "center",
-              marginLeft: 6,
-            }}
-          >
-            {filteredMachines.length} machines
-          </span>
+        <div style={{ marginLeft: "auto", display: "flex", gap: 6, alignItems: 'center' }}>
+          <div style={{ fontSize: 13, color: '#FF9800', fontWeight: 600, marginRight: 10 }}>
+            {filteredMachines.length} Machines Found
+          </div>
         </div>
       </div>
 
       {}
-      {viewMode === "grid" && (
-        <div>
-          {Object.keys(groupedMachines).length === 0 ? (
-            <div
+      <div
+        style={{
+          background: "#1a1a1a",
+          border: "1px solid #2a2a2a",
+          borderRadius: 12,
+          overflow: "hidden",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
+        }}
+      >
+        <table
+          style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}
+        >
+          <thead>
+            <tr
               style={{
-                background: "#1a1a1a",
-                border: "1px solid #2a2a2a",
-                borderRadius: 10,
-                padding: "50px 20px",
-                textAlign: "center",
-                color: "#444",
-                fontSize: 13,
+                background: "#111",
+                borderBottom: "2px solid #2a2a2a",
               }}
             >
-              No machines added yet. Add your first machine above.
-            </div>
-          ) : (
-            Object.entries(groupedMachines).map(([type, machines]) => {
-              const color = TYPE_COLORS[type] || "#888";
-              const icon = TYPE_ICONS[type] || "⚙️";
-              return (
-                <div key={type} style={{ marginBottom: 24 }}>
-                  <h3
-                    style={{
-                      fontSize: 14,
-                      fontWeight: 700,
-                      color: color,
-                      marginBottom: 12,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      letterSpacing: "1px",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    {icon} {type}{" "}
-                    <span
-                      style={{ fontSize: 12, color: "#555", fontWeight: 400 }}
-                    >
-                      ({machines.length})
-                    </span>
-                  </h3>
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns:
-                        "repeat(auto-fill, minmax(240px, 1fr))",
-                      gap: 14,
-                    }}
-                  >
-                    {machines.map((machine) => (
-                      <div
-                        key={machine.id}
-                        style={{
-                          background: "#1a1a1a",
-                          border: `1px solid ${color}44`,
-                          borderRadius: 10,
-                          padding: "16px",
-                          borderTop: `2px solid ${color}`,
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "flex-start",
-                            marginBottom: 12,
-                          }}
-                        >
-                          <div>
-                            {editingMachine === machine._id ? (
-                              <input
-                                value={editName}
-                                onChange={(e) => setEditName(e.target.value)}
-                                onBlur={() => handleEditSave(machine)}
-                                onKeyDown={(e) =>
-                                  e.key === "Enter" && handleEditSave(machine)
-                                }
-                                autoFocus
-                                style={{
-                                  ...inputStyle,
-                                  padding: "4px 8px",
-                                  fontSize: 13,
-                                  fontWeight: 700,
-                                }}
-                              />
-                            ) : (
-                              <div
-                                style={{
-                                  fontWeight: 700,
-                                  fontSize: 13,
-                                  color: "#e0e0e0",
-                                }}
-                              >
-                                {machine.name}
-                              </div>
-                            )}
-                            <div
-                              style={{
-                                fontSize: 11,
-                                color: "#555",
-                                marginTop: 3,
-                              }}
-                            >
-                              Added {machine.addedDate || "—"}
-                            </div>
-                          </div>
-                          <span
-                            style={{
-                              padding: "3px 10px",
-                              borderRadius: 20,
-                              fontSize: 11,
-                              fontWeight: 700,
-                              background:
-                                machine.status === "Active"
-                                  ? "#4CAF5022"
-                                  : "#f4433622",
-                              color:
-                                machine.status === "Active"
-                                  ? "#4CAF50"
-                                  : "#f44336",
-                            }}
-                          >
-                            {machine.status}
-                          </span>
-                        </div>
-
-                        {}
-                        <div
-                          style={{
-                            display: "grid",
-                            gridTemplateColumns: "1fr 1fr 1fr",
-                            gap: 8,
-                            marginBottom: 14,
-                          }}
-                        >
-                          {[
-                            {
-                              label: "CAPACITY",
-                              value: machine.capacity || "—",
-                            },
-                            {
-                              label: "HRS/SHIFT",
-                              value: machine.hrsPerShift || 8,
-                              unit: "hours",
-                            },
-                            {
-                              label: "SHIFTS",
-                              value: machine.shifts || 1,
-                              unit: "per day",
-                            },
-                          ].map((stat) => (
-                            <div
-                              key={stat.label}
-                              style={{ textAlign: "center" }}
-                            >
-                              <div
-                                style={{
-                                  fontSize: 9,
-                                  color: "#555",
-                                  letterSpacing: "0.5px",
-                                  fontWeight: 600,
-                                  marginBottom: 4,
-                                }}
-                              >
-                                {stat.label}
-                              </div>
-                              <div
-                                style={{
-                                  fontSize: 18,
-                                  fontWeight: 700,
-                                  color: "#e0e0e0",
-                                  lineHeight: 1,
-                                }}
-                              >
-                                {stat.label === "HRS/SHIFT" ? (
-                                  <input
-                                    type="number"
-                                    min={1}
-                                    max={24}
-                                    value={
-                                      machine.workingHours ||
-                                      machine.hrsPerShift ||
-                                      8
-                                    }
-                                    onChange={(e) =>
-                                      handleUpdateField(
-                                        machine,
-                                        "workingHours",
-                                        parseInt(e.target.value) || 8,
-                                      )
-                                    }
-                                    style={{
-                                      width: 40,
-                                      background: "transparent",
-                                      border: "none",
-                                      color: "#e0e0e0",
-                                      fontSize: 18,
-                                      fontWeight: 700,
-                                      textAlign: "center",
-                                      outline: "none",
-                                    }}
-                                  />
-                                ) : stat.label === "SHIFTS" ? (
-                                  <input
-                                    type="number"
-                                    min={1}
-                                    max={3}
-                                    value={
-                                      machine.shiftsPerDay ||
-                                      machine.shifts ||
-                                      1
-                                    }
-                                    onChange={(e) =>
-                                      handleUpdateField(
-                                        machine,
-                                        "shiftsPerDay",
-                                        parseInt(e.target.value) || 1,
-                                      )
-                                    }
-                                    style={{
-                                      width: 40,
-                                      background: "transparent",
-                                      border: "none",
-                                      color: "#e0e0e0",
-                                      fontSize: 18,
-                                      fontWeight: 700,
-                                      textAlign: "center",
-                                      outline: "none",
-                                    }}
-                                  />
-                                ) : (
-                                  stat.value
-                                )}
-                              </div>
-                              {stat.unit && (
-                                <div
-                                  style={{
-                                    fontSize: 9,
-                                    color: "#555",
-                                    marginTop: 2,
-                                  }}
-                                >
-                                  {stat.unit}
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-
-                        {}
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: 8,
-                            alignItems: "center",
-                          }}
-                        >
-                          <button
-                            onClick={() => handleToggleStatus(machine)}
-                            style={{
-                              flex: 1,
-                              padding: "6px 0",
-                              borderRadius: 5,
-                              fontSize: 11,
-                              fontWeight: 700,
-                              cursor: "pointer",
-                              border: "none",
-                              background:
-                                machine.status === "Active"
-                                  ? "#f4433611"
-                                  : "#4CAF5011",
-                              color:
-                                machine.status === "Active"
-                                  ? "#f44336"
-                                  : "#4CAF50",
-                            }}
-                          >
-                            {machine.status === "Active"
-                              ? "Set Inactive"
-                              : "Set Active"}
-                          </button>
-                          <button
-                            onClick={() => {
-                              setEditingMachine(machine._id);
-                              setEditName(machine.name);
-                            }}
-                            style={{
-                              padding: "6px 10px",
-                              background: "#FF980022",
-                              color: "#FF9800",
-                              border: "none",
-                              borderRadius: 5,
-                              fontSize: 13,
-                              cursor: "pointer",
-                            }}
-                          >
-                            🖊
-                          </button>
-                          <button
-                            onClick={() => handleDelete(machine)}
-                            style={{
-                              background: "#450a0a",
-                              color: "#ef4444",
-                              border: "1px solid #7f1d1d",
-                              borderRadius: 6,
-                              padding: "4px 14px",
-                              fontSize: 12,
-                              fontWeight: 700,
-                              cursor: "pointer",
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 6,
-                            }}
-                          >
-                            🗑️ Delete
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      )}
-
-      {}
-      {viewMode === "list" && (
-        <div
-          style={{
-            background: "#1a1a1a",
-            border: "1px solid #2a2a2a",
-            borderRadius: 10,
-            overflow: "hidden",
-          }}
-        >
-          <table
-            style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}
-          >
-            <thead>
-              <tr
-                style={{
-                  background: "#111",
-                  borderBottom: "1px solid #2a2a2a",
-                }}
-              >
-                {[
-                  "Machine Name",
-                  "Type",
-                  "Capacity",
-                  "Hrs/Shift",
-                  "Shifts/Day",
-                  "Status",
-                  "Actions",
-                ].map((h) => (
-                  <th
-                    key={h}
-                    style={{
-                      textAlign: "left",
-                      padding: "10px 14px",
-                      color: "#555",
-                      fontSize: 11,
-                      fontWeight: 600,
-                    }}
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
+              {[
+                "Machine Details",
+                "Type",
+                "Div",
+                "Run Rate",
+                "Hrs/Shft",
+                "Start/End",
+                "OT",
+                "Status",
+                "Actions",
+              ].map((h) => (
+                <th
+                  key={h}
+                  style={{
+                    textAlign: "left",
+                    padding: "14px 18px",
+                    color: "#888",
+                    fontSize: 11,
+                    fontWeight: 800,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
             <tbody>
               {filteredMachines.length === 0 ? (
                 <tr>
@@ -832,121 +482,144 @@ export default function MachineMaster({ toast }) {
                   </td>
                 </tr>
               ) : (
-                filteredMachines.map((m) => {
-                  const isEditing = editingMachine === m._id;
+                filteredMachines.map((m, idx) => {
+                  const isEditing = editingMachineId === m._id;
                   const color = TYPE_COLORS[m.type] || "#888";
+                  const data = isEditing ? editForm : m;
 
                   return (
-                    <tr key={m._id} style={{ borderBottom: "1px solid #1e1e1e" }}>
-                      <td style={{ padding: "10px 14px" }}>
+                    <tr
+                      key={m._id}
+                      style={{
+                        borderBottom: "1px solid #1e1e1e",
+                        background: idx % 2 === 0 ? "transparent" : "#141414",
+                        transition: "background 0.2s",
+                      }}
+                    >
+                      <td style={{ padding: "14px 18px" }}>
                         {isEditing ? (
                           <input
-                            value={editName}
-                            onChange={(e) => setEditName(e.target.value)}
-                            onBlur={() => handleEditSave(m)}
-                            onKeyDown={(e) =>
-                              e.key === "Enter" && handleEditSave(m)
+                            value={data.name || ""}
+                            onChange={(e) =>
+                              setEditForm({ ...editForm, name: e.target.value })
                             }
                             autoFocus
                             style={{
                               ...inputStyle,
-                              padding: "4px 8px",
-                              width: "140px",
+                              padding: "6px 10px",
+                              width: "180px",
+                              border: `1px solid ${color}88`,
                             }}
                           />
                         ) : (
-                          <div style={{ fontWeight: 600, color: "#e0e0e0" }}>
-                            {m.name}
+                          <div>
+                            <div
+                              style={{
+                                fontWeight: 700,
+                                color: "#fff",
+                                fontSize: 14,
+                              }}
+                            >
+                              {m.name}
+                            </div>
+                            <div
+                              style={{ fontSize: 10, color: "#555", marginTop: 2 }}
+                            >
+                              ID: {m._id.slice(-6)}
+                            </div>
                           </div>
                         )}
                       </td>
+                      <td style={{ padding: "14px 18px" }}>
+                        <select
+                          value={data.type}
+                          disabled={!isEditing}
+                          onChange={(e) =>
+                            setEditForm({ ...editForm, type: e.target.value })
+                          }
+                          style={{
+                            ...inputStyle,
+                            padding: "4px 8px",
+                            border: `1px solid ${color}44`,
+                            color: color,
+                            fontWeight: 600,
+                            opacity: isEditing ? 1 : 0.8,
+                            cursor: isEditing ? "default" : "not-allowed",
+                          }}
+                        >
+                          {MACHINE_TYPES.map((t) => (
+                            <option key={t} value={t}>
+                              {t}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
                       <td style={{ padding: "10px 14px" }}>
-                        {isEditing ? (
-                          <select
-                            value={m.type}
-                            onChange={(e) =>
-                              handleUpdateField(m, "type", e.target.value)
-                            }
-                            style={{ ...inputStyle, padding: "4px 8px" }}
-                          >
-                            {MACHINE_TYPES.map((t) => (
-                              <option key={t}>{t}</option>
-                            ))}
-                          </select>
-                        ) : (
-                          <span
-                            style={{
-                              padding: "2px 8px",
-                              borderRadius: 20,
-                              fontSize: 11,
-                              background: color + "22",
-                              color: color,
-                            }}
-                          >
-                            {m.type}
-                          </span>
-                        )}
+                        <select
+                          value={data.division || "Reel"}
+                          disabled={!isEditing}
+                          onChange={(e) =>
+                            setEditForm({ ...editForm, division: e.target.value })
+                          }
+                          style={{ ...inputStyle, padding: "4px 8px", width: "70px" }}
+                        >
+                          <option value="Reel">Reel</option>
+                          <option value="Sheet">Sheet</option>
+                        </select>
                       </td>
                       <td style={{ padding: "10px 14px" }}>
                         <input
                           type="number"
-                          value={m.capacity || 0}
+                          value={data.practicalRunRate || 0}
+                          disabled={!isEditing}
                           onChange={(e) =>
-                            handleUpdateField(
-                              m,
-                              "capacity",
-                              parseInt(e.target.value) || 0,
-                            )
+                            setEditForm({
+                              ...editForm,
+                              practicalRunRate: parseInt(e.target.value) || 0,
+                            })
                           }
-                          style={{
-                            ...inputStyle,
-                            width: "60px",
-                            padding: "4px 8px",
-                            textAlign: "center",
-                          }}
+                          style={{ ...inputStyle, width: "60px", textAlign: "center" }}
                         />
                       </td>
                       <td style={{ padding: "10px 14px" }}>
                         <input
                           type="number"
-                          min={1}
-                          max={24}
-                          value={m.workingHours || m.hrsPerShift || 8}
+                          value={data.standardShiftHours || 8}
+                          disabled={!isEditing}
                           onChange={(e) =>
-                            handleUpdateField(
-                              m,
-                              "workingHours",
-                              parseInt(e.target.value) || 8,
-                            )
+                            setEditForm({
+                              ...editForm,
+                              standardShiftHours: parseInt(e.target.value) || 8,
+                            })
                           }
-                          style={{
-                            ...inputStyle,
-                            width: "50px",
-                            padding: "4px 8px",
-                            textAlign: "center",
-                          }}
+                          style={{ ...inputStyle, width: "40px", textAlign: "center" }}
                         />
                       </td>
                       <td style={{ padding: "10px 14px" }}>
-                        <input
-                          type="number"
-                          min={1}
-                          max={3}
-                          value={m.shiftsPerDay || m.shifts || 1}
-                          onChange={(e) =>
-                            handleUpdateField(
-                              m,
-                              "shiftsPerDay",
-                              parseInt(e.target.value) || 1,
-                            )
-                          }
-                          style={{
-                            ...inputStyle,
-                            width: "50px",
-                            padding: "4px 8px",
-                            textAlign: "center",
-                          }}
-                        />
+                         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            <input 
+                              type="text" 
+                              value={data.shiftStartTime || "09:00"}
+                              disabled={!isEditing}
+                              onChange={(e) => setEditForm({...editForm, shiftStartTime: e.target.value})}
+                              style={{...inputStyle, padding: '2px 4px', fontSize: 10, width: 50}}
+                            />
+                            <input 
+                              type="text" 
+                              value={data.shiftEndTime || "17:00"}
+                              disabled={!isEditing}
+                              onChange={(e) => setEditForm({...editForm, shiftEndTime: e.target.value})}
+                              style={{...inputStyle, padding: '2px 4px', fontSize: 10, width: 50}}
+                            />
+                         </div>
+                      </td>
+                      <td style={{ padding: "10px 14px" }}>
+                         <input 
+                           type="checkbox"
+                           checked={data.overtimeAllowed || false}
+                           disabled={!isEditing}
+                           onChange={(e) => setEditForm({...editForm, overtimeAllowed: e.target.checked})}
+                         />
                       </td>
                       <td style={{ padding: "10px 14px" }}>
                         <span
@@ -960,55 +633,104 @@ export default function MachineMaster({ toast }) {
                                 ? "#4CAF5022"
                                 : "#f4433622",
                             color: m.status === "Active" ? "#4CAF50" : "#f44336",
-                            cursor: "pointer",
+                            cursor: isEditing ? "pointer" : "default",
                           }}
-                          onClick={() => handleToggleStatus(m)}
+                          onClick={() => {
+                            if (isEditing) {
+                              setEditForm({
+                                ...editForm,
+                                status:
+                                  editForm.status === "Active"
+                                    ? "Inactive"
+                                    : "Active",
+                              });
+                            }
+                          }}
                         >
-                          {m.status}
+                          {isEditing ? editForm.status : m.status}
                         </span>
                       </td>
                       <td style={{ padding: "10px 14px" }}>
                         <div style={{ display: "flex", gap: 6 }}>
-                          <button
-                            onClick={() => {
-                              if (isEditing) {
-                                handleEditSave(m);
-                              } else {
-                                setEditingMachine(m._id);
-                                setEditName(m.name);
-                              }
-                            }}
-                            style={{
-                              padding: "4px 8px",
-                              background: "#FF980022",
-                              color: "#FF9800",
-                              border: "none",
-                              borderRadius: 4,
-                              fontSize: 12,
-                              fontWeight: 700,
-                              cursor: "pointer",
-                            }}
-                          >
-                            {isEditing ? "💾" : "🖊️"}
-                          </button>
-                          <button
-                            onClick={() => handleDelete(m)}
-                            style={{
-                              background: "#450a0a",
-                              color: "#ef4444",
-                              border: "1px solid #7f1d1d",
-                              borderRadius: 6,
-                              padding: "4px 14px",
-                              fontSize: 12,
-                              fontWeight: 700,
-                              cursor: "pointer",
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 6,
-                            }}
-                          >
-                            🗑️ Delete
-                          </button>
+                          {isEditing ? (
+                            <>
+                              <button
+                                onClick={handleEditSave}
+                                style={{
+                                  padding: "6px 10px",
+                                  background: "#4CAF5022",
+                                  color: "#4CAF50",
+                                  border: "none",
+                                  borderRadius: 4,
+                                  fontSize: 14,
+                                  fontWeight: 700,
+                                  cursor: "pointer",
+                                }}
+                                title="Confirm Changes"
+                              >
+                                ✓
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setEditingMachineId(null);
+                                  setEditForm({});
+                                }}
+                                style={{
+                                  padding: "6px 10px",
+                                  background: "#f4433622",
+                                  color: "#f44336",
+                                  border: "none",
+                                  borderRadius: 4,
+                                  fontSize: 14,
+                                  fontWeight: 700,
+                                  cursor: "pointer",
+                                }}
+                                title="Cancel"
+                              >
+                                ✕
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => {
+                                  setEditingMachineId(m._id);
+                                  setEditForm({ ...m });
+                                }}
+                                style={{
+                                  padding: "4px 8px",
+                                  background: "#FF980022",
+                                  color: "#FF9800",
+                                  border: "none",
+                                  borderRadius: 4,
+                                  fontSize: 12,
+                                  fontWeight: 700,
+                                  cursor: "pointer",
+                                }}
+                                title="Edit Machine"
+                              >
+                                🖊️
+                              </button>
+                              <button
+                                onClick={() => handleDelete(m)}
+                                style={{
+                                  background: "#450a0a",
+                                  color: "#ef4444",
+                                  border: "1px solid #7f1d1d",
+                                  borderRadius: 6,
+                                  padding: "4px 14px",
+                                  fontSize: 12,
+                                  fontWeight: 700,
+                                  cursor: "pointer",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 6,
+                                }}
+                              >
+                                🗑️
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -1018,94 +740,10 @@ export default function MachineMaster({ toast }) {
             </tbody>
           </table>
         </div>
-      )}
+      
 
       {}
-      {viewMode === "capacity" && (
-        <div
-          style={{
-            background: "#1a1a1a",
-            border: "1px solid #2a2a2a",
-            borderRadius: 10,
-            padding: 20,
-          }}
-        >
-          <h3
-            style={{
-              fontSize: 14,
-              fontWeight: 700,
-              color: "#FF9800",
-              marginBottom: 16,
-            }}
-          >
-            📊 Capacity Overview by Type
-          </h3>
-          {MACHINE_TYPES.filter((t) => (machineMaster[t] || []).length > 0).map(
-            (type) => {
-              const machines = machineMaster[type] || [];
-              const active = machines.filter((m) => m.status === "Active");
-              const totalHrs = active.reduce(
-                (s, m) => s + (m.hrsPerShift || 8) * (m.shifts || 1),
-                0,
-              );
-              const color = TYPE_COLORS[type] || "#888";
-              return (
-                <div
-                  key={type}
-                  style={{
-                    marginBottom: 14,
-                    padding: "12px 16px",
-                    background: "#111",
-                    borderRadius: 8,
-                    borderLeft: `3px solid ${color}`,
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <div>
-                      <span
-                        style={{ fontWeight: 700, color: color, fontSize: 13 }}
-                      >
-                        {TYPE_ICONS[type]} {type}
-                      </span>
-                      <span
-                        style={{ fontSize: 12, color: "#555", marginLeft: 10 }}
-                      >
-                        {machines.length} machines ({active.length} active)
-                      </span>
-                    </div>
-                    <div style={{ textAlign: "right" }}>
-                      <div
-                        style={{
-                          fontSize: 18,
-                          fontWeight: 700,
-                          color: "#e0e0e0",
-                        }}
-                      >
-                        {totalHrs}h
-                      </div>
-                      <div style={{ fontSize: 11, color: "#555" }}>
-                        total capacity/day
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            },
-          )}
-          {MACHINE_TYPES.filter((t) => (machineMaster[t] || []).length > 0)
-            .length === 0 && (
-            <div style={{ textAlign: "center", color: "#444", padding: 30 }}>
-              No machines configured yet
-            </div>
-          )}
-        </div>
-      )}
+      {/* Capacity view removed as per user request */}
     </div>
   );
 }

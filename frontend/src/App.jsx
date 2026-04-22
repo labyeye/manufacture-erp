@@ -55,6 +55,7 @@ import PrintingDetailMaster from "./pages/PrintingDetailMaster";
 import RMStock from "./pages/RMStock";
 import FGStock from "./pages/FGStock";
 import CompanyMaster from "./pages/CompanyMaster";
+import BrandMaster from "./pages/BrandMaster";
 
 function App() {
   return (
@@ -525,6 +526,8 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
         return <MachineMaster {...data} toast={showToast} />;
       case "companymaster":
         return <CompanyMaster {...data} toast={showToast} />;
+      case "brandmaster":
+        return <BrandMaster {...data} toast={showToast} />;
       case "users":
         return (
           <UserManagement {...data} currentUser={session} toast={showToast} />

@@ -8,6 +8,7 @@ import {
   ImportBtn,
   ExportBtn,
   TemplateBtn,
+  ImportModal,
 } from "../components/ui/BasicComponents";
 import ConfirmModal from "../components/ConfirmModal";
 import * as XLSX from "xlsx";
@@ -45,7 +46,7 @@ const inputStyle = {
   boxSizing: "border-box",
 };
 
-export default function ItemMaster({ clientMaster = [], toast }) {
+export default function ItemMaster({ companyMaster = [], toast }) {
   const [itemMasterFG, setItemMasterFG] = useState([]);
   const [categoryMaster, setCategoryMaster] = useState({});
   const [loading, setLoading] = useState(false);
@@ -291,6 +292,20 @@ export default function ItemMaster({ clientMaster = [], toast }) {
     }
   };
 
+  const handleDelete = async (item) => {
+    if (!confirm(`Are you sure you want to delete ${item.name}?`)) return;
+    try {
+      setLoading(true);
+      await itemMasterAPI.delete(item._id);
+      toast("Item deleted successfully", "success");
+      fetchItems();
+    } catch (error) {
+      toast(error.response?.data?.error || "Failed to delete item", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleEdit = (item) => {
     setActiveTab(item.type);
     setEditingItem(item);
@@ -306,7 +321,7 @@ export default function ItemMaster({ clientMaster = [], toast }) {
     setGstRate(item.gstRate || "18");
     setHsnCode(item.hsnCode || "");
     setReorderLevel(item.reorderLevel || "0");
-    setCompanyName(item.clientName || "");
+    setCompanyName(item.brandName || item.clientName || "");
     setCompanyCategory(item.companyCategory || "");
 
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -748,100 +763,13 @@ export default function ItemMaster({ clientMaster = [], toast }) {
 
   return (
     <div className="fade">
-      {importProgress.show && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            background: "rgba(0,0,0,0.85)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 10000,
-            backdropFilter: "blur(4px)",
-          }}
-        >
-          <div
-            style={{
-              width: "100%",
-              maxWidth: 400,
-              background: "#1a1a1a",
-              border: "1px solid #333",
-              borderRadius: 16,
-              padding: 30,
-              textAlign: "center",
-              boxShadow: "0 20px 50px rgba(0,0,0,0.5)",
-            }}
-          >
-            <div
-              style={{
-                fontSize: 18,
-                fontWeight: 700,
-                color: "#e0e0e0",
-                marginBottom: 8,
-              }}
-            >
-              🚀 Importing Items
-            </div>
-            <div style={{ fontSize: 13, color: "#666", marginBottom: 24 }}>
-              Processing {importProgress.total} items for {activeTab}
-            </div>
-
-            <div
-              style={{
-                height: 8,
-                width: "100%",
-                background: "#0d0d0d",
-                borderRadius: 10,
-                overflow: "hidden",
-                marginBottom: 16,
-              }}
-            >
-              <div
-                style={{
-                  height: "100%",
-                  width: `${(importProgress.current / importProgress.total) * 100}%`,
-                  background: "linear-gradient(90deg, #2196F3, #64B5F6)",
-                  transition: "width 0.3s ease",
-                  boxShadow: "0 0 10px #2196F388",
-                }}
-              />
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                fontSize: 12,
-                fontWeight: 700,
-                color: "#888",
-                marginBottom: 20,
-              }}
-            >
-              <span style={{ color: "#2196F3" }}>
-                {importProgress.current} done
-              </span>
-              <span>of {importProgress.total} total</span>
-            </div>
-
-            <div
-              style={{
-                fontSize: 11,
-                color: "#555",
-                fontFamily: "monospace",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {importProgress.status}
-            </div>
-          </div>
-        </div>
-      )}
+      <ImportModal
+        show={importProgress.show}
+        current={importProgress.current}
+        total={importProgress.total}
+        status={importProgress.status}
+        title="Importing Items"
+      />
       <div style={{ marginBottom: 20 }}>
         <h2
           style={{ fontSize: 22, fontWeight: 700, color: "#e0e0e0", margin: 0 }}
@@ -997,11 +925,11 @@ export default function ItemMaster({ clientMaster = [], toast }) {
                   letterSpacing: "0.5px",
                 }}
               >
-                CLIENT NAME *
+                BRAND NAME *
               </label>
               <input
                 style={inputStyle}
-                placeholder="e.g. RDBD"
+                placeholder="e.g. Brand Name"
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
               />
@@ -1019,7 +947,7 @@ export default function ItemMaster({ clientMaster = [], toast }) {
                   letterSpacing: "0.5px",
                 }}
               >
-                CLIENT CATEGORY
+                COMPANY NAME
               </label>
               <input
                 style={inputStyle}
@@ -1452,7 +1380,7 @@ export default function ItemMaster({ clientMaster = [], toast }) {
               fontSize: 13,
             }}
           >
-            <span style={{ fontSize: 16 }}>🎟️</span> Bulk Import Client Product
+            <span style={{ fontSize: 16 }}>🏭</span> Bulk Import Company Product
             Codes
           </div>
           <div style={{ fontSize: 12, color: "#6366f199", lineHeight: 1.5 }}>
@@ -1806,7 +1734,7 @@ export default function ItemMaster({ clientMaster = [], toast }) {
                         minWidth: 100,
                       }}
                     >
-                      🎟️ Client Codes {showClientCodes === item._id ? "▲" : "▼"}
+                      🎟️ Co. Codes {showClientCodes === item._id ? "▲" : "▼"}
                     </button>
                     {showClientCodes === item._id && (
                       <div
@@ -1921,8 +1849,8 @@ export default function ItemMaster({ clientMaster = [], toast }) {
                               outline: "none",
                             }}
                           >
-                            <option value="">-- Select Client --</option>
-                            {(clientMaster || []).map((c) => (
+                            <option value="">-- Select Company --</option>
+                            {(companyMaster || []).map((c) => (
                               <option key={c.name} value={c.name}>
                                 {c.name}
                               </option>

@@ -8,6 +8,7 @@ import {
   ImportBtn,
   ExportBtn,
   TemplateBtn,
+  ImportModal,
 } from "../components/ui/BasicComponents";
 import { rawMaterialStockAPI } from "../api/auth";
 
@@ -16,6 +17,7 @@ const fmt = (n) => (n ?? 0).toLocaleString("en-IN");
 export default function RMStock({
   rawStock = [],
   setRawStock,
+  itemMasterFG = [],
   session,
   toast,
   refreshData,
@@ -24,6 +26,14 @@ export default function RMStock({
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
   const [editingItem, setEditingItem] = useState(null);
+  const [showZeroStock, setShowZeroStock] = useState(false);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [importProgress, setImportProgress] = useState({
+    show: false,
+    current: 0,
+    total: 0,
+    status: "",
+  });
   const fileInputRef = useRef(null);
 
   const handleDelete = async (id) => {
@@ -38,44 +48,67 @@ export default function RMStock({
     }
   };
 
+  const allItems = useMemo(() => {
+    const masterItems = itemMasterFG.filter((i) => i.type === "Raw Material");
+    const stockMap = new Map();
+    (rawStock || []).forEach((s) => {
+      if (s.code) stockMap.set(s.code, s);
+    });
+
+    return masterItems.map((m) => {
+      const s = stockMap.get(m.code);
+      return {
+        ...m,
+        _id: s?._id || m._id,
+        isFromMaster: !s,
+        qty: s?.qty || 0,
+        weight: s?.weight || 0,
+        rate: s?.rate || 0,
+        reorderLevel: s?.reorderLevel || m.reorderLevel || 0,
+        name: m.name,
+        category: m.category || m.paperCategory || "",
+      };
+    });
+  }, [itemMasterFG, rawStock]);
+
   const categories = useMemo(() => {
-    const list = Array.isArray(rawStock) ? rawStock : [];
-    const cats = [
-      ...new Set(
-        list.map((s) => s.category || s.paperCategory || "").filter(Boolean),
-      ),
-    ];
+    const cats = [...new Set(allItems.map((s) => s.category).filter(Boolean))];
     return ["All", ...cats];
-  }, [rawStock]);
+  }, [allItems]);
 
   const filtered = useMemo(() => {
-    let list = Array.isArray(rawStock) ? rawStock : [];
+    let list = allItems;
     if (search) {
       const q = search.toLowerCase();
       list = list.filter(
         (s) =>
-          (s.name || s.paperType || "").toLowerCase().includes(q) ||
+          (s.name || "").toLowerCase().includes(q) ||
           (s.category || "").toLowerCase().includes(q) ||
-          (s.code || "").toLowerCase().includes(q) ||
-          (s.productCode || "").toLowerCase().includes(q),
+          (s.code || "").toLowerCase().includes(q),
       );
     }
     if (activeFilter !== "All") {
-      list = list.filter(
-        (s) => (s.category || s.paperCategory || "") === activeFilter,
-      );
+      list = list.filter((s) => s.category === activeFilter);
+    }
+    if (!showZeroStock) {
+      list = list.filter((s) => (s.qty || 0) > 0 || (s.weight || 0) > 0);
     }
     return list;
-  }, [rawStock, search, activeFilter]);
+  }, [allItems, search, activeFilter, showZeroStock]);
 
-  const handleUpdateReorder = async (id, newVal) => {
+  const handleUpdateReorder = async (item, newVal) => {
     try {
-      await rawMaterialStockAPI.update(id, { reorderLevel: newVal });
-      setRawStock((prev) =>
-        prev.map((s) =>
-          s.id === id || s._id === id ? { ...s, reorderLevel: newVal } : s,
-        ),
-      );
+      if (item.isFromMaster) {
+        await rawMaterialStockAPI.create({
+          ...item,
+          reorderLevel: newVal,
+        });
+      } else {
+        await rawMaterialStockAPI.update(item._id || item.id, {
+          reorderLevel: newVal,
+        });
+      }
+      if (refreshData) await refreshData();
       toast?.("Reorder level updated", "success");
     } catch (err) {
       toast?.("Failed to update", "error");
@@ -85,14 +118,15 @@ export default function RMStock({
   const handleSaveEdit = async () => {
     if (!editingItem) return;
     try {
-      const id = editingItem._id || editingItem.id;
-      await rawMaterialStockAPI.update(id, editingItem);
-      setRawStock((prev) =>
-        prev.map((s) => (s._id === id || s.id === id ? editingItem : s)),
-      );
+      if (editingItem.isFromMaster) {
+        await rawMaterialStockAPI.create(editingItem);
+      } else {
+        const id = editingItem._id || editingItem.id;
+        await rawMaterialStockAPI.update(id, editingItem);
+      }
       setEditingItem(null);
       toast?.("Item updated successfully", "success");
-      if (refreshData) refreshData();
+      if (refreshData) await refreshData();
     } catch (err) {
       toast?.("Failed to save changes", "error");
     }
@@ -108,6 +142,20 @@ export default function RMStock({
     const rate = +(s.rate || 0);
     return sum + weight * rate;
   }, 0);
+
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === filtered.length && filtered.length > 0) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filtered.map((i) => i._id || i.id));
+    }
+  };
 
   const handleExport = () => {
     const headers = [
@@ -169,12 +217,25 @@ export default function RMStock({
         }
 
         if (imported.length > 0) {
-          toast(`Processing ${imported.length} items...`, "info");
+          setImportProgress({
+            show: true,
+            current: 0,
+            total: imported.length,
+            status: "Starting import...",
+          });
+
           (async () => {
             let successCount = 0;
             let updateCount = 0;
 
-            for (const item of imported) {
+            for (let i = 0; i < imported.length; i++) {
+              const item = imported[i];
+              setImportProgress((p) => ({
+                ...p,
+                current: i + 1,
+                status: `Processing: ${item.name}`,
+              }));
+
               const existing = (rawStock || []).find(
                 (s) =>
                   (item.code && s.code === item.code) ||
@@ -183,10 +244,6 @@ export default function RMStock({
 
               try {
                 if (existing) {
-                  // Adjust weight since RM Stock is often weight-based
-                  // But the user said "qty should be increase"
-                  // Let's adjust both qty and weight if they are provided
-                  // Backend adjustStock currently only adjusts qty? Let's check backend
                   await rawMaterialStockAPI.adjustStock(
                     existing._id,
                     item.qty,
@@ -207,6 +264,7 @@ export default function RMStock({
               `Import complete: ${successCount} new, ${updateCount} updated`,
               "success",
             );
+            setImportProgress({ show: false, current: 0, total: 0, status: "" });
             if (refreshData) refreshData();
           })();
         }
@@ -246,7 +304,7 @@ export default function RMStock({
           <button
             onClick={async () => {
               setSaving(true);
-              await handleUpdateReorder(item._id || item.id, +val);
+              await handleUpdateReorder(item, +val);
               setSaving(false);
             }}
             disabled={saving}
@@ -269,6 +327,13 @@ export default function RMStock({
 
   return (
     <div style={{ paddingBottom: 40 }}>
+      <ImportModal
+        show={importProgress.show}
+        current={importProgress.current}
+        total={importProgress.total}
+        status={importProgress.status}
+        title="Importing Raw Material Stock"
+      />
       {editingItem && (
         <div
           className="modal-backdrop"
@@ -599,6 +664,22 @@ export default function RMStock({
         >
           Raw Material Stock
         </h1>
+        <button
+          onClick={() => setShowZeroStock(!showZeroStock)}
+          style={{
+            marginLeft: "auto",
+            padding: "6px 12px",
+            borderRadius: 6,
+            fontSize: 12,
+            fontWeight: 700,
+            background: showZeroStock ? C.blue : "#141416",
+            color: "#fff",
+            border: `1px solid ${showZeroStock ? C.blue : "#2a2a2e"}`,
+            cursor: "pointer",
+          }}
+        >
+          {showZeroStock ? "Hide Zero Stock" : "Show Zero Stock"}
+        </button>
       </div>
       <p
         style={{
@@ -750,6 +831,21 @@ export default function RMStock({
         >
           <thead>
             <tr style={{ borderBottom: "1px solid #2a2a2e" }}>
+              <th style={{ width: 40, padding: "14px 16px" }}>
+                <input
+                  type="checkbox"
+                  checked={
+                    filtered.length > 0 && selectedIds.length === filtered.length
+                  }
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedIds(filtered.map((s) => s._id || s.id));
+                    } else {
+                      setSelectedIds([]);
+                    }
+                  }}
+                />
+              </th>
               {[
                 { label: "CODE", w: 100 },
                 { label: "MATERIAL NAME", w: "auto" },
@@ -788,8 +884,28 @@ export default function RMStock({
               return (
                 <tr
                   key={s._id || s.id || idx}
-                  style={{ borderBottom: "1px solid #1e1e22" }}
+                  style={{
+                    borderBottom: "1px solid #1e1e22",
+                    background: selectedIds.includes(s._id || s.id)
+                      ? "rgba(0, 122, 255, 0.05)"
+                      : "transparent",
+                  }}
                 >
+                  <td style={{ padding: "16px" }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(s._id || s.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedIds((prev) => [...prev, s._id || s.id]);
+                        } else {
+                          setSelectedIds((prev) =>
+                            prev.filter((id) => id !== (s._id || s.id)),
+                          );
+                        }
+                      }}
+                    />
+                  </td>
                   <td
                     style={{
                       padding: "16px",

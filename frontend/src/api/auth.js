@@ -584,3 +584,41 @@ export const consumableStockAPI = {
 };
 
 export default api;
+export const brandMasterAPI = {
+  getAll: async () => {
+    const response = await api.get("/brand-master");
+    return response.data;
+  },
+  getOne: async (id) => {
+    const response = await api.get(`/brand-master/${id}`);
+    return response.data;
+  },
+  create: async (data) => {
+    const response = await api.post("/brand-master", data);
+    return response.data;
+  },
+  update: async (id, data) => {
+    const response = await api.put(`/brand-master/${id}`, data);
+    return response.data;
+  },
+  delete: async (id) => {
+    const response = await api.delete(`/brand-master/${id}`);
+    return response.data;
+  },
+  updateStatus: async (id, status) => {
+    const response = await api.patch(`/brand-master/${id}/status`, { status });
+    return response.data;
+  },
+};
+
+export const planningAPI = {
+  generate: async () => {
+    const response = await api.post("/planning/generate");
+    return response.data;
+  },
+
+  getCalendar: async (params) => {
+    const response = await api.get("/planning/calendar", { params });
+    return response.data;
+  },
+};

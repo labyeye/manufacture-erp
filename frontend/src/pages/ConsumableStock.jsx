@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef } from "react";
 import * as XLSX from "xlsx";
 import { C } from "../constants/colors";
-import { Card, SectionTitle, Badge, Field, SubmitBtn, DateRangeFilter, ImportBtn, ExportBtn, TemplateBtn } from "../components/ui/BasicComponents";
+import { Card, SectionTitle, Badge, Field, SubmitBtn, DateRangeFilter, ImportBtn, ExportBtn, TemplateBtn, ImportModal } from "../components/ui/BasicComponents";
 import { consumableStockAPI } from "../api/auth";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
@@ -14,7 +14,7 @@ export default function ConsumableStock({
   consumableStock = [],
   setConsumableStock,
   categoryMaster = {},
-  itemMasterFG = {},
+  itemMasterFG = [],
   session,
   toast,
   refreshData,
@@ -28,32 +28,70 @@ export default function ConsumableStock({
   const [issueLog, setIssueLog] = useState([]);
   const [drDateFrom, setDrDateFrom] = useState("");
   const [drDateTo, setDrDateTo] = useState("");
+  const [showZeroStock, setShowZeroStock] = useState(false);
+  const [importProgress, setImportProgress] = useState({
+    show: false,
+    current: 0,
+    total: 0,
+    status: "",
+  });
+  const [selectedIds, setSelectedIds] = useState([]);
   const fileInputRef = useRef(null);
 
   
-  const totalItems = consumableStock.length;
-  const inStock = consumableStock.filter((s) => (s.qty || 0) > 0).length;
-  const outOfStock = consumableStock.filter((s) => (s.qty || 0) <= 0).length;
-  const belowReorder = consumableStock.filter(
+  const totalItemsCount = filtered.length;
+  const inStockCount = filtered.filter((s) => (s.qty || 0) > 0).length;
+  const outOfStockCount = filtered.filter((s) => (s.qty || 0) <= 0).length;
+  const belowReorderCount = filtered.filter(
     (s) => (s.reorderLevel || 0) > 0 && (s.qty || 0) <= (s.reorderLevel || 0),
   ).length;
-  const totalValue = consumableStock.reduce(
-    (sum, s) => sum + (+(s.qty || 0)) * (+(s.rate || 0)),
+  const totalValueSum = filtered.reduce(
+    (sum, s) => sum + +(s.qty || 0) * +(s.rate || 0),
     0,
   );
 
   
+  const allItems = useMemo(() => {
+    const masterItems = itemMasterFG.filter(
+      (i) => i.type === "Consumable" || i.type === "Machine Spare",
+    );
+    const stockMap = new Map();
+    (consumableStock || []).forEach((s) => {
+      if (s.code) stockMap.set(s.code, s);
+    });
+
+    return masterItems.map((m) => {
+      const s = stockMap.get(m.code);
+      return {
+        ...m,
+        _id: s?._id || m._id,
+        isFromMaster: !s,
+        qty: s?.qty || 0,
+        rate: s?.rate || m.rate || 0,
+        reorderLevel: s?.reorderLevel || m.reorderLevel || 0,
+        unit: s?.unit || m.uom || "nos",
+      };
+    });
+  }, [itemMasterFG, consumableStock]);
+
   const filtered = useMemo(() => {
-    let list = consumableStock || [];
+    let list = allItems;
     if (search) {
       const q = search.toLowerCase();
-      list = list.filter((s) => (s.name || "").toLowerCase().includes(q) || (s.category || "").toLowerCase().includes(q));
+      list = list.filter(
+        (s) =>
+          (s.name || "").toLowerCase().includes(q) ||
+          (s.category || "").toLowerCase().includes(q),
+      );
     }
     if (typeFilter !== "All") {
       list = list.filter((s) => (s.type || s.category || "") === typeFilter);
     }
+    if (!showZeroStock) {
+      list = list.filter((s) => (s.qty || 0) > 0);
+    }
     return list;
-  }, [consumableStock, search, typeFilter]);
+  }, [allItems, search, typeFilter, showZeroStock]);
 
   
   const handleIssue = async () => {
@@ -72,39 +110,32 @@ export default function ConsumableStock({
     }
 
     try {
-      // Persist to database
-      await consumableStockAPI.adjustStock(
-        selectedStock._id || selectedStock.id,
-        -qty,
-      );
-
-      // Update local state
-      setConsumableStock((prev) =>
-        prev.map((s) =>
-          (s._id || s.id) === (selectedStock._id || selectedStock.id)
-            ? { ...s, qty: (s.qty || 0) - qty }
-            : s,
-        ),
-      );
-
-      setIssueLog((prev) => [
-        {
-          _id: uid(),
-          date: today(),
-          itemId: selectedStock._id || selectedStock.id,
-          itemName: selectedStock.name,
-          qty,
-          category: selectedStock.category || "",
-          issuedBy: "User",
-        },
-        ...prev,
-      ]);
+      if (selectedStock.isFromMaster) {
+        // Create new stock record
+        await consumableStockAPI.create({
+          name: selectedStock.name,
+          code: selectedStock.code,
+          category: selectedStock.category,
+          type: selectedStock.type,
+          qty: -qty, // Backend usually subtracts from 0 if creating? Or maybe it should be 0? 
+          // Usually adjustStock subtracts from existing. Create should set initial qty.
+          // If issuing, we are reducing stock. So 0 - qty = -qty.
+          rate: selectedStock.rate,
+          unit: selectedStock.unit,
+        });
+      } else {
+        await consumableStockAPI.adjustStock(
+          selectedStock._id || selectedStock.id,
+          -qty,
+        );
+      }
 
       toast(`Issued ${qty} units of ${selectedStock.name}`, "success");
       setSelectedStock(null);
       setIssueQty("");
+      if (refreshData) refreshData();
     } catch (error) {
-      toast("Failed to update stock in database", "error");
+      toast("Failed to update stock", "error");
       console.error(error);
     }
   };
@@ -121,7 +152,7 @@ export default function ConsumableStock({
       "Reorder Level",
       "Rate (₹)",
     ];
-    const rows = (consumableStock || []).map((s) => [
+    const rows = filtered.map((s) => [
       s.code || "",
       s.name || "",
       s.category || "",
@@ -171,12 +202,25 @@ export default function ConsumableStock({
         }
 
         if (imported.length > 0) {
-          toast(`Processing ${imported.length} items...`, "info");
+          setImportProgress({
+            show: true,
+            current: 0,
+            total: imported.length,
+            status: "Starting import...",
+          });
+
           (async () => {
             let successCount = 0;
             let updateCount = 0;
 
-            for (const item of imported) {
+            for (let i = 0; i < imported.length; i++) {
+              const item = imported[i];
+              setImportProgress((p) => ({
+                ...p,
+                current: i + 1,
+                status: `Processing: ${item.name}`,
+              }));
+
               const existing = (consumableStock || []).find(
                 (s) =>
                   s.name.toLowerCase().trim() === item.name.toLowerCase().trim(),
@@ -199,6 +243,7 @@ export default function ConsumableStock({
               `Import complete: ${successCount} new, ${updateCount} updated`,
               "success",
             );
+            setImportProgress({ show: false, current: 0, total: 0, status: "" });
             if (refreshData) refreshData();
           })();
         }
@@ -213,7 +258,36 @@ export default function ConsumableStock({
 
   return (
     <div className="fade">
-      <SectionTitle icon="📦" title="Consumable Stock" sub="Consumables, machine spares and other non-RM inventory" />
+      <ImportModal
+        show={importProgress.show}
+        current={importProgress.current}
+        total={importProgress.total}
+        status={importProgress.status}
+        title="Importing Consumable Stock"
+      />
+      <div style={{ display: "flex", alignItems: "center", marginBottom: 20 }}>
+        <SectionTitle
+          icon="📦"
+          title="Consumable Stock"
+          sub="Consumables, machine spares and other non-RM inventory"
+        />
+        <button
+          onClick={() => setShowZeroStock(!showZeroStock)}
+          style={{
+            marginLeft: "auto",
+            padding: "8px 16px",
+            borderRadius: 6,
+            fontSize: 13,
+            fontWeight: 700,
+            background: showZeroStock ? C.blue : "transparent",
+            color: showZeroStock ? "#fff" : C.muted,
+            border: `1px solid ${showZeroStock ? C.blue : C.border}`,
+            cursor: "pointer",
+          }}
+        >
+          {showZeroStock ? "Hide Zero Stock" : "Show Zero Stock"}
+        </button>
+      </div>
 
       {}
       <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
@@ -246,11 +320,11 @@ export default function ConsumableStock({
         <div>
           {}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12, marginBottom: 18 }}>
-            <StatCard value={fmt(totalItems)} label="Total Items" color={C.blue || "#3b82f6"} />
-            <StatCard value={fmt(inStock)} label="In Stock" color={C.green || "#22c55e"} />
-            <StatCard value={fmt(outOfStock)} label="Out of Stock" color={C.red || "#ef4444"} />
-            <StatCard value={fmt(belowReorder)} label="Below Reorder" color={C.yellow || "#facc15"} />
-            <StatCard value={`₹${fmt(Math.round(totalValue))}`} label="Total Value (₹)" color={C.orange || "#f97316"} />
+            <StatCard value={fmt(totalItemsCount)} label="Total Items" color={C.blue || "#3b82f6"} />
+            <StatCard value={fmt(inStockCount)} label="In Stock" color={C.green || "#22c55e"} />
+            <StatCard value={fmt(outOfStockCount)} label="Out of Stock" color={C.red || "#ef4444"} />
+            <StatCard value={fmt(belowReorderCount)} label="Below Reorder" color={C.yellow || "#facc15"} />
+            <StatCard value={`₹${fmt(Math.round(totalValueSum))}`} label="Total Value (₹)" color={C.orange || "#f97316"} />
           </div>
 
           {}
@@ -322,8 +396,47 @@ export default function ConsumableStock({
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-                      {["CODE", "NAME", "CATEGORY", "TYPE", "QTY", "UNIT", "REORDER", "RATE (₹)", "VALUE (₹)", "STATUS", ""].map((h) => (
-                        <th key={h} style={{ padding: "11px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", color: C.muted, background: C.surface }}>
+                      <th style={{ width: 40, padding: "11px 14px" }}>
+                        <input
+                          type="checkbox"
+                          checked={
+                            filtered.length > 0 &&
+                            selectedIds.length === filtered.length
+                          }
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedIds(filtered.map((s) => s._id || s.id));
+                            } else {
+                              setSelectedIds([]);
+                            }
+                          }}
+                        />
+                      </th>
+                      {[
+                        "CODE",
+                        "NAME",
+                        "CATEGORY",
+                        "TYPE",
+                        "QTY",
+                        "UNIT",
+                        "REORDER",
+                        "RATE (₹)",
+                        "VALUE (₹)",
+                        "STATUS",
+                        "",
+                      ].map((h) => (
+                        <th
+                          key={h}
+                          style={{
+                            padding: "11px 14px",
+                            textAlign: "left",
+                            fontSize: 11,
+                            fontWeight: 700,
+                            letterSpacing: "0.06em",
+                            color: C.muted,
+                            background: C.surface,
+                          }}
+                        >
                           {h}
                         </th>
                       ))}
@@ -336,8 +449,42 @@ export default function ConsumableStock({
                       const statusColor = out ? C.red || "#ef4444" : low ? C.orange || "#f97316" : C.green || "#22c55e";
                       const statusLabel = out ? "Out of Stock" : low ? "Low Stock" : "In Stock";
                       return (
-                        <tr key={s.id || i} style={{ borderBottom: `1px solid ${C.border}22`, background: i % 2 === 1 ? (C.inputBg || "#ffffff08") : "transparent" }}>
-                          <td style={{ padding: "10px 14px", color: C.muted, fontSize: 11, fontFamily: "'JetBrains Mono',monospace" }}>{s.code || "—"}</td>
+                        <tr
+                          key={s.id || i}
+                          style={{
+                            borderBottom: `1px solid ${C.border}22`,
+                            background: selectedIds.includes(s._id || s.id)
+                              ? (C.blue || "#3b82f6") + "11"
+                              : i % 2 === 1
+                                ? C.inputBg || "#ffffff08"
+                                : "transparent",
+                          }}
+                        >
+                          <td style={{ padding: "10px 14px" }}>
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.includes(s._id || s.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedIds((prev) => [...prev, s._id || s.id]);
+                                } else {
+                                  setSelectedIds((prev) =>
+                                    prev.filter((id) => id !== (s._id || s.id)),
+                                  );
+                                }
+                              }}
+                            />
+                          </td>
+                          <td
+                            style={{
+                              padding: "10px 14px",
+                              color: C.muted,
+                              fontSize: 11,
+                              fontFamily: "'JetBrains Mono',monospace",
+                            }}
+                          >
+                            {s.code || "—"}
+                          </td>
                           <td style={{ padding: "10px 14px", fontWeight: 600 }}>{s.name}</td>
                           <td style={{ padding: "10px 14px", color: C.muted, fontSize: 12 }}>{s.category || "—"}</td>
                           <td style={{ padding: "10px 14px", fontSize: 12 }}>
