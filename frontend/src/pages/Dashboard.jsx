@@ -214,10 +214,10 @@ export function Dashboard({ data, session, toast }) {
 
   const activeJOs = useMemo(() => {
     return jobOrders.filter((j) => {
-      // Exclude Completed/Cancelled
+      
       if (j.status === "Completed" || j.status === "Cancelled") return false;
 
-      // Also exclude if all processes are done or no processes assigned
+      
       const jobProcs = j.process || [];
       if (jobProcs.length === 0) return false;
 

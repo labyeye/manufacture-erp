@@ -1,23 +1,21 @@
 import React from "react";
 import { C } from "../../constants/colors";
 
-export function Badge({ label, text, color = C.accent }) {
-  const content = label || text;
+export function Badge({ text, color = C.accent }) {
   return (
     <span
       style={{
-        background: "#1e293b",
-        color: color === C.accent ? "#fff" : color,
+        background: color + "22",
+        color: color,
         border: `1px solid ${color}44`,
         borderRadius: 4,
         padding: "2px 8px",
         fontSize: 10,
         fontWeight: 800,
         whiteSpace: "nowrap",
-        letterSpacing: "normal",
       }}
     >
-      {content}
+      {text}
     </span>
   );
 }
@@ -39,22 +37,23 @@ export function Card({ children, style = {}, onClick }) {
   );
 }
 
-export function SectionTitle({ icon, title, sub }) {
+export function SectionTitle({ icon, title, sub, children }) {
   return (
-    <div style={{ marginBottom: 20 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <span style={{ fontSize: 22, filter: "brightness(1) invert(0)" }}>
-          {icon}
-        </span>
-        <h2 style={{ fontSize: 20, color: C.text }}>{title}</h2>
+    <div style={{ marginBottom: 25, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+      <div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 24 }}>{icon}</span>
+          <h2 style={{ fontSize: 22, color: "#fff", margin: 0, fontWeight: 700 }}>{title}</h2>
+        </div>
+        {sub && (
+          <p style={{ color: "#666", fontSize: 13, marginTop: 4, marginLeft: 34, marginOpen: 0 }}>
+            {sub}
+          </p>
+        )}
       </div>
-      {sub && (
-        <p
-          style={{ color: C.muted, fontSize: 13, marginTop: 4, marginLeft: 32 }}
-        >
-          {sub}
-        </p>
-      )}
+      <div style={{ display: "flex", gap: 10 }}>
+        {children}
+      </div>
     </div>
   );
 }
@@ -94,31 +93,134 @@ export function Field({ label, children, span }) {
   );
 }
 
-export function SubmitBtn({
-  label = "Submit",
-  color = C.accent,
-  onClick,
-  disabled,
-}) {
+export function SubmitBtn({ label, ...props }) {
+  return <Button text={label} type="submit" {...props} />;
+}
+
+export function Button({ text, onClick, color = C.accent, type = "button", loading, small, icon }) {
   return (
     <button
+      type={type}
       onClick={onClick}
-      disabled={disabled}
+      disabled={loading}
       style={{
-        marginTop: 18,
-        background: disabled ? C.border : color,
-        color: disabled ? C.muted : "#fff",
+        background: color,
+        color: "#fff",
         border: "none",
-        borderRadius: 7,
-        padding: "11px 28px",
+        borderRadius: 6,
+        padding: small ? "5px 12px" : "10px 20px",
+        fontSize: small ? 11 : 13,
         fontWeight: 700,
-        fontSize: 14,
-        transition: "background .2s",
-        cursor: disabled ? "not-allowed" : "pointer",
+        cursor: loading ? "not-allowed" : "pointer",
+        opacity: loading ? 0.7 : 1,
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 8,
+        transition: "all 0.2s"
       }}
     >
-      {label}
+      {icon && <span>{icon}</span>}
+      {loading ? "..." : text}
     </button>
+  );
+}
+
+export function Input({ label, ...props }) {
+  return (
+    <div style={{ marginBottom: 15 }}>
+      {label && <label style={{ display: "block", fontSize: 11, color: "#666", fontWeight: 700, marginBottom: 5, textTransform: "uppercase" }}>{label}</label>}
+      <input
+        {...props}
+        style={{
+          width: "100%",
+          padding: "10px 12px",
+          background: "#0a0a0a",
+          border: `1px solid ${C.border}`,
+          borderRadius: 6,
+          color: "#fff",
+          fontSize: 13,
+          outline: "none",
+          boxSizing: "border-box"
+        }}
+      />
+    </div>
+  );
+}
+
+export function Select({ label, options = [], ...props }) {
+  return (
+    <div style={{ marginBottom: 15 }}>
+      {label && <label style={{ display: "block", fontSize: 11, color: "#666", fontWeight: 700, marginBottom: 5, textTransform: "uppercase" }}>{label}</label>}
+      <select
+        {...props}
+        style={{
+          width: "100%",
+          padding: "10px 12px",
+          background: "#0a0a0a",
+          border: `1px solid ${C.border}`,
+          borderRadius: 6,
+          color: "#fff",
+          fontSize: 13,
+          outline: "none",
+          boxSizing: "border-box"
+        }}
+      >
+        {options.map(opt => {
+          const val = typeof opt === 'object' ? opt.value : opt;
+          const lbl = typeof opt === 'object' ? opt.label : opt;
+          return <option key={val} value={val}>{lbl}</option>;
+        })}
+      </select>
+    </div>
+  );
+}
+
+export function Modal({ title, children, onClose }) {
+  return (
+    <div style={{
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", 
+      backdropFilter: "blur(8px)", zIndex: 1000, 
+      display: "flex", alignItems: "center", justifyContent: "center", padding: 20
+    }}>
+      <div style={{
+        background: "#111", border: `1px solid ${C.border}`, borderRadius: 12,
+        width: "100%", maxWidth: 600, padding: 25, boxShadow: "0 20px 40px rgba(0,0,0,0.4)"
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <h3 style={{ margin: 0, fontSize: 18, color: "#fff" }}>{title}</h3>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "#666", fontSize: 24, cursor: "pointer" }}>×</button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+export function Table({ headers, data, loading }) {
+  if (loading) return <div style={{ padding: 40, textAlign: "center", color: C.muted }}>Loading data...</div>;
+  if (!data.length) return <div style={{ padding: 40, textAlign: "center", color: C.muted }}>No records found.</div>;
+
+  return (
+    <div style={{ overflowX: "auto" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <thead>
+          <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+            {headers.map(h => (
+              <th key={h} style={{ textAlign: "left", padding: "12px 15px", color: "#666", fontSize: 11, fontWeight: 800, textTransform: "uppercase" }}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((row, i) => (
+            <tr key={i} style={{ borderBottom: `1px solid ${C.border}44` }}>
+              {row.map((cell, j) => (
+                <td key={j} style={{ padding: "12px 15px", color: "#e0e0e0", fontSize: 13 }}>{cell}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 

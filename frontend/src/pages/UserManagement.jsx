@@ -11,6 +11,10 @@ const ALL_MODULES = [
   { key: "production", label: "Production", icon: "🔧" },
   { key: "printingmaster", label: "Printing Detail Master", icon: "🖨️" },
   { key: "calendar", label: "Production Calendar", icon: "📅" },
+  { key: "toolingmaster", label: "Tooling Master", icon: "🛠️" },
+  { key: "factorycalendar", label: "Factory Calendar", icon: "🗓️" },
+  { key: "maintenance", label: "Machine Maintenance", icon: "🔧" },
+  { key: "breakdowns", label: "Breakdown Log", icon: "⚠️" },
   { key: "dispatch", label: "Dispatch", icon: "🚚" },
   { key: "rawstock", label: "RM Stock", icon: "🏗️" },
   { key: "fg", label: "FG Stock", icon: "🎪" },
@@ -105,7 +109,7 @@ export default function UserManagement({ currentUser, toast }) {
 
       if (type === "view") {
         if (currentAllowed.includes(moduleKey)) {
-          // Removing view auto removes edit
+          
           return {
             ...prev,
             allowedTabs: currentAllowed.filter((m) => m !== moduleKey),
@@ -123,7 +127,7 @@ export default function UserManagement({ currentUser, toast }) {
             editableTabs: currentEditable.filter((m) => m !== moduleKey),
           };
         } else {
-          // Adding edit auto adds view
+          
           return {
             ...prev,
             allowedTabs: currentAllowed.includes(moduleKey)

@@ -546,11 +546,11 @@ export default function ProductionUpdate({
                     
                     setEntry(prev => {
                       const updated = { ...prev, qtyCompleted: e.target.value };
-                      // If completed is max, rejection MUST be 0
+                      
                       if (val === remain) {
                         updated.qtyRejected = 0;
                       } else {
-                        // Ensure total doesn't exceed remain
+                        
                         const currentRej = Number(prev.qtyRejected || 0);
                         if (val + currentRej > remain) {
                           updated.qtyRejected = remain - val;

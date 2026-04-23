@@ -11,7 +11,7 @@ const companyMasterSchema = new mongoose.Schema({
     trim: true
   },
   priority: {
-    type: Number, // 1 (Highest) to 5 (Lowest)
+    type: Number, 
     default: 3
   },
   contact: {

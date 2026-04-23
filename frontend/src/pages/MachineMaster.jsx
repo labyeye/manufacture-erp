@@ -1,40 +1,36 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { machineMasterAPI } from "../api/auth";
-
-const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
+import { ALL_SKU_FAMILIES, PARALLEL_MACHINE_GROUPS } from "../constants/seedData";
 
 const MACHINE_TYPES = [
-  "Bag Making",
-  "Cutting",
   "Printing",
+  "Varnish",
   "Die Cutting",
-  "Pasting",
   "Lamination",
   "Formation",
+  "Bag Making",
+  "Sheet Cutting",
   "Manual Formation",
+  "Cutting",
+  "Handmade",
 ];
 
-const TYPE_ICONS = {
-  "Bag Making": "👜",
-  Cutting: "✂️",
-  Printing: "🖨️",
-  "Die Cutting": "🔲",
-  Pasting: "🔧",
-  Lamination: "📄",
-  Formation: "📦",
-  "Manual Formation": "🤲",
+const TYPE_COLORS = {
+  Printing: "#2196F3",
+  Varnish: "#00BCD4",
+  "Die Cutting": "#FF9800",
+  Lamination: "#9C27B0",
+  Formation: "#E91E63",
+  "Bag Making": "#f97316",
+  "Sheet Cutting": "#a855f7",
+  "Manual Formation": "#8D6E63",
+  Cutting: "#F44336",
+  Handmade: "#4CAF50",
 };
 
-const TYPE_COLORS = {
-  "Bag Making": "#9C27B0",
-  Cutting: "#F44336",
-  Printing: "#2196F3",
-  "Die Cutting": "#FF9800",
-  Pasting: "#4CAF50",
-  Lamination: "#00BCD4",
-  Formation: "#E91E63",
-  "Manual Formation": "#8D6E63",
-};
+const DIVISION_COLORS = { Sheet: "#3b82f6", Reel: "#f59e0b" };
+
+const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 const inputStyle = {
   padding: "9px 12px",
@@ -45,6 +41,25 @@ const inputStyle = {
   background: "#141414",
   color: "#e0e0e0",
   outline: "none",
+  width: "100%",
+  boxSizing: "border-box",
+};
+
+const labelStyle = {
+  fontSize: 11,
+  fontWeight: 600,
+  color: "#666",
+  display: "block",
+  marginBottom: 6,
+  letterSpacing: "0.5px",
+  textTransform: "uppercase",
+};
+
+const sectionHeaderStyle = {
+  gridColumn: "1 / -1",
+  borderBottom: "1px solid #2a2a2a",
+  paddingBottom: 10,
+  marginTop: 10,
 };
 
 export default function MachineMaster({ toast }) {
@@ -54,10 +69,9 @@ export default function MachineMaster({ toast }) {
   const [machineType, setMachineType] = useState("Printing");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("All Types");
+  const [filterDivision, setFilterDivision] = useState("All Divisions");
   const [filterStatus, setFilterStatus] = useState("All Status");
-  const [viewMode, setViewMode] = useState("list");
-  const [editingMachineId, setEditingMachineId] = useState(null);
-  const [editForm, setEditForm] = useState({});
+  const [editingMachine, setEditingMachine] = useState(null);
 
   useEffect(() => {
     fetchMachines();
@@ -72,77 +86,27 @@ export default function MachineMaster({ toast }) {
     }
   };
 
-  const allMachines = useMemo(() => machines, [machines]);
-
-  const machineMaster = useMemo(() => {
-    const grouped = {};
-    machines.forEach((machine) => {
-      if (!grouped[machine.type]) {
-        grouped[machine.type] = [];
-      }
-      grouped[machine.type].push(machine);
-    });
-    return grouped;
-  }, [machines]);
-
-  const totalMachines = allMachines.length;
-  const activeMachines = allMachines.filter(
-    (m) => m.status === "Active",
-  ).length;
-  const inactiveMachines = allMachines.filter(
-    (m) => m.status !== "Active",
-  ).length;
-  const configuredTypes = Object.keys(machineMaster).filter(
-    (t) => (machineMaster[t] || []).length > 0,
-  ).length;
-
   const filteredMachines = useMemo(
     () =>
-      allMachines.filter((m) => {
-        const matchSearch =
-          !searchTerm ||
-          m.name?.toLowerCase().includes(searchTerm.toLowerCase());
+      machines.filter((m) => {
+        const matchSearch = !searchTerm || m.name?.toLowerCase().includes(searchTerm.toLowerCase());
         const matchType = filterType === "All Types" || m.type === filterType;
-        const matchStatus =
-          filterStatus === "All Status" || m.status === filterStatus;
-        return matchSearch && matchType && matchStatus;
+        const matchDiv = filterDivision === "All Divisions" || m.division === filterDivision;
+        const matchStatus = filterStatus === "All Status" || m.status === filterStatus;
+        return matchSearch && matchType && matchDiv && matchStatus;
       }),
-    [allMachines, searchTerm, filterType, filterStatus],
+    [machines, searchTerm, filterType, filterDivision, filterStatus]
   );
-
-  const groupedMachines = useMemo(() => {
-    const groups = {};
-    filteredMachines.forEach((m) => {
-      if (!groups[m.type]) groups[m.type] = [];
-      groups[m.type].push(m);
-    });
-    return groups;
-  }, [filteredMachines]);
 
   const handleAdd = async () => {
     if (!machineName.trim()) {
       toast("Enter machine name", "error");
       return;
     }
-    if (!machineType) {
-      toast("Select machine type", "error");
-      return;
-    }
-
     setLoading(true);
     try {
-      await machineMasterAPI.create({
-        name: machineName.trim(),
-        type: machineType,
-        capacity: 0,
-        capacityUnit: "pcs/hr",
-        standardShiftHours: 8,
-        maxShiftsAllowed: 1,
-        overtimeAllowed: false,
-        practicalRunRate: 0,
-        division: 'Reel'
-      });
-      toast(`Machine "${machineName}" added to ${machineType}`, "success");
+      await machineMasterAPI.create({ name: machineName.trim(), type: machineType, status: "Active" });
+      toast(`Machine "${machineName}" added`, "success");
       setMachineName("");
       fetchMachines();
     } catch (error) {
@@ -152,317 +116,523 @@ export default function MachineMaster({ toast }) {
     }
   };
 
-  const handleDelete = async (machine) => {
-    if (!confirm("Delete this machine?")) return;
-
+  const handleUpdate = async (id, data) => {
     try {
-      await machineMasterAPI.delete(machine._id);
+      await machineMasterAPI.update(id, data);
+      toast("Machine updated", "success");
+      setEditingMachine(null);
+      fetchMachines();
+    } catch (error) {
+      toast("Update failed", "error");
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm("Delete this machine?")) return;
+    try {
+      await machineMasterAPI.delete(id);
       toast("Machine deleted", "success");
       fetchMachines();
     } catch (error) {
-      toast(error.response?.data?.error || "Failed to delete machine", "error");
+      toast("Delete failed", "error");
     }
   };
 
-  const handleToggleStatus = async (machine) => {
-    const newStatus = machine.status === "Active" ? "Inactive" : "Active";
-    try {
-      await machineMasterAPI.updateStatus(machine._id, newStatus);
-      fetchMachines();
-    } catch (error) {
-      toast(error.response?.data?.error || "Failed to update status", "error");
-    }
+  const EditModal = ({ machine }) => {
+    const [form, setForm] = useState({ ...machine });
+
+    const handleChange = (field, value) => {
+      setForm((prev) => ({ ...prev, [field]: value }));
+    };
+
+    const toggleDay = (day) => {
+      const current = form.workingDays || [];
+      const updated = current.includes(day) ? current.filter((d) => d !== day) : [...current, day];
+      handleChange("workingDays", updated);
+      handleChange("weeklyOff", DAYS_OF_WEEK.filter((d) => !updated.includes(d)));
+    };
+
+    const toggleCompat = (sku) => {
+      const current = Array.isArray(form.productCompatibility) ? form.productCompatibility : [];
+      const updated = current.includes(sku) ? current.filter((s) => s !== sku) : [...current, sku];
+      handleChange("productCompatibility", updated);
+    };
+
+    const compatList = Array.isArray(form.productCompatibility) ? form.productCompatibility : [];
+
+    return (
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,0.85)",
+          backdropFilter: "blur(8px)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 2000,
+          padding: 20,
+        }}
+      >
+        <div
+          style={{
+            background: "#121212",
+            border: "1px solid #2a2a2a",
+            borderRadius: 16,
+            width: "100%",
+            maxWidth: 960,
+            maxHeight: "90vh",
+            overflowY: "auto",
+            boxShadow: "0 20px 50px rgba(0,0,0,0.5)",
+            padding: 30,
+            color: "#fff",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 25 }}>
+            <h3 style={{ margin: 0, fontSize: 20 }}>Configure {machine.name}</h3>
+            <button
+              onClick={() => setEditingMachine(null)}
+              style={{ background: "transparent", border: "none", color: "#666", fontSize: 24, cursor: "pointer" }}
+            >
+              ×
+            </button>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 20 }}>
+            {}
+            <div style={sectionHeaderStyle}>
+              <span style={{ fontSize: 12, fontWeight: 800, color: "#FF9800" }}>BASIC CONFIGURATION</span>
+            </div>
+
+            <div>
+              <label style={labelStyle}>Machine Name</label>
+              <input style={inputStyle} value={form.name} onChange={(e) => handleChange("name", e.target.value)} />
+            </div>
+            <div>
+              <label style={labelStyle}>Process Type</label>
+              <select style={inputStyle} value={form.type} onChange={(e) => handleChange("type", e.target.value)}>
+                {MACHINE_TYPES.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>Division</label>
+              <select style={inputStyle} value={form.division} onChange={(e) => handleChange("division", e.target.value)}>
+                <option value="Sheet">Sheet</option>
+                <option value="Reel">Reel</option>
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>Active Status</label>
+              <select style={inputStyle} value={form.status} onChange={(e) => handleChange("status", e.target.value)}>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>Current Floor Status</label>
+              <select style={inputStyle} value={form.currentStatus} onChange={(e) => handleChange("currentStatus", e.target.value)}>
+                <option value="Idle">Idle</option>
+                <option value="Running">Running</option>
+                <option value="Breakdown">Breakdown</option>
+                <option value="Under Maintenance">Under Maintenance</option>
+              </select>
+            </div>
+
+            {}
+            <div style={sectionHeaderStyle}>
+              <span style={{ fontSize: 12, fontWeight: 800, color: "#2196F3" }}>CAPACITY & SHIFTS</span>
+            </div>
+
+            <div>
+              <label style={labelStyle}>Practical Run Rate (units/hr)</label>
+              <input
+                type="number"
+                style={inputStyle}
+                value={form.practicalRunRate}
+                onChange={(e) => handleChange("practicalRunRate", Number(e.target.value))}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Capacity Unit</label>
+              <select style={inputStyle} value={form.capacityUnit} onChange={(e) => handleChange("capacityUnit", e.target.value)}>
+                {["Sheets", "Kg", "Pcs", "Meters", "Units"].map((u) => (
+                  <option key={u} value={u}>
+                    {u}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>Std Shift Hours</label>
+              <input
+                type="number"
+                style={inputStyle}
+                value={form.standardShiftHours}
+                onChange={(e) => handleChange("standardShiftHours", Number(e.target.value))}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Max Shifts Allowed</label>
+              <select style={inputStyle} value={form.maxShiftsAllowed} onChange={(e) => handleChange("maxShiftsAllowed", Number(e.target.value))}>
+                <option value={1}>1</option>
+                <option value={2}>2</option>
+                <option value={3}>3</option>
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>Shift Start Time</label>
+              <input type="time" style={inputStyle} value={form.shiftStartTime} onChange={(e) => handleChange("shiftStartTime", e.target.value)} />
+            </div>
+            <div>
+              <label style={labelStyle}>Shift End Time</label>
+              <input type="time" style={inputStyle} value={form.shiftEndTime} onChange={(e) => handleChange("shiftEndTime", e.target.value)} />
+            </div>
+            <div>
+              <label style={labelStyle}>Break Time (hrs)</label>
+              <input
+                type="number"
+                step="0.5"
+                style={inputStyle}
+                value={form.breakTime}
+                onChange={(e) => handleChange("breakTime", Number(e.target.value))}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Min Batch Size</label>
+              <input
+                type="number"
+                style={inputStyle}
+                value={form.minBatchSize}
+                onChange={(e) => handleChange("minBatchSize", Number(e.target.value))}
+              />
+            </div>
+
+            {}
+            <div style={sectionHeaderStyle}>
+              <span style={{ fontSize: 12, fontWeight: 800, color: "#4CAF50" }}>OVERTIME & MAINTENANCE</span>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <input type="checkbox" checked={!!form.overtimeAllowed} onChange={(e) => handleChange("overtimeAllowed", e.target.checked)} />
+              <label style={{ ...labelStyle, marginBottom: 0 }}>Overtime Allowed</label>
+            </div>
+            <div>
+              <label style={labelStyle}>Max OT Hours / Day</label>
+              <input
+                type="number"
+                step="0.5"
+                style={inputStyle}
+                value={form.maxOvertimeHours}
+                onChange={(e) => handleChange("maxOvertimeHours", Number(e.target.value))}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>2nd Shift Lead Time (hrs)</label>
+              <input
+                type="number"
+                style={inputStyle}
+                value={form.secondShiftLeadTime}
+                onChange={(e) => handleChange("secondShiftLeadTime", Number(e.target.value))}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Planned Maint. Hours / Wk</label>
+              <input
+                type="number"
+                step="0.5"
+                style={inputStyle}
+                value={form.plannedMaintenanceHours}
+                onChange={(e) => handleChange("plannedMaintenanceHours", Number(e.target.value))}
+              />
+            </div>
+
+            {}
+            <div style={sectionHeaderStyle}>
+              <span style={{ fontSize: 12, fontWeight: 800, color: "#F44336" }}>TIMING DEFAULTS (hours)</span>
+            </div>
+
+            <div>
+              <label style={labelStyle}>Setup Time (first job)</label>
+              <input
+                type="number"
+                step="0.25"
+                style={inputStyle}
+                value={form.setupTimeDefault}
+                onChange={(e) => handleChange("setupTimeDefault", Number(e.target.value))}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Changeover Time</label>
+              <input
+                type="number"
+                step="0.25"
+                style={inputStyle}
+                value={form.changeoverTimeDefault}
+                onChange={(e) => handleChange("changeoverTimeDefault", Number(e.target.value))}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Priority Rank</label>
+              <input
+                type="number"
+                style={inputStyle}
+                value={form.priorityRank}
+                onChange={(e) => handleChange("priorityRank", Number(e.target.value))}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Cost Per Hour</label>
+              <input
+                type="number"
+                style={inputStyle}
+                value={form.costPerHour}
+                onChange={(e) => handleChange("costPerHour", Number(e.target.value))}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Operator Requirement</label>
+              <input
+                type="number"
+                style={inputStyle}
+                value={form.operatorRequirement}
+                onChange={(e) => handleChange("operatorRequirement", Number(e.target.value))}
+              />
+            </div>
+
+            {}
+            <div style={sectionHeaderStyle}>
+              <span style={{ fontSize: 12, fontWeight: 800, color: "#9C27B0" }}>SCHEDULING — PARALLEL GROUP & PRODUCT COMPATIBILITY</span>
+            </div>
+
+            <div>
+              <label style={labelStyle}>Parallel Machine Group</label>
+              <select style={inputStyle} value={form.parallelMachineGroup || ""} onChange={(e) => handleChange("parallelMachineGroup", e.target.value)}>
+                {PARALLEL_MACHINE_GROUPS.map((g) => (
+                  <option key={g} value={g}>
+                    {g || "— None —"}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {}
+            <div style={{ gridColumn: "1 / -1" }}>
+              <label style={{ ...labelStyle, marginBottom: 10 }}>
+                Product Compatibility
+                {compatList.length > 0 && (
+                  <span style={{ marginLeft: 8, color: "#FF9800", fontWeight: 800 }}>
+                    ({compatList.length} selected)
+                  </span>
+                )}
+              </label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {ALL_SKU_FAMILIES.map((sku) => {
+                  const checked = compatList.includes(sku);
+                  return (
+                    <button
+                      key={sku}
+                      type="button"
+                      onClick={() => toggleCompat(sku)}
+                      style={{
+                        padding: "5px 12px",
+                        borderRadius: 20,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        background: checked ? "#FF9800" : "#1a1a1a",
+                        color: checked ? "#000" : "#666",
+                        border: `1px solid ${checked ? "#FF9800" : "#333"}`,
+                        cursor: "pointer",
+                        transition: "all 0.15s",
+                      }}
+                    >
+                      {sku}
+                    </button>
+                  );
+                })}
+              </div>
+              <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => handleChange("productCompatibility", [...ALL_SKU_FAMILIES])}
+                  style={{
+                    fontSize: 11,
+                    padding: "3px 10px",
+                    borderRadius: 4,
+                    border: "1px solid #333",
+                    background: "#1a1a1a",
+                    color: "#888",
+                    cursor: "pointer",
+                  }}
+                >
+                  Select All
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleChange("productCompatibility", [])}
+                  style={{
+                    fontSize: 11,
+                    padding: "3px 10px",
+                    borderRadius: 4,
+                    border: "1px solid #333",
+                    background: "#1a1a1a",
+                    color: "#888",
+                    cursor: "pointer",
+                  }}
+                >
+                  Clear All
+                </button>
+              </div>
+            </div>
+
+            {}
+            <div style={{ gridColumn: "1 / -1", marginTop: 10 }}>
+              <label style={labelStyle}>Working Days</label>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+                {DAYS_OF_WEEK.map((day) => (
+                  <button
+                    key={day}
+                    type="button"
+                    onClick={() => toggleDay(day)}
+                    style={{
+                      padding: "6px 12px",
+                      borderRadius: 4,
+                      fontSize: 11,
+                      fontWeight: 700,
+                      background: (form.workingDays || []).includes(day) ? "#FF9800" : "#1a1a1a",
+                      color: (form.workingDays || []).includes(day) ? "#000" : "#666",
+                      border: "1px solid #333",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {day.slice(0, 3).toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ marginTop: 40, display: "flex", gap: 15 }}>
+            <button
+              onClick={() => handleUpdate(machine._id, form)}
+              style={{
+                flex: 1,
+                padding: "12px",
+                background: "#FF9800",
+                color: "#000",
+                border: "none",
+                borderRadius: 8,
+                fontWeight: 800,
+                cursor: "pointer",
+              }}
+            >
+              SAVE CONFIGURATION
+            </button>
+            <button
+              onClick={() => setEditingMachine(null)}
+              style={{
+                padding: "12px 25px",
+                background: "#222",
+                color: "#fff",
+                border: "1px solid #333",
+                borderRadius: 8,
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              CANCEL
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   };
-
-  const handleEditSave = async () => {
-    if (!editForm.name?.trim()) {
-      toast("Machine name is required", "error");
-      return;
-    }
-
-    try {
-      await machineMasterAPI.update(editingMachineId, editForm);
-      setEditingMachineId(null);
-      setEditForm({});
-      toast("Machine updated successfully", "success");
-      fetchMachines();
-    } catch (error) {
-      toast(error.response?.data?.error || "Failed to update machine", "error");
-    }
-  };
-
-  const handleUpdateField = async (machine, field, value) => {
-    try {
-      await machineMasterAPI.update(machine._id, { [field]: value });
-      fetchMachines();
-    } catch (error) {
-      toast(error.response?.data?.error || "Failed to update machine", "error");
-    }
-  };
-
-  const typeColor = TYPE_COLORS[machineType] || "#2196F3";
 
   return (
     <div className="fade">
-      <div style={{ marginBottom: 20 }}>
-        <h2
-          style={{ fontSize: 22, fontWeight: 700, color: "#e0e0e0", margin: 0 }}
-        >
-          🏭 Machine Master
-        </h2>
-        <p style={{ fontSize: 13, color: "#777", margin: "4px 0 0" }}>
-          Production machines — capacity, working time & shift planning
-        </p>
-      </div>
-
-      {}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 16,
-          marginBottom: 16,
-          flexWrap: "wrap",
-        }}
-      >
-        <div style={{ fontSize: 28, fontWeight: 700, color: "#e0e0e0" }}>
-          {totalMachines}{" "}
-          <span style={{ fontSize: 14, color: "#777", fontWeight: 400 }}>
-            Total
-          </span>
-        </div>
-        <div
-          style={{
-            background: "#1a1a1a",
-            border: "1px solid #4CAF5044",
-            borderRadius: 8,
-            padding: "8px 18px",
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-          }}
-        >
-          <span style={{ fontSize: 22, fontWeight: 700, color: "#4CAF50" }}>
-            {activeMachines}
-          </span>
-          <span style={{ fontSize: 13, color: "#4CAF50", fontWeight: 600 }}>
-            Active
-          </span>
-        </div>
-        <div
-          style={{
-            background: "#1a1a1a",
-            border: "1px solid #f4433644",
-            borderRadius: 8,
-            padding: "8px 18px",
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-          }}
-        >
-          <span style={{ fontSize: 22, fontWeight: 700, color: "#f44336" }}>
-            {inactiveMachines}
-          </span>
-          <span style={{ fontSize: 13, color: "#f44336", fontWeight: 600 }}>
-            Inactive
-          </span>
-        </div>
-        <div
-          style={{
-            background: "#1a1a1a",
-            border: "1px solid #2196F344",
-            borderRadius: 8,
-            padding: "8px 18px",
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-          }}
-        >
-          <span style={{ fontSize: 22, fontWeight: 700, color: "#2196F3" }}>
-            {configuredTypes}
-          </span>
-          <span style={{ fontSize: 13, color: "#2196F3", fontWeight: 600 }}>
-            Configured
-          </span>
+      <div style={{ marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div>
+          <h2 style={{ fontSize: 22, fontWeight: 700, color: "#e0e0e0", margin: 0 }}>🏭 Machine Master</h2>
+          <p style={{ fontSize: 13, color: "#777", margin: "4px 0 0" }}>
+            Configure capacity, shifts, parallel groups, and product compatibility per machine
+          </p>
         </div>
       </div>
 
       {}
-      <div
-        style={{
-          background: "#1a1a1a",
-          border: "1px solid #2a2a2a",
-          borderRadius: 10,
-          padding: "16px 20px",
-          marginBottom: 14,
-        }}
-      >
-        <div
-          style={{
-            fontSize: 13,
-            fontWeight: 700,
-            color: "#FF9800",
-            marginBottom: 14,
-          }}
-        >
-          Add New Machine
-        </div>
-        <div
-          style={{
-            display: "flex",
-            gap: 12,
-            alignItems: "flex-end",
-            flexWrap: "wrap",
-          }}
-        >
-          <div style={{ flex: 1, minWidth: 200 }}>
-            <label
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: "#666",
-                display: "block",
-                marginBottom: 6,
-                letterSpacing: "0.5px",
-              }}
-            >
-              MACHINE NAME *
-            </label>
-            <input
-              style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
-              placeholder="e.g. Offset Printer 3"
-              value={machineName}
-              onChange={(e) => setMachineName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-            />
-          </div>
-          <div style={{ minWidth: 160 }}>
-            <label
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: "#666",
-                display: "block",
-                marginBottom: 6,
-                letterSpacing: "0.5px",
-              }}
-            >
-              TYPE *
-            </label>
-            <select
-              value={machineType}
-              onChange={(e) => setMachineType(e.target.value)}
-              style={inputStyle}
-            >
-              {MACHINE_TYPES.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
-          </div>
+      <div style={{ background: "#1a1a1a", border: "1px solid #2a2a2a", borderRadius: 10, padding: "16px 20px", marginBottom: 20 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: "#FF9800", marginBottom: 12, letterSpacing: 1 }}>ADD NEW MACHINE</div>
+        <div style={{ display: "flex", gap: 12 }}>
+          <input
+            style={{ ...inputStyle, flex: 1 }}
+            placeholder="Machine Name"
+            value={machineName}
+            onChange={(e) => setMachineName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+          />
+          <select style={{ ...inputStyle, width: 200 }} value={machineType} onChange={(e) => setMachineType(e.target.value)}>
+            {MACHINE_TYPES.map((t) => (
+              <option key={t}>{t}</option>
+            ))}
+          </select>
           <button
             onClick={handleAdd}
-            style={{
-              padding: "9px 22px",
-              background: "#FF9800",
-              color: "#fff",
-              border: "none",
-              borderRadius: 6,
-              fontWeight: 700,
-              fontSize: 13,
-              cursor: "pointer",
-              whiteSpace: "nowrap",
-            }}
+            disabled={loading}
+            style={{ padding: "0 25px", background: "#FF9800", color: "#000", border: "none", borderRadius: 6, fontWeight: 800, cursor: "pointer" }}
           >
-            + Add
+            {loading ? "..." : "ADD MACHINE"}
           </button>
         </div>
       </div>
 
       {}
-      <div
-        style={{
-          display: "flex",
-          gap: 10,
-          marginBottom: 16,
-          alignItems: "center",
-          flexWrap: "nowrap",
-        }}
-      >
+      <div style={{ display: "flex", gap: 10, marginBottom: 15, flexWrap: "wrap" }}>
         <input
-          style={{ ...inputStyle, width: 180 }}
-          placeholder="🔍 Search..."
+          style={{ ...inputStyle, width: 220 }}
+          placeholder="🔍 Search machines..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
-        <select
-          value={filterType}
-          onChange={(e) => setFilterType(e.target.value)}
-          style={inputStyle}
-        >
+        <select style={{ ...inputStyle, width: 160 }} value={filterType} onChange={(e) => setFilterType(e.target.value)}>
           <option>All Types</option>
           {MACHINE_TYPES.map((t) => (
             <option key={t}>{t}</option>
           ))}
         </select>
-        <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          style={inputStyle}
-        >
+        <select style={{ ...inputStyle, width: 140 }} value={filterDivision} onChange={(e) => setFilterDivision(e.target.value)}>
+          <option>All Divisions</option>
+          <option>Sheet</option>
+          <option>Reel</option>
+        </select>
+        <select style={{ ...inputStyle, width: 120 }} value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
           <option>All Status</option>
           <option>Active</option>
           <option>Inactive</option>
         </select>
-        <div style={{ marginLeft: "auto", display: "flex", gap: 6, alignItems: 'center' }}>
-          <div style={{ fontSize: 13, color: '#FF9800', fontWeight: 600, marginRight: 10 }}>
-            {filteredMachines.length} Machines Found
-          </div>
-        </div>
+        <span style={{ marginLeft: "auto", fontSize: 12, color: "#555", alignSelf: "center" }}>
+          {filteredMachines.length} / {machines.length} machines
+        </span>
       </div>
 
       {}
-      <div
-        style={{
-          background: "#1a1a1a",
-          border: "1px solid #2a2a2a",
-          borderRadius: 12,
-          overflow: "hidden",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
-        }}
-      >
-        <table
-          style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}
-        >
+      <div style={{ background: "#1a1a1a", border: "1px solid #2a2a2a", borderRadius: 12, overflow: "hidden" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
           <thead>
-            <tr
-              style={{
-                background: "#111",
-                borderBottom: "2px solid #2a2a2a",
-              }}
-            >
-              {[
-                "Machine Details",
-                "Type",
-                "Div",
-                "Run Rate",
-                "Hrs/Shft",
-                "Start/End",
-                "OT",
-                "Status",
-                "Actions",
-              ].map((h) => (
+            <tr style={{ background: "#111", borderBottom: "1px solid #2a2a2a" }}>
+              {["Machine", "Type", "Division", "Run Rate", "Shifts", "OT", "Product Compatibility", "Status", "Actions"].map((h) => (
                 <th
                   key={h}
                   style={{
                     textAlign: "left",
-                    padding: "14px 18px",
-                    color: "#888",
+                    padding: "14px 16px",
+                    color: "#666",
                     fontSize: 11,
                     fontWeight: 800,
                     textTransform: "uppercase",
-                    letterSpacing: "0.05em",
+                    whiteSpace: "nowrap",
                   }}
                 >
                   {h}
@@ -470,283 +640,159 @@ export default function MachineMaster({ toast }) {
               ))}
             </tr>
           </thead>
-            <tbody>
-              {filteredMachines.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={6}
-                    style={{
-                      textAlign: "center",
-                      padding: "40px 0",
-                      color: "#444",
-                    }}
-                  >
-                    No machines found
-                  </td>
-                </tr>
-              ) : (
-                filteredMachines.map((m, idx) => {
-                  const isEditing = editingMachineId === m._id;
-                  const color = TYPE_COLORS[m.type] || "#888";
-                  const data = isEditing ? editForm : m;
+          <tbody>
+            {filteredMachines.length === 0 && (
+              <tr>
+                <td colSpan={9} style={{ padding: 40, textAlign: "center", color: "#444" }}>
+                  No machines found
+                </td>
+              </tr>
+            )}
+            {filteredMachines.map((m) => {
+              const typeColor = TYPE_COLORS[m.type] || "#888";
+              const divColor = DIVISION_COLORS[m.division] || "#555";
+              const compat = Array.isArray(m.productCompatibility) ? m.productCompatibility : [];
 
-                  return (
-                    <tr
-                      key={m._id}
+              return (
+                <tr key={m._id} style={{ borderBottom: "1px solid #1e1e1e" }}>
+                  <td style={{ padding: "12px 16px", fontWeight: 700, color: "#fff" }}>
+                    {m.name}
+                    {m.parallelMachineGroup && (
+                      <div style={{ fontSize: 10, color: "#9C27B0", marginTop: 2 }}>↔ {m.parallelMachineGroup}</div>
+                    )}
+                  </td>
+                  <td style={{ padding: "12px 16px" }}>
+                    <span
                       style={{
-                        borderBottom: "1px solid #1e1e1e",
-                        background: idx % 2 === 0 ? "transparent" : "#141414",
-                        transition: "background 0.2s",
+                        padding: "3px 8px",
+                        borderRadius: 4,
+                        background: typeColor + "22",
+                        color: typeColor,
+                        fontSize: 11,
+                        fontWeight: 700,
                       }}
                     >
-                      <td style={{ padding: "14px 18px" }}>
-                        {isEditing ? (
-                          <input
-                            value={data.name || ""}
-                            onChange={(e) =>
-                              setEditForm({ ...editForm, name: e.target.value })
-                            }
-                            autoFocus
+                      {m.type}
+                    </span>
+                  </td>
+                  <td style={{ padding: "12px 16px" }}>
+                    <span
+                      style={{
+                        padding: "3px 8px",
+                        borderRadius: 4,
+                        background: divColor + "22",
+                        color: divColor,
+                        fontSize: 11,
+                        fontWeight: 700,
+                      }}
+                    >
+                      {m.division || "—"}
+                    </span>
+                  </td>
+                  <td style={{ padding: "12px 16px", color: "#aaa" }}>
+                    {m.practicalRunRate ? `${m.practicalRunRate} ${m.capacityUnit || "Pcs"}/hr` : "—"}
+                  </td>
+                  <td style={{ padding: "12px 16px", color: "#aaa" }}>{m.maxShiftsAllowed || 1} × {m.standardShiftHours || 8}h</td>
+                  <td style={{ padding: "12px 16px" }}>
+                    {m.overtimeAllowed ? (
+                      <span style={{ color: "#FF9800", fontWeight: 700, fontSize: 11 }}>+{m.maxOvertimeHours}h</span>
+                    ) : (
+                      <span style={{ color: "#444", fontSize: 11 }}>No</span>
+                    )}
+                  </td>
+                  <td style={{ padding: "12px 16px", maxWidth: 260 }}>
+                    {compat.length === 0 ? (
+                      <span style={{ color: "#444", fontSize: 11 }}>Not set</span>
+                    ) : (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                        {compat.slice(0, 4).map((s) => (
+                          <span
+                            key={s}
                             style={{
-                              ...inputStyle,
-                              padding: "6px 10px",
-                              width: "180px",
-                              border: `1px solid ${color}88`,
+                              padding: "2px 7px",
+                              borderRadius: 10,
+                              background: "#E91E6322",
+                              color: "#E91E63",
+                              fontSize: 10,
+                              fontWeight: 600,
+                              whiteSpace: "nowrap",
                             }}
-                          />
-                        ) : (
-                          <div>
-                            <div
-                              style={{
-                                fontWeight: 700,
-                                color: "#fff",
-                                fontSize: 14,
-                              }}
-                            >
-                              {m.name}
-                            </div>
-                            <div
-                              style={{ fontSize: 10, color: "#555", marginTop: 2 }}
-                            >
-                              ID: {m._id.slice(-6)}
-                            </div>
-                          </div>
+                          >
+                            {s}
+                          </span>
+                        ))}
+                        {compat.length > 4 && (
+                          <span style={{ fontSize: 10, color: "#555", alignSelf: "center" }}>+{compat.length - 4}</span>
                         )}
-                      </td>
-                      <td style={{ padding: "14px 18px" }}>
-                        <select
-                          value={data.type}
-                          disabled={!isEditing}
-                          onChange={(e) =>
-                            setEditForm({ ...editForm, type: e.target.value })
-                          }
-                          style={{
-                            ...inputStyle,
-                            padding: "4px 8px",
-                            border: `1px solid ${color}44`,
-                            color: color,
-                            fontWeight: 600,
-                            opacity: isEditing ? 1 : 0.8,
-                            cursor: isEditing ? "default" : "not-allowed",
-                          }}
-                        >
-                          {MACHINE_TYPES.map((t) => (
-                            <option key={t} value={t}>
-                              {t}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td style={{ padding: "10px 14px" }}>
-                        <select
-                          value={data.division || "Reel"}
-                          disabled={!isEditing}
-                          onChange={(e) =>
-                            setEditForm({ ...editForm, division: e.target.value })
-                          }
-                          style={{ ...inputStyle, padding: "4px 8px", width: "70px" }}
-                        >
-                          <option value="Reel">Reel</option>
-                          <option value="Sheet">Sheet</option>
-                        </select>
-                      </td>
-                      <td style={{ padding: "10px 14px" }}>
-                        <input
-                          type="number"
-                          value={data.practicalRunRate || 0}
-                          disabled={!isEditing}
-                          onChange={(e) =>
-                            setEditForm({
-                              ...editForm,
-                              practicalRunRate: parseInt(e.target.value) || 0,
-                            })
-                          }
-                          style={{ ...inputStyle, width: "60px", textAlign: "center" }}
-                        />
-                      </td>
-                      <td style={{ padding: "10px 14px" }}>
-                        <input
-                          type="number"
-                          value={data.standardShiftHours || 8}
-                          disabled={!isEditing}
-                          onChange={(e) =>
-                            setEditForm({
-                              ...editForm,
-                              standardShiftHours: parseInt(e.target.value) || 8,
-                            })
-                          }
-                          style={{ ...inputStyle, width: "40px", textAlign: "center" }}
-                        />
-                      </td>
-                      <td style={{ padding: "10px 14px" }}>
-                         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                            <input 
-                              type="text" 
-                              value={data.shiftStartTime || "09:00"}
-                              disabled={!isEditing}
-                              onChange={(e) => setEditForm({...editForm, shiftStartTime: e.target.value})}
-                              style={{...inputStyle, padding: '2px 4px', fontSize: 10, width: 50}}
-                            />
-                            <input 
-                              type="text" 
-                              value={data.shiftEndTime || "17:00"}
-                              disabled={!isEditing}
-                              onChange={(e) => setEditForm({...editForm, shiftEndTime: e.target.value})}
-                              style={{...inputStyle, padding: '2px 4px', fontSize: 10, width: 50}}
-                            />
-                         </div>
-                      </td>
-                      <td style={{ padding: "10px 14px" }}>
-                         <input 
-                           type="checkbox"
-                           checked={data.overtimeAllowed || false}
-                           disabled={!isEditing}
-                           onChange={(e) => setEditForm({...editForm, overtimeAllowed: e.target.checked})}
-                         />
-                      </td>
-                      <td style={{ padding: "10px 14px" }}>
+                      </div>
+                    )}
+                  </td>
+                  <td style={{ padding: "12px 16px" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                      <span style={{ color: m.status === "Active" ? "#4CAF50" : "#f44336", fontWeight: 800, fontSize: 11 }}>
+                        {m.status}
+                      </span>
+                      {m.currentStatus && (
                         <span
                           style={{
-                            padding: "2px 8px",
-                            borderRadius: 20,
-                            fontSize: 11,
-                            fontWeight: 700,
-                            background:
-                              data.status === "Active"
-                                ? "#4CAF5022"
-                                : "#f4433622",
-                            color: data.status === "Active" ? "#4CAF50" : "#f44336",
-                            cursor: isEditing ? "pointer" : "default",
-                          }}
-                          onClick={() => {
-                            if (isEditing) {
-                              setEditForm({
-                                ...editForm,
-                                status:
-                                  editForm.status === "Active"
-                                    ? "Inactive"
-                                    : "Active",
-                              });
-                            }
+                            fontSize: 10,
+                            color:
+                              m.currentStatus === "Running"
+                                ? "#4CAF50"
+                                : m.currentStatus === "Breakdown"
+                                ? "#f44336"
+                                : m.currentStatus === "Under Maintenance"
+                                ? "#FF9800"
+                                : "#666",
                           }}
                         >
-                          {isEditing ? editForm.status : m.status}
+                          {m.currentStatus}
                         </span>
-                      </td>
-                      <td style={{ padding: "10px 14px" }}>
-                        <div style={{ display: "flex", gap: 6 }}>
-                          {isEditing ? (
-                            <>
-                              <button
-                                onClick={handleEditSave}
-                                style={{
-                                  padding: "6px 10px",
-                                  background: "#4CAF5022",
-                                  color: "#4CAF50",
-                                  border: "none",
-                                  borderRadius: 4,
-                                  fontSize: 14,
-                                  fontWeight: 700,
-                                  cursor: "pointer",
-                                }}
-                                title="Confirm Changes"
-                              >
-                                ✓
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setEditingMachineId(null);
-                                  setEditForm({});
-                                }}
-                                style={{
-                                  padding: "6px 10px",
-                                  background: "#f4433622",
-                                  color: "#f44336",
-                                  border: "none",
-                                  borderRadius: 4,
-                                  fontSize: 14,
-                                  fontWeight: 700,
-                                  cursor: "pointer",
-                                }}
-                                title="Cancel"
-                              >
-                                ✕
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              <button
-                                onClick={() => {
-                                  setEditingMachineId(m._id);
-                                  setEditForm({ ...m });
-                                }}
-                                style={{
-                                  padding: "4px 8px",
-                                  background: "#FF980022",
-                                  color: "#FF9800",
-                                  border: "none",
-                                  borderRadius: 4,
-                                  fontSize: 12,
-                                  fontWeight: 700,
-                                  cursor: "pointer",
-                                }}
-                                title="Edit Machine"
-                              >
-                                🖊️
-                              </button>
-                              <button
-                                onClick={() => handleDelete(m)}
-                                style={{
-                                  background: "#450a0a",
-                                  color: "#ef4444",
-                                  border: "1px solid #7f1d1d",
-                                  borderRadius: 6,
-                                  padding: "4px 14px",
-                                  fontSize: 12,
-                                  fontWeight: 700,
-                                  cursor: "pointer",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: 6,
-                                }}
-                              >
-                                🗑️
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-      
+                      )}
+                    </div>
+                  </td>
+                  <td style={{ padding: "12px 16px" }}>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        onClick={() => setEditingMachine(m)}
+                        style={{
+                          padding: "6px 12px",
+                          background: "#3b82f622",
+                          color: "#3b82f6",
+                          border: "1px solid #3b82f644",
+                          borderRadius: 4,
+                          fontSize: 11,
+                          fontWeight: 700,
+                          cursor: "pointer",
+                        }}
+                      >
+                        CONFIGURE
+                      </button>
+                      <button
+                        onClick={() => handleDelete(m._id)}
+                        style={{
+                          padding: "6px 12px",
+                          background: "#f4433622",
+                          color: "#f44336",
+                          border: "1px solid #f4433644",
+                          borderRadius: 4,
+                          fontSize: 11,
+                          fontWeight: 700,
+                          cursor: "pointer",
+                        }}
+                      >
+                        DELETE
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
 
-      {}
-      {/* Capacity view removed as per user request */}
+      {editingMachine && <EditModal machine={editingMachine} />}
     </div>
   );
 }

@@ -1,9 +1,13 @@
 import React, { useState, useMemo, useEffect } from "react";
 import moment from "moment";
 import { C } from "../constants/colors";
-import { Card, SectionTitle, Badge } from "../components/ui/BasicComponents";
+import {
+  Card,
+  SectionTitle,
+  Badge,
+  Modal,
+} from "../components/ui/BasicComponents";
 import { planningAPI } from "../api/auth";
-
 
 const fmt = (n) => (n ?? 0).toLocaleString("en-IN");
 
@@ -31,7 +35,7 @@ function addDays(dateStr, n) {
 
 function getWeekStart(dateStr) {
   const d = new Date(dateStr);
-  d.setDate(d.getDate() - d.getDay()); 
+  d.setDate(d.getDate() - d.getDay());
   return d.toISOString().split("T")[0];
 }
 
@@ -54,7 +58,6 @@ function formatMonthRange(startStr) {
   const d = new Date(startStr);
   return `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
-
 
 const DEFAULT_MACHINES = [
   { id: "M1", name: "SBBM 360 Machine 1", type: "Bag Making" },
@@ -93,15 +96,13 @@ const TYPE_COLOR = {
   Pasting: "#eab308",
 };
 
-
 function jobColor(jo, today) {
   if (!jo) return null;
-  if (jo.status === "Completed") return "#22c55e"; 
+  if (jo.status === "Completed") return "#22c55e";
   const due = jo.deliveryDate || jo.joDate;
-  if (due && due < today) return "#ef4444"; 
-  return "#3b82f6"; 
+  if (due && due < today) return "#ef4444";
+  return "#3b82f6";
 }
-
 
 export default function ProductionCalendar({
   jobOrders = [],
@@ -111,14 +112,16 @@ export default function ProductionCalendar({
   toast,
 }) {
   const today = todayStr();
-  const [mainView, setMainView] = useState("machine"); 
-  const [rangeView, setRangeView] = useState("week"); 
+  const [mainView, setMainView] = useState("machine");
+  const [rangeView, setRangeView] = useState("week");
   const [pivotDate, setPivotDate] = useState(getWeekStart(today));
-  const [machineTypeFilter, setMachineTypeFilter] = useState("All Machine Types");
+  const [machineTypeFilter, setMachineTypeFilter] =
+    useState("All Machine Types");
   const [selectedMachine, setSelectedMachine] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [calendarData, setCalendarData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [insightModal, setInsightModal] = useState(null);
 
   const machines = useMemo(() => {
     if (Array.isArray(machineMaster) && machineMaster.length > 0) {
@@ -182,7 +185,6 @@ export default function ProductionCalendar({
     fetchCalendar();
   }, [displayStart, days]);
 
-
   const navigate = (dir) => {
     const step = rangeView === "week" ? 7 : 30;
     setPivotDate(addDays(pivotDate, dir * step));
@@ -191,10 +193,26 @@ export default function ProductionCalendar({
   const jobIndex = useMemo(() => {
     const idx = {};
     (calendarData || []).forEach((entry) => {
-      const date = moment(entry.date).format('YYYY-MM-DD');
-      const key = `${entry.machineId._id}|${date}`;
-      if (!idx[key]) idx[key] = [];
-      idx[key].push(entry);
+      if (!entry.machineId || !entry.date) return;
+
+      const date = moment(entry.date).format("YYYY-MM-DD");
+
+      
+      const mIdRaw = entry.machineId._id || entry.machineId;
+      const mId = typeof mIdRaw === "string" ? mIdRaw : mIdRaw?.toString();
+      const mName = entry.machineId.name;
+
+      const keys = new Set();
+      if (mId) keys.add(`${mId}|${date}`);
+      if (mName) keys.add(`${mName}|${date}`);
+
+      keys.forEach((key) => {
+        if (!idx[key]) idx[key] = [];
+        
+        if (!idx[key].some((existing) => existing._id === entry._id)) {
+          idx[key].push(entry);
+        }
+      });
     });
     return idx;
   }, [calendarData]);
@@ -214,22 +232,71 @@ export default function ProductionCalendar({
 
   const colW = rangeView === "week" ? 110 : 36;
 
-  
+  const processStats = useMemo(() => {
+    const categories =
+      machineTypeFilter === "All Machine Types"
+        ? machineTypes.filter((t) => t !== "All Machine Types")
+        : [machineTypeFilter];
+
+    return categories
+      .map((cat) => {
+        const filteredMachines = machines.filter((m) => m.type === cat);
+        const filteredEntries = (calendarData || []).filter(
+          (e) => e.process === cat,
+        );
+
+        const fullMachines = Array.isArray(machineMaster)
+          ? machineMaster.filter((m) => m.type === cat)
+          : [];
+
+        const totalCapPerDay = fullMachines.reduce((sum, m) => {
+          return (
+            sum +
+            (m.practicalRunRate || 0) *
+              (m.standardShiftHours || 0) *
+              (m.maxShiftsAllowed || 0)
+          );
+        }, 0);
+
+        const totalScheduled = filteredEntries.reduce(
+          (sum, e) => sum + e.scheduledQty,
+          0,
+        );
+        const otHours = filteredEntries.reduce(
+          (sum, e) => sum + (e.overtimeHours || 0),
+          0,
+        );
+        const daysRequired =
+          totalCapPerDay > 0 ? Math.ceil(totalScheduled / totalCapPerDay) : 0;
+
+        return {
+          category: cat,
+          totalCapPerDay,
+          totalScheduled,
+          otHours,
+          daysRequired,
+          machineCount: filteredMachines.length,
+        };
+      })
+      .filter((s) => s.totalScheduled > 0 || s.totalCapPerDay > 0);
+  }, [machineTypeFilter, machineTypes, machines, calendarData, machineMaster]);
+
   const MachineSidePanel = () => {
     if (!selectedMachine) return null;
 
     const mId = selectedMachine.id || selectedMachine._id;
     const [editData, setEditData] = useState({ ...selectedMachine });
-    const [localReport, setLocalReport] = useState(selectedMachine.records || {});
-    const [showSuccess, setShowSuccess] = useState(false);
+    const [localReport, setLocalReport] = useState(
+      selectedMachine.records || {},
+    );
 
     const updateReport = (date, field, value) => {
-      setLocalReport(prev => ({
+      setLocalReport((prev) => ({
         ...prev,
         [date]: {
           ...(prev[date] || {}),
-          [field]: value
-        }
+          [field]: value,
+        },
       }));
     };
 
@@ -241,16 +308,15 @@ export default function ProductionCalendar({
           type: editData.type,
           workingHours: Number(editData.workingHours || 8),
           shiftsPerDay: Number(editData.shiftsPerDay || 1),
-          records: localReport
+          records: localReport,
         };
         await machineMasterAPI.update(mId, payload);
-        
-        setShowSuccess(true);
+
+        toast?.("Records saved successfully", "success");
         if (refreshData) await refreshData();
-        
+
         setTimeout(() => {
           setSelectedMachine(null);
-          setShowSuccess(false);
         }, 1500);
       } catch (err) {
         toast?.("Failed to save records", "error");
@@ -259,14 +325,16 @@ export default function ProductionCalendar({
       }
     };
 
-    
-    const stats = daysArray.reduce((acc, date) => {
-      const dayData = localReport[date] || {};
-      acc.totalCap += Number(dayData.capacity || 0);
-      acc.totalPlanned += Number(dayData.planned || 0);
-      acc.totalActual += Number(dayData.actual || 0);
-      return acc;
-    }, { totalCap: 0, totalPlanned: 0, totalActual: 0 });
+    const stats = daysArray.reduce(
+      (acc, date) => {
+        const dayData = localReport[date] || {};
+        acc.totalCap += Number(dayData.capacity || 0);
+        acc.totalPlanned += Number(dayData.planned || 0);
+        acc.totalActual += Number(dayData.actual || 0);
+        return acc;
+      },
+      { totalCap: 0, totalPlanned: 0, totalActual: 0 },
+    );
 
     return (
       <>
@@ -287,7 +355,7 @@ export default function ProductionCalendar({
             position: "fixed",
             right: 0,
             top: 0,
-            width: 750, 
+            width: 750,
             height: "100vh",
             background: "#121212",
             borderLeft: `1px solid ${C.border}`,
@@ -297,205 +365,348 @@ export default function ProductionCalendar({
             display: "flex",
             flexDirection: "column",
             animation: "slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-            color: "#fff"
+            color: "#fff",
           }}
         >
-          {showSuccess && (
-            <div style={{
-              position: "absolute",
-              inset: 0,
-              background: "#121212ee",
-              zIndex: 2000,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: "inherit",
-              animation: "fadeIn 0.4s ease-out"
-            }}>
-              <style>{`
-                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-                @keyframes bounce { 
-                  0%, 100% { transform: scale(1); } 
-                  50% { transform: scale(1.2); } 
-                }
-              `}</style>
-              <div style={{ fontSize: 64, animation: "bounce 0.8s ease-in-out" }}>✅</div>
-              <h3 style={{ marginTop: 24, fontSize: 24, fontWeight: 900 }}>Record Saved!</h3>
-              <p style={{ color: C.muted, marginTop: 8, fontSize: 14 }}>Database updated successfully.</p>
-            </div>
-          )}
           <style>{`
             @keyframes slideIn {
               from { transform: translateX(100%); }
               to { transform: translateX(0); }
             }
           `}</style>
-          
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 20,
+            }}
+          >
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <div style={{ fontSize: 28, background: "#ffffff08", padding: 10, borderRadius: 12 }}>🏭</div>
+              <div
+                style={{
+                  fontSize: 28,
+                  background: "#ffffff08",
+                  padding: 10,
+                  borderRadius: 12,
+                }}
+              >
+                🏭
+              </div>
               <div>
-                <h2 style={{ margin: 0, fontSize: 22, color: "#fff", fontWeight: 900, letterSpacing: "-0.01em" }}>{editData.name}</h2>
+                <h2
+                  style={{
+                    margin: 0,
+                    fontSize: 22,
+                    color: "#fff",
+                    fontWeight: 900,
+                    letterSpacing: "-0.01em",
+                  }}
+                >
+                  {editData.name}
+                </h2>
                 <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
-                   <Badge text={editData.type} color={C.blue} />
-                   <Badge text="Active" color={C.green} />
+                  <Badge text={editData.type} color={C.blue} />
+                  <Badge text="Active" color={C.green} />
                 </div>
               </div>
             </div>
-            <button 
+            <button
               onClick={() => setSelectedMachine(null)}
-              style={{ background: "transparent", border: "none", color: C.muted, fontSize: 32, cursor: "pointer", padding: "0 10px" }}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: C.muted,
+                fontSize: 32,
+                cursor: "pointer",
+                padding: "0 10px",
+              }}
             >
               ×
             </button>
           </div>
 
           <div style={{ fontSize: 11, color: C.muted, marginBottom: 20 }}>
-             No capacity configured — set it in Machine Master
+            No capacity configured — set it in Machine Master
           </div>
 
           {}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 28 }}>
-             {[
-               ["TOTAL CAPACITY", stats.totalCap, C.muted],
-               ["TOTAL PLANNED", stats.totalPlanned, C.yellow],
-               ["TOTAL ACTUAL", stats.totalActual, C.green]
-             ].map(([label, val, color]) => (
-               <div key={label} style={{ background: "#1a1a1a", padding: "16px", borderRadius: 12, textAlign: "center", border: `1px solid ${C.border}44` }}>
-                  <div style={{ fontSize: 10, fontWeight: 800, color: C.muted, marginBottom: 6, letterSpacing: "0.05em" }}>{label}</div>
-                  <div style={{ fontSize: 24, fontWeight: 900, color: color }}>{val.toLocaleString()}</div>
-               </div>
-             ))}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr 1fr",
+              gap: 16,
+              marginBottom: 28,
+            }}
+          >
+            {[
+              ["TOTAL CAPACITY", stats.totalCap, C.muted],
+              ["TOTAL PLANNED", stats.totalPlanned, C.yellow],
+              ["TOTAL ACTUAL", stats.totalActual, C.green],
+            ].map(([label, val, color]) => (
+              <div
+                key={label}
+                style={{
+                  background: "#1a1a1a",
+                  padding: "16px",
+                  borderRadius: 12,
+                  textAlign: "center",
+                  border: `1px solid ${C.border}44`,
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 800,
+                    color: C.muted,
+                    marginBottom: 6,
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  {label}
+                </div>
+                <div style={{ fontSize: 24, fontWeight: 900, color: color }}>
+                  {val.toLocaleString()}
+                </div>
+              </div>
+            ))}
           </div>
 
-          <div style={{ flex: 1, overflowY: "auto", border: `1px solid ${C.border}`, borderRadius: 12, background: "#0a0a0a", boxShadow: "inset 0 2px 10px #000" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
-               <thead style={{ position: "sticky", top: 0, background: "#1a1a1a", zIndex: 10, boxShadow: "0 2px 4px #00000044" }}>
-                  <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-                    <th style={{...thS, padding: "14px 16px"}}>DATE</th>
-                    <th style={thS}>CAPACITY QTY</th>
-                    <th style={{...thS, color: C.yellow}}>PLANNED QTY</th>
-                    <th style={{...thS, color: C.green}}>ACTUAL QTY</th>
-                    <th style={thS}>OPERATOR NAME</th>
-                  </tr>
-               </thead>
-               <tbody>
-                  {daysArray.map((date) => {
-                    const row = localReport[date] || {};
-                    const dateObj = new Date(date);
-                    const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
-                    const dateFmt = date.split("-").reverse().join("/");
-                    const dayName = DAYS[dateObj.getDay()];
-                    
-                    const pNum = Number(row.planned || 0);
-                    const aNum = Number(row.actual || 0);
-                    const isShort = pNum > 0 && aNum < pNum;
-                    const isOnTarget = pNum > 0 && aNum >= pNum;
-                    
-                    return (
-                      <tr key={date} style={{ borderBottom: "1px solid #ffffff05" }}>
-                        <td style={{...tdS, padding: "14px 16px", color: isWeekend ? C.red : (date === today ? C.yellow : "#fff")}}>
-                          <div style={{ fontWeight: 800, fontSize: 13 }}>{dateFmt}</div>
-                          <div style={{ fontSize: 10, opacity: 0.6, marginTop: 2 }}>{dayName} {isWeekend && "- Off"} {date === today && "(Today)"}</div>
-                        </td>
-                        <td style={tdS}>
-                          <input 
-                            type="number" 
-                            id={`${mId}-${date}-capacity`}
-                            name={`${mId}-${date}-capacity`}
-                            style={{...miniInp, background: "transparent"}} 
+          <div
+            style={{
+              flex: 1,
+              overflowY: "auto",
+              border: `1px solid ${C.border}`,
+              borderRadius: 12,
+              background: "#0a0a0a",
+              boxShadow: "inset 0 2px 10px #000",
+            }}
+          >
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                fontSize: 11,
+              }}
+            >
+              <thead
+                style={{
+                  position: "sticky",
+                  top: 0,
+                  background: "#1a1a1a",
+                  zIndex: 10,
+                  boxShadow: "0 2px 4px #00000044",
+                }}
+              >
+                <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                  <th style={{ ...thS, padding: "14px 16px" }}>DATE</th>
+                  <th style={thS}>CAPACITY QTY</th>
+                  <th style={{ ...thS, color: C.yellow }}>PLANNED QTY</th>
+                  <th style={{ ...thS, color: C.green }}>ACTUAL QTY</th>
+                  <th style={thS}>OPERATOR NAME</th>
+                </tr>
+              </thead>
+              <tbody>
+                {daysArray.map((date) => {
+                  const row = localReport[date] || {};
+                  const dateObj = new Date(date);
+                  const isWeekend =
+                    dateObj.getDay() === 0 || dateObj.getDay() === 6;
+                  const dateFmt = date.split("-").reverse().join("/");
+                  const dayName = DAYS[dateObj.getDay()];
+
+                  const pNum = Number(row.planned || 0);
+                  const aNum = Number(row.actual || 0);
+                  const isShort = pNum > 0 && aNum < pNum;
+                  const isOnTarget = pNum > 0 && aNum >= pNum;
+
+                  return (
+                    <tr
+                      key={date}
+                      style={{ borderBottom: "1px solid #ffffff05" }}
+                    >
+                      <td
+                        style={{
+                          ...tdS,
+                          padding: "14px 16px",
+                          color: isWeekend
+                            ? C.red
+                            : date === today
+                              ? C.yellow
+                              : "#fff",
+                        }}
+                      >
+                        <div style={{ fontWeight: 800, fontSize: 13 }}>
+                          {dateFmt}
+                        </div>
+                        <div
+                          style={{ fontSize: 10, opacity: 0.6, marginTop: 2 }}
+                        >
+                          {dayName} {isWeekend && "- Off"}{" "}
+                          {date === today && "(Today)"}
+                        </div>
+                      </td>
+                      <td style={tdS}>
+                        <input
+                          type="number"
+                          id={`${mId}-${date}-capacity`}
+                          name={`${mId}-${date}-capacity`}
+                          style={{ ...miniInp, background: "transparent" }}
+                          placeholder="-"
+                          value={row.capacity || ""}
+                          onChange={(e) =>
+                            updateReport(date, "capacity", e.target.value)
+                          }
+                        />
+                      </td>
+                      <td style={tdS}>
+                        <div style={{ position: "relative" }}>
+                          <input
+                            type="number"
+                            id={`${mId}-${date}-planned`}
+                            name={`${mId}-${date}-planned`}
+                            style={{
+                              ...miniInp,
+                              border: `1px solid ${C.yellow}33`,
+                              color: C.yellow,
+                              background: `${C.yellow}08`,
+                            }}
                             placeholder="-"
-                            value={row.capacity || ""} 
-                            onChange={(e) => updateReport(date, "capacity", e.target.value)}
+                            value={row.planned || ""}
+                            onChange={(e) =>
+                              updateReport(date, "planned", e.target.value)
+                            }
                           />
-                        </td>
-                        <td style={tdS}>
-                          <div style={{ position: "relative" }}>
-                            <input 
-                              type="number" 
-                              id={`${mId}-${date}-planned`}
-                              name={`${mId}-${date}-planned`}
-                              style={{...miniInp, border: `1px solid ${C.yellow}33`, color: C.yellow, background: `${C.yellow}08`}} 
-                              placeholder="-"
-                              value={row.planned || ""} 
-                              onChange={(e) => updateReport(date, "planned", e.target.value)}
-                            />
-                          </div>
-                        </td>
-                        <td style={tdS}>
-                          <div style={{ position: "relative" }}>
-                            <input 
-                              type="number" 
-                              id={`${mId}-${date}-actual`}
-                              name={`${mId}-${date}-actual`}
+                        </div>
+                      </td>
+                      <td style={tdS}>
+                        <div style={{ position: "relative" }}>
+                          <input
+                            type="number"
+                            id={`${mId}-${date}-actual`}
+                            name={`${mId}-${date}-actual`}
+                            style={{
+                              ...miniInp,
+                              border: `1px solid ${isShort ? C.red : isOnTarget ? C.green : C.border}44`,
+                              color: isShort
+                                ? C.red
+                                : isOnTarget
+                                  ? C.green
+                                  : "#fff",
+                              background: isShort
+                                ? `${C.red}11`
+                                : isOnTarget
+                                  ? `${C.green}11`
+                                  : "transparent",
+                            }}
+                            placeholder="-"
+                            value={row.actual || ""}
+                            onChange={(e) =>
+                              updateReport(date, "actual", e.target.value)
+                            }
+                          />
+                          {isShort && (
+                            <div
                               style={{
-                                ...miniInp, 
-                                border: `1px solid ${isShort ? C.red : (isOnTarget ? C.green : C.border)}44`, 
-                                color: isShort ? C.red : (isOnTarget ? C.green : "#fff"),
-                                background: isShort ? `${C.red}11` : (isOnTarget ? `${C.green}11` : "transparent")
-                              }} 
-                              placeholder="-"
-                              value={row.actual || ""} 
-                              onChange={(e) => updateReport(date, "actual", e.target.value)}
-                            />
-                            {isShort && (
-                              <div style={{ fontSize: 9, color: C.red, marginTop: 4, textAlign: "center", fontWeight: 700 }}>
-                                 ▼ {(pNum - aNum).toLocaleString()} short
-                              </div>
-                            )}
-                            {isOnTarget && (
-                              <div style={{ fontSize: 9, color: C.green, marginTop: 4, textAlign: "center", fontWeight: 700 }}>
-                                 ✓ on target
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                        <td style={tdS}>
-                          <input 
-                            id={`${mId}-${date}-operator`}
-                            name={`${mId}-${date}-operator`}
-                            style={miniInp} 
-                            placeholder="e.g. Operator"
-                            value={row.operator || ""} 
-                            onChange={(e) => updateReport(date, "operator", e.target.value)}
-                          />
-                        </td>
-                      </tr>
-                    );
-                  })}
-               </tbody>
+                                fontSize: 9,
+                                color: C.red,
+                                marginTop: 4,
+                                textAlign: "center",
+                                fontWeight: 700,
+                              }}
+                            >
+                              ▼ {(pNum - aNum).toLocaleString()} short
+                            </div>
+                          )}
+                          {isOnTarget && (
+                            <div
+                              style={{
+                                fontSize: 9,
+                                color: C.green,
+                                marginTop: 4,
+                                textAlign: "center",
+                                fontWeight: 700,
+                              }}
+                            >
+                              ✓ on target
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td style={tdS}>
+                        <input
+                          id={`${mId}-${date}-operator`}
+                          name={`${mId}-${date}-operator`}
+                          style={miniInp}
+                          placeholder="e.g. Operator"
+                          value={row.operator || ""}
+                          onChange={(e) =>
+                            updateReport(date, "operator", e.target.value)
+                          }
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
             </table>
           </div>
 
-          <div style={{ padding: "16px 0", fontSize: 11, color: C.muted, display: "flex", justifyContent: "space-between" }}>
-             <span>Capacity auto-filled - enter Planned and Actual manually</span>
-             <span style={{ fontWeight: 800 }}>{displayStart} — {daysArray[daysArray.length-1]}</span>
+          <div
+            style={{
+              padding: "16px 0",
+              fontSize: 11,
+              color: C.muted,
+              display: "flex",
+              justifyContent: "space-between",
+            }}
+          >
+            <span>
+              Capacity auto-filled - enter Planned and Actual manually
+            </span>
+            <span style={{ fontWeight: 800 }}>
+              {displayStart} — {daysArray[daysArray.length - 1]}
+            </span>
           </div>
 
           <div style={{ display: "flex", gap: 14, marginTop: 8 }}>
-            <button 
+            <button
               onClick={() => setSelectedMachine(null)}
-              style={{ flex: 1, padding: "14px", borderRadius: 10, background: "#ffffff11", border: "none", color: "#fff", fontWeight: 700, cursor: "pointer", transition: "all 0.2s" }}
-              onMouseEnter={(e) => e.currentTarget.style.background = "#ffffff18"}
-              onMouseLeave={(e) => e.currentTarget.style.background = "#ffffff11"}
+              style={{
+                flex: 1,
+                padding: "14px",
+                borderRadius: 10,
+                background: "#ffffff11",
+                border: "none",
+                color: "#fff",
+                fontWeight: 700,
+                cursor: "pointer",
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = "#ffffff18")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.background = "#ffffff11")
+              }
             >
               Close
             </button>
-            <button 
+            <button
               onClick={handleSave}
               disabled={isSaving}
-              style={{ 
-                flex: 2, 
-                padding: "14px", 
-                borderRadius: 10, 
-                background: C.blue, 
-                border: "none", 
-                color: "#fff", 
-                fontWeight: 800, 
-                cursor: "pointer", 
+              style={{
+                flex: 2,
+                padding: "14px",
+                borderRadius: 10,
+                background: C.blue,
+                border: "none",
+                color: "#fff",
+                fontWeight: 800,
+                cursor: "pointer",
                 boxShadow: `0 4px 15px ${C.blue}44`,
-                opacity: isSaving ? 0.7 : 1 
+                opacity: isSaving ? 0.7 : 1,
               }}
             >
               {isSaving ? "Saving..." : "Save Planning Records"}
@@ -506,6 +717,140 @@ export default function ProductionCalendar({
     );
   };
 
+  const JobInsightModal = () => {
+    if (!insightModal) return null;
+    const { entry, allEntries, totalQty, totalDays } = insightModal;
+    const jo = entry.jobOrderId;
+    const isOverdue =
+      jo?.internalDueDate &&
+      moment(entry.plannedEnd || entry.date).isAfter(jo.internalDueDate);
+    const otEntries = allEntries.filter(
+      (e) => e.isOvertime || e.shift === "OT",
+    );
+    const totalOTHours = otEntries.reduce(
+      (sum, e) => sum + (e.scheduledHours || 0),
+      0,
+    );
+
+    return (
+      <Modal
+        title={`🤖 Scheduling Insight: Job ${entry.jobCardNo}`}
+        onClose={() => setInsightModal(null)}
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div
+            style={{
+              padding: 12,
+              background: C.surface,
+              borderRadius: 8,
+              border: `1px solid ${C.border}`,
+            }}
+          >
+            <h4 style={{ margin: "0 0 8px 0", color: C.text }}>Job Details</h4>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 8,
+                fontSize: 13,
+              }}
+            >
+              <span style={{ color: C.muted }}>Item:</span>{" "}
+              <span style={{ color: C.text, fontWeight: 600 }}>
+                {jo?.itemName || "Unknown"}
+              </span>
+              <span style={{ color: C.muted }}>Total Qty:</span>{" "}
+              <span>{totalQty.toLocaleString()} units</span>
+              <span style={{ color: C.muted }}>Process:</span>{" "}
+              <span>{entry.process}</span>
+              <span style={{ color: C.muted }}>Delivery Date:</span>{" "}
+              <span>
+                {jo?.deliveryDate
+                  ? moment(jo.deliveryDate).format("DD MMM YYYY")
+                  : "Not Set"}
+              </span>
+            </div>
+          </div>
+
+          <div
+            style={{
+              padding: 12,
+              background: isOverdue ? C.red + "11" : C.green + "11",
+              borderRadius: 8,
+              border: `1px solid ${isOverdue ? C.red : C.green}33`,
+            }}
+          >
+            <h4
+              style={{
+                margin: "0 0 8px 0",
+                color: isOverdue ? C.red : C.green,
+              }}
+            >
+              Planning Summary
+            </h4>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 8,
+                fontSize: 13,
+              }}
+            >
+              <span style={{ color: C.muted }}>Total Days Required:</span>{" "}
+              <span style={{ fontWeight: 700 }}>{totalDays} Days</span>
+              <span style={{ color: C.muted }}>Planned End:</span>{" "}
+              <span style={{ fontWeight: 700 }}>
+                {moment(entry.plannedEnd || entry.date).format("DD MMM YYYY")}
+              </span>
+              <span style={{ color: C.muted }}>Status Check:</span>
+              <span
+                style={{ fontWeight: 700, color: isOverdue ? C.red : C.green }}
+              >
+                {isOverdue
+                  ? "⚠️ Likely to be delayed"
+                  : "✅ On track for delivery"}
+              </span>
+            </div>
+          </div>
+
+          <div
+            style={{
+              padding: 12,
+              background: totalOTHours > 0 ? C.orange + "11" : C.surface,
+              borderRadius: 8,
+              border: `1px solid ${totalOTHours > 0 ? C.orange : C.border}33`,
+            }}
+          >
+            <h4
+              style={{
+                margin: "0 0 8px 0",
+                color: totalOTHours > 0 ? C.orange : C.text,
+              }}
+            >
+              Machine Allocation
+            </h4>
+            <div style={{ fontSize: 13 }}>
+              <p style={{ margin: "0 0 4px 0" }}>
+                Allocated to{" "}
+                <strong>{entry.machineId?.name || "Selected Machine"}</strong>
+              </p>
+              {totalOTHours > 0 ? (
+                <p style={{ margin: 0, color: C.orange }}>
+                  Requires <strong>{totalOTHours.toFixed(1)} hrs</strong> of
+                  Overtime to meet this schedule.
+                </p>
+              ) : (
+                <p style={{ margin: 0, color: C.muted }}>
+                  Fully schedulable within regular shifts. No overtime needed.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      </Modal>
+    );
+  };
+
   return (
     <div className="fade">
       <SectionTitle
@@ -513,7 +858,7 @@ export default function ProductionCalendar({
         title="Production Calendar"
         sub="Machine-wise schedule — click any job to log actual production"
       >
-        <button 
+        <button
           onClick={handleGenerate}
           disabled={loading}
           style={{
@@ -525,7 +870,7 @@ export default function ProductionCalendar({
             fontWeight: 700,
             fontSize: 12,
             cursor: "pointer",
-            marginLeft: "auto"
+            marginLeft: "auto",
           }}
         >
           {loading ? "Planning..." : "⚡ Regenerate Rolling Plan"}
@@ -533,6 +878,7 @@ export default function ProductionCalendar({
       </SectionTitle>
 
       <MachineSidePanel />
+      <JobInsightModal />
 
       <div
         style={{
@@ -643,6 +989,171 @@ export default function ProductionCalendar({
           ))}
         </select>
       </div>
+
+      {}
+      <div
+        style={{
+          display: "flex",
+          gap: 12,
+          overflowX: "auto",
+          paddingBottom: 16,
+          marginBottom: 8,
+          scrollbarWidth: "none",
+        }}
+      >
+        {processStats.map((stat) => (
+          <div
+            key={stat.category}
+            style={{
+              minWidth: 240,
+              background: C.surface,
+              border: `1px solid ${C.border}`,
+              borderTop: `3px solid ${TYPE_COLOR[stat.category] || C.blue}`,
+              borderRadius: 8,
+              padding: 12,
+              boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 10,
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 12,
+                  fontWeight: 800,
+                  color: TYPE_COLOR[stat.category] || C.blue,
+                  textTransform: "uppercase",
+                }}
+              >
+                {MACHINE_ICON[stat.category] || "⚙️"} {stat.category}
+              </span>
+              <Badge text={`${stat.machineCount} Machines`} color="#ffffff11" />
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 10,
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    fontSize: 9,
+                    color: C.muted,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Daily Capacity
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 900, color: "#fff" }}>
+                  {fmt(stat.totalCapPerDay)}
+                </div>
+              </div>
+              <div>
+                <div
+                  style={{
+                    fontSize: 9,
+                    color: C.muted,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Scheduled Qty
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 900, color: C.blue }}>
+                  {fmt(stat.totalScheduled)}
+                </div>
+              </div>
+              <div>
+                <div
+                  style={{
+                    fontSize: 9,
+                    color: C.muted,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Est. Time
+                </div>
+                <div
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 900,
+                    color: stat.daysRequired > 7 ? C.yellow : C.green,
+                  }}
+                >
+                  {stat.daysRequired} Days
+                </div>
+              </div>
+              <div>
+                <div
+                  style={{
+                    fontSize: 9,
+                    color: C.muted,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  OT Required
+                </div>
+                <div
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 900,
+                    color: stat.otHours > 0 ? C.red : C.muted,
+                  }}
+                >
+                  {stat.otHours.toFixed(1)} hrs
+                </div>
+              </div>
+            </div>
+
+            {stat.totalCapPerDay > 0 && (
+              <div style={{ marginTop: 12 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontSize: 9,
+                    marginBottom: 4,
+                  }}
+                >
+                  <span style={{ color: C.muted }}>Load Utilization</span>
+                  <span style={{ color: "#fff", fontWeight: 700 }}>
+                    {Math.round(
+                      (stat.totalScheduled /
+                        (stat.totalCapPerDay * stat.daysRequired || 1)) *
+                        100,
+                    )}
+                    %
+                  </span>
+                </div>
+                <div
+                  style={{
+                    height: 4,
+                    background: "#ffffff08",
+                    borderRadius: 2,
+                    overflow: "hidden",
+                  }}
+                >
+                  <div
+                    style={{
+                      height: "100%",
+                      width: `${Math.min(100, (stat.totalScheduled / (stat.totalCapPerDay * stat.daysRequired || 1)) * 100)}%`,
+                      background: TYPE_COLOR[stat.category] || C.blue,
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+      {}
 
       <div
         style={{
@@ -758,6 +1269,11 @@ export default function ProductionCalendar({
           </thead>
           <tbody>
             {visibleMachines.map((machine, mi) => {
+              const fullMachine = Array.isArray(machineMaster)
+                ? machineMaster.find(
+                    (m) => (m._id || m.id) === (machine.id || machine._id),
+                  )
+                : machine;
               const typeColor = TYPE_COLOR[machine.type] || C.muted;
               const icon = MACHINE_ICON[machine.type] || "⚙️";
               return (
@@ -770,11 +1286,7 @@ export default function ProductionCalendar({
                 >
                   <td
                     onClick={() => {
-                        
-                        const fullMachine = Array.isArray(machineMaster) 
-                            ? machineMaster.find(m => (m._id || m.id) === (machine.id || machine._id))
-                            : machine;
-                        setSelectedMachine({ ...machine, ...fullMachine });
+                      setSelectedMachine({ ...machine, ...fullMachine });
                     }}
                     style={{
                       padding: "10px 16px",
@@ -787,10 +1299,15 @@ export default function ProductionCalendar({
                       left: 0,
                       zIndex: 1,
                       cursor: "pointer",
-                      transition: "background 0.2s"
+                      transition: "background 0.2s",
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = "#ffffff05"}
-                    onMouseLeave={(e) => e.currentTarget.style.background = mi % 2 === 0 ? C.surface : C.inputBg || C.surface}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.background = "#ffffff05")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.background =
+                        mi % 2 === 0 ? C.surface : C.inputBg || C.surface)
+                    }
                   >
                     <div
                       style={{ display: "flex", alignItems: "center", gap: 8 }}
@@ -868,41 +1385,223 @@ export default function ProductionCalendar({
                         ) : (
                           jobs.map((entry) => {
                             const jo = entry.jobOrderId;
-                            const jc = entry.isOvertime ? C.red : C.blue;
+                            const itemName = jo?.itemName || "Unknown Item";
+
+                            
+                            const statusColor =
+                              entry.deliveryFeasible === "GREEN"
+                                ? C.green
+                                : entry.deliveryFeasible === "ORANGE"
+                                  ? C.yellow
+                                  : entry.deliveryFeasible === "RED"
+                                    ? C.red
+                                    : C.blue;
+
+                            
+                            const scheduledSoFar = (calendarData || [])
+                              .filter(
+                                (e) =>
+                                  e.jobCardNo === entry.jobCardNo &&
+                                  moment(e.date).isSameOrBefore(
+                                    moment(entry.date),
+                                  ),
+                              )
+                              .reduce((sum, e) => sum + e.scheduledQty, 0);
+
+                            const progressPercent = Math.min(
+                              100,
+                              (scheduledSoFar / (jo?.orderQty || 1)) * 100,
+                            );
+
+                            const schedHrs = entry.scheduledHours || 0;
+                            const shiftHrs = fullMachine?.standardShiftHours || 8;
+                            const shiftsCount = Math.max(1, Math.ceil(schedHrs / shiftHrs));
+                            const hasOT = entry.overtimeNeeded || entry.overtimeHours > 0;
+
                             return (
                               <div
                                 key={entry._id}
-                                onClick={() =>
-                                  toast &&
-                                  toast(
-                                    `Job: ${entry.jobCardNo} — ${entry.startTime} to ${entry.endTime}`,
-                                    "info",
-                                  )
-                                }
-                                title={`${entry.jobCardNo} · ${jo?.companyName || ""} · ${entry.startTime}-${entry.endTime}`}
+                                onClick={() => {
+                                  const allEntries = (
+                                    calendarData || []
+                                  ).filter(
+                                    (e) => e.jobCardNo === entry.jobCardNo,
+                                  );
+                                  const totalQty = allEntries.reduce(
+                                    (sum, e) => sum + e.scheduledQty,
+                                    0,
+                                  );
+                                  const totalDays = new Set(
+                                    allEntries.map((e) =>
+                                      moment(e.date).format("YYYY-MM-DD"),
+                                    ),
+                                  ).size;
+
+                                  setInsightModal({
+                                    entry,
+                                    allEntries,
+                                    totalQty,
+                                    totalDays,
+                                  });
+                                }}
+                                title={`${entry.jobCardNo} · ${itemName} · Target: ${entry.dailyTarget}`}
                                 style={{
                                   fontSize: 10,
-                                  padding: "4px 6px",
-                                  background: jc + "22",
-                                  border: `1px solid ${jc}44`,
-                                  borderRadius: 4,
-                                  color: jc,
-                                  fontWeight: 700,
-                                  marginBottom: 4,
+                                  padding: "10px",
+                                  background: `${statusColor}08`,
+                                  border: `1px solid ${statusColor}22`,
+                                  borderLeft: `4px solid ${statusColor}`,
+                                  borderRadius: "4px 8px 8px 4px",
+                                  color: "#fff",
+                                  fontWeight: 600,
+                                  marginBottom: 8,
                                   cursor: "pointer",
                                   textAlign: "left",
+                                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                                  transition: "transform 0.1s",
+                                  position: "relative",
                                 }}
+                                onMouseEnter={(e) =>
+                                  (e.currentTarget.style.transform =
+                                    "scale(1.02)")
+                                }
+                                onMouseLeave={(e) =>
+                                  (e.currentTarget.style.transform = "scale(1)")
+                                }
                               >
-                                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                                  <span>{entry.jobCardNo}</span>
-                                  <span style={{ opacity: 0.7 }}>{entry.startTime}</span>
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    marginBottom: 4,
+                                    alignItems: "center",
+                                  }}
+                                >
+                                  <span
+                                    style={{
+                                      fontSize: 11,
+                                      fontWeight: 800,
+                                      color: statusColor,
+                                    }}
+                                  >
+                                    {entry.jobCardNo}
+                                  </span>
+                                  {entry.overtimeNeeded && (
+                                    <span
+                                      style={{
+                                        background: `${C.red}22`,
+                                        color: C.red,
+                                        padding: "1px 4px",
+                                        borderRadius: 3,
+                                        fontSize: 8,
+                                        fontWeight: 900,
+                                        border: `1px solid ${C.red}44`,
+                                      }}
+                                    >
+                                      OT REQ
+                                    </span>
+                                  )}
                                 </div>
-                                <div style={{ fontSize: 9, opacity: 0.8, marginTop: 2, fontWeight: 500 }}>
-                                  {entry.scheduledQty.toLocaleString()} units
+
+                                <div
+                                  style={{
+                                    fontSize: 10,
+                                    color: "#fff",
+                                    marginBottom: 2,
+                                    whiteSpace: "nowrap",
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                  }}
+                                >
+                                  {itemName}
                                 </div>
-                                {entry.isOvertime && (
-                                  <div style={{ fontSize: 8, color: C.red, marginTop: 2 }}>⚡ OVERTIME</div>
-                                )}
+
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                    marginTop: 6,
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      flexDirection: "column",
+                                    }}
+                                  >
+                                    <span
+                                      style={{
+                                        fontSize: 8,
+                                        color: C.muted,
+                                        textTransform: "uppercase",
+                                      }}
+                                    >
+                                      Daily Target
+                                    </span>
+                                    <span
+                                      style={{ fontSize: 11, fontWeight: 700 }}
+                                    >
+                                      {entry.dailyTarget?.toLocaleString() ||
+                                        entry.scheduledQty?.toLocaleString()}{" "}
+                                      <span
+                                        style={{ opacity: 0.5, fontSize: 9 }}
+                                      >
+                                        qty
+                                      </span>
+                                    </span>
+                                  </div>
+
+                                  <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3 }}>
+                                    {shiftsCount > 1 ? (
+                                      <span style={{ fontSize: 8, color: C.yellow, fontWeight: 700, background: `${C.yellow}22`, padding: '2px 4px', borderRadius: 3, border: `1px solid ${C.yellow}44` }}>
+                                        {shiftsCount} SHIFTS
+                                      </span>
+                                    ) : (
+                                      <span style={{ fontSize: 8, color: C.muted, fontWeight: 600, padding: '2px 4px' }}>
+                                        1 SHIFT
+                                      </span>
+                                    )}
+                                    {hasOT && (
+                                      <span style={{ fontSize: 8, color: C.red, fontWeight: 700, background: `${C.red}22`, padding: '2px 4px', borderRadius: 3, border: `1px solid ${C.red}44` }}>
+                                        + {entry.overtimeHours > 0 ? `${entry.overtimeHours}h ` : ''}OT
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {}
+                                <div style={{ marginTop: 8 }}>
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      justifyContent: "space-between",
+                                      fontSize: 8,
+                                      marginBottom: 2,
+                                      color: C.muted,
+                                    }}
+                                  >
+                                    <span>Progress</span>
+                                    <span>{Math.round(progressPercent)}%</span>
+                                  </div>
+                                  <div
+                                    style={{
+                                      height: 4,
+                                      background: "#ffffff11",
+                                      borderRadius: 2,
+                                      overflow: "hidden",
+                                    }}
+                                  >
+                                    <div
+                                      style={{
+                                        height: "100%",
+                                        width: `${progressPercent}%`,
+                                        background: statusColor,
+                                        transition: "width 0.3s ease",
+                                      }}
+                                    />
+                                  </div>
+                                </div>
                               </div>
                             );
                           })
@@ -1020,12 +1719,12 @@ const thS = {
   fontWeight: 700,
   fontSize: 10,
   letterSpacing: "0.05em",
-  textTransform: "uppercase"
+  textTransform: "uppercase",
 };
 
 const tdS = {
   padding: "10px 12px",
-  verticalAlign: "top"
+  verticalAlign: "top",
 };
 
 const miniInp = {
@@ -1037,9 +1736,8 @@ const miniInp = {
   color: "#fff",
   fontSize: 12,
   outline: "none",
-  textAlign: "center"
+  textAlign: "center",
 };
-
 
 function tabBtn(active, color) {
   return {

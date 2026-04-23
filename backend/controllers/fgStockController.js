@@ -9,7 +9,7 @@ exports.getAllStock = async (req, res) => {
     if (companyName)
       filter.companyName = { $regex: companyName, $options: "i" };
 
-    // Multi-tenant filtering for Client users
+    
     if (req.user && req.user.role === "Client" && req.user.clientTag) {
       filter.companyCat = req.user.clientTag;
     }

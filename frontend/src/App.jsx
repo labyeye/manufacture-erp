@@ -56,6 +56,10 @@ import RMStock from "./pages/RMStock";
 import FGStock from "./pages/FGStock";
 import CompanyMaster from "./pages/CompanyMaster";
 import BrandMaster from "./pages/BrandMaster";
+import ToolingMaster from "./pages/ToolingMaster";
+import FactoryCalendar from "./pages/FactoryCalendar";
+import MachineMaintenance from "./pages/MachineMaintenance";
+import BreakdownLog from "./pages/BreakdownLog";
 
 function App() {
   return (
@@ -111,7 +115,6 @@ function AppContent() {
   let allowedTabs = userRole.tabs;
   let editableTabs = userRole.tabs;
 
-  // Custom overrides for non-Admins
   if (user.role !== "Admin") {
     if (user.allowedTabs && user.allowedTabs.length > 0) {
       allowedTabs = user.allowedTabs;
@@ -119,9 +122,6 @@ function AppContent() {
     if (user.editableTabs && user.editableTabs.length > 0) {
       editableTabs = user.editableTabs;
     } else {
-      // Fallback: If allowedTabs used but no editableTabs defined,
-      // non-admins shouldn't implicitly get edit rights to everything in their role.
-      // But for simplicity, we keep it as role tabs if nulled.
       editableTabs = user.editableTabs || userRole.tabs;
     }
   }
@@ -325,9 +325,9 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
 
   const matchesClient = (stockItem, tag) => {
     if (!tag) return true;
-    // Direct check on stock item's companyCat
+
     if (stockItem.companyCat === tag) return true;
-    // Fallback: check Item Master for the itemCode
+
     const item = itemMasterFG.find((i) => i.code === stockItem.itemCode);
     return item?.clientCategory === tag;
   };
@@ -387,7 +387,6 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
       };
     }
 
-    // Client filtering based on clientCategory in ItemMaster or companyCat in FGStock
     const filteredFG = fgStock.filter((s) => matchesClient(s, tag));
     const filteredItemMaster = itemMasterFG.filter(
       (i) => i.clientCategory === tag,
@@ -469,6 +468,7 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
   const data = filteredData;
 
   const renderPage = () => {
+    console.log("Current Tab:", currentTab);
     switch (currentTab) {
       case "dashboard":
         return (
@@ -505,7 +505,15 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
       case "printingmaster":
         return <PrintingDetailMaster {...data} toast={showToast} />;
       case "calendar":
-        return <ProductionCalendar {...data} />;
+        return <ProductionCalendar {...data} toast={showToast} />;
+      case "toolingmaster":
+        return <ToolingMaster {...data} toast={showToast} />;
+      case "factorycalendar":
+        return <FactoryCalendar {...data} toast={showToast} />;
+      case "maintenance":
+        return <MachineMaintenance {...data} toast={showToast} />;
+      case "breakdowns":
+        return <BreakdownLog {...data} toast={showToast} />;
       case "dispatch":
         return <Dispatch {...data} toast={showToast} />;
       case "rawstock":
@@ -736,31 +744,6 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
               >
                 Ctrl+K
               </span>
-            </div>
-
-            <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-              <div
-                style={{
-                  position: "relative",
-                  cursor: "pointer",
-                  fontSize: 20,
-                }}
-              >
-                🔔
-                <div
-                  style={{
-                    position: "absolute",
-                    top: -2,
-                    right: -2,
-                    width: 8,
-                    height: 8,
-                    background: C.red,
-                    borderRadius: "50%",
-                    border: "2px solid #0d0d0d",
-                  }}
-                />
-              </div>
-              <div style={{ cursor: "pointer", fontSize: 18 }}>🌙</div>
             </div>
           </div>
 

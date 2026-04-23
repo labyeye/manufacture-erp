@@ -382,7 +382,9 @@ export default function CompanyMaster({ toast }) {
             <select
               style={inputStyle}
               value={formData.priority}
-              onChange={(e) => handleChange("priority", parseInt(e.target.value))}
+              onChange={(e) =>
+                handleChange("priority", parseInt(e.target.value))
+              }
             >
               <option value={1}>1 - Urgent / VIP</option>
               <option value={2}>2 - High Priority</option>
@@ -557,10 +559,17 @@ export default function CompanyMaster({ toast }) {
                       {company.gstin || "-"}
                     </td>
                     <td style={{ padding: "12px", color: "#aaa" }}>
-                      <span style={{ 
-                        color: company.priority === 1 ? C.red : (company.priority === 2 ? C.orange : C.muted),
-                        fontWeight: 700
-                      }}>
+                      <span
+                        style={{
+                          color:
+                            company.priority === 1
+                              ? C.red
+                              : company.priority === 2
+                                ? C.orange
+                                : C.muted,
+                          fontWeight: 700,
+                        }}
+                      >
                         P{company.priority || 3}
                       </span>
                     </td>
@@ -615,7 +624,9 @@ export default function CompanyMaster({ toast }) {
                           {company.status === "Active" ? "⏸" : "▶"}
                         </button>
                         <button
-                          onClick={() => setConfirmModal({ isOpen: true, id: company._id })}
+                          onClick={() =>
+                            setConfirmModal({ isOpen: true, id: company._id })
+                          }
                           style={{
                             background: "#450a0a",
                             color: "#ef4444",

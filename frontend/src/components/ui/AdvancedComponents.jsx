@@ -180,7 +180,7 @@ export function Toast({ msg, onClose, type = "success" }) {
   return (
     <>
       <style>{alertKeyframes}</style>
-      {/* Backdrop */}
+      {}
       <div
         onClick={handleClose}
         style={{
@@ -191,7 +191,7 @@ export function Toast({ msg, onClose, type = "success" }) {
           animation: exiting ? "alertScaleOut 0.28s ease forwards" : "fadeIn 0.2s ease",
         }}
       />
-      {/* Modal */}
+      {}
       <div
         style={{
           position: "fixed",
@@ -210,12 +210,12 @@ export function Toast({ msg, onClose, type = "success" }) {
             : "alertScaleIn 0.38s cubic-bezier(0.34,1.56,0.64,1)",
         }}
       >
-        {/* Top accent line */}
+        {}
         <div style={{ height: 3, background: c.color, width: "100%" }} />
 
-        {/* Content */}
+        {}
         <div style={{ padding: "28px 28px 20px", textAlign: "center" }}>
-          {/* Icon with pulse ring */}
+          {}
           <div style={{
             display: "inline-flex",
             alignItems: "center",
@@ -234,7 +234,7 @@ export function Toast({ msg, onClose, type = "success" }) {
             {c.icon}
           </div>
 
-          {/* Title */}
+          {}
           <div style={{
             fontSize: 17,
             fontWeight: 700,
@@ -245,7 +245,7 @@ export function Toast({ msg, onClose, type = "success" }) {
             {c.title}
           </div>
 
-          {/* Message */}
+          {}
           {type === "validation" && msgs.length > 1 ? (
             <ul style={{
               margin: "8px 0 0 0",
@@ -269,7 +269,7 @@ export function Toast({ msg, onClose, type = "success" }) {
             </div>
           )}
 
-          {/* Dismiss hint */}
+          {}
           <div style={{
             marginTop: 18,
             fontSize: 11,
@@ -280,7 +280,7 @@ export function Toast({ msg, onClose, type = "success" }) {
           </div>
         </div>
 
-        {/* Progress bar */}
+        {}
         <div style={{ height: 3, background: "#1e2530", width: "100%" }}>
           <div style={{
             height: "100%",

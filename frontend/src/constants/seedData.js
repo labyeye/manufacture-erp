@@ -157,35 +157,298 @@ export const FG_SIZE_CLIENT_CATS = [
   "Paper Boat Tray",
 ];
 
+
+export const PARALLEL_MACHINE_GROUPS = [
+  "",
+  "SBBM 360 Pair",
+  "Lamination Pair",
+  "Manual Die Cutter Pair",
+  "Lid 110mm Pair",
+  "Flat Bowl Pair",
+  "Carton Erection Pair",
+];
+
+
+export const ALL_SKU_FAMILIES = [
+  
+  "Paper Dip Bowl",
+  "Paper Dip Bowl Lid",
+  "Paper Cup",
+  "Paper Cup Lid",
+  "Paper Soup Bowl",
+  "Paper Soup Bowl Lid",
+  "Paper Flat Bowl",
+  "Paper Flat Bowl Lid",
+  "Paper Salad Box",
+  "Paper Burger Box",
+  "Paper Boat Tray",
+  
+  "Paper Bag with Handle",
+  "Paper Bag without Handle",
+  "Wrapping Paper",
+  
+  "Cake Box",
+  "Pastry Box",
+  "Paper Bag Manual",
+  "Insert",
+  "Sleeve",
+  "Sticker",
+];
+
+
+const _SHEET_FG = [
+  "Paper Dip Bowl",
+  "Paper Dip Bowl Lid",
+  "Paper Cup",
+  "Paper Soup Bowl",
+  "Paper Soup Bowl Lid",
+  "Paper Flat Bowl",
+  "Paper Flat Bowl Lid",
+  "Paper Salad Box",
+  "Paper Boat Tray",
+  "Paper Burger Box",
+];
+
 export const SEED_MACHINES = [
-  { name: "SBBM 360 Machine 1", type: "Formation" },
-  { name: "SBBM 360 Machine 2", type: "Formation" },
-  { name: "Flexo Printing Machine", type: "Printing" },
-  { name: "Sheet Cutting Machine", type: "Cutting" },
-  { name: "Laminator Machine 1", type: "Lamination" },
-  { name: "Laminator Machine 2", type: "Lamination" },
-  { name: "Handmade", type: "Manual Formation" },
-  { name: "Komori 28x40inch Machine", type: "Printing" },
-  { name: "Akiyama 19x26inch Machine", type: "Printing" },
-  { name: "Manual Die Cutting Machine 1", type: "Die Cutting" },
-  { name: "Manual Die Cutting Machine 2", type: "Die Cutting" },
-  { name: "Half Cutting Machine", type: "Die Cutting" },
-  { name: "Automatic Die Cutting", type: "Die Cutting" },
-  { name: "Carton Erection 1", type: "Formation" },
-  { name: "Carton Erection 2", type: "Formation" },
-  { name: "Bowl 250ml", type: "Formation" },
-  { name: "Bowl 350ml", type: "Formation" },
-  { name: "Bowl 500ml", type: "Formation" },
-  { name: "Bowl 750ml", type: "Formation" },
-  { name: "Lid 110mm 1", type: "Formation" },
-  { name: "Lid 110mm 2", type: "Formation" },
-  { name: "Single Layer Lid", type: "Formation" },
-  { name: "Dip Bowl", type: "Formation" },
-  { name: "Single Wall Cup", type: "Formation" },
-  { name: "Double Wall Cup", type: "Formation" },
-  { name: "Flat Bowl Machine 1", type: "Formation" },
-  { name: "Flat Bowl Machine 2", type: "Formation" },
-  { name: "Flat Bowl Lid Machine", type: "Formation" },
+  
+  
+  {
+    name: "Komori 28x40inch Machine",
+    type: "Printing",
+    division: "Sheet",
+    capacityUnit: "Sheets",
+    productCompatibility: _SHEET_FG,
+    parallelMachineGroup: "",
+  },
+  
+  {
+    name: "Manual Die Cutting Machine 1",
+    type: "Die Cutting",
+    division: "Sheet",
+    capacityUnit: "Sheets",
+    productCompatibility: _SHEET_FG,
+    parallelMachineGroup: "Manual Die Cutter Pair",
+    priorityRank: 2,
+  },
+  {
+    name: "Manual Die Cutting Machine 2",
+    type: "Die Cutting",
+    division: "Sheet",
+    capacityUnit: "Sheets",
+    productCompatibility: _SHEET_FG,
+    parallelMachineGroup: "Manual Die Cutter Pair",
+    priorityRank: 2,
+  },
+  {
+    name: "Automatic Die Cutting",
+    type: "Die Cutting",
+    division: "Sheet",
+    capacityUnit: "Sheets",
+    productCompatibility: _SHEET_FG,
+    parallelMachineGroup: "",
+    priorityRank: 1, 
+  },
+  
+  {
+    name: "Laminator Machine 1",
+    type: "Lamination",
+    division: "Sheet",
+    capacityUnit: "Sheets",
+    productCompatibility: _SHEET_FG,
+    parallelMachineGroup: "Lamination Pair",
+  },
+  {
+    name: "Laminator Machine 2",
+    type: "Lamination",
+    division: "Sheet",
+    capacityUnit: "Sheets",
+    productCompatibility: _SHEET_FG,
+    parallelMachineGroup: "Lamination Pair",
+  },
+  
+  {
+    name: "Dip Bowl",
+    type: "Formation",
+    division: "Sheet",
+    capacityUnit: "Pcs",
+    productCompatibility: ["Paper Dip Bowl"],
+    parallelMachineGroup: "",
+  },
+  {
+    name: "Single Layer Lid",
+    type: "Formation",
+    division: "Sheet",
+    capacityUnit: "Pcs",
+    productCompatibility: ["Paper Dip Bowl Lid"],
+    parallelMachineGroup: "",
+  },
+  
+  {
+    name: "Single Wall Cup",
+    type: "Formation",
+    division: "Sheet",
+    capacityUnit: "Pcs",
+    productCompatibility: ["Paper Cup"],
+    parallelMachineGroup: "",
+  },
+  {
+    name: "Double Wall Cup",
+    type: "Formation",
+    division: "Sheet",
+    capacityUnit: "Pcs",
+    productCompatibility: ["Paper Cup"],
+    parallelMachineGroup: "",
+  },
+  
+  {
+    name: "Bowl 250ml",
+    type: "Formation",
+    division: "Sheet",
+    capacityUnit: "Pcs",
+    productCompatibility: ["Paper Soup Bowl"],
+    parallelMachineGroup: "",
+  },
+  {
+    name: "Bowl 350ml",
+    type: "Formation",
+    division: "Sheet",
+    capacityUnit: "Pcs",
+    productCompatibility: ["Paper Soup Bowl"],
+    parallelMachineGroup: "",
+  },
+  {
+    name: "Bowl 500ml",
+    type: "Formation",
+    division: "Sheet",
+    capacityUnit: "Pcs",
+    productCompatibility: ["Paper Soup Bowl"],
+    parallelMachineGroup: "",
+  },
+  {
+    name: "Bowl 750ml",
+    type: "Formation",
+    division: "Sheet",
+    capacityUnit: "Pcs",
+    productCompatibility: ["Paper Soup Bowl"],
+    parallelMachineGroup: "",
+  },
+  
+  {
+    name: "Lid 110mm 1",
+    type: "Formation",
+    division: "Sheet",
+    capacityUnit: "Pcs",
+    productCompatibility: ["Paper Soup Bowl Lid"],
+    parallelMachineGroup: "Lid 110mm Pair",
+  },
+  {
+    name: "Lid 110mm 2",
+    type: "Formation",
+    division: "Sheet",
+    capacityUnit: "Pcs",
+    productCompatibility: ["Paper Soup Bowl Lid"],
+    parallelMachineGroup: "Lid 110mm Pair",
+  },
+  
+  {
+    name: "Flat Bowl Machine 1",
+    type: "Formation",
+    division: "Sheet",
+    capacityUnit: "Pcs",
+    productCompatibility: ["Paper Flat Bowl"], 
+    parallelMachineGroup: "Flat Bowl Pair",
+  },
+  {
+    name: "Flat Bowl Machine 2",
+    type: "Formation",
+    division: "Sheet",
+    capacityUnit: "Pcs",
+    productCompatibility: ["Paper Flat Bowl"], 
+    parallelMachineGroup: "Flat Bowl Pair",
+  },
+  {
+    name: "Flat Bowl Lid Machine",
+    type: "Formation",
+    division: "Sheet",
+    capacityUnit: "Pcs",
+    productCompatibility: ["Paper Flat Bowl Lid"],
+    parallelMachineGroup: "",
+  },
+  
+  {
+    name: "Carton Erection 1",
+    type: "Formation",
+    division: "Sheet",
+    capacityUnit: "Pcs",
+    productCompatibility: ["Paper Salad Box", "Paper Boat Tray", "Paper Burger Box"],
+    parallelMachineGroup: "Carton Erection Pair",
+  },
+  {
+    name: "Carton Erection 2",
+    type: "Formation",
+    division: "Sheet",
+    capacityUnit: "Pcs",
+    productCompatibility: ["Paper Salad Box", "Paper Boat Tray", "Paper Burger Box"],
+    parallelMachineGroup: "Carton Erection Pair",
+  },
+  
+  {
+    name: "Flexo Printing Machine",
+    type: "Printing",
+    division: "Reel",
+    capacityUnit: "Kg",
+    productCompatibility: ["Paper Bag with Handle", "Paper Bag without Handle"],
+    parallelMachineGroup: "",
+  },
+  {
+    name: "SBBM 360 Machine 1",
+    type: "Bag Making",
+    division: "Reel",
+    capacityUnit: "Pcs",
+    productCompatibility: ["Paper Bag with Handle", "Paper Bag without Handle"],
+    parallelMachineGroup: "SBBM 360 Pair",
+  },
+  {
+    name: "SBBM 360 Machine 2",
+    type: "Bag Making",
+    division: "Reel",
+    capacityUnit: "Pcs",
+    productCompatibility: ["Paper Bag with Handle", "Paper Bag without Handle"],
+    parallelMachineGroup: "SBBM 360 Pair",
+  },
+  {
+    name: "Sheet Cutting Machine",
+    type: "Sheet Cutting",
+    division: "Reel",
+    capacityUnit: "Pcs",
+    productCompatibility: ["Wrapping Paper"],
+    parallelMachineGroup: "",
+  },
+  
+  {
+    name: "Akiyama 19x26inch Machine",
+    type: "Printing",
+    division: "Sheet",
+    capacityUnit: "Sheets",
+    productCompatibility: [],
+    parallelMachineGroup: "",
+  },
+  {
+    name: "Half Cutting Machine",
+    type: "Die Cutting",
+    division: "Sheet",
+    capacityUnit: "Sheets",
+    productCompatibility: [],
+    parallelMachineGroup: "",
+  },
+  {
+    name: "Handmade",
+    type: "Manual Formation",
+    division: "Sheet",
+    capacityUnit: "Pcs",
+    productCompatibility: [],
+    parallelMachineGroup: "",
+  },
 ];
 
 export const DEFAULT_ROLES = {
@@ -202,6 +465,10 @@ export const DEFAULT_ROLES = {
       "production",
       "printingmaster",
       "calendar",
+      "toolingmaster",
+      "factorycalendar",
+      "maintenance",
+      "breakdowns",
       "dispatch",
       "rawstock",
       "fg",
@@ -219,7 +486,17 @@ export const DEFAULT_ROLES = {
   Production: {
     label: "Production",
     color: "#f59e0b",
-    tabs: ["dashboard", "production", "printingmaster", "calendar", "jobs"],
+    tabs: [
+      "dashboard",
+      "production",
+      "printingmaster",
+      "calendar",
+      "jobs",
+      "toolingmaster",
+      "factorycalendar",
+      "maintenance",
+      "breakdowns",
+    ],
   },
   Store: {
     label: "Store",
@@ -248,6 +525,10 @@ export const TABS = [
   { id: "production", icon: "🔧", label: "Production Update" },
   { id: "printingmaster", icon: "🖨️", label: "Printing Detail Master" },
   { id: "calendar", icon: "📅", label: "Production Calendar" },
+  { id: "toolingmaster", icon: "🛠️", label: "Tooling Master" },
+  { id: "factorycalendar", icon: "🗓️", label: "Factory Calendar" },
+  { id: "maintenance", icon: "🔧", label: "Machine Maintenance" },
+  { id: "breakdowns", icon: "⚠️", label: "Breakdown Log" },
   { id: "dispatch", icon: "🚛", label: "Dispatch" },
   { id: "rawstock", icon: "📦", label: "RM Stock" },
   { id: "fg", icon: "🏭", label: "FG Stock" },
@@ -262,7 +543,7 @@ export const TABS = [
   { id: "users", icon: "👥", label: "User Management" },
 ];
 
-export const SEED_VERSION = "v13";
+export const SEED_VERSION = "v14";
 
 export const TRANSACTION_KEYS = [
   "erp_purchaseOrders",

@@ -612,13 +612,98 @@ export const brandMasterAPI = {
 };
 
 export const planningAPI = {
-  generate: async () => {
-    const response = await api.post("/planning/generate");
+  generate: async (params) => {
+    const response = await api.get("/planning/generate", { params });
     return response.data;
   },
 
   getCalendar: async (params) => {
     const response = await api.get("/planning/calendar", { params });
+    return response.data;
+  },
+
+  planJob: async (data) => {
+    const response = await api.post("/planning/plan-job", data);
+    return response.data;
+  },
+};
+
+export const toolingMasterAPI = {
+  getAll: async () => {
+    const response = await api.get("/tooling-master");
+    return response.data;
+  },
+  getOne: async (id) => {
+    const response = await api.get(`/tooling-master/${id}`);
+    return response.data;
+  },
+  create: async (data) => {
+    const response = await api.post("/tooling-master", data);
+    return response.data;
+  },
+  update: async (id, data) => {
+    const response = await api.put(`/tooling-master/${id}`, data);
+    return response.data;
+  },
+  delete: async (id) => {
+    const response = await api.delete(`/tooling-master/${id}`);
+    return response.data;
+  },
+};
+
+export const factoryCalendarAPI = {
+  getAll: async () => {
+    const response = await api.get("/factory-calendar");
+    return response.data;
+  },
+  create: async (data) => {
+    const response = await api.post("/factory-calendar", data);
+    return response.data;
+  },
+  update: async (id, data) => {
+    const response = await api.put(`/factory-calendar/${id}`, data);
+    return response.data;
+  },
+  delete: async (id) => {
+    const response = await api.delete(`/factory-calendar/${id}`);
+    return response.data;
+  },
+};
+
+export const machineMaintenanceAPI = {
+  getAll: async () => {
+    const response = await api.get("/machine-maintenance");
+    return response.data;
+  },
+  create: async (data) => {
+    const response = await api.post("/machine-maintenance", data);
+    return response.data;
+  },
+  update: async (id, data) => {
+    const response = await api.put(`/machine-maintenance/${id}`, data);
+    return response.data;
+  },
+  delete: async (id) => {
+    const response = await api.delete(`/machine-maintenance/${id}`);
+    return response.data;
+  },
+};
+
+export const breakdownLogAPI = {
+  getAll: async () => {
+    const response = await api.get("/breakdown-log");
+    return response.data;
+  },
+  create: async (data) => {
+    const response = await api.post("/breakdown-log", data);
+    return response.data;
+  },
+  update: async (id, data) => {
+    const response = await api.put(`/breakdown-log/${id}`, data);
+    return response.data;
+  },
+  delete: async (id) => {
+    const response = await api.delete(`/breakdown-log/${id}`);
     return response.data;
   },
 };

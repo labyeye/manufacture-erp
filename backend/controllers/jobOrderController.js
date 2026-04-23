@@ -7,14 +7,26 @@ const SalesOrder = require("../models/SalesOrder");
 const { generateJONo } = require("../utils/counters");
 const { generateJobCardPDF } = require("../utils/pdf");
 
+const JobStage = require("../models/JobStage");
+
 const STAGES = [
   "Printing",
-  "Flexo Printing",
+  "Varnish",
+  "Die Cutting",
+  "Lamination",
+  "Formation",
+  "Bag Making",
+  "Sheet Cutting",
+];
+
+const STAGES_ORDER = [
+  "Printing",
   "Varnish",
   "Lamination",
   "Die Cutting",
   "Formation",
-  "Manual Formation",
+  "Bag Making",
+  "Sheet Cutting",
 ];
 
 async function buildSchedule(jobOrder, machineAssignments) {
@@ -93,7 +105,7 @@ async function adjustRMStock(jobOrder, direction = -1) {
 
     if (rmStock) {
       if (rmStock.unit === "kg" || jobOrder.paperCategory === "Paper Reel") {
-        const weightToAdjust = Number(jobOrder.reelWeightKg || 0) * direction; // direction -1 means deduct
+        const weightToAdjust = Number(jobOrder.reelWeightKg || 0) * direction; 
         rmStock.weight = Math.max(0, rmStock.weight + weightToAdjust);
         if (rmStock.unit === "sheets" && rmStock.weightPerSheet > 0) {
           rmStock.qty = Math.floor(rmStock.weight / rmStock.weightPerSheet);
@@ -197,11 +209,11 @@ async function checkRMStockSufficiency(jobOrder, existingJOId = null) {
     let currentWeight = Number(rmStock.weight || 0);
     let currentQty = Number(rmStock.qty || 0);
 
-    // If update, add back the old JO's stock to current stock for the check
+    
     if (existingJOId) {
       const oldJO = await JobOrder.findById(existingJOId);
       if (oldJO) {
-        // Only if it's the same stock item
+        
         if (
           String(oldJO.rmStockId) === String(rmStock._id) ||
           (oldJO.paperType === jobOrder.paperType &&
@@ -298,7 +310,7 @@ async function checkRMStockSufficiency(jobOrder, existingJOId = null) {
     return { sufficient: true };
   } catch (err) {
     console.error("❌ Stock Sufficiency Check Error:", err);
-    return { sufficient: true }; // Default to true if check fails to not block production? Or false? Choosing true to be safe but console error.
+    return { sufficient: true }; 
   }
 }
 
@@ -335,28 +347,20 @@ async function upsertPrintingMaster(jobOrder) {
 
 exports.getAll = async (req, res) => {
   try {
-    const jobOrders = await JobOrder.find()
-      .populate("createdBy", "name username")
-      .sort({ createdAt: -1 });
-
+    const jobOrders = await JobOrder.find().sort({ createdAt: -1 });
     res.json(jobOrders);
   } catch (error) {
-    console.error("Get job orders error:", error);
+    console.error("Get all job orders error:", error);
     res.status(500).json({ error: "Failed to fetch job orders" });
   }
 };
 
 exports.getOne = async (req, res) => {
   try {
-    const jobOrder = await JobOrder.findById(req.params.id).populate(
-      "createdBy",
-      "name username",
-    );
-
+    const jobOrder = await JobOrder.findById(req.params.id);
     if (!jobOrder) {
       return res.status(404).json({ error: "Job order not found" });
     }
-
     res.json(jobOrder);
   } catch (error) {
     console.error("Get job order error:", error);
@@ -368,14 +372,6 @@ exports.create = async (req, res) => {
   try {
     const joNo = await generateJONo();
 
-    const STAGES_ORDER = [
-      "Printing",
-      "Varnish",
-      "Lamination",
-      "Die Cutting",
-      "Formation",
-      "Manual Formation",
-    ];
     let sortedProcess = req.body.process || [];
     if (Array.isArray(sortedProcess)) {
       sortedProcess.sort(
@@ -388,12 +384,20 @@ exports.create = async (req, res) => {
       process: sortedProcess,
       joNo,
       createdBy: req.userId,
-      status: "Open",
+      status: "Draft", 
       completedProcesses: [],
       stageQtyMap: new Map(),
       stageTotalMap: new Map(),
       stageHistory: [],
     };
+
+    if (req.body.deliveryDate) {
+      
+      const deliveryDate = new Date(req.body.deliveryDate);
+      const internalDueDate = new Date(deliveryDate);
+      internalDueDate.setHours(internalDueDate.getHours() - 24);
+      jobOrderData.internalDueDate = internalDueDate;
+    }
 
     if (req.body.machineAssignments) {
       jobOrderData.machineAssignments = new Map(
@@ -407,7 +411,6 @@ exports.create = async (req, res) => {
 
     const jobOrder = new JobOrder(jobOrderData);
 
-    // CHECK STOCK SUFFICIENCY
     const stockCheck = await checkRMStockSufficiency(jobOrder);
     if (!stockCheck.sufficient) {
       return res.status(400).json({ error: stockCheck.message });
@@ -415,40 +418,36 @@ exports.create = async (req, res) => {
 
     await jobOrder.save();
 
-    await adjustRMStock(jobOrder, -1);
+    
+    let prevStageId = null;
+    for (let i = 0; i < sortedProcess.length; i++) {
+      const processName = sortedProcess[i];
+      const jobStage = new JobStage({
+        jobOrderId: jobOrder._id,
+        sequence: i + 1,
+        processType: processName,
+        predecessorStageId: prevStageId,
+        status: i === 0 ? "Eligible" : "Blocked",
+        eligibilityStatus: i === 0 ? "Eligible" : "Blocked",
+        materialReady: i === 0 ? jobOrder.materialReady : false,
+        artworkApproved: i === 0 ? jobOrder.artworkApproved : false,
+        
+        toolReady: false, 
+        predecessorComplete: i === 0
+      });
+      await jobStage.save();
+      prevStageId = jobStage._id;
+    }
 
+    await adjustRMStock(jobOrder, -1);
     await upsertPrintingMaster(jobOrder);
 
-    if (jobOrderData.soRef) {
-      const so = await SalesOrder.findOne({ soNo: jobOrderData.soRef });
-      if (so) {
-        const allJOs = await JobOrder.find({ soRef: jobOrderData.soRef });
-        let allScheduled = true;
-
-        so.items.forEach((soItem) => {
-          const orderedForThisItem = soItem.orderQty || 0;
-          const scheduledQty = allJOs
-            .filter((jo) => jo.itemName === soItem.itemName)
-            .reduce((sum, jo) => sum + (jo.orderQty || 0), 0);
-
-          if (scheduledQty < orderedForThisItem) {
-            allScheduled = false;
-          }
-        });
-
-        if (allScheduled && so.status !== "Issued") {
-          so.status = "Issued";
-          await so.save();
-        }
-      }
-    }
+    
 
     res.status(201).json(jobOrder);
   } catch (error) {
     console.error("Create job order error:", error);
-    res
-      .status(500)
-      .json({ error: "Failed to create job order", details: error.message });
+    res.status(500).json({ error: "Failed to create job order", details: error.message });
   }
 };
 
@@ -473,13 +472,13 @@ exports.update = async (req, res) => {
       );
     }
 
-    // CHECK STOCK SUFFICIENCY
+    
     const stockCheck = await checkRMStockSufficiency(req.body, req.params.id);
     if (!stockCheck.sufficient) {
       return res.status(400).json({ error: stockCheck.message });
     }
 
-    // REVERT OLD STOCK
+    
     await adjustRMStock(jobOrder, 1);
 
     Object.assign(jobOrder, req.body);
@@ -496,7 +495,7 @@ exports.update = async (req, res) => {
 
     await jobOrder.save();
 
-    // APPLY NEW STOCK
+    
     await adjustRMStock(jobOrder, -1);
 
     res.json(jobOrder);
@@ -513,7 +512,7 @@ exports.delete = async (req, res) => {
       return res.status(404).json({ error: "Job order not found" });
     }
 
-    // REVERT STOCK
+    
     await adjustRMStock(jobOrder, 1);
 
     await JobOrder.findByIdAndDelete(req.params.id);
@@ -730,7 +729,7 @@ async function recalculateProductionStats(jobOrder) {
     }
 
     const ItemMaster = require("../models/ItemMaster");
-    // Fallback or override if ItemMaster has a more definitive code
+    
     const im = await ItemMaster.findOne({
       $or: [{ name: jobOrder.itemName }, { code: itemCode }],
     });

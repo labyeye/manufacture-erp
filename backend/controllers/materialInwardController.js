@@ -132,8 +132,8 @@ exports.create = async (req, res) => {
 
     await inward.save();
 
-    // DEDUCT old stock if update
-    // ADD NEW stock logic consolidated
+    
+    
     await adjustStock(items, 1, location);
 
     await inward.populate("purchaseOrderRef");
@@ -142,7 +142,7 @@ exports.create = async (req, res) => {
 
     res.status(201).json(inward);
     
-    // Update PO Status
+    
     if (poRef) {
       await updatePurchaseOrderStatus(poRef);
     }
@@ -300,7 +300,7 @@ exports.update = async (req, res) => {
     const inward = await MaterialInward.findById(req.params.id);
     if (!inward) return res.status(404).json({ message: "Inward not found" });
 
-    // REVERT STOCK
+    
     await adjustStock(inward.items, -1, inward.location);
 
     inward.inwardDate = inwardDate || inward.inwardDate;
@@ -318,7 +318,7 @@ exports.update = async (req, res) => {
 
     await inward.save();
 
-    // APPLY NEW STOCK
+    
     await adjustStock(inward.items, 1, inward.location);
 
     await inward.populate("purchaseOrderRef");
@@ -327,7 +327,7 @@ exports.update = async (req, res) => {
 
     res.json(inward);
 
-    // Update PO Status
+    
     if (inward.poRef) {
       await updatePurchaseOrderStatus(inward.poRef);
     }
@@ -341,13 +341,13 @@ exports.delete = async (req, res) => {
     const inward = await MaterialInward.findById(req.params.id);
     if (!inward) return res.status(404).json({ message: "Inward not found" });
 
-    // REVERT STOCK
+    
     await adjustStock(inward.items, -1, inward.location);
 
     await MaterialInward.findByIdAndDelete(req.params.id);
     res.json({ message: "Inward deleted successfully" });
 
-    // Update PO Status
+    
     if (inward.poRef) {
       await updatePurchaseOrderStatus(inward.poRef);
     }

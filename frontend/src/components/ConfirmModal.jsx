@@ -8,7 +8,7 @@ const ConfirmModal = ({
   message = "Are you sure you want to proceed?",
   confirmText = "Confirm",
   cancelText = "Cancel",
-  type = "danger" // danger, warning, info, success
+  type = "danger" 
 }) => {
   if (!isOpen) return null;
 

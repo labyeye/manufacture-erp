@@ -23,7 +23,7 @@ const userSchema = new mongoose.Schema({
     default: "Viewer"
   },
   clientTag: {
-    type: String, // e.g., "HP", "ZPL", or "Other"
+    type: String, 
     default: null
   },
   editableTabs: {

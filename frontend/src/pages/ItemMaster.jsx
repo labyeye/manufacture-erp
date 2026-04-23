@@ -453,7 +453,7 @@ export default function ItemMaster({ companyMaster = [], toast }) {
       return [...common, ...dims, ...tail];
     }
 
-    // Consumable / Machine Spare
+    
     return [...common, ...tail];
   };
 
@@ -485,7 +485,7 @@ export default function ItemMaster({ companyMaster = [], toast }) {
     const row = cols.map((c) => c.key(exampleItem));
 
     const ws = XLSX.utils.aoa_to_sheet([header, row]);
-    // Style header row width
+    
     ws["!cols"] = header.map(() => ({ wch: 18 }));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, `${activeTab} Template`);
@@ -525,19 +525,19 @@ export default function ItemMaster({ companyMaster = [], toast }) {
       for (const rowData of rows) {
         if (!rowData || rowData.length === 0) continue;
 
-        // Skip if row is mostly empty
+        
         if (!rowData[1] && !rowData[2]) continue;
 
         const item = { type: activeTab };
 
-        // Map columns based on template order (same as getTabColumns)
+        
         colsDef.forEach((col, idx) => {
           const val = rowData[idx];
           if (val === undefined || val === null) return;
 
-          // Reverse mapping: we need to know which property to set
-          // Since we can't easily get the property name from the key function (i) => i.prop
-          // Let's manually map the most important ones or use a smarter approach
+          
+          
+          
 
           const header = col.header.toLowerCase();
           if (header.includes("product code")) item.code = String(val).trim();

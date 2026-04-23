@@ -1,61 +1,95 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const productionCalendarSchema = new mongoose.Schema({
-  machineId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'MachineMaster',
-    required: true
+const productionCalendarSchema = new mongoose.Schema(
+  {
+    machineId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "MachineMaster",
+      required: true,
+    },
+    date: {
+      type: Date,
+      required: true,
+    },
+    shift: {
+      type: String,
+      enum: ["Day", "OT", "Night"],
+      required: true,
+    },
+    startTime: {
+      type: String,
+      required: true,
+    },
+    endTime: {
+      type: String,
+      required: true,
+    },
+    jobOrderId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "JobOrder",
+      required: true,
+    },
+    jobStageId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "JobStage",
+    },
+    jobCardNo: {
+      type: String,
+      required: true,
+    },
+    process: {
+      type: String,
+      required: true,
+    },
+    scheduledHours: {
+      type: Number,
+      required: true,
+    },
+    scheduledQty: {
+      type: Number,
+      required: true,
+    },
+    dailyTarget: Number,          
+    deliveryFeasible: {           
+      type: String,
+      enum: ["GREEN", "ORANGE", "RED"],
+    },
+    isOvertime: {
+      type: Boolean,
+      default: false,
+    },
+    overtimeNeeded: {
+      type: Boolean,
+      default: false,
+    },
+    overtimeHours: {
+      type: Number,
+      default: 0,
+    },
+    locked: {
+      type: Boolean,
+      default: false,
+    },
+    rescheduleReasonCode: {
+      type: String,
+      enum: ['Breakdown', 'Urgent Insertion', 'Material Delay', 'Artwork Pending', 'Tool Unavailable', 'Manual'],
+    },
+    plannedStart: Date,
+    actualStart: Date,
+    plannedEnd: Date,
+    actualEnd: Date,
+    plannedQty: Number,
+    actualQty: Number,
+    status: {
+      type: String,
+      enum: ["Scheduled", "Pending Approval", "Approved", "In Progress", "Completed", "Rescheduled", "Cancelled"],
+      default: "Scheduled",
+    },
+    remarks: String,
   },
-  date: {
-    type: Date,
-    required: true
+  {
+    timestamps: true,
   },
-  shift: {
-    type: String,
-    enum: ['Shift 1', 'Shift 2', 'Shift 3', 'OT'],
-    required: true
-  },
-  startTime: {
-    type: String, // format 'HH:mm'
-    required: true
-  },
-  endTime: {
-    type: String, // format 'HH:mm'
-    required: true
-  },
-  jobOrderId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'JobOrder',
-    required: true
-  },
-  jobCardNo: {
-    type: String,
-    required: true
-  },
-  process: {
-    type: String, // Printing, Lamination, Die Cut, etc.
-    required: true
-  },
-  scheduledHours: {
-    type: Number,
-    required: true
-  },
-  scheduledQty: {
-    type: Number,
-    required: true
-  },
-  isOvertime: {
-    type: Boolean,
-    default: false
-  },
-  status: {
-    type: String,
-    enum: ['Planned', 'In-Progress', 'Completed', 'Delayed'],
-    default: 'Planned'
-  },
-  remarks: String
-}, {
-  timestamps: true
-});
+);
 
-module.exports = mongoose.model('ProductionCalendar', productionCalendarSchema);
+module.exports = mongoose.model("ProductionCalendar", productionCalendarSchema);

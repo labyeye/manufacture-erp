@@ -161,14 +161,14 @@ exports.deletePurchaseOrder = async (req, res) => {
       return res.status(404).json({ error: "Purchase order not found" });
     }
 
-    // Status check
+    
     if (["Received", "Partial"].includes(po.status)) {
       return res.status(400).json({
         error: `Deletion blocked: This PO is currently '${po.status}'. Orders that have been partially or fully received cannot be deleted for audit reasons. Cancel the order first if not needed.`,
       });
     }
 
-    // Association check
+    
     const inward = await MaterialInward.findOne({
       $or: [{ purchaseOrderRef: cleanId }, { poRef: po.poNo }],
     });

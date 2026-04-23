@@ -99,8 +99,6 @@ export default function PurchaseOrders({
   const [drDateTo, setDrDateTo] = useState("");
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
     fetchPOs();
@@ -129,7 +127,6 @@ export default function PurchaseOrders({
     }
   };
 
-  
   const rmItems = useMemo(() => {
     const rmCat = Object.values(categoryMaster || {}).find(
       (c) => (c.type || "").trim().toLowerCase() === "raw material",
@@ -150,7 +147,6 @@ export default function PurchaseOrders({
     return [...new Set([...baseline, ...fromMaster])];
   }, [categoryMaster]);
 
-  
   const subCategoriesByItem = useMemo(() => {
     const result = {};
     const rmCat = Object.values(categoryMaster || {}).find(
@@ -409,7 +405,6 @@ export default function PurchaseOrders({
             it.gstRate = masterItem.gstRate || 18;
             it.hsnCode = masterItem.hsnCode || "";
 
-            
             if (!it.gsm) {
               const gsmMatch = it.itemName.match(/(\d+)[\s-]*gsm/i);
               if (gsmMatch) it.gsm = gsmMatch[1];
@@ -434,19 +429,16 @@ export default function PurchaseOrders({
             else if (name.includes("tape")) it.category = "Tape";
             else if (name.includes("glue")) it.category = "Glue";
 
-            
             const consDimMatch = it.itemName.match(
               /(\d+)[\s-]*x[\s-]*(\d+)(?:[\s-]*x[\s-]*(\d+))?[\s-]*(\w+)/i,
             );
             if (consDimMatch) {
               it.width = consDimMatch[1];
               if (consDimMatch[3]) {
-                
                 it.length = consDimMatch[2];
                 it.height = consDimMatch[3];
                 it.uom = consDimMatch[4];
               } else {
-                
                 it.height = consDimMatch[2];
                 it.uom = consDimMatch[4];
               }
@@ -554,7 +546,6 @@ export default function PurchaseOrders({
       const e = {};
       const isRM = it.materialType === "Raw Material" || !it.materialType;
 
-      
       const masterItem = itemMasterItems.find(
         (x) =>
           (x.code || "").trim().toLowerCase() ===
@@ -593,7 +584,7 @@ export default function PurchaseOrders({
       let result;
 
       const poData = {
-        poNo: header.poNumber, 
+        poNo: header.poNumber,
         poDate: header.poDate,
         vendor: header.vendorName,
         items: items.map((it) => {
@@ -629,26 +620,22 @@ export default function PurchaseOrders({
 
       if (editingId) {
         result = await purchaseOrdersAPI.update(editingId, poData);
-        setSuccessMessage("Purchase Order updated successfully!");
+        toast?.("Purchase Order updated successfully!", "success");
       } else {
         result = await purchaseOrdersAPI.create(poData);
-        setSuccessMessage(
+        toast?.(
           `Purchase Order ${result.purchaseOrder.poNo} created successfully!`,
+          "success",
         );
       }
 
-      setShowSuccessModal(true);
-      setTimeout(() => {
-        setShowSuccessModal(false);
-        setEditingId(null);
-
-        fetchPOs();
-        setHeader(blankHeader);
-        setItems([blankItem()]);
-        setHeaderErrors({});
-        setItemErrors([{}]);
-        setView("records");
-      }, 2000);
+      setEditingId(null);
+      fetchPOs();
+      setHeader(blankHeader);
+      setItems([blankItem()]);
+      setHeaderErrors({});
+      setItemErrors([{}]);
+      setView("records");
     } catch (error) {
       console.error("Save error:", error);
       toast(error.response?.data?.error || "Failed to save PO", "error");
@@ -706,7 +693,8 @@ export default function PurchaseOrders({
           weight: it.weight || "",
           rate: it.rate || "",
           amount: it.amount || "",
-          gstRate: it.gstRate !== undefined ? it.gstRate : masterItem?.gstRate || 18,
+          gstRate:
+            it.gstRate !== undefined ? it.gstRate : masterItem?.gstRate || 18,
           hsnCode: it.hsnCode || masterItem?.hsnCode || "",
           taxAmount: it.taxAmount || 0,
           noOfSheets: it.noOfSheets || "",
@@ -1535,7 +1523,7 @@ export default function PurchaseOrders({
                     style={{
                       padding: "16px 20px",
                       borderLeft: `4px solid ${C.blue}`,
-                      background: "#161b22", 
+                      background: "#161b22",
                     }}
                   >
                     {}
@@ -1751,59 +1739,6 @@ export default function PurchaseOrders({
                 );
               })
           )}
-        </div>
-      )}
-
-      {showSuccessModal && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0, 0, 0, 0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
-          }}
-        >
-          <div
-            style={{
-              background: C.card,
-              border: `1px solid ${C.border}`,
-              borderRadius: 10,
-              padding: 40,
-              textAlign: "center",
-              maxWidth: 300,
-              animation: "scaleIn 0.3s ease-out",
-            }}
-          >
-            <div style={{ fontSize: 50, marginBottom: 16 }}>✓</div>
-            <p
-              style={{
-                fontSize: 16,
-                fontWeight: 700,
-                color: C.green,
-                margin: 0,
-              }}
-            >
-              {successMessage}
-            </p>
-          </div>
-          <style>{`
-            @keyframes scaleIn {
-              from {
-                transform: scale(0.8);
-                opacity: 0;
-              }
-              to {
-                transform: scale(1);
-                opacity: 1;
-              }
-            }
-          `}</style>
         </div>
       )}
     </div>

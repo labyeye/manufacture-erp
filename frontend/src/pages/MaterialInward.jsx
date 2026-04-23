@@ -47,7 +47,6 @@ export default function MaterialInward({
 }) {
   const canEdit = editableTabs.includes("inward");
   const [loading, setLoading] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
   const today = () => new Date().toISOString().split("T")[0];
   const uid = () => Math.random().toString(36).substr(2, 9);
   const fmt = (n) => (+n || 0).toLocaleString("en-IN");
@@ -499,23 +498,19 @@ export default function MaterialInward({
 
       if (editId) {
         await materialInwardAPI.update(editId, payload);
-        toast("Material Inward updated successfully", "success");
+        toast?.("Material Inward updated successfully", "success");
         setEditId(null);
       } else {
         await materialInwardAPI.create(payload);
-        toast("Material Inward created successfully", "success");
+        toast?.("Material Inward created successfully", "success");
         if (props.refreshData) props.refreshData();
       }
 
-      setShowSuccess(true);
-      setTimeout(() => {
-        setShowSuccess(false);
-        setHeader(blankHeader);
-        setItems([{ ...blankItem, _id: uid() }]);
-        setHeaderErrors({});
-        setItemErrors([{}]);
-        fetchInwards();
-      }, 2000);
+      setHeader(blankHeader);
+      setItems([{ ...blankItem, _id: uid() }]);
+      setHeaderErrors({});
+      setItemErrors([{}]);
+      fetchInwards();
     } catch (error) {
       toast(error.response?.data?.message || "Failed to save", "error");
       console.error(error);
@@ -1944,73 +1939,6 @@ export default function MaterialInward({
           )}
         </div>
       )}
-
-      {showSuccess && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "rgba(0,0,0,0.4)",
-            zIndex: 9999,
-            animation: "fadeIn 0.3s ease-out",
-          }}
-        >
-          <div
-            style={{
-              background: "#fff",
-              borderRadius: 12,
-              padding: 40,
-              textAlign: "center",
-              maxWidth: 280,
-              animation: "scaleIn 0.3s ease-out",
-            }}
-          >
-            <div
-              style={{
-                fontSize: 64,
-                marginBottom: 16,
-                animation: "bounce 0.6s ease-out",
-              }}
-            >
-              ✓
-            </div>
-            <h2
-              style={{
-                color: C.green,
-                fontSize: 18,
-                fontWeight: 700,
-                margin: "0 0 8px 0",
-              }}
-            >
-              {editId ? "Updated Successfully" : "Created Successfully"}
-            </h2>
-            <p style={{ color: C.muted, fontSize: 13, margin: 0 }}>
-              {editId
-                ? "Material inward has been updated"
-                : "Material inward has been created"}
-            </p>
-          </div>
-        </div>
-      )}
-
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes scaleIn {
-          from { transform: scale(0.8); opacity: 0; }
-          to { transform: scale(1); opacity: 1; }
-        }
-        @keyframes bounce {
-          0% { transform: scale(0); }
-          50% { transform: scale(1.2); }
-          100% { transform: scale(1); }
-        }
-      `}</style>
     </div>
   );
 }

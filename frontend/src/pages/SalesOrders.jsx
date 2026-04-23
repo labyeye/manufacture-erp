@@ -258,7 +258,7 @@ export default function SalesOrders(props) {
         const foundBrand = brands.find((b) => b.name === v);
         if (foundBrand) {
           next.companyCategory = foundBrand.companyName || "";
-          // Find company to get contact
+          
           const foundCo = companyMaster.find(c => c.name === foundBrand.companyName);
           if (foundCo) {
             next.clientContact = foundCo.contact || foundCo.phone || "";

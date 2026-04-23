@@ -38,19 +38,6 @@ export default function ConsumableStock({
   const [selectedIds, setSelectedIds] = useState([]);
   const fileInputRef = useRef(null);
 
-  
-  const totalItemsCount = filtered.length;
-  const inStockCount = filtered.filter((s) => (s.qty || 0) > 0).length;
-  const outOfStockCount = filtered.filter((s) => (s.qty || 0) <= 0).length;
-  const belowReorderCount = filtered.filter(
-    (s) => (s.reorderLevel || 0) > 0 && (s.qty || 0) <= (s.reorderLevel || 0),
-  ).length;
-  const totalValueSum = filtered.reduce(
-    (sum, s) => sum + +(s.qty || 0) * +(s.rate || 0),
-    0,
-  );
-
-  
   const allItems = useMemo(() => {
     const masterItems = itemMasterFG.filter(
       (i) => i.type === "Consumable" || i.type === "Machine Spare",
@@ -93,6 +80,17 @@ export default function ConsumableStock({
     return list;
   }, [allItems, search, typeFilter, showZeroStock]);
 
+  const totalItemsCount = filtered.length;
+  const inStockCount = filtered.filter((s) => (s.qty || 0) > 0).length;
+  const outOfStockCount = filtered.filter((s) => (s.qty || 0) <= 0).length;
+  const belowReorderCount = filtered.filter(
+    (s) => (s.reorderLevel || 0) > 0 && (s.qty || 0) <= (s.reorderLevel || 0),
+  ).length;
+  const totalValueSum = filtered.reduce(
+    (sum, s) => sum + +(s.qty || 0) * +(s.rate || 0),
+    0,
+  );
+
   
   const handleIssue = async () => {
     if (!selectedStock || !issueQty) {
@@ -111,15 +109,15 @@ export default function ConsumableStock({
 
     try {
       if (selectedStock.isFromMaster) {
-        // Create new stock record
+        
         await consumableStockAPI.create({
           name: selectedStock.name,
           code: selectedStock.code,
           category: selectedStock.category,
           type: selectedStock.type,
-          qty: -qty, // Backend usually subtracts from 0 if creating? Or maybe it should be 0? 
-          // Usually adjustStock subtracts from existing. Create should set initial qty.
-          // If issuing, we are reducing stock. So 0 - qty = -qty.
+          qty: -qty, 
+          
+          
           rate: selectedStock.rate,
           unit: selectedStock.unit,
         });

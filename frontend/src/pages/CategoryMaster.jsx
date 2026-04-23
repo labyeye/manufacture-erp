@@ -32,8 +32,8 @@ export default function CategoryMaster({ toast }) {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [editingCategory, setEditingCategory] = useState(null); // {oldName, newName}
-  const [editingSubType, setEditingSubType] = useState(null); // {oldName, newName}
+  const [editingCategory, setEditingCategory] = useState(null); 
+  const [editingSubType, setEditingSubType] = useState(null); 
   const fileInputRef = useRef(null);
 
   useEffect(() => {

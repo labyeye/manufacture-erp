@@ -260,7 +260,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], toast }) {
       if (!it.itemName) e.itemName = true;
       if (!it.qty) e.qty = true;
 
-      // FG Stock Check
+      
       const stockItem = (fgStock || []).find((s) => s.itemName === it.itemName);
       if (!stockItem) {
         e.itemName = true;

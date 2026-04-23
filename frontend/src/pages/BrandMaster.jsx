@@ -202,7 +202,7 @@ export default function BrandMaster({ toast }) {
           status: `Importing: ${row["Brand Name"] || row.name || "Brand"}`,
         }));
 
-        // Find company ID by name if provided
+        
         let companyId = null;
         let companyName = "";
         if (row["Linked Company"]) {
