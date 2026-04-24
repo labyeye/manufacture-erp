@@ -113,6 +113,7 @@ export default function JobOrders(props) {
     orderDate: "",
     deliveryDate: "",
     orderQty: "",
+    priority: "Standard",
     printing: "",
     plate: "",
     processes: [],
@@ -479,6 +480,7 @@ export default function JobOrders(props) {
         companyName: header.companyName,
         companyCategory: header.companyCategory,
         itemName: header.itemName,
+        priority: header.priority || "Standard",
         orderQty: Number(header.orderQty),
         orderDate: header.orderDate ? new Date(header.orderDate) : null,
         deliveryDate: header.deliveryDate
@@ -930,6 +932,39 @@ export default function JobOrders(props) {
                 }
                 placeholder="DD/MM/YYYY"
               />
+            </Field>
+            <Field label="Priority 🚦">
+              <select
+                value={header.priority || "Standard"}
+                onChange={(e) => setH("priority", e.target.value)}
+                style={{
+                  padding: "9px 12px",
+                  border: `1px solid ${
+                    header.priority === "VIP" ? "#ef4444"
+                    : header.priority === "Rush" ? "#f97316"
+                    : header.priority === "Fill-in" ? "#6b7280"
+                    : "#2a2a2a"
+                  }`,
+                  borderRadius: 6,
+                  fontSize: 13,
+                  fontFamily: "inherit",
+                  background: "#141414",
+                  color:
+                    header.priority === "VIP" ? "#ef4444"
+                    : header.priority === "Rush" ? "#f97316"
+                    : header.priority === "Fill-in" ? "#6b7280"
+                    : "#e0e0e0",
+                  outline: "none",
+                  width: "100%",
+                  boxSizing: "border-box",
+                  fontWeight: header.priority !== "Standard" ? 700 : 400,
+                }}
+              >
+                <option value="VIP">VIP Client</option>
+                <option value="Rush">Rush Order</option>
+                <option value="Standard">Standard</option>
+                <option value="Fill-in">Fill-in</option>
+              </select>
             </Field>
           </div>
 
@@ -1653,6 +1688,7 @@ export default function JobOrders(props) {
                   companyName: jo.companyName || "",
                   companyCategory: jo.companyCategory || "",
                   itemName: jo.itemName || "",
+                  priority: jo.priority || "Standard",
                   size: "",
                   orderDate: jo.orderDate
                     ? new Date(jo.orderDate).toISOString().slice(0, 10)
@@ -1749,6 +1785,34 @@ export default function JobOrders(props) {
                         text={r.status}
                         color={r.status === "Completed" ? C.green : C.orange}
                       />
+                      {r.priority && r.priority !== "Standard" && (
+                        <span
+                          style={{
+                            padding: "2px 8px",
+                            borderRadius: 4,
+                            fontSize: 10,
+                            fontWeight: 800,
+                            background:
+                              r.priority === "VIP" ? "#ef444422"
+                              : r.priority === "Rush" ? "#f9731622"
+                              : "#6b728022",
+                            color:
+                              r.priority === "VIP" ? "#ef4444"
+                              : r.priority === "Rush" ? "#f97316"
+                              : "#9ca3af",
+                            border: `1px solid ${
+                              r.priority === "VIP" ? "#ef444444"
+                              : r.priority === "Rush" ? "#f9731644"
+                              : "#6b728044"
+                            }`,
+                            letterSpacing: "0.04em",
+                          }}
+                        >
+                          {r.priority === "VIP" ? "⭐ VIP"
+                           : r.priority === "Rush" ? "⚡ RUSH"
+                           : "↓ FILL-IN"}
+                        </span>
+                      )}
                     </div>
                     <div style={{ display: "flex", gap: 6 }}>
                       <button

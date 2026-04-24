@@ -4,8 +4,8 @@ const ProductionCalendar = require("../models/ProductionCalendar");
 const CompanyMaster = require("../models/CompanyMaster");
 const moment = require("moment");
 
-// Shifts: Morning 09:00–17:30 (8 hrs effective), OT 17:30–20:30 (3 hrs), Night 17:30–01:30 (8 hrs)
-// OT and Night both start at shiftEndTime; when both are used Night starts after OT.
+
+
 
 const addHoursToTime = (baseTime, hours) => {
   const [bh, bm] = baseTime.split(":").map(Number);
@@ -55,15 +55,15 @@ const generateProductionCalendar = async (req, res) => {
 
     const machineState = {};
     machines.forEach((m) => {
-      const shiftHrs = m.standardShiftHours || 8; // Morning: 09:00–17:30 (8 effective hrs)
-      const otHours = m.overtimeAllowed ? m.maxOvertimeHours || 3 : 0; // OT: 17:30–20:30
+      const shiftHrs = m.standardShiftHours || 8; 
+      const otHours = m.overtimeAllowed ? m.maxOvertimeHours || 3 : 0; 
       const numShifts = m.maxShiftsAllowed || 1;
-      const nightShiftHours = numShifts >= 2 ? shiftHrs : 0; // Night: 17:30–01:30 (8 hrs)
+      const nightShiftHours = numShifts >= 2 ? shiftHrs : 0; 
       const efficiency = m.efficiencyFactor || 0.95;
       const runRate = m.practicalRunRate || 1000;
 
       const effectiveRunRate = runRate * efficiency;
-      // Total daily capacity: Morning + OT + Night
+      
       const dailyCapHours = shiftHrs + otHours + nightShiftHours;
 
       const workingDays = m.workingDays?.length
@@ -83,7 +83,7 @@ const generateProductionCalendar = async (req, res) => {
         nightShiftHours,
         effectiveRunRate,
         dailyUsedHours: {},
-        lastJobByDate: {}, // tracks which job last ran on this machine per date
+        lastJobByDate: {}, 
       };
     });
 
@@ -147,9 +147,9 @@ const generateProductionCalendar = async (req, res) => {
         let blocks = [];
         let safety = 0;
 
-        // Shift tiers in order: Morning → OT → Night
-        // Each tier is defined as [startHrOffset, endHrOffset] from shiftStart (09:00)
-        // When OT and Night are both used, Night starts after OT ends (not at 17:30)
+        
+        
+        
         const shiftTiers = [
           {
             shift: "Morning",
@@ -192,9 +192,9 @@ const generateProductionCalendar = async (req, res) => {
                   : "RED";
             })();
 
-            // Determine if this job needs a changeover on this date.
-            // A changeover is required when the machine already has usage from a
-            // DIFFERENT job today and the machine has a non-zero changeoverTime.
+            
+            
+            
             const isFirstJobOnDate = (state.dailyUsedHours[dateStr] || 0) === 0;
             const lastJobOnDate = state.lastJobByDate[dateStr];
             const needsChangeover =
@@ -202,21 +202,21 @@ const generateProductionCalendar = async (req, res) => {
               lastJobOnDate &&
               lastJobOnDate !== job._id.toString() &&
               state.changeoverTime > 0;
-            // jobSetupApplied tracks whether setup/changeover has been deducted
-            // for this job on this date (applied at most once, in Morning only).
+            
+            
             let jobSetupApplied = false;
 
             for (const tier of shiftTiers) {
               if (remaining <= 0) break;
 
               const tierCapacity = tier.end - tier.start;
-              if (tierCapacity <= 0) continue; // tier not enabled on this machine
+              if (tierCapacity <= 0) continue; 
 
               const currentUsed = state.dailyUsedHours[dateStr] || 0;
-              if (currentUsed >= tier.end) continue; // already consumed past this tier
+              if (currentUsed >= tier.end) continue; 
 
-              // If a changeover is still pending, only the Morning tier can absorb
-              // it. Skip OT/Night entirely until changeover has been applied.
+              
+              
               if (
                 !jobSetupApplied &&
                 needsChangeover &&
@@ -227,13 +227,13 @@ const generateProductionCalendar = async (req, res) => {
               const usedInTier = Math.max(0, currentUsed - tier.start);
               const availableInTier = tierCapacity - usedInTier;
 
-              // Setup time rules (Morning tier only, applied once per job-date):
-              //   • First job of the day  → setupTime (new-job setup)
-              //   • Subsequent job with changeover needed → changeoverTime
-              //   • Otherwise (continuation or no changeover) → 0
+              
+              
+              
+              
               const effectiveSetup = (() => {
                 if (tier.shift !== "Morning") return 0;
-                if (usedInTier === 0) return state.setupTime; // first job today
+                if (usedInTier === 0) return state.setupTime; 
                 if (!jobSetupApplied && needsChangeover)
                   return state.changeoverTime;
                 return 0;
@@ -253,7 +253,7 @@ const generateProductionCalendar = async (req, res) => {
               const actualWorkHrs = qtyToSchedule / state.effectiveRunRate;
               const scheduledHrs = actualWorkHrs + effectiveSetup;
 
-              // Wall clock times: offset from shiftStartTime (09:00)
+              
               const blockStartOffset = Math.max(currentUsed, tier.start);
               const startTime = addHoursToTime(
                 machineShiftStart,
@@ -300,8 +300,8 @@ const generateProductionCalendar = async (req, res) => {
                 (state.dailyUsedHours[dateStr] || 0) + scheduledHrs;
               remaining -= qtyToSchedule;
 
-              // Mark setup as applied for this job-date, and record which job
-              // last ran on this machine on this date (for changeover detection).
+              
+              
               if (effectiveSetup > 0) jobSetupApplied = true;
               state.lastJobByDate[dateStr] = job._id.toString();
             }
@@ -410,12 +410,12 @@ const planJob = async (req, res) => {
       const machine = machineMap[machineId.toString()];
       if (!machine || !machine.practicalRunRate) continue;
 
-      const shiftHrs = machine.standardShiftHours || 8; // Morning: 8 effective hrs
+      const shiftHrs = machine.standardShiftHours || 8; 
       const otCapHours = machine.overtimeAllowed
         ? machine.maxOvertimeHours || 3
-        : 0; // OT: 3 hrs
+        : 0; 
       const numShifts = machine.maxShiftsAllowed || 1;
-      const nightShiftHours = numShifts >= 2 ? shiftHrs : 0; // Night: 8 hrs
+      const nightShiftHours = numShifts >= 2 ? shiftHrs : 0; 
 
       const machineShiftStart = machine.shiftStartTime || "09:00";
       const machineShiftEnd = machine.shiftEndTime || "17:30";
@@ -432,7 +432,7 @@ const planJob = async (req, res) => {
         ? machine.weeklyOff
         : ["Sunday"];
 
-      // Get existing usage for these machines to avoid overbooking
+      
       const existingEntries = await ProductionCalendar.find({
         machineId: { $in: machineIds },
         date: { $gte: processStart.toDate() },
@@ -461,7 +461,7 @@ const planJob = async (req, res) => {
           const dateStr = current.format("YYYY-MM-DD");
           const mIdStr = machineId.toString();
 
-          // --- MORNING SHIFT ---
+          
           const usedAlready = (machineUsage[mIdStr] || {})[dateStr] || 0;
           const dayAvailable = Math.max(0, shiftHrs - usedAlready);
 
@@ -497,7 +497,7 @@ const planJob = async (req, res) => {
             }
           }
 
-          // --- OT SHIFT (17:30–20:30, 3 hrs) ---
+          
           if (remaining > 0 && otCapHours > 0 && runRate > 0) {
             const usedAfterDay = (machineUsage[mIdStr] || {})[dateStr] || 0;
             const otAvailable = Math.max(
@@ -516,7 +516,7 @@ const planJob = async (req, res) => {
                 if (!machineUsage[mIdStr]) machineUsage[mIdStr] = {};
                 machineUsage[mIdStr][dateStr] = usedAfterDay + otScheduledHours;
 
-                const otStartTime = machineShiftEnd; // 17:30
+                const otStartTime = machineShiftEnd; 
                 const otEndTime = addHoursToTime(otStartTime, otScheduledHours);
 
                 entries.push({
@@ -543,7 +543,7 @@ const planJob = async (req, res) => {
             }
           }
 
-          // --- NIGHT SHIFT (starts after OT if OT used, else at 17:30; runs 8 hrs → 01:30) ---
+          
           if (remaining > 0 && nightShiftHours > 0 && runRate > 0) {
             const usedAfterOT = (machineUsage[mIdStr] || {})[dateStr] || 0;
             const nightAvailable = Math.max(
@@ -563,7 +563,7 @@ const planJob = async (req, res) => {
                 machineUsage[mIdStr][dateStr] =
                   usedAfterOT + nightScheduledHours;
 
-                // Night starts at shiftEnd + OT hours (after OT) or at shiftEnd if no OT
+                
                 const nightStartTime = addHoursToTime(
                   machineShiftEnd,
                   otCapHours,

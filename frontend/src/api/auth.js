@@ -707,3 +707,30 @@ export const breakdownLogAPI = {
     return response.data;
   },
 };
+
+export const priceListAPI = {
+  getAll: async (params) => {
+    const response = await api.get("/price-list", { params });
+    return response.data;
+  },
+  getOne: async (id) => {
+    const response = await api.get(`/price-list/${id}`);
+    return response.data;
+  },
+  create: async (data) => {
+    const response = await api.post("/price-list", data);
+    return response.data;
+  },
+  update: async (id, data) => {
+    const response = await api.put(`/price-list/${id}`, data);
+    return response.data;
+  },
+  delete: async (id) => {
+    const response = await api.delete(`/price-list/${id}`);
+    return response.data;
+  },
+  bulkImport: async (records) => {
+    const response = await api.post("/price-list/bulk-import", { records });
+    return response.data;
+  },
+};

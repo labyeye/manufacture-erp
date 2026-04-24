@@ -56,10 +56,14 @@ import RMStock from "./pages/RMStock";
 import FGStock from "./pages/FGStock";
 import CompanyMaster from "./pages/CompanyMaster";
 import BrandMaster from "./pages/BrandMaster";
-import ToolingMaster from "./pages/ToolingMaster";
-import FactoryCalendar from "./pages/FactoryCalendar";
-import MachineMaintenance from "./pages/MachineMaintenance";
-import BreakdownLog from "./pages/BreakdownLog";
+import MachineTools from "./pages/MachineTools";
+import PriceMaster from "./pages/PriceMaster";
+import Forecast from "./pages/Forecast";
+import Subcontracting from "./pages/Subcontracting";
+import QualityHub from "./pages/QualityHub";
+import MaintenancePlanner from "./pages/MaintenancePlanner";
+import DesignHub from "./pages/DesignHub";
+import NotificationHub from "./pages/NotificationHub";
 
 function App() {
   return (
@@ -506,15 +510,69 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
         return <PrintingDetailMaster {...data} toast={showToast} />;
       case "calendar":
         return <ProductionCalendar {...data} toast={showToast} />;
-      case "toolingmaster":
-        return <ToolingMaster {...data} toast={showToast} />;
-      case "factorycalendar":
-        return <FactoryCalendar {...data} toast={showToast} />;
-      case "maintenance":
-        return <MachineMaintenance {...data} toast={showToast} />;
-      case "breakdowns":
-        return <BreakdownLog {...data} toast={showToast} />;
-      case "dispatch":
+      case "subcontracting":
+        return (
+          <Subcontracting
+            jobOrders={data.jobOrders}
+            vendorMaster={data.vendorMaster}
+            toast={showToast}
+          />
+        );
+      case "qualityhub":
+        return (
+          <QualityHub
+            jobOrders={data.jobOrders}
+            purchaseOrders={data.purchaseOrders}
+            inward={data.inward}
+            vendorMaster={data.vendorMaster}
+            toast={showToast}
+          />
+        );
+      case "maintenanceplanner":
+        return (
+          <MaintenancePlanner
+            machineMaster={data.machineMaster}
+            toast={showToast}
+          />
+        );
+      case "designhub":
+        return (
+          <DesignHub
+            salesOrders={data.salesOrders}
+            jobOrders={data.jobOrders}
+            toast={showToast}
+          />
+        );
+      case "notificationhub":
+        return (
+          <NotificationHub
+            salesOrders={data.salesOrders}
+            jobOrders={data.jobOrders}
+            dispatches={data.dispatches}
+            purchaseOrders={data.purchaseOrders}
+            consumableStock={data.consumableStock}
+            allEntries={data.allEntries}
+            activeMachines={data.activeMachines}
+            toast={showToast}
+          />
+        );
+      case "machinetools":
+        return <MachineTools toast={showToast} />;
+      case "pricemaster":
+        return <PriceMaster toast={showToast} />;
+      case "forecast":
+        return (
+          <Forecast
+            salesOrders={data.salesOrders}
+            itemMasterFG={data.itemMasterFG}
+            rawStock={data.rawStock}
+            jobOrders={data.jobOrders}
+            vendorMaster={data.vendorMaster}
+            toast={showToast}
+            refreshData={fetchMasters}
+          />
+        );
+case "dispatch":
         return <Dispatch {...data} toast={showToast} />;
       case "rawstock":
         return <RMStock {...data} session={session} toast={showToast} />;

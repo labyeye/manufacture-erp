@@ -1,12 +1,12 @@
-/**
- * seedMachines.js
- * Upserts machine records with capacity data from the Machine Master Field Reference.
- *
- * Run: node backend/scripts/seedMachines.js
- *   or: MONGODB_URI=<uri> node backend/scripts/seedMachines.js
- *
- * Safe to run multiple times — uses upsert by name.
- */
+
+
+
+
+
+
+
+
+
 
 require("dotenv").config();
 const mongoose = require("mongoose");
@@ -15,35 +15,35 @@ const MachineMaster = require("../models/MachineMaster");
 const MONGODB_URI =
   process.env.MONGODB_URI || "mongodb://localhost:27017/manufactureiq";
 
-// ---------------------------------------------------------------------------
-// Reference data from Machine Master Field Reference sheet (2026-04-25)
-// setupTimeDefault  = "Setup Time New Job (Minutes)"   → converted to hours
-// changeoverTimeDefault = "Mould/Size Change Time (Min)" → converted to hours
-// practicalRunRate  = "Capacity Per Hour"
-// ---------------------------------------------------------------------------
+
+
+
+
+
+
 const MACHINE_CAPACITY = [
-  // --- Sheet / Printing ---
+  
   {
     name: "Komori 28x40inch Machine",
     practicalRunRate: 3750,
     capacityUnit: "Sheets",
-    setupTimeDefault: 30 / 60,       // 30 min → 0.50 hr
+    setupTimeDefault: 30 / 60,       
     changeoverTimeDefault: 0,
   },
   {
     name: "Flexo Printing Machine",
     practicalRunRate: 3750,
     capacityUnit: "Pcs",
-    setupTimeDefault: 45 / 60,       // 45 min → 0.75 hr
+    setupTimeDefault: 45 / 60,       
     changeoverTimeDefault: 0,
   },
 
-  // --- Die Cutting ---
+  
   {
     name: "Manual Die Cutting Machine 1",
     practicalRunRate: 875,
     capacityUnit: "Sheets",
-    setupTimeDefault: 45 / 60,       // 45 min → 0.75 hr
+    setupTimeDefault: 45 / 60,       
     changeoverTimeDefault: 0,
   },
   {
@@ -57,11 +57,11 @@ const MACHINE_CAPACITY = [
     name: "Automatic Die Cutting",
     practicalRunRate: 2500,
     capacityUnit: "Sheets",
-    setupTimeDefault: 30 / 60,       // 30 min → 0.50 hr
+    setupTimeDefault: 30 / 60,       
     changeoverTimeDefault: 0,
   },
 
-  // --- Lamination ---
+  
   {
     name: "Laminator Machine 1",
     practicalRunRate: 1250,
@@ -71,19 +71,19 @@ const MACHINE_CAPACITY = [
   },
   {
     name: "Laminator Machine 2",
-    practicalRunRate: 1250,          // same spec as Machine 1
+    practicalRunRate: 1250,          
     capacityUnit: "Sheets",
     setupTimeDefault: 30 / 60,
     changeoverTimeDefault: 0,
   },
 
-  // --- Formation: Dip Bowl / Lid ---
+  
   {
     name: "Dip Bowl",
     practicalRunRate: 2750,
     capacityUnit: "Pcs",
-    setupTimeDefault: 10 / 60,       // 10 min → 0.167 hr
-    changeoverTimeDefault: 360 / 60, // 360 min → 6 hr  (mould change)
+    setupTimeDefault: 10 / 60,       
+    changeoverTimeDefault: 360 / 60, 
   },
   {
     name: "Single Layer Lid",
@@ -93,7 +93,7 @@ const MACHINE_CAPACITY = [
     changeoverTimeDefault: 360 / 60,
   },
 
-  // --- Formation: Paper Cups ---
+  
   {
     name: "Single Wall Cup",
     practicalRunRate: 2750,
@@ -109,7 +109,7 @@ const MACHINE_CAPACITY = [
     changeoverTimeDefault: 360 / 60,
   },
 
-  // --- Formation: Soup Bowls (dedicated sizes — no mould change) ---
+  
   {
     name: "Bowl 250ml",
     practicalRunRate: 2250,
@@ -139,7 +139,7 @@ const MACHINE_CAPACITY = [
     changeoverTimeDefault: 0,
   },
 
-  // --- Formation: Lid 110mm ---
+  
   {
     name: "Lid 110mm 1",
     practicalRunRate: 2250,
@@ -149,19 +149,19 @@ const MACHINE_CAPACITY = [
   },
   {
     name: "Lid 110mm 2",
-    practicalRunRate: 1875,          // slightly lower capacity
+    practicalRunRate: 1875,          
     capacityUnit: "Pcs",
     setupTimeDefault: 10 / 60,
     changeoverTimeDefault: 0,
   },
 
-  // --- Formation: Flat Bowl (mould change required) ---
+  
   {
     name: "Flat Bowl Machine 1",
     practicalRunRate: 2250,
     capacityUnit: "Pcs",
     setupTimeDefault: 10 / 60,
-    changeoverTimeDefault: 360 / 60, // 6 hr mould change
+    changeoverTimeDefault: 360 / 60, 
   },
   {
     name: "Flat Bowl Machine 2",
@@ -178,13 +178,13 @@ const MACHINE_CAPACITY = [
     changeoverTimeDefault: 0,
   },
 
-  // --- Formation: Carton Erection ---
+  
   {
     name: "Carton Erection 1",
     practicalRunRate: 2750,
     capacityUnit: "Pcs",
     setupTimeDefault: 10 / 60,
-    changeoverTimeDefault: 150 / 60, // 150 min → 2.5 hr
+    changeoverTimeDefault: 150 / 60, 
   },
   {
     name: "Carton Erection 2",
@@ -194,13 +194,13 @@ const MACHINE_CAPACITY = [
     changeoverTimeDefault: 150 / 60,
   },
 
-  // --- Bag Making: SBBM 360 ---
+  
   {
     name: "SBBM 360 Machine 1",
     practicalRunRate: 5250,
     capacityUnit: "Pcs",
     setupTimeDefault: 10 / 60,
-    changeoverTimeDefault: 180 / 60, // 180 min → 3 hr
+    changeoverTimeDefault: 180 / 60, 
   },
   {
     name: "SBBM 360 Machine 2",
@@ -210,17 +210,17 @@ const MACHINE_CAPACITY = [
     changeoverTimeDefault: 180 / 60,
   },
 
-  // --- Sheet Cutting ---
+  
   {
     name: "Sheet Cutting Machine",
     practicalRunRate: 11250,
     capacityUnit: "Pcs",
     setupTimeDefault: 10 / 60,
-    changeoverTimeDefault: 0,        // mould change time not specified in reference
+    changeoverTimeDefault: 0,        
   },
 ];
 
-// ---------------------------------------------------------------------------
+
 
 async function seed() {
   await mongoose.connect(MONGODB_URI);
@@ -249,7 +249,7 @@ async function seed() {
       );
       updated++;
     } else {
-      // Insert with full defaults
+      
       await MachineMaster.create({
         name: data.name,
         type: _inferType(data.name),

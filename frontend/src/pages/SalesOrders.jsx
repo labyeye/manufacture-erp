@@ -16,6 +16,7 @@ import {
   usersAPI,
   categoryMasterAPI,
   brandMasterAPI,
+  priceListAPI,
 } from "../api/auth";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
@@ -46,6 +47,7 @@ export default function SalesOrders(props) {
   const [companies, setCompanies] = useState([]);
   const [brands, setBrands] = useState([]);
   const [users, setUsers] = useState([]);
+  const [sellingPrices, setSellingPrices] = useState([]);
   const [companyCategories, setCompanyCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const today_val = today();
@@ -168,7 +170,17 @@ export default function SalesOrders(props) {
     fetchCompanies();
     fetchBrands();
     fetchUsers();
+    fetchSellingPrices();
   }, []);
+
+  const fetchSellingPrices = async () => {
+    try {
+      const data = await priceListAPI.getAll({ listType: "selling", status: "Active" });
+      setSellingPrices(Array.isArray(data) ? data : []);
+    } catch {
+      // price lookup is non-critical, silently ignore
+    }
+  };
 
   const fetchBrands = async () => {
     try {
@@ -309,6 +321,17 @@ export default function SalesOrders(props) {
             hsnCode: found.hsnCode || "",
             gsm: found.gsm || "",
           };
+        }
+        // Auto-fill price from Price List Master (company-specific first, then generic)
+        const companyMatch = sellingPrices.find(
+          (p) => p.itemCode === codeOnly && p.companyName === header.companyName
+        );
+        const genericMatch = sellingPrices.find(
+          (p) => p.itemCode === codeOnly && !p.companyName
+        );
+        const priceEntry = companyMatch || genericMatch;
+        if (priceEntry) {
+          it.price = priceEntry.unitPrice;
         }
       }
 

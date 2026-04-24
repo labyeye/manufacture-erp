@@ -80,7 +80,7 @@ export default function MachineMaster({ toast }) {
     fetchMachines();
   }, []);
 
-  // ── Column definitions for import / export ──────────────────────────────
+  
   const TEMPLATE_COLS = [
     { key: "name",                   header: "name *",                    hint: "Unique machine name" },
     { key: "type",                   header: "type *",                    hint: "Printing|Die Cutting|Lamination|Formation|Bag Making|Sheet Cutting|Manual Formation|Varnish|Cutting|Handmade" },
@@ -107,7 +107,7 @@ export default function MachineMaster({ toast }) {
     { key: "parallelMachineGroup",   header: "parallelMachineGroup",      hint: "e.g. SBBM 360 Pair  (leave blank for none)" },
   ];
 
-  // Serialise a machine record into a flat row for the spreadsheet
+  
   const machineToRow = (m) => ({
     name:                  m.name || "",
     type:                  m.type || "",
@@ -134,7 +134,7 @@ export default function MachineMaster({ toast }) {
     parallelMachineGroup:  m.parallelMachineGroup || "",
   });
 
-  // Parse a spreadsheet row back into an API-ready object
+  
   const rowToMachine = (row) => {
     const get = (key) => row[key] ?? row[TEMPLATE_COLS.find((c) => c.key === key)?.header] ?? "";
     const num = (key, fallback = 0) => { const v = parseFloat(get(key)); return isNaN(v) ? fallback : v; };
@@ -170,17 +170,17 @@ export default function MachineMaster({ toast }) {
     };
   };
 
-  // Build a workbook with styled header + hint row
+  
   const buildWorkbook = (dataRows) => {
     const headers = TEMPLATE_COLS.map((c) => c.header);
     const hints   = TEMPLATE_COLS.map((c) => c.hint);
     const wsData  = [headers, hints, ...dataRows.map((r) => TEMPLATE_COLS.map((c) => r[c.key] ?? ""))];
     const ws = XLSX.utils.aoa_to_sheet(wsData);
 
-    // Column widths
+    
     ws["!cols"] = TEMPLATE_COLS.map((_, i) => ({ wch: i < 2 ? 30 : 22 }));
 
-    // Freeze top 2 rows
+    
     ws["!freeze"] = { xSplit: 0, ySplit: 2 };
 
     const wb = XLSX.utils.book_new();
@@ -204,7 +204,7 @@ export default function MachineMaster({ toast }) {
   const handleImportFile = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    e.target.value = "";          // reset so the same file can be re-imported
+    e.target.value = "";          
 
     setImporting(true);
     try {
@@ -213,17 +213,17 @@ export default function MachineMaster({ toast }) {
       const ws = wb.Sheets[wb.SheetNames[0]];
       const raw = XLSX.utils.sheet_to_json(ws, { header: 1 });
 
-      // Row 0 = headers, Row 1 = hints (skip), Row 2+ = data
+      
       if (raw.length < 3) { toast?.("No data rows found in file", "error"); return; }
 
       const headerRow = raw[0].map((h) => String(h || "").trim());
       const dataRows  = raw.slice(2).filter((r) => r.some(Boolean));
 
-      // Build objects keyed by column header
+      
       const objects = dataRows.map((row) => {
         const obj = {};
         headerRow.forEach((h, i) => { obj[h] = row[i] ?? ""; });
-        // Also map by key (without hint suffix) so rowToMachine works
+        
         TEMPLATE_COLS.forEach((col, i) => { obj[col.key] = row[i] ?? ""; });
         return obj;
       });
@@ -322,12 +322,38 @@ export default function MachineMaster({ toast }) {
     }
   };
 
+  const TRANSITION_TYPES = [
+    "Color Change (Same Family)",
+    "Color Change (Different Family)",
+    "Plate Change (Same Job)",
+    "Plate Change (Different Job)",
+    "Product Type Change",
+    "Material Change",
+    "Full Washup",
+    "Ink Change",
+  ];
+
   const EditModal = ({ machine }) => {
     const [form, setForm] = useState({ ...machine });
+    const [changeoverRules, setChangeoverRules] = useState(
+      Array.isArray(machine.changeoverRules) ? machine.changeoverRules : []
+    );
+    const [newRule, setNewRule] = useState({ fromType: "", toType: "", minutes: "" });
 
     const handleChange = (field, value) => {
       setForm((prev) => ({ ...prev, [field]: value }));
     };
+
+    const addChangeoverRule = () => {
+      if (!newRule.fromType || !newRule.toType || !newRule.minutes) return;
+      setChangeoverRules((r) => [
+        ...r,
+        { fromType: newRule.fromType, toType: newRule.toType, minutes: Number(newRule.minutes) },
+      ]);
+      setNewRule({ fromType: "", toType: "", minutes: "" });
+    };
+
+    const removeRule = (idx) => setChangeoverRules((r) => r.filter((_, i) => i !== idx));
 
     const toggleDay = (day) => {
       const current = form.workingDays || [];
@@ -699,9 +725,102 @@ export default function MachineMaster({ toast }) {
             </div>
           </div>
 
+          {/* Changeover Rules */}
+          <div style={{ gridColumn: "1 / -1", marginTop: 24 }}>
+            <div style={{ borderBottom: "1px solid #2a2a2a", paddingBottom: 10, marginBottom: 16 }}>
+              <span style={{ fontSize: 12, fontWeight: 800, color: "#FF9800" }}>CHANGEOVER RULES</span>
+              <span style={{ fontSize: 11, color: "#666", marginLeft: 10 }}>
+                Define setup time per transition type to enable smart job batching
+              </span>
+            </div>
+
+            {/* Existing rules */}
+            {changeoverRules.length > 0 && (
+              <div style={{ marginBottom: 12 }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                  <thead>
+                    <tr>
+                      {["From Transition", "To Transition", "Minutes", ""].map((h) => (
+                        <th key={h} style={{ textAlign: "left", padding: "6px 8px", color: "#666", fontWeight: 700, fontSize: 10, textTransform: "uppercase", borderBottom: "1px solid #2a2a2a" }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {changeoverRules.map((rule, idx) => (
+                      <tr key={idx} style={{ borderBottom: "1px solid #1a1a1a" }}>
+                        <td style={{ padding: "6px 8px", color: "#ccc" }}>{rule.fromType}</td>
+                        <td style={{ padding: "6px 8px", color: "#ccc" }}>→ {rule.toType}</td>
+                        <td style={{ padding: "6px 8px" }}>
+                          <span style={{ color: "#FF9800", fontWeight: 700 }}>{rule.minutes} min</span>
+                        </td>
+                        <td style={{ padding: "6px 8px" }}>
+                          <button
+                            onClick={() => removeRule(idx)}
+                            style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer", fontSize: 14 }}
+                          >
+                            ×
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Add new rule */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 100px auto", gap: 8, alignItems: "end" }}>
+              <div>
+                <label style={{ ...labelStyle, marginBottom: 4 }}>From</label>
+                <select
+                  value={newRule.fromType}
+                  onChange={(e) => setNewRule((r) => ({ ...r, fromType: e.target.value }))}
+                  style={{ ...inputStyle, fontSize: 12 }}
+                >
+                  <option value="">Select transition...</option>
+                  {TRANSITION_TYPES.map((t) => <option key={t}>{t}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={{ ...labelStyle, marginBottom: 4 }}>To</label>
+                <select
+                  value={newRule.toType}
+                  onChange={(e) => setNewRule((r) => ({ ...r, toType: e.target.value }))}
+                  style={{ ...inputStyle, fontSize: 12 }}
+                >
+                  <option value="">Select transition...</option>
+                  {TRANSITION_TYPES.map((t) => <option key={t}>{t}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={{ ...labelStyle, marginBottom: 4 }}>Minutes</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={newRule.minutes}
+                  onChange={(e) => setNewRule((r) => ({ ...r, minutes: e.target.value }))}
+                  placeholder="e.g. 45"
+                  style={{ ...inputStyle, fontSize: 12 }}
+                />
+              </div>
+              <button
+                onClick={addChangeoverRule}
+                style={{ padding: "9px 16px", background: "#FF980022", border: "1px solid #FF9800", borderRadius: 6, color: "#FF9800", fontWeight: 700, cursor: "pointer", fontSize: 12, whiteSpace: "nowrap" }}
+              >
+                + Add
+              </button>
+            </div>
+
+            {changeoverRules.length === 0 && (
+              <div style={{ fontSize: 11, color: "#555", marginTop: 8 }}>
+                No rules defined. Scheduler uses <strong style={{ color: "#888" }}>{form.changeoverTimeDefault || 0}h</strong> global default for all transitions.
+              </div>
+            )}
+          </div>
+
           <div style={{ marginTop: 40, display: "flex", gap: 15 }}>
             <button
-              onClick={() => handleUpdate(machine._id, form)}
+              onClick={() => handleUpdate(machine._id, { ...form, changeoverRules })}
               style={{
                 flex: 1,
                 padding: "12px",
@@ -737,7 +856,7 @@ export default function MachineMaster({ toast }) {
 
   return (
     <div className="fade">
-      {/* hidden file input for import */}
+      {}
       <input
         ref={importRef}
         type="file"
@@ -754,7 +873,7 @@ export default function MachineMaster({ toast }) {
           </p>
         </div>
 
-        {/* Import / Export controls */}
+        {}
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
           <button
             onClick={handleDownloadTemplate}

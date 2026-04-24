@@ -129,6 +129,7 @@ export default function ProductionCalendar({
   const [calendarData, setCalendarData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [insightModal, setInsightModal] = useState(null);
+  const [dragJob, setDragJob] = useState(null); // { entry, sourceMachineId, sourceDate }
 
   const machines = useMemo(() => {
     if (Array.isArray(machineMaster) && machineMaster.length > 0) {
@@ -738,10 +739,10 @@ export default function ProductionCalendar({
       (sum, e) => sum + (e.scheduledHours || 0),
       0,
     );
-    // Setup time: from Machine Master setupTimeDefault (Morning shift only)
-    // Run time: scheduledQty / (practicalRunRate × efficiencyFactor)
+    
+    
     const getEntryTimes = (e) => {
-      const m = e.machineId; // populated with setupTimeDefault, practicalRunRate, efficiencyFactor
+      const m = e.machineId; 
       const setupT = e.shift === "Morning" ? (m?.setupTimeDefault ?? e.setupTime ?? 0.5) : 0;
       const cap = (m?.practicalRunRate || 0) * (m?.efficiencyFactor || 0.85);
       const runT = cap > 0 ? e.scheduledQty / cap : (e.runTime || 0);
@@ -1005,6 +1006,12 @@ export default function ProductionCalendar({
           style={tabBtn(mainView === "date", C.blue)}
         >
           📅 Date View
+        </button>
+        <button
+          onClick={() => setMainView("gantt")}
+          style={tabBtn(mainView === "gantt", "#8b5cf6")}
+        >
+          📊 Gantt
         </button>
 
         <div
@@ -1523,11 +1530,11 @@ export default function ProductionCalendar({
                             const shiftsCount = Math.max(1, Math.ceil(schedHrs / shiftHrs));
                             const hasOT = entry.overtimeNeeded || entry.overtimeHours > 0;
 
-                            // Setup time: from Machine Master setupTimeDefault (only for Morning shift)
+                            
                             const cardSetupTime = entry.shift === "Morning"
                               ? (fullMachine?.setupTimeDefault ?? 0.5)
                               : 0;
-                            // Run time: Qty / capacity per hour (practicalRunRate × efficiencyFactor)
+                            
                             const capacityPerHour =
                               (fullMachine?.practicalRunRate || 0) *
                               (fullMachine?.efficiencyFactor || 0.85);
@@ -1835,6 +1842,320 @@ export default function ProductionCalendar({
             ))}
         </Card>
       )}
+
+      {/* ── Gantt View ── */}
+      {mainView === "gantt" && (() => {
+        // Build per-machine capacity utilization per day
+        const machineCapMap = {};
+        (Array.isArray(machineMaster) ? machineMaster : []).forEach((m) => {
+          const cap = (m.practicalRunRate || 0) * (m.standardShiftHours || 8) * (m.maxShiftsAllowed || 1) * (m.efficiencyFactor || 0.85);
+          machineCapMap[m._id] = cap;
+          machineCapMap[m.name] = cap;
+        });
+
+        // Group calendar entries by machine → date
+        const ganttRows = visibleMachines.map((machine) => {
+          const mId = machine.id;
+          const mName = machine.name;
+          const dailySlots = daysArray.map((date) => {
+            const key1 = `${mId}|${date}`;
+            const key2 = `${mName}|${date}`;
+            const entries = [...(jobIndex[key1] || []), ...(jobIndex[key2] || [])];
+            const uniqueEntries = entries.filter((e, i, arr) => arr.findIndex((x) => x._id === e._id) === i);
+            const totalScheduled = uniqueEntries.reduce((s, e) => s + (e.scheduledQty || 0), 0);
+            const cap = machineCapMap[mId] || machineCapMap[mName] || 0;
+            const utilPct = cap > 0 ? Math.min(200, (totalScheduled / cap) * 100) : (totalScheduled > 0 ? 100 : 0);
+            const isOverloaded = utilPct > 100;
+            // Check delivery risk: any job whose delivery date is before today
+            const hasRisk = uniqueEntries.some((e) => {
+              const jo = e.jobOrderId;
+              if (!jo?.deliveryDate) return false;
+              const plannedEnd = e.plannedEnd || date;
+              return moment(plannedEnd).isAfter(moment(jo.deliveryDate));
+            });
+            return { date, entries: uniqueEntries, totalScheduled, utilPct, isOverloaded, hasRisk, cap };
+          });
+          return { machine, dailySlots };
+        });
+
+        // Delivery-risk alert jobs
+        const riskJobs = (calendarData || []).filter((e) => {
+          const jo = e.jobOrderId;
+          if (!jo?.deliveryDate) return false;
+          const plannedEnd = e.plannedEnd || e.date;
+          return moment(plannedEnd).isAfter(moment(jo.deliveryDate));
+        });
+        const riskSet = new Set(riskJobs.map((e) => e.jobCardNo));
+
+        const handleDragStart = (e, entry, machineId, date) => {
+          setDragJob({ entry, sourceMachineId: machineId, sourceDate: date });
+          e.dataTransfer.effectAllowed = "move";
+        };
+
+        const handleDrop = async (e, targetMachineId, targetDate) => {
+          e.preventDefault();
+          if (!dragJob) return;
+          if (dragJob.sourceDate === targetDate && dragJob.sourceMachineId === targetMachineId) {
+            setDragJob(null);
+            return;
+          }
+          try {
+            await planningAPI.planJob({
+              entryId: dragJob.entry._id,
+              machineId: targetMachineId,
+              date: targetDate,
+            });
+            toast?.("Job rescheduled", "success");
+            fetchCalendar();
+          } catch {
+            toast?.("Failed to reschedule — check capacity", "error");
+          }
+          setDragJob(null);
+        };
+
+        const colW = rangeView === "week" ? 110 : 36;
+
+        return (
+          <div style={{ marginTop: 16 }}>
+            {/* Risk alert banner */}
+            {riskSet.size > 0 && (
+              <div style={{ background: "#ef444411", border: "1px solid #ef444433", borderRadius: 8, padding: "10px 16px", marginBottom: 12, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+                <span style={{ color: "#ef4444", fontWeight: 800, fontSize: 12 }}>⚠️ DELIVERY RISK</span>
+                {[...riskSet].slice(0, 6).map((jc) => (
+                  <span key={jc} style={{ padding: "2px 8px", background: "#ef444422", borderRadius: 4, fontSize: 11, color: "#fca5a5", fontWeight: 700 }}>{jc}</span>
+                ))}
+                {riskSet.size > 6 && <span style={{ fontSize: 11, color: "#ef4444" }}>+{riskSet.size - 6} more</span>}
+                <span style={{ fontSize: 11, color: "#999", marginLeft: "auto" }}>Planned end date exceeds delivery date — negotiate or expedite</span>
+              </div>
+            )}
+
+            {/* Legend */}
+            <div style={{ display: "flex", gap: 16, alignItems: "center", marginBottom: 12, fontSize: 11, color: "#888" }}>
+              <span>Utilization:</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 12, height: 12, borderRadius: 2, background: "#22c55e66", display: "inline-block" }} />≤80%</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 12, height: 12, borderRadius: 2, background: "#f59e0b66", display: "inline-block" }} />81–100%</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 12, height: 12, borderRadius: 2, background: "#ef444466", display: "inline-block" }} />&gt;100% OVERLOAD</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 12, height: 12, borderRadius: 2, background: "#ef4444", display: "inline-block" }} />⚠ Delivery risk</span>
+              <span style={{ marginLeft: "auto", color: "#555" }}>Drag jobs to reschedule</span>
+            </div>
+
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ borderCollapse: "collapse", minWidth: "100%" }}>
+                <thead>
+                  <tr>
+                    <th style={{ ...thS, width: 160, position: "sticky", left: 0, background: C.surface || "#111", zIndex: 2, borderRight: `1px solid ${C.border}22` }}>
+                      Machine
+                    </th>
+                    {daysArray.map((date) => {
+                      const d = new Date(date);
+                      const isToday = date === today;
+                      const dow = DAYS[d.getDay()];
+                      return (
+                        <th
+                          key={date}
+                          style={{
+                            ...thS,
+                            width: colW,
+                            minWidth: colW,
+                            textAlign: "center",
+                            background: isToday ? "#3b82f611" : C.surface || "#111",
+                            borderBottom: isToday ? "2px solid #3b82f6" : `1px solid ${C.border}22`,
+                            color: isToday ? "#3b82f6" : "#666",
+                            padding: "6px 4px",
+                          }}
+                        >
+                          <div>{dow}</div>
+                          <div style={{ fontSize: 9, color: "#555" }}>{date.slice(5)}</div>
+                        </th>
+                      );
+                    })}
+                  </tr>
+                </thead>
+                <tbody>
+                  {ganttRows.map(({ machine, dailySlots }) => (
+                    <tr key={machine.id} style={{ borderBottom: `1px solid ${C.border}11` }}>
+                      <td
+                        style={{
+                          ...tdS,
+                          position: "sticky",
+                          left: 0,
+                          background: C.surface || "#111",
+                          zIndex: 1,
+                          borderRight: `1px solid ${C.border}22`,
+                          minWidth: 160,
+                        }}
+                      >
+                        <div style={{ fontSize: 11, fontWeight: 700, color: TYPE_COLOR[machine.type] || "#888" }}>
+                          {MACHINE_ICON[machine.type] || "⚙️"} {machine.name}
+                        </div>
+                        <div style={{ fontSize: 9, color: "#555" }}>{machine.type}</div>
+                      </td>
+                      {dailySlots.map(({ date, entries, utilPct, isOverloaded, hasRisk, cap }) => {
+                        const bgColor = hasRisk
+                          ? "#ef444422"
+                          : isOverloaded
+                          ? "#ef444411"
+                          : utilPct > 80
+                          ? "#f59e0b11"
+                          : utilPct > 0
+                          ? "#22c55e0a"
+                          : "transparent";
+                        const borderColor = hasRisk
+                          ? "#ef444444"
+                          : isOverloaded
+                          ? "#ef444433"
+                          : utilPct > 80
+                          ? "#f59e0b33"
+                          : "transparent";
+                        const barColor = hasRisk
+                          ? "#ef4444"
+                          : isOverloaded
+                          ? "#ef4444"
+                          : utilPct > 80
+                          ? "#f59e0b"
+                          : "#22c55e";
+                        return (
+                          <td
+                            key={date}
+                            style={{
+                              padding: 3,
+                              verticalAlign: "top",
+                              background: bgColor,
+                              border: `1px solid ${borderColor}`,
+                              minWidth: colW,
+                              width: colW,
+                              cursor: dragJob ? "copy" : "default",
+                            }}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) => handleDrop(e, machine.id, date)}
+                          >
+                            {/* Utilization bar */}
+                            {utilPct > 0 && (
+                              <div style={{ height: 4, borderRadius: 2, background: "#1a1a1a", marginBottom: 3, overflow: "hidden" }}>
+                                <div style={{ height: "100%", width: `${Math.min(100, utilPct)}%`, background: barColor, borderRadius: 2 }} />
+                              </div>
+                            )}
+                            {/* Job chips */}
+                            {entries.slice(0, rangeView === "week" ? 4 : 2).map((entry, i) => {
+                              const jo = entry.jobOrderId;
+                              const isRisk = riskSet.has(entry.jobCardNo);
+                              const priority = jo?.priority;
+                              const chipColor = isRisk ? "#ef4444"
+                                : priority === "VIP" ? "#ef4444"
+                                : priority === "Rush" ? "#f97316"
+                                : TYPE_COLOR[entry.process] || "#3b82f6";
+                              return (
+                                <div
+                                  key={entry._id || i}
+                                  draggable
+                                  onDragStart={(e) => handleDragStart(e, entry, machine.id, date)}
+                                  title={`${entry.jobCardNo} · ${entry.process} · ${(entry.scheduledQty || 0).toLocaleString()} units${isRisk ? " ⚠️ DELIVERY RISK" : ""}${priority && priority !== "Standard" ? ` · ${priority}` : ""}`}
+                                  style={{
+                                    background: chipColor + "22",
+                                    border: `1px solid ${chipColor}55`,
+                                    borderRadius: 3,
+                                    padding: rangeView === "week" ? "3px 5px" : "1px 3px",
+                                    fontSize: rangeView === "week" ? 10 : 8,
+                                    color: chipColor,
+                                    fontWeight: 700,
+                                    cursor: "grab",
+                                    marginBottom: 2,
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    whiteSpace: "nowrap",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 3,
+                                  }}
+                                >
+                                  {isRisk && <span style={{ fontSize: 8 }}>⚠️</span>}
+                                  {priority === "VIP" && <span style={{ fontSize: 8 }}>⭐</span>}
+                                  {priority === "Rush" && <span style={{ fontSize: 8 }}>⚡</span>}
+                                  <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+                                    {rangeView === "week" ? entry.jobCardNo : entry.jobCardNo?.slice(-4)}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                            {entries.length > (rangeView === "week" ? 4 : 2) && (
+                              <div style={{ fontSize: 9, color: "#666", textAlign: "center" }}>
+                                +{entries.length - (rangeView === "week" ? 4 : 2)}
+                              </div>
+                            )}
+                            {/* Utilization % label */}
+                            {utilPct > 0 && rangeView === "week" && (
+                              <div style={{ fontSize: 9, color: barColor, textAlign: "right", marginTop: 2 }}>
+                                {utilPct.toFixed(0)}%
+                              </div>
+                            )}
+                            {isOverloaded && (
+                              <div style={{ fontSize: 9, color: "#ef4444", fontWeight: 800, textAlign: "center" }}>
+                                OVERLOAD
+                              </div>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Batching suggestions */}
+            {(() => {
+              const suggestions = [];
+              visibleMachines.forEach((machine) => {
+                const machineEntries = (calendarData || []).filter((e) => {
+                  const mId = e.machineId?._id || e.machineId;
+                  return mId === machine.id || e.machineId?.name === machine.name;
+                });
+                // Group by printing color/plate if printing machine
+                if (machine.type === "Printing") {
+                  const colorGroups = {};
+                  machineEntries.forEach((e) => {
+                    const jo = e.jobOrderId;
+                    const color = jo?.printing || "Unknown";
+                    if (!colorGroups[color]) colorGroups[color] = [];
+                    colorGroups[color].push(e);
+                  });
+                  Object.entries(colorGroups).forEach(([color, ents]) => {
+                    const dates = [...new Set(ents.map((e) => moment(e.date).format("YYYY-MM-DD")))].sort();
+                    if (dates.length > 1) {
+                      const span = moment(dates[dates.length - 1]).diff(moment(dates[0]), "days");
+                      if (span > 2) {
+                        suggestions.push({
+                          machine: machine.name,
+                          color,
+                          count: ents.length,
+                          span,
+                          saving: Math.round(ents.length * 0.35 * 30),
+                        });
+                      }
+                    }
+                  });
+                }
+              });
+              if (!suggestions.length) return null;
+              return (
+                <div style={{ marginTop: 16, background: "#8b5cf611", border: "1px solid #8b5cf633", borderRadius: 8, padding: 16 }}>
+                  <div style={{ fontWeight: 700, color: "#a78bfa", marginBottom: 10, fontSize: 13 }}>
+                    💡 Batching Opportunities — batch similar jobs to cut setup time 30–40%
+                  </div>
+                  {suggestions.slice(0, 5).map((s, i) => (
+                    <div key={i} style={{ fontSize: 12, color: "#ccc", padding: "6px 0", borderBottom: "1px solid #8b5cf622" }}>
+                      <strong style={{ color: "#a78bfa" }}>{s.machine}</strong>
+                      {" — "}
+                      {s.count} jobs with <strong>{s.color}</strong>-color print spread over {s.span} days.
+                      Consolidate to save ~{s.saving} min changeover.
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
+        );
+      })()}
     </div>
   );
 }
