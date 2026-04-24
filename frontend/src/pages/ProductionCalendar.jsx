@@ -129,7 +129,7 @@ export default function ProductionCalendar({
   const [calendarData, setCalendarData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [insightModal, setInsightModal] = useState(null);
-  const [dragJob, setDragJob] = useState(null); // { entry, sourceMachineId, sourceDate }
+  const [dragJob, setDragJob] = useState(null); 
 
   const machines = useMemo(() => {
     if (Array.isArray(machineMaster) && machineMaster.length > 0) {
@@ -1843,9 +1843,9 @@ export default function ProductionCalendar({
         </Card>
       )}
 
-      {/* ── Gantt View ── */}
+      {}
       {mainView === "gantt" && (() => {
-        // Build per-machine capacity utilization per day
+        
         const machineCapMap = {};
         (Array.isArray(machineMaster) ? machineMaster : []).forEach((m) => {
           const cap = (m.practicalRunRate || 0) * (m.standardShiftHours || 8) * (m.maxShiftsAllowed || 1) * (m.efficiencyFactor || 0.85);
@@ -1853,7 +1853,7 @@ export default function ProductionCalendar({
           machineCapMap[m.name] = cap;
         });
 
-        // Group calendar entries by machine → date
+        
         const ganttRows = visibleMachines.map((machine) => {
           const mId = machine.id;
           const mName = machine.name;
@@ -1866,7 +1866,7 @@ export default function ProductionCalendar({
             const cap = machineCapMap[mId] || machineCapMap[mName] || 0;
             const utilPct = cap > 0 ? Math.min(200, (totalScheduled / cap) * 100) : (totalScheduled > 0 ? 100 : 0);
             const isOverloaded = utilPct > 100;
-            // Check delivery risk: any job whose delivery date is before today
+            
             const hasRisk = uniqueEntries.some((e) => {
               const jo = e.jobOrderId;
               if (!jo?.deliveryDate) return false;
@@ -1878,7 +1878,7 @@ export default function ProductionCalendar({
           return { machine, dailySlots };
         });
 
-        // Delivery-risk alert jobs
+        
         const riskJobs = (calendarData || []).filter((e) => {
           const jo = e.jobOrderId;
           if (!jo?.deliveryDate) return false;
@@ -1917,7 +1917,7 @@ export default function ProductionCalendar({
 
         return (
           <div style={{ marginTop: 16 }}>
-            {/* Risk alert banner */}
+            {}
             {riskSet.size > 0 && (
               <div style={{ background: "#ef444411", border: "1px solid #ef444433", borderRadius: 8, padding: "10px 16px", marginBottom: 12, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
                 <span style={{ color: "#ef4444", fontWeight: 800, fontSize: 12 }}>⚠️ DELIVERY RISK</span>
@@ -1929,7 +1929,7 @@ export default function ProductionCalendar({
               </div>
             )}
 
-            {/* Legend */}
+            {}
             <div style={{ display: "flex", gap: 16, alignItems: "center", marginBottom: 12, fontSize: 11, color: "#888" }}>
               <span>Utilization:</span>
               <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 12, height: 12, borderRadius: 2, background: "#22c55e66", display: "inline-block" }} />≤80%</span>
@@ -2029,13 +2029,13 @@ export default function ProductionCalendar({
                             onDragOver={(e) => e.preventDefault()}
                             onDrop={(e) => handleDrop(e, machine.id, date)}
                           >
-                            {/* Utilization bar */}
+                            {}
                             {utilPct > 0 && (
                               <div style={{ height: 4, borderRadius: 2, background: "#1a1a1a", marginBottom: 3, overflow: "hidden" }}>
                                 <div style={{ height: "100%", width: `${Math.min(100, utilPct)}%`, background: barColor, borderRadius: 2 }} />
                               </div>
                             )}
-                            {/* Job chips */}
+                            {}
                             {entries.slice(0, rangeView === "week" ? 4 : 2).map((entry, i) => {
                               const jo = entry.jobOrderId;
                               const isRisk = riskSet.has(entry.jobCardNo);
@@ -2082,7 +2082,7 @@ export default function ProductionCalendar({
                                 +{entries.length - (rangeView === "week" ? 4 : 2)}
                               </div>
                             )}
-                            {/* Utilization % label */}
+                            {}
                             {utilPct > 0 && rangeView === "week" && (
                               <div style={{ fontSize: 9, color: barColor, textAlign: "right", marginTop: 2 }}>
                                 {utilPct.toFixed(0)}%
@@ -2102,7 +2102,7 @@ export default function ProductionCalendar({
               </table>
             </div>
 
-            {/* Batching suggestions */}
+            {}
             {(() => {
               const suggestions = [];
               visibleMachines.forEach((machine) => {
@@ -2110,7 +2110,7 @@ export default function ProductionCalendar({
                   const mId = e.machineId?._id || e.machineId;
                   return mId === machine.id || e.machineId?.name === machine.name;
                 });
-                // Group by printing color/plate if printing machine
+                
                 if (machine.type === "Printing") {
                   const colorGroups = {};
                   machineEntries.forEach((e) => {

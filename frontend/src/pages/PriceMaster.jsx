@@ -21,7 +21,7 @@ import * as XLSX from "xlsx";
 
 const ACCENT = "#ff7800";
 
-// ─── Sub-tab bar ──────────────────────────────────────────────────────────────
+
 const SUBTABS = [
   { id: "selling",  icon: "💰", label: "Selling Prices" },
   { id: "purchase", icon: "🛒", label: "Purchase Prices" },
@@ -56,7 +56,7 @@ function SubTabBar({ active, onChange }) {
   );
 }
 
-// ─── Column definitions ───────────────────────────────────────────────────────
+
 const SELLING_COLS = [
   { header: "Item Code",      key: (r) => r.itemCode || "" },
   { header: "Item Name",      key: (r) => r.itemName || "" },
@@ -83,7 +83,7 @@ const PURCHASE_COLS = [
   { header: "Remarks",        key: (r) => r.remarks || "" },
 ];
 
-// ─── Selling Price Section ────────────────────────────────────────────────────
+
 function SellingSection({ toast }) {
   const [records, setRecords]   = useState([]);
   const [companies, setCompanies] = useState([]);
@@ -121,7 +121,7 @@ function SellingSection({ toast }) {
 
   useEffect(() => { fetchData(); }, []);
 
-  // Auto-fill company name when company selected
+  
   const handleCompanyChange = (id) => {
     const co = companies.find((c) => c._id === id);
     setFormData((f) => ({ ...f, companyId: id, companyName: co?.name || co?.companyName || "" }));
@@ -174,7 +174,7 @@ function SellingSection({ toast }) {
     }
   };
 
-  // ── Template ──
+  
   const handleTemplate = () => {
     const headers = SELLING_COLS.map((c) => c.header);
     const example = { itemCode: "FG-001", itemName: "Product A", companyName: "ABC Ltd", unitPrice: 100, uom: "Pcs", currency: "INR", effectiveFrom: "2024-01-01", status: "Active", remarks: "" };
@@ -186,7 +186,7 @@ function SellingSection({ toast }) {
     toast?.("Template downloaded", "success");
   };
 
-  // ── Export ──
+  
   const handleExport = () => {
     if (!records.length) { toast?.("No data to export", "error"); return; }
     const headers = SELLING_COLS.map((c) => c.header);
@@ -199,7 +199,7 @@ function SellingSection({ toast }) {
     toast?.("Exported", "success");
   };
 
-  // ── Import ──
+  
   const handleImport = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -316,7 +316,7 @@ function SellingSection({ toast }) {
   );
 }
 
-// ─── Purchase Price Section ───────────────────────────────────────────────────
+
 function PurchaseSection({ toast }) {
   const [records, setRecords]   = useState([]);
   const [vendors, setVendors]   = useState([]);
@@ -407,7 +407,7 @@ function PurchaseSection({ toast }) {
     }
   };
 
-  // ── Template ──
+  
   const handleTemplate = () => {
     const headers = PURCHASE_COLS.map((c) => c.header);
     const example = { itemCode: "RM-001", itemName: "Raw Material A", vendorName: "XYZ Suppliers", unitPrice: 50, uom: "Kg", currency: "INR", moq: 100, leadTimeDays: 7, effectiveFrom: "2024-01-01", status: "Active", remarks: "" };
@@ -419,7 +419,7 @@ function PurchaseSection({ toast }) {
     toast?.("Template downloaded", "success");
   };
 
-  // ── Export ──
+  
   const handleExport = () => {
     if (!records.length) { toast?.("No data to export", "error"); return; }
     const headers = PURCHASE_COLS.map((c) => c.header);
@@ -432,7 +432,7 @@ function PurchaseSection({ toast }) {
     toast?.("Exported", "success");
   };
 
-  // ── Import ──
+  
   const handleImport = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -555,7 +555,7 @@ function PurchaseSection({ toast }) {
   );
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+
 export default function PriceMaster({ toast }) {
   const [activeTab, setActiveTab] = useState("selling");
 

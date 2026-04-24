@@ -3,9 +3,9 @@ import { Card, SectionTitle, Input } from "../components/ui/BasicComponents";
 import { C } from "../constants/colors";
 import moment from "moment";
 
-// ─── Pure computation helpers ─────────────────────────────────────────────────
 
-/** Last N months as ['YYYY-MM', …], oldest first */
+
+
 function getMonthRange(n) {
   const out = [];
   for (let i = n - 1; i >= 0; i--)
@@ -13,10 +13,10 @@ function getMonthRange(n) {
   return out;
 }
 
-/**
- * { productCode → { 'YYYY-MM' → qty } }
- * Also captures companyCategory per SO so client breakdown works.
- */
+
+
+
+
 function buildMonthlyDemand(salesOrders) {
   const map = {};
   (salesOrders || []).forEach((so) => {
@@ -32,7 +32,7 @@ function buildMonthlyDemand(salesOrders) {
   return map;
 }
 
-/** { productCode → { HP: qty, ZPL: qty, Others: qty } } */
+
 function buildClientBreakdown(salesOrders) {
   const map = {};
   (salesOrders || []).forEach((so) => {
@@ -48,7 +48,7 @@ function buildClientBreakdown(salesOrders) {
   return map;
 }
 
-/** { productCode → { 1: qty, 2: qty, 3: qty, 4: qty } } for one client category */
+
 function buildWeeklyDemand(salesOrders, clientCat) {
   const map = {};
   (salesOrders || []).forEach((so) => {
@@ -65,22 +65,22 @@ function buildWeeklyDemand(salesOrders, clientCat) {
   return map;
 }
 
-/** Average of last N values in series (treating zeros as real zeros) */
+
 function rollingAvg(series, n) {
   const slice = series.slice(-n);
   return slice.reduce((s, v) => s + v, 0) / n;
 }
 
-/**
- * Weighted 3-month forecast.
- * Weights: most-recent 50 %, prior 33 %, two months ago 17 %.
- */
+
+
+
+
 function weightedForecast(series) {
-  const [c, b, a] = series.slice(-3); // a = oldest of the three
+  const [c, b, a] = series.slice(-3); 
   return (c || 0) * 0.5 + (b || 0) * 0.33 + (a || 0) * 0.17;
 }
 
-/** Population standard deviation of the non-zero values in series */
+
 function stdDev(series) {
   const vals = series.filter((v) => v > 0);
   if (vals.length < 2) return 0;
@@ -108,7 +108,7 @@ function getMoMPct(series) {
   return ((last - prev) / prev) * 100;
 }
 
-// ─── Visual constants ─────────────────────────────────────────────────────────
+
 const TREND_CFG = {
   up:     { color: "#22c55e", label: "Trending ↑", bg: "#052e1688" },
   down:   { color: "#ef4444", label: "Declining ↓", bg: "#450a0a88" },
@@ -121,7 +121,7 @@ const ACCENT = "#ff7800";
 const fmt  = (n) => (n == null || isNaN(n)) ? "—" : Math.round(n).toLocaleString("en-IN");
 const fmtD = (n) => (n == null || isNaN(n)) ? "—" : n.toFixed(1);
 
-// ─── Sortable header cell ─────────────────────────────────────────────────────
+
 function SortTh({ label, k, sortKey, sortDir, onSort, style = {} }) {
   const active = sortKey === k;
   return (
@@ -146,7 +146,7 @@ function SortTh({ label, k, sortKey, sortDir, onSort, style = {} }) {
   );
 }
 
-// ─── Weekly heatmap cell ──────────────────────────────────────────────────────
+
 function HeatCell({ qty, maxQty }) {
   const intensity = maxQty > 0 ? qty / maxQty : 0;
   return (
@@ -167,7 +167,7 @@ function HeatCell({ qty, maxQty }) {
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+
 export default function DemandForecast({ salesOrders = [], itemMasterFG = [] }) {
   const [search,       setSearch]       = useState("");
   const [trendFilter,  setTrendFilter]  = useState("all");
@@ -175,14 +175,14 @@ export default function DemandForecast({ salesOrders = [], itemMasterFG = [] }) 
   const [sortKey,      setSortKey]      = useState("forecast");
   const [sortDir,      setSortDir]      = useState("desc");
 
-  // ── Build demand maps (expensive — memoised) ──
+  
   const MONTHS_12     = useMemo(() => getMonthRange(12), []);
   const monthlyDemand = useMemo(() => buildMonthlyDemand(salesOrders), [salesOrders]);
   const clientMap     = useMemo(() => buildClientBreakdown(salesOrders), [salesOrders]);
   const weeklyHP      = useMemo(() => buildWeeklyDemand(salesOrders, "HP"),  [salesOrders]);
   const weeklyZPL     = useMemo(() => buildWeeklyDemand(salesOrders, "ZPL"), [salesOrders]);
 
-  // Union of codes from item master + SO history
+  
   const allCodes = useMemo(() => {
     const fromMaster = (itemMasterFG || [])
       .filter((i) => i.type === "Finished Good" || i.type === "Finished Goods")
@@ -192,7 +192,7 @@ export default function DemandForecast({ salesOrders = [], itemMasterFG = [] }) 
     return [...new Set([...fromMaster, ...fromSOs])];
   }, [itemMasterFG, monthlyDemand]);
 
-  // ── Compute one row per product ──
+  
   const rows = useMemo(() => {
     return allCodes.map((code) => {
       const master  = (itemMasterFG || []).find((i) => i.code === code);
@@ -230,7 +230,7 @@ export default function DemandForecast({ salesOrders = [], itemMasterFG = [] }) 
     });
   }, [allCodes, itemMasterFG, monthlyDemand, clientMap, MONTHS_12, weeklyHP, weeklyZPL]);
 
-  // ── Filters + sort ──
+  
   const filtered = useMemo(() => {
     return rows
       .filter((r) => {
@@ -253,7 +253,7 @@ export default function DemandForecast({ salesOrders = [], itemMasterFG = [] }) 
       });
   }, [rows, trendFilter, clientFilter, search, sortKey, sortDir]);
 
-  // ── Summary ──
+  
   const summary = useMemo(() => {
     const active = rows.filter((r) => r.trend !== "nodata");
     return {
@@ -293,7 +293,7 @@ export default function DemandForecast({ salesOrders = [], itemMasterFG = [] }) 
         sub="Rolling avg + trend detection · Next-month forecast per SKU from SO history"
       />
 
-      {/* ── Summary cards ── */}
+      {}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 12, marginBottom: 20 }}>
         {[
           { label: "Items Tracked",  value: summary.tracked, color: ACCENT },
@@ -309,7 +309,7 @@ export default function DemandForecast({ salesOrders = [], itemMasterFG = [] }) 
         ))}
       </div>
 
-      {/* ── Filters ── */}
+      {}
       <Card style={{ marginBottom: 16, padding: "12px 18px" }}>
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
           <Input
@@ -319,7 +319,7 @@ export default function DemandForecast({ salesOrders = [], itemMasterFG = [] }) 
             style={{ width: 240 }}
           />
 
-          {/* Trend filter pills */}
+          {}
           <div style={{ display: "flex", gap: 5 }}>
             {["all", "up", "down", "stable", "new"].map((t) => {
               const active = trendFilter === t;
@@ -343,7 +343,7 @@ export default function DemandForecast({ salesOrders = [], itemMasterFG = [] }) 
             })}
           </div>
 
-          {/* Client filter pills */}
+          {}
           <div style={{ display: "flex", gap: 5, marginLeft: "auto" }}>
             {[
               { id: "all", label: "All Clients",  color: C.muted },
@@ -372,7 +372,7 @@ export default function DemandForecast({ salesOrders = [], itemMasterFG = [] }) 
         </div>
       </Card>
 
-      {/* ── Forecast table ── */}
+      {}
       <Card>
         {filtered.length === 0 ? (
           <div style={{ textAlign: "center", padding: 48, color: C.muted, fontSize: 13 }}>
@@ -387,7 +387,7 @@ export default function DemandForecast({ salesOrders = [], itemMasterFG = [] }) 
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr>
-                  {/* Left-aligned text cols */}
+                  {}
                   {[
                     { label: "CODE",  k: "code",  align: "left" },
                     { label: "ITEM",  k: "name",  align: "left" },
@@ -427,17 +427,17 @@ export default function DemandForecast({ salesOrders = [], itemMasterFG = [] }) 
                       key={r.code}
                       style={{ borderBottom: `1px solid ${C.border}22`, background: i % 2 === 0 ? "transparent" : "#ffffff04" }}
                     >
-                      {/* Code */}
+                      {}
                       <td style={{ ...tdBase, fontFamily: "monospace", fontWeight: 700, color: ACCENT, paddingLeft: 14 }}>
                         {r.code}
                       </td>
 
-                      {/* Name */}
+                      {}
                       <td style={{ ...tdBase, maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {r.name}
                       </td>
 
-                      {/* Trend badge */}
+                      {}
                       <td style={tdBase}>
                         <span style={{
                           background: tc.bg, color: tc.color,
@@ -449,20 +449,20 @@ export default function DemandForecast({ salesOrders = [], itemMasterFG = [] }) 
                         </span>
                       </td>
 
-                      {/* MoM % */}
+                      {}
                       <td style={{ ...tdBase, textAlign: "right", fontWeight: 700, fontFamily: "monospace",
                         color: r.mom == null ? C.muted : r.mom > 0 ? "#22c55e" : r.mom < 0 ? "#ef4444" : C.muted }}>
                         {r.mom == null ? "—" : `${r.mom > 0 ? "+" : ""}${fmtD(r.mom)}%`}
                       </td>
 
-                      {/* Rolling avgs */}
+                      {}
                       {["avg3", "avg6", "avg12"].map((k) => (
                         <td key={k} style={{ ...tdBase, textAlign: "right", color: C.muted }}>
                           {fmt(r[k])}
                         </td>
                       ))}
 
-                      {/* Forecast (highlighted) */}
+                      {}
                       <td style={{ ...tdBase, textAlign: "right" }}>
                         <span style={{
                           fontWeight: 800, fontSize: 15,
@@ -476,12 +476,12 @@ export default function DemandForecast({ salesOrders = [], itemMasterFG = [] }) 
                         )}
                       </td>
 
-                      {/* Confidence band */}
+                      {}
                       <td style={{ ...tdBase, textAlign: "right", color: C.muted, fontSize: 11, fontFamily: "monospace" }}>
                         {r.forecast > 0 ? `${fmt(r.lower)} – ${fmt(r.upper)}` : "—"}
                       </td>
 
-                      {/* Weekly heat cells */}
+                      {}
                       {showWeekly && [1, 2, 3, 4].map((w) => (
                         <HeatCell key={w} qty={weekRow[w] || 0} maxQty={maxWqty} />
                       ))}
@@ -494,7 +494,7 @@ export default function DemandForecast({ salesOrders = [], itemMasterFG = [] }) 
         )}
       </Card>
 
-      {/* ── Weekly pattern legend (shown only when HP/ZPL active) ── */}
+      {}
       {showWeekly && (
         <div style={{ marginTop: 12, padding: "10px 16px", background: "#111", borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 11, color: C.muted }}>
           <b style={{ color: "#999" }}>Weekly Pattern:</b>{" "}
@@ -506,7 +506,7 @@ export default function DemandForecast({ salesOrders = [], itemMasterFG = [] }) 
         </div>
       )}
 
-      {/* ── Methodology note ── */}
+      {}
       <div style={{ marginTop: 8, padding: "10px 16px", background: "#0d0d0d", borderRadius: 8, border: `1px solid ${C.border}22`, fontSize: 11, color: "#444" }}>
         <b style={{ color: "#555" }}>Model:</b>{" "}
         Forecast = weighted 3-month moving avg (last month 50 % · prior 33 % · two months ago 17 %).

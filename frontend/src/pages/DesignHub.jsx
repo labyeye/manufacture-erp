@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { C } from "../constants/colors";
 
-/* ─── helpers ─────────────────────────────────────────────── */
+
 const today = () => new Date().toISOString().slice(0, 10);
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("en-GB") : "—");
@@ -24,7 +24,7 @@ const TABS = [
   { id: "dieline",  icon: "✂️", label: "Dieline Library" },
 ];
 
-/* Artwork workflow stages */
+
 const ART_STAGES = [
   { id: "received",        label: "Received",         icon: "📥", color: "#6b7280" },
   { id: "internal_review", label: "Internal Review",  icon: "🔍", color: "#3b82f6" },
@@ -36,7 +36,7 @@ const ART_STAGES = [
 
 const stageOrder = ART_STAGES.filter((s) => s.id !== "rejected").map((s) => s.id);
 
-/* ═══════════════════════════════════════════════════════════ */
+
 export default function DesignHub({ salesOrders = [], jobOrders = [], toast }) {
   const [tab, setTab] = useState("artwork");
   return (
@@ -63,9 +63,9 @@ export default function DesignHub({ salesOrders = [], jobOrders = [], toast }) {
   );
 }
 
-/* ═══════════════════════════════════════════════════════════
-   ARTWORK APPROVAL
-═══════════════════════════════════════════════════════════ */
+
+
+
 function ArtworkTab({ salesOrders, jobOrders, toast }) {
   const [records, setRecords] = useState(load(LS_ART));
   const [view, setView]       = useState("list");
@@ -177,7 +177,7 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
         </button>
       </div>
 
-      {/* Stage filter pills */}
+      {}
       <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
         {["All", ...ART_STAGES.map((s) => s.id)].map((s) => {
           const stg = ART_STAGES.find((x) => x.id === s);
@@ -191,7 +191,7 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
         })}
       </div>
 
-      {/* Form */}
+      {}
       {view === "form" && (
         <div style={{ background: "#111", border: "1px solid #2a2a2a", borderRadius: 10, padding: 20, marginBottom: 16 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: "#facc15", marginBottom: 18 }}>{editId ? "Edit Artwork Record" : "Register New Artwork"}</div>
@@ -232,7 +232,7 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
         </div>
       )}
 
-      {/* List */}
+      {}
       {view === "list" && (
         <div style={{ background: "#111", border: "1px solid #2a2a2a", borderRadius: 10, padding: 20 }}>
           {filtered.length === 0 && (
@@ -249,7 +249,7 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
 
             return (
               <div key={rec.id} style={{ borderBottom: "1px solid #1a1a1a", padding: "14px 4px" }}>
-                {/* Header row */}
+                {}
                 <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
                   <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
                     <span style={{ fontWeight: 700, fontSize: 14 }}>{rec.artworkName}</span>
@@ -284,7 +284,7 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
                   </div>
                 </div>
 
-                {/* Progress bar */}
+                {}
                 <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 8 }}>
                   {stageOrder.map((s, i) => {
                     const stg = ART_STAGES.find((x) => x.id === s);
@@ -303,7 +303,7 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
                   })}
                 </div>
 
-                {/* Advance action */}
+                {}
                 {canAdvance && isExpanded && (
                   <div style={{ background: "#0a0a0a", border: "1px solid #2a2a2a", borderRadius: 8, padding: 14, marginBottom: 10 }}>
                     <div style={{ fontSize: 11, color: "#888", marginBottom: 10, fontWeight: 700 }}>
@@ -326,7 +326,7 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
                   </div>
                 )}
 
-                {/* Timeline */}
+                {}
                 {isExpanded && (rec.stageHistory || []).length > 0 && (
                   <div style={{ paddingLeft: 10 }}>
                     {rec.stageHistory.map((h, i) => {
@@ -352,9 +352,9 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
   );
 }
 
-/* ═══════════════════════════════════════════════════════════
-   DIELINE LIBRARY
-═══════════════════════════════════════════════════════════ */
+
+
+
 function DielineTab({ jobOrders, toast }) {
   const [dielines, setDielines] = useState(load(LS_DIEL));
   const [view, setView]         = useState("list");
@@ -388,7 +388,7 @@ function DielineTab({ jobOrders, toast }) {
     setForm(blankForm); setEditId(null); setView("list");
   };
 
-  // Count JOs using each die code
+  
   const dieUsageMap = useMemo(() => {
     const map = {};
     (jobOrders || []).forEach((jo) => {

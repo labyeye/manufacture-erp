@@ -178,7 +178,7 @@ export default function SalesOrders(props) {
       const data = await priceListAPI.getAll({ listType: "selling", status: "Active" });
       setSellingPrices(Array.isArray(data) ? data : []);
     } catch {
-      // price lookup is non-critical, silently ignore
+      
     }
   };
 
@@ -322,7 +322,7 @@ export default function SalesOrders(props) {
             gsm: found.gsm || "",
           };
         }
-        // Auto-fill price from Price List Master (company-specific first, then generic)
+        
         const companyMatch = sellingPrices.find(
           (p) => p.itemCode === codeOnly && p.companyName === header.companyName
         );

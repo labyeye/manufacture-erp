@@ -211,7 +211,7 @@ export function Dashboard({ data, session, toast }) {
 
   const [oeeGranularity,    setOeeGranularity]    = useState("weekly");
   const [oeeSelectedMachine, setOeeSelectedMachine] = useState("all");
-  const [oeeTargetEdit,     setOeeTargetEdit]     = useState(null); // machineId being edited
+  const [oeeTargetEdit,     setOeeTargetEdit]     = useState(null); 
 
   useEffect(() => {
     setAppliedFilters({
@@ -449,13 +449,13 @@ export function Dashboard({ data, session, toast }) {
     return list.filter((r) => r.status === soReconStatus);
   }, [salesOrders, dispMap, jobOrders, dateFrom, dateTo, soReconStatus]);
 
-  // ── Smart Alerts Engine ──────────────────────────────────────────────────
+  
   const allAlerts = useMemo(() => {
     const alerts = [];
     const todayMs = Date.now();
     const now     = new Date();
 
-    // ── 1. Jobs at risk of missing delivery ──────────────────────────────
+    
     (salesOrders || []).forEach((so) => {
       if (so.status === "Completed" || so.status === "Closed") return;
       const dueStr = so.deliveryDate || so.expectedDelivery || so.dueDate;
@@ -503,7 +503,7 @@ export function Dashboard({ data, session, toast }) {
       }
     });
 
-    // ── 2. Vendor lead time creep ─────────────────────────────────────────
+    
     const vendorPts = {};
     (purchaseOrders || []).forEach((po) => {
       const v = po.vendor || po.vendorName;
@@ -542,7 +542,7 @@ export function Dashboard({ data, session, toast }) {
       }
     });
 
-    // ── 3. Client order frequency drop (churn signal) ─────────────────────
+    
     const thisM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
     const prevD  = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const prevM  = `${prevD.getFullYear()}-${String(prevD.getMonth() + 1).padStart(2, "0")}`;
@@ -573,12 +573,12 @@ export function Dashboard({ data, session, toast }) {
       }
     });
 
-    // ── 4. Consumable stock runout estimate ───────────────────────────────
+    
     (consumableStock || []).forEach((item) => {
       const qty    = +(item.qty || 0);
       const reorder = +(item.reorderLevel || 0);
       if (qty <= 0 || reorder <= 0) return;
-      // Treat reorderLevel as ~14-day safety stock → daily rate estimate
+      
       const dailyRate = reorder / 14;
       const daysLeft  = qty / dailyRate;
       if (daysLeft < 14) {
@@ -595,7 +595,7 @@ export function Dashboard({ data, session, toast }) {
       }
     });
 
-    // ── 5. Machine downtime spike vs last month ────────────────────────────
+    
     const daysElapsedThis = now.getDate();
     const daysInLast = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
 
@@ -627,7 +627,7 @@ export function Dashboard({ data, session, toast }) {
       }
     });
 
-    // Sort: critical → high → medium → low
+    
     const sev = { critical: 0, high: 1, medium: 2, low: 3 };
     return alerts.sort((a, b) => (sev[a.severity] ?? 3) - (sev[b.severity] ?? 3));
   }, [salesOrders, jobOrders, purchaseOrders, inward, consumableStock, allEntries, activeMachines]);
@@ -1041,7 +1041,7 @@ export function Dashboard({ data, session, toast }) {
         })()}
       </div>
 
-      {/* ── Smart Alerts compact banner ── */}
+      {}
       {allAlerts.length > 0 && (
         <div style={{ marginBottom: 16 }}>
           <div style={{ display: "flex", gap: 8, alignItems: "center", overflowX: "auto", paddingBottom: 4 }}>
@@ -3773,19 +3773,19 @@ export function Dashboard({ data, session, toast }) {
           );
         })()}
 
-      {/* ─── OEE Report ──────────────────────────────────────────────────── */}
+      {}
       {reportTab === "oee" &&
         (() => {
           const BENCHMARK = 85;
 
-          // ── Helpers ──────────────────────────────────────────────────────
+          
           const pct = (n) => (n == null ? "—" : `${(n * 100).toFixed(1)}%`);
           const oeeColor = (v) =>
             v == null ? "#555" : v >= 0.85 ? C.green : v >= 0.65 ? C.yellow : C.red;
           const oeeLabel = (v) =>
             v == null ? "—" : v >= 0.85 ? "World-class" : v >= 0.65 ? "Average" : "Poor";
 
-          // ISO week key "YYYY-Www"
+          
           const isoWeek = (dateStr) => {
             if (!dateStr) return "unknown";
             const d = new Date(dateStr);
@@ -3796,19 +3796,19 @@ export function Dashboard({ data, session, toast }) {
           const monthKey = (dateStr) =>
             dateStr ? dateStr.slice(0, 7) : "unknown";
 
-          // ── Filtered entries ─────────────────────────────────────────────
+          
           const oeeEntries = allEntries.filter((e) => {
             if (dateFrom && e.date < dateFrom) return false;
             if (dateTo   && e.date > dateTo)   return false;
             return true;
           });
 
-          // Fleet-planned (date+shift) combos
+          
           const fleetCombos = new Set(
             oeeEntries.map((e) => `${e.date}|${e.shift || "_"}`)
           );
 
-          // ── Per-machine OEE ───────────────────────────────────────────────
+          
           const machineData = activeMachines.map((m) => {
             const mid = String(m._id);
             const ents = oeeEntries.filter(
@@ -3836,7 +3836,7 @@ export function Dashboard({ data, session, toast }) {
             const oee =
               A != null && P != null && Q != null ? A * P * Q : Q;
 
-            // shift breakdown
+            
             const byShift = {};
             ents.forEach((e) => {
               const sh = e.shift || "Unknown";
@@ -3853,7 +3853,7 @@ export function Dashboard({ data, session, toast }) {
             };
           });
 
-          // ── Fleet aggregate ───────────────────────────────────────────────
+          
           const fleetGood  = machineData.reduce((s, r) => s + r.good,     0);
           const fleetRej   = machineData.reduce((s, r) => s + r.rejected, 0);
           const fleetTotal = fleetGood + fleetRej;
@@ -3874,7 +3874,7 @@ export function Dashboard({ data, session, toast }) {
               ? fleetA * fleetP * fleetQ
               : fleetQ;
 
-          // ── Trend data ────────────────────────────────────────────────────
+          
           const trendEntries =
             oeeSelectedMachine === "all"
               ? oeeEntries
@@ -3895,15 +3895,15 @@ export function Dashboard({ data, session, toast }) {
 
           const trendRows = Object.entries(trendBuckets)
             .sort(([a], [b]) => a.localeCompare(b))
-            .slice(-16) // show last 16 periods max
+            .slice(-16) 
             .map(([label, b]) => {
               const tot = b.good + b.rejected;
               const q   = tot > 0 ? b.good / tot : 0;
-              // For trend, use Q as proxy (P is target-dependent)
+              
               return { label, q: q * 100 };
             });
 
-          // ── SVG trend chart ───────────────────────────────────────────────
+          
           const TrendChart = () => {
             if (trendRows.length === 0) return null;
             const chartH  = 180;
@@ -3919,7 +3919,7 @@ export function Dashboard({ data, session, toast }) {
                 height={chartH}
                 style={{ display: "block", overflow: "visible" }}
               >
-                {/* Grid lines */}
+                {}
                 {[0, 25, 50, 65, 85, 100].map((v) => {
                   const y = padTop + inner * (1 - v / 100);
                   return (
@@ -3943,7 +3943,7 @@ export function Dashboard({ data, session, toast }) {
                   );
                 })}
 
-                {/* Bars */}
+                {}
                 {trendRows.map((row, i) => {
                   const barH = (row.q / 100) * inner;
                   const x    = `${(i / trendRows.length) * 100}%`;
@@ -3989,7 +3989,7 @@ export function Dashboard({ data, session, toast }) {
             );
           };
 
-          // ── Root-cause logic ─────────────────────────────────────────────
+          
           const rootCause = (() => {
             const factors = [
               { key: "A", label: "Availability", val: fleetA, fix: "Machine downtime or unplanned stops" },
@@ -4002,7 +4002,7 @@ export function Dashboard({ data, session, toast }) {
 
           return (
             <div>
-              {/* ── Header + controls ── */}
+              {}
               <div
                 style={{
                   display: "flex",
@@ -4049,7 +4049,7 @@ export function Dashboard({ data, session, toast }) {
                 </div>
               </div>
 
-              {/* ── Fleet summary cards ── */}
+              {}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12, marginBottom: 20 }}>
                 {[
                   { label: "Fleet OEE",      val: fleetOEE, note: fleetP == null ? "Quality proxy" : "A×P×Q" },
@@ -4076,7 +4076,7 @@ export function Dashboard({ data, session, toast }) {
                 })}
               </div>
 
-              {/* ── Root-cause callout ── */}
+              {}
               {rootCause && (
                 <div style={{ marginBottom: 20, padding: "12px 18px", borderRadius: 8, background: `${oeeColor(rootCause.val)}11`, border: `1px solid ${oeeColor(rootCause.val)}44`, display: "flex", gap: 14, alignItems: "center" }}>
                   <span style={{ fontSize: 22 }}>⚠️</span>
@@ -4094,7 +4094,7 @@ export function Dashboard({ data, session, toast }) {
                 </div>
               )}
 
-              {/* ── Trend chart ── */}
+              {}
               <div style={{ background: "#141416", border: "1px solid #2a2a2e", borderRadius: 8, padding: "16px 20px", marginBottom: 20 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: "#bbb" }}>
@@ -4118,7 +4118,7 @@ export function Dashboard({ data, session, toast }) {
                 }
               </div>
 
-              {/* ── Per-machine OEE table ── */}
+              {}
               <div style={{ borderRadius: 8, overflow: "hidden", border: "1px solid #2a2a2e", marginBottom: 20 }}>
                 <div style={{ padding: "12px 16px", background: "#1a1a1e", borderBottom: "1px solid #2a2a2e", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <span style={{ fontWeight: 700, color: "#bbb", fontSize: 12 }}>Per-Machine OEE Breakdown</span>
@@ -4157,14 +4157,14 @@ export function Dashboard({ data, session, toast }) {
                               {" / "}
                               <span style={{ color: "#888" }}>{r.total.toLocaleString("en-IN")}</span>
                             </td>
-                            {/* Availability */}
+                            {}
                             <td style={{ ...TD, textAlign: "right" }}>
                               <div style={{ fontWeight: 700, color: oeeColor(r.A) }}>{pct(r.A)}</div>
                               <div style={{ height: 3, background: "#2a2a2e", borderRadius: 2, marginTop: 3, width: 60 }}>
                                 <div style={{ height: 3, borderRadius: 2, background: oeeColor(r.A), width: `${((r.A ?? 0) * 100).toFixed(0)}%` }} />
                               </div>
                             </td>
-                            {/* Performance */}
+                            {}
                             <td style={{ ...TD, textAlign: "right" }}>
                               {r.P != null
                                 ? <>
@@ -4176,25 +4176,25 @@ export function Dashboard({ data, session, toast }) {
                                 : <span style={{ color: "#555", fontSize: 10 }}>Set target →</span>
                               }
                             </td>
-                            {/* Quality */}
+                            {}
                             <td style={{ ...TD, textAlign: "right" }}>
                               <div style={{ fontWeight: 700, color: oeeColor(r.Q) }}>{pct(r.Q)}</div>
                               <div style={{ height: 3, background: "#2a2a2e", borderRadius: 2, marginTop: 3, width: 60 }}>
                                 <div style={{ height: 3, borderRadius: 2, background: oeeColor(r.Q), width: `${((r.Q ?? 0) * 100).toFixed(0)}%` }} />
                               </div>
                             </td>
-                            {/* OEE */}
+                            {}
                             <td style={{ ...TD, textAlign: "right" }}>
                               <span style={{ fontWeight: 900, fontSize: 16, color: col }}>{pct(r.oee)}</span>
                               {r.P == null && <div style={{ fontSize: 9, color: "#555" }}>Q only</div>}
                             </td>
-                            {/* Status badge */}
+                            {}
                             <td style={{ ...TD, textAlign: "center" }}>
                               <span style={{ padding: "3px 8px", borderRadius: 4, fontSize: 10, fontWeight: 700, background: `${col}22`, color: col, border: `1px solid ${col}44` }}>
                                 {oeeLabel(r.oee)}
                               </span>
                             </td>
-                            {/* Shift target */}
+                            {}
                             <td style={{ ...TD, textAlign: "right" }}>
                               {isEditing ? (
                                 <input
@@ -4233,7 +4233,7 @@ export function Dashboard({ data, session, toast }) {
                 </table>
               </div>
 
-              {/* ── Shift-wise breakdown ── */}
+              {}
               {machineData.some((r) => Object.keys(r.byShift).length > 0) && (
                 <div style={{ borderRadius: 8, overflow: "hidden", border: "1px solid #2a2a2e", marginBottom: 20 }}>
                   <div style={{ padding: "12px 16px", background: "#1a1a1e", borderBottom: "1px solid #2a2a2e", fontWeight: 700, color: "#bbb", fontSize: 12 }}>
@@ -4291,7 +4291,7 @@ export function Dashboard({ data, session, toast }) {
                 </div>
               )}
 
-              {/* ── Methodology note ── */}
+              {}
               <div style={{ padding: "10px 16px", background: "#0d0d0d", borderRadius: 8, border: "1px solid #2a2a2e22", fontSize: 10, color: "#444", lineHeight: 1.7 }}>
                 <b style={{ color: "#666" }}>OEE = Availability × Performance × Quality</b>
                 {" · "}
@@ -4305,7 +4305,7 @@ export function Dashboard({ data, session, toast }) {
           );
         })()}
 
-      {/* ─── Smart Alerts Engine ─────────────────────────────────────────── */}
+      {}
       {reportTab === "alerts" &&
         (() => {
           const SEV_CFG = {
@@ -4326,7 +4326,7 @@ export function Dashboard({ data, session, toast }) {
             ["critical","high","medium","low"].map((s) => [s, allAlerts.filter((a) => a.severity === s).length])
           );
 
-          // Group by type for the breakdown
+          
           const byType = {};
           allAlerts.forEach((a) => {
             if (!byType[a.type]) byType[a.type] = [];
@@ -4335,7 +4335,7 @@ export function Dashboard({ data, session, toast }) {
 
           return (
             <div>
-              {/* ── Summary ── */}
+              {}
               {allAlerts.length === 0 ? (
                 <div style={{ textAlign: "center", padding: 60, background: "#141416", borderRadius: 12, border: "1px solid #2a2a2e" }}>
                   <div style={{ fontSize: 40, marginBottom: 12 }}>✅</div>
@@ -4346,7 +4346,7 @@ export function Dashboard({ data, session, toast }) {
                 </div>
               ) : (
                 <>
-                  {/* Severity summary row */}
+                  {}
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 20 }}>
                     {["critical","high","medium","low"].map((s) => {
                       const cfg = SEV_CFG[s];
@@ -4360,7 +4360,7 @@ export function Dashboard({ data, session, toast }) {
                     })}
                   </div>
 
-                  {/* Alert cards by type */}
+                  {}
                   {Object.entries(byType).map(([type, typeAlerts]) => (
                     <div key={type} style={{ marginBottom: 20 }}>
                       <div style={{ fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 10 }}>
@@ -4374,7 +4374,7 @@ export function Dashboard({ data, session, toast }) {
                               key={a.id}
                               style={{ background: "#141416", border: `1px solid ${cfg.color}44`, borderLeft: `4px solid ${cfg.color}`, borderRadius: 10, padding: "14px 18px", display: "grid", gridTemplateColumns: "auto 1fr auto", gap: 14, alignItems: "start" }}
                             >
-                              {/* Icon + severity */}
+                              {}
                               <div style={{ textAlign: "center" }}>
                                 <div style={{ fontSize: 22 }}>{a.icon}</div>
                                 <div style={{ fontSize: 9, fontWeight: 700, color: cfg.color, marginTop: 4, whiteSpace: "nowrap" }}>
@@ -4382,7 +4382,7 @@ export function Dashboard({ data, session, toast }) {
                                 </div>
                               </div>
 
-                              {/* Body */}
+                              {}
                               <div>
                                 <div style={{ fontWeight: 700, fontSize: 14, color: "#e0e0e0", marginBottom: 4 }}>
                                   {a.title}
@@ -4393,7 +4393,7 @@ export function Dashboard({ data, session, toast }) {
                                 <div style={{ fontSize: 11, color: "#555" }}>{a.meta}</div>
                               </div>
 
-                              {/* Recommended action */}
+                              {}
                               <div style={{ minWidth: 200, background: `${cfg.color}0d`, border: `1px solid ${cfg.color}33`, borderRadius: 7, padding: "10px 14px" }}>
                                 <div style={{ fontSize: 9, fontWeight: 700, color: cfg.color, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 5 }}>
                                   Recommended Action
@@ -4407,7 +4407,7 @@ export function Dashboard({ data, session, toast }) {
                     </div>
                   ))}
 
-                  {/* How alerts are computed */}
+                  {}
                   <div style={{ padding: "10px 16px", background: "#0d0d0d", borderRadius: 8, border: "1px solid #2a2a2e22", fontSize: 10, color: "#444", lineHeight: 1.8 }}>
                     <b style={{ color: "#666" }}>Alert logic:</b>{" "}
                     <b>Delivery Risk</b> — production velocity (last 7d) × remaining units &gt; days until SO delivery date.{" "}

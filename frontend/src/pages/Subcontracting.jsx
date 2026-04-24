@@ -62,7 +62,7 @@ const saveRecords = (recs) => {
 
 export default function Subcontracting({ jobOrders = [], vendorMaster = [], toast }) {
   const [records, setRecords] = useState(loadRecords);
-  const [view, setView] = useState("list"); // "list" | "form" | "receive"
+  const [view, setView] = useState("list"); 
   const [editId, setEditId] = useState(null);
   const [receiveId, setReceiveId] = useState(null);
   const [filterStatus, setFilterStatus] = useState("All");
@@ -109,7 +109,7 @@ export default function Subcontracting({ jobOrders = [], vendorMaster = [], toas
       toast?.("Fill all required fields", "error");
       return;
     }
-    // Find JO for priority/client info
+    
     const jo = jobOrders.find((j) => j.joNo === form.joRef || j._id === form.joRef);
     const record = {
       id: editId || uid(),
@@ -228,7 +228,7 @@ export default function Subcontracting({ jobOrders = [], vendorMaster = [], toas
     });
   }, [records, filterStatus, filterStage, search]);
 
-  // Summary stats
+  
   const stats = useMemo(() => {
     const active = records.filter((r) => !["Reconciled", "Cancelled"].includes(r.status));
     const overdue = active.filter((r) => r.expectedReturn && r.expectedReturn < today());
@@ -259,7 +259,7 @@ export default function Subcontracting({ jobOrders = [], vendorMaster = [], toas
 
   return (
     <div className="fade">
-      {/* Header */}
+      {}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
         <div>
           <div style={{ fontSize: 20, fontWeight: 800 }}>Subcontracting</div>
@@ -284,7 +284,7 @@ export default function Subcontracting({ jobOrders = [], vendorMaster = [], toas
         </button>
       </div>
 
-      {/* Summary cards */}
+      {}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 20 }}>
         {[
           { label: "Active Issues", value: stats.active, color: "#f97316" },
@@ -299,7 +299,7 @@ export default function Subcontracting({ jobOrders = [], vendorMaster = [], toas
         ))}
       </div>
 
-      {/* Issue form */}
+      {}
       {view === "form" && (
         <div style={{ background: "#111", border: "1px solid #2a2a2a", borderRadius: 10, padding: 24, marginBottom: 20 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: "#facc15", marginBottom: 20 }}>
@@ -410,7 +410,7 @@ export default function Subcontracting({ jobOrders = [], vendorMaster = [], toas
         </div>
       )}
 
-      {/* Receive form */}
+      {}
       {view === "receive" && receiveId && (() => {
         const rec = records.find((r) => r.id === receiveId);
         if (!rec) return null;
@@ -448,7 +448,7 @@ export default function Subcontracting({ jobOrders = [], vendorMaster = [], toas
               </div>
             </div>
 
-            {/* Past receipts */}
+            {}
             {(rec.receipts || []).length > 0 && (
               <div style={{ marginBottom: 16 }}>
                 <div style={{ fontSize: 11, color: "#666", fontWeight: 700, textTransform: "uppercase", marginBottom: 8 }}>Previous Receipts</div>
@@ -472,10 +472,10 @@ export default function Subcontracting({ jobOrders = [], vendorMaster = [], toas
         );
       })()}
 
-      {/* List view */}
+      {}
       {view === "list" && (
         <div style={{ background: "#111", border: "1px solid #2a2a2a", borderRadius: 10, padding: 20 }}>
-          {/* Filters */}
+          {}
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 16, alignItems: "center" }}>
             <input
               value={search}
@@ -580,7 +580,7 @@ export default function Subcontracting({ jobOrders = [], vendorMaster = [], toas
                   </div>
                 </div>
 
-                {/* Progress bar */}
+                {}
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
                   <div style={{ flex: 1, height: 6, background: "#1a1a1a", borderRadius: 3, overflow: "hidden" }}>
                     <div style={{ height: "100%", width: `${Math.min(100, pct)}%`, background: pct >= 100 ? "#22c55e" : pct > 0 ? "#f59e0b" : "#555", borderRadius: 3, transition: "width 0.3s" }} />

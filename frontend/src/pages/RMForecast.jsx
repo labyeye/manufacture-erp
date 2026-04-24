@@ -11,25 +11,25 @@ import { C } from "../constants/colors";
 import { purchaseOrdersAPI } from "../api/auth";
 import moment from "moment";
 
-// ─── Pure helpers ──────────────────────────────────────────────────────────────
 
-/** Normalised key: "kraft|80" from paperType + gsm */
+
+
 const mkey = (type, gsm) =>
   `${(type || "").toLowerCase().replace(/\s+/g, "")}|${Math.round(Number(gsm) || 0)}`;
 
-/**
- * Estimate kg of paper consumed by a job order.
- * paperIdx = 1 (primary) | 2 (secondary / hasSecondPaper)
- */
+
+
+
+
 function estimateJobKg(jo, paperIdx) {
   if (paperIdx === 1) {
     if (Number(jo.reelWeightKg) > 0) return Number(jo.reelWeightKg);
     const sheets = Number(jo.noOfSheets) || 0;
     const gsm    = Number(jo.paperGsm)   || 0;
-    const w      = Number(jo.sheetW)     || 0; // mm
-    const l      = Number(jo.sheetL)     || 0; // mm
+    const w      = Number(jo.sheetW)     || 0; 
+    const l      = Number(jo.sheetL)     || 0; 
     if (sheets && gsm && w && l) {
-      // weight(kg) = sheets × gsm(g/m²) × area(m²) / 1000
+      
       return (sheets * gsm * (w / 1000) * (l / 1000)) / 1000;
     }
   } else if (paperIdx === 2 && jo.hasSecondPaper) {
@@ -44,10 +44,10 @@ function estimateJobKg(jo, paperIdx) {
   return 0;
 }
 
-/**
- * Build { matchKey → { kg30, kg60, kg90, v30, v60, v90 } }
- * from job orders (Scheduled / In Progress / Completed).
- */
+
+
+
+
 function buildVelocityMap(jobOrders) {
   const ACTIVE = new Set(["Scheduled", "In Progress", "Completed"]);
   const cut30  = moment().subtract(30, "days");
@@ -76,7 +76,7 @@ function buildVelocityMap(jobOrders) {
       add(mkey(jo.paperType2, jo.paperGsm2), estimateJobKg(jo, 2), date);
   });
 
-  // Convert cumulative kg → daily velocity
+  
   Object.values(map).forEach((v) => {
     v.v30 = v.kg30 / 30;
     v.v60 = v.kg60 / 60;
@@ -86,7 +86,7 @@ function buildVelocityMap(jobOrders) {
   return map;
 }
 
-// ─── Status config ────────────────────────────────────────────────────────────
+
 const S = {
   critical: { color: "#ef4444", label: "Critical",   bg: "#450a0a99", icon: "🔴" },
   warning:  { color: "#f59e0b", label: "Warning",    bg: "#451a0399", icon: "🟡" },
@@ -99,7 +99,7 @@ const ACCENT = "#ff7800";
 const fmtN = (n, d = 1) => (n == null || isNaN(n) ? "—" : Number(n).toFixed(d));
 const fmtKg = (n) => (n == null || isNaN(n) || n === 0 ? "—" : `${Number(n).toFixed(1)} kg`);
 
-// ─── Draft PO Modal ───────────────────────────────────────────────────────────
+
 function DraftPOModal({ row, vendors, leadDays, bufferDays, toast, onClose, onCreated }) {
   const targetDays = leadDays + bufferDays + 7;
   const defaultQty = row.v30 > 0
@@ -152,7 +152,7 @@ function DraftPOModal({ row, vendors, leadDays, bufferDays, toast, onClose, onCr
 
   return (
     <Modal title={`Draft PO — ${row.name}`} onClose={onClose}>
-      {/* Item summary */}
+      {}
       <div style={{ background: "#111", borderRadius: 8, padding: "12px 16px", marginBottom: 16, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
         {[
           ["Current Stock",   fmtKg(row.currentKg)],
@@ -209,7 +209,7 @@ function DraftPOModal({ row, vendors, leadDays, bufferDays, toast, onClose, onCr
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+
 export default function RMForecast({ rawStock = [], jobOrders = [], vendorMaster = [], toast, refreshData }) {
   const [leadDays,      setLeadDays]     = useState(7);
   const [bufferDays,    setBufferDays]   = useState(5);
@@ -219,7 +219,7 @@ export default function RMForecast({ rawStock = [], jobOrders = [], vendorMaster
   const [sortDir,       setSortDir]      = useState("asc");
   const [draftRow,      setDraftRow]     = useState(null);
 
-  // ── Core computation ──
+  
   const velocityMap = useMemo(() => buildVelocityMap(jobOrders), [jobOrders]);
 
   const rows = useMemo(() => {
@@ -249,7 +249,7 @@ export default function RMForecast({ rawStock = [], jobOrders = [], vendorMaster
       });
   }, [rawStock, velocityMap, leadDays, bufferDays]);
 
-  // ── Summary ──
+  
   const summary = useMemo(() => ({
     total:    rows.length,
     critical: rows.filter(r => r.status === "critical").length,
@@ -258,7 +258,7 @@ export default function RMForecast({ rawStock = [], jobOrders = [], vendorMaster
     dead:     rows.filter(r => r.status === "dead").length,
   }), [rows]);
 
-  // ── Filter + sort ──
+  
   const filtered = useMemo(() => {
     return rows
       .filter(r => {
@@ -272,7 +272,7 @@ export default function RMForecast({ rawStock = [], jobOrders = [], vendorMaster
         return true;
       })
       .sort((a, b) => {
-        // Sort nulls to end regardless of direction
+        
         const av = a[sortKey] ?? (sortDir === "asc" ? Infinity : -Infinity);
         const bv = b[sortKey] ?? (sortDir === "asc" ? Infinity : -Infinity);
         if (av === bv) return 0;
@@ -309,7 +309,7 @@ export default function RMForecast({ rawStock = [], jobOrders = [], vendorMaster
         sub="Consumption velocity from job orders · Days-of-cover · Dead stock detection"
       />
 
-      {/* ── Summary cards ── */}
+      {}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 12, marginBottom: 20 }}>
         {[
           { label: "Items Tracked", value: summary.total,    color: ACCENT       },
@@ -325,7 +325,7 @@ export default function RMForecast({ rawStock = [], jobOrders = [], vendorMaster
         ))}
       </div>
 
-      {/* ── Settings + filters ── */}
+      {}
       <Card style={{ marginBottom: 16, padding: "12px 18px" }}>
         <div style={{ display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center" }}>
           <Input
@@ -335,7 +335,7 @@ export default function RMForecast({ rawStock = [], jobOrders = [], vendorMaster
             style={{ width: 230 }}
           />
 
-          {/* Status pills */}
+          {}
           <div style={{ display: "flex", gap: 5 }}>
             {["all", "critical", "warning", "ok", "dead"].map((s) => {
               const cfg = S[s] || {};
@@ -357,7 +357,7 @@ export default function RMForecast({ rawStock = [], jobOrders = [], vendorMaster
             })}
           </div>
 
-          {/* Lead time / buffer settings */}
+          {}
           <div style={{ display: "flex", gap: 10, alignItems: "center", marginLeft: "auto" }}>
             <span style={{ fontSize: 11, color: C.muted, whiteSpace: "nowrap" }}>Lead time:</span>
             <input
@@ -379,7 +379,7 @@ export default function RMForecast({ rawStock = [], jobOrders = [], vendorMaster
         </div>
       </Card>
 
-      {/* ── Main forecast table ── */}
+      {}
       <Card>
         {filtered.length === 0 ? (
           <div style={{ textAlign: "center", padding: 48, color: C.muted, fontSize: 13 }}>
@@ -417,39 +417,39 @@ export default function RMForecast({ rawStock = [], jobOrders = [], vendorMaster
 
                   return (
                     <tr key={r._id || r.code || i} style={{ borderBottom: `1px solid ${C.border}22`, background: i % 2 === 0 ? "transparent" : "#ffffff03" }}>
-                      {/* Item name */}
+                      {}
                       <td style={{ ...tdL, fontWeight: 700, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         <div>{r.name}</div>
                         {r.code && <div style={{ fontSize: 10, color: C.muted, fontFamily: "monospace" }}>{r.code}</div>}
                       </td>
 
-                      {/* Paper type + GSM */}
+                      {}
                       <td style={tdL}>
                         {r.paperType
                           ? <><span style={{ fontWeight: 600 }}>{r.paperType}</span>{r.gsm ? <span style={{ color: C.muted, fontSize: 11 }}> · {r.gsm} GSM</span> : ""}</>
                           : <span style={{ color: C.muted }}>—</span>}
                       </td>
 
-                      {/* Current stock */}
+                      {}
                       <td style={{ ...tdR, fontWeight: 700, color: r.currentKg > 0 ? "#fff" : C.muted }}>
                         {r.currentKg > 0 ? `${r.currentKg.toLocaleString("en-IN")} kg` : "—"}
                       </td>
 
-                      {/* Velocity cols */}
+                      {}
                       {[r.v30, r.v60, r.v90].map((v, vi) => (
                         <td key={vi} style={{ ...tdR, color: v > 0 ? C.text : C.muted }}>
                           {v > 0 ? fmtN(v) : "—"}
                         </td>
                       ))}
 
-                      {/* Days of cover */}
+                      {}
                       <td style={{ ...tdR, fontWeight: 700, color: coverColor }}>
                         {r.daysOfCover != null
                           ? <>{fmtN(r.daysOfCover)} <span style={{ fontWeight: 400, fontSize: 10, color: C.muted }}>days</span></>
                           : <span style={{ color: C.muted }}>—</span>}
                       </td>
 
-                      {/* Status badge */}
+                      {}
                       <td style={{ padding: "10px 12px", textAlign: "center" }}>
                         <span style={{
                           background: sc.bg, color: sc.color,
@@ -461,12 +461,12 @@ export default function RMForecast({ rawStock = [], jobOrders = [], vendorMaster
                         </span>
                       </td>
 
-                      {/* Suggested order */}
+                      {}
                       <td style={{ ...tdR, color: r.suggestedKg > 0 ? "#f59e0b" : C.muted, fontWeight: r.suggestedKg > 0 ? 700 : 400 }}>
                         {r.suggestedKg > 0 ? `${fmtN(r.suggestedKg, 0)} kg` : "—"}
                       </td>
 
-                      {/* Action */}
+                      {}
                       <td style={{ padding: "10px 12px", textAlign: "center" }}>
                         {isActionable && r.suggestedKg > 0 ? (
                           <button
@@ -494,7 +494,7 @@ export default function RMForecast({ rawStock = [], jobOrders = [], vendorMaster
         )}
       </Card>
 
-      {/* ── Dead stock callout ── */}
+      {}
       {summary.dead > 0 && (statusFilter === "all" || statusFilter === "dead") && (
         <div style={{ marginTop: 16, padding: "14px 18px", background: "#1e1b4b44", border: "1px solid #818cf844", borderRadius: 10 }}>
           <div style={{ fontWeight: 700, color: "#818cf8", marginBottom: 6, fontSize: 13 }}>
@@ -510,7 +510,7 @@ export default function RMForecast({ rawStock = [], jobOrders = [], vendorMaster
         </div>
       )}
 
-      {/* ── Methodology note ── */}
+      {}
       <div style={{ marginTop: 10, padding: "10px 16px", background: "#0d0d0d", borderRadius: 8, border: `1px solid ${C.border}22`, fontSize: 11, color: "#444" }}>
         <b style={{ color: "#555" }}>How velocity is computed:</b>{" "}
         Matches RM stock to Job Orders by <b>Paper Type + GSM</b>. Weight per job =
@@ -521,7 +521,7 @@ export default function RMForecast({ rawStock = [], jobOrders = [], vendorMaster
         Suggested order covers lead time + buffer + 7-day safety stock.
       </div>
 
-      {/* ── Draft PO Modal ── */}
+      {}
       {draftRow && (
         <DraftPOModal
           row={draftRow}

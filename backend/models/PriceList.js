@@ -17,7 +17,7 @@ const priceListSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
-    // Selling price fields
+    
     companyId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "CompanyMaster",
@@ -26,7 +26,7 @@ const priceListSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
-    // Purchase price fields
+    
     vendorId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "VendorMaster",
@@ -53,7 +53,7 @@ const priceListSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
-    // Purchase-only fields
+    
     moq: {
       type: Number,
       default: 1,
@@ -75,7 +75,7 @@ const priceListSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Compound index — one active price per SKU+company or SKU+vendor
+
 priceListSchema.index({ listType: 1, itemCode: 1, companyId: 1 });
 priceListSchema.index({ listType: 1, itemCode: 1, vendorId: 1 });
 

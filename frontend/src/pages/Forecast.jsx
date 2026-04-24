@@ -23,7 +23,7 @@ export default function Forecast({
 
   return (
     <div className="fade">
-      {/* ── Sub-tab bar ── */}
+      {}
       <div
         style={{
           display: "flex",
@@ -62,7 +62,7 @@ export default function Forecast({
         })}
       </div>
 
-      {/* ── Tab content ── */}
+      {}
       {activeTab === "demand" && (
         <DemandForecast
           salesOrders={salesOrders}

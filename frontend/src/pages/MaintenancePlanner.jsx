@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { C } from "../constants/colors";
 import { machineMaintenanceAPI } from "../api/auth";
 
-/* ─── helpers ─────────────────────────────────────────────── */
+
 const today = () => new Date().toISOString().slice(0, 10);
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("en-GB") : "—");
@@ -13,8 +13,8 @@ const addDays = (dateStr, n) => {
 };
 const daysDiff = (a, b) => Math.round((new Date(a) - new Date(b)) / 86400000);
 
-const LS_INTERVALS = "pm_intervals";   // { machineId: { intervalDays, lastPMDate, notes } }
-const LS_PARTS     = "spare_parts";    // spare parts inventory
+const LS_INTERVALS = "pm_intervals";   
+const LS_PARTS     = "spare_parts";    
 
 const load = (k) => { try { return JSON.parse(localStorage.getItem(k) || "{}"); } catch { return {}; } };
 const loadArr = (k) => { try { return JSON.parse(localStorage.getItem(k) || "[]"); } catch { return []; } };
@@ -44,7 +44,7 @@ const TABS = [
   { id: "parts", icon: "🔩", label: "Spare Parts" },
 ];
 
-/* ═══════════════════════════════════════════════════════════ */
+
 export default function MaintenancePlanner({ machineMaster = [], toast }) {
   const [tab, setTab] = useState("pm");
 
@@ -72,9 +72,9 @@ export default function MaintenancePlanner({ machineMaster = [], toast }) {
   );
 }
 
-/* ═══════════════════════════════════════════════════════════
-   PM SCHEDULER
-═══════════════════════════════════════════════════════════ */
+
+
+
 function PMSchedulerTab({ machineMaster, toast }) {
   const [intervals, setIntervals] = useState(load(LS_INTERVALS));
   const [pmRecords, setPMRecords]  = useState([]);
@@ -103,13 +103,13 @@ function PMSchedulerTab({ machineMaster, toast }) {
     setEditMachineId(null);
   };
 
-  // Compute next PM dates and overdue status
+  
   const schedule = useMemo(() => {
     return machines.map((m) => {
       const mid = m._id || m.id;
       const cfg = intervals[mid];
 
-      // Find last PM from maintenance records
+      
       const machineRecords = pmRecords.filter((r) => {
         const rId = r.machineId?._id || r.machineId;
         return rId === mid || r.machineId?.name === m.name;
@@ -154,7 +154,7 @@ function PMSchedulerTab({ machineMaster, toast }) {
         technician: "",
       });
       toast?.(`PM work order created for ${s.machine.name}`, "success");
-      // Refresh
+      
       const res = await machineMaintenanceAPI.getAll();
       setPMRecords(Array.isArray(res) ? res : res?.records || []);
     } catch {
@@ -177,7 +177,7 @@ function PMSchedulerTab({ machineMaster, toast }) {
         </div>
       </div>
 
-      {/* Edit interval panel */}
+      {}
       {editMachineId && (() => {
         const m = machines.find((x) => (x._id || x.id) === editMachineId);
         return (
@@ -207,7 +207,7 @@ function PMSchedulerTab({ machineMaster, toast }) {
         );
       })()}
 
-      {/* PM table */}
+      {}
       <div style={{ overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
@@ -285,9 +285,9 @@ function PMSchedulerTab({ machineMaster, toast }) {
   );
 }
 
-/* ═══════════════════════════════════════════════════════════
-   SPARE PARTS
-═══════════════════════════════════════════════════════════ */
+
+
+
 function SparePartsTab({ machineMaster, toast }) {
   const [parts, setParts] = useState(loadArr(LS_PARTS));
   const [view, setView]   = useState("list");
@@ -474,7 +474,7 @@ function SparePartsTab({ machineMaster, toast }) {
               </tbody>
             </table>
           </div>
-          {/* Inventory value */}
+          {}
           {parts.length > 0 && (
             <div style={{ marginTop: 12, fontSize: 12, color: "#888", textAlign: "right" }}>
               Total inventory value: <strong style={{ color: "#e0e0e0" }}>

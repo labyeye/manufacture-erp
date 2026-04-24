@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { C } from "../constants/colors";
 
-/* ─── helpers ─────────────────────────────────────────────── */
+
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—");
 const fmtN = (n) => (n ?? 0).toLocaleString("en-IN");
 const yesterday = () => { const d = new Date(); d.setDate(d.getDate() - 1); return d.toISOString().slice(0, 10); };
@@ -22,7 +22,7 @@ const TABS = [
   { id: "whatsapp", icon: "💬", label: "WhatsApp" },
 ];
 
-/* ═══════════════════════════════════════════════════════════ */
+
 export default function NotificationHub({
   salesOrders = [],
   jobOrders = [],
@@ -66,9 +66,9 @@ export default function NotificationHub({
   );
 }
 
-/* ═══════════════════════════════════════════════════════════
-   EXECUTIVE EMAIL
-═══════════════════════════════════════════════════════════ */
+
+
+
 function EmailTab({ salesOrders, jobOrders, dispatches, purchaseOrders, consumableStock, allEntries, activeMachines, toast }) {
   const [recipientEmail, setRecipientEmail] = useState(loadSettings().execEmail || "");
   const [ownerName, setOwnerName]           = useState(loadSettings().ownerName || "");
@@ -78,7 +78,7 @@ function EmailTab({ salesOrders, jobOrders, dispatches, purchaseOrders, consumab
   const todayStr = new Date().toISOString().slice(0, 10);
 
   const digest = useMemo(() => {
-    // Yesterday's production
+    
     const yesterdayEntries = (allEntries || []).filter((e) => {
       const d = e.date?.slice(0, 10) || e.enteredAt?.slice(0, 10);
       return d === yest;
@@ -87,37 +87,37 @@ function EmailTab({ salesOrders, jobOrders, dispatches, purchaseOrders, consumab
     const uniqueJOsRan = new Set(yesterdayEntries.map((e) => e.joNo)).size;
     const machinesRan  = new Set(yesterdayEntries.map((e) => e.machineId)).size;
 
-    // Today's dispatch plan
+    
     const todayDispatches = (dispatches || []).filter((d) => {
       const dd = d.dispatchDate || d.date || "";
       return dd.slice(0, 10) === todayStr;
     });
     const dispatchQty = todayDispatches.reduce((s, d) => s + (d.qty || d.quantity || 0), 0);
 
-    // Open SOs due this week
+    
     const oneWeek = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
     const dueThisWeek = (salesOrders || []).filter((so) => {
       const dd = so.deliveryDate?.slice(0, 10);
       return dd && dd >= todayStr && dd <= oneWeek && !["Completed", "Cancelled"].includes(so.status);
     });
 
-    // Overdue SOs
+    
     const overdue = (salesOrders || []).filter((so) => {
       const dd = so.deliveryDate?.slice(0, 10);
       return dd && dd < todayStr && !["Completed", "Cancelled", "Dispatched"].includes(so.status);
     });
 
-    // Active JOs in production
+    
     const activeJOs = (jobOrders || []).filter((j) => j.status === "In Progress" || j.status === "Open" || j.status === "Pending");
 
-    // Low stock
+    
     const lowStock = (consumableStock || []).filter((c) => Number(c.qty || 0) <= Number(c.reorderLevel || 0));
 
-    // Machine status
+    
     const totalMachines = (activeMachines || []).length;
     const runningToday  = new Set((allEntries || []).filter((e) => e.date?.slice(0, 10) === yest).map((e) => e.machineId)).size;
 
-    // Pending POs
+    
     const pendingPOs = (purchaseOrders || []).filter((p) => !["Received", "Closed"].includes(p.status || "")).length;
 
     return { totalYestProduction, uniqueJOsRan, machinesRan, todayDispatches, dispatchQty, dueThisWeek, overdue, activeJOs, lowStock, totalMachines, runningToday, pendingPOs };
@@ -193,7 +193,7 @@ To configure: go to Notification Hub in your ERP.
         Daily factory digest — production, dispatch, alerts. Set up your email client to send at 8am.
       </div>
 
-      {/* Config */}
+      {}
       <div style={{ background: "#111", border: "1px solid #2a2a2a", borderRadius: 10, padding: 20, marginBottom: 20 }}>
         <div style={{ fontWeight: 700, color: "#facc15", marginBottom: 14, fontSize: 13 }}>Configuration</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginBottom: 14 }}>
@@ -224,7 +224,7 @@ To configure: go to Notification Hub in your ERP.
         )}
       </div>
 
-      {/* Email preview */}
+      {}
       <div style={{ background: "#0a0a0a", border: "1px solid #2a2a2a", borderRadius: 10, padding: 24 }}>
         <div style={{ fontWeight: 700, color: "#888", marginBottom: 14, fontSize: 12, textTransform: "uppercase" }}>Email Preview</div>
         <pre style={{ fontFamily: "monospace", fontSize: 12, color: "#d1d5db", lineHeight: 1.7, margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
@@ -235,9 +235,9 @@ To configure: go to Notification Hub in your ERP.
   );
 }
 
-/* ═══════════════════════════════════════════════════════════
-   WHATSAPP
-═══════════════════════════════════════════════════════════ */
+
+
+
 function WhatsAppTab({ salesOrders, dispatches, purchaseOrders, toast }) {
   const [settings, setSettings] = useState(loadSettings);
   const [activeTemplate, setActiveTemplate] = useState("dispatch");
@@ -352,7 +352,7 @@ Have a productive day!
         Generate ready-to-send WhatsApp messages. Opens WhatsApp Web with pre-filled text — no API required.
       </div>
 
-      {/* Settings */}
+      {}
       <div style={{ background: "#111", border: "1px solid #2a2a2a", borderRadius: 10, padding: 20, marginBottom: 20 }}>
         <div style={{ fontWeight: 700, color: "#facc15", marginBottom: 14, fontSize: 13 }}>Company Settings</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginBottom: 10 }}>
@@ -367,7 +367,7 @@ Have a productive day!
         </div>
       </div>
 
-      {/* Template selector */}
+      {}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginBottom: 20 }}>
         {TEMPLATES.map((t) => (
           <button key={t.id} onClick={() => { setActiveTemplate(t.id); setPreviewMsg(""); }}
@@ -379,7 +379,7 @@ Have a productive day!
         ))}
       </div>
 
-      {/* Template inputs */}
+      {}
       <div style={{ background: "#111", border: "1px solid #2a2a2a", borderRadius: 10, padding: 20, marginBottom: 16 }}>
         {activeTemplate === "dispatch" && (
           <div>
@@ -444,7 +444,7 @@ Have a productive day!
           </div>
         )}
 
-        {/* Preview and send */}
+        {}
         {previewMsg && (
           <div style={{ marginTop: 10 }}>
             <div style={{ fontSize: 11, color: "#888", fontWeight: 700, textTransform: "uppercase", marginBottom: 8 }}>Message Preview</div>

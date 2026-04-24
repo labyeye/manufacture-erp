@@ -725,7 +725,7 @@ export default function MachineMaster({ toast }) {
             </div>
           </div>
 
-          {/* Changeover Rules */}
+          {}
           <div style={{ gridColumn: "1 / -1", marginTop: 24 }}>
             <div style={{ borderBottom: "1px solid #2a2a2a", paddingBottom: 10, marginBottom: 16 }}>
               <span style={{ fontSize: 12, fontWeight: 800, color: "#FF9800" }}>CHANGEOVER RULES</span>
@@ -734,7 +734,7 @@ export default function MachineMaster({ toast }) {
               </span>
             </div>
 
-            {/* Existing rules */}
+            {}
             {changeoverRules.length > 0 && (
               <div style={{ marginBottom: 12 }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
@@ -768,7 +768,7 @@ export default function MachineMaster({ toast }) {
               </div>
             )}
 
-            {/* Add new rule */}
+            {}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 100px auto", gap: 8, alignItems: "end" }}>
               <div>
                 <label style={{ ...labelStyle, marginBottom: 4 }}>From</label>

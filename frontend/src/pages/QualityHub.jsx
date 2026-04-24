@@ -1,14 +1,14 @@
 import React, { useState, useMemo } from "react";
 import { C } from "../constants/colors";
 
-/* ─── helpers ─────────────────────────────────────────────── */
+
 const today = () => new Date().toISOString().slice(0, 10);
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("en-GB") : "—");
 const pct = (n, d) => (d > 0 ? Math.round((n / d) * 100) : null);
 
 const LS_FAI = "fai_records";
-const LS_VQ  = "vendor_quality_manual"; // manual responsiveness scores
+const LS_VQ  = "vendor_quality_manual"; 
 
 const load = (key) => { try { return JSON.parse(localStorage.getItem(key) || "[]"); } catch { return []; } };
 const save = (key, v) => localStorage.setItem(key, JSON.stringify(v));
@@ -46,9 +46,9 @@ const MEASUREMENT_DEFAULTS = [
   { key: "Print Score", value: "" },
 ];
 
-/* ═══════════════════════════════════════════════════════════
-   MAIN COMPONENT
-═══════════════════════════════════════════════════════════ */
+
+
+
 export default function QualityHub({
   jobOrders = [],
   purchaseOrders = [],
@@ -60,7 +60,7 @@ export default function QualityHub({
 
   return (
     <div className="fade">
-      {/* Tab bar */}
+      {}
       <div style={{ display: "flex", gap: 4, marginBottom: 24, borderBottom: "1px solid #2a2a2a", paddingBottom: 0 }}>
         {TABS.map((t) => {
           const active = tab === t.id;
@@ -92,12 +92,12 @@ export default function QualityHub({
   );
 }
 
-/* ═══════════════════════════════════════════════════════════
-   FAI TAB
-═══════════════════════════════════════════════════════════ */
+
+
+
 function FAITab({ jobOrders, toast }) {
   const [records, setRecords] = useState(load(LS_FAI));
-  const [view, setView]       = useState("list"); // list | form
+  const [view, setView]       = useState("list"); 
   const [editId, setEditId]   = useState(null);
   const [filterStatus, setFilterStatus] = useState("All");
 
@@ -117,7 +117,7 @@ function FAITab({ jobOrders, toast }) {
     [jobOrders]
   );
 
-  // Check if a JO has an approved FAI
+  
   const joFAIStatus = useMemo(() => {
     const map = {};
     records.forEach((r) => {
@@ -160,7 +160,7 @@ function FAITab({ jobOrders, toast }) {
 
   return (
     <div>
-      {/* Header */}
+      {}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18, flexWrap: "wrap", gap: 10 }}>
         <div>
           <div style={{ fontSize: 17, fontWeight: 800 }}>First Article Inspection</div>
@@ -176,7 +176,7 @@ function FAITab({ jobOrders, toast }) {
         </button>
       </div>
 
-      {/* Summary pills */}
+      {}
       <div style={{ display: "flex", gap: 10, marginBottom: 18, flexWrap: "wrap" }}>
         {Object.entries(FAI_STATUS).map(([s, { color }]) => {
           const n = records.filter((r) => r.status === s).length;
@@ -193,7 +193,7 @@ function FAITab({ jobOrders, toast }) {
         )}
       </div>
 
-      {/* Form */}
+      {}
       {view === "form" && (
         <div style={{ ...card("#3b82f6"), marginBottom: 20 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: "#facc15", marginBottom: 20 }}>
@@ -236,7 +236,7 @@ function FAITab({ jobOrders, toast }) {
             </div>
           </div>
 
-          {/* Measurements */}
+          {}
           <div style={{ marginBottom: 16 }}>
             <label style={{ ...lbl, marginBottom: 10 }}>Measurements</label>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10 }}>
@@ -286,7 +286,7 @@ function FAITab({ jobOrders, toast }) {
             </div>
           </div>
 
-          {/* Photo upload */}
+          {}
           <div style={{ marginBottom: 20 }}>
             <label style={lbl}>Sample Photo</label>
             <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
@@ -311,7 +311,7 @@ function FAITab({ jobOrders, toast }) {
         </div>
       )}
 
-      {/* List */}
+      {}
       {view === "list" && (
         <div style={{ ...card(), background: "#111" }}>
           {filteredRecords.length === 0 && (
@@ -346,7 +346,7 @@ function FAITab({ jobOrders, toast }) {
                       style={{ padding: "4px 10px", border: "1px solid #ef444433", background: "transparent", color: "#ef4444", borderRadius: 4, fontSize: 11, cursor: "pointer" }}>🗑</button>
                   </div>
                 </div>
-                {/* Measurements row */}
+                {}
                 {r.measurements?.filter((m) => m.key && m.value).length > 0 && (
                   <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                     {r.measurements.filter((m) => m.key && m.value).map((m, i) => (
@@ -368,7 +368,7 @@ function FAITab({ jobOrders, toast }) {
         </div>
       )}
 
-      {/* Gate warning on active JOs */}
+      {}
       {view === "list" && (
         <div style={{ marginTop: 16, ...card("#f59e0b"), borderColor: "#f59e0b33" }}>
           <div style={{ fontWeight: 700, fontSize: 12, color: "#f59e0b", marginBottom: 10 }}>
@@ -394,9 +394,9 @@ function FAITab({ jobOrders, toast }) {
   );
 }
 
-/* ═══════════════════════════════════════════════════════════
-   SUPPLIER SCORECARD TAB
-═══════════════════════════════════════════════════════════ */
+
+
+
 function SupplierTab({ purchaseOrders, inward, vendorMaster, toast }) {
   const [manualScores, setManualScores] = useState(() => load(LS_VQ));
   const [editVendor, setEditVendor] = useState(null);
@@ -406,7 +406,7 @@ function SupplierTab({ purchaseOrders, inward, vendorMaster, toast }) {
     typeof po.vendor === "object" ? po.vendor?.name : po.vendor || po.vendorName || "";
 
   const scores = useMemo(() => {
-    // Group POs by vendor
+    
     const vendorPOs = {};
     (purchaseOrders || []).forEach((po) => {
       const v = getVendorName(po);
@@ -415,7 +415,7 @@ function SupplierTab({ purchaseOrders, inward, vendorMaster, toast }) {
       vendorPOs[v].push(po);
     });
 
-    // Map inward by poNo for GRN date lookup
+    
     const inwardByPO = {};
     (inward || []).forEach((g) => {
       const po = g.poNo || g.poRef;
@@ -440,7 +440,7 @@ function SupplierTab({ purchaseOrders, inward, vendorMaster, toast }) {
       const deliveredPOs = onTimeCount + lateCount;
       const onTimePct = deliveredPOs > 0 ? Math.round((onTimeCount / deliveredPOs) * 100) : null;
 
-      // Price competitiveness: avg unit price across PO items
+      
       const allItems = pos.flatMap((po) => po.items || []);
       const avgPrice = allItems.length
         ? allItems.reduce((s, it) => {
@@ -453,11 +453,11 @@ function SupplierTab({ purchaseOrders, inward, vendorMaster, toast }) {
       const manual = manualScores.find((m) => m.vendor === vendor);
       const responsiveness = manual?.responsiveness != null ? Number(manual.responsiveness) : null;
 
-      // Composite score (0–100)
+      
       let score = 0, components = 0;
       if (onTimePct != null) { score += onTimePct * 0.4; components++; }
       if (responsiveness != null) { score += responsiveness * 0.3; components++; }
-      // Quality: placeholder (no rejection data in inward schema)
+      
       const rawScore = components > 0 ? score / (components * 0.7) : null;
       const composite = rawScore != null ? Math.min(100, Math.round(rawScore)) : null;
 
@@ -492,7 +492,7 @@ function SupplierTab({ purchaseOrders, inward, vendorMaster, toast }) {
         Computed from {purchaseOrders?.length || 0} POs · {inward?.length || 0} GRNs · Click a vendor to enter responsiveness score
       </div>
 
-      {/* Grade summary */}
+      {}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 20 }}>
         {["A", "B", "C"].map((g) => {
           const count = scores.filter((s) => s.grade === g).length;
@@ -508,7 +508,7 @@ function SupplierTab({ purchaseOrders, inward, vendorMaster, toast }) {
         })}
       </div>
 
-      {/* Edit responsiveness modal */}
+      {}
       {editVendor && (
         <div style={{ ...card("#8b5cf6"), marginBottom: 16 }}>
           <div style={{ fontWeight: 700, color: "#a78bfa", marginBottom: 12 }}>
@@ -529,7 +529,7 @@ function SupplierTab({ purchaseOrders, inward, vendorMaster, toast }) {
         </div>
       )}
 
-      {/* Scorecard table */}
+      {}
       <div style={{ overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
