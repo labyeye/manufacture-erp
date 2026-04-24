@@ -45,11 +45,11 @@ const machineMasterSchema = new mongoose.Schema(
     },
     shiftStartTime: {
       type: String,
-      default: "08:00",
+      default: "09:00",
     },
     shiftEndTime: {
       type: String,
-      default: "16:00",
+      default: "17:30",
     },
     maxShiftsAllowed: {
       type: Number,
@@ -63,7 +63,7 @@ const machineMasterSchema = new mongoose.Schema(
     },
     maxOvertimeHours: {
       type: Number,
-      default: 4.0,
+      default: 3.0,
     },
     secondShiftLeadTime: {
       type: Number,

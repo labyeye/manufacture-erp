@@ -4,6 +4,17 @@ const ProductionCalendar = require("../models/ProductionCalendar");
 const CompanyMaster = require("../models/CompanyMaster");
 const moment = require("moment");
 
+// Shifts: Morning 09:00–17:30 (8 hrs effective), OT 17:30–20:30 (3 hrs), Night 17:30–01:30 (8 hrs)
+// OT and Night both start at shiftEndTime; when both are used Night starts after OT.
+
+const addHoursToTime = (baseTime, hours) => {
+  const [bh, bm] = baseTime.split(":").map(Number);
+  const totalMins = bh * 60 + bm + Math.round(hours * 60);
+  const h = Math.floor(totalMins / 60) % 24;
+  const m = totalMins % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+};
+
 const generateProductionCalendar = async (req, res) => {
   try {
     const horizonDays = parseInt(req.query.days) || 14;
@@ -44,14 +55,16 @@ const generateProductionCalendar = async (req, res) => {
 
     const machineState = {};
     machines.forEach((m) => {
-      const shiftHrs = m.standardShiftHours || 8;
+      const shiftHrs = m.standardShiftHours || 8;          // Morning: 09:00–17:30 (8 effective hrs)
+      const otHours = m.overtimeAllowed ? (m.maxOvertimeHours || 3) : 0; // OT: 17:30–20:30
       const numShifts = m.maxShiftsAllowed || 1;
+      const nightShiftHours = numShifts >= 2 ? shiftHrs : 0; // Night: 17:30–01:30 (8 hrs)
       const efficiency = m.efficiencyFactor || 0.85;
       const runRate = m.practicalRunRate || 1000;
-      
+
       const effectiveRunRate = runRate * efficiency;
-      const dailyCap = effectiveRunRate * shiftHrs * numShifts;
-      const dailyCapHours = shiftHrs * numShifts;
+      // Total daily capacity: Morning + OT + Night
+      const dailyCapHours = shiftHrs + otHours + nightShiftHours;
 
       const workingDays = m.workingDays?.length
         ? m.workingDays
@@ -60,12 +73,13 @@ const generateProductionCalendar = async (req, res) => {
 
       machineState[m._id.toString()] = {
         machine: m,
-        dailyCap,
         dailyCapHours,
         setupTime: m.setupTimeDefault !== undefined ? m.setupTimeDefault : 0.5,
         workingDays,
         weeklyOff,
         shiftHrs,
+        otHours,
+        nightShiftHours,
         effectiveRunRate,
         dailyUsedHours: {},
       };
@@ -131,6 +145,30 @@ const generateProductionCalendar = async (req, res) => {
         let blocks = [];
         let safety = 0;
 
+        // Shift tiers in order: Morning → OT → Night
+        // Each tier is defined as [startHrOffset, endHrOffset] from shiftStart (09:00)
+        // When OT and Night are both used, Night starts after OT ends (not at 17:30)
+        const shiftTiers = [
+          {
+            shift: "Morning",
+            start: 0,
+            end: state.shiftHrs,
+            isOT: false,
+          },
+          {
+            shift: "OT",
+            start: state.shiftHrs,
+            end: state.shiftHrs + state.otHours,
+            isOT: true,
+          },
+          {
+            shift: "Night",
+            start: state.shiftHrs + state.otHours,
+            end: state.shiftHrs + state.otHours + state.nightShiftHours,
+            isOT: true,
+          },
+        ];
+
         while (remaining > 0 && safety++ < 300) {
           const dateStr = currentDate.format("YYYY-MM-DD");
           const dayName = currentDate.format("dddd");
@@ -139,81 +177,98 @@ const generateProductionCalendar = async (req, res) => {
             state.workingDays.includes(dayName) &&
             !state.weeklyOff.includes(dayName)
           ) {
-            const usedHoursToday = state.dailyUsedHours[dateStr] || 0;
-            const availableHoursToday = state.dailyCapHours - usedHoursToday;
-            const setupTime = state.setupTime;
+            const machineShiftStart =
+              selectedMachine.shiftStartTime || "09:00";
 
-            if (availableHoursToday > setupTime) {
-              const runRate = state.effectiveRunRate;
-              if (runRate > 0) {
-                const availableWorkHours = availableHoursToday - setupTime;
-                const qtyPossible = Math.floor(availableWorkHours * runRate);
-                
-                if (qtyPossible <= 0) {
-                   // Not enough time left for even 1 unit after setup
-                   currentDate.add(1, "days");
-                   continue;
-                }
+            const deliveryFeasible = (() => {
+              const dueDate = moment(job.internalDueDate || job.deliveryDate);
+              if (!dueDate.isValid()) return "GREEN";
+              const daysToDeadline = dueDate.diff(currentDate, "days");
+              return daysToDeadline > 2
+                ? "GREEN"
+                : daysToDeadline >= 0
+                  ? "ORANGE"
+                  : "RED";
+            })();
 
-                const qtyToSchedule = Math.min(remaining, qtyPossible);
+            for (const tier of shiftTiers) {
+              if (remaining <= 0) break;
 
-                let deliveryFeasible = "GREEN";
-                const dueDate = moment(job.internalDueDate || job.deliveryDate);
-                if (dueDate.isValid()) {
-                  const daysToDeadline = dueDate.diff(currentDate, "days");
-                  deliveryFeasible =
-                    daysToDeadline > 2
-                      ? "GREEN"
-                      : daysToDeadline >= 0
-                        ? "ORANGE"
-                        : "RED";
-                }
+              const tierCapacity = tier.end - tier.start;
+              if (tierCapacity <= 0) continue; // tier not enabled on this machine
 
-                const actualWorkHours = qtyToSchedule / runRate;
-                const totalHoursToBook = actualWorkHours + setupTime;
-                
-                // Final safety check to avoid exceeding dailyCapHours due to float precision
-                const finalHours = Math.min(totalHoursToBook, availableHoursToday);
-                const scheduledHours = finalHours;
+              const currentUsed = state.dailyUsedHours[dateStr] || 0;
+              if (currentUsed >= tier.end) continue; // already consumed past this tier
 
-                const startMoment = currentDate
-                  .clone()
-                  .set({
-                    hour: parseInt(
-                      (selectedMachine.shiftStartTime || "08:00").split(":")[0],
-                    ),
-                    minute: 0,
-                  })
-                  .add(usedHoursToday, "hours");
-                const endMoment = startMoment
-                  .clone()
-                  .add(scheduledHours, "hours");
+              const usedInTier = Math.max(0, currentUsed - tier.start);
+              const availableInTier = tierCapacity - usedInTier;
 
-                blocks.push({
-                  machineId: selectedMachine._id,
-                  date: currentDate.toDate(),
-                  shift: usedHoursToday + scheduledHours > state.shiftHrs ? "Night" : "Day",
-                  startTime: startMoment.format("HH:mm"),
-                  endTime: endMoment.format("HH:mm"),
-                  jobOrderId: job._id,
-                  jobCardNo: job.joNo,
-                  process: processType,
-                  scheduledHours: scheduledHours,
-                  scheduledQty: qtyToSchedule,
-                  dailyTarget: Math.round(qtyToSchedule),
-                  isOvertime: usedHoursToday + scheduledHours > state.shiftHrs,
-                  overtimeNeeded: usedHoursToday + scheduledHours > state.shiftHrs,
-                  overtimeHours: Math.max(0, (usedHoursToday + scheduledHours) - state.shiftHrs),
-                  deliveryFeasible,
-                  status: "Scheduled",
-                  plannedStart: startMoment.toDate(),
-                  plannedEnd: endMoment.toDate(),
-                });
+              // Setup time only at the very start of the Morning shift
+              const effectiveSetup =
+                tier.shift === "Morning" && usedInTier === 0
+                  ? state.setupTime
+                  : 0;
 
-                state.dailyUsedHours[dateStr] =
-                  usedHoursToday + scheduledHours;
-                remaining -= qtyToSchedule;
-              }
+              if (
+                availableInTier <= effectiveSetup ||
+                state.effectiveRunRate <= 0
+              )
+                continue;
+
+              const workHrs = availableInTier - effectiveSetup;
+              const qtyPossible = Math.floor(workHrs * state.effectiveRunRate);
+              if (qtyPossible <= 0) continue;
+
+              const qtyToSchedule = Math.min(remaining, qtyPossible);
+              const actualWorkHrs = qtyToSchedule / state.effectiveRunRate;
+              const scheduledHrs = actualWorkHrs + effectiveSetup;
+
+              // Wall clock times: offset from shiftStartTime (09:00)
+              const blockStartOffset = Math.max(currentUsed, tier.start);
+              const startTime = addHoursToTime(
+                machineShiftStart,
+                blockStartOffset,
+              );
+              const endTime = addHoursToTime(
+                machineShiftStart,
+                blockStartOffset + scheduledHrs,
+              );
+
+              const startMoment = currentDate.clone().set({
+                hour: parseInt(startTime.split(":")[0]),
+                minute: parseInt(startTime.split(":")[1]),
+              });
+              const endMoment = currentDate.clone().set({
+                hour: parseInt(endTime.split(":")[0]),
+                minute: parseInt(endTime.split(":")[1]),
+              });
+
+              blocks.push({
+                machineId: selectedMachine._id,
+                date: currentDate.toDate(),
+                shift: tier.shift,
+                startTime,
+                endTime,
+                jobOrderId: job._id,
+                jobCardNo: job.joNo,
+                process: processType,
+                scheduledHours: scheduledHrs,
+                setupTime: effectiveSetup,
+                runTime: scheduledHrs - effectiveSetup,
+                scheduledQty: qtyToSchedule,
+                dailyTarget: Math.round(qtyToSchedule),
+                isOvertime: tier.isOT,
+                overtimeNeeded: tier.isOT,
+                overtimeHours: tier.isOT ? scheduledHrs : 0,
+                deliveryFeasible,
+                status: tier.isOT ? "Pending Approval" : "Scheduled",
+                plannedStart: startMoment.toDate(),
+                plannedEnd: endMoment.toDate(),
+              });
+
+              state.dailyUsedHours[dateStr] =
+                (state.dailyUsedHours[dateStr] || 0) + scheduledHrs;
+              remaining -= qtyToSchedule;
             }
           }
 
@@ -261,7 +316,7 @@ const getProductionCalendar = async (req, res) => {
     }
 
     const calendar = await ProductionCalendar.find(query)
-      .populate("machineId", "name type")
+      .populate("machineId", "name type setupTimeDefault practicalRunRate efficiencyFactor standardShiftHours")
       .populate("jobOrderId", "joNo itemName companyName")
       .sort({ date: 1, startTime: 1 });
 
@@ -317,14 +372,18 @@ const planJob = async (req, res) => {
       const machine = machineMap[machineId.toString()];
       if (!machine || !machine.practicalRunRate) continue;
 
-      const shiftHrs = machine.standardShiftHours || 8;
+      const shiftHrs = machine.standardShiftHours || 8;   // Morning: 8 effective hrs
+      const otCapHours = machine.overtimeAllowed ? (machine.maxOvertimeHours || 3) : 0; // OT: 3 hrs
       const numShifts = machine.maxShiftsAllowed || 1;
-      const dailyCapHours = shiftHrs * numShifts;
+      const nightShiftHours = numShifts >= 2 ? shiftHrs : 0; // Night: 8 hrs
+
+      const machineShiftStart = machine.shiftStartTime || "09:00";
+      const machineShiftEnd = machine.shiftEndTime || "17:30";
+
       const setupTime =
         machine.setupTimeDefault !== undefined ? machine.setupTimeDefault : 0.5;
-
-      const maxOTHours = machine.maxOvertimeHours || 4;
-      const otCapHours = machine.overtimeAllowed ? maxOTHours : 0;
+      const runRate =
+        (machine.practicalRunRate || 1000) * (machine.efficiencyFactor || 0.85);
 
       const workingDays = machine.workingDays?.length
         ? machine.workingDays
@@ -333,19 +392,20 @@ const planJob = async (req, res) => {
         ? machine.weeklyOff
         : ["Sunday"];
 
-      // Get existing usage for these machines to avoid overbooking during manual planning
+      // Get existing usage for these machines to avoid overbooking
       const existingEntries = await ProductionCalendar.find({
         machineId: { $in: machineIds },
         date: { $gte: processStart.toDate() },
-        jobOrderId: { $ne: jobOrderId }
+        jobOrderId: { $ne: jobOrderId },
       });
 
       const machineUsage = {};
-      existingEntries.forEach(e => {
+      existingEntries.forEach((e) => {
         const d = moment(e.date).format("YYYY-MM-DD");
         const mId = e.machineId.toString();
         if (!machineUsage[mId]) machineUsage[mId] = {};
-        machineUsage[mId][d] = (machineUsage[mId][d] || 0) + (e.scheduledHours || 0);
+        machineUsage[mId][d] =
+          (machineUsage[mId][d] || 0) + (e.scheduledHours || 0);
       });
 
       let remaining = job.orderQty;
@@ -358,78 +418,141 @@ const planJob = async (req, res) => {
         const dayName = DAY_NAMES[current.day()];
 
         if (workingDays.includes(dayName) && !weeklyOff.includes(dayName)) {
-          const runRate = (machine.practicalRunRate || 1000) * (machine.efficiencyFactor || 0.85);
-          let normalQty = 0;
-          let normalScheduledHours = 0;
+          const dateStr = current.format("YYYY-MM-DD");
+          const mIdStr = machineId.toString();
 
-          const usedAlready = (machineUsage[machineId.toString()] || {})[current.format("YYYY-MM-DD")] || 0;
-          const availableHours = Math.max(0, dailyCapHours - usedAlready);
+          // --- MORNING SHIFT ---
+          const usedAlready =
+            (machineUsage[mIdStr] || {})[dateStr] || 0;
+          const dayAvailable = Math.max(0, shiftHrs - usedAlready);
 
-          if (availableHours > setupTime && runRate > 0) {
-            const qtyPossible = (availableHours - setupTime) * runRate;
-            normalQty = Math.min(remaining, qtyPossible);
-            normalScheduledHours = normalQty / runRate + setupTime;
+          if (dayAvailable > setupTime && runRate > 0) {
+            const qtyPossible = (dayAvailable - setupTime) * runRate;
+            const normalQty = Math.min(remaining, qtyPossible);
+            if (normalQty > 0) {
+              const normalScheduledHours = normalQty / runRate + setupTime;
+              remaining -= normalQty;
+
+              if (!machineUsage[mIdStr]) machineUsage[mIdStr] = {};
+              machineUsage[mIdStr][dateStr] = usedAlready + normalScheduledHours;
+
+              entries.push({
+                machineId: machine._id,
+                date: current.toDate(),
+                shift: "Morning",
+                startTime: machineShiftStart,
+                endTime: machineShiftEnd,
+                jobOrderId: job._id,
+                jobCardNo: job.joNo,
+                process,
+                scheduledHours: normalScheduledHours,
+                setupTime: setupTime,
+                runTime: normalScheduledHours - setupTime,
+                scheduledQty: normalQty,
+                isOvertime: false,
+                status: "Scheduled",
+                plannedStart: current.toDate(),
+                plannedEnd: current.clone().endOf("day").toDate(),
+              });
+            }
           }
-          
-          if (normalQty > 0) {
-            remaining -= normalQty;
-            // Update local usage tracker
-            if (!machineUsage[machineId.toString()]) machineUsage[machineId.toString()] = {};
-            machineUsage[machineId.toString()][current.format("YYYY-MM-DD")] = usedAlready + normalScheduledHours;
 
-            entries.push({
-              machineId: machine._id,
-              date: current.toDate(),
-              shift: "Day",
-              startTime: machine.shiftStartTime || "08:00",
-              endTime: machine.shiftEndTime || "16:00",
-              jobOrderId: job._id,
-              jobCardNo: job.joNo,
-              process,
-              scheduledHours: normalScheduledHours,
-              scheduledQty: normalQty,
-              isOvertime: false,
-              status: "Scheduled",
-              plannedStart: current.toDate(),
-              plannedEnd: current.clone().endOf("day").toDate(),
-            });
-          }
-
+          // --- OT SHIFT (17:30–20:30, 3 hrs) ---
           if (remaining > 0 && otCapHours > 0 && runRate > 0) {
-            const usedAlreadyAfterDay = (machineUsage[machineId.toString()] || {})[current.format("YYYY-MM-DD")] || 0;
-            const availableOTHours = Math.max(0, (dailyCapHours + otCapHours) - usedAlreadyAfterDay);
-            
-            if (availableOTHours > 0) {
-              const qtyPossibleOT = availableOTHours * runRate;
+            const usedAfterDay =
+              (machineUsage[mIdStr] || {})[dateStr] || 0;
+            const otAvailable = Math.max(
+              0,
+              shiftHrs + otCapHours - usedAfterDay,
+            );
+
+            if (otAvailable > 0) {
+              const qtyPossibleOT = otAvailable * runRate;
               const otQty = Math.min(remaining, qtyPossibleOT);
-              
+
               if (otQty > 0) {
                 remaining -= otQty;
                 const otScheduledHours = otQty / runRate;
-                
-                // Update local usage tracker
-                if (!machineUsage[machineId.toString()]) machineUsage[machineId.toString()] = {};
-                machineUsage[machineId.toString()][current.format("YYYY-MM-DD")] = usedAlreadyAfterDay + otScheduledHours;
 
-                const otStart = machine.shiftEndTime || "16:00";
-                const otEndHr = parseInt(otStart.split(":")[0]) + Math.ceil(otScheduledHours);
-                const otEnd = `${String(otEndHr).padStart(2, "0")}:00`;
+                if (!machineUsage[mIdStr]) machineUsage[mIdStr] = {};
+                machineUsage[mIdStr][dateStr] =
+                  usedAfterDay + otScheduledHours;
+
+                const otStartTime = machineShiftEnd; // 17:30
+                const otEndTime = addHoursToTime(otStartTime, otScheduledHours);
 
                 entries.push({
                   machineId: machine._id,
                   date: current.toDate(),
                   shift: "OT",
-                  startTime: otStart,
-                  endTime: otEnd,
+                  startTime: otStartTime,
+                  endTime: otEndTime,
                   jobOrderId: job._id,
                   jobCardNo: job.joNo,
                   process,
                   scheduledHours: otScheduledHours,
+                  setupTime: 0,
+                  runTime: otScheduledHours,
                   scheduledQty: otQty,
                   isOvertime: true,
                   overtimeNeeded: true,
                   overtimeHours: otScheduledHours,
-                  status: "Scheduled",
+                  status: "Pending Approval",
+                  plannedStart: current.toDate(),
+                  plannedEnd: current.clone().endOf("day").toDate(),
+                });
+              }
+            }
+          }
+
+          // --- NIGHT SHIFT (starts after OT if OT used, else at 17:30; runs 8 hrs → 01:30) ---
+          if (remaining > 0 && nightShiftHours > 0 && runRate > 0) {
+            const usedAfterOT =
+              (machineUsage[mIdStr] || {})[dateStr] || 0;
+            const nightAvailable = Math.max(
+              0,
+              shiftHrs + otCapHours + nightShiftHours - usedAfterOT,
+            );
+
+            if (nightAvailable > 0) {
+              const qtyPossibleNight = nightAvailable * runRate;
+              const nightQty = Math.min(remaining, qtyPossibleNight);
+
+              if (nightQty > 0) {
+                remaining -= nightQty;
+                const nightScheduledHours = nightQty / runRate;
+
+                if (!machineUsage[mIdStr]) machineUsage[mIdStr] = {};
+                machineUsage[mIdStr][dateStr] =
+                  usedAfterOT + nightScheduledHours;
+
+                // Night starts at shiftEnd + OT hours (after OT) or at shiftEnd if no OT
+                const nightStartTime = addHoursToTime(
+                  machineShiftEnd,
+                  otCapHours,
+                );
+                const nightEndTime = addHoursToTime(
+                  nightStartTime,
+                  nightScheduledHours,
+                );
+
+                entries.push({
+                  machineId: machine._id,
+                  date: current.toDate(),
+                  shift: "Night",
+                  startTime: nightStartTime,
+                  endTime: nightEndTime,
+                  jobOrderId: job._id,
+                  jobCardNo: job.joNo,
+                  process,
+                  scheduledHours: nightScheduledHours,
+                  setupTime: 0,
+                  runTime: nightScheduledHours,
+                  scheduledQty: nightQty,
+                  isOvertime: true,
+                  overtimeNeeded: true,
+                  overtimeHours: nightScheduledHours,
+                  status: "Pending Approval",
                   plannedStart: current.toDate(),
                   plannedEnd: current.clone().endOf("day").toDate(),
                 });

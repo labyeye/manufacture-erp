@@ -16,7 +16,7 @@ const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 const today = () => new Date().toISOString().slice(0, 10);
 const fmt = (n) => (n ?? 0).toLocaleString("en-IN");
 
-const SHIFTS = ["Morning", "Afternoon", "Night"];
+const SHIFTS = ["Morning", "OT", "Night"];
 
 export default function ProductionUpdate({
   jobOrders = [],

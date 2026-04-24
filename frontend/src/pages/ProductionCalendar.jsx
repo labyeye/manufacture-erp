@@ -11,6 +11,13 @@ import { planningAPI } from "../api/auth";
 
 const fmt = (n) => (n ?? 0).toLocaleString("en-IN");
 
+const fmtHrs = (h) => {
+  if (!h || h <= 0) return "0m";
+  if (h < 1) return `${Math.round(h * 60)}m`;
+  const rounded = parseFloat(h.toFixed(2));
+  return Number.isInteger(rounded) ? `${rounded}h` : `${rounded}h`;
+};
+
 const DAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const MONTHS = [
   "Jan",
@@ -731,6 +738,17 @@ export default function ProductionCalendar({
       (sum, e) => sum + (e.scheduledHours || 0),
       0,
     );
+    // Setup time: from Machine Master setupTimeDefault (Morning shift only)
+    // Run time: scheduledQty / (practicalRunRate × efficiencyFactor)
+    const getEntryTimes = (e) => {
+      const m = e.machineId; // populated with setupTimeDefault, practicalRunRate, efficiencyFactor
+      const setupT = e.shift === "Morning" ? (m?.setupTimeDefault ?? e.setupTime ?? 0.5) : 0;
+      const cap = (m?.practicalRunRate || 0) * (m?.efficiencyFactor || 0.85);
+      const runT = cap > 0 ? e.scheduledQty / cap : (e.runTime || 0);
+      return { setupT, runT };
+    };
+    const totalSetupTime = allEntries.reduce((sum, e) => sum + getEntryTimes(e).setupT, 0);
+    const totalRunTime = allEntries.reduce((sum, e) => sum + getEntryTimes(e).runT, 0);
 
     return (
       <Modal
@@ -810,6 +828,93 @@ export default function ProductionCalendar({
                   ? "⚠️ Likely to be delayed"
                   : "✅ On track for delivery"}
               </span>
+            </div>
+          </div>
+
+          <div
+            style={{
+              padding: 12,
+              background: C.surface,
+              borderRadius: 8,
+              border: `1px solid ${C.border}`,
+            }}
+          >
+            <h4 style={{ margin: "0 0 10px 0", color: C.text }}>Time Breakdown</h4>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div
+                style={{
+                  padding: "10px 12px",
+                  background: "#1e3a5f",
+                  borderRadius: 6,
+                  border: "1px solid #3b82f633",
+                  textAlign: "center",
+                }}
+              >
+                <div style={{ fontSize: 10, color: "#93c5fd", marginBottom: 4, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1 }}>
+                  ⚙ Total Setup
+                </div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "#93c5fd" }}>
+                  {fmtHrs(totalSetupTime)}
+                </div>
+              </div>
+              <div
+                style={{
+                  padding: "10px 12px",
+                  background: "#14532d",
+                  borderRadius: 6,
+                  border: "1px solid #22c55e33",
+                  textAlign: "center",
+                }}
+              >
+                <div style={{ fontSize: 10, color: "#86efac", marginBottom: 4, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1 }}>
+                  ▶ Total Run
+                </div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "#86efac" }}>
+                  {fmtHrs(totalRunTime)}
+                </div>
+              </div>
+            </div>
+            <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 4 }}>
+              {allEntries.map((e, i) => {
+                const { setupT, runT } = getEntryTimes(e);
+                return (
+                  <div
+                    key={i}
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "80px 60px 1fr 1fr",
+                      gap: 6,
+                      fontSize: 11,
+                      padding: "4px 0",
+                      borderBottom: `1px solid ${C.border}22`,
+                      alignItems: "center",
+                    }}
+                  >
+                    <span style={{ color: C.muted, fontSize: 10 }}>
+                      {moment(e.date).format("DD MMM")}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 9,
+                        fontWeight: 700,
+                        color: e.shift === "Morning" ? "#60a5fa" : e.shift === "OT" ? C.orange : "#c084fc",
+                        background: e.shift === "Morning" ? "#1e3a5f" : e.shift === "OT" ? C.orange + "22" : "#4c1d9522",
+                        padding: "1px 5px",
+                        borderRadius: 3,
+                        textAlign: "center",
+                      }}
+                    >
+                      {e.shift}
+                    </span>
+                    <span style={{ color: "#93c5fd", fontSize: 11 }}>
+                      ⚙ {fmtHrs(setupT)}
+                    </span>
+                    <span style={{ color: "#86efac", fontSize: 11 }}>
+                      ▶ {fmtHrs(runT)}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -1418,6 +1523,18 @@ export default function ProductionCalendar({
                             const shiftsCount = Math.max(1, Math.ceil(schedHrs / shiftHrs));
                             const hasOT = entry.overtimeNeeded || entry.overtimeHours > 0;
 
+                            // Setup time: from Machine Master setupTimeDefault (only for Morning shift)
+                            const cardSetupTime = entry.shift === "Morning"
+                              ? (fullMachine?.setupTimeDefault ?? 0.5)
+                              : 0;
+                            // Run time: Qty / capacity per hour (practicalRunRate × efficiencyFactor)
+                            const capacityPerHour =
+                              (fullMachine?.practicalRunRate || 0) *
+                              (fullMachine?.efficiencyFactor || 0.85);
+                            const cardRunTime = capacityPerHour > 0
+                              ? entry.scheduledQty / capacityPerHour
+                              : (entry.runTime || 0);
+
                             return (
                               <div
                                 key={entry._id}
@@ -1570,8 +1687,31 @@ export default function ProductionCalendar({
                                   </div>
                                 </div>
 
-                                {}
-                                <div style={{ marginTop: 8 }}>
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                    marginTop: 6,
+                                    padding: "4px 0",
+                                    borderTop: `1px solid #ffffff11`,
+                                  }}
+                                >
+                                  <span style={{ fontSize: 8, color: C.muted }}>
+                                    ⚙ Setup
+                                  </span>
+                                  <span style={{ fontSize: 9, fontWeight: 700, color: "#93c5fd" }}>
+                                    {fmtHrs(cardSetupTime)}
+                                  </span>
+                                  <span style={{ fontSize: 8, color: C.muted }}>
+                                    ▶ Run
+                                  </span>
+                                  <span style={{ fontSize: 9, fontWeight: 700, color: "#86efac" }}>
+                                    {fmtHrs(cardRunTime)}
+                                  </span>
+                                </div>
+
+                                <div style={{ marginTop: 6 }}>
                                   <div
                                     style={{
                                       display: "flex",

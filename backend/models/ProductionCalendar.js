@@ -13,7 +13,7 @@ const productionCalendarSchema = new mongoose.Schema(
     },
     shift: {
       type: String,
-      enum: ["Day", "OT", "Night"],
+      enum: ["Morning", "OT", "Night"],
       required: true,
     },
     startTime: {
@@ -44,6 +44,14 @@ const productionCalendarSchema = new mongoose.Schema(
     scheduledHours: {
       type: Number,
       required: true,
+    },
+    setupTime: {
+      type: Number,
+      default: 0,
+    },
+    runTime: {
+      type: Number,
+      default: 0,
     },
     scheduledQty: {
       type: Number,
