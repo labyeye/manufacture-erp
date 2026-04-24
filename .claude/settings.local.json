@@ -11,7 +11,10 @@
       "Bash(pip3 install:*)",
       "Bash(echo \"running in background PID: $!\")",
       "Bash(cp /tmp/Google-SEO-Report-arevents.in-full.pdf \"/Users/labh/Desktop/AR-Events-SEO-Report-2026-04-20.pdf\")",
-      "Bash(cp /tmp/Google-SEO-Report-arevents.in-full.html \"/Users/labh/Desktop/AR-Events-SEO-Report-2026-04-20.html\")"
+      "Bash(cp /tmp/Google-SEO-Report-arevents.in-full.html \"/Users/labh/Desktop/AR-Events-SEO-Report-2026-04-20.html\")",
+      "Bash(node scripts/seedMachines.js)",
+      "Bash(node -e ':*)",
+      "Bash(node --input-type=module --eval ':*)"
     ]
   }
 }

@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
+import * as XLSX from "xlsx";
 import { machineMasterAPI } from "../api/auth";
 import { ALL_SKU_FAMILIES, PARALLEL_MACHINE_GROUPS } from "../constants/seedData";
 
@@ -72,10 +73,193 @@ export default function MachineMaster({ toast }) {
   const [filterDivision, setFilterDivision] = useState("All Divisions");
   const [filterStatus, setFilterStatus] = useState("All Status");
   const [editingMachine, setEditingMachine] = useState(null);
+  const [importing, setImporting] = useState(false);
+  const importRef = useRef(null);
 
   useEffect(() => {
     fetchMachines();
   }, []);
+
+  // ── Column definitions for import / export ──────────────────────────────
+  const TEMPLATE_COLS = [
+    { key: "name",                   header: "name *",                    hint: "Unique machine name" },
+    { key: "type",                   header: "type *",                    hint: "Printing|Die Cutting|Lamination|Formation|Bag Making|Sheet Cutting|Manual Formation|Varnish|Cutting|Handmade" },
+    { key: "division",               header: "division",                  hint: "Sheet|Reel" },
+    { key: "status",                 header: "status",                    hint: "Active|Inactive" },
+    { key: "capacityUnit",           header: "capacityUnit",              hint: "Pcs|Sheets|Kg|Meters|Units" },
+    { key: "practicalRunRate",       header: "practicalRunRate (units/hr)",hint: "e.g. 2250" },
+    { key: "efficiencyFactor",       header: "efficiencyFactor (0.7-0.95)",hint: "e.g. 0.95" },
+    { key: "setupTimeDefault",       header: "setupTimeDefault (hrs)",    hint: "e.g. 0.167  (10 min = 10/60)" },
+    { key: "changeoverTimeDefault",  header: "changeoverTimeDefault (hrs)",hint: "e.g. 6  (360 min = 360/60)" },
+    { key: "standardShiftHours",     header: "standardShiftHours",        hint: "e.g. 8" },
+    { key: "maxShiftsAllowed",       header: "maxShiftsAllowed",          hint: "1|2|3" },
+    { key: "shiftStartTime",         header: "shiftStartTime",            hint: "HH:MM  e.g. 09:00" },
+    { key: "shiftEndTime",           header: "shiftEndTime",              hint: "HH:MM  e.g. 17:30" },
+    { key: "overtimeAllowed",        header: "overtimeAllowed",           hint: "TRUE|FALSE" },
+    { key: "maxOvertimeHours",       header: "maxOvertimeHours",          hint: "e.g. 3" },
+    { key: "breakTime",              header: "breakTime (hrs)",           hint: "e.g. 1" },
+    { key: "workingDays",            header: "workingDays",               hint: "Comma-separated: Monday,Tuesday,..." },
+    { key: "weeklyOff",              header: "weeklyOff",                 hint: "Comma-separated: Sunday" },
+    { key: "priorityRank",           header: "priorityRank",              hint: "1 = highest" },
+    { key: "costPerHour",            header: "costPerHour",               hint: "e.g. 500" },
+    { key: "operatorRequirement",    header: "operatorRequirement",       hint: "e.g. 1" },
+    { key: "minBatchSize",           header: "minBatchSize",              hint: "e.g. 0" },
+    { key: "parallelMachineGroup",   header: "parallelMachineGroup",      hint: "e.g. SBBM 360 Pair  (leave blank for none)" },
+  ];
+
+  // Serialise a machine record into a flat row for the spreadsheet
+  const machineToRow = (m) => ({
+    name:                  m.name || "",
+    type:                  m.type || "",
+    division:              m.division || "Reel",
+    status:                m.status || "Active",
+    capacityUnit:          m.capacityUnit || "Pcs",
+    practicalRunRate:      m.practicalRunRate ?? "",
+    efficiencyFactor:      m.efficiencyFactor ?? 0.95,
+    setupTimeDefault:      m.setupTimeDefault ?? "",
+    changeoverTimeDefault: m.changeoverTimeDefault ?? 0,
+    standardShiftHours:    m.standardShiftHours ?? 8,
+    maxShiftsAllowed:      m.maxShiftsAllowed ?? 1,
+    shiftStartTime:        m.shiftStartTime || "09:00",
+    shiftEndTime:          m.shiftEndTime || "17:30",
+    overtimeAllowed:       m.overtimeAllowed ? "TRUE" : "FALSE",
+    maxOvertimeHours:      m.maxOvertimeHours ?? 3,
+    breakTime:             m.breakTime ?? 1,
+    workingDays:           Array.isArray(m.workingDays) ? m.workingDays.join(", ") : "Monday, Tuesday, Wednesday, Thursday, Friday, Saturday",
+    weeklyOff:             Array.isArray(m.weeklyOff) ? m.weeklyOff.join(", ") : "Sunday",
+    priorityRank:          m.priorityRank ?? 1,
+    costPerHour:           m.costPerHour ?? 0,
+    operatorRequirement:   m.operatorRequirement ?? 1,
+    minBatchSize:          m.minBatchSize ?? 0,
+    parallelMachineGroup:  m.parallelMachineGroup || "",
+  });
+
+  // Parse a spreadsheet row back into an API-ready object
+  const rowToMachine = (row) => {
+    const get = (key) => row[key] ?? row[TEMPLATE_COLS.find((c) => c.key === key)?.header] ?? "";
+    const num = (key, fallback = 0) => { const v = parseFloat(get(key)); return isNaN(v) ? fallback : v; };
+    const str = (key, fallback = "") => String(get(key) || fallback).trim();
+    const arr = (key, fallback = []) => {
+      const v = str(key);
+      return v ? v.split(",").map((s) => s.trim()).filter(Boolean) : fallback;
+    };
+    return {
+      name:                  str("name"),
+      type:                  str("type"),
+      division:              str("division", "Reel"),
+      status:                str("status", "Active"),
+      capacityUnit:          str("capacityUnit", "Pcs"),
+      practicalRunRate:      num("practicalRunRate"),
+      efficiencyFactor:      num("efficiencyFactor", 0.95),
+      setupTimeDefault:      num("setupTimeDefault", 0.5),
+      changeoverTimeDefault: num("changeoverTimeDefault", 0),
+      standardShiftHours:    num("standardShiftHours", 8),
+      maxShiftsAllowed:      num("maxShiftsAllowed", 1),
+      shiftStartTime:        str("shiftStartTime", "09:00"),
+      shiftEndTime:          str("shiftEndTime", "17:30"),
+      overtimeAllowed:       String(get("overtimeAllowed")).toUpperCase() === "TRUE",
+      maxOvertimeHours:      num("maxOvertimeHours", 3),
+      breakTime:             num("breakTime", 1),
+      workingDays:           arr("workingDays", ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]),
+      weeklyOff:             arr("weeklyOff", ["Sunday"]),
+      priorityRank:          num("priorityRank", 1),
+      costPerHour:           num("costPerHour", 0),
+      operatorRequirement:   num("operatorRequirement", 1),
+      minBatchSize:          num("minBatchSize", 0),
+      parallelMachineGroup:  str("parallelMachineGroup"),
+    };
+  };
+
+  // Build a workbook with styled header + hint row
+  const buildWorkbook = (dataRows) => {
+    const headers = TEMPLATE_COLS.map((c) => c.header);
+    const hints   = TEMPLATE_COLS.map((c) => c.hint);
+    const wsData  = [headers, hints, ...dataRows.map((r) => TEMPLATE_COLS.map((c) => r[c.key] ?? ""))];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+    // Column widths
+    ws["!cols"] = TEMPLATE_COLS.map((_, i) => ({ wch: i < 2 ? 30 : 22 }));
+
+    // Freeze top 2 rows
+    ws["!freeze"] = { xSplit: 0, ySplit: 2 };
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Machines");
+    return wb;
+  };
+
+  const handleExport = () => {
+    const rows = machines.map(machineToRow);
+    const wb = buildWorkbook(rows);
+    XLSX.writeFile(wb, `machine_master_${new Date().toISOString().slice(0,10)}.xlsx`);
+    toast?.("Exported " + machines.length + " machines", "success");
+  };
+
+  const handleDownloadTemplate = () => {
+    const wb = buildWorkbook([]);
+    XLSX.writeFile(wb, "machine_master_template.xlsx");
+    toast?.("Template downloaded", "success");
+  };
+
+  const handleImportFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";          // reset so the same file can be re-imported
+
+    setImporting(true);
+    try {
+      const buffer = await file.arrayBuffer();
+      const wb = XLSX.read(buffer, { type: "array" });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const raw = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+      // Row 0 = headers, Row 1 = hints (skip), Row 2+ = data
+      if (raw.length < 3) { toast?.("No data rows found in file", "error"); return; }
+
+      const headerRow = raw[0].map((h) => String(h || "").trim());
+      const dataRows  = raw.slice(2).filter((r) => r.some(Boolean));
+
+      // Build objects keyed by column header
+      const objects = dataRows.map((row) => {
+        const obj = {};
+        headerRow.forEach((h, i) => { obj[h] = row[i] ?? ""; });
+        // Also map by key (without hint suffix) so rowToMachine works
+        TEMPLATE_COLS.forEach((col, i) => { obj[col.key] = row[i] ?? ""; });
+        return obj;
+      });
+
+      const existingMap = {};
+      machines.forEach((m) => { existingMap[m.name] = m._id; });
+
+      let updated = 0, created = 0, errors = 0;
+      for (const obj of objects) {
+        const data = rowToMachine(obj);
+        if (!data.name) continue;
+        try {
+          const existingId = existingMap[data.name];
+          if (existingId) {
+            await machineMasterAPI.update(existingId, data);
+            updated++;
+          } else {
+            await machineMasterAPI.create(data);
+            created++;
+          }
+        } catch {
+          errors++;
+        }
+      }
+
+      toast?.(
+        `Import done — ${updated} updated, ${created} created${errors ? `, ${errors} errors` : ""}`,
+        errors ? "error" : "success"
+      );
+      fetchMachines();
+    } catch (err) {
+      toast?.("Import failed: " + err.message, "error");
+    } finally {
+      setImporting(false);
+    }
+  };
 
   const fetchMachines = async () => {
     try {
@@ -553,12 +737,83 @@ export default function MachineMaster({ toast }) {
 
   return (
     <div className="fade">
-      <div style={{ marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+      {/* hidden file input for import */}
+      <input
+        ref={importRef}
+        type="file"
+        accept=".xlsx,.xls"
+        style={{ display: "none" }}
+        onChange={handleImportFile}
+      />
+
+      <div style={{ marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
         <div>
           <h2 style={{ fontSize: 22, fontWeight: 700, color: "#e0e0e0", margin: 0 }}>🏭 Machine Master</h2>
           <p style={{ fontSize: 13, color: "#777", margin: "4px 0 0" }}>
             Configure capacity, shifts, parallel groups, and product compatibility per machine
           </p>
+        </div>
+
+        {/* Import / Export controls */}
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          <button
+            onClick={handleDownloadTemplate}
+            title="Download a blank XLSX template with all columns"
+            style={{
+              padding: "8px 14px",
+              background: "#1a1a1a",
+              color: "#9C27B0",
+              border: "1px solid #9C27B044",
+              borderRadius: 6,
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            ⬇ Template
+          </button>
+          <button
+            onClick={handleExport}
+            title="Export all machines to XLSX"
+            style={{
+              padding: "8px 14px",
+              background: "#1a1a1a",
+              color: "#4CAF50",
+              border: "1px solid #4CAF5044",
+              borderRadius: 6,
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            ↑ Export
+          </button>
+          <button
+            onClick={() => importRef.current?.click()}
+            disabled={importing}
+            title="Import machines from XLSX (updates existing by name, creates new)"
+            style={{
+              padding: "8px 14px",
+              background: importing ? "#1a1a1a" : "#2196F322",
+              color: importing ? "#555" : "#2196F3",
+              border: `1px solid ${importing ? "#333" : "#2196F344"}`,
+              borderRadius: 6,
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: importing ? "not-allowed" : "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            {importing ? "Importing..." : "↓ Import"}
+          </button>
         </div>
       </div>
 

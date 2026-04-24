@@ -67,7 +67,7 @@ const machineMasterSchema = new mongoose.Schema(
     },
     secondShiftLeadTime: {
       type: Number,
-      default: 24, 
+      default: 24,
     },
 
     workingDays: {
@@ -98,19 +98,19 @@ const machineMasterSchema = new mongoose.Schema(
       type: Number,
       min: 0.7,
       max: 0.95,
-      default: 0.85,
+      default: 0.95,
     },
     setupTimeDefault: {
       type: Number,
-      default: 0.5, 
+      default: 0.5,
     },
     changeoverTimeDefault: {
       type: Number,
-      default: 0.25, 
+      default: 0.25,
     },
     breakTime: {
       type: Number,
-      default: 1.0, 
+      default: 1.0,
     },
 
     capacityUnit: {
@@ -120,7 +120,7 @@ const machineMasterSchema = new mongoose.Schema(
     },
 
     productCompatibility: {
-      type: [String], 
+      type: [String],
       default: [],
     },
     minBatchSize: {
