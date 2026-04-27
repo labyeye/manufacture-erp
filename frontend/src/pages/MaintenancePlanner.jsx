@@ -45,6 +45,8 @@ const TABS = [
 ];
 
 
+export { PMSchedulerTab, SparePartsTab };
+
 export default function MaintenancePlanner({ machineMaster = [], toast }) {
   const [tab, setTab] = useState("pm");
 

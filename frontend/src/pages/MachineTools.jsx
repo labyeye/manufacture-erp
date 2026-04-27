@@ -16,7 +16,9 @@ import {
   factoryCalendarAPI,
   machineMaintenanceAPI,
   breakdownLogAPI,
+  itemMasterAPI,
 } from "../api/auth";
+import { PMSchedulerTab, SparePartsTab } from "./MaintenancePlanner";
 import moment from "moment";
 import * as XLSX from "xlsx";
 
@@ -28,6 +30,8 @@ const SUBTABS = [
   { id: "calendar", icon: "🗓️", label: "Factory Calendar" },
   { id: "maintenance", icon: "🔧", label: "Machine Maintenance" },
   { id: "breakdowns", icon: "⚠️", label: "Breakdown Log" },
+  { id: "pm", icon: "🗓️", label: "PM Scheduler" },
+  { id: "parts", icon: "🔩", label: "Spare Parts" },
 ];
 
 const ACCENT = "#ff7800";
@@ -97,6 +101,8 @@ const TOOL_COLUMNS = [
 function ToolTypeSection({ tabId, toast }) {
   const cfg = TOOL_CONFIG[tabId];
   const [tools, setTools] = useState([]);
+  const [fgItems, setFgItems] = useState([]);
+  const [allMachines, setAllMachines] = useState([]);
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -115,9 +121,16 @@ function ToolTypeSection({ tabId, toast }) {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const data = await toolingMasterAPI.getAll();
+      const [data, itemData, macData] = await Promise.all([
+        toolingMasterAPI.getAll(),
+        itemMasterAPI.getAll(),
+        machineMasterAPI.getAll(),
+      ]);
       const all = Array.isArray(data) ? data : [];
       setTools(all.filter((t) => t.toolType === cfg.type));
+      const items = Array.isArray(itemData) ? itemData : (itemData?.items || []);
+      setFgItems(items.filter((i) => i.type === "Finished Goods" && i.code));
+      setAllMachines(Array.isArray(macData) ? macData : macData?.machines || []);
     } catch {
       toast?.("Failed to fetch data", "error");
     } finally {
@@ -167,10 +180,8 @@ function ToolTypeSection({ tabId, toast }) {
   const handleEdit = (tool) => {
     setFormData({
       designCode: tool.designCode,
-      linkedSKU: tool.linkedSKU,
-      compatibleMachines: (tool.compatibleMachines || []).map(
-        (m) => m._id || m,
-      ),
+      linkedSKU: tool.linkedSKU || "",
+      compatibleMachines: (tool.compatibleMachines || []).map((m) => m._id || m),
       status: tool.status,
       maxImpressionsBeforeRecondition: tool.maxImpressionsBeforeRecondition,
       location: tool.location,
@@ -178,6 +189,16 @@ function ToolTypeSection({ tabId, toast }) {
     });
     setEditingId(tool._id);
     setShowModal(true);
+  };
+
+  const toggleMachine = (machineId) => {
+    setFormData((prev) => {
+      const current = prev.compatibleMachines || [];
+      const updated = current.includes(machineId)
+        ? current.filter((id) => id !== machineId)
+        : [...current, machineId];
+      return { ...prev, compatibleMachines: updated };
+    });
   };
 
   const handleDelete = async (id) => {
@@ -339,37 +360,57 @@ function ToolTypeSection({ tabId, toast }) {
           loading={loading}
           headers={[
             "DESIGN CODE",
-            "LINKED SKU",
+            "FG PRODUCT CODE",
+            "MACHINES",
             "STATUS",
             "IMPRESSIONS",
             "LOCATION",
             "ACTIONS",
           ]}
-          data={tools.map((tool) => [
-            <span style={{ fontWeight: 700 }}>{tool.designCode}</span>,
-            tool.linkedSKU,
-            <Badge
-              text={tool.status}
-              color={
-                tool.status === "Available"
-                  ? C.green
-                  : tool.status === "In Use"
-                    ? C.blue
-                    : C.red
-              }
-            />,
-            `${(tool.impressionsDone || 0).toLocaleString()} / ${(tool.maxImpressionsBeforeRecondition || 0).toLocaleString()}`,
-            tool.location || "-",
-            <div style={{ display: "flex", gap: 8 }}>
-              <Button small text="Edit" onClick={() => handleEdit(tool)} />
-              <Button
-                small
-                text="Delete"
-                color={C.red}
-                onClick={() => handleDelete(tool._id)}
-              />
-            </div>,
-          ])}
+          data={tools.map((tool) => {
+            const linkedItem = fgItems.find((i) => i.code === tool.linkedSKU);
+            const linkedMachineIds = (tool.compatibleMachines || []).map((m) => m._id || m);
+            const linkedMachineNames = allMachines
+              .filter((m) => linkedMachineIds.includes(m._id))
+              .map((m) => m.name);
+            return [
+              <span style={{ fontWeight: 700 }}>{tool.designCode}</span>,
+              tool.linkedSKU ? (
+                <div>
+                  <div style={{ fontWeight: 700, color: "#ff7800", fontSize: 12 }}>{tool.linkedSKU}</div>
+                  {linkedItem && <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>{linkedItem.name}</div>}
+                </div>
+              ) : <span style={{ color: "#444" }}>—</span>,
+              linkedMachineNames.length > 0 ? (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                  {linkedMachineNames.map((n) => (
+                    <span key={n} style={{ padding: "2px 7px", borderRadius: 10, background: "#3b82f622", color: "#3b82f6", fontSize: 10, fontWeight: 600 }}>{n}</span>
+                  ))}
+                </div>
+              ) : <span style={{ color: "#444", fontSize: 11 }}>—</span>,
+              <Badge
+                text={tool.status}
+                color={
+                  tool.status === "Available"
+                    ? C.green
+                    : tool.status === "In Use"
+                      ? C.blue
+                      : C.red
+                }
+              />,
+              `${(tool.impressionsDone || 0).toLocaleString()} / ${(tool.maxImpressionsBeforeRecondition || 0).toLocaleString()}`,
+              tool.location || "-",
+              <div style={{ display: "flex", gap: 8 }}>
+                <Button small text="Edit" onClick={() => handleEdit(tool)} />
+                <Button
+                  small
+                  text="Delete"
+                  color={C.red}
+                  onClick={() => handleDelete(tool._id)}
+                />
+              </div>,
+            ];
+          })}
         />
       </Card>
 
@@ -397,13 +438,19 @@ function ToolTypeSection({ tabId, toast }) {
                 }
                 required
               />
-              <Input
-                label="Linked SKU / Product"
+              <Select
+                label="Linked FG Product Code"
                 value={formData.linkedSKU}
                 onChange={(e) =>
                   setFormData({ ...formData, linkedSKU: e.target.value })
                 }
-                required
+                options={[
+                  { label: "— Select FG Product —", value: "" },
+                  ...fgItems.map((i) => ({
+                    label: `${i.code}${i.name ? ` — ${i.name}` : ""}`,
+                    value: i.code,
+                  })),
+                ]}
               />
               <Select
                 label="Status"
@@ -449,6 +496,44 @@ function ToolTypeSection({ tabId, toast }) {
                 }
               />
             </div>
+
+            {allMachines.length > 0 && (
+              <div style={{ marginTop: 16 }}>
+                <label style={{ display: "block", fontSize: 11, color: "#666", fontWeight: 700, marginBottom: 8, textTransform: "uppercase" }}>
+                  Compatible Machines
+                  {formData.compatibleMachines.length > 0 && (
+                    <span style={{ marginLeft: 8, color: "#ff7800" }}>
+                      ({formData.compatibleMachines.length} selected)
+                    </span>
+                  )}
+                </label>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {allMachines.map((m) => {
+                    const selected = (formData.compatibleMachines || []).includes(m._id);
+                    return (
+                      <button
+                        key={m._id}
+                        type="button"
+                        onClick={() => toggleMachine(m._id)}
+                        style={{
+                          padding: "4px 12px",
+                          borderRadius: 20,
+                          fontSize: 12,
+                          fontWeight: 600,
+                          background: selected ? "#3b82f6" : "#1a1a1a",
+                          color: selected ? "#fff" : "#666",
+                          border: `1px solid ${selected ? "#3b82f6" : "#333"}`,
+                          cursor: "pointer",
+                          transition: "all 0.15s",
+                        }}
+                      >
+                        {m.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             <div
               style={{
                 marginTop: 20,
@@ -993,7 +1078,7 @@ function BreakdownSection({ toast }) {
 }
 
 
-export default function MachineTools({ toast }) {
+export default function MachineTools({ machineMaster = [], toast }) {
   const [activeTab, setActiveTab] = useState("cylinders");
 
   return (
@@ -1001,7 +1086,7 @@ export default function MachineTools({ toast }) {
       <SectionTitle
         icon="⚙️"
         title="Machine & Tooling"
-        sub="Cylinders · Dies · Plates · Factory Calendar · Maintenance · Breakdowns"
+        sub="Cylinders · Dies · Plates · Factory Calendar · Maintenance · Breakdowns · PM Scheduler · Spare Parts"
       />
       <SubTabBar active={activeTab} onChange={setActiveTab} />
       {(activeTab === "cylinders" ||
@@ -1012,6 +1097,8 @@ export default function MachineTools({ toast }) {
       {activeTab === "calendar" && <CalendarSection toast={toast} />}
       {activeTab === "maintenance" && <MaintenanceSection toast={toast} />}
       {activeTab === "breakdowns" && <BreakdownSection toast={toast} />}
+      {activeTab === "pm" && <PMSchedulerTab machineMaster={machineMaster} toast={toast} />}
+      {activeTab === "parts" && <SparePartsTab machineMaster={machineMaster} toast={toast} />}
     </div>
   );
 }

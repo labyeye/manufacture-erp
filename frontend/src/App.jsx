@@ -62,7 +62,6 @@ import PriceMaster from "./pages/PriceMaster";
 import Forecast from "./pages/Forecast";
 import Subcontracting from "./pages/Subcontracting";
 import QualityHub from "./pages/QualityHub";
-import MaintenancePlanner from "./pages/MaintenancePlanner";
 import DesignHub from "./pages/DesignHub";
 import NotificationHub from "./pages/NotificationHub";
 
@@ -534,13 +533,6 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
             toast={showToast}
           />
         );
-      case "maintenanceplanner":
-        return (
-          <MaintenancePlanner
-            machineMaster={data.machineMaster}
-            toast={showToast}
-          />
-        );
       case "designhub":
         return (
           <DesignHub
@@ -563,7 +555,7 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
           />
         );
       case "machinetools":
-        return <MachineTools toast={showToast} />;
+        return <MachineTools machineMaster={data.machineMaster} toast={showToast} />;
       case "pricemaster":
         return <PriceMaster toast={showToast} />;
       case "forecast":
