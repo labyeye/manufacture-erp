@@ -1,8 +1,8 @@
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import * as XLSX from "xlsx";
 import { C } from "../constants/colors";
 import { Card, SectionTitle, Badge, Field, SubmitBtn, DateRangeFilter, ImportBtn, ExportBtn, TemplateBtn, ImportModal } from "../components/ui/BasicComponents";
-import { consumableStockAPI } from "../api/auth";
+import { consumableStockAPI, spareIssueLogAPI } from "../api/auth";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 const today = () => new Date().toISOString().slice(0, 10);
@@ -14,8 +14,9 @@ const TYPE_FILTERS = ["All", "Consumable", "Machine Spare", "Other"];
 export default function ConsumableStock({
   consumableStock = [],
   setConsumableStock,
-  categoryMaster = {},
+  categoryMaster = [],
   itemMasterFG = [],
+  machineMaster = [],
   session,
   toast,
   refreshData,
@@ -26,7 +27,11 @@ export default function ConsumableStock({
   const [typeFilter, setTypeFilter] = useState("All");
   const [selectedStock, setSelectedStock] = useState(null);
   const [issueQty, setIssueQty] = useState("");
-  const [issueLog, setIssueLog] = useState([]);
+  const [issueMachine, setIssueMachine] = useState(null);
+  const [issueRemarks, setIssueRemarks] = useState("");
+  const [issueCategoryFilter, setIssueCategoryFilter] = useState("");
+  const [fetchedLogs, setFetchedLogs] = useState([]);
+  const [logsLoading, setLogsLoading] = useState(false);
   const [drDateFrom, setDrDateFrom] = useState("");
   const [drDateTo, setDrDateTo] = useState("");
   const [showZeroStock, setShowZeroStock] = useState(false);
@@ -38,6 +43,37 @@ export default function ConsumableStock({
   });
   const [selectedIds, setSelectedIds] = useState([]);
   const fileInputRef = useRef(null);
+
+  // Categories from CategoryMaster where type === 'Machine Spare'
+  const machineSpareCategories = useMemo(() => {
+    const entry = (Array.isArray(categoryMaster) ? categoryMaster : []).find(
+      (c) => c.type === "Machine Spare",
+    );
+    if (!entry) return [];
+    const fromSubTypes = entry.subTypes ? Object.keys(entry.subTypes) : [];
+    const fromCategories = entry.categories || [];
+    const all = [...new Set([...fromCategories, ...fromSubTypes])];
+    return all.filter(Boolean).sort();
+  }, [categoryMaster]);
+
+  const fetchLogs = useCallback(async () => {
+    setLogsLoading(true);
+    try {
+      const params = {};
+      if (drDateFrom) params.from = drDateFrom;
+      if (drDateTo) params.to = drDateTo;
+      const res = await spareIssueLogAPI.getAll(params);
+      setFetchedLogs(res.logs || []);
+    } catch {
+      // silently fail; logs just won't show
+    } finally {
+      setLogsLoading(false);
+    }
+  }, [drDateFrom, drDateTo]);
+
+  useEffect(() => {
+    if (view === "log") fetchLogs();
+  }, [view, fetchLogs]);
 
   const allItems = useMemo(() => {
     const masterItems = itemMasterFG.filter(
@@ -103,38 +139,34 @@ export default function ConsumableStock({
       toast("Quantity must be > 0", "error");
       return;
     }
-    if (qty > (selectedStock.qty || 0)) {
+    if (!selectedStock.isFromMaster && qty > (selectedStock.qty || 0)) {
       toast(`Insufficient qty. Available: ${selectedStock.qty}`, "error");
       return;
     }
 
     try {
-      if (selectedStock.isFromMaster) {
-        
-        await consumableStockAPI.create({
-          name: selectedStock.name,
-          code: selectedStock.code,
-          category: selectedStock.category,
-          type: selectedStock.type,
-          qty: -qty, 
-          
-          
-          rate: selectedStock.rate,
-          unit: selectedStock.unit,
-        });
-      } else {
-        await consumableStockAPI.adjustStock(
-          selectedStock._id || selectedStock.id,
-          -qty,
-        );
-      }
+      await spareIssueLogAPI.create({
+        itemCode: selectedStock.code,
+        itemName: selectedStock.name,
+        category: selectedStock.category,
+        machineId: issueMachine?._id || issueMachine?.id || undefined,
+        machineName: issueMachine?.name || "",
+        qty,
+        unit: selectedStock.unit || selectedStock.uom || "nos",
+        issuedBy: session?.name || session?.username || "",
+        remarks: issueRemarks,
+        stockId: selectedStock.isFromMaster ? undefined : (selectedStock._id || selectedStock.id),
+      });
 
-      toast(`Issued ${qty} units of ${selectedStock.name}`, "success");
+      toast(`Issued ${qty} units of ${selectedStock.name}${issueMachine ? ` to ${issueMachine.name}` : ""}`, "success");
       setSelectedStock(null);
       setIssueQty("");
+      setIssueMachine(null);
+      setIssueRemarks("");
       if (refreshData) refreshData();
     } catch (error) {
-      toast("Failed to update stock", "error");
+      const msg = error?.response?.data?.error || "Failed to update stock";
+      toast(msg, "error");
       console.error(error);
     }
   };
@@ -293,7 +325,7 @@ export default function ConsumableStock({
         {[
           ["stock", "📦 Stock"],
           ["issue", "➡️ Issue Item"],
-          ["log", `📋 Records (${issueLog.length})`],
+          ["log", `📋 Records (${fetchedLogs.length})`],
         ].map(([v, l]) => (
           <button
             key={v}
@@ -578,17 +610,37 @@ export default function ConsumableStock({
       {}
       {view === "issue" && (
         <Card>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: C.orange || "#f97316", marginBottom: 16 }}>Issue Consumable Item</h3>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: C.orange || "#f97316", marginBottom: 16 }}>Issue Spare / Consumable Item</h3>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 14, marginBottom: 16 }}>
+            {machineSpareCategories.length > 0 && (
+              <Field label="Filter by Category">
+                <select
+                  value={issueCategoryFilter}
+                  onChange={(e) => { setIssueCategoryFilter(e.target.value); setSelectedStock(null); }}
+                >
+                  <option value="">-- All Categories --</option>
+                  {machineSpareCategories.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </Field>
+            )}
             <Field label="Select Item *">
               <select
-                value={selectedStock?.id || ""}
-                onChange={(e) => setSelectedStock(consumableStock.find((s) => s.id === e.target.value) || null)}
+                value={selectedStock?._id || selectedStock?.id || ""}
+                onChange={(e) => {
+                  const found = allItems.find((s) => (s._id || s.id) === e.target.value);
+                  setSelectedStock(found || null);
+                }}
               >
                 <option value="">-- Select Item --</option>
-                {consumableStock.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name} (Available: {fmt(s.qty || 0)})</option>
-                ))}
+                {allItems
+                  .filter((s) => !issueCategoryFilter || s.category === issueCategoryFilter)
+                  .map((s) => (
+                    <option key={s._id || s.id} value={s._id || s.id}>
+                      {s.name}{s.category ? ` [${s.category}]` : ""} — Avail: {fmt(s.qty || 0)} {s.unit || "nos"}
+                    </option>
+                  ))}
               </select>
             </Field>
             {selectedStock && (
@@ -603,15 +655,45 @@ export default function ConsumableStock({
                 </Field>
               </>
             )}
+            <Field label="Issue to Machine">
+              <select
+                value={issueMachine?._id || issueMachine?.id || ""}
+                onChange={(e) => {
+                  const m = machineMaster.find((m) => (m._id || m.id) === e.target.value);
+                  setIssueMachine(m || null);
+                }}
+              >
+                <option value="">-- Select Machine (optional) --</option>
+                {(machineMaster || []).filter((m) => m.status === "Active" || !m.status).map((m) => (
+                  <option key={m._id || m.id} value={m._id || m.id}>
+                    {m.name}{m.type ? ` (${m.type})` : ""}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Remarks">
+              <input
+                type="text"
+                placeholder="Purpose / notes (optional)"
+                value={issueRemarks}
+                onChange={(e) => setIssueRemarks(e.target.value)}
+              />
+            </Field>
           </div>
           {selectedStock && issueQty && (
             <div style={{ padding: "12px 16px", background: (C.orange || "#f97316") + "11", border: `1px solid ${(C.orange || "#f97316")}44`, borderRadius: 6, marginBottom: 16, fontSize: 13 }}>
-              Issue <strong style={{ color: C.orange || "#f97316" }}>{fmt(+issueQty)}</strong> units of <strong>{selectedStock.name}</strong>
+              Issue <strong style={{ color: C.orange || "#f97316" }}>{fmt(+issueQty)}</strong> {selectedStock.unit || "nos"} of <strong>{selectedStock.name}</strong>
+              {issueMachine && <> → Machine: <strong style={{ color: C.blue || "#3b82f6" }}>{issueMachine.name}</strong></>}
             </div>
           )}
           <div style={{ display: "flex", gap: 10 }}>
             <SubmitBtn label="Issue Item" color={C.green} onClick={handleIssue} />
-            <button onClick={() => { setSelectedStock(null); setIssueQty(""); }} style={{ padding: "9px 20px", borderRadius: 6, border: `1px solid ${C.border}`, background: C.inputBg, color: C.muted, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>Clear</button>
+            <button
+              onClick={() => { setSelectedStock(null); setIssueQty(""); setIssueMachine(null); setIssueRemarks(""); setIssueCategoryFilter(""); }}
+              style={{ padding: "9px 20px", borderRadius: 6, border: `1px solid ${C.border}`, background: C.inputBg, color: C.muted, fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+            >
+              Clear
+            </button>
           </div>
         </Card>
       )}
@@ -619,22 +701,58 @@ export default function ConsumableStock({
       {}
       {view === "log" && (
         <Card>
-          <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 14 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: C.muted, margin: 0 }}>Issue History</h3>
+          <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 14, flexWrap: "wrap" }}>
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: C.muted, margin: 0 }}>Spare Issue History</h3>
             <DateRangeFilter dateFrom={drDateFrom} setDateFrom={setDrDateFrom} dateTo={drDateTo} setDateTo={setDrDateTo} />
+            <button
+              onClick={fetchLogs}
+              style={{ padding: "6px 14px", borderRadius: 6, border: `1px solid ${C.border}`, background: C.inputBg, color: C.muted, fontSize: 12, fontWeight: 700, cursor: "pointer" }}
+            >
+              {logsLoading ? "Loading…" : "Refresh"}
+            </button>
           </div>
-          {issueLog.length === 0 ? (
+          {logsLoading ? (
+            <div style={{ textAlign: "center", color: C.muted, padding: 32, fontSize: 13 }}>Loading records…</div>
+          ) : fetchedLogs.length === 0 ? (
             <div style={{ textAlign: "center", color: C.muted, padding: 32, fontSize: 13 }}>No issues recorded yet</div>
           ) : (
-            issueLog.map((log) => (
-              <div key={log.id} style={{ display: "flex", gap: 14, alignItems: "center", padding: "10px 4px", borderBottom: `1px solid ${C.border}22`, fontSize: 13, flexWrap: "wrap" }}>
-                <span style={{ fontSize: 11, color: C.muted, minWidth: 90 }}>{fmtDate(log.date)}</span>
-                <span style={{ fontWeight: 600, flex: 1 }}>{log.itemName}</span>
-                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, color: C.orange || "#f97316" }}>-{fmt(log.qty)}</span>
-                <span style={{ fontSize: 11, color: C.muted }}>{log.category}</span>
-                <span style={{ fontSize: 11, color: C.muted }}>By {log.issuedBy}</span>
-              </div>
-            ))
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <thead>
+                  <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                    {["DATE", "ITEM", "CATEGORY", "QTY", "ISSUED TO MACHINE", "REMARKS", "ISSUED BY"].map((h) => (
+                      <th key={h} style={{ padding: "9px 12px", textAlign: "left", fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", color: C.muted, whiteSpace: "nowrap" }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {fetchedLogs.map((log, i) => (
+                    <tr key={log._id || i} style={{ borderBottom: `1px solid ${C.border}22`, background: i % 2 === 1 ? C.inputBg || "#ffffff08" : "transparent" }}>
+                      <td style={{ padding: "9px 12px", color: C.muted, fontSize: 11, whiteSpace: "nowrap" }}>{fmtDate(log.issuedAt)}</td>
+                      <td style={{ padding: "9px 12px", fontWeight: 600 }}>
+                        {log.itemName}
+                        {log.itemCode && <span style={{ fontSize: 10, color: C.muted, marginLeft: 6, fontFamily: "monospace" }}>{log.itemCode}</span>}
+                      </td>
+                      <td style={{ padding: "9px 12px", fontSize: 12, color: C.muted }}>{log.category || "—"}</td>
+                      <td style={{ padding: "9px 12px", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, color: C.orange || "#f97316", whiteSpace: "nowrap" }}>
+                        -{fmt(log.qty)} {log.unit || "nos"}
+                      </td>
+                      <td style={{ padding: "9px 12px" }}>
+                        {log.machineName ? (
+                          <span style={{ padding: "2px 8px", borderRadius: 4, background: (C.blue || "#3b82f6") + "22", color: C.blue || "#3b82f6", fontSize: 11, fontWeight: 600 }}>
+                            {log.machineName}
+                          </span>
+                        ) : (
+                          <span style={{ color: C.muted, fontSize: 11 }}>—</span>
+                        )}
+                      </td>
+                      <td style={{ padding: "9px 12px", color: C.muted, fontSize: 12 }}>{log.remarks || "—"}</td>
+                      <td style={{ padding: "9px 12px", color: C.muted, fontSize: 12 }}>{log.issuedBy || "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </Card>
       )}

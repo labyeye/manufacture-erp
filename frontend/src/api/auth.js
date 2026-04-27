@@ -583,6 +583,17 @@ export const consumableStockAPI = {
   },
 };
 
+export const spareIssueLogAPI = {
+  getAll: async (params) => {
+    const response = await api.get("/spare-issue-log", { params });
+    return response.data;
+  },
+  create: async (data) => {
+    const response = await api.post("/spare-issue-log", data);
+    return response.data;
+  },
+};
+
 export default api;
 export const brandMasterAPI = {
   getAll: async () => {

@@ -47,6 +47,7 @@ const factoryCalendarRoutes = require("./routes/factoryCalendar");
 const machineMaintenanceRoutes = require("./routes/machineMaintenance");
 const breakdownLogRoutes = require("./routes/breakdownLog");
 const priceListRoutes = require("./routes/priceList");
+const spareIssueLogRoutes = require("./routes/spareIssueLog");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/purchase-orders", purchaseOrderRoutes);
@@ -71,6 +72,7 @@ app.use("/api/factory-calendar", factoryCalendarRoutes);
 app.use("/api/machine-maintenance", machineMaintenanceRoutes);
 app.use("/api/breakdown-log", breakdownLogRoutes);
 app.use("/api/price-list", priceListRoutes);
+app.use("/api/spare-issue-log", spareIssueLogRoutes);
 
 app.get("/api/health", (req, res) => {
   res.json({
