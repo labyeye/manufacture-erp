@@ -143,9 +143,16 @@ const generateProductionCalendar = async (req, res) => {
         const state = machineState[selectedMachine._id.toString()];
         let currentDate = minStartTime.clone();
 
-        let remaining = stageQty;
+        const alreadyDone = job.stageQtyMap?.get(processType) || 0;
+        let remaining = Math.max(0, stageQty - alreadyDone);
         let blocks = [];
         let safety = 0;
+
+        if (remaining === 0) {
+          previousStageMinStart = startDate.clone();
+          previousProcess = processType;
+          continue;
+        }
 
         
         
@@ -626,8 +633,259 @@ const planJob = async (req, res) => {
   }
 };
 
+const recalcJobCalendar = async (jobId) => {
+  const job = await JobOrder.findById(jobId);
+  if (!job || ["Completed", "Cancelled"].includes(job.status)) return 0;
+  if (!job.process || job.process.length === 0) return 0;
+
+  const machines = await MachineMaster.find({ status: "Active" });
+  const today = moment().startOf("day");
+
+  await ProductionCalendar.deleteMany({
+    jobOrderId: job._id,
+    date: { $gte: today.toDate() },
+    locked: { $ne: true },
+  });
+
+  // Seed machine usage from other jobs already in the calendar
+  const machineIds = machines.map((m) => m._id);
+  const existing = await ProductionCalendar.find({
+    machineId: { $in: machineIds },
+    date: { $gte: today.toDate() },
+    jobOrderId: { $ne: job._id },
+  });
+  const existingUsage = {};
+  existing.forEach((e) => {
+    const mId = e.machineId.toString();
+    const d = moment(e.date).format("YYYY-MM-DD");
+    if (!existingUsage[mId]) existingUsage[mId] = {};
+    existingUsage[mId][d] = (existingUsage[mId][d] || 0) + (e.scheduledHours || 0);
+  });
+
+  const machineStateMap = {};
+  machines.forEach((m) => {
+    const shiftHrs = m.standardShiftHours || 8;
+    const otHours = m.overtimeAllowed ? m.maxOvertimeHours || 3 : 0;
+    const numShifts = m.maxShiftsAllowed || 1;
+    const nightShiftHours = numShifts >= 2 ? shiftHrs : 0;
+    const workingDays = m.workingDays?.length
+      ? m.workingDays
+      : ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const weeklyOff = m.weeklyOff?.length ? m.weeklyOff : ["Sunday"];
+    machineStateMap[m._id.toString()] = {
+      machine: m,
+      shiftHrs,
+      otHours,
+      nightShiftHours,
+      setupTime: m.setupTimeDefault !== undefined ? m.setupTimeDefault : 0.5,
+      changeoverTime: m.changeoverTimeDefault || 0,
+      workingDays,
+      weeklyOff,
+      effectiveRunRate: (m.practicalRunRate || 1000) * (m.efficiencyFactor || 0.95),
+      dailyUsedHours: { ...(existingUsage[m._id.toString()] || {}) },
+      lastJobByDate: {},
+    };
+  });
+
+  const orderQty = job.orderQty || 0;
+  const noOfSheets = job.noOfSheets || orderQty;
+  const calendarEntries = [];
+  let previousStageMinStart = today.clone();
+  let previousProcess = null;
+
+  for (const processType of job.process) {
+    const compatibleMachines = machines.filter((m) => m.type === processType);
+    if (compatibleMachines.length === 0) {
+      previousProcess = processType;
+      continue;
+    }
+
+    let selectedMachine = compatibleMachines[0];
+    if (job.machineAssignments?.get(processType)) {
+      const assignedId = job.machineAssignments.get(processType);
+      const found = compatibleMachines.find((m) => m._id.toString() === assignedId);
+      if (found) selectedMachine = found;
+    }
+
+    let stageQty = orderQty;
+    if (
+      processType.includes("Printing") ||
+      processType.includes("Die Cut") ||
+      processType === "Varnish" ||
+      processType === "Sheet Cutting"
+    ) {
+      stageQty = noOfSheets;
+    }
+
+    const alreadyDone = job.stageQtyMap?.get(processType) || 0;
+    let remaining = Math.max(0, stageQty - alreadyDone);
+
+    if (remaining === 0) {
+      previousStageMinStart = today.clone();
+      previousProcess = processType;
+      continue;
+    }
+
+    let bufferDays = 0;
+    if (previousProcess === "Printing" && processType.includes("Die Cut")) bufferDays = 1;
+    if (previousProcess?.includes("Die Cut") && processType === "Formation") bufferDays = 2;
+
+    const state = machineStateMap[selectedMachine._id.toString()];
+    let currentDate = previousStageMinStart.clone().add(bufferDays, "days");
+    let blocks = [];
+    let safety = 0;
+
+    const shiftTiers = [
+      { shift: "Morning", start: 0, end: state.shiftHrs, isOT: false },
+      { shift: "OT", start: state.shiftHrs, end: state.shiftHrs + state.otHours, isOT: true },
+      { shift: "Night", start: state.shiftHrs + state.otHours, end: state.shiftHrs + state.otHours + state.nightShiftHours, isOT: true },
+    ];
+
+    while (remaining > 0 && safety++ < 300) {
+      const dateStr = currentDate.format("YYYY-MM-DD");
+      const dayName = currentDate.format("dddd");
+
+      if (state.workingDays.includes(dayName) && !state.weeklyOff.includes(dayName)) {
+        const machineShiftStart = selectedMachine.shiftStartTime || "09:00";
+        const dueDate = moment(job.internalDueDate || job.deliveryDate);
+        const daysToDeadline = dueDate.isValid() ? dueDate.diff(currentDate, "days") : 999;
+        const deliveryFeasible =
+          daysToDeadline > 2 ? "GREEN" : daysToDeadline >= 0 ? "ORANGE" : "RED";
+
+        const isFirstJobOnDate = (state.dailyUsedHours[dateStr] || 0) === 0;
+        const lastJobOnDate = state.lastJobByDate[dateStr];
+        const needsChangeover =
+          !isFirstJobOnDate &&
+          lastJobOnDate &&
+          lastJobOnDate !== job._id.toString() &&
+          state.changeoverTime > 0;
+        let jobSetupApplied = false;
+
+        for (const tier of shiftTiers) {
+          if (remaining <= 0) break;
+          const tierCapacity = tier.end - tier.start;
+          if (tierCapacity <= 0) continue;
+          const currentUsed = state.dailyUsedHours[dateStr] || 0;
+          if (currentUsed >= tier.end) continue;
+          if (!jobSetupApplied && needsChangeover && tier.shift !== "Morning") continue;
+
+          const usedInTier = Math.max(0, currentUsed - tier.start);
+          const availableInTier = tierCapacity - usedInTier;
+          const effectiveSetup = (() => {
+            if (tier.shift !== "Morning") return 0;
+            if (usedInTier === 0) return state.setupTime;
+            if (!jobSetupApplied && needsChangeover) return state.changeoverTime;
+            return 0;
+          })();
+
+          if (availableInTier <= effectiveSetup || state.effectiveRunRate <= 0) continue;
+
+          const workHrs = availableInTier - effectiveSetup;
+          const qtyPossible = Math.floor(workHrs * state.effectiveRunRate);
+          if (qtyPossible <= 0) continue;
+
+          const qtyToSchedule = Math.min(remaining, qtyPossible);
+          const scheduledHrs = qtyToSchedule / state.effectiveRunRate + effectiveSetup;
+          const blockStartOffset = Math.max(currentUsed, tier.start);
+          const startTime = addHoursToTime(machineShiftStart, blockStartOffset);
+          const endTime = addHoursToTime(machineShiftStart, blockStartOffset + scheduledHrs);
+
+          blocks.push({
+            machineId: selectedMachine._id,
+            date: currentDate.toDate(),
+            shift: tier.shift,
+            startTime,
+            endTime,
+            jobOrderId: job._id,
+            jobCardNo: job.joNo,
+            process: processType,
+            scheduledHours: scheduledHrs,
+            setupTime: effectiveSetup,
+            runTime: scheduledHrs - effectiveSetup,
+            scheduledQty: qtyToSchedule,
+            dailyTarget: Math.round(qtyToSchedule),
+            isOvertime: tier.isOT,
+            overtimeNeeded: tier.isOT,
+            overtimeHours: tier.isOT ? scheduledHrs : 0,
+            deliveryFeasible,
+            status: tier.isOT ? "Pending Approval" : "Scheduled",
+            plannedStart: currentDate.clone().set({
+              hour: parseInt(startTime.split(":")[0]),
+              minute: parseInt(startTime.split(":")[1]),
+            }).toDate(),
+            plannedEnd: currentDate.clone().set({
+              hour: parseInt(endTime.split(":")[0]),
+              minute: parseInt(endTime.split(":")[1]),
+            }).toDate(),
+          });
+
+          state.dailyUsedHours[dateStr] = (state.dailyUsedHours[dateStr] || 0) + scheduledHrs;
+          remaining -= qtyToSchedule;
+          if (effectiveSetup > 0) jobSetupApplied = true;
+          state.lastJobByDate[dateStr] = job._id.toString();
+        }
+      }
+
+      if (remaining > 0) currentDate.add(1, "days");
+    }
+
+    previousStageMinStart = currentDate.clone();
+    previousProcess = processType;
+    calendarEntries.push(...blocks);
+  }
+
+  if (calendarEntries.length > 0) {
+    await ProductionCalendar.insertMany(calendarEntries);
+  }
+  return calendarEntries.length;
+};
+
+const cascadeAffectedJobs = async (triggerJobId) => {
+  const today = moment().startOf("day").toDate();
+
+  // Which machines does the trigger job occupy going forward?
+  const affectedMachineIds = await ProductionCalendar.find({
+    jobOrderId: triggerJobId,
+    date: { $gte: today },
+  }).distinct("machineId");
+
+  if (affectedMachineIds.length === 0) return;
+
+  // All other non-locked future entries on those machines
+  const conflicting = await ProductionCalendar.find({
+    machineId: { $in: affectedMachineIds },
+    jobOrderId: { $ne: triggerJobId },
+    date: { $gte: today },
+    locked: { $ne: true },
+  }).populate("jobOrderId", "deliveryDate status");
+
+  // Deduplicate jobs and sort earliest delivery date first
+  const seen = new Set();
+  const affectedJobs = [];
+  conflicting.forEach((e) => {
+    const jo = e.jobOrderId;
+    if (!jo || ["Completed", "Cancelled"].includes(jo.status)) return;
+    const id = jo._id.toString();
+    if (seen.has(id)) return;
+    seen.add(id);
+    affectedJobs.push({ jobId: jo._id, deliveryDate: jo.deliveryDate });
+  });
+
+  affectedJobs.sort((a, b) =>
+    moment(a.deliveryDate).diff(moment(b.deliveryDate))
+  );
+
+  // Re-plan each affected job in priority order. Each call seeds from the
+  // current DB state so jobs cascade forward naturally.
+  for (const { jobId } of affectedJobs) {
+    await recalcJobCalendar(jobId);
+  }
+};
+
 module.exports = {
   generateProductionCalendar,
   getProductionCalendar,
   planJob,
+  recalcJobCalendar,
+  cascadeAffectedJobs,
 };

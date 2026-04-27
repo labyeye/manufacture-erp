@@ -15,6 +15,7 @@ import { useEffect } from "react";
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 const today = () => new Date().toISOString().slice(0, 10);
 const fmt = (n) => (n ?? 0).toLocaleString("en-IN");
+const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("en-GB") : "—");
 
 const SHIFTS = ["Morning", "OT", "Night"];
 
@@ -813,7 +814,7 @@ export default function ProductionUpdate({
                               </span>
                             )}
                             <span style={{ color: C.muted, fontSize: 12 }}>
-                              {r.date}
+                              {fmtDate(r.date)}
                             </span>
                           </div>
                         </div>

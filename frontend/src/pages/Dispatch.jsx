@@ -15,10 +15,11 @@ import { dispatchAPI, salesOrdersAPI, jobOrdersAPI } from "../api/auth";
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 const today = () => new Date().toISOString().slice(0, 10);
 const fmt = (n) => (n ?? 0).toLocaleString("en-IN");
+const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("en-GB") : "—");
 
 const UNIT_OPTIONS = ["pcs", "kg"];
 
-export default function Dispatch({ fgStock = [], itemMasterFG = [], toast }) {
+export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = [], toast }) {
   const [dispatch, setDispatch] = useState([]);
   const [salesOrders, setSalesOrders] = useState([]);
   const [jobOrders, setJobOrders] = useState([]);
@@ -130,6 +131,12 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], toast }) {
             const masterItem = (itemMasterFG || []).find(
               (m) => m.name === it.itemName,
             );
+            const priceEntry = (priceList || []).find(
+              (p) =>
+                p.listType === "selling" &&
+                (p.itemName === it.itemName || p.itemCode === (masterItem?.code || "")) &&
+                (!p.companyName || p.companyName === so.companyName),
+            );
             return {
               _id: uid(),
               itemName: it.itemName || "",
@@ -142,7 +149,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], toast }) {
               unit: it.qtyUnit || "nos",
               pcsPerBox: "",
               noOfBox: "",
-              rate: it.price || 0,
+              rate: it.price || priceEntry?.unitPrice || 0,
               gstRate: it.gstRate || 18,
               amount: it.amount || 0,
               taxAmount: it.taxAmount || 0,
@@ -206,6 +213,17 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], toast }) {
           it.clientCode = masterItem.clientCodes?.[header.clientName] || "";
         } else {
           it.clientCode = "";
+        }
+
+        const priceEntry = (priceList || []).find(
+          (p) =>
+            p.listType === "selling" &&
+            (p.itemName === v || p.itemCode === (masterItem?.code || "")) &&
+            (!p.companyName || p.companyName === header.companyName),
+        );
+        if (priceEntry) {
+          it.rate = priceEntry.unitPrice;
+          it.gstRate = it.gstRate || 18;
         }
       }
 
@@ -998,7 +1016,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], toast }) {
                         {r.dispatchNo}
                       </span>
                       <span style={{ fontSize: 12, color: C.muted }}>
-                        {r.dispatchDate}
+                        {fmtDate(r.date)}
                       </span>
                       <span style={{ fontSize: 13, fontWeight: 600 }}>
                         {r.companyName}

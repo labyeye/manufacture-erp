@@ -143,8 +143,7 @@ export default function PurchaseOrders({
     );
     const fromMaster =
       consCat && consCat.subTypes ? Object.keys(consCat.subTypes) : [];
-    const baseline = ["Tape", "Corrugated Box", "LDPE Polybag", "Glue"];
-    return [...new Set([...baseline, ...fromMaster])];
+    return [...new Set(fromMaster)];
   }, [categoryMaster]);
 
   const subCategoriesByItem = useMemo(() => {

@@ -8,6 +8,7 @@ import {
   DatePicker,
 } from "../components/ui/BasicComponents";
 import { fmt, today, xlsxDownload, daysSince } from "../utils/helpers";
+const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("en-GB") : "—");
 import * as XLSX from "xlsx";
 import { salesOrdersAPI } from "../api/auth";
 
@@ -1511,7 +1512,7 @@ export function Dashboard({ data, session, toast }) {
                           background: idx % 2 === 0 ? "#0e0e12" : "#121216",
                         }}
                       >
-                        <td style={TD}>{e.date || "—"}</td>
+                        <td style={TD}>{fmtDate(e.date)}</td>
                         <td style={TD}>
                           <div style={{ fontWeight: 600 }}>
                             {e.itemName || "—"}
@@ -4426,8 +4427,10 @@ export function Dashboard({ data, session, toast }) {
       {reportTab === "bottleneck" &&
         (() => {
           const todayMs = Date.now();
+          const FEEDER_STAGES = ["Printing", "Varnish", "Lamination", "Die Cutting"];
+          const SINK_STAGES   = ["Formation", "Manual Formation"];
+          const ALL_BN_STAGES = [...FEEDER_STAGES, ...SINK_STAGES];
 
-          // Days since last production activity (or job creation if no history)
           const jobWaitDays = (jo) => {
             const hist = jo.stageHistory || [];
             if (hist.length === 0) {
@@ -4441,50 +4444,107 @@ export function Dashboard({ data, session, toast }) {
             return Math.max(0, (todayMs - latest) / 86400000);
           };
 
-          const stageStats = STAGES.map((stage) => {
-            const jobs    = processPendingMap[stage] || [];
-            const waits   = jobs.map(jobWaitDays);
-            const count   = jobs.length;
-            const avgWait = waits.length ? waits.reduce((s, v) => s + v, 0) / waits.length : 0;
-            const maxWait = waits.length ? Math.max(...waits) : 0;
+          const stageStats = ALL_BN_STAGES.map((stage) => {
+            const jobs     = processPendingMap[stage] || [];
+            const waits    = jobs.map(jobWaitDays);
+            const count    = jobs.length;
+            const avgWait  = waits.length ? waits.reduce((s, v) => s + v, 0) / waits.length : 0;
+            const maxWait  = waits.length ? Math.max(...waits) : 0;
             const pressure = count * avgWait;
-            return { stage, count, avgWait, maxWait, pressure, jobs };
+            const isFeeder = FEEDER_STAGES.includes(stage);
+            return { stage, count, avgWait, maxWait, pressure, jobs, isFeeder };
           });
 
-          const maxCount   = Math.max(...stageStats.map((s) => s.count), 1);
-          const maxPressure = Math.max(...stageStats.map((s) => s.pressure), 0.001);
-          const bottleneck = stageStats.reduce(
-            (b, s) => (s.pressure > b.pressure ? s : b),
-            stageStats[0]
-          );
-          const totalWIP = stageStats.reduce((s, r) => s + r.count, 0);
-          const allMaxWait = Math.max(...stageStats.map((s) => s.maxWait));
+          const feederStats     = stageStats.filter((s) => s.isFeeder);
+          const sinkStats       = stageStats.filter((s) => !s.isFeeder);
+          const feederDepth     = feederStats.reduce((s, r) => s + r.count, 0);
+          const sinkDepth       = sinkStats.reduce((s, r) => s + r.count, 0);
+          const dieCuttingCount = (processPendingMap["Die Cutting"] || []).length;
+          const earlyPipeDepth  = feederDepth - dieCuttingCount;
 
-          // Auto-recommendation
+          const maxCount    = Math.max(...stageStats.map((s) => s.count), 1);
+          const maxPressure = Math.max(...stageStats.map((s) => s.pressure), 0.001);
+          const bottleneck  = stageStats.reduce((b, s) => (s.pressure > b.pressure ? s : b), stageStats[0]);
+          const totalWIP    = feederDepth + sinkDepth;
+
+          const noWIP = totalWIP === 0;
+          const starvationRisk =
+            noWIP ? "none"
+            : sinkDepth === 0 && dieCuttingCount === 0 ? "high"
+            : sinkDepth <= 1 && dieCuttingCount <= 1   ? "medium"
+            : "low";
+
+          const starvationColor = starvationRisk === "high" ? C.red : starvationRisk === "medium" ? C.yellow : starvationRisk === "none" ? "#555" : C.green;
+          const starvationLabel = starvationRisk === "high" ? "High Risk" : starvationRisk === "medium" ? "Moderate" : starvationRisk === "none" ? "No WIP" : "Healthy";
+
+          const starvationText = (() => {
+            if (starvationRisk === "high") {
+              if (earlyPipeDepth > 0)
+                return `Formation & Manual Formation queues are empty. Die Cutting is also clear — ${earlyPipeDepth} job${earlyPipeDepth > 1 ? "s are" : " is"} still in early stages (Printing / Varnish / Lamination) and haven't reached Die Cutting yet. Formation machines may go idle shortly.`;
+              return "Formation & Manual Formation queues are empty and no jobs are in the feeder pipeline. Formation machines are currently idle.";
+            }
+            if (starvationRisk === "medium")
+              return `Formation queues are thin (${sinkDepth} job${sinkDepth !== 1 ? "s" : ""}) and Die Cutting has only ${dieCuttingCount} job${dieCuttingCount !== 1 ? "s" : ""} to feed them. Monitor closely to avoid idle time on Formation machines.`;
+            return "";
+          })();
+
           const rec = (() => {
-            if (bottleneck.count === 0) return "No active WIP queue. Production is flowing smoothly.";
-            const { stage, count, avgWait } = bottleneck;
+            if (noWIP || bottleneck.count === 0) return "No active WIP queue. Production is flowing smoothly.";
+            const { stage, count, avgWait, isFeeder } = bottleneck;
             const tips = {
-              Printing:         "Consider overtime scheduling or redistributing jobs across available printing machines.",
-              Varnish:          "Batch smaller jobs together to reduce setup time. Check varnish machine drum speed.",
-              Lamination:       "Lamination queues build fast — review laminator speed or add a parallel pass.",
-              "Die Cutting":    "Inspect dies for wear; worn dies slow throughput significantly. Check registration.",
-              Formation:        "Formation is labor-intensive. Consider adding operators or a dedicated night shift.",
-              "Manual Formation": "Manual bottlenecks are operator-bound. Overtime or cross-training helps immediately.",
+              Printing:           "Consider overtime or redistributing jobs across available printing machines.",
+              Varnish:            "Batch smaller jobs together to cut setup time. Check varnish machine drum speed.",
+              Lamination:         "Lamination queues build fast — review laminator speed or add a parallel pass.",
+              "Die Cutting":      "Inspect dies for wear; worn dies slow throughput significantly. Die Cutting directly gates Formation — clearing this queue is highest priority.",
+              Formation:          "Formation machines are backed up. Consider adding a night shift or a second operator per machine.",
+              "Manual Formation": "Manual Formation is operator-bound. Overtime or cross-training provides the fastest relief.",
             };
             const tip = tips[stage] || "Review machine capacity and operator allocation for this stage.";
-            return `${stage} is your bottleneck — ${count} job${count > 1 ? "s" : ""} queued, avg ${avgWait.toFixed(1)} days waiting. ${tip}`;
+            const cascade = isFeeder
+              ? ` As a feeder stage, this congestion will propagate downstream and starve Formation machines if not addressed.`
+              : "";
+            return `${stage} is your bottleneck — ${count} job${count > 1 ? "s" : ""} queued, avg ${avgWait.toFixed(1)} days waiting.${cascade} ${tip}`;
           })();
+
+          const TankNode = ({ s, height = 90, fontSize = 24 }) => {
+            const fillPct = s.count / maxCount;
+            const isBN    = s.stage === bottleneck.stage && s.count > 0;
+            const border  = isBN ? "#ef4444" : fillPct > 0.5 ? C.yellow : fillPct > 0 ? (s.isFeeder ? "#3b82f6" : "#22c55e") : "#2a2a2e";
+            const fillBg  = isBN ? "#ef444422" : fillPct > 0.5 ? "#f59e0b22" : s.isFeeder ? "#3b82f622" : "#22c55e22";
+            return (
+              <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <div style={{ height: 22 }}>{isBN && <span style={{ fontSize: 15 }}>👑</span>}</div>
+                <div style={{ width: 82, height, border: `2px solid ${border}`, borderRadius: 6, background: "#0c0c0e", position: "relative", overflow: "hidden" }}>
+                  <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: `${fillPct * 100}%`, background: fillBg }} />
+                  <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: 2 }}>
+                    <div style={{ fontSize, fontWeight: 900, color: s.count > 0 ? (isBN ? "#ef4444" : "#e0e0e0") : "#2a2a2e", lineHeight: 1 }}>{s.count}</div>
+                    {s.count > 0 && <div style={{ fontSize: 9, color: "#888" }}>~{s.avgWait.toFixed(1)}d</div>}
+                  </div>
+                </div>
+                <div style={{ fontSize: 9, color: isBN ? "#ef4444" : "#666", fontWeight: isBN ? 700 : 400, marginTop: 6, textAlign: "center", lineHeight: 1.3, maxWidth: 86 }}>
+                  {s.stage}
+                </div>
+              </div>
+            );
+          };
+
+          const Arrow = ({ color = "#2a2a2e", wide = false }) => (
+            <div style={{ display: "flex", alignItems: "center", flexShrink: 0, marginBottom: 32 }}>
+              <div style={{ width: wide ? 20 : 14, height: 2, background: color }} />
+              <div style={{ width: 0, height: 0, borderLeft: `${wide ? 8 : 6}px solid ${color}`, borderTop: `${wide ? 6 : 5}px solid transparent`, borderBottom: `${wide ? 6 : 5}px solid transparent` }} />
+            </div>
+          );
 
           return (
             <div>
               {/* ── Summary cards ── */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 20 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 12, marginBottom: 20 }}>
                 {[
-                  { label: "Total WIP Jobs",          val: totalWIP,                                                   color: C.yellow, isText: false },
-                  { label: "Bottleneck Stage",         val: bottleneck.count > 0 ? bottleneck.stage : "None",          color: C.red,    isText: true  },
-                  { label: "Avg Wait at Bottleneck",   val: bottleneck.count > 0 ? `${bottleneck.avgWait.toFixed(1)}d` : "—", color: "#f97316", isText: true },
-                  { label: "Max Wait (any job)",       val: allMaxWait > 0 ? `${allMaxWait.toFixed(1)}d` : "—",        color: C.red,    isText: true  },
+                  { label: "Total WIP Jobs",        val: totalWIP,                                                          color: C.yellow,        isText: false },
+                  { label: "Bottleneck Stage",       val: bottleneck.count > 0 ? bottleneck.stage : "None",                 color: C.red,           isText: true  },
+                  { label: "Avg Wait at Bottleneck", val: bottleneck.count > 0 ? `${bottleneck.avgWait.toFixed(1)}d` : "—", color: "#f97316",       isText: true  },
+                  { label: "Feeder Pipeline Depth",  val: feederDepth,                                                       color: "#3b82f6",       isText: false },
+                  { label: "Formation Starvation",   val: starvationLabel,                                                   color: starvationColor, isText: true  },
                 ].map(({ label, val, color, isText }) => (
                   <div key={label} style={{ background: "#141416", border: `1px solid ${color}44`, borderLeft: `4px solid ${color}`, borderRadius: 8, padding: 16 }}>
                     <div style={{ fontSize: 11, color: "#888", fontWeight: 700, textTransform: "uppercase", marginBottom: 6 }}>{label}</div>
@@ -4494,63 +4554,60 @@ export function Dashboard({ data, session, toast }) {
               </div>
 
               {/* ── Recommendation ── */}
-              {bottleneck.count > 0 && (
-                <div style={{ marginBottom: 20, padding: "14px 18px", borderRadius: 8, background: "#1a0a0a", border: "1px solid #ef444466", display: "flex", gap: 14, alignItems: "flex-start" }}>
+              {!noWIP && bottleneck.count > 0 && (
+                <div style={{ marginBottom: 16, padding: "14px 18px", borderRadius: 8, background: "#1a0a0a", border: "1px solid #ef444466", display: "flex", gap: 14, alignItems: "flex-start" }}>
                   <span style={{ fontSize: 20, flexShrink: 0 }}>💡</span>
                   <div>
-                    <div style={{ fontWeight: 700, color: "#ef4444", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>
-                      Bottleneck Recommendation
-                    </div>
+                    <div style={{ fontWeight: 700, color: "#ef4444", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Bottleneck Recommendation</div>
                     <div style={{ fontSize: 13, color: "#bbb", lineHeight: 1.6 }}>{rec}</div>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Starvation alert ── */}
+              {(starvationRisk === "high" || starvationRisk === "medium") && starvationText && (
+                <div style={{ marginBottom: 16, padding: "14px 18px", borderRadius: 8, background: starvationRisk === "high" ? "#1a0505" : "#1a1400", border: `1px solid ${starvationColor}66`, display: "flex", gap: 14, alignItems: "flex-start" }}>
+                  <span style={{ fontSize: 20, flexShrink: 0 }}>⚠️</span>
+                  <div>
+                    <div style={{ fontWeight: 700, color: starvationColor, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Formation Starvation {starvationRisk === "high" ? "Warning" : "Notice"}</div>
+                    <div style={{ fontSize: 13, color: "#bbb", lineHeight: 1.6 }}>{starvationText}</div>
                   </div>
                 </div>
               )}
 
               {/* ── Pipeline flow diagram ── */}
               <div style={{ background: "#141416", border: "1px solid #2a2a2e", borderRadius: 8, padding: "20px 20px 16px", marginBottom: 20 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 20 }}>
-                  Production Pipeline — WIP Queue Depth
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: "0.05em" }}>Production Pipeline — Feeder Stages → Formation Sinks</div>
+                  <div style={{ display: "flex", gap: 14 }}>
+                    <span style={{ fontSize: 10, color: "#3b82f6" }}>■ Feeder</span>
+                    <span style={{ fontSize: 10, color: "#22c55e" }}>■ Sink</span>
+                  </div>
                 </div>
-                <div style={{ display: "flex", alignItems: "flex-end", gap: 0, overflowX: "auto", paddingBottom: 8 }}>
-                  {stageStats.map((s, i) => {
-                    const fillPct   = s.count / maxCount;
-                    const isBN      = s.stage === bottleneck.stage && s.count > 0;
-                    const border    = isBN ? "#ef4444" : fillPct > 0.5 ? C.yellow : fillPct > 0 ? "#3b82f6" : "#2a2a2e";
-                    const fillBg    = isBN ? "#ef444422" : fillPct > 0.5 ? "#f59e0b22" : "#3b82f622";
-                    return (
-                      <React.Fragment key={s.stage}>
-                        {i > 0 && (
-                          <div style={{ display: "flex", alignItems: "center", flexShrink: 0, marginBottom: 32 }}>
-                            <div style={{ width: 14, height: 2, background: "#2a2a2e" }} />
-                            <div style={{ width: 0, height: 0, borderLeft: "6px solid #3a3a3e", borderTop: "5px solid transparent", borderBottom: "5px solid transparent" }} />
-                          </div>
-                        )}
-                        <div style={{ flexShrink: 0, width: 100, display: "flex", flexDirection: "column", alignItems: "center" }}>
-                          <div style={{ height: 22 }}>
-                            {isBN && <span style={{ fontSize: 16 }}>👑</span>}
-                          </div>
-                          {/* Tank */}
-                          <div style={{ width: 82, height: 90, border: `2px solid ${border}`, borderRadius: 6, background: "#0c0c0e", position: "relative", overflow: "hidden" }}>
-                            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: `${fillPct * 100}%`, background: fillBg }} />
-                            <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: 2 }}>
-                              <div style={{ fontSize: 24, fontWeight: 900, color: s.count > 0 ? (isBN ? "#ef4444" : "#e0e0e0") : "#2a2a2e", lineHeight: 1 }}>
-                                {s.count}
-                              </div>
-                              {s.count > 0 && (
-                                <div style={{ fontSize: 9, color: "#888" }}>~{s.avgWait.toFixed(1)}d</div>
-                              )}
-                            </div>
-                          </div>
-                          <div style={{ fontSize: 9, color: isBN ? "#ef4444" : "#666", fontWeight: isBN ? 700 : 400, marginTop: 6, textAlign: "center", lineHeight: 1.3, maxWidth: 90 }}>
-                            {s.stage}
-                          </div>
-                        </div>
-                      </React.Fragment>
-                    );
-                  })}
+
+                <div style={{ display: "flex", alignItems: "center", overflowX: "auto", paddingBottom: 8 }}>
+                  {/* Feeder chain */}
+                  {feederStats.map((s, i) => (
+                    <React.Fragment key={s.stage}>
+                      {i > 0 && <Arrow />}
+                      <TankNode s={s} />
+                    </React.Fragment>
+                  ))}
+
+                  {/* Transition arrow: feeder → sinks */}
+                  <Arrow color="#3b82f6" wide />
+
+                  {/* Sink column: Formation + Manual Formation stacked */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12, flexShrink: 0 }}>
+                    <div style={{ fontSize: 9, color: "#22c55e88", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", textAlign: "center" }}>Formation Sinks</div>
+                    {sinkStats.map((s) => (
+                      <TankNode key={s.stage} s={s} height={72} fontSize={20} />
+                    ))}
+                  </div>
                 </div>
-                <div style={{ fontSize: 10, color: "#444", marginTop: 6 }}>
-                  Fill level = relative WIP queue depth · 👑 = highest pressure (jobs × avg wait days)
+
+                <div style={{ fontSize: 10, color: "#444", marginTop: 8 }}>
+                  Fill = relative WIP queue depth · 👑 = highest pressure (jobs × avg wait) · Blue arrow = feeder → Formation flow · Varnish & Lamination apply to ~20–25% of jobs
                 </div>
               </div>
 
@@ -4562,22 +4619,27 @@ export function Dashboard({ data, session, toast }) {
                 <table style={{ ...TABLE, tableLayout: "auto" }}>
                   <thead>
                     <tr>
-                      {["Stage", "Jobs Queued", "Avg Wait (d)", "Max Wait (d)", "Pressure Index", "Status"].map((h) => (
+                      {["Stage", "Role", "Jobs Queued", "Avg Wait (d)", "Max Wait (d)", "Pressure Index", "Status"].map((h) => (
                         <th key={h} style={TH}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {stageStats.map((s, i) => {
-                      const isBN   = s.stage === bottleneck.stage && s.count > 0;
-                      const col    = isBN ? C.red : s.count > 2 ? C.yellow : s.count > 0 ? C.green : "#555";
-                      const label  = s.count === 0 ? "Clear" : isBN ? "Bottleneck 👑" : s.count > 2 ? "Congested" : "Manageable";
+                      const isBN      = s.stage === bottleneck.stage && s.count > 0;
+                      const col       = isBN ? C.red : s.count > 2 ? C.yellow : s.count > 0 ? C.green : "#555";
+                      const label     = s.count === 0 ? "Clear" : isBN ? "Bottleneck 👑" : s.count > 2 ? "Congested" : "Manageable";
+                      const roleCol   = s.isFeeder ? "#3b82f6" : "#22c55e";
+                      const roleLabel = s.isFeeder ? "Feeder" : "Sink";
                       return (
                         <tr key={s.stage} style={{ background: i % 2 === 0 ? "#0e0e12" : "#121216" }}>
                           <td style={{ ...TD, fontWeight: 700 }}>{s.stage}</td>
-                          <td style={{ ...TD, textAlign: "right", fontWeight: 700, color: s.count > 0 ? col : "#555" }}>
-                            {s.count || "—"}
+                          <td style={{ ...TD }}>
+                            <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 10, fontWeight: 700, background: `${roleCol}22`, color: roleCol, border: `1px solid ${roleCol}44` }}>
+                              {roleLabel}
+                            </span>
                           </td>
+                          <td style={{ ...TD, textAlign: "right", fontWeight: 700, color: s.count > 0 ? col : "#555" }}>{s.count || "—"}</td>
                           <td style={{ ...TD, textAlign: "right", color: s.avgWait > 3 ? C.red : s.avgWait > 1 ? C.yellow : "#888" }}>
                             {s.count > 0 ? s.avgWait.toFixed(1) : "—"}
                           </td>
@@ -4609,7 +4671,7 @@ export function Dashboard({ data, session, toast }) {
               {/* ── Longest-waiting jobs ── */}
               {(() => {
                 const stuck = stageStats
-                  .flatMap((s) => s.jobs.map((jo) => ({ jo, stage: s.stage, wait: jobWaitDays(jo) })))
+                  .flatMap((s) => s.jobs.map((jo) => ({ jo, stage: s.stage, isFeeder: s.isFeeder, wait: jobWaitDays(jo) })))
                   .sort((a, b) => b.wait - a.wait)
                   .slice(0, 8);
                 if (!stuck.length) return null;
@@ -4621,27 +4683,35 @@ export function Dashboard({ data, session, toast }) {
                     <table style={{ ...TABLE, tableLayout: "auto" }}>
                       <thead>
                         <tr>
-                          {["JO #", "Item", "Client", "Stuck at Stage", "Days Waiting"].map((h) => (
+                          {["JO #", "Item", "Client", "Stuck at Stage", "Role", "Days Waiting"].map((h) => (
                             <th key={h} style={TH}>{h}</th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
-                        {stuck.map(({ jo, stage, wait }, i) => (
-                          <tr key={jo._id || i} style={{ background: i % 2 === 0 ? "#0e0e12" : "#121216" }}>
-                            <td style={{ ...TD, color: C.yellow, fontWeight: 700 }}>{jo.joNo}</td>
-                            <td style={TD}>{jo.itemName || "—"}</td>
-                            <td style={{ ...TD, color: "#888" }}>{jo.companyName || "—"}</td>
-                            <td style={TD}>
-                              <span style={{ padding: "2px 8px", borderRadius: 4, background: (PROCESS_COLORS[stage] || "#555") + "33", color: PROCESS_COLORS[stage] || "#aaa", fontSize: 11, fontWeight: 700 }}>
-                                {stage}
-                              </span>
-                            </td>
-                            <td style={{ ...TD, textAlign: "right", fontWeight: 700, color: wait > 5 ? C.red : wait > 2 ? C.yellow : "#888" }}>
-                              {wait.toFixed(1)}d
-                            </td>
-                          </tr>
-                        ))}
+                        {stuck.map(({ jo, stage, isFeeder, wait }, i) => {
+                          const roleCol = isFeeder ? "#3b82f6" : "#22c55e";
+                          return (
+                            <tr key={jo._id || i} style={{ background: i % 2 === 0 ? "#0e0e12" : "#121216" }}>
+                              <td style={{ ...TD, color: C.yellow, fontWeight: 700 }}>{jo.joNo}</td>
+                              <td style={TD}>{jo.itemName || "—"}</td>
+                              <td style={{ ...TD, color: "#888" }}>{jo.companyName || "—"}</td>
+                              <td style={TD}>
+                                <span style={{ padding: "2px 8px", borderRadius: 4, background: (PROCESS_COLORS[stage] || "#555") + "33", color: PROCESS_COLORS[stage] || "#aaa", fontSize: 11, fontWeight: 700 }}>
+                                  {stage}
+                                </span>
+                              </td>
+                              <td style={{ ...TD }}>
+                                <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 10, fontWeight: 700, background: `${roleCol}22`, color: roleCol, border: `1px solid ${roleCol}44` }}>
+                                  {isFeeder ? "Feeder" : "Sink"}
+                                </span>
+                              </td>
+                              <td style={{ ...TD, textAlign: "right", fontWeight: 700, color: wait > 5 ? C.red : wait > 2 ? C.yellow : "#888" }}>
+                                {wait.toFixed(1)}d
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>

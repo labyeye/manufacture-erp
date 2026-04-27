@@ -7,6 +7,7 @@ import { consumableStockAPI } from "../api/auth";
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 const today = () => new Date().toISOString().slice(0, 10);
 const fmt = (n) => (n ?? 0).toLocaleString("en-IN");
+const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("en-GB") : "—");
 
 const TYPE_FILTERS = ["All", "Consumable", "Machine Spare", "Other"];
 
@@ -627,7 +628,7 @@ export default function ConsumableStock({
           ) : (
             issueLog.map((log) => (
               <div key={log.id} style={{ display: "flex", gap: 14, alignItems: "center", padding: "10px 4px", borderBottom: `1px solid ${C.border}22`, fontSize: 13, flexWrap: "wrap" }}>
-                <span style={{ fontSize: 11, color: C.muted, minWidth: 90 }}>{log.date}</span>
+                <span style={{ fontSize: 11, color: C.muted, minWidth: 90 }}>{fmtDate(log.date)}</span>
                 <span style={{ fontWeight: 600, flex: 1 }}>{log.itemName}</span>
                 <span style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, color: C.orange || "#f97316" }}>-{fmt(log.qty)}</span>
                 <span style={{ fontSize: 11, color: C.muted }}>{log.category}</span>

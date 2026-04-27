@@ -128,6 +128,7 @@ function DraftPOModal({ row, vendors, leadDays, bufferDays, toast, onClose, onCr
         remarks: `Auto-generated draft — RM Forecast (${row.name})`,
         items: [{
           materialType: "Raw Material",
+          productCode: row.code || "",
           itemName:   row.name,
           paperType:  row.paperType || "",
           gsm:        row.gsm       || 0,

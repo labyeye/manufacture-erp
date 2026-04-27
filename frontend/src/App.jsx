@@ -31,6 +31,7 @@ import {
   dispatchAPI,
   companyMasterAPI,
   consumableStockAPI,
+  priceListAPI,
 } from "./api/auth";
 import { AuthContext, AuthProvider, useAuth } from "./context/AuthContext";
 import { Toast } from "./components/ui/AdvancedComponents";
@@ -194,6 +195,7 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
     "erp_companyMaster",
     [],
   );
+  const [priceList, setPriceList] = usePersistedState("erp_priceList", []);
 
   const [soCounter, setSoCounter] = usePersistedState("erp_soCounter", {
     SO: 1,
@@ -309,6 +311,7 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
         "stocks",
         "consumableStock",
       ),
+      run(priceListAPI.getAll, setPriceList, "priceLists", "priceList"),
     ]);
   };
 
@@ -384,6 +387,7 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
         setMachineReportData,
         companyMaster,
         setCompanyMaster,
+        priceList,
         editableTabs,
         allowedTabs,
         currentTab,
@@ -444,6 +448,7 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
       setMachineReportData,
       companyMaster,
       setCompanyMaster,
+      priceList,
       editableTabs,
       allowedTabs,
       currentTab,
@@ -467,6 +472,7 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
     sizeMaster,
     printingMaster,
     companyMaster,
+    priceList,
   ]);
 
   const data = filteredData;

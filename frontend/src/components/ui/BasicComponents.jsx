@@ -405,22 +405,27 @@ export function AutocompleteInput({
 
 export function DatePicker({ value, onChange, style = {} }) {
   return (
-    <input
-      type="date"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      style={{
-        width: "100%",
-        padding: "9px 12px",
-        background: C.inputBg,
-        border: "1px solid " + C.border,
-        borderRadius: 6,
-        fontSize: 13,
-        color: C.text,
-        accentColor: "white",
-        ...style,
-      }}
-    />
+    <div style={{ position: "relative", width: "100%" }}>
+      <input
+        type="date"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        style={{
+          width: "100%",
+          padding: "9px 36px 9px 12px",
+          background: C.inputBg,
+          border: "1px solid " + C.border,
+          borderRadius: 6,
+          fontSize: 13,
+          color: C.text,
+          accentColor: C.text,
+          colorScheme: "dark",
+          boxSizing: "border-box",
+          ...style,
+        }}
+      />
+      
+    </div>
   );
 }
 

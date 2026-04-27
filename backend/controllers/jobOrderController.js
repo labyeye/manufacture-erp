@@ -8,6 +8,7 @@ const { generateJONo } = require("../utils/counters");
 const { generateJobCardPDF } = require("../utils/pdf");
 
 const JobStage = require("../models/JobStage");
+const { recalcJobCalendar, cascadeAffectedJobs } = require("./planningController");
 
 const STAGES = [
   "Printing",
@@ -557,6 +558,9 @@ exports.addStage = async (req, res) => {
     await recalculateProductionStats(jobOrder);
 
     await jobOrder.save();
+    recalcJobCalendar(jobOrder._id)
+      .then(() => cascadeAffectedJobs(jobOrder._id))
+      .catch((e) => console.error("Calendar cascade error (addStage):", e));
     res.json(jobOrder);
   } catch (error) {
     console.error("Add stage error:", error);
@@ -589,6 +593,9 @@ exports.updateStage = async (req, res) => {
     await recalculateProductionStats(jobOrder);
 
     await jobOrder.save();
+    recalcJobCalendar(jobOrder._id)
+      .then(() => cascadeAffectedJobs(jobOrder._id))
+      .catch((e) => console.error("Calendar cascade error (updateStage):", e));
     res.json(jobOrder);
   } catch (error) {
     console.error("Update stage error:", error);
@@ -610,6 +617,9 @@ exports.deleteStage = async (req, res) => {
     await recalculateProductionStats(jobOrder);
 
     await jobOrder.save();
+    recalcJobCalendar(jobOrder._id)
+      .then(() => cascadeAffectedJobs(jobOrder._id))
+      .catch((e) => console.error("Calendar cascade error (deleteStage):", e));
     res.json(jobOrder);
   } catch (error) {
     console.error("Delete stage error:", error);
