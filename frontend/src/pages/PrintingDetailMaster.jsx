@@ -10,7 +10,7 @@ import {
   ExportBtn,
   TemplateBtn,
 } from "../components/ui/BasicComponents";
-import { printingDetailMasterAPI, companyMasterAPI } from "../api/auth";
+import { printingDetailMasterAPI, companyMasterAPI, toolingMasterAPI, itemMasterAPI } from "../api/auth";
 import * as XLSX from "xlsx";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
@@ -20,15 +20,21 @@ export default function PrintingDetailMaster({ toast }) {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [companyMaster, setCompanyMaster] = useState([]);
+  const [plateTools, setPlateTools] = useState([]);
+  const [dieTools, setDieTools] = useState([]);
+  const [fgItems, setFgItems] = useState([]);
   const fileInputRef = React.useRef(null);
 
   const blankEntry = {
     itemName: "",
+    linkedFGCode: "",
     companyName: "",
     companyCategory: "",
     itemCategory: "",
     printing: "",
     plate: "",
+    linkedPlateCode: "",
+    linkedDieCode: "",
     process: [],
     paperCategory: "Paper Sheets",
     paperType: "",
@@ -51,7 +57,24 @@ export default function PrintingDetailMaster({ toast }) {
   useEffect(() => {
     fetchPrintingDetails();
     fetchCompanies();
+    fetchToolingAndItems();
   }, []);
+
+  const fetchToolingAndItems = async () => {
+    try {
+      const [toolData, itemData] = await Promise.all([
+        toolingMasterAPI.getAll(),
+        itemMasterAPI.getAll(),
+      ]);
+      const tools = Array.isArray(toolData) ? toolData : [];
+      setPlateTools(tools.filter((t) => t.toolType === "Plate"));
+      setDieTools(tools.filter((t) => t.toolType === "Die"));
+      const items = Array.isArray(itemData) ? itemData : (itemData?.items || []);
+      setFgItems(items.filter((i) => i.type === "Finished Goods" && i.code));
+    } catch {
+      // silently fail — tooling/items are optional enrichment
+    }
+  };
 
   const fetchPrintingDetails = async () => {
     setLoading(true);
@@ -419,9 +442,31 @@ export default function PrintingDetailMaster({ toast }) {
               gap: 16,
             }}
           >
+            <Field label="FG Product Code">
+              <select
+                value={entry.linkedFGCode}
+                onChange={(e) => {
+                  const code = e.target.value;
+                  const item = fgItems.find((i) => i.code === code);
+                  setField("linkedFGCode", code);
+                  if (item) {
+                    setField("itemName", item.name || item.itemName || code);
+                    if (item.category) setField("itemCategory", item.category);
+                  }
+                }}
+                style={{ border: errors.linkedFGCode ? "1px solid red" : "" }}
+              >
+                <option value="">— Select FG Product —</option>
+                {fgItems.map((i) => (
+                  <option key={i.code} value={i.code}>
+                    {i.code}{i.name ? ` — ${i.name}` : ""}
+                  </option>
+                ))}
+              </select>
+            </Field>
             <Field label="Item Name *">
               <input
-                placeholder="Item name"
+                placeholder="Auto-filled from FG code or type manually"
                 value={entry.itemName}
                 onChange={(e) => setField("itemName", e.target.value)}
                 style={{ border: errors.itemName ? "1px solid red" : "" }}
@@ -462,12 +507,12 @@ export default function PrintingDetailMaster({ toast }) {
                 ))}
               </select>
             </Field>
-            <Field label="Plate">
+            <Field label="Plate Status">
               <select
                 value={entry.plate}
                 onChange={(e) => setField("plate", e.target.value)}
               >
-                <option value="">-- Plate --</option>
+                <option value="">-- Plate Status --</option>
                 {["Plain", "Old", "New"].map((v) => (
                   <option key={v} value={v}>
                     {v}
@@ -475,6 +520,34 @@ export default function PrintingDetailMaster({ toast }) {
                 ))}
               </select>
             </Field>
+            <Field label="Linked Plate (Tooling)">
+              <select
+                value={entry.linkedPlateCode}
+                onChange={(e) => setField("linkedPlateCode", e.target.value)}
+              >
+                <option value="">— Select Plate —</option>
+                {plateTools.map((p) => (
+                  <option key={p._id} value={p.designCode}>
+                    {p.designCode}{p.linkedSKU ? ` · ${p.linkedSKU}` : ""} [{p.status}]
+                  </option>
+                ))}
+              </select>
+            </Field>
+            {entry.process.includes("Die Cutting") && (
+              <Field label="Linked Die (Tooling)">
+                <select
+                  value={entry.linkedDieCode}
+                  onChange={(e) => setField("linkedDieCode", e.target.value)}
+                >
+                  <option value="">— Select Die —</option>
+                  {dieTools.map((d) => (
+                    <option key={d._id} value={d.designCode}>
+                      {d.designCode}{d.linkedSKU ? ` · ${d.linkedSKU}` : ""} [{d.status}]
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            )}
             <Field label="Paper Category">
               <select
                 value={entry.paperCategory}
@@ -739,16 +812,25 @@ export default function PrintingDetailMaster({ toast }) {
                     )}
                   </td>
                   <td style={CELL_STYLE}>
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 6 }}
-                    >
-                      {item.plate && (
-                        <Badge text={item.plate} color="#3b82f6" />
-                      )}
-                      <span style={{ fontWeight: 700 }}>
-                        {item.printing || "0"}
-                      </span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      {item.plate && <Badge text={item.plate} color="#3b82f6" />}
+                      <span style={{ fontWeight: 700 }}>{item.printing || "0"}</span>
                     </div>
+                    {item.linkedPlateCode && (
+                      <div style={{ marginTop: 4, fontSize: 10, color: "#a78bfa", fontWeight: 700 }}>
+                        🪨 {item.linkedPlateCode}
+                      </div>
+                    )}
+                    {item.linkedDieCode && (
+                      <div style={{ marginTop: 2, fontSize: 10, color: "#fb923c", fontWeight: 700 }}>
+                        ✂️ {item.linkedDieCode}
+                      </div>
+                    )}
+                    {item.linkedFGCode && (
+                      <div style={{ marginTop: 2, fontSize: 10, color: "#ff7800", fontWeight: 700 }}>
+                        📦 {item.linkedFGCode}
+                      </div>
+                    )}
                   </td>
                   <td style={CELL_STYLE}>
                     <div
