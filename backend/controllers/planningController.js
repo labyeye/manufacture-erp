@@ -1011,5 +1011,6 @@ module.exports = {
   planJob,
   recalcJobCalendar,
   cascadeAffectedJobs,
+  shiftEntry,
   shiftMissed,
 };
