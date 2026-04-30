@@ -129,7 +129,8 @@ export default function ProductionCalendar({
   const [calendarData, setCalendarData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [insightModal, setInsightModal] = useState(null);
-  const [dragJob, setDragJob] = useState(null); 
+  const [dragJob, setDragJob] = useState(null);
+  const [isShifting, setIsShifting] = useState(false);
 
   const machines = useMemo(() => {
     if (Array.isArray(machineMaster) && machineMaster.length > 0) {
@@ -171,6 +172,32 @@ export default function ProductionCalendar({
       toast?.("Failed to fetch calendar", "error");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const missedCount = useMemo(() => {
+    return (calendarData || []).filter((e) => {
+      const entryDate = moment(e.date).format("YYYY-MM-DD");
+      return (
+        entryDate < today &&
+        !["Completed", "Cancelled", "Rescheduled"].includes(e.status) &&
+        !e.locked
+      );
+    }).length;
+  }, [calendarData, today]);
+
+  const handleShiftMissed = async () => {
+    try {
+      setIsShifting(true);
+      const res = await planningAPI.shiftMissed();
+      if (res.success) {
+        toast?.(res.message, "success");
+        fetchCalendar();
+      }
+    } catch (err) {
+      toast?.("Failed to shift missed entries", "error");
+    } finally {
+      setIsShifting(false);
     }
   };
 
@@ -985,6 +1012,47 @@ export default function ProductionCalendar({
 
       <MachineSidePanel />
       <JobInsightModal />
+
+      {missedCount > 0 && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            background: "#f9731611",
+            border: "1px solid #f9731633",
+            borderRadius: 8,
+            padding: "10px 16px",
+            marginBottom: 14,
+          }}
+        >
+          <span style={{ fontSize: 18 }}>⏭️</span>
+          <span style={{ color: "#f97316", fontWeight: 700, fontSize: 13 }}>
+            {missedCount} missed entr{missedCount === 1 ? "y" : "ies"} detected
+          </span>
+          <span style={{ color: C.muted, fontSize: 12 }}>
+            — production scheduled in the past that wasn't marked Completed
+          </span>
+          <button
+            onClick={handleShiftMissed}
+            disabled={isShifting}
+            style={{
+              marginLeft: "auto",
+              padding: "6px 14px",
+              background: "#f97316",
+              color: "#fff",
+              border: "none",
+              borderRadius: 6,
+              fontWeight: 700,
+              fontSize: 12,
+              cursor: "pointer",
+              opacity: isShifting ? 0.7 : 1,
+            }}
+          >
+            {isShifting ? "Shifting..." : "Shift Forward →"}
+          </button>
+        </div>
+      )}
 
       <div
         style={{

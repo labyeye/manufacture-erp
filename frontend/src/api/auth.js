@@ -637,6 +637,11 @@ export const planningAPI = {
     const response = await api.post("/planning/plan-job", data);
     return response.data;
   },
+
+  shiftMissed: async () => {
+    const response = await api.post("/planning/shift-missed");
+    return response.data;
+  },
 };
 
 export const toolingMasterAPI = {

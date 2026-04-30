@@ -882,10 +882,64 @@ const cascadeAffectedJobs = async (triggerJobId) => {
   }
 };
 
+const shiftMissed = async (req, res) => {
+  try {
+    const today = moment().startOf("day").toDate();
+
+    // Find distinct jobOrderIds for past entries that weren't completed
+    const missedEntries = await ProductionCalendar.find({
+      date: { $lt: today },
+      status: { $nin: ["Completed", "Cancelled", "Rescheduled"] },
+      locked: { $ne: true },
+    }).select("jobOrderId");
+
+    const affectedJobIds = [
+      ...new Set(missedEntries.map((e) => e.jobOrderId.toString())),
+    ];
+
+    if (affectedJobIds.length === 0) {
+      return res.json({
+        success: true,
+        message: "No missed entries found",
+        affectedJobs: 0,
+        newEntries: 0,
+      });
+    }
+
+    // Mark past missed entries as Rescheduled (keep history)
+    await ProductionCalendar.updateMany(
+      {
+        date: { $lt: today },
+        status: { $nin: ["Completed", "Cancelled", "Rescheduled"] },
+        locked: { $ne: true },
+      },
+      { $set: { status: "Rescheduled" } }
+    );
+
+    // Recalculate calendar for each affected job from today
+    let totalNew = 0;
+    for (const jobId of affectedJobIds) {
+      const count = await recalcJobCalendar(jobId);
+      totalNew += count;
+    }
+
+    res.json({
+      success: true,
+      message: `Shifted ${affectedJobIds.length} job(s) forward — ${totalNew} new entries created`,
+      affectedJobs: affectedJobIds.length,
+      newEntries: totalNew,
+    });
+  } catch (error) {
+    console.error("shiftMissed error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   generateProductionCalendar,
   getProductionCalendar,
   planJob,
   recalcJobCalendar,
   cascadeAffectedJobs,
+  shiftMissed,
 };
