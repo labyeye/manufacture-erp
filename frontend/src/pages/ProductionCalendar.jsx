@@ -755,6 +755,8 @@ export default function ProductionCalendar({
   const JobInsightModal = () => {
     if (!insightModal) return null;
     const { entry, allEntries, totalQty, totalDays } = insightModal;
+    const [shifting, setShifting] = useState(false);
+    const [shiftReason, setShiftReason] = useState("");
     const jo = entry.jobOrderId;
     const isOverdue =
       jo?.internalDueDate &&
@@ -980,6 +982,76 @@ export default function ProductionCalendar({
             </div>
           </div>
         </div>
+
+        {/* Shift to next day — only for non-completed, non-locked entries */}
+        {!["Completed", "Cancelled", "Rescheduled"].includes(entry.status) && !entry.locked && (
+          <div
+            style={{
+              marginTop: 16,
+              padding: 14,
+              background: "#f9731611",
+              border: "1px solid #f9731633",
+              borderRadius: 8,
+            }}
+          >
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#f97316", marginBottom: 10 }}>
+              ⏭ Shift This Entry to Next Working Day
+            </div>
+            <select
+              value={shiftReason}
+              onChange={(e) => setShiftReason(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "8px 10px",
+                borderRadius: 6,
+                background: "#1c2128",
+                border: "1px solid #30363d",
+                color: "#e6edf3",
+                fontSize: 13,
+                marginBottom: 10,
+              }}
+            >
+              <option value="">Select reason (optional)</option>
+              <option value="Breakdown">Machine Breakdown</option>
+              <option value="Material Delay">Material Delay</option>
+              <option value="Artwork Pending">Artwork Pending</option>
+              <option value="Urgent Insertion">Urgent Job Insertion</option>
+              <option value="Tool Unavailable">Tool Unavailable</option>
+              <option value="Manual">Manual Reschedule</option>
+            </select>
+            <button
+              disabled={shifting}
+              onClick={async () => {
+                try {
+                  setShifting(true);
+                  const res = await planningAPI.shiftEntry(entry._id, shiftReason || undefined);
+                  if (res.success) {
+                    toast?.(res.message, "success");
+                    setInsightModal(null);
+                    fetchCalendar();
+                  }
+                } catch {
+                  toast?.("Failed to shift entry", "error");
+                } finally {
+                  setShifting(false);
+                }
+              }}
+              style={{
+                width: "100%",
+                padding: "10px",
+                borderRadius: 6,
+                background: shifting ? "#f9731688" : "#f97316",
+                border: "none",
+                color: "#fff",
+                fontWeight: 800,
+                fontSize: 13,
+                cursor: shifting ? "not-allowed" : "pointer",
+              }}
+            >
+              {shifting ? "Shifting..." : "Shift to Next Working Day →"}
+            </button>
+          </div>
+        )}
       </Modal>
     );
   };
@@ -1817,6 +1889,41 @@ export default function ProductionCalendar({
                                     />
                                   </div>
                                 </div>
+
+                                {/* Shift button — only for past, non-completed entries */}
+                                {d < today &&
+                                  !["Completed", "Cancelled", "Rescheduled"].includes(entry.status) &&
+                                  !entry.locked && (
+                                    <button
+                                      onClick={async (e) => {
+                                        e.stopPropagation();
+                                        try {
+                                          const res = await planningAPI.shiftEntry(entry._id);
+                                          if (res.success) {
+                                            toast?.(res.message, "success");
+                                            fetchCalendar();
+                                          }
+                                        } catch {
+                                          toast?.("Failed to shift", "error");
+                                        }
+                                      }}
+                                      title="Shift to next working day"
+                                      style={{
+                                        marginTop: 6,
+                                        width: "100%",
+                                        padding: "4px 0",
+                                        background: "#f9731622",
+                                        border: "1px solid #f9731644",
+                                        borderRadius: 4,
+                                        color: "#f97316",
+                                        fontSize: 10,
+                                        fontWeight: 700,
+                                        cursor: "pointer",
+                                      }}
+                                    >
+                                      ⏭ Shift →
+                                    </button>
+                                  )}
                               </div>
                             );
                           })

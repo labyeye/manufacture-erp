@@ -882,6 +882,76 @@ const cascadeAffectedJobs = async (triggerJobId) => {
   }
 };
 
+const shiftEntry = async (req, res) => {
+  try {
+    const { entryId, reason } = req.body;
+    if (!entryId) {
+      return res.status(400).json({ success: false, message: "entryId required" });
+    }
+
+    const entry = await ProductionCalendar.findById(entryId).populate(
+      "machineId",
+      "workingDays weeklyOff"
+    );
+    if (!entry) {
+      return res.status(404).json({ success: false, message: "Entry not found" });
+    }
+    if (entry.locked) {
+      return res.status(400).json({ success: false, message: "Entry is locked and cannot be shifted" });
+    }
+
+    const workingDays = entry.machineId?.workingDays?.length
+      ? entry.machineId.workingDays
+      : ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const weeklyOff = entry.machineId?.weeklyOff?.length
+      ? entry.machineId.weeklyOff
+      : ["Sunday"];
+
+    // Find the next working day after the current entry date
+    const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    let nextDate = moment(entry.date).add(1, "days");
+    let safety = 0;
+    while (safety++ < 14) {
+      const dayName = DAY_NAMES[nextDate.day()];
+      if (workingDays.includes(dayName) && !weeklyOff.includes(dayName)) break;
+      nextDate.add(1, "days");
+    }
+
+    // Recalculate deliveryFeasible for new date
+    const job = await JobOrder.findById(entry.jobOrderId);
+    const dueDate = moment(job?.internalDueDate || job?.deliveryDate);
+    const daysToDeadline = dueDate.isValid() ? dueDate.diff(nextDate, "days") : 999;
+    const deliveryFeasible =
+      daysToDeadline > 2 ? "GREEN" : daysToDeadline >= 0 ? "ORANGE" : "RED";
+
+    // Update the entry to the new date
+    entry.date = nextDate.toDate();
+    entry.plannedStart = nextDate.clone().set({
+      hour: parseInt((entry.startTime || "09:00").split(":")[0]),
+      minute: parseInt((entry.startTime || "09:00").split(":")[1]),
+    }).toDate();
+    entry.plannedEnd = nextDate.clone().set({
+      hour: parseInt((entry.endTime || "17:00").split(":")[0]),
+      minute: parseInt((entry.endTime || "17:00").split(":")[1]),
+    }).toDate();
+    entry.deliveryFeasible = deliveryFeasible;
+    entry.status = "Scheduled";
+    if (reason) entry.rescheduleReasonCode = reason;
+
+    await entry.save();
+
+    res.json({
+      success: true,
+      message: `Entry shifted to ${nextDate.format("DD MMM YYYY")}`,
+      newDate: nextDate.format("YYYY-MM-DD"),
+      deliveryFeasible,
+    });
+  } catch (error) {
+    console.error("shiftEntry error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 const shiftMissed = async (req, res) => {
   try {
     const today = moment().startOf("day").toDate();
