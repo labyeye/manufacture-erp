@@ -66,7 +66,7 @@ export default function ProductionUpdate({
   const [searchTerm, setSearchTerm] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [editingEntry, setEditingEntry] = useState(null); 
+  const [editingEntry, setEditingEntry] = useState(null);
 
   const fetchJobOrders = async () => {
     try {
@@ -92,7 +92,6 @@ export default function ProductionUpdate({
     [jobOrders],
   );
 
-  
   const allProductionRecords = useMemo(() => {
     const records = [];
     (jobOrders || []).forEach((jo) => {
@@ -161,7 +160,11 @@ export default function ProductionUpdate({
       };
 
       if (editingEntry) {
-        await jobOrdersAPI.updateStage(editingEntry.joId, editingEntry.stageId, stageData);
+        await jobOrdersAPI.updateStage(
+          editingEntry.joId,
+          editingEntry.stageId,
+          stageData,
+        );
         toast(`Production updated for ${entry.joNo}`, "success");
       } else {
         await jobOrdersAPI.addStage(jo._id, stageData);
@@ -171,10 +174,13 @@ export default function ProductionUpdate({
       setEntry(blankEntry);
       setEditingEntry(null);
       setErrors({});
-      fetchJobOrders(); 
+      fetchJobOrders();
     } catch (error) {
       console.error("Production update error:", error);
-      toast(error.response?.data?.error || "Failed to update production", "error");
+      toast(
+        error.response?.data?.error || "Failed to update production",
+        "error",
+      );
     }
   };
 
@@ -196,7 +202,10 @@ export default function ProductionUpdate({
   };
 
   const handleDelete = async (joId, stageId) => {
-    if (!window.confirm("Are you sure you want to delete this production record?")) return;
+    if (
+      !window.confirm("Are you sure you want to delete this production record?")
+    )
+      return;
     try {
       await jobOrdersAPI.deleteStage(joId, stageId);
       toast("Record deleted", "success");
@@ -207,26 +216,42 @@ export default function ProductionUpdate({
     }
   };
 
-  const selectedJO = useMemo(() => jobOrders.find(j => j.joNo === entry.joNo), [jobOrders, entry.joNo]);
-  
+  const selectedJO = useMemo(
+    () => jobOrders.find((j) => j.joNo === entry.joNo),
+    [jobOrders, entry.joNo],
+  );
+
   const stageTargetLogic = useMemo(() => {
     if (!selectedJO || !entry.productionStage) {
       return { target: 0, done: 0, remain: 0 };
     }
-    const STAGES_ORDER = ["Printing", "Varnish", "Lamination", "Die Cutting", "Formation", "Manual Formation"];
-    const procArr = [...(selectedJO.process || [])].sort((a, b) => STAGES_ORDER.indexOf(a) - STAGES_ORDER.indexOf(b));
+    const STAGES_ORDER = [
+      "Printing",
+      "Varnish",
+      "Lamination",
+      "Die Cutting",
+      "Formation",
+      "Manual Formation",
+    ];
+    const procArr = [...(selectedJO.process || [])].sort(
+      (a, b) => STAGES_ORDER.indexOf(a) - STAGES_ORDER.indexOf(b),
+    );
     const s = entry.productionStage;
     const sIdx = procArr.indexOf(s);
     if (sIdx === -1) return { target: 0, done: 0, remain: 0 };
 
     const isFormation = s.includes("Formation");
-    const isSheet = (selectedJO.paperCategory || "").toLowerCase().includes("sheet");
+    const isSheet = (selectedJO.paperCategory || "")
+      .toLowerCase()
+      .includes("sheet");
 
     let target = 0;
     if (isFormation) {
       target = selectedJO.orderQty || 0;
     } else if (sIdx === 0) {
-      target = isSheet ? (selectedJO.noOfSheets || 0) : (selectedJO.reelWeightKg || 0);
+      target = isSheet
+        ? selectedJO.noOfSheets || 0
+        : selectedJO.reelWeightKg || 0;
     } else {
       const prevS = procArr[sIdx - 1];
       target = selectedJO.stageQtyMap?.[prevS] || 0;
@@ -236,10 +261,12 @@ export default function ProductionUpdate({
 
     let pastDoneActual = done;
     if (editingEntry && editingEntry.joId === selectedJO._id) {
-       const pastRec = selectedJO.stageHistory?.find(h => h._id === editingEntry.stageId);
-       if (pastRec && pastRec.stage === s) {
-          pastDoneActual -= (pastRec.qtyCompleted || 0);
-       }
+      const pastRec = selectedJO.stageHistory?.find(
+        (h) => h._id === editingEntry.stageId,
+      );
+      if (pastRec && pastRec.stage === s) {
+        pastDoneActual -= pastRec.qtyCompleted || 0;
+      }
     }
 
     const remain = Math.max(0, target - pastDoneActual);
@@ -249,23 +276,30 @@ export default function ProductionUpdate({
 
   const availableQty = useMemo(() => {
     if (!selectedJO || !entry.productionStage) return null;
-    
-    
-    const STAGES_ORDER = ["Printing", "Varnish", "Lamination", "Die Cutting", "Formation", "Manual Formation"];
-    const proc = [...(selectedJO.process || [])].sort((a, b) => STAGES_ORDER.indexOf(a) - STAGES_ORDER.indexOf(b));
-    
+
+    const STAGES_ORDER = [
+      "Printing",
+      "Varnish",
+      "Lamination",
+      "Die Cutting",
+      "Formation",
+      "Manual Formation",
+    ];
+    const proc = [...(selectedJO.process || [])].sort(
+      (a, b) => STAGES_ORDER.indexOf(a) - STAGES_ORDER.indexOf(b),
+    );
+
     const idx = proc.indexOf(entry.productionStage);
     if (idx === -1) return null;
-    if (idx === 0) return null; 
+    if (idx === 0) return null;
 
-    
-    
     const prevStage = proc[idx - 1];
-    const qtyDoneInPrev = selectedJO.stageQtyMap?.[prevStage] || 
-                         (selectedJO.stageHistory || [])
-                           .filter(h => h.stage === prevStage)
-                           .reduce((sum, h) => sum + (h.qtyCompleted || 0), 0);
-    
+    const qtyDoneInPrev =
+      selectedJO.stageQtyMap?.[prevStage] ||
+      (selectedJO.stageHistory || [])
+        .filter((h) => h.stage === prevStage)
+        .reduce((sum, h) => sum + (h.qtyCompleted || 0), 0);
+
     return qtyDoneInPrev;
   }, [selectedJO, entry.productionStage]);
 
@@ -362,9 +396,7 @@ export default function ProductionUpdate({
               </Field>
 
               <Field label="ITEM NAME">
-                <div style={readonlyStyle}>
-                  {selectedJO?.itemName || "—"}
-                </div>
+                <div style={readonlyStyle}>{selectedJO?.itemName || "—"}</div>
               </Field>
 
               <Field label="CURRENT STAGE">
@@ -374,14 +406,12 @@ export default function ProductionUpdate({
               </Field>
 
               <Field label="ORDER QUANTITY">
-                <div style={readonlyStyle}>
-                  {selectedJO?.orderQty || 0}
-                </div>
+                <div style={readonlyStyle}>{selectedJO?.orderQty || 0}</div>
               </Field>
 
               <Field label="# OF SHEETS">
                 <div style={readonlyStyle}>
-                  {selectedJO?.paperCategory?.toLowerCase().includes("sheet") 
+                  {selectedJO?.paperCategory?.toLowerCase().includes("sheet")
                     ? `Paper 1: ${selectedJO?.noOfSheets || 0}`
                     : `Weight: ${selectedJO?.reelWeightKg || 0} kg`}
                 </div>
@@ -394,83 +424,104 @@ export default function ProductionUpdate({
                   style={E("productionStage")}
                 >
                   <option value="">-- Select Stage --</option>
-                  {(selectedJO?.process || [
-                    "Printing",
-                    "Varnish",
-                    "Lamination",
-                    "Die Cutting",
-                    "Formation",
-                    "Manual Formation",
-                  ]).map((s, idx, arr) => {
+                  {(
+                    selectedJO?.process || [
+                      "Printing",
+                      "Varnish",
+                      "Lamination",
+                      "Die Cutting",
+                      "Formation",
+                      "Manual Formation",
+                    ]
+                  ).map((s, idx, arr) => {
                     const isFormation = s.includes("Formation");
-                    const isSheet = (selectedJO?.paperCategory || "").toLowerCase().includes("sheet");
-                    
+                    const isSheet = (selectedJO?.paperCategory || "")
+                      .toLowerCase()
+                      .includes("sheet");
+
                     let target = 0;
                     if (isFormation) {
                       target = selectedJO?.orderQty || 0;
                     } else if (idx === 0) {
-                      target = isSheet ? (selectedJO?.noOfSheets || 0) : (selectedJO?.reelWeightKg || 0);
+                      target = isSheet
+                        ? selectedJO?.noOfSheets || 0
+                        : selectedJO?.reelWeightKg || 0;
                     } else {
-                      
-                      const prevS = arr[idx-1];
+                      const prevS = arr[idx - 1];
                       target = selectedJO?.stageQtyMap?.[prevS] || 0;
                     }
 
                     const done = selectedJO?.stageTotalMap?.[s] || 0;
-                    const unit = isFormation ? "" : (isSheet ? "" : " kg");
-                    
-                    
+                    const unit = isFormation ? "" : isSheet ? "" : " kg";
+
                     let disabled = false;
                     for (let i = 0; i < idx; i++) {
                       const prevS = arr[i];
                       const prevDone = selectedJO?.stageTotalMap?.[prevS] || 0;
-                      
+
                       let prevTarget = 0;
                       if (prevS.includes("Formation")) {
                         prevTarget = selectedJO?.orderQty || 0;
                       } else if (i === 0) {
-                        prevTarget = isSheet ? (selectedJO?.noOfSheets || 0) : (selectedJO?.reelWeightKg || 0);
+                        prevTarget = isSheet
+                          ? selectedJO?.noOfSheets || 0
+                          : selectedJO?.reelWeightKg || 0;
                       } else {
-                        const beforePrevS = arr[i-1];
-                        prevTarget = selectedJO?.stageQtyMap?.[beforePrevS] || 0;
+                        const beforePrevS = arr[i - 1];
+                        prevTarget =
+                          selectedJO?.stageQtyMap?.[beforePrevS] || 0;
                       }
-                      
-                      
-                      
+
                       if (prevTarget <= 0 || prevDone < prevTarget) {
                         disabled = true;
                         break;
                       }
                     }
 
-                    
-                    if (!disabled && target > 0 && done >= target && (!editingEntry || entry.productionStage !== s)) {
+                    if (
+                      !disabled &&
+                      target > 0 &&
+                      done >= target &&
+                      (!editingEntry || entry.productionStage !== s)
+                    ) {
                       disabled = true;
                     }
 
                     return (
                       <option key={s} value={s} disabled={disabled}>
-                        {s} ({done}/{target}{unit}) {disabled ? "🔒" : ""}
+                        {s} ({done}/{target}
+                        {unit}) {disabled ? "🔒" : ""}
                       </option>
                     );
                   })}
                 </select>
                 {EMsg("productionStage")}
-                
+
                 {entry.productionStage && selectedJO && (
-                  <div style={{ fontSize: 10, color: C.muted, marginTop: 4, fontWeight: 700 }}>
+                  <div
+                    style={{
+                      fontSize: 10,
+                      color: C.muted,
+                      marginTop: 4,
+                      fontWeight: 700,
+                    }}
+                  >
                     {(() => {
                       const s = entry.productionStage;
                       const procArr = selectedJO.process || [];
                       const sIdx = procArr.indexOf(s);
                       const isFormation = s.includes("Formation");
-                      const isSheet = (selectedJO.paperCategory || "").toLowerCase().includes("sheet");
-                      
+                      const isSheet = (selectedJO.paperCategory || "")
+                        .toLowerCase()
+                        .includes("sheet");
+
                       let target = 0;
                       if (isFormation) {
                         target = selectedJO.orderQty || 0;
                       } else if (sIdx === 0) {
-                        target = isSheet ? (selectedJO.noOfSheets || 0) : (selectedJO.reelWeightKg || 0);
+                        target = isSheet
+                          ? selectedJO.noOfSheets || 0
+                          : selectedJO.reelWeightKg || 0;
                       } else {
                         const prevS = procArr[sIdx - 1];
                         target = selectedJO.stageQtyMap?.[prevS] || 0;
@@ -478,10 +529,16 @@ export default function ProductionUpdate({
 
                       const done = selectedJO.stageTotalMap?.[s] || 0;
                       const remain = Math.max(0, target - done);
-                      const unit = isFormation ? "" : (isSheet ? " sheets" : " kg");
+                      const unit = isFormation
+                        ? ""
+                        : isSheet
+                          ? " sheets"
+                          : " kg";
                       return (
                         <span>
-                          {s}: <b style={{ color: C.yellow }}>{done}</b> / {target} filled - <b style={{ color: C.red }}>{remain}</b> remaining
+                          {s}: <b style={{ color: C.yellow }}>{done}</b> /{" "}
+                          {target} filled -{" "}
+                          <b style={{ color: C.red }}>{remain}</b> remaining
                         </span>
                       );
                     })()}
@@ -507,7 +564,7 @@ export default function ProductionUpdate({
                 />
                 {EMsg("operator")}
               </Field>
- 
+
               <Field label="MACHINE">
                 <select
                   value={entry.machineId}
@@ -541,17 +598,19 @@ export default function ProductionUpdate({
                     const val = Number(e.target.value);
                     const remain = stageTargetLogic.remain;
                     if (val > remain) {
-                      toast(`Cannot exceed remaining target (${remain})`, "error");
+                      toast(
+                        `Cannot exceed remaining target (${remain})`,
+                        "error",
+                      );
                       return;
                     }
-                    
-                    setEntry(prev => {
+
+                    setEntry((prev) => {
                       const updated = { ...prev, qtyCompleted: e.target.value };
-                      
+
                       if (val === remain) {
                         updated.qtyRejected = 0;
                       } else {
-                        
                         const currentRej = Number(prev.qtyRejected || 0);
                         if (val + currentRej > remain) {
                           updated.qtyRejected = remain - val;
@@ -564,7 +623,14 @@ export default function ProductionUpdate({
                 />
                 {EMsg("qtyCompleted")}
                 {availableQty !== null && (
-                  <div style={{ fontSize: 10, color: C.blue, marginTop: 4, fontWeight: 700 }}>
+                  <div
+                    style={{
+                      fontSize: 10,
+                      color: C.blue,
+                      marginTop: 4,
+                      fontWeight: 700,
+                    }}
+                  >
                     Available: {availableQty}
                   </div>
                 )}
@@ -575,15 +641,20 @@ export default function ProductionUpdate({
                   type="number"
                   placeholder="0"
                   value={entry.qtyRejected}
-                  disabled={Number(entry.qtyCompleted) === stageTargetLogic.remain}
+                  disabled={
+                    Number(entry.qtyCompleted) === stageTargetLogic.remain
+                  }
                   onChange={(e) => {
                     const val = Number(e.target.value);
                     const comp = Number(entry.qtyCompleted || 0);
                     const remain = stageTargetLogic.remain;
-                    
+
                     if (comp + val > remain) {
                       const maxAllowed = remain - comp;
-                      toast(`Total (Completed + Rejected) cannot exceed ${remain}. Max rejection allowed: ${maxAllowed}`, "error");
+                      toast(
+                        `Total (Completed + Rejected) cannot exceed ${remain}. Max rejection allowed: ${maxAllowed}`,
+                        "error",
+                      );
                       setField("qtyRejected", maxAllowed);
                       return;
                     }
@@ -613,7 +684,13 @@ export default function ProductionUpdate({
             </div>
             <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
               <SubmitBtn
-                label={fetching ? "Saving..." : (editingEntry ? "Update Record" : "Add Record")}
+                label={
+                  fetching
+                    ? "Saving..."
+                    : editingEntry
+                      ? "Update Record"
+                      : "Add Record"
+                }
                 color="#FF7F11"
                 onClick={submit}
                 disabled={fetching}
@@ -656,7 +733,14 @@ export default function ProductionUpdate({
               marginBottom: 20,
             }}
           >
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+            <div
+              style={{
+                display: "flex",
+                gap: 12,
+                flexWrap: "wrap",
+                alignItems: "center",
+              }}
+            >
               <div style={{ position: "relative" }}>
                 <input
                   placeholder="Filter by JO# or stage..."
@@ -672,10 +756,27 @@ export default function ProductionUpdate({
                     width: 240,
                   }}
                 />
-                <span style={{ position: "absolute", left: 10, top: 10, fontSize: 13 }}>🔍</span>
+                <span
+                  style={{
+                    position: "absolute",
+                    left: 10,
+                    top: 10,
+                    fontSize: 13,
+                  }}
+                >
+                  🔍
+                </span>
               </div>
 
-              <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: C.muted }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  fontSize: 12,
+                  color: C.muted,
+                }}
+              >
                 <span>Date:</span>
                 <input
                   type="date"
@@ -716,7 +817,9 @@ export default function ProductionUpdate({
 
           {}
           {jobOrders.length === 0 && (
-            <div style={{ textAlign: "center", color: C.muted, padding: 32 }}>No job orders found.</div>
+            <div style={{ textAlign: "center", color: C.muted, padding: 32 }}>
+              No job orders found.
+            </div>
           )}
 
           {jobOrders
@@ -750,10 +853,18 @@ export default function ProductionUpdate({
                     }}
                   >
                     <div>
-                      <span style={{ fontSize: 16, fontWeight: 800, color: "#facc15" }}>
+                      <span
+                        style={{
+                          fontSize: 16,
+                          fontWeight: 800,
+                          color: "#facc15",
+                        }}
+                      >
                         {jo.joNo}
                       </span>
-                      <span style={{ fontSize: 14, color: C.muted, marginLeft: 12 }}>
+                      <span
+                        style={{ fontSize: 14, color: C.muted, marginLeft: 12 }}
+                      >
                         {jo.itemName} {jo.companyName}
                       </span>
                     </div>
@@ -763,7 +874,13 @@ export default function ProductionUpdate({
                     />
                   </div>
 
-                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 10,
+                    }}
+                  >
                     {records.map((r, idx) => (
                       <div
                         key={r._id || idx}
@@ -777,7 +894,15 @@ export default function ProductionUpdate({
                           border: `1px solid ${C.border}22`,
                         }}
                       >
-                        <div style={{ display: "flex", alignItems: "center", gap: 16, flex: 1, flexWrap: "wrap" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 16,
+                            flex: 1,
+                            flexWrap: "wrap",
+                          }}
+                        >
                           <div
                             style={{
                               background: "#FF7F1122",
@@ -793,24 +918,57 @@ export default function ProductionUpdate({
                           >
                             {r.stage}
                           </div>
-                          <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 13 }}>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 12,
+                              fontSize: 13,
+                            }}
+                          >
                             <span style={{ fontWeight: 600 }}>
-                              <span style={{ color: C.green }}>✓</span> {r.qtyCompleted} done
+                              <span style={{ color: C.green }}>✓</span>{" "}
+                              {r.qtyCompleted} done
                             </span>
                             {r.qtyRejected > 0 && (
                               <span style={{ color: C.red }}>
-                                <span style={{ color: C.red }}>✕</span> {r.qtyRejected} rejected
+                                <span style={{ color: C.red }}>✕</span>{" "}
+                                {r.qtyRejected} rejected
                               </span>
                             )}
-                            <span style={{ color: C.muted, display: "flex", alignItems: "center", gap: 4 }}>
+                            <span
+                              style={{
+                                color: C.muted,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 4,
+                              }}
+                            >
                               👤 {r.operator}
                             </span>
-                            <span style={{ color: C.muted, display: "flex", alignItems: "center", gap: 4 }}>
+                            <span
+                              style={{
+                                color: C.muted,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 4,
+                              }}
+                            >
                               🕒 {r.shift}
                             </span>
                             {r.machineId && (
-                              <span style={{ color: C.muted, display: "flex", alignItems: "center", gap: 4 }}>
-                                🏭 {machineMaster.find(m => m._id === r.machineId)?.name || r.machineId}
+                              <span
+                                style={{
+                                  color: C.muted,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 4,
+                                }}
+                              >
+                                🏭{" "}
+                                {machineMaster.find(
+                                  (m) => m._id === r.machineId,
+                                )?.name || r.machineId}
                               </span>
                             )}
                             <span style={{ color: C.muted, fontSize: 12 }}>
@@ -954,7 +1112,7 @@ export default function ProductionUpdate({
             </div>
           )}
           {(jobOrders || []).map((jo) => {
-            const updates = (jo.stageHistory || []);
+            const updates = jo.stageHistory || [];
             const totalCompleted = updates.reduce(
               (sum, u) => sum + +(u.qtyCompleted || 0),
               0,
