@@ -499,6 +499,14 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
             fgStock={data.fgStock}
             rawStock={data.rawStock}
             dispatches={data.dispatches}
+            consumableStock={data.consumableStock}
+            vendorMaster={data.vendorMaster}
+            companyMaster={data.companyMaster}
+            itemMasterFG={data.itemMasterFG}
+            machineMaster={data.machineMaster}
+            priceList={data.priceList}
+            printingMaster={data.printingMaster}
+            categoryMaster={data.categoryMaster}
           />
         );
       case "purchase":
