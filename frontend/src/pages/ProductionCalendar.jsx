@@ -131,6 +131,8 @@ export default function ProductionCalendar({
   const [insightModal, setInsightModal] = useState(null);
   const [dragJob, setDragJob] = useState(null);
   const [isShifting, setIsShifting] = useState(false);
+  const [missedModal, setMissedModal] = useState(null); // { entries: [] }
+  const missedModalShown = React.useRef(false);
 
   const machines = useMemo(() => {
     if (Array.isArray(machineMaster) && machineMaster.length > 0) {
@@ -160,7 +162,7 @@ export default function ProductionCalendar({
     [displayStart, days],
   );
 
-  const fetchCalendar = async () => {
+  const fetchCalendar = async (checkMissed = false) => {
     try {
       setLoading(true);
       const data = await planningAPI.getCalendar({
@@ -168,6 +170,24 @@ export default function ProductionCalendar({
         endDate: daysArray[daysArray.length - 1],
       });
       setCalendarData(data);
+
+      // Auto-detect missed entries: only check YESTERDAY's entries
+      // (planned yesterday but no production entry done by today)
+      if (checkMissed && !missedModalShown.current) {
+        const yesterday = moment().subtract(1, "days").format("YYYY-MM-DD");
+        const missed = (data || []).filter((e) => {
+          const entryDate = moment(e.date).format("YYYY-MM-DD");
+          return (
+            entryDate === yesterday &&
+            !["Completed", "Cancelled", "Rescheduled"].includes(e.status) &&
+            !e.locked
+          );
+        });
+        if (missed.length > 0) {
+          missedModalShown.current = true;
+          setMissedModal({ entries: missed });
+        }
+      }
     } catch (err) {
       toast?.("Failed to fetch calendar", "error");
     } finally {
@@ -217,7 +237,7 @@ export default function ProductionCalendar({
   };
 
   useEffect(() => {
-    fetchCalendar();
+    fetchCalendar(true);
   }, [displayStart, days]);
 
   const navigate = (dir) => {
@@ -1056,6 +1076,130 @@ export default function ProductionCalendar({
     );
   };
 
+  const MissedModal = () => {
+    if (!missedModal) return null;
+    const { entries } = missedModal;
+    const [shifting, setShifting] = useState(false);
+
+    // Group by job card number for a clean display
+    const grouped = entries.reduce((acc, e) => {
+      const key = e.jobCardNo;
+      if (!acc[key]) acc[key] = { jobCardNo: key, itemName: e.jobOrderId?.itemName || "—", dates: [], ids: [] };
+      acc[key].dates.push(moment(e.date).format("DD MMM"));
+      acc[key].ids.push(e._id);
+      return acc;
+    }, {});
+    const jobs = Object.values(grouped);
+
+    const handleShiftAll = async () => {
+      try {
+        setShifting(true);
+        const res = await planningAPI.shiftMissed();
+        if (res.success) {
+          toast?.(res.message, "success");
+          setMissedModal(null);
+          fetchCalendar(false);
+        }
+      } catch {
+        toast?.("Failed to shift missed entries", "error");
+      } finally {
+        setShifting(false);
+      }
+    };
+
+    return (
+      <>
+        <div
+          onClick={() => setMissedModal(null)}
+          style={{ position: "fixed", inset: 0, background: "#00000088", backdropFilter: "blur(4px)", zIndex: 2000 }}
+        />
+        <div style={{
+          position: "fixed",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          width: 460,
+          maxWidth: "90vw",
+          background: "#1c2128",
+          border: "1px solid #30363d",
+          borderRadius: 12,
+          zIndex: 2001,
+          boxShadow: "0 24px 60px #000000cc",
+          overflow: "hidden",
+        }}>
+          {/* Header */}
+          <div style={{ background: "#f9731611", borderBottom: "1px solid #f9731633", padding: "16px 20px", display: "flex", alignItems: "center", gap: 12 }}>
+            <span style={{ fontSize: 24 }}>⏭️</span>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: 15, color: "#f97316" }}>
+                Yesterday's Production Not Updated
+              </div>
+              <div style={{ fontSize: 12, color: "#8b949e", marginTop: 2 }}>
+                {jobs.length} job{jobs.length === 1 ? "" : "s"} planned for yesterday ({moment().subtract(1,"days").format("DD MMM")}) — no entry done. Shift to today?
+              </div>
+            </div>
+          </div>
+
+          {/* Job list */}
+          <div style={{ padding: "14px 20px", maxHeight: 260, overflowY: "auto" }}>
+            {jobs.map((job) => (
+              <div key={job.jobCardNo} style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "10px 12px",
+                marginBottom: 8,
+                background: "#0d1117",
+                borderRadius: 8,
+                border: "1px solid #30363d",
+              }}>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: "#e6edf3" }}>{job.jobCardNo}</div>
+                  <div style={{ fontSize: 11, color: "#8b949e", marginTop: 2 }}>{job.itemName}</div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  {job.dates.map((d, i) => (
+                    <span key={i} style={{
+                      fontSize: 10, fontWeight: 700, color: "#f97316",
+                      background: "#f9731622", border: "1px solid #f9731633",
+                      borderRadius: 4, padding: "2px 7px", marginLeft: 4, display: "inline-block", marginBottom: 3
+                    }}>{d}</span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Footer */}
+          <div style={{ padding: "14px 20px", borderTop: "1px solid #30363d", display: "flex", gap: 10 }}>
+            <button
+              onClick={() => setMissedModal(null)}
+              style={{
+                flex: 1, padding: "10px", borderRadius: 8,
+                background: "transparent", border: "1px solid #30363d",
+                color: "#8b949e", fontWeight: 700, fontSize: 13, cursor: "pointer",
+              }}
+            >
+              Skip for Now
+            </button>
+            <button
+              onClick={handleShiftAll}
+              disabled={shifting}
+              style={{
+                flex: 2, padding: "10px", borderRadius: 8,
+                background: shifting ? "#f9731688" : "#f97316",
+                border: "none", color: "#fff",
+                fontWeight: 800, fontSize: 13, cursor: shifting ? "not-allowed" : "pointer",
+              }}
+            >
+              {shifting ? "Shifting..." : `Yes, Shift to Today (${moment().format("DD MMM")}) →`}
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  };
+
   return (
     <div className="fade">
       <SectionTitle
@@ -1084,47 +1228,8 @@ export default function ProductionCalendar({
 
       <MachineSidePanel />
       <JobInsightModal />
+      <MissedModal />
 
-      {missedCount > 0 && (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            background: "#f9731611",
-            border: "1px solid #f9731633",
-            borderRadius: 8,
-            padding: "10px 16px",
-            marginBottom: 14,
-          }}
-        >
-          <span style={{ fontSize: 18 }}>⏭️</span>
-          <span style={{ color: "#f97316", fontWeight: 700, fontSize: 13 }}>
-            {missedCount} missed entr{missedCount === 1 ? "y" : "ies"} detected
-          </span>
-          <span style={{ color: C.muted, fontSize: 12 }}>
-            — production scheduled in the past that wasn't marked Completed
-          </span>
-          <button
-            onClick={handleShiftMissed}
-            disabled={isShifting}
-            style={{
-              marginLeft: "auto",
-              padding: "6px 14px",
-              background: "#f97316",
-              color: "#fff",
-              border: "none",
-              borderRadius: 6,
-              fontWeight: 700,
-              fontSize: 12,
-              cursor: "pointer",
-              opacity: isShifting ? 0.7 : 1,
-            }}
-          >
-            {isShifting ? "Shifting..." : "Shift Forward →"}
-          </button>
-        </div>
-      )}
 
       <div
         style={{
