@@ -10,9 +10,6 @@ import { Card, SectionTitle } from "../components/ui/BasicComponents";
 
 
 
-
-
-
 export function GlobalSearch({
   salesOrders,
   jobOrders,
@@ -36,47 +33,93 @@ export function GlobalSearch({
     const term_lower = term.toLowerCase();
     const results = [];
 
-    
     (salesOrders || []).forEach((so) => {
+      const company = so.companyName || so.clientName || "";
       if (
         so.soNo?.toLowerCase().includes(term_lower) ||
-        so.clientName?.toLowerCase().includes(term_lower)
+        company.toLowerCase().includes(term_lower)
       ) {
         results.push({
           type: "Sales Order",
-          id: so.id,
+          id: so._id || so.id,
           name: so.soNo,
-          detail: so.clientName,
+          detail: company,
         });
       }
     });
 
-    
     (jobOrders || []).forEach((jo) => {
       if (
         jo.joNo?.toLowerCase().includes(term_lower) ||
-        jo.itemName?.toLowerCase().includes(term_lower)
+        jo.itemName?.toLowerCase().includes(term_lower) ||
+        jo.companyName?.toLowerCase().includes(term_lower)
       ) {
         results.push({
           type: "Job Order",
-          id: jo.id,
+          id: jo._id || jo.id,
           name: jo.joNo,
-          detail: jo.itemName,
+          detail: jo.itemName || jo.companyName || "",
         });
       }
     });
 
-    
     (purchaseOrders || []).forEach((po) => {
+      const vendorName = typeof po.vendor === "object" ? po.vendor?.name : (po.vendor || po.vendorName || "");
       if (
         po.poNo?.toLowerCase().includes(term_lower) ||
-        po.vendorName?.toLowerCase().includes(term_lower)
+        vendorName.toLowerCase().includes(term_lower)
       ) {
         results.push({
           type: "Purchase Order",
-          id: po.id,
+          id: po._id || po.id,
           name: po.poNo,
-          detail: po.vendorName,
+          detail: vendorName,
+        });
+      }
+    });
+
+    (inward || []).forEach((inv) => {
+      const ref = inv.inwardNo || inv.grnNo || "";
+      const vendor = inv.vendorName || inv.vendor || "";
+      if (
+        ref.toLowerCase().includes(term_lower) ||
+        vendor.toLowerCase().includes(term_lower)
+      ) {
+        results.push({
+          type: "Material Inward",
+          id: inv._id || inv.id,
+          name: ref,
+          detail: vendor,
+        });
+      }
+    });
+
+    (dispatches || []).forEach((d) => {
+      if (
+        d.dispatchNo?.toLowerCase().includes(term_lower) ||
+        d.companyName?.toLowerCase().includes(term_lower) ||
+        d.soRef?.toLowerCase().includes(term_lower)
+      ) {
+        results.push({
+          type: d.type === "Return" ? "Material Return" : "Dispatch",
+          id: d._id || d.id,
+          name: d.dispatchNo,
+          detail: d.companyName || "",
+        });
+      }
+    });
+
+    (fgStock || []).forEach((s) => {
+      if (
+        s.itemName?.toLowerCase().includes(term_lower) ||
+        s.itemCode?.toLowerCase().includes(term_lower) ||
+        s.code?.toLowerCase().includes(term_lower)
+      ) {
+        results.push({
+          type: "FG Stock",
+          id: s._id || s.id,
+          name: s.itemName,
+          detail: `Qty: ${s.qty ?? 0} ${s.unit || "pcs"}`,
         });
       }
     });

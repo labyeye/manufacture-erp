@@ -42,6 +42,13 @@ const dispatchSchema = new mongoose.Schema({
     default: 0
   },
   remarks: String,
+  type: {
+    type: String,
+    enum: ['Outward', 'Return'],
+    default: 'Outward'
+  },
+  originalDispatchRef: String,
+  returnReason: String,
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'

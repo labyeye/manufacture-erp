@@ -1078,7 +1078,7 @@ function BreakdownSection({ toast }) {
 }
 
 
-export default function MachineTools({ machineMaster = [], toast }) {
+export default function MachineTools({ machineMaster = [], itemMasterFG = [], categoryMaster = [], toast }) {
   const [activeTab, setActiveTab] = useState("cylinders");
 
   return (
@@ -1098,7 +1098,7 @@ export default function MachineTools({ machineMaster = [], toast }) {
       {activeTab === "maintenance" && <MaintenanceSection toast={toast} />}
       {activeTab === "breakdowns" && <BreakdownSection toast={toast} />}
       {activeTab === "pm" && <PMSchedulerTab machineMaster={machineMaster} toast={toast} />}
-      {activeTab === "parts" && <SparePartsTab machineMaster={machineMaster} toast={toast} />}
+      {activeTab === "parts" && <SparePartsTab machineMaster={machineMaster} itemMasterFG={itemMasterFG} categoryMaster={categoryMaster} toast={toast} />}
     </div>
   );
 }

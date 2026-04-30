@@ -1,6 +1,6 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { C } from "../constants/colors";
-import { machineMaintenanceAPI } from "../api/auth";
+import { machineMaintenanceAPI, spareIssueLogAPI } from "../api/auth";
 
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -290,11 +290,18 @@ function PMSchedulerTab({ machineMaster, toast }) {
 
 
 
-function SparePartsTab({ machineMaster, toast }) {
+function SparePartsTab({ machineMaster, itemMasterFG = [], categoryMaster = [], toast }) {
   const [parts, setParts] = useState(loadArr(LS_PARTS));
   const [view, setView]   = useState("list");
   const [editId, setEditId] = useState(null);
   const [search, setSearch] = useState("");
+
+  // Usage history state
+  const [usageLogs, setUsageLogs] = useState([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [usageDateFrom, setUsageDateFrom] = useState("");
+  const [usageDateTo, setUsageDateTo] = useState("");
+  const [usageMachineFilter, setUsageMachineFilter] = useState("");
 
   const blankForm = {
     partName: "", partNumber: "", machineId: "", category: "",
@@ -305,45 +312,118 @@ function SparePartsTab({ machineMaster, toast }) {
 
   const machines = useMemo(() => (Array.isArray(machineMaster) ? machineMaster : []), [machineMaster]);
 
+  // Extract Machine Spare categories from categoryMaster
+  const machineSpareCategories = useMemo(() => {
+    const arr = Array.isArray(categoryMaster) ? categoryMaster : [];
+    const entry = arr.find((c) => c.type === "Machine Spare");
+    if (!entry) return [];
+    const fromSubTypes = entry.subTypes ? Object.keys(entry.subTypes) : [];
+    const fromCategories = entry.categories || [];
+    return [...new Set([...fromCategories, ...fromSubTypes])].filter(Boolean).sort();
+  }, [categoryMaster]);
+
+  // Extract Machine Spare items from itemMasterFG
+  const machineSpareItems = useMemo(() => {
+    return (Array.isArray(itemMasterFG) ? itemMasterFG : []).filter(
+      (i) => i.type === "Machine Spare"
+    );
+  }, [itemMasterFG]);
+
+  // Filter part names by selected category
+  const filteredSpareItems = useMemo(() => {
+    if (!form.category) return machineSpareItems;
+    return machineSpareItems.filter((i) => i.category === form.category);
+  }, [machineSpareItems, form.category]);
+
   const persist = (p) => { setParts(p); save(LS_PARTS, p); };
   const setF = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
+  const handleCategoryChange = (cat) => {
+    setForm((f) => ({ ...f, category: cat, partName: "", partNumber: "" }));
+  };
+
+  const handlePartNameChange = (name) => {
+    const item = machineSpareItems.find((i) => i.name === name);
+    setForm((f) => ({
+      ...f,
+      partName: name,
+      partNumber: item?.code || f.partNumber,
+      category: item?.category || f.category,
+    }));
+  };
+
   const handleSubmit = () => {
-    if (!form.partName) { toast?.("Enter part name", "error"); return; }
+    if (!form.partName) { toast?.("Select a part name", "error"); return; }
     const rec = { id: editId || uid(), ...form, qty: Number(form.qty), reorderPoint: Number(form.reorderPoint), unitCost: Number(form.unitCost), updatedAt: new Date().toISOString() };
     if (editId) { persist(parts.map((p) => (p.id === editId ? rec : p))); toast?.("Part updated", "success"); }
     else { persist([rec, ...parts]); toast?.("Part added to inventory", "success"); }
     setForm(blankForm); setEditId(null); setView("list");
   };
 
+  const fetchUsageLogs = useCallback(async () => {
+    setLogsLoading(true);
+    try {
+      const params = {};
+      if (usageDateFrom) params.from = usageDateFrom;
+      if (usageDateTo) params.to = usageDateTo;
+      const res = await spareIssueLogAPI.getAll(params);
+      setUsageLogs(res.logs || []);
+    } catch {
+      toast?.("Failed to load usage history", "error");
+    } finally {
+      setLogsLoading(false);
+    }
+  }, [usageDateFrom, usageDateTo]);
+
+  useEffect(() => {
+    if (view === "usage") fetchUsageLogs();
+  }, [view, fetchUsageLogs]);
+
+  const filteredUsageLogs = useMemo(() => {
+    if (!usageMachineFilter) return usageLogs;
+    return usageLogs.filter((l) =>
+      (l.machineName || "").toLowerCase().includes(usageMachineFilter.toLowerCase())
+    );
+  }, [usageLogs, usageMachineFilter]);
+
   const filtered = useMemo(() =>
-    parts.filter((p) => !search || [p.partName, p.partNumber, p.machineId, p.vendor].join(" ").toLowerCase().includes(search.toLowerCase())),
+    parts.filter((p) => !search || [p.partName, p.partNumber, p.machineId, p.vendor, p.category].join(" ").toLowerCase().includes(search.toLowerCase())),
     [parts, search]
   );
 
-  const reorderCount = parts.filter((p) => Number(p.qty) <= Number(p.reorderPoint)).length;
+  const reorderCount = parts.filter((p) => Number(p.qty) <= Number(p.reorderPoint) && Number(p.reorderPoint) > 0).length;
 
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18, flexWrap: "wrap", gap: 10 }}>
         <div>
-          <div style={{ fontSize: 17, fontWeight: 800 }}>Spare Parts Inventory</div>
+          <div style={{ fontSize: 17, fontWeight: 800 }}>Spare Parts</div>
           <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
-            Critical spares with reorder alerts — prevent 2-day production losses from missing parts
+            Machine spare parts inventory — linked to Item Master &amp; Category Master
           </div>
         </div>
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
           {reorderCount > 0 && (
             <div style={{ padding: "6px 14px", background: "#ef444422", border: "1px solid #ef444433", borderRadius: 6, fontSize: 12, color: "#ef4444", fontWeight: 700 }}>
               🔔 {reorderCount} Reorder{reorderCount > 1 ? "s" : ""} Needed
             </div>
           )}
-          <button
-            onClick={() => { setForm(blankForm); setEditId(null); setView(view === "form" ? "list" : "form"); }}
-            style={{ padding: "8px 18px", background: view === "form" ? "transparent" : "#3b82f6", border: "1px solid #3b82f6", borderRadius: 6, color: view === "form" ? "#3b82f6" : "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer" }}
-          >
-            {view === "form" ? "← Back" : "+ Add Part"}
-          </button>
+          {["list", "form", "usage"].map((v) => (
+            <button
+              key={v}
+              onClick={() => { if (v !== "form") { setView(v); } else { setForm(blankForm); setEditId(null); setView("form"); } }}
+              style={{
+                padding: "7px 16px",
+                background: view === v ? "#3b82f6" : "transparent",
+                border: "1px solid #3b82f6",
+                borderRadius: 6,
+                color: view === v ? "#fff" : "#3b82f6",
+                fontWeight: 700, fontSize: 12, cursor: "pointer",
+              }}
+            >
+              {v === "list" ? "📋 Inventory" : v === "form" ? (editId ? "✏️ Edit" : "+ Add Part") : "📊 Usage History"}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -352,12 +432,32 @@ function SparePartsTab({ machineMaster, toast }) {
           <div style={{ fontSize: 14, fontWeight: 700, color: "#facc15", marginBottom: 18 }}>{editId ? "Edit Part" : "Add Spare Part"}</div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14, marginBottom: 16 }}>
             <div>
-              <label style={lbl}>Part Name *</label>
-              <input value={form.partName} onChange={(e) => setF("partName", e.target.value)} placeholder="e.g. Print Roller #3" style={inp} />
+              <label style={lbl}>Category {machineSpareCategories.length > 0 ? "(from Master)" : ""}</label>
+              {machineSpareCategories.length > 0 ? (
+                <select value={form.category} onChange={(e) => handleCategoryChange(e.target.value)} style={inp}>
+                  <option value="">-- Select Category --</option>
+                  {machineSpareCategories.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+              ) : (
+                <input value={form.category} onChange={(e) => setF("category", e.target.value)} placeholder="e.g. Rollers, Blades, Bearings" style={inp} />
+              )}
             </div>
             <div>
-              <label style={lbl}>Part Number / SKU</label>
-              <input value={form.partNumber} onChange={(e) => setF("partNumber", e.target.value)} placeholder="e.g. PR-360-3" style={inp} />
+              <label style={lbl}>Part Name * {machineSpareItems.length > 0 ? "(from Item Master)" : ""}</label>
+              {machineSpareItems.length > 0 ? (
+                <select value={form.partName} onChange={(e) => handlePartNameChange(e.target.value)} style={inp}>
+                  <option value="">-- Select Part --</option>
+                  {filteredSpareItems.map((i) => (
+                    <option key={i._id || i.id} value={i.name}>{i.name}{i.code ? ` [${i.code}]` : ""}</option>
+                  ))}
+                </select>
+              ) : (
+                <input value={form.partName} onChange={(e) => setF("partName", e.target.value)} placeholder="e.g. Print Roller #3" style={inp} />
+              )}
+            </div>
+            <div>
+              <label style={lbl}>Part Number / Code</label>
+              <input value={form.partNumber} onChange={(e) => setF("partNumber", e.target.value)} placeholder="Auto-filled from Item Master" style={inp} />
             </div>
             <div>
               <label style={lbl}>Compatible Machine</label>
@@ -365,10 +465,6 @@ function SparePartsTab({ machineMaster, toast }) {
                 <option value="">All / Any</option>
                 {machines.map((m) => <option key={m._id || m.id} value={m.name}>{m.name}</option>)}
               </select>
-            </div>
-            <div>
-              <label style={lbl}>Category</label>
-              <input value={form.category} onChange={(e) => setF("category", e.target.value)} placeholder="e.g. Rollers, Blades, Bearings" style={inp} />
             </div>
             <div>
               <label style={lbl}>Current Qty</label>
@@ -415,7 +511,7 @@ function SparePartsTab({ machineMaster, toast }) {
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr>
-                  {["Part", "Machine", "Stock", "Reorder At", "Status", "Location", "Vendor", "Cost", ""].map((h) => (
+                  {["Category", "Part", "Machine", "Stock", "Reorder At", "Status", "Location", "Cost", ""].map((h) => (
                     <th key={h} style={{ textAlign: "left", padding: "10px 12px", color: "#666", fontWeight: 700, fontSize: 10, textTransform: "uppercase", borderBottom: "1px solid #2a2a2a", background: "#0a0a0a", whiteSpace: "nowrap" }}>{h}</th>
                   ))}
                 </tr>
@@ -430,18 +526,18 @@ function SparePartsTab({ machineMaster, toast }) {
                   const qty = Number(p.qty);
                   const rop = Number(p.reorderPoint);
                   const isOut = qty === 0;
-                  const isLow = qty > 0 && qty <= rop;
+                  const isLow = qty > 0 && rop > 0 && qty <= rop;
                   const statusCol = isOut ? "#ef4444" : isLow ? "#f59e0b" : "#22c55e";
-                  const statusLabel = isOut ? "OUT OF STOCK" : isLow ? `LOW — reorder` : "OK";
+                  const statusLabel = isOut ? "OUT OF STOCK" : isLow ? "LOW — reorder" : "OK";
                   return (
                     <tr key={p.id} style={{ borderBottom: "1px solid #1a1a1a", borderLeft: isOut ? "3px solid #ef4444" : isLow ? "3px solid #f59e0b" : "3px solid transparent" }}>
+                      <td style={{ padding: "10px 12px", fontSize: 11, color: "#888" }}>{p.category || "—"}</td>
                       <td style={{ padding: "10px 12px" }}>
                         <div style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
                           {p.criticalFlag && <span style={{ color: "#ef4444", fontSize: 10 }}>🔴</span>}
                           {p.partName}
                         </div>
                         {p.partNumber && <div style={{ fontSize: 10, color: "#555" }}>{p.partNumber}</div>}
-                        {p.category && <div style={{ fontSize: 10, color: "#888" }}>{p.category}</div>}
                       </td>
                       <td style={{ padding: "10px 12px", fontSize: 12, color: "#888" }}>{p.machineId || "Any"}</td>
                       <td style={{ padding: "10px 12px" }}>
@@ -452,7 +548,6 @@ function SparePartsTab({ machineMaster, toast }) {
                         <span style={{ padding: "2px 8px", background: statusCol + "22", border: `1px solid ${statusCol}33`, borderRadius: 4, fontSize: 10, color: statusCol, fontWeight: 700 }}>{statusLabel}</span>
                       </td>
                       <td style={{ padding: "10px 12px", fontSize: 12, color: "#888" }}>{p.location || "—"}</td>
-                      <td style={{ padding: "10px 12px", fontSize: 12, color: "#888" }}>{p.vendor || "—"}</td>
                       <td style={{ padding: "10px 12px", fontSize: 12, color: "#aaa" }}>
                         {p.unitCost ? `₹${Number(p.unitCost).toLocaleString("en-IN")}` : "—"}
                       </td>
@@ -476,7 +571,6 @@ function SparePartsTab({ machineMaster, toast }) {
               </tbody>
             </table>
           </div>
-          {}
           {parts.length > 0 && (
             <div style={{ marginTop: 12, fontSize: 12, color: "#888", textAlign: "right" }}>
               Total inventory value: <strong style={{ color: "#e0e0e0" }}>
@@ -485,6 +579,78 @@ function SparePartsTab({ machineMaster, toast }) {
             </div>
           )}
         </>
+      )}
+
+      {view === "usage" && (
+        <div>
+          <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#888" }}>Spare Part Usage History</div>
+            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+              <div>
+                <label style={{ ...lbl, display: "inline-block", marginRight: 6 }}>From</label>
+                <input type="date" value={usageDateFrom} onChange={(e) => setUsageDateFrom(e.target.value)} style={{ ...inp, width: "auto", padding: "6px 10px" }} />
+              </div>
+              <div>
+                <label style={{ ...lbl, display: "inline-block", marginRight: 6 }}>To</label>
+                <input type="date" value={usageDateTo} onChange={(e) => setUsageDateTo(e.target.value)} style={{ ...inp, width: "auto", padding: "6px 10px" }} />
+              </div>
+              <input
+                value={usageMachineFilter}
+                onChange={(e) => setUsageMachineFilter(e.target.value)}
+                placeholder="Filter by machine..."
+                style={{ ...inp, width: "auto", padding: "6px 10px" }}
+              />
+              <button
+                onClick={fetchUsageLogs}
+                style={{ padding: "6px 14px", background: "#3b82f622", border: "1px solid #3b82f644", color: "#3b82f6", borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: "pointer" }}
+              >
+                {logsLoading ? "Loading…" : "Refresh"}
+              </button>
+            </div>
+          </div>
+          {logsLoading ? (
+            <div style={{ textAlign: "center", color: "#555", padding: 40 }}>Loading usage records…</div>
+          ) : filteredUsageLogs.length === 0 ? (
+            <div style={{ textAlign: "center", color: "#555", padding: 40 }}>No usage records found for the selected period</div>
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr>
+                    {["Date", "Part Name", "Category", "Qty Used", "Machine", "Issued By", "Remarks"].map((h) => (
+                      <th key={h} style={{ textAlign: "left", padding: "10px 12px", color: "#666", fontWeight: 700, fontSize: 10, textTransform: "uppercase", borderBottom: "1px solid #2a2a2a", background: "#0a0a0a", whiteSpace: "nowrap" }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredUsageLogs.map((log, i) => (
+                    <tr key={log._id || i} style={{ borderBottom: "1px solid #1a1a1a" }}>
+                      <td style={{ padding: "10px 12px", fontSize: 11, color: "#888", whiteSpace: "nowrap" }}>{fmtDate(log.issuedAt)}</td>
+                      <td style={{ padding: "10px 12px", fontWeight: 600 }}>
+                        {log.itemName}
+                        {log.itemCode && <div style={{ fontSize: 10, color: "#555" }}>{log.itemCode}</div>}
+                      </td>
+                      <td style={{ padding: "10px 12px", fontSize: 12, color: "#888" }}>{log.category || "—"}</td>
+                      <td style={{ padding: "10px 12px", fontWeight: 700, color: "#f59e0b" }}>
+                        {log.qty} {log.unit || "nos"}
+                      </td>
+                      <td style={{ padding: "10px 12px" }}>
+                        {log.machineName ? (
+                          <span style={{ padding: "2px 8px", borderRadius: 4, background: "#3b82f622", color: "#3b82f6", fontSize: 11, fontWeight: 600 }}>{log.machineName}</span>
+                        ) : <span style={{ color: "#555", fontSize: 11 }}>—</span>}
+                      </td>
+                      <td style={{ padding: "10px 12px", fontSize: 12, color: "#888" }}>{log.issuedBy || "—"}</td>
+                      <td style={{ padding: "10px 12px", fontSize: 12, color: "#888" }}>{log.remarks || "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div style={{ marginTop: 10, fontSize: 12, color: "#888", textAlign: "right" }}>
+                Total usage: <strong style={{ color: "#e0e0e0" }}>{filteredUsageLogs.length} records</strong>
+              </div>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

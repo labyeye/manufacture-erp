@@ -555,7 +555,7 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
           />
         );
       case "machinetools":
-        return <MachineTools machineMaster={data.machineMaster} toast={showToast} />;
+        return <MachineTools machineMaster={data.machineMaster} itemMasterFG={data.itemMasterFG} categoryMaster={data.categoryMaster} toast={showToast} />;
       case "pricemaster":
         return <PriceMaster toast={showToast} />;
       case "forecast":

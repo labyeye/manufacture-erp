@@ -9,7 +9,7 @@ const today = () => new Date().toISOString().slice(0, 10);
 const fmt = (n) => (n ?? 0).toLocaleString("en-IN");
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("en-GB") : "—");
 
-const TYPE_FILTERS = ["All", "Consumable", "Machine Spare", "Other"];
+const TYPE_FILTERS = ["All", "Consumable", "Other"];
 
 export default function ConsumableStock({
   consumableStock = [],
@@ -77,7 +77,7 @@ export default function ConsumableStock({
 
   const allItems = useMemo(() => {
     const masterItems = itemMasterFG.filter(
-      (i) => i.type === "Consumable" || i.type === "Machine Spare",
+      (i) => i.type === "Consumable" || i.type === "Other",
     );
     const stockMap = new Map();
     (consumableStock || []).forEach((s) => {
@@ -300,7 +300,7 @@ export default function ConsumableStock({
         <SectionTitle
           icon="📦"
           title="Consumable Stock"
-          sub="Consumables, machine spares and other non-RM inventory"
+          sub="Consumables and other non-RM inventory (Machine Spares tracked in Machine &amp; Tooling)"
         />
         <button
           onClick={() => setShowZeroStock(!showZeroStock)}
@@ -418,7 +418,7 @@ export default function ConsumableStock({
                 </div>
                 {!search && (
                   <div style={{ fontSize: 12, color: C.muted }}>
-                    Stock auto-updates when you record a GRN with Consumable / Machine Spare / Other items
+                    Stock auto-updates when you record a GRN with Consumable or Other items
                   </div>
                 )}
               </div>

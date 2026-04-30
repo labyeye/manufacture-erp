@@ -98,6 +98,7 @@ exports.create = async (req, res) => {
     }
 
     const dispatchNo = await getNextDispatchNo();
+    const recordType = req.body.type === "Return" ? "Return" : "Outward";
 
     const dispatch = new Dispatch({
       dispatchNo,
@@ -110,13 +111,17 @@ exports.create = async (req, res) => {
       lrNo: lrNo?.trim(),
       items,
       remarks: remarks?.trim(),
+      type: recordType,
+      originalDispatchRef: req.body.originalDispatchRef?.trim(),
+      returnReason: req.body.returnReason?.trim(),
       createdBy: req.user._id,
     });
 
     await dispatch.save();
     await dispatch.populate("createdBy", "name username");
 
-    await adjustFGStock(items, -1);
+    // For Returns, add stock back (+1). For Outward, deduct (-1).
+    await adjustFGStock(items, recordType === "Return" ? 1 : -1);
 
     res.status(201).json({
       message: "Dispatch created successfully",

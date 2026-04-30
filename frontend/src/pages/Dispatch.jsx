@@ -60,6 +60,19 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
   const [drDateTo, setDrDateTo] = useState("");
   const [editId, setEditId] = useState(null);
 
+  // Material Return state
+  const blankReturnHeader = {
+    returnDate: today(),
+    companyName: "",
+    originalDispatchRef: "",
+    returnReason: "",
+    vehicleNo: "",
+    remarks: "",
+  };
+  const [returnHeader, setReturnHeader] = useState(blankReturnHeader);
+  const [returnItems, setReturnItems] = useState([blankItem()]);
+  const [returnLoading, setReturnLoading] = useState(false);
+
   useEffect(() => {
     fetchDispatches();
     fetchSalesOrders();
@@ -526,20 +539,20 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
         sub="Record outgoing dispatches against sales orders"
       />
 
-      {}
-      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
         {[
-          ["form", "📝 New Dispatch"],
-          ["records", `📋 Records (${dispatch.length})`],
-        ].map(([v, l]) => (
+          ["form", "📝 New Dispatch", C.purple],
+          ["return", "↩️ Material Return", C.orange || "#f97316"],
+          ["records", `📋 Records (${dispatch.length})`, C.blue],
+        ].map(([v, l, col]) => (
           <button
             key={v}
             onClick={() => setView(v)}
             style={{
               padding: "8px 20px",
               borderRadius: 6,
-              border: `1px solid ${view === v ? C.purple : C.border}`,
-              background: view === v ? C.purple : "transparent",
+              border: `1px solid ${view === v ? col : C.border}`,
+              background: view === v ? col : "transparent",
               color: view === v ? "#fff" : C.muted,
               fontWeight: 700,
               fontSize: 13,
@@ -877,6 +890,246 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
         </div>
       )}
 
+      {view === "return" && (
+        <div>
+          <Card style={{ marginBottom: 16 }}>
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: C.orange || "#f97316", marginBottom: 18 }}>
+              Material Return Details
+            </h3>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 14, marginBottom: 14 }}>
+              <Field label="Return Date *">
+                <input
+                  type="date"
+                  value={returnHeader.returnDate}
+                  onChange={(e) => setReturnHeader((h) => ({ ...h, returnDate: e.target.value }))}
+                />
+              </Field>
+              <Field label="Company Name *">
+                <input
+                  placeholder="Company returning goods"
+                  value={returnHeader.companyName}
+                  onChange={(e) => setReturnHeader((h) => ({ ...h, companyName: e.target.value }))}
+                />
+              </Field>
+              <Field label="Original Dispatch Ref">
+                <select
+                  value={returnHeader.originalDispatchRef}
+                  onChange={(e) => {
+                    const ref = e.target.value;
+                    const orig = (dispatch || []).find((d) => d.dispatchNo === ref);
+                    setReturnHeader((h) => ({
+                      ...h,
+                      originalDispatchRef: ref,
+                      companyName: orig?.companyName || h.companyName,
+                    }));
+                    if (orig?.items?.length) {
+                      setReturnItems(orig.items.map((it) => ({
+                        _id: uid(),
+                        itemName: it.itemName || "",
+                        productCode: it.productCode || "",
+                        companyCode: it.companyCode || "",
+                        qty: "",
+                        unit: it.unit || "nos",
+                        pcsPerBox: "",
+                        noOfBox: "",
+                        rate: it.rate || "",
+                        gstRate: it.gstRate || 18,
+                        amount: "",
+                        taxAmount: "",
+                        totalWithTax: "",
+                      })));
+                    }
+                  }}
+                >
+                  <option value="">-- Link to original dispatch (optional) --</option>
+                  {(dispatch || []).filter((d) => d.type !== "Return").map((d) => (
+                    <option key={d._id} value={d.dispatchNo}>
+                      {d.dispatchNo} — {d.companyName} ({d.date ? new Date(d.date).toLocaleDateString("en-GB") : ""})
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Vehicle No">
+                <input
+                  placeholder="Vehicle number"
+                  value={returnHeader.vehicleNo}
+                  onChange={(e) => setReturnHeader((h) => ({ ...h, vehicleNo: e.target.value }))}
+                />
+              </Field>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 14 }}>
+              <Field label="Return Reason *">
+                <select
+                  value={returnHeader.returnReason}
+                  onChange={(e) => setReturnHeader((h) => ({ ...h, returnReason: e.target.value }))}
+                >
+                  <option value="">-- Select Reason --</option>
+                  {["Quality Issue", "Wrong Item", "Excess Quantity", "Damaged in Transit", "Customer Rejection", "Other"].map((r) => (
+                    <option key={r}>{r}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Remarks">
+                <input
+                  placeholder="Additional notes"
+                  value={returnHeader.remarks}
+                  onChange={(e) => setReturnHeader((h) => ({ ...h, remarks: e.target.value }))}
+                />
+              </Field>
+            </div>
+          </Card>
+
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: C.orange || "#f97316" }}>
+              Return Items ({returnItems.length})
+            </h3>
+            <button
+              onClick={() => setReturnItems((prev) => [...prev, blankItem()])}
+              style={{ background: C.orange || "#f97316", color: "#fff", border: "none", borderRadius: 6, padding: "8px 18px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+            >
+              + Add Item
+            </button>
+          </div>
+
+          {returnItems.map((it, idx) => (
+            <Card key={it._id} style={{ marginBottom: 12, borderLeft: `3px solid ${C.orange || "#f97316"}` }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                <span style={{ fontWeight: 700, color: C.orange || "#f97316", fontSize: 13 }}>Item {idx + 1}</span>
+                {returnItems.length > 1 && (
+                  <button
+                    onClick={() => setReturnItems((prev) => prev.filter((_, i) => i !== idx))}
+                    style={{ background: (C.red || "#ef4444") + "22", color: C.red || "#ef4444", border: "none", borderRadius: 5, padding: "4px 12px", fontWeight: 700, fontSize: 12, cursor: "pointer" }}
+                  >
+                    ✕ Remove
+                  </button>
+                )}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 0.5fr", gap: 10 }}>
+                <Field label="Item Name *">
+                  <select
+                    value={it.itemName}
+                    onChange={(e) => setReturnItems((prev) => {
+                      const updated = [...prev];
+                      updated[idx] = { ...updated[idx], itemName: e.target.value };
+                      return updated;
+                    })}
+                  >
+                    <option value="">-- Select Item --</option>
+                    {(fgStock || []).map((s) => (
+                      <option key={s._id || s.id} value={s.itemName}>{s.itemName}</option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Return Qty *">
+                  <input
+                    type="number"
+                    placeholder="Qty being returned"
+                    value={it.qty}
+                    onChange={(e) => setReturnItems((prev) => {
+                      const updated = [...prev];
+                      updated[idx] = { ...updated[idx], qty: e.target.value };
+                      return updated;
+                    })}
+                  />
+                </Field>
+                <Field label="Unit">
+                  <select
+                    value={it.unit}
+                    onChange={(e) => setReturnItems((prev) => {
+                      const updated = [...prev];
+                      updated[idx] = { ...updated[idx], unit: e.target.value };
+                      return updated;
+                    })}
+                  >
+                    {UNIT_OPTIONS.map((u) => <option key={u}>{u}</option>)}
+                  </select>
+                </Field>
+                <Field label="Product Code">
+                  <input
+                    placeholder="Product code"
+                    value={it.productCode}
+                    onChange={(e) => setReturnItems((prev) => {
+                      const updated = [...prev];
+                      updated[idx] = { ...updated[idx], productCode: e.target.value };
+                      return updated;
+                    })}
+                  />
+                </Field>
+                <Field label="Rate (₹)">
+                  <input
+                    type="number"
+                    value={it.rate || ""}
+                    onChange={(e) => setReturnItems((prev) => {
+                      const updated = [...prev];
+                      updated[idx] = { ...updated[idx], rate: e.target.value };
+                      return updated;
+                    })}
+                  />
+                </Field>
+              </div>
+            </Card>
+          ))}
+
+          <div style={{ marginTop: 8, display: "flex", gap: 10 }}>
+            <button
+              disabled={returnLoading}
+              onClick={async () => {
+                if (!returnHeader.companyName) { toast("Company name is required", "error"); return; }
+                if (!returnHeader.returnReason) { toast("Please select a return reason", "error"); return; }
+                const validItems = returnItems.filter((it) => it.itemName && it.qty);
+                if (validItems.length === 0) { toast("Add at least one item with quantity", "error"); return; }
+
+                setReturnLoading(true);
+                try {
+                  const res = await dispatchAPI.create({
+                    date: new Date(returnHeader.returnDate),
+                    companyName: returnHeader.companyName,
+                    vehicleNo: returnHeader.vehicleNo,
+                    remarks: returnHeader.remarks,
+                    type: "Return",
+                    originalDispatchRef: returnHeader.originalDispatchRef,
+                    returnReason: returnHeader.returnReason,
+                    items: validItems.map((it) => ({
+                      itemName: it.itemName,
+                      productCode: it.productCode || "",
+                      companyCode: it.companyCode || "",
+                      qty: Number(it.qty),
+                      unit: it.unit || "nos",
+                      rate: it.rate ? Number(it.rate) : 0,
+                      amount: 0,
+                      gstRate: 0,
+                      taxAmount: 0,
+                      totalWithTax: 0,
+                    })),
+                  });
+                  toast(`Material Return ${res.dispatch?.dispatchNo} recorded — FG stock updated`, "success");
+                  setReturnHeader(blankReturnHeader);
+                  setReturnItems([blankItem()]);
+                  fetchDispatches();
+                  setView("records");
+                } catch (err) {
+                  toast(err.response?.data?.error || "Failed to record return", "error");
+                } finally {
+                  setReturnLoading(false);
+                }
+              }}
+              style={{
+                background: returnLoading ? "#333" : (C.orange || "#f97316"),
+                color: "#fff",
+                border: "none",
+                borderRadius: 6,
+                padding: "10px 24px",
+                fontWeight: 700,
+                fontSize: 13,
+                cursor: returnLoading ? "not-allowed" : "pointer",
+              }}
+            >
+              {returnLoading ? "Saving…" : `↩️ Record Material Return (${returnItems.filter((it) => it.itemName && it.qty).length} item${returnItems.filter((it) => it.itemName && it.qty).length !== 1 ? "s" : ""})`}
+            </button>
+          </div>
+        </div>
+      )}
+
       {view === "records" && (
         <Card>
           <div
@@ -1009,19 +1262,27 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                       <span
                         style={{
                           fontFamily: "'JetBrains Mono',monospace",
-                          color: C.purple,
+                          color: r.type === "Return" ? (C.orange || "#f97316") : C.purple,
                           fontWeight: 700,
                         }}
                       >
                         {r.dispatchNo}
                       </span>
+                      {r.type === "Return" && (
+                        <span style={{ fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 4, background: (C.orange || "#f97316") + "22", color: C.orange || "#f97316" }}>
+                          ↩️ RETURN
+                        </span>
+                      )}
                       <span style={{ fontSize: 12, color: C.muted }}>
                         {fmtDate(r.date)}
                       </span>
                       <span style={{ fontSize: 13, fontWeight: 600 }}>
                         {r.companyName}
                       </span>
-                      <Badge text={r.status} color={C.green} />
+                      {r.returnReason && (
+                        <span style={{ fontSize: 11, color: C.muted }}>Reason: {r.returnReason}</span>
+                      )}
+                      {r.type !== "Return" && <Badge text={r.status || "Dispatched"} color={C.green} />}
                       {(() => {
                         const unitSummary = (r.items || []).reduce(
                           (acc, it) => {
