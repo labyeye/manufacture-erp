@@ -44,6 +44,8 @@ export default function MaterialInward({
   toast,
   editableTabs = [],
   props = {},
+  deepLinkId,
+  onDeepLinkConsumed,
 }) {
   const canEdit = editableTabs.includes("inward");
   const [loading, setLoading] = useState(false);
@@ -96,6 +98,7 @@ export default function MaterialInward({
   const [view, setView] = useState("form");
   const [editId, setEditId] = useState(null);
   const [editData, setEditData] = useState({});
+  const [highlightId, setHighlightId] = useState(null);
   const [drDateFrom, setDrDateFrom] = useState("");
   const [drDateTo, setDrDateTo] = useState("");
 
@@ -136,6 +139,26 @@ export default function MaterialInward({
     fetchItemMaster();
     fetchPOs();
   }, []);
+
+  useEffect(() => {
+    if (!deepLinkId || !inward.length) return;
+    const record = inward.find((r) => (r.inwardNo || r.grnNo) === deepLinkId);
+    if (record) {
+      setView("records");
+      setHighlightId(deepLinkId);
+      onDeepLinkConsumed?.();
+    }
+  }, [deepLinkId, inward]);
+
+  useEffect(() => {
+    if (!highlightId) return;
+    const timer = setTimeout(() => {
+      const el = document.querySelector(`[data-record-id="${highlightId}"]`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 100);
+    const clear = setTimeout(() => setHighlightId(null), 3500);
+    return () => { clearTimeout(timer); clearTimeout(clear); };
+  }, [highlightId]);
 
   const fetchItemMaster = async () => {
     try {
@@ -1723,10 +1746,13 @@ export default function MaterialInward({
                 return (
                   <Card
                     key={r._id}
+                    data-record-id={r.inwardNo || r.grnNo}
                     style={{
                       padding: "16px 20px",
-                      borderLeft: `4px solid ${C.blue}`,
-                      background: "#111114",
+                      borderLeft: `4px solid ${(r.inwardNo || r.grnNo) === highlightId ? C.accent : C.blue}`,
+                      background: (r.inwardNo || r.grnNo) === highlightId ? `${C.accent}11` : "#111114",
+                      boxShadow: (r.inwardNo || r.grnNo) === highlightId ? `0 0 0 2px ${C.accent}66` : undefined,
+                      transition: "all 0.4s ease",
                     }}
                   >
                     <div

@@ -41,6 +41,8 @@ export default function SalesOrders(props) {
     refreshData,
     companyMaster = [],
     session,
+    deepLinkId,
+    onDeepLinkConsumed,
   } = props;
   const isClient = session?.role === "Client";
   const [salesOrders, setSalesOrders] = useState([]);
@@ -164,6 +166,7 @@ export default function SalesOrders(props) {
   const [drDateFrom, setDrDateFrom] = useState("");
   const [drDateTo, setDrDateTo] = useState("");
   const [editId, setEditId] = useState(null);
+  const [highlightId, setHighlightId] = useState(null);
 
   useEffect(() => {
     fetchSalesOrders();
@@ -172,6 +175,26 @@ export default function SalesOrders(props) {
     fetchUsers();
     fetchSellingPrices();
   }, []);
+
+  useEffect(() => {
+    if (!deepLinkId || !salesOrders.length) return;
+    const so = salesOrders.find((s) => s.soNo === deepLinkId);
+    if (so) {
+      setView("records");
+      setHighlightId(deepLinkId);
+      onDeepLinkConsumed?.();
+    }
+  }, [deepLinkId, salesOrders]);
+
+  useEffect(() => {
+    if (!highlightId) return;
+    const timer = setTimeout(() => {
+      const el = document.querySelector(`[data-record-id="${highlightId}"]`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 100);
+    const clear = setTimeout(() => setHighlightId(null), 3500);
+    return () => { clearTimeout(timer); clearTimeout(clear); };
+  }, [highlightId]);
 
   const fetchSellingPrices = async () => {
     try {
@@ -1600,10 +1623,13 @@ export default function SalesOrders(props) {
               return (
                 <Card
                   key={r._id}
+                  data-record-id={r.soNo}
                   style={{
                     padding: "16px 20px",
-                    borderLeft: `3px solid ${C.green || "#4ade80"}`,
-                    background: "#161b22",
+                    borderLeft: `4px solid ${r.soNo === highlightId ? C.accent : (C.green || "#4ade80")}`,
+                    background: r.soNo === highlightId ? `${C.accent}11` : "#161b22",
+                    boxShadow: r.soNo === highlightId ? `0 0 0 2px ${C.accent}66` : undefined,
+                    transition: "all 0.4s ease",
                   }}
                 >
                   {}

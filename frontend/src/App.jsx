@@ -145,7 +145,13 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
     const lastTab = localStorage.getItem("erp_lastTab");
     return lastTab || "dashboard";
   });
+  const [deepLink, setDeepLink] = useState(null);
   const [toast, setToast] = useState(null);
+
+  const handleNavigate = (tab, recordId) => {
+    setCurrentTab(tab);
+    setDeepLink(recordId ? { tab, recordId } : null);
+  };
 
   useEffect(() => {
     localStorage.setItem("erp_lastTab", currentTab);
@@ -507,16 +513,17 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
             priceList={data.priceList}
             printingMaster={data.printingMaster}
             categoryMaster={data.categoryMaster}
+            onNavigate={handleNavigate}
           />
         );
       case "purchase":
-        return <PurchaseOrders {...data} />;
+        return <PurchaseOrders {...data} deepLinkId={deepLink?.tab === "purchase" ? deepLink.recordId : null} onDeepLinkConsumed={() => setDeepLink(null)} />;
       case "inward":
-        return <MaterialInward {...data} toast={showToast} />;
+        return <MaterialInward {...data} toast={showToast} deepLinkId={deepLink?.tab === "inward" ? deepLink.recordId : null} onDeepLinkConsumed={() => setDeepLink(null)} />;
       case "sales":
-        return <SalesOrders {...data} session={session} toast={showToast} />;
+        return <SalesOrders {...data} session={session} toast={showToast} deepLinkId={deepLink?.tab === "sales" ? deepLink.recordId : null} onDeepLinkConsumed={() => setDeepLink(null)} />;
       case "jobs":
-        return <JobOrders {...data} toast={showToast} />;
+        return <JobOrders {...data} toast={showToast} deepLinkId={deepLink?.tab === "jobs" ? deepLink.recordId : null} onDeepLinkConsumed={() => setDeepLink(null)} />;
       case "production":
         return <ProductionUpdate {...data} toast={showToast} />;
       case "printingmaster":

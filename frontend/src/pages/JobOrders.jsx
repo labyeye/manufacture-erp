@@ -99,6 +99,8 @@ export default function JobOrders(props) {
     setRawStock,
     toast,
     companyMaster = [],
+    deepLinkId,
+    onDeepLinkConsumed,
   } = props;
   const [jobOrders, setJobOrders] = useState([]);
   const [salesOrders, setSalesOrders] = useState([]);
@@ -247,6 +249,7 @@ export default function JobOrders(props) {
   const [headerErrors, setHeaderErrors] = useState({});
   const [view, setView] = useState("form");
   const [editId, setEditId] = useState(null);
+  const [highlightId, setHighlightId] = useState(null);
 
   const uniqueCompanyCategories = useMemo(() => {
     return [
@@ -258,6 +261,63 @@ export default function JobOrders(props) {
     fetchJobOrders();
     fetchSalesOrders();
   }, []);
+
+  const handleEditJO = (jo) => {
+    setEditId(jo._id);
+    setHeader({
+      joDate: new Date(jo.jobcardDate).toISOString().slice(0, 10),
+      soRef: jo.soRef || "",
+      companyName: jo.companyName || "",
+      companyCategory: jo.companyCategory || "",
+      itemName: jo.itemName || "",
+      priority: jo.priority || "Standard",
+      size: "",
+      orderDate: jo.orderDate ? new Date(jo.orderDate).toISOString().slice(0, 10) : "",
+      deliveryDate: jo.deliveryDate ? new Date(jo.deliveryDate).toISOString().slice(0, 10) : "",
+      orderQty: jo.orderQty || "",
+      printing: jo.printing || "",
+      plate: jo.plate || "",
+      processes: jo.process || [],
+      paperCategory: jo.paperCategory || "",
+      paperType: jo.paperType || "",
+      paperGsm: jo.paperGsm || "",
+      noOfUps: jo.noOfUps || "",
+      noOfSheets: jo.noOfSheets || "",
+      sheetUom: jo.sheetUom || "mm",
+      sheetW: jo.sheetW || "",
+      sheetL: jo.sheetL || "",
+      sheetSize: jo.sheetSize || "",
+      hasSecondPaper: jo.hasSecondPaper || false,
+      paperCategory2: jo.paperCategory2 || "",
+      paperType2: jo.paperType2 || "",
+      paperGsm2: jo.paperGsm2 || "",
+      noOfSheets2: jo.noOfSheets2 || "",
+      remarks: jo.remarks || "",
+      machineAssignments: jo.machineAssignments || {},
+    });
+    setView("form");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    if (!deepLinkId || !jobOrders.length) return;
+    const jo = jobOrders.find((j) => j.joNo === deepLinkId);
+    if (jo) {
+      setView("records");
+      setHighlightId(deepLinkId);
+      onDeepLinkConsumed?.();
+    }
+  }, [deepLinkId, jobOrders]);
+
+  useEffect(() => {
+    if (!highlightId) return;
+    const timer = setTimeout(() => {
+      const el = document.querySelector(`[data-record-id="${highlightId}"]`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 100);
+    const clear = setTimeout(() => setHighlightId(null), 3500);
+    return () => { clearTimeout(timer); clearTimeout(clear); };
+  }, [highlightId]);
 
   const fetchJobOrders = async () => {
     try {
@@ -1738,9 +1798,16 @@ export default function JobOrders(props) {
               return (
                 <div
                   key={r._id || r.id}
+                  data-record-id={r.joNo}
                   style={{
                     borderBottom: `1px solid ${C.border}22`,
                     padding: "12px 4px",
+                    background: r.joNo === highlightId ? `${C.accent}11` : "transparent",
+                    borderLeft: r.joNo === highlightId ? `3px solid ${C.accent}` : "3px solid transparent",
+                    paddingLeft: "10px",
+                    boxShadow: r.joNo === highlightId ? `0 0 0 1px ${C.accent}44` : undefined,
+                    borderRadius: r.joNo === highlightId ? 6 : 0,
+                    transition: "all 0.4s ease",
                   }}
                 >
                   <div

@@ -21,6 +21,44 @@ const MODULE_COLORS = {
   "Category":         "#10b981",
 };
 
+const TYPE_TO_TAB = {
+  "Sales Order":      "sales",
+  "Job Order":        "jobs",
+  "Purchase Order":   "purchase",
+  "Material Inward":  "inward",
+  "Dispatch":         "dispatch",
+  "Material Return":  "dispatch",
+  "FG Stock":         "fg",
+  "RM Stock":         "rawstock",
+  "Consumable Stock": "consumablestock",
+  "Vendor Master":    "vendormaster",
+  "Company Master":   "companymaster",
+  "Item Master":      "itemmaster",
+  "Machine Master":   "machinemaster",
+  "Price List":       "pricemaster",
+  "Printing Master":  "printingmaster",
+  "Category":         "sizemaster",
+};
+
+const TYPE_ICONS = {
+  "Sales Order":      "🧾",
+  "Job Order":        "📋",
+  "Purchase Order":   "🛒",
+  "Material Inward":  "📦",
+  "Dispatch":         "🚚",
+  "Material Return":  "↩️",
+  "FG Stock":         "🏭",
+  "RM Stock":         "📊",
+  "Consumable Stock": "🔧",
+  "Vendor Master":    "🏪",
+  "Company Master":   "🏢",
+  "Item Master":      "📝",
+  "Machine Master":   "⚙️",
+  "Price List":       "💰",
+  "Printing Master":  "🖨️",
+  "Category":         "🗂️",
+};
+
 export function GlobalSearch({
   salesOrders,
   jobOrders,
@@ -37,6 +75,7 @@ export function GlobalSearch({
   priceList,
   printingMaster,
   categoryMaster,
+  onNavigate,
 }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
@@ -45,7 +84,6 @@ export function GlobalSearch({
     const term = searchTerm.trim().toLowerCase();
     if (!term) return [];
 
-    const push = (arr, results) => arr && results.forEach((r) => arr.push(r));
     const results = [];
 
     // Sales Orders
@@ -286,7 +324,7 @@ export function GlobalSearch({
         });
     });
 
-    // Category Master (array of type docs)
+    // Category Master
     const catArr = Array.isArray(categoryMaster)
       ? categoryMaster
       : Object.values(categoryMaster || {});
@@ -330,6 +368,11 @@ export function GlobalSearch({
     });
     return map;
   }, [filtered]);
+
+  const handleNavigate = (type, recordId) => {
+    const tab = TYPE_TO_TAB[type];
+    if (tab && onNavigate) onNavigate(tab, recordId || null);
+  };
 
   return (
     <div className="fade">
@@ -391,6 +434,7 @@ export function GlobalSearch({
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {Object.entries(grouped).map(([type, items]) => {
             const color = MODULE_COLORS[type] || C.accent;
+            const tab = TYPE_TO_TAB[type];
             return (
               <Card key={type}>
                 <div
@@ -403,27 +447,50 @@ export function GlobalSearch({
                     marginBottom: 10,
                     paddingBottom: 8,
                     borderBottom: `1px solid ${C.border}`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
                   }}
                 >
-                  {type} — {items.length} result{items.length !== 1 ? "s" : ""}
+                  <span>{TYPE_ICONS[type] || "📄"} {type} — {items.length} result{items.length !== 1 ? "s" : ""}</span>
+                  {tab && onNavigate && (
+                    <button
+                      onClick={() => handleNavigate(type)}
+                      style={{
+                        fontSize: 10,
+                        padding: "3px 10px",
+                        borderRadius: 4,
+                        border: `1px solid ${color}55`,
+                        background: color + "15",
+                        color,
+                        cursor: "pointer",
+                        fontWeight: 700,
+                        letterSpacing: 0.5,
+                      }}
+                    >
+                      Open Module →
+                    </button>
+                  )}
                 </div>
                 {items.map((result, i) => (
                   <div
                     key={i}
+                    onClick={() => handleNavigate(result.type, result.name)}
                     onMouseEnter={(e) => (e.currentTarget.style.background = C.surface)}
                     onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                     style={{
                       padding: "10px 8px",
                       borderRadius: 6,
-                      cursor: "default",
+                      cursor: tab ? "pointer" : "default",
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
                       borderBottom:
                         i < items.length - 1 ? `1px solid ${C.border}22` : "none",
+                      transition: "background 0.15s",
                     }}
                   >
-                    <div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontWeight: 700, color: C.text, fontSize: 14 }}>
                         {result.name}
                       </div>
@@ -433,21 +500,43 @@ export function GlobalSearch({
                         </div>
                       )}
                     </div>
-                    {result.meta && (
-                      <span
-                        style={{
-                          fontSize: 11,
-                          color: C.muted,
-                          background: C.surface,
-                          padding: "3px 8px",
-                          borderRadius: 4,
-                          whiteSpace: "nowrap",
-                          marginLeft: 12,
-                        }}
-                      >
-                        {result.meta}
-                      </span>
-                    )}
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: 12, flexShrink: 0 }}>
+                      {result.meta && (
+                        <span
+                          style={{
+                            fontSize: 11,
+                            color: C.muted,
+                            background: C.surface,
+                            padding: "3px 8px",
+                            borderRadius: 4,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {result.meta}
+                        </span>
+                      )}
+                      {tab && onNavigate && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleNavigate(result.type, result.name);
+                          }}
+                          style={{
+                            fontSize: 11,
+                            padding: "4px 10px",
+                            borderRadius: 4,
+                            border: `1px solid ${color}44`,
+                            background: color + "18",
+                            color,
+                            cursor: "pointer",
+                            fontWeight: 600,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          View →
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </Card>

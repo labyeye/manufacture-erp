@@ -1048,7 +1048,14 @@ export default function ProductionCalendar({
                   if (res.success) {
                     toast?.(res.message, "success");
                     setInsightModal(null);
-                    fetchCalendar();
+                    const newDate = res.newDate;
+                    if (newDate < displayStart || newDate > daysArray[daysArray.length - 1]) {
+                      setPivotDate(getWeekStart(newDate));
+                    } else {
+                      fetchCalendar();
+                    }
+                  } else {
+                    toast?.(res.message || "Failed to shift", "error");
                   }
                 } catch {
                   toast?.("Failed to shift entry", "error");
@@ -1870,6 +1877,23 @@ export default function ProductionCalendar({
                                       OT REQ
                                     </span>
                                   )}
+                                  {(entry.jobOrderId?.shiftHistory?.length > 0) && (
+                                    <span
+                                      title={`Shifted ${entry.jobOrderId.shiftHistory.length} time(s)`}
+                                      style={{
+                                        background: "#f9731622",
+                                        color: "#f97316",
+                                        padding: "1px 5px",
+                                        borderRadius: 3,
+                                        fontSize: 8,
+                                        fontWeight: 900,
+                                        border: "1px solid #f9731644",
+                                        cursor: "default",
+                                      }}
+                                    >
+                                      ⏭ ×{entry.jobOrderId.shiftHistory.length}
+                                    </span>
+                                  )}
                                 </div>
 
                                 <div
@@ -2006,7 +2030,14 @@ export default function ProductionCalendar({
                                           const res = await planningAPI.shiftEntry(entry._id);
                                           if (res.success) {
                                             toast?.(res.message, "success");
-                                            fetchCalendar();
+                                            const newDate = res.newDate;
+                                            if (newDate < displayStart || newDate > daysArray[daysArray.length - 1]) {
+                                              setPivotDate(getWeekStart(newDate));
+                                            } else {
+                                              fetchCalendar();
+                                            }
+                                          } else {
+                                            toast?.(res.message || "Failed to shift", "error");
                                           }
                                         } catch {
                                           toast?.("Failed to shift", "error");

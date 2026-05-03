@@ -35,6 +35,16 @@ const scheduleSchema = new mongoose.Schema(
   { _id: false },
 );
 
+const joShiftHistorySchema = new mongoose.Schema(
+  {
+    fromDate: Date,
+    process: String,
+    reason: String,
+    shiftedAt: { type: Date, default: Date.now },
+  },
+  { _id: false },
+);
+
 const jobOrderSchema = new mongoose.Schema(
   {
     joNo: {
@@ -131,6 +141,7 @@ const jobOrderSchema = new mongoose.Schema(
       default: {},
     },
     schedule: [scheduleSchema],
+    shiftHistory: { type: [joShiftHistorySchema], default: [] },
     remarks: String,
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,

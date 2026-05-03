@@ -362,7 +362,7 @@ const getProductionCalendar = async (req, res) => {
         "machineId",
         "name type setupTimeDefault practicalRunRate efficiencyFactor standardShiftHours",
       )
-      .populate("jobOrderId", "joNo itemName companyName")
+      .populate("jobOrderId", "joNo itemName companyName shiftHistory")
       .sort({ date: 1, startTime: 1 });
 
     res.status(200).json(calendar);
@@ -907,9 +907,13 @@ const shiftEntry = async (req, res) => {
       ? entry.machineId.weeklyOff
       : ["Sunday"];
 
-    // Find the next working day after the current entry date
+    // Find the next working day from today (not just +1 from entry date)
     const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    let nextDate = moment(entry.date).add(1, "days");
+    let nextDate = moment().startOf("day");
+    // If entry is already in the future, shift from next day after its date
+    if (moment(entry.date).isSameOrAfter(moment().startOf("day"))) {
+      nextDate = moment(entry.date).add(1, "days");
+    }
     let safety = 0;
     while (safety++ < 14) {
       const dayName = DAY_NAMES[nextDate.day()];
@@ -917,34 +921,55 @@ const shiftEntry = async (req, res) => {
       nextDate.add(1, "days");
     }
 
-    // Recalculate deliveryFeasible for new date
+    // Fetch job for history + deliveryFeasible
     const job = await JobOrder.findById(entry.jobOrderId);
     const dueDate = moment(job?.internalDueDate || job?.deliveryDate);
     const daysToDeadline = dueDate.isValid() ? dueDate.diff(nextDate, "days") : 999;
     const deliveryFeasible =
       daysToDeadline > 2 ? "GREEN" : daysToDeadline >= 0 ? "ORANGE" : "RED";
 
-    // Update the entry to the new date
-    entry.date = nextDate.toDate();
-    entry.plannedStart = nextDate.clone().set({
-      hour: parseInt((entry.startTime || "09:00").split(":")[0]),
-      minute: parseInt((entry.startTime || "09:00").split(":")[1]),
-    }).toDate();
-    entry.plannedEnd = nextDate.clone().set({
-      hour: parseInt((entry.endTime || "17:00").split(":")[0]),
-      minute: parseInt((entry.endTime || "17:00").split(":")[1]),
-    }).toDate();
-    entry.deliveryFeasible = deliveryFeasible;
-    entry.status = "Scheduled";
-    if (reason) entry.rescheduleReasonCode = reason;
+    const fromDate = entry.date;
+    const shiftReasonCode = reason || "Manual";
 
+    // Record shift history on this calendar entry
+    entry.shiftHistory = entry.shiftHistory || [];
+    entry.shiftHistory.push({
+      fromDate,
+      toDate: nextDate.toDate(),
+      reason: shiftReasonCode,
+      shiftedAt: new Date(),
+    });
+    entry.shiftCount = (entry.shiftCount || 0) + 1;
+
+    // Mark entry as Rescheduled and record reason
+    entry.status = "Rescheduled";
+    entry.rescheduleReasonCode = shiftReasonCode;
     await entry.save();
+
+    // Record shift in the JobOrder's shiftHistory for job-level tracking
+    if (job) {
+      job.shiftHistory = job.shiftHistory || [];
+      job.shiftHistory.push({
+        fromDate,
+        process: entry.process,
+        reason: shiftReasonCode,
+        shiftedAt: new Date(),
+      });
+      await job.save();
+    }
+
+    // Recalculate the full calendar for this job from today — cascades all stages
+    await recalcJobCalendar(entry.jobOrderId.toString());
+
+    // Get total shift count for this job across all entries
+    const totalShifts = job ? job.shiftHistory.length : 1;
 
     res.json({
       success: true,
-      message: `Entry shifted to ${nextDate.format("DD MMM YYYY")}`,
+      message: `Shifted to ${nextDate.format("DD MMM YYYY")} (shifted ${totalShifts} time${totalShifts !== 1 ? "s" : ""} total)`,
       newDate: nextDate.format("YYYY-MM-DD"),
       deliveryFeasible,
+      totalShifts,
     });
   } catch (error) {
     console.error("shiftEntry error:", error);

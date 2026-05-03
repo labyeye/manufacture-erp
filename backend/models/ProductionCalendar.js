@@ -1,5 +1,18 @@
 const mongoose = require("mongoose");
 
+const shiftHistorySchema = new mongoose.Schema(
+  {
+    fromDate: { type: Date, required: true },
+    toDate: { type: Date },
+    reason: {
+      type: String,
+      enum: ['Breakdown', 'Urgent Insertion', 'Material Delay', 'Artwork Pending', 'Tool Unavailable', 'Manual'],
+    },
+    shiftedAt: { type: Date, default: Date.now },
+  },
+  { _id: false },
+);
+
 const productionCalendarSchema = new mongoose.Schema(
   {
     machineId: {
@@ -94,6 +107,8 @@ const productionCalendarSchema = new mongoose.Schema(
       default: "Scheduled",
     },
     remarks: String,
+    shiftHistory: { type: [shiftHistorySchema], default: [] },
+    shiftCount: { type: Number, default: 0 },
   },
   {
     timestamps: true,

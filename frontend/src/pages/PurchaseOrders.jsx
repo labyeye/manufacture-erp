@@ -51,6 +51,8 @@ export default function PurchaseOrders({
   sizeMaster = {},
   toast,
   editableTabs = [],
+  deepLinkId,
+  onDeepLinkConsumed,
 }) {
   const canEdit = editableTabs.includes("purchase");
   const blankHeader = {
@@ -99,11 +101,32 @@ export default function PurchaseOrders({
   const [drDateTo, setDrDateTo] = useState("");
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [highlightId, setHighlightId] = useState(null);
 
   useEffect(() => {
     fetchPOs();
     fetchItemMaster();
   }, []);
+
+  useEffect(() => {
+    if (!deepLinkId || !purchaseOrders.length) return;
+    const po = purchaseOrders.find((p) => p.poNo === deepLinkId);
+    if (po) {
+      setView("records");
+      setHighlightId(deepLinkId);
+      onDeepLinkConsumed?.();
+    }
+  }, [deepLinkId, purchaseOrders]);
+
+  useEffect(() => {
+    if (!highlightId) return;
+    const timer = setTimeout(() => {
+      const el = document.querySelector(`[data-record-id="${highlightId}"]`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 100);
+    const clear = setTimeout(() => setHighlightId(null), 3500);
+    return () => { clearTimeout(timer); clearTimeout(clear); };
+  }, [highlightId]);
 
   const fetchItemMaster = async () => {
     try {
@@ -1519,10 +1542,13 @@ export default function PurchaseOrders({
                 return (
                   <Card
                     key={r._id}
+                    data-record-id={r.poNo}
                     style={{
                       padding: "16px 20px",
-                      borderLeft: `4px solid ${C.blue}`,
-                      background: "#161b22",
+                      borderLeft: `4px solid ${r.poNo === highlightId ? C.accent : C.blue}`,
+                      background: r.poNo === highlightId ? `${C.accent}11` : "#161b22",
+                      boxShadow: r.poNo === highlightId ? `0 0 0 2px ${C.accent}66` : undefined,
+                      transition: "all 0.4s ease",
                     }}
                   >
                     {}
