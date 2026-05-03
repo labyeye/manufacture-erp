@@ -413,7 +413,7 @@ export default function ProductionUpdate({
                 <div style={readonlyStyle}>
                   {selectedJO?.paperCategory?.toLowerCase().includes("sheet")
                     ? `Paper 1: ${selectedJO?.noOfSheets || 0}`
-                    : `Weight: ${selectedJO?.reelWeightKg || 0} kg`}
+                    : `${selectedJO?.orderQty || 0} pcs`}
                 </div>
               </Field>
 
@@ -452,7 +452,7 @@ export default function ProductionUpdate({
                     }
 
                     const done = selectedJO?.stageTotalMap?.[s] || 0;
-                    const unit = isFormation ? "" : isSheet ? "" : " kg";
+                    const unit = isFormation ? " pcs" : isSheet ? "" : " kg";
 
                     let disabled = false;
                     for (let i = 0; i < idx; i++) {
@@ -530,7 +530,7 @@ export default function ProductionUpdate({
                       const done = selectedJO.stageTotalMap?.[s] || 0;
                       const remain = Math.max(0, target - done);
                       const unit = isFormation
-                        ? ""
+                        ? " pcs"
                         : isSheet
                           ? " sheets"
                           : " kg";

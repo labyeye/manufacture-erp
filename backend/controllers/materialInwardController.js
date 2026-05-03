@@ -297,10 +297,67 @@ exports.update = async (req, res) => {
       }
     }
 
+    const effectivePoRef = poRef || (await MaterialInward.findById(req.params.id))?.poRef;
+    if (effectivePoRef && items) {
+      const po = await PurchaseOrder.findOne({ poNo: effectivePoRef });
+      if (po) {
+        const allInwards = await MaterialInward.find({
+          poRef: effectivePoRef,
+          _id: { $ne: req.params.id },
+        });
+
+        let orderedMap = {};
+        po.items.forEach((it) => {
+          const key = it.itemName || it.productCode || "unknown";
+          orderedMap[key] =
+            (orderedMap[key] || 0) + (Number(it.weight) || Number(it.qty) || 0);
+        });
+
+        let receivedMap = {};
+        allInwards.forEach((inw) => {
+          inw.items.forEach((it) => {
+            const key = it.itemName || it.productCode || "unknown";
+            receivedMap[key] =
+              (receivedMap[key] || 0) +
+              (Number(it.weight) || Number(it.qty) || 0);
+          });
+        });
+
+        for (const it of items) {
+          const key = it.itemName || it.productCode || "unknown";
+          const incoming = Number(it.weight) || Number(it.qty) || 0;
+          const ordered = orderedMap[key] || 0;
+          const previouslyReceived = receivedMap[key] || 0;
+
+          if (ordered > 0) {
+            const allowed = ordered * 1.2;
+            if (previouslyReceived + incoming > allowed) {
+              return res.status(400).json({
+                message: `Excess receiving not allowed for ${key}. Ordered: ${ordered}, Maximum Allowed (20% excess): ${allowed}, Trying to receive: ${previouslyReceived + incoming}`,
+              });
+            }
+
+            const incomingRate = Number(it.rate) || Number(it.price) || 0;
+            const poItem = po.items.find(
+              (pi) => (pi.itemName || pi.productCode || "unknown") === key,
+            );
+            if (poItem) {
+              const poRate = Number(poItem.rate) || Number(poItem.price) || 0;
+              if (poRate > 0 && incomingRate > poRate) {
+                return res.status(400).json({
+                  message: `Material Inward price (${incomingRate}) cannot be higher than Purchase Order price (${poRate}) for ${key}.`,
+                });
+              }
+            }
+          }
+        }
+      }
+    }
+
     const inward = await MaterialInward.findById(req.params.id);
     if (!inward) return res.status(404).json({ message: "Inward not found" });
 
-    
+
     await adjustStock(inward.items, -1, inward.location);
 
     inward.inwardDate = inwardDate || inward.inwardDate;
