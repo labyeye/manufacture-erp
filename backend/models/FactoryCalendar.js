@@ -17,6 +17,12 @@ const factoryCalendarSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    affectedMachineIds: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "MachineMaster",
+      },
+    ],
   },
   {
     timestamps: true,

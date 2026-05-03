@@ -7,7 +7,7 @@ import {
   Badge,
   Modal,
 } from "../components/ui/BasicComponents";
-import { planningAPI } from "../api/auth";
+import { planningAPI, breakdownLogAPI, factoryCalendarAPI, machineMaintenanceAPI } from "../api/auth";
 
 const fmt = (n) => (n ?? 0).toLocaleString("en-IN");
 
@@ -133,6 +133,18 @@ export default function ProductionCalendar({
   const [isShifting, setIsShifting] = useState(false);
   const [missedModal, setMissedModal] = useState(null); // { entries: [] }
   const missedModalShown = React.useRef(false);
+  const [breakdowns, setBreakdowns] = useState([]);
+  const [breakdownModal, setBreakdownModal] = useState(null); // { machine } or null
+  const [bdForm, setBdForm] = useState({ reasonCode: "Other", issueDescription: "", startDateTime: "", endDateTime: "", operatorName: "", backupOperator: "" });
+  const [isSavingBd, setIsSavingBd] = useState(false);
+  const [holidays, setHolidays] = useState([]);
+  const [maintenanceBlocks, setMaintenanceBlocks] = useState([]);
+  const [powerCutModal, setPowerCutModal] = useState(false);
+  const [pcForm, setPcForm] = useState({ date: "", reason: "", machineIds: [] });
+  const [isSavingPc, setIsSavingPc] = useState(false);
+  const [isSettingUpPm, setIsSettingUpPm] = useState(false);
+  const [rushJobs, setRushJobs] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
 
   const machines = useMemo(() => {
     if (Array.isArray(machineMaster) && machineMaster.length > 0) {
@@ -236,9 +248,71 @@ export default function ProductionCalendar({
     }
   };
 
+  const fetchBreakdowns = async () => {
+    try {
+      const data = await breakdownLogAPI.getAll({
+        startDate: displayStart,
+        endDate: daysArray[daysArray.length - 1],
+      });
+      setBreakdowns(data || []);
+    } catch {
+      // non-critical
+    }
+  };
+
+  const fetchHolidays = async () => {
+    try {
+      const data = await factoryCalendarAPI.getAll({
+        startDate: displayStart,
+        endDate: daysArray[daysArray.length - 1],
+      });
+      setHolidays(data || []);
+    } catch {
+      // non-critical
+    }
+  };
+
+  const fetchMaintenance = async () => {
+    try {
+      const data = await machineMaintenanceAPI.getAll({
+        startDate: displayStart,
+        endDate: daysArray[daysArray.length - 1],
+      });
+      setMaintenanceBlocks(data || []);
+    } catch {
+      // non-critical
+    }
+  };
+
+  const fetchRushJobs = async () => {
+    // Collect rush/critical jobs from calendarData or from passed jobOrders
+    const rush = (jobOrders || []).filter(
+      (jo) =>
+        ["Rush", "Critical"].includes(jo.orderPriorityOverride) &&
+        !jo.rushApproved &&
+        !["Completed", "Cancelled"].includes(jo.status)
+    );
+    setRushJobs(rush);
+  };
+
+  useEffect(() => {
+    // Load current user for role-based controls
+    try {
+      const u = JSON.parse(localStorage.getItem("user") || "{}");
+      setCurrentUser(u);
+    } catch {}
+  }, []);
+
   useEffect(() => {
     fetchCalendar(true);
+    fetchBreakdowns();
+    fetchHolidays();
+    fetchMaintenance();
   }, [displayStart, days]);
+
+  useEffect(() => {
+    fetchRushJobs();
+  }, [jobOrders]);
 
   const navigate = (dir) => {
     const step = rangeView === "week" ? 7 : 30;
@@ -271,6 +345,53 @@ export default function ProductionCalendar({
     });
     return idx;
   }, [calendarData]);
+
+  // breakdownIndex[machineId][dateStr] = breakdown object (first open one, excludes Operator Absent)
+  // operatorAbsentIndex[machineId][dateStr] = absence object
+  const { breakdownIndex, operatorAbsentIndex } = useMemo(() => {
+    const bdIdx = {};
+    const oaIdx = {};
+    breakdowns.forEach((bd) => {
+      if (!bd.machineId) return;
+      const mId = (bd.machineId._id || bd.machineId).toString();
+      const idx = bd.reasonCode === "Operator Absent" ? oaIdx : bdIdx;
+      if (!idx[mId]) idx[mId] = {};
+      const start = moment(bd.startDateTime).startOf("day");
+      const end = bd.endDateTime
+        ? moment(bd.endDateTime).startOf("day")
+        : moment(bd.startDateTime).startOf("day");
+      let cur = start.clone();
+      while (cur.isSameOrBefore(end)) {
+        const ds = cur.format("YYYY-MM-DD");
+        if (!idx[mId][ds]) idx[mId][ds] = bd;
+        cur.add(1, "day");
+      }
+    });
+    return { breakdownIndex: bdIdx, operatorAbsentIndex: oaIdx };
+  }, [breakdowns]);
+
+  // holidayIndex[dateStr] = factoryCalendar entry
+  const holidayIndex = useMemo(() => {
+    const idx = {};
+    holidays.forEach((h) => {
+      const ds = moment(h.date).format("YYYY-MM-DD");
+      idx[ds] = h;
+    });
+    return idx;
+  }, [holidays]);
+
+  // maintenanceIndex[machineId][dateStr] = maintenance record
+  const maintenanceIndex = useMemo(() => {
+    const idx = {};
+    maintenanceBlocks.forEach((m) => {
+      if (!m.machineId) return;
+      const mId = (m.machineId._id || m.machineId).toString();
+      if (!idx[mId]) idx[mId] = {};
+      const ds = moment(m.startDateTime).format("YYYY-MM-DD");
+      if (!idx[mId][ds]) idx[mId][ds] = m;
+    });
+    return idx;
+  }, [maintenanceBlocks]);
 
   const visibleMachines = useMemo(
     () =>
@@ -1207,6 +1328,326 @@ export default function ProductionCalendar({
     );
   };
 
+  const BreakdownModal = () => {
+    if (!breakdownModal) return null;
+    const { machine } = breakdownModal;
+    const machineName = machine.name || "Machine";
+
+    const handleSubmit = async () => {
+      if (!bdForm.startDateTime) {
+        toast?.("Start date/time is required", "error");
+        return;
+      }
+      try {
+        setIsSavingBd(true);
+        const mIdStr = (machine._id || machine.id || "").toString();
+        const isAbsence = bdForm.reasonCode === "Operator Absent";
+        await breakdownLogAPI.create({
+          machineId: mIdStr,
+          startDateTime: new Date(bdForm.startDateTime).toISOString(),
+          endDateTime: bdForm.endDateTime ? new Date(bdForm.endDateTime).toISOString() : undefined,
+          reasonCode: bdForm.reasonCode,
+          issueDescription: bdForm.issueDescription,
+          operatorName: bdForm.operatorName || undefined,
+          backupOperator: bdForm.backupOperator || undefined,
+          status: "Open",
+        });
+        const msg = isAbsence
+          ? `Operator absence logged for ${machineName} — jobs auto-shifted`
+          : `Breakdown logged for ${machineName} — affected jobs auto-shifted`;
+        toast?.(msg, "success");
+        setBreakdownModal(null);
+        fetchCalendar();
+        fetchBreakdowns();
+      } catch (err) {
+        toast?.("Failed to log breakdown: " + (err?.response?.data?.error || err.message), "error");
+      } finally {
+        setIsSavingBd(false);
+      }
+    };
+
+    const inputStyle = {
+      width: "100%",
+      padding: "8px 10px",
+      background: "#0d1117",
+      border: "1px solid #30363d",
+      borderRadius: 6,
+      color: "#e6edf3",
+      fontSize: 13,
+      boxSizing: "border-box",
+    };
+
+    return (
+      <>
+        <div
+          onClick={() => setBreakdownModal(null)}
+          style={{ position: "fixed", inset: 0, background: "#00000088", backdropFilter: "blur(4px)", zIndex: 3000 }}
+        />
+        <div style={{
+          position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)",
+          width: 420, maxWidth: "92vw", background: "#1c2128", border: "1px solid #30363d",
+          borderRadius: 12, zIndex: 3001, boxShadow: "0 24px 60px #000000cc", overflow: "hidden",
+        }}>
+          {/* Header */}
+          <div style={{ background: "#ef444411", borderBottom: "1px solid #ef444433", padding: "16px 20px", display: "flex", alignItems: "center", gap: 12 }}>
+            <span style={{ fontSize: 22 }}>{bdForm.reasonCode === "Operator Absent" ? "👤" : "⚠️"}</span>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: 15, color: "#ef4444" }}>
+                {bdForm.reasonCode === "Operator Absent" ? "Log Operator Absence" : "Log Machine Breakdown"}
+              </div>
+              <div style={{ fontSize: 12, color: "#8b949e", marginTop: 2 }}>{machineName} — affected jobs will be auto-shifted</div>
+            </div>
+            <button onClick={() => setBreakdownModal(null)} style={{ marginLeft: "auto", background: "none", border: "none", color: "#8b949e", fontSize: 18, cursor: "pointer" }}>✕</button>
+          </div>
+
+          {/* Form */}
+          <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
+            <div>
+              <label style={{ fontSize: 11, color: "#8b949e", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 5 }}>
+                Reason Code
+              </label>
+              <select
+                value={bdForm.reasonCode}
+                onChange={(e) => setBdForm((p) => ({ ...p, reasonCode: e.target.value }))}
+                style={inputStyle}
+              >
+                {["Mechanical", "Electrical", "Tooling", "Material Jam", "Power", "Operator Absent", "Other"].map((r) => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
+            </div>
+
+            {bdForm.reasonCode === "Operator Absent" ? (
+              <>
+                <div>
+                  <label style={{ fontSize: 11, color: "#8b949e", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 5 }}>
+                    Absent Operator Name
+                  </label>
+                  <input
+                    type="text"
+                    value={bdForm.operatorName}
+                    onChange={(e) => setBdForm((p) => ({ ...p, operatorName: e.target.value }))}
+                    placeholder="Name of absent operator"
+                    style={inputStyle}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, color: "#8b949e", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 5 }}>
+                    Backup Operator (if any)
+                  </label>
+                  <input
+                    type="text"
+                    value={bdForm.backupOperator}
+                    onChange={(e) => setBdForm((p) => ({ ...p, backupOperator: e.target.value }))}
+                    placeholder="Name of backup operator"
+                    style={inputStyle}
+                  />
+                </div>
+              </>
+            ) : null}
+
+            <div>
+              <label style={{ fontSize: 11, color: "#8b949e", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 5 }}>
+                {bdForm.reasonCode === "Operator Absent" ? "Date *" : "Start Date & Time *"}
+              </label>
+              <input
+                type={bdForm.reasonCode === "Operator Absent" ? "date" : "datetime-local"}
+                value={bdForm.startDateTime}
+                onChange={(e) => setBdForm((p) => ({ ...p, startDateTime: e.target.value }))}
+                style={inputStyle}
+              />
+            </div>
+
+            {bdForm.reasonCode !== "Operator Absent" && (
+              <div>
+                <label style={{ fontSize: 11, color: "#8b949e", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 5 }}>
+                  Expected Resolution (optional)
+                </label>
+                <input
+                  type="datetime-local"
+                  value={bdForm.endDateTime}
+                  onChange={(e) => setBdForm((p) => ({ ...p, endDateTime: e.target.value }))}
+                  style={inputStyle}
+                />
+              </div>
+            )}
+
+            <div>
+              <label style={{ fontSize: 11, color: "#8b949e", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 5 }}>
+                {bdForm.reasonCode === "Operator Absent" ? "Notes" : "Issue Description"}
+              </label>
+              <textarea
+                value={bdForm.issueDescription}
+                onChange={(e) => setBdForm((p) => ({ ...p, issueDescription: e.target.value }))}
+                rows={2}
+                placeholder={bdForm.reasonCode === "Operator Absent" ? "Any notes..." : "Brief description of the issue..."}
+                style={{ ...inputStyle, resize: "vertical" }}
+              />
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div style={{ padding: "14px 20px", borderTop: "1px solid #30363d", display: "flex", gap: 10 }}>
+            <button
+              onClick={() => setBreakdownModal(null)}
+              style={{ flex: 1, padding: "10px", borderRadius: 8, background: "transparent", border: "1px solid #30363d", color: "#8b949e", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={isSavingBd}
+              style={{ flex: 2, padding: "10px", borderRadius: 8, background: isSavingBd ? "#ef444488" : "#ef4444", border: "none", color: "#fff", fontWeight: 800, fontSize: 13, cursor: isSavingBd ? "not-allowed" : "pointer" }}
+            >
+              {isSavingBd
+                ? "Logging & Shifting..."
+                : bdForm.reasonCode === "Operator Absent"
+                  ? "Log Absence & Auto-Shift Jobs"
+                  : "Log Breakdown & Auto-Shift Jobs"}
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  };
+
+  const PowerCutModal = () => {
+    if (!powerCutModal) return null;
+    const inputStyle = { width: "100%", padding: "8px 10px", background: "#0d1117", border: "1px solid #30363d", borderRadius: 6, color: "#e6edf3", fontSize: 13, boxSizing: "border-box" };
+
+    const toggleMachine = (id) => {
+      setPcForm((p) => ({
+        ...p,
+        machineIds: p.machineIds.includes(id) ? p.machineIds.filter((x) => x !== id) : [...p.machineIds, id],
+      }));
+    };
+
+    const handleSubmit = async () => {
+      if (!pcForm.date) { toast?.("Date is required", "error"); return; }
+      if (pcForm.machineIds.length === 0) { toast?.("Select at least one affected machine", "error"); return; }
+      try {
+        setIsSavingPc(true);
+        await factoryCalendarAPI.create({
+          date: new Date(pcForm.date).toISOString(),
+          type: "Power-cut",
+          reason: pcForm.reason || "Power Cut",
+          affectsAllMachines: false,
+          affectedMachineIds: pcForm.machineIds,
+        });
+        toast?.(`Power cut logged — ${pcForm.machineIds.length} machines shifted`, "success");
+        setPowerCutModal(false);
+        setPcForm({ date: "", reason: "", machineIds: [] });
+        fetchCalendar();
+        fetchHolidays();
+      } catch (err) {
+        toast?.("Failed to log power cut: " + (err?.response?.data?.error || err.message), "error");
+      } finally {
+        setIsSavingPc(false);
+      }
+    };
+
+    return (
+      <>
+        <div onClick={() => setPowerCutModal(false)} style={{ position: "fixed", inset: 0, background: "#00000088", backdropFilter: "blur(4px)", zIndex: 3000 }} />
+        <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 460, maxWidth: "92vw", background: "#1c2128", border: "1px solid #30363d", borderRadius: 12, zIndex: 3001, boxShadow: "0 24px 60px #000000cc", overflow: "hidden" }}>
+          <div style={{ background: "#eab30811", borderBottom: "1px solid #eab30833", padding: "16px 20px", display: "flex", alignItems: "center", gap: 12 }}>
+            <span style={{ fontSize: 22 }}>⚡</span>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: 15, color: "#eab308" }}>Log Power Cut</div>
+              <div style={{ fontSize: 12, color: "#8b949e", marginTop: 2 }}>Select affected machines — their jobs will be auto-shifted</div>
+            </div>
+            <button onClick={() => setPowerCutModal(false)} style={{ marginLeft: "auto", background: "none", border: "none", color: "#8b949e", fontSize: 18, cursor: "pointer" }}>✕</button>
+          </div>
+          <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
+            <div>
+              <label style={{ fontSize: 11, color: "#8b949e", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 5 }}>Date *</label>
+              <input type="date" value={pcForm.date} onChange={(e) => setPcForm((p) => ({ ...p, date: e.target.value }))} style={inputStyle} />
+            </div>
+            <div>
+              <label style={{ fontSize: 11, color: "#8b949e", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 5 }}>Reason / Note</label>
+              <input type="text" value={pcForm.reason} onChange={(e) => setPcForm((p) => ({ ...p, reason: e.target.value }))} placeholder="e.g. MSEB scheduled cut" style={inputStyle} />
+            </div>
+            <div>
+              <label style={{ fontSize: 11, color: "#8b949e", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 8 }}>Affected Machines *</label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, maxHeight: 180, overflowY: "auto" }}>
+                {machines.map((m) => {
+                  const mId = (m._id || m.id || "").toString();
+                  const selected = pcForm.machineIds.includes(mId);
+                  return (
+                    <button
+                      key={mId}
+                      onClick={() => toggleMachine(mId)}
+                      style={{ padding: "5px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: "pointer", background: selected ? "#eab30833" : "#ffffff08", border: `1px solid ${selected ? "#eab308" : "#30363d"}`, color: selected ? "#eab308" : "#8b949e" }}
+                    >
+                      {m.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+          <div style={{ padding: "14px 20px", borderTop: "1px solid #30363d", display: "flex", gap: 10 }}>
+            <button onClick={() => setPowerCutModal(false)} style={{ flex: 1, padding: "10px", borderRadius: 8, background: "transparent", border: "1px solid #30363d", color: "#8b949e", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>Cancel</button>
+            <button onClick={handleSubmit} disabled={isSavingPc} style={{ flex: 2, padding: "10px", borderRadius: 8, background: isSavingPc ? "#eab30888" : "#eab308", border: "none", color: "#000", fontWeight: 800, fontSize: 13, cursor: isSavingPc ? "not-allowed" : "pointer" }}>
+              {isSavingPc ? "Logging..." : `Log Power Cut (${pcForm.machineIds.length} machines)`}
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  };
+
+  const canApproveRush = currentUser && ["Admin", "Manager", "Production"].includes(currentUser.role);
+
+  const RushApprovalPanel = () => {
+    const [approvingId, setApprovingId] = useState(null);
+    if (rushJobs.length === 0) return null;
+
+    const handleApprove = async (jo) => {
+      try {
+        setApprovingId(jo._id);
+        const res = await planningAPI.approveRush(jo._id, currentUser?._id);
+        if (res.success) {
+          toast?.(res.message, "success");
+          fetchCalendar();
+          fetchRushJobs();
+        }
+      } catch (err) {
+        toast?.("Failed to approve rush: " + (err?.response?.data?.message || err.message), "error");
+      } finally {
+        setApprovingId(null);
+      }
+    };
+
+    return (
+      <div style={{ background: "#ef444411", border: "1px solid #ef444433", borderRadius: 8, padding: "12px 16px", marginBottom: 12, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 16 }}>🚨</span>
+        <span style={{ fontWeight: 800, fontSize: 13, color: "#ef4444" }}>Rush Orders Awaiting Approval</span>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginLeft: "auto" }}>
+          {rushJobs.map((jo) => (
+            <div key={jo._id} style={{ background: "#0d1117", border: "1px solid #ef444444", borderRadius: 6, padding: "6px 10px", display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 12, fontWeight: 800, color: jo.orderPriorityOverride === "Critical" ? "#ef4444" : "#f97316" }}>
+                {jo.orderPriorityOverride === "Critical" ? "🔴" : "🟠"} {jo.joNo}
+              </span>
+              <span style={{ fontSize: 11, color: "#8b949e" }}>{jo.itemName}</span>
+              {canApproveRush ? (
+                <button
+                  onClick={() => handleApprove(jo)}
+                  disabled={approvingId === jo._id}
+                  style={{ padding: "3px 8px", borderRadius: 4, background: approvingId === jo._id ? "#ef444488" : "#ef4444", border: "none", color: "#fff", fontSize: 10, fontWeight: 800, cursor: approvingId === jo._id ? "not-allowed" : "pointer" }}
+                >
+                  {approvingId === jo._id ? "..." : "Approve →"}
+                </button>
+              ) : (
+                <span style={{ fontSize: 10, color: "#8b949e", fontStyle: "italic" }}>Awaiting approval</span>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="fade">
       <SectionTitle
@@ -1236,7 +1677,10 @@ export default function ProductionCalendar({
       <MachineSidePanel />
       <JobInsightModal />
       <MissedModal />
+      <BreakdownModal />
+      <PowerCutModal />
 
+      <RushApprovalPanel />
 
       <div
         style={{
@@ -1333,6 +1777,37 @@ export default function ProductionCalendar({
         >
           Today
         </button>
+
+        <button
+          onClick={() => {
+            setPowerCutModal(true);
+            setPcForm({ date: today, reason: "", machineIds: [] });
+          }}
+          style={{ padding: "7px 12px", borderRadius: 6, border: "1px solid #eab30888", background: "transparent", color: "#eab308", fontWeight: 700, fontSize: 12, cursor: "pointer" }}
+        >
+          ⚡ Power Cut
+        </button>
+
+        {canApproveRush && (
+          <button
+            onClick={async () => {
+              try {
+                setIsSettingUpPm(true);
+                const res = await planningAPI.setupPM();
+                toast?.(res.message, "success");
+                fetchMaintenance();
+              } catch (err) {
+                toast?.("PM setup failed: " + (err?.response?.data?.message || err.message), "error");
+              } finally {
+                setIsSettingUpPm(false);
+              }
+            }}
+            disabled={isSettingUpPm}
+            style={{ padding: "7px 12px", borderRadius: 6, border: "1px solid #9ca3af44", background: "transparent", color: "#9ca3af", fontWeight: 700, fontSize: 12, cursor: "pointer" }}
+          >
+            {isSettingUpPm ? "..." : "🔧 Setup PM"}
+          </button>
+        )}
 
         <select
           value={machineTypeFilter}
@@ -1531,7 +2006,11 @@ export default function ProductionCalendar({
         {[
           ["#3b82f6", "On track"],
           ["#22c55e", "Done"],
-          ["#ef4444", "Overdue"],
+          ["#ef4444", "Breakdown / Overdue"],
+          ["#f97316", "Operator Absent"],
+          ["#eab308", "Power Cut"],
+          ["#8b5cf6", "Holiday"],
+          ["#9ca3af", "PM Block"],
         ].map(([color, label]) => (
           <span
             key={label}
@@ -1596,36 +2075,40 @@ export default function ProductionCalendar({
                 const dayName = DAYS[dateObj.getDay()];
                 const dayNum = dateObj.getDate();
                 const isToday = d === today;
+                const hDay = holidayIndex[d];
+                const isHoliday = hDay && hDay.type !== "Power-cut";
                 return (
                   <th
                     key={d}
+                    title={isHoliday ? `${hDay.type}: ${hDay.reason || ""}` : undefined}
                     style={{
                       padding: "8px 4px",
                       textAlign: "center",
                       fontSize: 11,
                       fontWeight: 700,
-                      color: isToday ? C.orange || "#f97316" : C.muted,
-                      background: isToday
-                        ? (C.orange || "#f97316") + "11"
-                        : C.surface,
+                      color: isHoliday
+                        ? "#8b5cf6"
+                        : isToday ? C.orange || "#f97316" : C.muted,
+                      background: isHoliday
+                        ? "#8b5cf611"
+                        : isToday ? (C.orange || "#f97316") + "11" : C.surface,
                       borderBottom: `1px solid ${C.border}`,
                       borderRight: `1px solid ${C.border}22`,
                       minWidth: colW,
-                      borderTop: isToday
-                        ? `2px solid ${C.orange || "#f97316"}`
-                        : "none",
+                      borderTop: isHoliday
+                        ? "2px solid #8b5cf6"
+                        : isToday ? `2px solid ${C.orange || "#f97316"}` : "none",
                     }}
                   >
                     <div>{dayName}</div>
-                    <div
-                      style={{
-                        fontSize: rangeView === "week" ? 15 : 12,
-                        fontWeight: 900,
-                        marginTop: 2,
-                      }}
-                    >
+                    <div style={{ fontSize: rangeView === "week" ? 15 : 12, fontWeight: 900, marginTop: 2 }}>
                       {dayNum}
                     </div>
+                    {isHoliday && (
+                      <div style={{ fontSize: 8, color: "#8b5cf6", marginTop: 1, fontWeight: 700 }}>
+                        {hDay.type === "Holiday" ? "🏖 HOL" : hDay.type === "Shutdown" ? "🔒 OFF" : hDay.type === "Half-day" ? "½ DAY" : hDay.type}
+                      </div>
+                    )}
                   </th>
                 );
               })}
@@ -1698,16 +2181,30 @@ export default function ProductionCalendar({
                           {machine.type}
                         </div>
                       </div>
-                      <span
-                        style={{
-                          marginLeft: "auto",
-                          color: C.border,
-                          fontSize: 12,
-                          cursor: "pointer",
-                        }}
-                      >
-                        ⚙
-                      </span>
+                      <div style={{ marginLeft: "auto", display: "flex", gap: 4, alignItems: "center" }}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setBreakdownModal({ machine });
+                            setBdForm({ reasonCode: "Other", issueDescription: "", startDateTime: new Date().toISOString().slice(0, 16), endDateTime: "" });
+                          }}
+                          title="Log Breakdown"
+                          style={{
+                            background: "#ef444422",
+                            border: "1px solid #ef444444",
+                            borderRadius: 4,
+                            color: "#ef4444",
+                            fontSize: 9,
+                            fontWeight: 800,
+                            padding: "2px 5px",
+                            cursor: "pointer",
+                            lineHeight: 1.4,
+                          }}
+                        >
+                          ⚠ BD
+                        </button>
+                        <span style={{ color: C.border, fontSize: 12, cursor: "pointer" }}>⚙</span>
+                      </div>
                     </div>
                   </td>
 
@@ -1718,6 +2215,15 @@ export default function ProductionCalendar({
                     const isToday = d === today;
                     const isWeekend =
                       new Date(d).getDay() === 0 || new Date(d).getDay() === 6;
+                    const mIdStr = (fullMachine?._id || machine.id || "").toString();
+                    const bdOnDay = breakdownIndex[mIdStr]?.[d];
+                    const oaOnDay = operatorAbsentIndex[mIdStr]?.[d];
+                    const pmOnDay = maintenanceIndex[mIdStr]?.[d];
+                    const holidayOnDay = holidayIndex[d];
+                    const powerCutOnDay = holidayOnDay?.type === "Power-cut" &&
+                      (holidayOnDay.affectsAllMachines !== false ||
+                       holidayOnDay.affectedMachineIds?.includes(mIdStr))
+                      ? holidayOnDay : null;
 
                     return (
                       <td
@@ -1728,15 +2234,56 @@ export default function ProductionCalendar({
                           borderRight: `1px solid ${C.border}22`,
                           verticalAlign: "top",
                           textAlign: "center",
-                          background: isToday
-                            ? (C.orange || "#f97316") + "08"
-                            : isWeekend
-                              ? "#ffffff04"
-                              : "transparent",
+                          background: bdOnDay
+                            ? "#ef444408"
+                            : holidayOnDay && holidayOnDay.type !== "Power-cut"
+                              ? "#8b5cf608"
+                              : isToday
+                                ? (C.orange || "#f97316") + "08"
+                                : isWeekend
+                                  ? "#ffffff04"
+                                  : "transparent",
                           minWidth: colW,
                         }}
                       >
-                        {jobs.length === 0 ? (
+                        {bdOnDay && (
+                          <div
+                            title={`Breakdown: ${bdOnDay.reasonCode}${bdOnDay.issueDescription ? " — " + bdOnDay.issueDescription : ""}`}
+                            style={{ background: "#ef444422", border: "1px solid #ef444488", borderLeft: "4px solid #ef4444", borderRadius: "4px 8px 8px 4px", color: "#ef4444", fontSize: 9, fontWeight: 800, padding: "6px 6px", marginBottom: 6, textAlign: "left" }}
+                          >
+                            <div>⚠ BREAKDOWN</div>
+                            <div style={{ opacity: 0.8, fontWeight: 600, marginTop: 2 }}>{bdOnDay.reasonCode}</div>
+                            {bdOnDay.status === "Open" && <div style={{ opacity: 0.7, fontSize: 8, marginTop: 2 }}>● Open</div>}
+                          </div>
+                        )}
+                        {oaOnDay && (
+                          <div
+                            title={`Operator Absent${oaOnDay.operatorName ? ": " + oaOnDay.operatorName : ""}${oaOnDay.backupOperator ? " → Backup: " + oaOnDay.backupOperator : ""}`}
+                            style={{ background: "#f9731622", border: "1px solid #f9731688", borderLeft: "4px solid #f97316", borderRadius: "4px 8px 8px 4px", color: "#f97316", fontSize: 9, fontWeight: 800, padding: "6px 6px", marginBottom: 6, textAlign: "left" }}
+                          >
+                            <div>👤 OPERATOR ABSENT</div>
+                            {oaOnDay.operatorName && <div style={{ opacity: 0.8, fontWeight: 600, marginTop: 2 }}>{oaOnDay.operatorName}</div>}
+                            {oaOnDay.backupOperator && <div style={{ opacity: 0.7, fontSize: 8, marginTop: 2 }}>Backup: {oaOnDay.backupOperator}</div>}
+                          </div>
+                        )}
+                        {pmOnDay && (
+                          <div
+                            title={`PM: ${pmOnDay.type} — ${pmOnDay.hoursBlocked}h blocked`}
+                            style={{ background: "#6b728022", border: "1px solid #6b728055", borderLeft: "4px solid #9ca3af", borderRadius: "4px 8px 8px 4px", color: "#9ca3af", fontSize: 9, fontWeight: 800, padding: "6px 6px", marginBottom: 6, textAlign: "left" }}
+                          >
+                            <div>🔧 PM</div>
+                            <div style={{ opacity: 0.8, fontWeight: 600, marginTop: 2 }}>{pmOnDay.hoursBlocked}h</div>
+                          </div>
+                        )}
+                        {powerCutOnDay && (
+                          <div
+                            title={`Power Cut${powerCutOnDay.reason ? ": " + powerCutOnDay.reason : ""}`}
+                            style={{ background: "#eab30822", border: "1px solid #eab30855", borderLeft: "4px solid #eab308", borderRadius: "4px 8px 8px 4px", color: "#eab308", fontSize: 9, fontWeight: 800, padding: "6px 6px", marginBottom: 6, textAlign: "left" }}
+                          >
+                            <div>⚡ POWER CUT</div>
+                          </div>
+                        )}
+                        {jobs.length === 0 && !bdOnDay ? (
                           <span
                             style={{
                               fontSize: 10,
@@ -1746,7 +2293,7 @@ export default function ProductionCalendar({
                           >
                             OFF
                           </span>
-                        ) : (
+                        ) : jobs.length === 0 ? null : (
                           jobs.map((entry) => {
                             const jo = entry.jobOrderId;
                             const itemName = jo?.itemName || "Unknown Item";

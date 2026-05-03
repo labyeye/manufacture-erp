@@ -2,7 +2,20 @@ const JobOrder = require("../models/JobOrder");
 const MachineMaster = require("../models/MachineMaster");
 const ProductionCalendar = require("../models/ProductionCalendar");
 const CompanyMaster = require("../models/CompanyMaster");
+const FactoryCalendar = require("../models/FactoryCalendar");
+const MachineMaintenance = require("../models/MachineMaintenance");
 const moment = require("moment");
+
+// Returns a Set of "YYYY-MM-DD" strings that are holidays/shutdowns
+const getHolidaySet = async (startDate, endDate) => {
+  const entries = await FactoryCalendar.find({
+    date: { $gte: startDate, $lte: endDate },
+    type: { $in: ["Holiday", "Shutdown"] },
+  });
+  const set = new Set();
+  entries.forEach((e) => set.add(moment(e.date).format("YYYY-MM-DD")));
+  return set;
+};
 
 
 
@@ -647,6 +660,10 @@ const recalcJobCalendar = async (jobId) => {
     locked: { $ne: true },
   });
 
+  // Pre-load holidays for next 180 days to skip during scheduling
+  const horizonEnd = today.clone().add(180, "days").toDate();
+  const holidaySet = await getHolidaySet(today.toDate(), horizonEnd);
+
   // Seed machine usage from other jobs already in the calendar
   const machineIds = machines.map((m) => m._id);
   const existing = await ProductionCalendar.find({
@@ -745,7 +762,11 @@ const recalcJobCalendar = async (jobId) => {
       const dateStr = currentDate.format("YYYY-MM-DD");
       const dayName = currentDate.format("dddd");
 
-      if (state.workingDays.includes(dayName) && !state.weeklyOff.includes(dayName)) {
+      if (
+        state.workingDays.includes(dayName) &&
+        !state.weeklyOff.includes(dayName) &&
+        !holidaySet.has(dateStr)
+      ) {
         const machineShiftStart = selectedMachine.shiftStartTime || "09:00";
         const dueDate = moment(job.internalDueDate || job.deliveryDate);
         const daysToDeadline = dueDate.isValid() ? dueDate.diff(currentDate, "days") : 999;
@@ -1030,6 +1051,110 @@ const shiftMissed = async (req, res) => {
   }
 };
 
+const approveRush = async (req, res) => {
+  try {
+    const { jobOrderId, approvedBy } = req.body;
+    if (!jobOrderId) {
+      return res.status(400).json({ success: false, message: "jobOrderId required" });
+    }
+
+    const job = await JobOrder.findById(jobOrderId);
+    if (!job) return res.status(404).json({ success: false, message: "Job not found" });
+    if (!["Rush", "Critical"].includes(job.orderPriorityOverride)) {
+      return res.status(400).json({ success: false, message: "Job is not Rush or Critical priority" });
+    }
+
+    // Mark as rush-approved
+    job.rushApproved = true;
+    job.rushApprovedBy = approvedBy || null;
+    job.rushApprovedAt = new Date();
+    await job.save();
+
+    // Recalc this job first (it starts from today, no dependencies changed)
+    await recalcJobCalendar(jobOrderId);
+
+    // Then cascade all other jobs that share machines with this rush job
+    await cascadeAffectedJobs(jobOrderId);
+
+    res.json({
+      success: true,
+      message: `Rush order ${job.joNo} approved — jobs cascaded forward`,
+      joNo: job.joNo,
+    });
+  } catch (error) {
+    console.error("approveRush error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const setupPreventiveMaintenance = async (req, res) => {
+  try {
+    // Generate PM windows for the next 6 months: 2h on the 2nd Saturday of each month
+    const machines = await MachineMaster.find({ status: "Active" });
+    if (machines.length === 0) {
+      return res.json({ success: true, message: "No active machines found", created: 0 });
+    }
+
+    const today = moment().startOf("day");
+    const hoursBlocked = 2;
+    const records = [];
+
+    for (let m = 0; m < 6; m++) {
+      const monthStart = today.clone().add(m, "months").startOf("month");
+      // Find the 2nd Saturday of this month
+      let satCount = 0;
+      let secondSat = null;
+      for (let d = 0; d < 31; d++) {
+        const day = monthStart.clone().add(d, "days");
+        if (day.month() !== monthStart.month()) break;
+        if (day.day() === 6) { // Saturday
+          satCount++;
+          if (satCount === 2) {
+            secondSat = day;
+            break;
+          }
+        }
+      }
+      if (!secondSat) continue;
+
+      // PM window: 08:00 – 10:00 (2 hours before shift starts)
+      const startDT = secondSat.clone().set({ hour: 8, minute: 0, second: 0 }).toDate();
+      const endDT = secondSat.clone().set({ hour: 10, minute: 0, second: 0 }).toDate();
+
+      for (const machine of machines) {
+        // Skip if already exists
+        const exists = await MachineMaintenance.findOne({
+          machineId: machine._id,
+          startDateTime: startDT,
+        });
+        if (!exists) {
+          records.push({
+            machineId: machine._id,
+            startDateTime: startDT,
+            endDateTime: endDT,
+            type: "PM Inspection",
+            reason: "Auto-scheduled 2nd Saturday preventive maintenance",
+            hoursBlocked,
+          });
+        }
+      }
+    }
+
+    if (records.length > 0) {
+      await MachineMaintenance.insertMany(records);
+    }
+
+    res.json({
+      success: true,
+      message: `Created ${records.length} PM windows across ${machines.length} machines for next 6 months`,
+      created: records.length,
+    });
+  } catch (error) {
+    console.error("setupPreventiveMaintenance error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   generateProductionCalendar,
   getProductionCalendar,
@@ -1038,4 +1163,6 @@ module.exports = {
   cascadeAffectedJobs,
   shiftEntry,
   shiftMissed,
+  approveRush,
+  setupPreventiveMaintenance,
 };

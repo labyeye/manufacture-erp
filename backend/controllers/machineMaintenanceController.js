@@ -1,8 +1,17 @@
 const MachineMaintenance = require('../models/MachineMaintenance');
+const moment = require('moment');
 
 exports.getAll = async (req, res) => {
   try {
-    const maintenance = await MachineMaintenance.find().populate('machineId');
+    const { startDate, endDate, machineId } = req.query;
+    const query = {};
+    if (machineId) query.machineId = machineId;
+    if (startDate || endDate) {
+      query.startDateTime = {};
+      if (startDate) query.startDateTime.$gte = moment(startDate).startOf('day').toDate();
+      if (endDate) query.startDateTime.$lte = moment(endDate).endOf('day').toDate();
+    }
+    const maintenance = await MachineMaintenance.find(query).populate('machineId').sort({ startDateTime: 1 });
     res.json(maintenance);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch maintenance records' });

@@ -114,6 +114,15 @@ const jobOrderSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
+    rushApproved: {
+      type: Boolean,
+      default: false,
+    },
+    rushApprovedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    rushApprovedAt: Date,
     internalDueDate: Date, 
     dispatchDate: Date,
 

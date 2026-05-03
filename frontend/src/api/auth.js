@@ -647,6 +647,16 @@ export const planningAPI = {
     const response = await api.post("/planning/shift-entry", { entryId, reason });
     return response.data;
   },
+
+  approveRush: async (jobOrderId, approvedBy) => {
+    const response = await api.post("/planning/approve-rush", { jobOrderId, approvedBy });
+    return response.data;
+  },
+
+  setupPM: async () => {
+    const response = await api.post("/planning/setup-pm");
+    return response.data;
+  },
 };
 
 export const toolingMasterAPI = {
@@ -673,8 +683,8 @@ export const toolingMasterAPI = {
 };
 
 export const factoryCalendarAPI = {
-  getAll: async () => {
-    const response = await api.get("/factory-calendar");
+  getAll: async (params) => {
+    const response = await api.get("/factory-calendar", { params });
     return response.data;
   },
   create: async (data) => {
@@ -692,8 +702,8 @@ export const factoryCalendarAPI = {
 };
 
 export const machineMaintenanceAPI = {
-  getAll: async () => {
-    const response = await api.get("/machine-maintenance");
+  getAll: async (params) => {
+    const response = await api.get("/machine-maintenance", { params });
     return response.data;
   },
   create: async (data) => {
@@ -711,8 +721,8 @@ export const machineMaintenanceAPI = {
 };
 
 export const breakdownLogAPI = {
-  getAll: async () => {
-    const response = await api.get("/breakdown-log");
+  getAll: async (params) => {
+    const response = await api.get("/breakdown-log", { params });
     return response.data;
   },
   create: async (data) => {
