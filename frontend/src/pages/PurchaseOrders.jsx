@@ -328,7 +328,7 @@ export default function PurchaseOrders({
                   <td>${it.gsm ? it.gsm + "gsm" : "—"}</td>
                   <td style="white-space: nowrap;">${it.sheetSize || (it.widthMm ? it.widthMm + (it.lengthMm ? "x" + it.lengthMm : "") + "mm" : "—")}</td>
                   <td style="text-align: center;">${it.noOfSheets || (it.category?.includes("Sheet") ? fmt(it.qty) : "—") || "—"}</td>
-                  <td class="col-qty" style="white-space: nowrap;">${fmt(it.weight || 0)} kg</td>
+                  <td class="col-qty" style="white-space: nowrap;">${it.weight ? fmt(it.weight) + " kg" : (it.qty ? fmt(it.qty) + " " + (it.unit || "nos") : "—")}</td>
                   <td style="white-space: nowrap;">₹${fmt(it.rate)}</td>
                   <td style="text-align: center;">${it.usedGst}%</td>
                   <td class="col-amt" style="white-space: nowrap;">₹${fmt(it.amount)}</td>
