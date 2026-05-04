@@ -74,6 +74,7 @@ export default function ItemMaster({ companyMaster = [], toast }) {
   });
   const [gstRate, setGstRate] = useState("18");
   const [hsnCode, setHsnCode] = useState("");
+  const [productCode, setProductCode] = useState("");
   const [reorderLevel, setReorderLevel] = useState("0");
   const [selectedIds, setSelectedIds] = useState([]);
   const [showClientCodes, setShowClientCodes] = useState(null);
@@ -227,6 +228,7 @@ export default function ItemMaster({ companyMaster = [], toast }) {
 
       if (editingItem) {
         await itemMasterAPI.update(editingItem._id, {
+          code: productCode.trim() || undefined,
           name: newItemName,
           category: selectedCategory,
           subCategory: selectedSubCategory,
@@ -286,6 +288,7 @@ export default function ItemMaster({ companyMaster = [], toast }) {
       setGstRate("18");
       setHsnCode("");
       setReorderLevel("0");
+      setProductCode("");
       fetchItems();
     } catch (error) {
       toast(error.response?.data?.error || "Failed to save item", "error");
@@ -325,6 +328,7 @@ export default function ItemMaster({ companyMaster = [], toast }) {
     setReorderLevel(item.reorderLevel || "0");
     setCompanyName(item.brandName || item.clientName || "");
     setCompanyCategory(item.companyCategory || "");
+    setProductCode(item.code || "");
 
     setShowEditModal(true);
   };
@@ -847,6 +851,7 @@ export default function ItemMaster({ companyMaster = [], toast }) {
             setGstRate("18");
             setHsnCode("");
             setReorderLevel("0");
+            setProductCode("");
           }}
         />
       )}
@@ -911,6 +916,7 @@ export default function ItemMaster({ companyMaster = [], toast }) {
                 setGstRate("18");
                 setHsnCode("");
                 setReorderLevel("0");
+                setProductCode("");
               }}
               style={{
                 background: "transparent",
@@ -926,6 +932,29 @@ export default function ItemMaster({ companyMaster = [], toast }) {
             </button>
           )}
         </div>
+        {editingItem && (
+          <div style={{ marginBottom: 14 }}>
+            <label
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                color: "#666",
+                display: "block",
+                marginBottom: 6,
+                letterSpacing: "0.5px",
+              }}
+            >
+              PRODUCT CODE
+            </label>
+            <input
+              style={inputStyle}
+              placeholder="e.g. RM0001"
+              value={productCode}
+              onChange={(e) => setProductCode(e.target.value)}
+            />
+          </div>
+        )}
+
         <div
           style={{
             display: "grid",
@@ -1420,6 +1449,7 @@ export default function ItemMaster({ companyMaster = [], toast }) {
                 setGstRate("18");
                 setHsnCode("");
                 setReorderLevel("0");
+                setProductCode("");
               }}
               style={{
                 padding: "9px 18px",
