@@ -125,7 +125,10 @@ export default function PurchaseOrders({
       if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 100);
     const clear = setTimeout(() => setHighlightId(null), 3500);
-    return () => { clearTimeout(timer); clearTimeout(clear); };
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(clear);
+    };
   }, [highlightId]);
 
   const fetchItemMaster = async () => {
@@ -328,7 +331,7 @@ export default function PurchaseOrders({
                   <td>${it.gsm ? it.gsm + "gsm" : "—"}</td>
                   <td style="white-space: nowrap;">${it.sheetSize || (it.widthMm ? it.widthMm + (it.lengthMm ? "x" + it.lengthMm : "") + "mm" : "—")}</td>
                   <td style="text-align: center;">${it.noOfSheets || (it.category?.includes("Sheet") ? fmt(it.qty) : "—") || "—"}</td>
-                  <td class="col-qty" style="white-space: nowrap;">${it.weight ? fmt(it.weight) + " kg" : (it.qty ? fmt(it.qty) + " " + (it.unit || "nos") : "—")}</td>
+                  <td class="col-qty" style="white-space: nowrap;">${it.weight ? fmt(it.weight) + " kg" : it.qty ? fmt(it.qty) + " " + (it.unit || "nos") : "—"}</td>
                   <td style="white-space: nowrap;">₹${fmt(it.rate)}</td>
                   <td style="text-align: center;">${it.usedGst}%</td>
                   <td class="col-amt" style="white-space: nowrap;">₹${fmt(it.amount)}</td>
@@ -1546,8 +1549,12 @@ export default function PurchaseOrders({
                     style={{
                       padding: "16px 20px",
                       borderLeft: `4px solid ${r.poNo === highlightId ? C.accent : C.blue}`,
-                      background: r.poNo === highlightId ? `${C.accent}11` : "#161b22",
-                      boxShadow: r.poNo === highlightId ? `0 0 0 2px ${C.accent}66` : undefined,
+                      background:
+                        r.poNo === highlightId ? `${C.accent}11` : "#161b22",
+                      boxShadow:
+                        r.poNo === highlightId
+                          ? `0 0 0 2px ${C.accent}66`
+                          : undefined,
                       transition: "all 0.4s ease",
                     }}
                   >

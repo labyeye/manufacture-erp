@@ -296,42 +296,27 @@ export default function MaterialInward({
           it.materialType = masterItem.type || "Raw Material";
 
           if (it.materialType === "Raw Material") {
-            if (name.includes("Paper Reel")) {
-              it.category = "Paper Reel";
-              const gsmMatch = name.match(/(\d+)gsm/);
-              const widthMatch = name.match(/(\d+)mm/);
-              const paperTypes = [
-                "MG Kraft",
-                "MF Kraft",
-                "Bleached Kraft",
-                "OGR",
-              ];
-              const foundType = paperTypes.find((t) => name.includes(t));
+            it.category = (masterItem.category || "").trim();
+            it.subCategory = (masterItem.subCategory || "").trim();
+            it.gsm = masterItem.gsm || "";
+            it.widthMm = masterItem.width || "";
+            it.lengthMm = masterItem.length || "";
+            it.gstRate = masterItem.gstRate || 18;
+            it.hsnCode = masterItem.hsnCode || "";
+
+            if (!it.gsm) {
+              const gsmMatch = name.match(/(\d+)[\s-]*gsm/i);
               if (gsmMatch) it.gsm = gsmMatch[1];
-              if (widthMatch) it.widthMm = widthMatch[1];
-              if (foundType) it.subCategory = foundType;
-            } else if (name.includes("Sheet")) {
-              it.category = "Paper Sheets";
-              const gsmMatch = name.match(/(\d+)gsm/);
-              const dimMatch = name.match(/(\d+)x(\d+)mm/);
-              const widthMatch = name.match(/(\d+)mm/);
-              const paperTypes = [
-                "White PE Coated",
-                "Kraft PE Coated",
-                "Kraft Uncoated",
-                "SBS/FBB",
-                "Whiteback",
-                "Greyback",
-                "Art Paper",
-                "Gumming Sheet",
-              ];
-              const foundType = paperTypes.find((t) => name.includes(t));
-              if (gsmMatch) it.gsm = gsmMatch[1];
+            }
+            if (!it.widthMm) {
+              const dimMatch = name.match(/(\d+)[\s-]*x[\s-]*(\d+)[\s-]*mm/i);
+              const widthMatch = name.match(/(\d+)[\s-]*mm/i);
               if (dimMatch) {
                 it.widthMm = dimMatch[1];
                 it.lengthMm = dimMatch[2];
-              } else if (widthMatch) it.widthMm = widthMatch[1];
-              if (foundType) it.subCategory = foundType;
+              } else if (widthMatch) {
+                it.widthMm = widthMatch[1];
+              }
             }
           } else if (it.materialType === "Consumable") {
             const lowName = (it.itemName || "").toLowerCase();
