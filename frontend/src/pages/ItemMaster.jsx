@@ -80,6 +80,7 @@ export default function ItemMaster({ companyMaster = [], toast }) {
   const [manualClient, setManualClient] = useState("");
   const [manualCode, setManualCode] = useState("");
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, count: 0 });
+  const [showEditModal, setShowEditModal] = useState(false);
   const fileInputRef = useRef(null);
   const companyCodesFileRef = useRef(null);
 
@@ -248,6 +249,7 @@ export default function ItemMaster({ companyMaster = [], toast }) {
         });
         toast("Item updated", "success");
         setEditingItem(null);
+        setShowEditModal(false);
       } else {
         await itemMasterAPI.create({
           name: newItemName,
@@ -324,7 +326,7 @@ export default function ItemMaster({ companyMaster = [], toast }) {
     setCompanyName(item.brandName || item.clientName || "");
     setCompanyCategory(item.companyCategory || "");
 
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setShowEditModal(true);
   };
 
   const handleBulkDelete = async () => {
@@ -825,26 +827,104 @@ export default function ItemMaster({ companyMaster = [], toast }) {
         ))}
       </div>
 
+      {showEditModal && editingItem && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.75)",
+            zIndex: 999,
+          }}
+          onClick={() => {
+            setShowEditModal(false);
+            setEditingItem(null);
+            setNewItemName("");
+            setSelectedCategory("");
+            setSelectedSubCategory("");
+            setGsm("");
+            setWidth("");
+            setLength("");
+            setGstRate("18");
+            setHsnCode("");
+            setReorderLevel("0");
+          }}
+        />
+      )}
+
       <div
-        style={{
-          background: "#1a1a1a",
-          border: "1px solid #2a2a2a",
-          borderRadius: 10,
-          padding: "16px 20px",
-          marginBottom: 14,
-        }}
+        style={
+          showEditModal && editingItem
+            ? {
+                position: "fixed",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                zIndex: 1000,
+                background: "#1a1a1a",
+                border: "1px solid #333",
+                borderRadius: 12,
+                padding: "20px 24px",
+                width: "90%",
+                maxWidth: 960,
+                maxHeight: "88vh",
+                overflowY: "auto",
+              }
+            : {
+                background: "#1a1a1a",
+                border: "1px solid #2a2a2a",
+                borderRadius: 10,
+                padding: "16px 20px",
+                marginBottom: 14,
+              }
+        }
       >
         <div
           style={{
-            fontSize: 12,
-            fontWeight: 700,
-            color: "#2196F3",
-            letterSpacing: "1px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
             marginBottom: 14,
-            textTransform: "uppercase",
           }}
         >
-          {editingItem ? `Edit ${activeTab} Item` : `Add ${activeTab} Item`}
+          <div
+            style={{
+              fontSize: 12,
+              fontWeight: 700,
+              color: "#2196F3",
+              letterSpacing: "1px",
+              textTransform: "uppercase",
+            }}
+          >
+            {editingItem ? `Edit ${activeTab} Item` : `Add ${activeTab} Item`}
+          </div>
+          {showEditModal && editingItem && (
+            <button
+              onClick={() => {
+                setShowEditModal(false);
+                setEditingItem(null);
+                setNewItemName("");
+                setSelectedCategory("");
+                setSelectedSubCategory("");
+                setGsm("");
+                setWidth("");
+                setLength("");
+                setGstRate("18");
+                setHsnCode("");
+                setReorderLevel("0");
+              }}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "#888",
+                fontSize: 20,
+                cursor: "pointer",
+                lineHeight: 1,
+                padding: "0 4px",
+              }}
+            >
+              ✕
+            </button>
+          )}
         </div>
         <div
           style={{
@@ -1330,6 +1410,7 @@ export default function ItemMaster({ companyMaster = [], toast }) {
             <button
               onClick={() => {
                 setEditingItem(null);
+                setShowEditModal(false);
                 setNewItemName("");
                 setSelectedCategory("");
                 setSelectedSubCategory("");
