@@ -46,7 +46,7 @@ const inputStyle = {
   boxSizing: "border-box",
 };
 
-export default function ItemMaster({ companyMaster = [], toast }) {
+export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
   const [itemMasterFG, setItemMasterFG] = useState([]);
   const [categoryMaster, setCategoryMaster] = useState({});
   const [loading, setLoading] = useState(false);
@@ -290,6 +290,7 @@ export default function ItemMaster({ companyMaster = [], toast }) {
       setReorderLevel("0");
       setProductCode("");
       fetchItems();
+      refreshData?.();
     } catch (error) {
       toast(error.response?.data?.error || "Failed to save item", "error");
     } finally {
@@ -304,6 +305,7 @@ export default function ItemMaster({ companyMaster = [], toast }) {
       await itemMasterAPI.delete(item._id);
       toast("Item deleted successfully", "success");
       fetchItems();
+      refreshData?.();
     } catch (error) {
       toast(error.response?.data?.error || "Failed to delete item", "error");
     } finally {
@@ -340,6 +342,7 @@ export default function ItemMaster({ companyMaster = [], toast }) {
       toast(`Successfully deleted ${confirmModal.count} items`, "success");
       setSelectedIds([]);
       fetchItems();
+      refreshData?.();
     } catch (error) {
       toast("Bulk delete failed", "error");
     } finally {
