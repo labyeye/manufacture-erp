@@ -111,13 +111,10 @@ export default function ConsumableStock({
     if (typeFilter !== "All") {
       list = list.filter((s) => (s.type || s.category || "") === typeFilter);
     }
-    if (showZeroStock) {
-      list = list.filter(
-        (s) =>
-          (s.qty || 0) > 0 ||
-          (s.code || "").trim().toUpperCase().startsWith("CG"),
-      );
-    } else {
+    list = list.filter(
+      (s) => !(s.code || "").trim().toUpperCase().startsWith("CN"),
+    );
+    if (!showZeroStock) {
       list = list.filter((s) => (s.qty || 0) > 0);
     }
     return list;
