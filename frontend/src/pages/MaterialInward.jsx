@@ -319,12 +319,16 @@ export default function MaterialInward({
               }
             }
           } else if (it.materialType === "Consumable") {
-            const lowName = (it.itemName || "").toLowerCase();
-            if (lowName.includes("ldpe polybag")) it.category = "LDPE Polybag";
-            else if (lowName.includes("box") || lowName.includes("corrugated"))
-              it.category = "Corrugated Box";
-            else if (lowName.includes("tape")) it.category = "Tape";
-            else if (lowName.includes("glue")) it.category = "Glue";
+            if (masterItem.category) {
+              it.category = masterItem.category.trim();
+            } else {
+              const lowName = (it.itemName || "").toLowerCase();
+              if (lowName.includes("ldpe polybag")) it.category = "LDPE Polybag";
+              else if (lowName.includes("box") || lowName.includes("corrugated"))
+                it.category = "Corrugated Box";
+              else if (lowName.includes("tape")) it.category = "Tape";
+              else if (lowName.includes("glue")) it.category = "Glue";
+            }
 
             const consDimMatch = (it.itemName || "").match(
               /(\d+)[\s-]*x[\s-]*(\d+)(?:[\s-]*x[\s-]*(\d+))?[\s-]*(\w+)/i,
