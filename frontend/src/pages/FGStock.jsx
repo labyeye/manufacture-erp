@@ -463,7 +463,9 @@ export default function FGStock({
               status: `Processing: ${item.itemName}`,
             }));
 
-            const existingInStock = (fgStock || []).find(
+            // Match against allItems (normalized merged view) so itemCode/itemName
+            // are consistent with what's displayed, not the raw fgStock array
+            const existingItem = allItems.find(
               (s) =>
                 (item.itemCode &&
                   (s.itemCode || "").toLowerCase().trim() ===
@@ -474,14 +476,17 @@ export default function FGStock({
             );
 
             try {
-              if (existingInStock) {
-                await fgStockAPI.update(existingInStock._id, {
-                  qty: item.qty,
+              if (existingItem && !existingItem.isFromMaster) {
+                // Item exists in DB — ADD qty to existing (not overwrite)
+                const newQty = (existingItem.qty || 0) + item.qty;
+                await fgStockAPI.update(existingItem._id, {
+                  qty: newQty,
                   reorder: item.reorder,
                   price: item.price,
                 });
                 updateCount++;
               } else {
+                // Item not in DB yet — create it fresh
                 await fgStockAPI.create(item);
                 successCount++;
               }
