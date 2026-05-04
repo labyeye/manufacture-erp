@@ -289,7 +289,9 @@ export default function FGStock({
       if (code) stockMap.set(code, s);
     });
 
-    return masterItems.map((m) => {
+    const masterCodes = new Set(masterItems.map((m) => m.code).filter(Boolean));
+
+    const fromMaster = masterItems.map((m) => {
       const s = stockMap.get(m.code);
       return {
         ...m,
@@ -304,6 +306,23 @@ export default function FGStock({
         companyCat: m.companyCategory || s?.companyCat || "",
       };
     });
+
+    // Also show fgStock items that are not in Item Master
+    const fromStockOnly = (fgStock || [])
+      .filter((s) => {
+        const code = s.itemCode || s.code;
+        return code && !masterCodes.has(code);
+      })
+      .map((s) => ({
+        ...s,
+        isFromMaster: false,
+        itemName: s.itemName,
+        itemCode: s.itemCode || s.code || "",
+        category: s.category || "",
+        companyCat: s.companyCat || "",
+      }));
+
+    return [...fromMaster, ...fromStockOnly];
   }, [itemMasterFG, fgStock]);
 
   const categories = useMemo(
@@ -446,10 +465,12 @@ export default function FGStock({
 
             const existingInStock = (fgStock || []).find(
               (s) =>
-                (s.itemCode || "").toLowerCase().trim() ===
-                  (item.itemCode || "").toLowerCase().trim() ||
-                s.itemName.toLowerCase().trim() ===
-                  item.itemName.toLowerCase().trim(),
+                (item.itemCode &&
+                  (s.itemCode || "").toLowerCase().trim() ===
+                    item.itemCode.toLowerCase().trim()) ||
+                (item.itemName &&
+                  s.itemName?.toLowerCase().trim() ===
+                    item.itemName.toLowerCase().trim()),
             );
 
             try {
