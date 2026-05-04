@@ -414,7 +414,7 @@ export default function FGStock({
           const row = json[i];
           if (row && (row[0] || row[1])) {
             importedItems.push({
-              code: (row[0] || "").toString(),
+              itemCode: (row[0] || "").toString(),
               itemName: (row[1] || "").toString(),
               category: (row[2] || "").toString(),
               companyCat: (row[3] || "").toString(),
@@ -444,15 +444,21 @@ export default function FGStock({
               status: `Processing: ${item.itemName}`,
             }));
 
-            const existing = (fgStock || []).find(
+            const existingInStock = (fgStock || []).find(
               (s) =>
+                (s.itemCode || "").toLowerCase().trim() ===
+                  (item.itemCode || "").toLowerCase().trim() ||
                 s.itemName.toLowerCase().trim() ===
-                item.itemName.toLowerCase().trim(),
+                  item.itemName.toLowerCase().trim(),
             );
 
             try {
-              if (existing) {
-                await fgStockAPI.adjustStock(existing._id, item.qty);
+              if (existingInStock) {
+                await fgStockAPI.update(existingInStock._id, {
+                  qty: item.qty,
+                  reorder: item.reorder,
+                  price: item.price,
+                });
                 updateCount++;
               } else {
                 await fgStockAPI.create(item);
