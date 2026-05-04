@@ -156,6 +156,7 @@ exports.createItem = async (req, res) => {
 exports.updateItem = async (req, res) => {
   try {
     const {
+      code,
       name,
       category,
       subCategory,
@@ -177,6 +178,18 @@ exports.updateItem = async (req, res) => {
     const item = await ItemMaster.findById(req.params.id);
     if (!item) {
       return res.status(404).json({ error: "Item not found" });
+    }
+
+    if (code && code.trim().toUpperCase() !== item.code) {
+      const newCode = code.trim().toUpperCase();
+      const existing = await ItemMaster.findOne({
+        code: newCode,
+        _id: { $ne: req.params.id },
+      });
+      if (existing) {
+        return res.status(400).json({ error: "Product code already in use" });
+      }
+      item.code = newCode;
     }
 
     if (name && name !== item.name) {
