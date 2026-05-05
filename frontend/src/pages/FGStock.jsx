@@ -463,23 +463,24 @@ export default function FGStock({
               status: `Processing: ${item.itemName}`,
             }));
 
-            // Match against allItems (normalized merged view) so itemCode/itemName
-            // are consistent with what's displayed, not the raw fgStock array
-            const existingItem = allItems.find(
+            // Search directly in fgStock (DB source of truth) by itemCode or itemName
+            const existingFGStockItem = (fgStock || []).find(
               (s) =>
                 (item.itemCode &&
                   (s.itemCode || "").toLowerCase().trim() ===
                     item.itemCode.toLowerCase().trim()) ||
                 (item.itemName &&
-                  s.itemName?.toLowerCase().trim() ===
+                  (s.itemName || "").toLowerCase().trim() ===
                     item.itemName.toLowerCase().trim()),
             );
 
             try {
-              if (existingItem && !existingItem.isFromMaster) {
-                // Item exists in DB — ADD qty to existing (not overwrite)
-                const newQty = (existingItem.qty || 0) + item.qty;
-                await fgStockAPI.update(existingItem._id, {
+              if (existingFGStockItem) {
+                // Item exists in DB — if qty is 0, set to Excel qty; otherwise add
+                const currentQty = existingFGStockItem.qty || 0;
+                const newQty =
+                  currentQty === 0 ? item.qty : currentQty + item.qty;
+                await fgStockAPI.update(existingFGStockItem._id, {
                   qty: newQty,
                   reorder: item.reorder,
                   price: item.price,
