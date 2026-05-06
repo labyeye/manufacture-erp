@@ -308,10 +308,22 @@ export default function FGStock({
     });
 
     // Also show fgStock items that are not in Item Master
+    // Items with no code are matched by _id to avoid duplicates
+    const masterStockIds = new Set(
+      (fgStock || [])
+        .filter((s) => {
+          const code = s.itemCode || s.code;
+          return code && masterCodes.has(code);
+        })
+        .map((s) => s._id?.toString())
+    );
+
     const fromStockOnly = (fgStock || [])
       .filter((s) => {
         const code = s.itemCode || s.code;
-        return code && !masterCodes.has(code);
+        // Include: items with a code not in master, OR items with no code at all
+        if (!code) return !masterStockIds.has(s._id?.toString());
+        return !masterCodes.has(code);
       })
       .map((s) => ({
         ...s,
@@ -429,14 +441,29 @@ export default function FGStock({
 
         const importedItems = [];
 
+        // Build a name→master lookup for FG items
+        const masterFGItems = (itemMasterFG || []).filter(
+          (i) => i.type === "Finished Goods"
+        );
+        const masterByName = new Map(
+          masterFGItems.map((m) => [m.name?.toLowerCase().trim(), m])
+        );
+
         for (let i = 1; i < json.length; i++) {
           const row = json[i];
           if (row && (row[0] || row[1])) {
+            const itemName = (row[1] || "").toString().trim();
+            const excelCode = (row[0] || "").toString().trim();
+
+            // Match by name against Item Master to get the correct FG code
+            const masterMatch = masterByName.get(itemName.toLowerCase());
+            const itemCode = masterMatch?.code || excelCode || "";
+
             importedItems.push({
-              itemCode: (row[0] || "").toString(),
-              itemName: (row[1] || "").toString(),
-              category: (row[2] || "").toString(),
-              companyCat: (row[3] || "").toString(),
+              itemCode,
+              itemName,
+              category: masterMatch?.category || (row[2] || "").toString(),
+              companyCat: masterMatch?.companyCategory || (row[3] || "").toString(),
               qty: parseFloat(row[4] || 0),
               reorder: parseFloat(row[5] || 0),
               price: parseFloat(row[6] || 0),
@@ -476,15 +503,16 @@ export default function FGStock({
 
             try {
               if (existingFGStockItem) {
-                // Item exists in DB — if qty is 0, set to Excel qty; otherwise add
-                const currentQty = existingFGStockItem.qty || 0;
-                const newQty =
-                  currentQty === 0 ? item.qty : currentQty + item.qty;
-                await fgStockAPI.update(existingFGStockItem._id, {
-                  qty: newQty,
+                // Item exists in DB — replace qty; also backfill code if master matched
+                const updatePayload = {
+                  qty: item.qty,
                   reorder: item.reorder,
                   price: item.price,
-                });
+                };
+                if (item.itemCode && !existingFGStockItem.itemCode) {
+                  updatePayload.itemCode = item.itemCode;
+                }
+                await fgStockAPI.update(existingFGStockItem._id, updatePayload);
                 updateCount++;
               } else {
                 // Item not in DB yet — create it fresh

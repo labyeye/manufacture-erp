@@ -84,6 +84,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
   const [showEditModal, setShowEditModal] = useState(false);
   const fileInputRef = useRef(null);
   const companyCodesFileRef = useRef(null);
+  const editInitRef = useRef(false); // suppresses name auto-gen during edit init
 
   useEffect(() => {
     fetchItems();
@@ -91,8 +92,14 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
   }, []);
 
   useEffect(() => {
+    // Skip during edit form initialization — name is already set from saved data
+    if (editInitRef.current) return;
+
     if (activeTab === "Raw Material" && selectedCategory) {
-      const parts = [selectedSubCategory, selectedCategory];
+      const catLabel = selectedCategory.startsWith("Paper ")
+        ? selectedCategory.slice(6)
+        : selectedCategory;
+      const parts = [selectedSubCategory, catLabel];
       if (gsm) parts.push(gsm + "gsm");
       if (width && length) parts.push(width + "x" + length + "mm");
       else if (width) parts.push(width + "mm");
@@ -241,7 +248,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
           gussett: Number(gussett) || undefined,
           height: Number(height) || undefined,
           uom: uom,
-          clientName: activeTab === "Finished Goods" ? companyName : undefined,
+          companyName: activeTab === "Finished Goods" ? companyName : undefined,
           companyCategory:
             activeTab === "Finished Goods" ? companyCategory : undefined,
           gstRate: Number(gstRate),
@@ -267,7 +274,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
           gussett: Number(gussett) || undefined,
           height: Number(height) || undefined,
           uom: uom,
-          clientName: activeTab === "Finished Goods" ? companyName : undefined,
+          companyName: activeTab === "Finished Goods" ? companyName : undefined,
           companyCategory:
             activeTab === "Finished Goods" ? companyCategory : undefined,
           gstRate: Number(gstRate),
@@ -314,25 +321,45 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
   };
 
   const handleEdit = (item) => {
+    editInitRef.current = true; // prevent useEffect from overwriting the name
     setActiveTab(item.type);
     setEditingItem(item);
     setNewItemName(item.name || "");
     setSelectedCategory(item.category || "");
     setSelectedSubCategory(item.subCategory || "");
-    setGsm(item.gsm || "");
-    setWidth(item.width || "");
-    setLength(item.length || "");
-    setGussett(item.gussett || "");
-    setHeight(item.height || "");
-    setUom(item.uom || "mm");
-    setGstRate(item.gstRate || "18");
+
+    // Parse dims from name as fallback if DB fields are empty
+    const parsedDims = (() => {
+      const n = item.name || "";
+      const gsmMatch = n.match(/(\d+(?:\.\d+)?)\s*gsm/i);
+      const dim3 = n.match(/(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)\s*(mm|cm|inch)/i);
+      const dim2 = n.match(/(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)\s*(mm|cm|inch)/i);
+      const dim1 = n.match(/(\d+(?:\.\d+)?)\s*(mm|cm|inch)/i);
+      return {
+        gsm: gsmMatch ? gsmMatch[1] : "",
+        width: dim3 ? dim3[1] : dim2 ? dim2[1] : dim1 ? dim1[1] : "",
+        length: dim3 ? dim3[2] : dim2 ? dim2[2] : "",
+        height: dim3 ? dim3[3] : "",
+        uom: dim3 ? dim3[4] : dim2 ? dim2[3] : dim1 ? dim1[2] : "mm",
+      };
+    })();
+
+    setGsm(item.gsm != null ? String(item.gsm) : parsedDims.gsm);
+    setWidth(item.width != null ? String(item.width) : parsedDims.width);
+    setLength(item.length != null ? String(item.length) : parsedDims.length);
+    setGussett(item.gussett != null ? String(item.gussett) : "");
+    setHeight(item.height != null ? String(item.height) : parsedDims.height);
+    setUom(item.uom || parsedDims.uom || "mm");
+    setGstRate(item.gstRate != null ? String(item.gstRate) : "18");
     setHsnCode(item.hsnCode || "");
-    setReorderLevel(item.reorderLevel || "0");
-    setCompanyName(item.brandName || item.clientName || "");
+    setReorderLevel(item.reorderLevel != null ? String(item.reorderLevel) : "0");
+    setCompanyName(item.companyName || "");
     setCompanyCategory(item.companyCategory || "");
     setProductCode(item.code || "");
 
     setShowEditModal(true);
+    // Re-enable auto-name after all state setters have flushed
+    setTimeout(() => { editInitRef.current = false; }, 0);
   };
 
   const handleBulkDelete = async () => {
@@ -446,7 +473,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
     if (activeTab === "Finished Goods") {
       return [
         ...common,
-        { header: "Client Name", key: (i) => i.clientName || "" },
+        { header: "Client Name", key: (i) => i.companyName || "" },
         { header: "Client Category", key: (i) => i.companyCategory || "" },
         { header: "UOM", key: (i) => i.uom || "mm" },
         { header: "GSM", key: (i) => i.gsm ?? "" },
@@ -556,7 +583,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
           else if (header.includes("sub category"))
             item.subCategory = String(val).trim();
           else if (header.includes("client name"))
-            item.clientName = String(val).trim();
+            item.companyName = String(val).trim();
           else if (header.includes("client category"))
             item.companyCategory = String(val).trim();
           else if (header.includes("uom")) item.uom = String(val).trim();
@@ -602,29 +629,44 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
       });
 
       let successCount = 0;
+      let skippedCount = 0;
       let failedCount = 0;
+
+      // Build a set of existing names for this tab (case-insensitive)
+      const existingNames = new Set(
+        (itemMasterFG || [])
+          .filter((i) => i.type === activeTab)
+          .map((i) => (i.name || "").toLowerCase().trim())
+      );
 
       for (let i = 0; i < imported.length; i++) {
         const item = imported[i];
         setImportProgress((prev) => ({
           ...prev,
           current: i + 1,
-          status: `Importing: ${item.name}`,
+          status: `Processing: ${item.name}`,
         }));
+
+        // Skip if already exists
+        if (existingNames.has((item.name || "").toLowerCase().trim())) {
+          skippedCount++;
+          continue;
+        }
 
         try {
           await itemMasterAPI.create(item);
           successCount++;
+          existingNames.add((item.name || "").toLowerCase().trim());
         } catch (err) {
           console.error(`Failed to import ${item.name}:`, err);
           failedCount++;
         }
       }
 
-      toast(
-        `Import complete! ${successCount} successful, ${failedCount} failed.`,
-        "success",
-      );
+      const parts = [`${successCount} added`];
+      if (skippedCount) parts.push(`${skippedCount} skipped (already exist)`);
+      if (failedCount) parts.push(`${failedCount} failed`);
+      toast(`Import complete! ${parts.join(", ")}.`, successCount > 0 ? "success" : "info");
       fetchItems();
     } catch (error) {
       console.error("Import error:", error);

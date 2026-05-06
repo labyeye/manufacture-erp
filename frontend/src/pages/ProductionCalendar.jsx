@@ -124,6 +124,7 @@ export default function ProductionCalendar({
   const [pivotDate, setPivotDate] = useState(getWeekStart(today));
   const [machineTypeFilter, setMachineTypeFilter] =
     useState("All Machine Types");
+  const [machineFilter, setMachineFilter] = useState("All Machines");
   const [selectedMachine, setSelectedMachine] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [calendarData, setCalendarData] = useState([]);
@@ -393,13 +394,16 @@ export default function ProductionCalendar({
     return idx;
   }, [maintenanceBlocks]);
 
-  const visibleMachines = useMemo(
-    () =>
-      machineTypeFilter === "All Machine Types"
-        ? machines
-        : machines.filter((m) => m.type === machineTypeFilter),
-    [machines, machineTypeFilter],
-  );
+  const visibleMachines = useMemo(() => {
+    let filtered = machines;
+    if (machineTypeFilter !== "All Machine Types") {
+      filtered = filtered.filter((m) => m.type === machineTypeFilter);
+    }
+    if (machineFilter !== "All Machines") {
+      filtered = filtered.filter((m) => m.name === machineFilter);
+    }
+    return filtered;
+  }, [machines, machineTypeFilter, machineFilter]);
 
   const dateRangeLabel =
     rangeView === "week"
@@ -1226,6 +1230,8 @@ export default function ProductionCalendar({
         if (res.success) {
           toast?.(res.message, "success");
           setMissedModal(null);
+          // Navigate to today's week so shifted entries are visible
+          setPivotDate(getWeekStart(today));
           fetchCalendar(false);
         }
       } catch {
@@ -1809,24 +1815,50 @@ export default function ProductionCalendar({
           </button>
         )}
 
-        <select
-          value={machineTypeFilter}
-          onChange={(e) => setMachineTypeFilter(e.target.value)}
-          style={{
-            marginLeft: "auto",
-            padding: "7px 12px",
-            borderRadius: 6,
-            border: `1px solid ${C.border}`,
-            background: C.inputBg || C.surface,
-            color: C.text || "#e5e7eb",
-            fontSize: 12,
-            cursor: "pointer",
-          }}
-        >
-          {machineTypes.map((t) => (
-            <option key={t}>{t}</option>
-          ))}
-        </select>
+        <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
+          <select
+            value={machineTypeFilter}
+            onChange={(e) => {
+              setMachineTypeFilter(e.target.value);
+              setMachineFilter("All Machines");
+            }}
+            style={{
+              padding: "7px 12px",
+              borderRadius: 6,
+              border: `1px solid ${C.border}`,
+              background: C.inputBg || C.surface,
+              color: C.text || "#e5e7eb",
+              fontSize: 12,
+              cursor: "pointer",
+            }}
+          >
+            {machineTypes.map((t) => (
+              <option key={t}>{t}</option>
+            ))}
+          </select>
+          <select
+            value={machineFilter}
+            onChange={(e) => setMachineFilter(e.target.value)}
+            style={{
+              padding: "7px 12px",
+              borderRadius: 6,
+              border: `1px solid ${machineFilter !== "All Machines" ? C.blue || "#3b82f6" : C.border}`,
+              background: machineFilter !== "All Machines" ? (C.blue || "#3b82f6") + "22" : C.inputBg || C.surface,
+              color: machineFilter !== "All Machines" ? C.blue || "#3b82f6" : C.text || "#e5e7eb",
+              fontSize: 12,
+              cursor: "pointer",
+              fontWeight: machineFilter !== "All Machines" ? 700 : 400,
+            }}
+          >
+            <option value="All Machines">All Machines</option>
+            {(machineTypeFilter === "All Machine Types"
+              ? machines
+              : machines.filter((m) => m.type === machineTypeFilter)
+            ).map((m) => (
+              <option key={m.id} value={m.name}>{m.name}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {}
@@ -2005,8 +2037,8 @@ export default function ProductionCalendar({
       >
         {[
           ["#3b82f6", "On track"],
-          ["#22c55e", "Done"],
-          ["#ef4444", "Breakdown / Overdue"],
+          ["#22c55e", "Done / Actual met"],
+          ["#ef4444", "Breakdown / Overdue / Short"],
           ["#f97316", "Operator Absent"],
           ["#eab308", "Power Cut"],
           ["#8b5cf6", "Holiday"],
@@ -2284,15 +2316,9 @@ export default function ProductionCalendar({
                           </div>
                         )}
                         {jobs.length === 0 && !bdOnDay ? (
-                          <span
-                            style={{
-                              fontSize: 10,
-                              color: C.red || "#ef4444",
-                              opacity: 0.6,
-                            }}
-                          >
-                            OFF
-                          </span>
+                          (isWeekend || (holidayOnDay && holidayOnDay.type !== "Power-cut")) ? (
+                            <span style={{ fontSize: 10, color: C.muted, opacity: 0.5 }}>OFF</span>
+                          ) : null
                         ) : jobs.length === 0 ? null : (
                           jobs.map((entry) => {
                             const jo = entry.jobOrderId;
@@ -2533,6 +2559,38 @@ export default function ProductionCalendar({
                                     {fmtHrs(cardRunTime)}
                                   </span>
                                 </div>
+
+                                {/* Actual qty row */}
+                                {entry.actualQty != null && (
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      justifyContent: "space-between",
+                                      alignItems: "center",
+                                      marginTop: 6,
+                                      padding: "4px 6px",
+                                      borderRadius: 4,
+                                      background: entry.actualQty >= (entry.scheduledQty || 0)
+                                        ? "#22c55e22"
+                                        : "#ef444422",
+                                      border: `1px solid ${entry.actualQty >= (entry.scheduledQty || 0) ? "#22c55e44" : "#ef444444"}`,
+                                    }}
+                                  >
+                                    <span style={{ fontSize: 8, color: C.muted, textTransform: "uppercase" }}>Actual</span>
+                                    <span style={{
+                                      fontSize: 11,
+                                      fontWeight: 800,
+                                      color: entry.actualQty >= (entry.scheduledQty || 0) ? "#22c55e" : "#ef4444",
+                                    }}>
+                                      {entry.actualQty.toLocaleString()}
+                                      {entry.actualQty < (entry.scheduledQty || 0) && (
+                                        <span style={{ fontSize: 8, marginLeft: 3, opacity: 0.8 }}>
+                                          ▼{((entry.scheduledQty || 0) - entry.actualQty).toLocaleString()}
+                                        </span>
+                                      )}
+                                    </span>
+                                  </div>
+                                )}
 
                                 <div style={{ marginTop: 6 }}>
                                   <div

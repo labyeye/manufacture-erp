@@ -374,14 +374,14 @@ exports.bulkImport = async (req, res) => {
           gsm: gsm ? Number(gsm) : undefined,
           width: width ? Number(width) : undefined,
           length: length ? Number(length) : undefined,
-          clientName: clientName?.trim(),
+          companyName: (clientName || itemData.companyName)?.trim(),
           gstRate: gstRate ? Number(gstRate) : 18,
           hsnCode: hsnCode?.trim(),
           reorderLevel: reorderLevel ? Number(reorderLevel) : 0,
           gussett: gussett ? Number(gussett) : undefined,
           height: height ? Number(height) : undefined,
           uom: uom || "mm",
-          clientCategory: clientCategory?.trim(),
+          companyCategory: (clientCategory || itemData.companyCategory)?.trim(),
           createdBy: req.user?.id,
         });
 
