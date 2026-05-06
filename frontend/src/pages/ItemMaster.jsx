@@ -1730,7 +1730,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                 padding: "8px 16px",
                 background: "#0a0a0a",
                 borderBottom: "1px solid #2a2a2a",
-                gap: 16,
+                gap: 10,
                 fontSize: 10,
                 fontWeight: 800,
                 color: "#555",
@@ -1738,18 +1738,18 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                 letterSpacing: "0.5px",
               }}
             >
-              <div style={{ width: 16 }} />
-              <div style={{ minWidth: 70, textAlign: "left" }}>Code</div>
-              <div style={{ minWidth: 260, textAlign: "left" }}>Item Name</div>
+              <div style={{ width: 16, flexShrink: 0 }} />
+              <div style={{ width: 72, flexShrink: 0 }}>Code</div>
+              <div style={{ flex: 1, minWidth: 180 }}>Item Name</div>
               {activeTab === "Finished Goods" && (
-                <div style={{ width: 70, textAlign: "left" }}>Client Cat</div>
+                <div style={{ width: 100, flexShrink: 0 }}>Client Cat</div>
               )}
-              <div style={{ width: 90, textAlign: "left" }}>Category</div>
-
-              <div style={{ width: 60, textAlign: "left" }}>Sub-Category</div>
-              <div style={{ minWidth: 40, textAlign: "center" }}>GST</div>
-              <div style={{ minWidth: 130, textAlign: "left" }}>Reorder</div>
-              <div style={{ width: 220, textAlign: "right" }}>Actions</div>
+              <div style={{ width: 110, flexShrink: 0 }}>Category</div>
+              <div style={{ width: 110, flexShrink: 0 }}>Sub-Category</div>
+              <div style={{ width: 50, flexShrink: 0, textAlign: "center" }}>GST</div>
+              <div style={{ width: 70, flexShrink: 0, textAlign: "center" }}>Reorder</div>
+              <div style={{ width: 88, flexShrink: 0 }}>Date</div>
+              <div style={{ width: 160, flexShrink: 0, textAlign: "right" }}>Actions</div>
             </div>
             {sorted.map((item, idx) => (
               <div
@@ -1761,28 +1761,32 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                   background: idx % 2 === 0 ? "#0d1117" : "#11151c",
                   borderBottom:
                     idx === sorted.length - 1 ? "none" : "1px solid #21262d",
-                  gap: 16,
+                  gap: 10,
                 }}
               >
                 <input
                   type="checkbox"
                   checked={selectedIds.includes(item._id)}
                   onChange={() => toggleSelect(item._id)}
-                  style={{ cursor: "pointer", width: 16, height: 16 }}
+                  style={{ cursor: "pointer", width: 16, height: 16, flexShrink: 0 }}
                 />
                 <div
                   style={{
-                    minWidth: 70,
-                    padding: "6px 0",
+                    width: 72,
+                    flexShrink: 0,
+                    padding: "5px 0",
                     border: "1px solid #2196F344",
                     borderRadius: 6,
                     textAlign: "center",
                     color: "#2196F3",
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: 700,
                     background: "#2196F30a",
                     fontFamily: "monospace",
                     cursor: "pointer",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
                   }}
                   onClick={() => handleEdit(item)}
                 >
@@ -1791,9 +1795,13 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                 <div
                   style={{
                     flex: 1,
+                    minWidth: 180,
                     color: "#e6edf3",
                     fontSize: 13,
                     fontWeight: 600,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
                   }}
                 >
                   {item.name}
@@ -1801,12 +1809,17 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                 {activeTab === "Finished Goods" && (
                   <div
                     style={{
-                      padding: "4px 12px",
+                      width: 100,
+                      flexShrink: 0,
+                      padding: "4px 8px",
                       borderRadius: 6,
                       background: "#9c27b01a",
                       color: "#ba68c8",
                       fontSize: 11,
                       fontWeight: 600,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
                     }}
                   >
                     {item.companyCategory || "-"}
@@ -1814,37 +1827,48 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                 )}
                 <div
                   style={{
-                    padding: "4px 12px",
+                    width: 110,
+                    flexShrink: 0,
+                    padding: "4px 8px",
                     borderRadius: 6,
                     background: "#1565C022",
                     color: "#64B5F6",
                     fontSize: 11,
                     fontWeight: 600,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
                   }}
                 >
                   {item.category || "-"}
                 </div>
                 <div
                   style={{
-                    padding: "4px 12px",
+                    width: 110,
+                    flexShrink: 0,
+                    padding: "4px 8px",
                     borderRadius: 6,
                     background: "#4CAF501a",
                     color: "#4CAF50",
                     fontSize: 11,
                     fontWeight: 600,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
                   }}
                 >
                   {item.subCategory || "-"}
                 </div>
                 <div
                   style={{
-                    padding: "4px 10px",
+                    width: 50,
+                    flexShrink: 0,
+                    padding: "4px 6px",
                     borderRadius: 6,
                     background: "#64B5F614",
                     color: "#64B5F6",
                     fontSize: 10,
                     fontWeight: 700,
-                    minWidth: 40,
                     textAlign: "center",
                   }}
                 >
@@ -1852,13 +1876,14 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                 </div>
                 <div
                   style={{
-                    padding: "4px 10px",
+                    width: 70,
+                    flexShrink: 0,
+                    padding: "4px 6px",
                     borderRadius: 6,
                     background: "#ff98001a",
                     color: "#ff9800",
                     fontSize: 10,
                     fontWeight: 700,
-                    minWidth: 50,
                     textAlign: "center",
                   }}
                 >
@@ -2049,49 +2074,53 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                     )}
                   </div>
                 )}
-                <div style={{ color: "#484f58", fontSize: 11, minWidth: 80 }}>
+                <div style={{ color: "#484f58", fontSize: 11, width: 88, flexShrink: 0 }}>
                   {
                     new Date(item.addedOn || item.createdAt)
                       .toISOString()
                       .split("T")[0]
                   }
                 </div>
-                <button
-                  onClick={() => handleEdit(item)}
-                  style={{
-                    background: "#1e293b",
-                    color: "#64b5f6",
-                    border: "1px solid #334155",
-                    borderRadius: 6,
-                    padding: "4px 14px",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                  }}
-                >
-                  ✏️ Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(item)}
-                  style={{
-                    background: "#450a0a",
-                    color: "#ef4444",
-                    border: "1px solid #7f1d1d",
-                    borderRadius: 6,
-                    padding: "4px 14px",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                  }}
-                >
-                  🗑️ Delete
-                </button>
+                <div style={{ width: 160, flexShrink: 0, display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                  <button
+                    onClick={() => handleEdit(item)}
+                    style={{
+                      background: "#1e293b",
+                      color: "#64b5f6",
+                      border: "1px solid #334155",
+                      borderRadius: 6,
+                      padding: "4px 10px",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    ✏️ Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(item)}
+                    style={{
+                      background: "#450a0a",
+                      color: "#ef4444",
+                      border: "1px solid #7f1d1d",
+                      borderRadius: 6,
+                      padding: "4px 10px",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    🗑️ Delete
+                  </button>
+                </div>
               </div>
             ))}
           </>
