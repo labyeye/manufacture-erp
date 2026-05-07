@@ -484,6 +484,7 @@ export const DEFAULT_ROLES = {
       "pricemaster",
       "forecast",
       "users",
+      "erpconsole",
     ],
   },
   Production: {
