@@ -5,23 +5,24 @@ const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 
+const activityLogger = require("./middleware/activityLogger");
+const activityLogRoutes = require("./routes/activityLog");
+const authRoutes = require("./routes/auth");
+
 const app = express();
 
-app.use(helmet({ crossOriginResourcePolicy: false }));
-
-const allowedOrigins = "https://www.packbetter.in, http://packbetter.in, http://localhost:3000"
+const allowedOrigins = "https://www.packbetter.in,http://packbetter.in,http://localhost:3000"
   .split(",")
   .map((o) => o.trim())
   .filter(Boolean);
 
+app.use(helmet({ crossOriginResourcePolicy: false }));
+
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (mobile apps, curl, Postman)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
+      if (allowedOrigins.includes(origin)) return callback(null, true);
       callback(new Error(`CORS: origin ${origin} not allowed`));
     },
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -30,7 +31,6 @@ app.use(
   })
 );
 
-// Handle preflight for all routes
 app.options("*", cors());
 app.use(express.json({ limit: "10mb", strict: false }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
@@ -47,10 +47,6 @@ mongoose
     console.error("✗ MongoDB connection error:", err);
     process.exit(1);
   });
-
-const activityLogger = require("./middleware/activityLogger");
-const activityLogRoutes = require("./routes/activityLog");
-const authRoutes = require("./routes/auth");
 const purchaseOrderRoutes = require("./routes/purchaseOrders");
 const materialInwardRoutes = require("./routes/materialInward");
 const categoryMasterRoutes = require("./routes/categoryMaster");
