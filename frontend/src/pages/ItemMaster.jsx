@@ -33,6 +33,12 @@ const CATEGORY_CONFIG = {
   Label: { layout: "2D", f1: "WIDTH", f2: "LENGTH" },
 };
 
+// Dimension config for consumable categories that need size fields
+const CONSUMABLE_DIM_CONFIG = {
+  "LDPE Polybag": { fields: ["WIDTH", "HEIGHT"] },
+  "Corrugated Box": { fields: ["WIDTH", "LENGTH", "HEIGHT"] },
+};
+
 const inputStyle = {
   width: "100%",
   padding: "9px 12px",
@@ -120,7 +126,17 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
       ];
       setNewItemName(parts.filter(Boolean).join(" "));
     } else if ((activeTab === "Consumable" || activeTab === "Machine Spare") && selectedCategory) {
-      const parts = [selectedCategory, selectedSubCategory];
+      const dimCfg = CONSUMABLE_DIM_CONFIG[selectedCategory];
+      const parts = [selectedCategory];
+      if (dimCfg) {
+        const dims = [];
+        if (dimCfg.fields.includes("WIDTH") && width) dims.push(width);
+        if (dimCfg.fields.includes("LENGTH") && length) dims.push(length);
+        if (dimCfg.fields.includes("HEIGHT") && height) dims.push(height);
+        if (dims.length) parts.push(dims.join("x") + "mm");
+      } else if (selectedSubCategory) {
+        parts.push(selectedSubCategory);
+      }
       setNewItemName(parts.filter(Boolean).join(" "));
     }
   }, [
@@ -1033,6 +1049,9 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
               onChange={(e) => {
                 setSelectedCategory(e.target.value);
                 setSelectedSubCategory("");
+                setWidth("");
+                setLength("");
+                setHeight("");
               }}
               style={inputStyle}
             >
@@ -1074,26 +1093,66 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
               </select>
             </div>
           ) : (activeTab === "Consumable" || activeTab === "Machine Spare") && selectedCategory ? (
-            <div>
-              <label
-                style={{
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: "#666",
-                  display: "block",
-                  marginBottom: 6,
-                  letterSpacing: "0.5px",
-                }}
-              >
-                SIZE / TYPE
-              </label>
-              <input
-                style={inputStyle}
-                placeholder="e.g. 100ml, A4, Large"
-                value={selectedSubCategory}
-                onChange={(e) => setSelectedSubCategory(e.target.value)}
-              />
-            </div>
+            (() => {
+              const dimCfg = CONSUMABLE_DIM_CONFIG[selectedCategory];
+              if (dimCfg) {
+                // Render dimension fields for LDPE Polybag / Corrugated
+                return dimCfg.fields.map((field) => (
+                  <div key={field}>
+                    <label
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: "#666",
+                        display: "block",
+                        marginBottom: 6,
+                        letterSpacing: "0.5px",
+                      }}
+                    >
+                      {field} (mm)
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="e.g. 200"
+                      style={inputStyle}
+                      value={
+                        field === "WIDTH" ? width
+                        : field === "LENGTH" ? length
+                        : height
+                      }
+                      onChange={(e) => {
+                        if (field === "WIDTH") setWidth(e.target.value);
+                        else if (field === "LENGTH") setLength(e.target.value);
+                        else setHeight(e.target.value);
+                      }}
+                    />
+                  </div>
+                ));
+              }
+              // Default: free-text SIZE / TYPE
+              return (
+                <div>
+                  <label
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: "#666",
+                      display: "block",
+                      marginBottom: 6,
+                      letterSpacing: "0.5px",
+                    }}
+                  >
+                    SIZE / TYPE
+                  </label>
+                  <input
+                    style={inputStyle}
+                    placeholder="e.g. 100ml, A4, Large"
+                    value={selectedSubCategory}
+                    onChange={(e) => setSelectedSubCategory(e.target.value)}
+                  />
+                </div>
+              );
+            })()
           ) : null}
           {activeTab === "Finished Goods" && (
             <div>

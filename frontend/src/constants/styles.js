@@ -19,4 +19,8 @@ export const GLOBAL_STYLE = `
   @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
   .fade{animation:fadeIn .25s ease}
+  @media(max-width:767px){
+    input,select,textarea{font-size:16px}
+    table{min-width:600px}
+  }
 `;

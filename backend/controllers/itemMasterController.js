@@ -50,18 +50,27 @@ const getNextItemCode = async (type) => {
   const prefix = prefixMap[type] || "IT";
   const counterName = `itemMaster_${prefix}`;
 
-  const itemCount = await ItemMaster.countDocuments({
-    code: { $regex: new RegExp(`^${prefix}`) },
-  });
+  // Find the highest numeric suffix currently in the DB for this prefix
+  const allCodes = await ItemMaster.find(
+    { code: { $regex: new RegExp(`^${prefix}\\d{4}$`) } },
+    { code: 1 },
+  );
+  const maxDbSeq = allCodes.reduce((max, item) => {
+    const n = parseInt(item.code.slice(prefix.length), 10);
+    return isNaN(n) ? max : Math.max(max, n);
+  }, 0);
 
-  if (itemCount === 0) {
+  // Ensure counter is at least at the DB max so we never re-use a taken code
+  const current = await Counter.findOne({ name: counterName });
+  if (!current || current.seq < maxDbSeq) {
     await Counter.findOneAndUpdate(
       { name: counterName },
-      { $set: { seq: 0 } },
+      { $set: { seq: maxDbSeq } },
       { upsert: true },
     );
   }
 
+  // Increment and return the next available code
   const counter = await Counter.findOneAndUpdate(
     { name: counterName },
     { $inc: { seq: 1 } },

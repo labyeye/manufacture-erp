@@ -141,6 +141,17 @@ function AppContent() {
   );
 }
 
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const handler = (e) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+  return isMobile;
+}
+
 function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
   const [currentTab, setCurrentTab] = useState(() => {
     const lastTab = localStorage.getItem("erp_lastTab");
@@ -148,10 +159,13 @@ function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
   });
   const [deepLink, setDeepLink] = useState(null);
   const [toast, setToast] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   const handleNavigate = (tab, recordId) => {
     setCurrentTab(tab);
     setDeepLink(recordId ? { tab, recordId } : null);
+    if (isMobile) setSidebarOpen(false);
   };
 
   useEffect(() => {
@@ -627,6 +641,147 @@ case "dispatch":
     }
   };
 
+  const sidebarContent = (
+    <>
+      <div
+        style={{
+          padding: "24px 20px",
+          borderBottom: `1px solid ${C.border}44`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <div>
+          <div
+            style={{
+              color: C.accent,
+              fontWeight: 900,
+              fontSize: 13,
+              letterSpacing: "normal",
+              textTransform: "uppercase",
+            }}
+          >
+            MANUFACTUREIQ
+          </div>
+          <div
+            style={{
+              color: "#fff",
+              fontWeight: 800,
+              fontSize: 22,
+              marginTop: -2,
+            }}
+          >
+            ERP System
+          </div>
+          <div style={{ color: C.muted, fontSize: 10, marginTop: 4 }}>
+            Manufacturing Suite
+          </div>
+        </div>
+        {isMobile && (
+          <button
+            onClick={() => setSidebarOpen(false)}
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "#94a3b8",
+              fontSize: 22,
+              cursor: "pointer",
+              padding: "4px 8px",
+            }}
+          >
+            ✕
+          </button>
+        )}
+      </div>
+
+      <div style={{ flex: 1, overflowY: "auto", padding: "10px 0" }}>
+        {TABS.filter((tab) => allowedTabs.includes(tab.id)).map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => {
+              setCurrentTab(tab.id);
+              if (isMobile) setSidebarOpen(false);
+            }}
+            style={{
+              width: "100%",
+              padding: "14px 24px",
+              textAlign: "left",
+              border: "none",
+              background:
+                currentTab === tab.id
+                  ? "rgba(255, 120, 0, 0.08)"
+                  : "transparent",
+              color: currentTab === tab.id ? "#ff7800" : "#94a3b8",
+              borderLeft: `4px solid ${currentTab === tab.id ? "#ff7800" : "transparent"}`,
+              cursor: "pointer",
+              transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+              fontSize: 13,
+              fontWeight: currentTab === tab.id ? 700 : 500,
+              display: "flex",
+              alignItems: "center",
+              gap: 14,
+            }}
+            onMouseEnter={(e) => {
+              if (currentTab !== tab.id) {
+                e.currentTarget.style.background = "rgba(255, 255, 255, 0.03)";
+                e.currentTarget.style.color = "#fff";
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (currentTab !== tab.id) {
+                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.color = "#94a3b8";
+              }
+            }}
+          >
+            <span
+              style={{
+                fontSize: 20,
+                opacity: currentTab === tab.id ? 1 : 0.6,
+                filter:
+                  currentTab === tab.id
+                    ? "drop-shadow(0 0 5px #ff780044)"
+                    : "none",
+              }}
+            >
+              {tab.icon}
+            </span>
+            <span style={{ letterSpacing: "0.02em" }}>{tab.label}</span>
+          </button>
+        ))}
+      </div>
+
+      <div
+        style={{
+          padding: 16,
+          borderTop: `1px solid ${C.border}44`,
+          background: "#0a0a0a",
+        }}
+      >
+        <div style={{ fontSize: 11, color: C.muted, marginBottom: 8 }}>
+          👤 {session.username} ({session.role})
+        </div>
+        <button
+          onClick={onLogout}
+          style={{
+            width: "100%",
+            background: "#450a0a",
+            color: "#ef4444",
+            border: "1px solid #7f1d1d",
+            borderRadius: 6,
+            padding: "8px",
+            fontWeight: 700,
+            fontSize: 11,
+            cursor: "pointer",
+          }}
+        >
+          Logout System
+        </button>
+      </div>
+    </>
+  );
+
   return (
     <div
       style={{
@@ -640,193 +795,139 @@ case "dispatch":
       }}
     >
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-        {}
-        <div
-          style={{
-            background: "#0a0a0a",
-            borderRight: `1px solid ${C.border}`,
-            width: 240,
-            display: "flex",
-            flexDirection: "column",
-            flexShrink: 0,
-            maxHeight: "100%",
-          }}
-        >
-          {}
+        {/* Mobile overlay backdrop */}
+        {isMobile && sidebarOpen && (
           <div
+            onClick={() => setSidebarOpen(false)}
             style={{
-              padding: "24px 20px",
-              borderBottom: `1px solid ${C.border}44`,
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.6)",
+              zIndex: 40,
             }}
-          >
-            <div
-              style={{
-                color: C.accent,
-                fontWeight: 900,
-                fontSize: 13,
-                letterSpacing: "normal",
-                textTransform: "uppercase",
-              }}
-            >
-              MANUFACTUREIQ
-            </div>
-            <div
-              style={{
-                color: "#fff",
-                fontWeight: 800,
-                fontSize: 22,
-                marginTop: -2,
-              }}
-            >
-              ERP System
-            </div>
-            <div style={{ color: C.muted, fontSize: 10, marginTop: 4 }}>
-              Manufacturing Suite
-            </div>
-          </div>
+          />
+        )}
 
-          <div style={{ flex: 1, overflowY: "auto", padding: "10px 0" }}>
-            {TABS.filter((tab) => allowedTabs.includes(tab.id)).map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setCurrentTab(tab.id)}
-                style={{
-                  width: "100%",
-                  padding: "14px 24px",
-                  textAlign: "left",
-                  border: "none",
-                  background:
-                    currentTab === tab.id
-                      ? "rgba(255, 120, 0, 0.08)"
-                      : "transparent",
-                  color: currentTab === tab.id ? "#ff7800" : "#94a3b8",
-                  borderLeft: `4px solid ${currentTab === tab.id ? "#ff7800" : "transparent"}`,
-                  cursor: "pointer",
-                  transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-                  fontSize: 13,
-                  fontWeight: currentTab === tab.id ? 700 : 500,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 14,
-                }}
-                onMouseEnter={(e) => {
-                  if (currentTab !== tab.id) {
-                    e.currentTarget.style.background =
-                      "rgba(255, 255, 255, 0.03)";
-                    e.currentTarget.style.color = "#fff";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (currentTab !== tab.id) {
-                    e.currentTarget.style.background = "transparent";
-                    e.currentTarget.style.color = "#94a3b8";
-                  }
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: 20,
-                    opacity: currentTab === tab.id ? 1 : 0.6,
-                    filter:
-                      currentTab === tab.id
-                        ? "drop-shadow(0 0 5px #ff780044)"
-                        : "none",
-                  }}
-                >
-                  {tab.icon}
-                </span>
-                <span style={{ letterSpacing: "0.02em" }}>{tab.label}</span>
-              </button>
-            ))}
-          </div>
-
-          {}
+        {/* Sidebar */}
+        {!isMobile ? (
           <div
             style={{
-              padding: 16,
-              borderTop: `1px solid ${C.border}44`,
               background: "#0a0a0a",
+              borderRight: `1px solid ${C.border}`,
+              width: 240,
+              display: "flex",
+              flexDirection: "column",
+              flexShrink: 0,
+              maxHeight: "100%",
             }}
           >
-            <div style={{ fontSize: 11, color: C.muted, marginBottom: 8 }}>
-              👤 {session.username} ({session.role})
-            </div>
-            <button
-              onClick={onLogout}
-              style={{
-                width: "100%",
-                background: "#450a0a",
-                color: "#ef4444",
-                border: "1px solid #7f1d1d",
-                borderRadius: 6,
-                padding: "8px",
-                fontWeight: 700,
-                fontSize: 11,
-                cursor: "pointer",
-              }}
-            >
-              Logout System
-            </button>
+            {sidebarContent}
           </div>
-        </div>
+        ) : (
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              height: "100%",
+              width: 260,
+              background: "#0a0a0a",
+              borderRight: `1px solid ${C.border}`,
+              display: "flex",
+              flexDirection: "column",
+              zIndex: 50,
+              transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)",
+              transition: "transform 0.25s ease",
+            }}
+          >
+            {sidebarContent}
+          </div>
+        )}
 
-        {}
+        {/* Main content */}
         <div
           style={{
             flex: 1,
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
+            minWidth: 0,
           }}
         >
-          {}
+          {/* Top header */}
           <div
             style={{
-              height: 60,
+              height: 56,
               background: "#0d0d0d",
               borderBottom: `1px solid ${C.border}44`,
               display: "flex",
               alignItems: "center",
-              padding: "0 24px",
+              padding: isMobile ? "0 12px" : "0 24px",
               justifyContent: "space-between",
+              gap: 12,
+              flexShrink: 0,
             }}
           >
+            {isMobile && (
+              <button
+                onClick={() => setSidebarOpen(true)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "#94a3b8",
+                  fontSize: 22,
+                  cursor: "pointer",
+                  padding: "4px",
+                  flexShrink: 0,
+                }}
+              >
+                ☰
+              </button>
+            )}
             <div
               style={{
                 background: "#1a1a1a",
                 borderRadius: 8,
-                padding: "8px 16px",
+                padding: isMobile ? "7px 12px" : "8px 16px",
                 display: "flex",
                 alignItems: "center",
                 gap: 10,
-                width: 300,
+                flex: 1,
+                maxWidth: isMobile ? "100%" : 300,
                 color: "#555",
                 fontSize: 13,
                 cursor: "pointer",
               }}
-              onClick={() => setCurrentTab("search")}
+              onClick={() => {
+                setCurrentTab("search");
+                if (isMobile) setSidebarOpen(false);
+              }}
             >
-              <span>🔍</span> Search anything...
-              <span
-                style={{
-                  marginLeft: "auto",
-                  fontSize: 10,
-                  background: "#333",
-                  padding: "2px 6px",
-                  borderRadius: 4,
-                }}
-              >
-                Ctrl+K
-              </span>
+              <span>🔍</span>
+              <span style={{ flex: 1 }}>Search anything...</span>
+              {!isMobile && (
+                <span
+                  style={{
+                    fontSize: 10,
+                    background: "#333",
+                    padding: "2px 6px",
+                    borderRadius: 4,
+                    flexShrink: 0,
+                  }}
+                >
+                  Ctrl+K
+                </span>
+              )}
             </div>
           </div>
 
-          {}
+          {/* Page content */}
           <div
             style={{
               flex: 1,
-              padding: 24,
+              padding: isMobile ? 12 : 24,
               overflowY: "auto",
+              overflowX: "hidden",
               position: "relative",
             }}
           >
@@ -835,7 +936,6 @@ case "dispatch":
         </div>
       </div>
 
-      {}
       {toast && (
         <Toast
           key={toast.id}
