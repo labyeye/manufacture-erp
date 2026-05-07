@@ -64,6 +64,7 @@ import Subcontracting from "./pages/Subcontracting";
 import QualityHub from "./pages/QualityHub";
 import DesignHub from "./pages/DesignHub";
 import NotificationHub from "./pages/NotificationHub";
+import ERPConsole from "./pages/ERPConsole";
 
 function App() {
   return (
@@ -611,6 +612,8 @@ case "dispatch":
         return (
           <UserManagement {...data} currentUser={session} toast={showToast} />
         );
+      case "erpconsole":
+        return <ERPConsole session={session} toast={showToast} />;
       default:
         return (
           <Dashboard

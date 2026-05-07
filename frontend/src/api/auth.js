@@ -765,3 +765,18 @@ export const priceListAPI = {
     return response.data;
   },
 };
+
+export const activityLogAPI = {
+  getLogs: async (params = {}) => {
+    const response = await api.get("/activity-log", { params });
+    return response.data;
+  },
+  getFilters: async () => {
+    const response = await api.get("/activity-log/filters");
+    return response.data;
+  },
+  clearOldLogs: async (days = 90) => {
+    const response = await api.delete(`/activity-log/clear?days=${days}`);
+    return response.data;
+  },
+};

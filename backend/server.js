@@ -12,6 +12,7 @@ app.use(cors());
 app.use(express.json({ limit: "10mb", strict: false }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(morgan("dev"));
+app.use(activityLogger);
 
 mongoose
   .connect(process.env.MONGODB_URI, {
@@ -24,6 +25,8 @@ mongoose
     process.exit(1);
   });
 
+const activityLogger = require("./middleware/activityLogger");
+const activityLogRoutes = require("./routes/activityLog");
 const authRoutes = require("./routes/auth");
 const purchaseOrderRoutes = require("./routes/purchaseOrders");
 const materialInwardRoutes = require("./routes/materialInward");
@@ -49,6 +52,7 @@ const breakdownLogRoutes = require("./routes/breakdownLog");
 const priceListRoutes = require("./routes/priceList");
 const spareIssueLogRoutes = require("./routes/spareIssueLog");
 
+app.use("/api/activity-log", activityLogRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/purchase-orders", purchaseOrderRoutes);
 app.use("/api/material-inward", materialInwardRoutes);

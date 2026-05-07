@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const ActivityLog = require("../models/ActivityLog");
 
 
 
@@ -34,6 +35,20 @@ exports.login = async (req, res) => {
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRES_IN || "7d",
     });
+
+    const ip =
+      req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
+      req.socket?.remoteAddress ||
+      null;
+    ActivityLog.create({
+      action: "LOGIN",
+      module: "Auth",
+      entityName: user.username,
+      performedBy: user._id,
+      performedByName: user.name,
+      performedByRole: user.role,
+      ipAddress: ip,
+    }).catch(() => {});
 
     res.json({
       token,
@@ -79,7 +94,21 @@ exports.me = async (req, res) => {
 
 
 exports.logout = async (req, res) => {
-  
+  if (req.user) {
+    const ip =
+      req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
+      req.socket?.remoteAddress ||
+      null;
+    ActivityLog.create({
+      action: "LOGOUT",
+      module: "Auth",
+      entityName: req.user.username,
+      performedBy: req.user._id,
+      performedByName: req.user.name,
+      performedByRole: req.user.role,
+      ipAddress: ip,
+    }).catch(() => {});
+  }
   res.json({ message: "Logged out successfully" });
 };
 

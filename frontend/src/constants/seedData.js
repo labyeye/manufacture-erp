@@ -546,6 +546,7 @@ export const TABS = [
   { id: "qualityhub", icon: "🔬", label: "Quality Hub" },
   { id: "designhub", icon: "🎨", label: "Design Hub" },
   { id: "users", icon: "👥", label: "User Management" },
+  { id: "erpconsole", icon: "🖥️", label: "ERP Console" },
 ];
 
 export const SEED_VERSION = "v14";

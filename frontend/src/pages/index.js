@@ -34,3 +34,4 @@ export { default as QualityHub } from "./QualityHub";
 export { default as MaintenancePlanner } from "./MaintenancePlanner";
 export { default as DesignHub } from "./DesignHub";
 export { default as NotificationHub } from "./NotificationHub";
+export { default as ERPConsole } from "./ERPConsole";

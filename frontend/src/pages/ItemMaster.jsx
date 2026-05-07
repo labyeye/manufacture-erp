@@ -119,6 +119,9 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
         companyName,
       ];
       setNewItemName(parts.filter(Boolean).join(" "));
+    } else if ((activeTab === "Consumable" || activeTab === "Machine Spare") && selectedCategory) {
+      const parts = [selectedCategory, selectedSubCategory];
+      setNewItemName(parts.filter(Boolean).join(" "));
     }
   }, [
     selectedCategory,
@@ -292,6 +295,8 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
       setGsm("");
       setWidth("");
       setLength("");
+      setGussett("");
+      setHeight("");
       setGstRate("18");
       setHsnCode("");
       setReorderLevel("0");
@@ -958,6 +963,8 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                 setGsm("");
                 setWidth("");
                 setLength("");
+                setGussett("");
+                setHeight("");
                 setGstRate("18");
                 setHsnCode("");
                 setReorderLevel("0");
@@ -1037,7 +1044,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
               ))}
             </select>
           </div>
-          {tabSubCategories.length > 0 && (
+          {tabSubCategories.length > 0 ? (
             <div>
               <label
                 style={{
@@ -1051,7 +1058,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
               >
                 {activeTab === "Finished Goods"
                   ? "SIZE *"
-                  : "SUB-CATEGORY / TYPE *"}
+                  : "SUB-CATEGORY / TYPE"}
               </label>
               <select
                 value={selectedSubCategory}
@@ -1066,7 +1073,28 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                 ))}
               </select>
             </div>
-          )}
+          ) : (activeTab === "Consumable" || activeTab === "Machine Spare") && selectedCategory ? (
+            <div>
+              <label
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: "#666",
+                  display: "block",
+                  marginBottom: 6,
+                  letterSpacing: "0.5px",
+                }}
+              >
+                SIZE / TYPE
+              </label>
+              <input
+                style={inputStyle}
+                placeholder="e.g. 100ml, A4, Large"
+                value={selectedSubCategory}
+                onChange={(e) => setSelectedSubCategory(e.target.value)}
+              />
+            </div>
+          ) : null}
           {activeTab === "Finished Goods" && (
             <div>
               <label
@@ -1332,12 +1360,12 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
               style={{
                 ...inputStyle,
                 background:
-                  activeTab === "Raw Material" || activeTab === "Finished Goods"
+                  activeTab !== "Consumable" && activeTab !== "Machine Spare"
                     ? "#0a0a0a"
                     : inputStyle.background,
               }}
               readOnly={
-                activeTab === "Raw Material" || activeTab === "Finished Goods"
+                activeTab !== "Consumable" && activeTab !== "Machine Spare"
               }
               placeholder={`Enter ${activeTab} name`}
               value={newItemName}
