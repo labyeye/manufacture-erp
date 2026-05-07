@@ -128,14 +128,15 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
     } else if ((activeTab === "Consumable" || activeTab === "Machine Spare") && selectedCategory) {
       const dimCfg = CONSUMABLE_DIM_CONFIG[selectedCategory];
       const parts = [selectedCategory];
+      const uomSuffix = uom === "N/A" ? "" : uom;
       if (dimCfg) {
         const dims = [];
         if (dimCfg.fields.includes("WIDTH") && width) dims.push(width);
         if (dimCfg.fields.includes("LENGTH") && length) dims.push(length);
         if (dimCfg.fields.includes("HEIGHT") && height) dims.push(height);
-        if (dims.length) parts.push(dims.join("x") + uom);
+        if (dims.length) parts.push(dims.join("x") + uomSuffix);
       } else if (selectedSubCategory) {
-        parts.push(selectedSubCategory + uom);
+        parts.push(selectedSubCategory + uomSuffix);
       }
       setNewItemName(parts.filter(Boolean).join(" "));
     }
@@ -1105,6 +1106,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                     <option value="mm">mm</option>
                     <option value="cm">cm</option>
                     <option value="inch">inch</option>
+                    <option value="N/A">Not Applicable</option>
                   </select>
                 </div>
               );
@@ -1115,7 +1117,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                   ...dimCfg.fields.map((field) => (
                     <div key={field}>
                       <label style={{ fontSize: 11, fontWeight: 600, color: "#666", display: "block", marginBottom: 6, letterSpacing: "0.5px" }}>
-                        {field} ({uom})
+                        {field}{uom !== "N/A" ? ` (${uom})` : ""}
                       </label>
                       <input
                         type="number"
