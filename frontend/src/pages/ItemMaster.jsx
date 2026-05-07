@@ -133,9 +133,9 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
         if (dimCfg.fields.includes("WIDTH") && width) dims.push(width);
         if (dimCfg.fields.includes("LENGTH") && length) dims.push(length);
         if (dimCfg.fields.includes("HEIGHT") && height) dims.push(height);
-        if (dims.length) parts.push(dims.join("x") + "mm");
+        if (dims.length) parts.push(dims.join("x") + uom);
       } else if (selectedSubCategory) {
-        parts.push(selectedSubCategory);
+        parts.push(selectedSubCategory + uom);
       }
       setNewItemName(parts.filter(Boolean).join(" "));
     }
@@ -1052,6 +1052,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                 setWidth("");
                 setLength("");
                 setHeight("");
+                if (activeTab === "Consumable" || activeTab === "Machine Spare") setUom("mm");
               }}
               style={inputStyle}
             >
@@ -1095,63 +1096,57 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
           ) : (activeTab === "Consumable" || activeTab === "Machine Spare") && selectedCategory ? (
             (() => {
               const dimCfg = CONSUMABLE_DIM_CONFIG[selectedCategory];
+              const uomSelect = (
+                <div key="uom">
+                  <label style={{ fontSize: 11, fontWeight: 600, color: "#666", display: "block", marginBottom: 6, letterSpacing: "0.5px" }}>
+                    UNIT (UOM)
+                  </label>
+                  <select value={uom} onChange={(e) => setUom(e.target.value)} style={inputStyle}>
+                    <option value="mm">mm</option>
+                    <option value="cm">cm</option>
+                    <option value="inch">inch</option>
+                  </select>
+                </div>
+              );
               if (dimCfg) {
-                // Render dimension fields for LDPE Polybag / Corrugated
-                return dimCfg.fields.map((field) => (
-                  <div key={field}>
-                    <label
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 600,
-                        color: "#666",
-                        display: "block",
-                        marginBottom: 6,
-                        letterSpacing: "0.5px",
-                      }}
-                    >
-                      {field} (mm)
-                    </label>
-                    <input
-                      type="number"
-                      placeholder="e.g. 200"
-                      style={inputStyle}
-                      value={
-                        field === "WIDTH" ? width
-                        : field === "LENGTH" ? length
-                        : height
-                      }
-                      onChange={(e) => {
-                        if (field === "WIDTH") setWidth(e.target.value);
-                        else if (field === "LENGTH") setLength(e.target.value);
-                        else setHeight(e.target.value);
-                      }}
-                    />
-                  </div>
-                ));
+                // Dimension fields for LDPE Polybag / Corrugated + UOM
+                return [
+                  uomSelect,
+                  ...dimCfg.fields.map((field) => (
+                    <div key={field}>
+                      <label style={{ fontSize: 11, fontWeight: 600, color: "#666", display: "block", marginBottom: 6, letterSpacing: "0.5px" }}>
+                        {field} ({uom})
+                      </label>
+                      <input
+                        type="number"
+                        placeholder="e.g. 200"
+                        style={inputStyle}
+                        value={field === "WIDTH" ? width : field === "LENGTH" ? length : height}
+                        onChange={(e) => {
+                          if (field === "WIDTH") setWidth(e.target.value);
+                          else if (field === "LENGTH") setLength(e.target.value);
+                          else setHeight(e.target.value);
+                        }}
+                      />
+                    </div>
+                  )),
+                ];
               }
-              // Default: free-text SIZE / TYPE
-              return (
-                <div>
-                  <label
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 600,
-                      color: "#666",
-                      display: "block",
-                      marginBottom: 6,
-                      letterSpacing: "0.5px",
-                    }}
-                  >
+              // Default: free-text SIZE / TYPE + UOM
+              return [
+                <div key="size">
+                  <label style={{ fontSize: 11, fontWeight: 600, color: "#666", display: "block", marginBottom: 6, letterSpacing: "0.5px" }}>
                     SIZE / TYPE
                   </label>
                   <input
                     style={inputStyle}
-                    placeholder="e.g. 100ml, A4, Large"
+                    placeholder="e.g. 100, A4, Large"
                     value={selectedSubCategory}
                     onChange={(e) => setSelectedSubCategory(e.target.value)}
                   />
-                </div>
-              );
+                </div>,
+                uomSelect,
+              ];
             })()
           ) : null}
           {activeTab === "Finished Goods" && (

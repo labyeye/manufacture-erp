@@ -30,56 +30,117 @@ const PATH_TO_MODULE = {
 };
 
 function resolveModule(path) {
-  const stripped = path.replace(/^\/api\//, "").split("/")[0];
   const sub = path.replace(/^\/api\//, "");
   if (sub.startsWith("auth/users")) return "User Management";
   if (sub.startsWith("auth/login")) return "Auth";
   if (sub.startsWith("auth/logout")) return "Auth";
-  return PATH_TO_MODULE[stripped] || stripped;
+  const segment = sub.split("/")[0];
+  return PATH_TO_MODULE[segment] || segment;
 }
 
-function resolveAction(method, path, statusCode) {
+function resolveAction(method, path) {
   const p = path.toLowerCase();
-  if (p.includes("/login"))        return "LOGIN";
-  if (p.includes("/logout"))       return "LOGOUT";
-  if (p.includes("/bulk-delete"))  return "BULK_DELETED";
-  if (p.includes("/bulk-import"))  return "BULK_IMPORTED";
-  if (p.includes("/status"))       return "STATUS_CHANGED";
-  if (p.includes("/adjust-stock") || p.includes("/stock-adjust")) return "STOCK_ADJUSTED";
-  if (method === "POST")   return "CREATED";
-  if (method === "PUT" || method === "PATCH") return "UPDATED";
-  if (method === "DELETE") return "DELETED";
+  if (p.includes("/login"))                                   return "LOGIN";
+  if (p.includes("/logout"))                                  return "LOGOUT";
+  if (p.includes("/bulk-delete"))                             return "BULK_DELETED";
+  if (p.includes("/bulk-import"))                             return "BULK_IMPORTED";
+  if (p.includes("/status"))                                  return "STATUS_CHANGED";
+  if (p.includes("/stage"))                                   return "STATUS_CHANGED";
+  if (p.includes("/adjust") || p.includes("/stock-adjust"))  return "STOCK_ADJUSTED";
+  if (method === "POST")                                      return "CREATED";
+  if (method === "PUT" || method === "PATCH")                 return "UPDATED";
+  if (method === "DELETE")                                    return "DELETED";
   return "UPDATED";
 }
 
-function extractEntityInfo(body, module, action) {
+// All wrapper keys any controller might use
+const WRAPPER_KEYS = [
+  "item", "order", "jobOrder", "salesOrder", "purchaseOrder",
+  "dispatch", "vendor", "company", "brand", "machine", "user",
+  "category", "log", "record", "plan", "maintenance", "breakdown",
+  "tooling", "calendar", "spare", "price", "detail", "printing",
+  "stock", "entry", "inward", "size", "priceList",
+];
+
+function pickName(obj) {
+  if (!obj || typeof obj !== "object") return null;
+  return (
+    obj.name || obj.username || obj.code ||
+    obj.orderNo || obj.soNumber || obj.poNumber || obj.joNumber ||
+    obj.grnNumber || obj.dispatchNo || obj.machineId ||
+    obj.itemCode || obj.description || obj.title || null
+  );
+}
+
+function extractEntityInfo(body, action) {
   if (!body || typeof body !== "object") return { id: null, name: null };
 
-  const record =
-    body.item || body.order || body.entry || body.dispatch ||
-    body.vendor || body.company || body.brand || body.machine ||
-    body.user || body.category || body.log || body.record ||
-    body.plan || body.maintenance || body.breakdown || body.tooling ||
-    body.calendar || body.spare || body.price || body.detail ||
-    body.printing || (Array.isArray(body.items) ? null : null);
+  // Try known wrapper keys
+  for (const key of WRAPPER_KEYS) {
+    const val = body[key];
+    if (val && typeof val === "object" && !Array.isArray(val)) {
+      return {
+        id:   String(val._id || val.id || ""),
+        name: pickName(val) || "",
+      };
+    }
+  }
 
-  if (record) {
+  // Direct response body (many controllers do res.json(record) directly)
+  if (body._id || body.id || body.name || body.code || body.orderNo || body.joNumber) {
     return {
-      id:   String(record._id || record.id || ""),
-      name: record.name || record.code || record.orderNo ||
-            record.soNumber || record.poNumber || record.joNumber ||
-            record.grnNumber || record.dispatchNo || record.username || "",
+      id:   String(body._id || body.id || ""),
+      name: pickName(body) || "",
     };
   }
 
-  if (action === "BULK_IMPORTED" && body.results?.success?.length) {
+  // Bulk operations
+  if (action === "BULK_IMPORTED" && body.results?.success?.length != null) {
     return { id: null, name: `${body.results.success.length} records imported` };
   }
-  if (action === "BULK_DELETED" && body.deletedCount != null) {
-    return { id: null, name: `${body.deletedCount} records deleted` };
+  if (action === "BULK_DELETED") {
+    if (body.deletedCount != null) return { id: null, name: `${body.deletedCount} records deleted` };
+    if (body.message) return { id: null, name: body.message };
   }
 
   return { id: null, name: null };
+}
+
+function buildDetails(method, reqBody, resBody, action) {
+  const d = {};
+
+  if (action === "LOGIN") {
+    return { username: reqBody?.username };
+  }
+
+  if (action === "CREATED" || action === "UPDATED") {
+    // Pick the meaningful fields from the request body (skip large/nested)
+    const SKIP = ["_id", "__v", "createdAt", "updatedAt", "password", "token"];
+    const fields = {};
+    for (const [k, v] of Object.entries(reqBody || {})) {
+      if (SKIP.includes(k)) continue;
+      if (typeof v === "object" && v !== null && !Array.isArray(v)) continue;
+      fields[k] = v;
+    }
+    if (Object.keys(fields).length) d.fields = fields;
+  }
+
+  if (action === "STATUS_CHANGED") {
+    d.newStatus =
+      reqBody?.status || reqBody?.stage || reqBody?.state ||
+      resBody?.status || resBody?.stage || "—";
+  }
+
+  if (action === "STOCK_ADJUSTED") {
+    d.qty = reqBody?.quantity || reqBody?.qty || reqBody?.adjustment;
+    d.type = reqBody?.adjustmentType || reqBody?.type;
+  }
+
+  if (action === "DELETED" || action === "BULK_DELETED") {
+    d.path = resBody?.message || "";
+  }
+
+  return Object.keys(d).length ? d : undefined;
 }
 
 function activityLogger(req, res, next) {
@@ -90,27 +151,26 @@ function activityLogger(req, res, next) {
   res.json = function (body) {
     originalJson(body);
 
-    const status = res.statusCode;
-    if (status >= 400) return;
+    if (res.statusCode >= 400) return;
 
     const module = resolveModule(req.path);
-    const action = resolveAction(req.method, req.path, status);
-    const { id, name } = extractEntityInfo(body, module, action);
+    const action = resolveAction(req.method, req.path);
+    const { id, name } = extractEntityInfo(body, action);
+    const details = buildDetails(req.method, req.body, body, action);
 
     const ip =
       req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
-      req.socket?.remoteAddress ||
-      null;
+      req.socket?.remoteAddress || null;
 
     const log = new ActivityLog({
       action,
       module,
       entityId:        id || undefined,
       entityName:      name || undefined,
-      details:         req.method === "DELETE" ? { path: req.path } : undefined,
+      details,
       performedBy:     req.user?._id || undefined,
-      performedByName: req.user?.name || (body?.user?.name) || undefined,
-      performedByRole: req.user?.role || (body?.user?.role) || undefined,
+      performedByName: req.user?.name || body?.user?.name || undefined,
+      performedByRole: req.user?.role || body?.user?.role || undefined,
       ipAddress:       ip,
     });
 
