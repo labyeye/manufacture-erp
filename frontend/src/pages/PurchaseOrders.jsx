@@ -534,7 +534,7 @@ export default function PurchaseOrders({
             it.qty = sheets;
             it.noOfSheets = sheets;
           } else if (k === "qty" && +v) {
-            const kg = ((+v * gramsPerSheet) / 1000).toFixed(3);
+            const kg = Math.round((+v * gramsPerSheet) / 1000);
             it.weight = kg;
             it.noOfSheets = +v;
           } else if (

@@ -637,10 +637,10 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
           const header = col.header.toLowerCase();
           if (header.includes("product code")) item.code = String(val).trim();
           else if (header.includes("item name")) item.name = String(val).trim();
-          else if (header.includes("category") && !header.includes("client"))
-            item.category = String(val).trim();
           else if (header.includes("sub category"))
             item.subCategory = String(val).trim();
+          else if (header.includes("category") && !header.includes("client"))
+            item.category = String(val).trim();
           else if (header.includes("client name"))
             item.companyName = String(val).trim();
           else if (header.includes("client category"))
