@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo, useEffect } from "react";
+import React, { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import {
   itemMasterAPI,
   categoryMasterAPI,
@@ -52,6 +52,16 @@ const inputStyle = {
   boxSizing: "border-box",
 };
 
+function useIsMobile(breakpoint = 768) {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < breakpoint);
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < breakpoint);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, [breakpoint]);
+  return isMobile;
+}
+
 export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
   const [itemMasterFG, setItemMasterFG] = useState([]);
   const [categoryMaster, setCategoryMaster] = useState({});
@@ -87,10 +97,12 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
   const [manualClient, setManualClient] = useState("");
   const [manualCode, setManualCode] = useState("");
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, count: 0 });
+  const [deleteAllModal, setDeleteAllModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const fileInputRef = useRef(null);
   const companyCodesFileRef = useRef(null);
   const editInitRef = useRef(false); // suppresses name auto-gen during edit init
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     fetchItems();
@@ -102,6 +114,13 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
     if (editInitRef.current) return;
 
     if (activeTab === "Raw Material" && selectedCategory) {
+      // Polycoated Blanks: user types name manually, no auto-generation
+      if (
+        selectedSubCategory === "Polycoated Blanks" ||
+        selectedCategory === "Polycoated Blanks"
+      ) {
+        return;
+      }
       const catLabel = selectedCategory.startsWith("Paper ")
         ? selectedCategory.slice(6)
         : selectedCategory;
@@ -203,12 +222,8 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
         names.push(...Object.keys(c.subTypes));
       }
     });
-
-    const fromItems = [
-      ...new Set(tabItems.map((i) => i.category).filter(Boolean)),
-    ];
-    return [...new Set([...names, ...fromItems])];
-  }, [rawCategories, activeTab, tabItems]);
+    return [...new Set(names)];
+  }, [rawCategories, activeTab]);
 
   const tabSubCategories = useMemo(() => {
     if (!selectedCategory) return [];
@@ -217,6 +232,11 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
     );
     return catObj ? catObj.subTypes[selectedCategory] : [];
   }, [rawCategories, activeTab, selectedCategory]);
+
+  const clientCategories = useMemo(() => {
+    const clientDoc = rawCategories.find((c) => c.type === "Client");
+    return Object.keys(clientDoc?.subTypes || {});
+  }, [rawCategories]);
 
   const filtered = useMemo(
     () =>
@@ -396,6 +416,23 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
       toast("Bulk delete failed", "error");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    try {
+      setLoading(true);
+      const ids = tabItems.map((i) => i._id);
+      await itemMasterAPI.bulkDelete(ids);
+      toast(`Deleted all ${activeTab} items`, "success");
+      setSelectedIds([]);
+      fetchItems();
+      refreshData?.();
+    } catch (error) {
+      toast("Delete all failed", "error");
+    } finally {
+      setLoading(false);
+      setDeleteAllModal(false);
     }
   };
 
@@ -651,14 +688,14 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
       });
 
       let successCount = 0;
-      let skippedCount = 0;
+      let updatedCount = 0;
       let failedCount = 0;
 
-      // Build a set of existing names for this tab (case-insensitive)
-      const existingNames = new Set(
+      // Build a name→item map for this tab (case-insensitive lookup)
+      const existingMap = new Map(
         (itemMasterFG || [])
           .filter((i) => i.type === activeTab)
-          .map((i) => (i.name || "").toLowerCase().trim())
+          .map((i) => [(i.name || "").toLowerCase().trim(), i])
       );
 
       for (let i = 0; i < imported.length; i++) {
@@ -669,26 +706,31 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
           status: `Processing: ${item.name}`,
         }));
 
-        // Skip if already exists
-        if (existingNames.has((item.name || "").toLowerCase().trim())) {
-          skippedCount++;
-          continue;
-        }
+        const key = (item.name || "").toLowerCase().trim();
+        const existing = existingMap.get(key);
 
         try {
-          await itemMasterAPI.create(item);
-          successCount++;
-          existingNames.add((item.name || "").toLowerCase().trim());
+          if (existing) {
+            // Update — override all fields from the import
+            await itemMasterAPI.update(existing._id, item);
+            updatedCount++;
+          } else {
+            await itemMasterAPI.create(item);
+            successCount++;
+            // Add to map so duplicates within the file don't double-create
+            existingMap.set(key, { _id: key, name: item.name, type: activeTab });
+          }
         } catch (err) {
           console.error(`Failed to import ${item.name}:`, err);
           failedCount++;
         }
       }
 
-      const parts = [`${successCount} added`];
-      if (skippedCount) parts.push(`${skippedCount} skipped (already exist)`);
+      const parts = [];
+      if (successCount) parts.push(`${successCount} added`);
+      if (updatedCount) parts.push(`${updatedCount} updated`);
       if (failedCount) parts.push(`${failedCount} failed`);
-      toast(`Import complete! ${parts.join(", ")}.`, successCount > 0 ? "success" : "info");
+      toast(`Import complete! ${parts.join(", ")}.`, successCount > 0 || updatedCount > 0 ? "success" : "error");
       fetchItems();
     } catch (error) {
       console.error("Import error:", error);
@@ -1185,14 +1227,18 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                   letterSpacing: "0.5px",
                 }}
               >
-                COMPANY NAME
+                CLIENT CATEGORY
               </label>
-              <input
+              <select
                 style={inputStyle}
-                placeholder="e.g. Modern Trade"
                 value={companyCategory}
                 onChange={(e) => setCompanyCategory(e.target.value)}
-              />
+              >
+                <option value="">-- Select Category --</option>
+                {clientCategories.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
             </div>
           )}
           {activeTab === "Finished Goods" && selectedCategory && (
@@ -1416,12 +1462,18 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
               style={{
                 ...inputStyle,
                 background:
-                  activeTab !== "Consumable" && activeTab !== "Machine Spare"
+                  activeTab !== "Consumable" &&
+                  activeTab !== "Machine Spare" &&
+                  selectedSubCategory !== "Polycoated Blanks" &&
+                  selectedCategory !== "Polycoated Blanks"
                     ? "#0a0a0a"
                     : inputStyle.background,
               }}
               readOnly={
-                activeTab !== "Consumable" && activeTab !== "Machine Spare"
+                activeTab !== "Consumable" &&
+                activeTab !== "Machine Spare" &&
+                selectedSubCategory !== "Polycoated Blanks" &&
+                selectedCategory !== "Polycoated Blanks"
               }
               placeholder={`Enter ${activeTab} name`}
               value={newItemName}
@@ -1683,17 +1735,20 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
       <div
         style={{
           display: "flex",
+          flexWrap: "wrap",
           justifyContent: "space-between",
           alignItems: "center",
+          gap: 10,
           marginBottom: 14,
         }}
       >
-        <div style={{ display: "flex", gap: 10, flex: 1 }}>
+        <div style={{ display: "flex", gap: 10, flex: 1, flexWrap: "wrap", minWidth: 0 }}>
           <input
             placeholder="Search code or name..."
             style={{
               ...inputStyle,
               maxWidth: 300,
+              minWidth: 120,
               background: "#1a1a1a",
               borderColor: "#2a2a2a",
             }}
@@ -1706,6 +1761,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
             style={{
               ...inputStyle,
               maxWidth: 160,
+              minWidth: 120,
               background: "#1a1a1a",
               borderColor: "#2a2a2a",
             }}
@@ -1719,7 +1775,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
           </select>
         </div>
 
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
           {selectedIds.length > 0 && (
             <button
               onClick={() =>
@@ -1749,6 +1805,24 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
             onClick={() => fileInputRef.current?.click()}
             label="Bulk Import"
           />
+          {tabItems.length > 0 && (
+            <button
+              onClick={() => setDeleteAllModal(true)}
+              style={{
+                background: "#450a0a",
+                color: "#ef4444",
+                border: "1px solid #7f1d1d",
+                borderRadius: 6,
+                padding: "6px 14px",
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
+              🗑️ Delete All
+            </button>
+          )}
           <input
             type="file"
             ref={fileInputRef}
@@ -1759,7 +1833,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
         </div>
       </div>
 
-      {sorted.length > 0 && (
+      {sorted.length > 0 && !isMobile && (
         <div
           style={{
             display: "flex",
@@ -1784,29 +1858,178 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
         </div>
       )}
 
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 0,
-          border: "1px solid #2a2a2a",
-          borderRadius: sorted.length > 0 ? "0 0 10px 10px" : "10px",
-          overflow: "hidden",
-        }}
-      >
-        {sorted.length === 0 ? (
-          <div
-            style={{
-              textAlign: "center",
-              padding: "40px",
-              background: "#1a1a1a",
-              color: "#444",
-            }}
-          >
-            No items found.
+      {sorted.length === 0 ? (
+        <div
+          style={{
+            textAlign: "center",
+            padding: "40px",
+            background: "#1a1a1a",
+            border: "1px solid #2a2a2a",
+            borderRadius: 10,
+            color: "#444",
+          }}
+        >
+          No items found.
+        </div>
+      ) : isMobile ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", background: "#1a1a1a", border: "1px solid #2a2a2a", borderRadius: 8 }}>
+            <input type="checkbox" checked={selectedIds.length === sorted.length} onChange={toggleSelectAll} style={{ cursor: "pointer", width: 16, height: 16 }} />
+            <span style={{ fontSize: 11, fontWeight: 700, color: "#666" }}>SELECT ALL ({sorted.length})</span>
           </div>
-        ) : (
-          <>
+          {sorted.map((item) => (
+            <div
+              key={item._id}
+              style={{
+                background: "#1a1a1a",
+                border: "1px solid #2a2a2a",
+                borderRadius: 10,
+                padding: "14px 16px",
+              }}
+            >
+              {/* top row: checkbox + code + name */}
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 10 }}>
+                <input
+                  type="checkbox"
+                  checked={selectedIds.includes(item._id)}
+                  onChange={() => toggleSelect(item._id)}
+                  style={{ cursor: "pointer", width: 16, height: 16, flexShrink: 0, marginTop: 2 }}
+                />
+                <div
+                  onClick={() => handleEdit(item)}
+                  style={{
+                    padding: "3px 10px",
+                    border: "1px solid #2196F344",
+                    borderRadius: 6,
+                    color: "#2196F3",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    background: "#2196F30a",
+                    fontFamily: "monospace",
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                    flexShrink: 0,
+                  }}
+                >
+                  {item.code}
+                </div>
+                <div style={{ flex: 1, color: "#e6edf3", fontSize: 13, fontWeight: 600, lineHeight: 1.4 }}>
+                  {item.name}
+                </div>
+              </div>
+
+              {/* badges */}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
+                {activeTab === "Finished Goods" && item.companyCategory && (
+                  <span style={{ padding: "3px 8px", borderRadius: 20, background: "#9c27b01a", color: "#ba68c8", fontSize: 11, fontWeight: 600 }}>
+                    {item.companyCategory}
+                  </span>
+                )}
+                {item.category && (
+                  <span style={{ padding: "3px 8px", borderRadius: 20, background: "#1565C022", color: "#64B5F6", fontSize: 11, fontWeight: 600 }}>
+                    {item.category}
+                  </span>
+                )}
+                {item.subCategory && (
+                  <span style={{ padding: "3px 8px", borderRadius: 20, background: "#4CAF501a", color: "#4CAF50", fontSize: 11, fontWeight: 600 }}>
+                    {item.subCategory}
+                  </span>
+                )}
+                <span style={{ padding: "3px 8px", borderRadius: 20, background: "#64B5F614", color: "#64B5F6", fontSize: 11, fontWeight: 600 }}>
+                  GST {item.gstRate || 0}%
+                </span>
+                <span style={{ padding: "3px 8px", borderRadius: 20, background: "#ff98001a", color: "#ff9800", fontSize: 11, fontWeight: 600 }}>
+                  RL: {item.reorderLevel || 0}
+                </span>
+                <span style={{ padding: "3px 8px", borderRadius: 20, background: "#ffffff08", color: "#484f58", fontSize: 11 }}>
+                  {new Date(item.addedOn || item.createdAt).toISOString().split("T")[0]}
+                </span>
+              </div>
+
+              {/* Co. codes (FG) */}
+              {activeTab === "Finished Goods" && (
+                <div style={{ marginBottom: 10 }}>
+                  <button
+                    onClick={() => {
+                      setManualClient("");
+                      setManualCode("");
+                      setShowClientCodes(showClientCodes === item._id ? null : item._id);
+                    }}
+                    style={{
+                      padding: "5px 12px",
+                      borderRadius: 6,
+                      background: "#4f46e51a",
+                      color: "#818cf8",
+                      border: "1px solid #4f46e544",
+                      fontSize: 11,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      width: "100%",
+                      textAlign: "left",
+                    }}
+                  >
+                    🎟️ Co. Codes {showClientCodes === item._id ? "▲" : "▼"}
+                  </button>
+                  {showClientCodes === item._id && (
+                    <div style={{ marginTop: 8, background: "#111", border: "1px solid #333", borderRadius: 8, padding: 10 }}>
+                      {item.companyCodes && Object.entries(item.companyCodes).filter(([_, v]) => v).length > 0 ? (
+                        Object.entries(item.companyCodes).filter(([_, v]) => v).map(([client, code]) => (
+                          <div key={client} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "5px 0", borderBottom: "1px solid #222", gap: 10 }}>
+                            <span style={{ color: "#666" }}>{client}:</span>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <span style={{ color: "#e0e0e0", fontWeight: 700 }}>{code}</span>
+                              <button onClick={() => removeClientCode(item, client)} style={{ background: "transparent", border: "none", cursor: "pointer", fontSize: 12, color: "#ff4444", padding: 0 }}>✕</button>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div style={{ fontSize: 11, color: "#444", textAlign: "center", marginBottom: 8 }}>No client codes</div>
+                      )}
+                      <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid #333" }}>
+                        <div style={{ fontSize: 10, color: "#818cf8", marginBottom: 4, fontWeight: 700 }}>+ ADD CLIENT CODE</div>
+                        <select value={manualClient} onChange={(e) => setManualClient(e.target.value)} style={{ width: "100%", background: "#000", border: "1px solid #333", borderRadius: 4, fontSize: 11, color: "#fff", padding: 5, marginBottom: 6, outline: "none" }}>
+                          <option value="">-- Select Company --</option>
+                          {(companyMaster || []).map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
+                        </select>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <input placeholder="Code" value={manualCode} onChange={(e) => setManualCode(e.target.value)} style={{ flex: 1, background: "#000", border: "1px solid #333", borderRadius: 4, fontSize: 11, color: "#fff", padding: 5, outline: "none" }} />
+                          <button onClick={() => handleManualClientCodeSave(item)} style={{ background: "#4f46e5", border: "none", borderRadius: 4, color: "#fff", padding: "5px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>SAVE</button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* actions */}
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  onClick={() => handleEdit(item)}
+                  style={{ flex: 1, padding: "8px 0", background: "#1e293b", color: "#64b5f6", border: "1px solid #334155", borderRadius: 6, fontSize: 13, fontWeight: 700, cursor: "pointer" }}
+                >
+                  ✏️ Edit
+                </button>
+                <button
+                  onClick={() => handleDelete(item)}
+                  style={{ flex: 1, padding: "8px 0", background: "#450a0a", color: "#ef4444", border: "1px solid #7f1d1d", borderRadius: 6, fontSize: 13, fontWeight: 700, cursor: "pointer" }}
+                >
+                  🗑️ Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div
+          style={{
+            border: "1px solid #2a2a2a",
+            borderRadius: "0 0 10px 10px",
+            overflowX: "auto",
+            WebkitOverflowScrolling: "touch",
+          }}
+        >
+          <div style={{ minWidth: 860 }}>
+            {/* header */}
             <div
               style={{
                 display: "flex",
@@ -1832,9 +2055,14 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
               <div style={{ width: 110, flexShrink: 0 }}>Sub-Category</div>
               <div style={{ width: 50, flexShrink: 0, textAlign: "center" }}>GST</div>
               <div style={{ width: 70, flexShrink: 0, textAlign: "center" }}>Reorder</div>
+              {activeTab === "Finished Goods" && (
+                <div style={{ width: 110, flexShrink: 0 }}>Co. Codes</div>
+              )}
               <div style={{ width: 88, flexShrink: 0 }}>Date</div>
               <div style={{ width: 160, flexShrink: 0, textAlign: "right" }}>Actions</div>
             </div>
+
+            {/* rows */}
             {sorted.map((item, idx) => (
               <div
                 key={item._id}
@@ -1843,8 +2071,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                   alignItems: "center",
                   padding: "10px 16px",
                   background: idx % 2 === 0 ? "#0d1117" : "#11151c",
-                  borderBottom:
-                    idx === sorted.length - 1 ? "none" : "1px solid #21262d",
+                  borderBottom: idx === sorted.length - 1 ? "none" : "1px solid #21262d",
                   gap: 10,
                 }}
               >
@@ -1855,361 +2082,97 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                   style={{ cursor: "pointer", width: 16, height: 16, flexShrink: 0 }}
                 />
                 <div
-                  style={{
-                    width: 72,
-                    flexShrink: 0,
-                    padding: "5px 0",
-                    border: "1px solid #2196F344",
-                    borderRadius: 6,
-                    textAlign: "center",
-                    color: "#2196F3",
-                    fontSize: 11,
-                    fontWeight: 700,
-                    background: "#2196F30a",
-                    fontFamily: "monospace",
-                    cursor: "pointer",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
+                  style={{ width: 72, flexShrink: 0, padding: "5px 0", border: "1px solid #2196F344", borderRadius: 6, textAlign: "center", color: "#2196F3", fontSize: 11, fontWeight: 700, background: "#2196F30a", fontFamily: "monospace", cursor: "pointer", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
                   onClick={() => handleEdit(item)}
                 >
                   {item.code}
                 </div>
-                <div
-                  style={{
-                    flex: 1,
-                    minWidth: 180,
-                    color: "#e6edf3",
-                    fontSize: 13,
-                    fontWeight: 600,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
+                <div style={{ flex: 1, minWidth: 180, color: "#e6edf3", fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {item.name}
                 </div>
                 {activeTab === "Finished Goods" && (
-                  <div
-                    style={{
-                      width: 100,
-                      flexShrink: 0,
-                      padding: "4px 8px",
-                      borderRadius: 6,
-                      background: "#9c27b01a",
-                      color: "#ba68c8",
-                      fontSize: 11,
-                      fontWeight: 600,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
+                  <div style={{ width: 100, flexShrink: 0, padding: "4px 8px", borderRadius: 6, background: "#9c27b01a", color: "#ba68c8", fontSize: 11, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {item.companyCategory || "-"}
                   </div>
                 )}
-                <div
-                  style={{
-                    width: 110,
-                    flexShrink: 0,
-                    padding: "4px 8px",
-                    borderRadius: 6,
-                    background: "#1565C022",
-                    color: "#64B5F6",
-                    fontSize: 11,
-                    fontWeight: 600,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
+                <div style={{ width: 110, flexShrink: 0, padding: "4px 8px", borderRadius: 6, background: "#1565C022", color: "#64B5F6", fontSize: 11, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {item.category || "-"}
                 </div>
-                <div
-                  style={{
-                    width: 110,
-                    flexShrink: 0,
-                    padding: "4px 8px",
-                    borderRadius: 6,
-                    background: "#4CAF501a",
-                    color: "#4CAF50",
-                    fontSize: 11,
-                    fontWeight: 600,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
+                <div style={{ width: 110, flexShrink: 0, padding: "4px 8px", borderRadius: 6, background: "#4CAF501a", color: "#4CAF50", fontSize: 11, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {item.subCategory || "-"}
                 </div>
-                <div
-                  style={{
-                    width: 50,
-                    flexShrink: 0,
-                    padding: "4px 6px",
-                    borderRadius: 6,
-                    background: "#64B5F614",
-                    color: "#64B5F6",
-                    fontSize: 10,
-                    fontWeight: 700,
-                    textAlign: "center",
-                  }}
-                >
+                <div style={{ width: 50, flexShrink: 0, padding: "4px 6px", borderRadius: 6, background: "#64B5F614", color: "#64B5F6", fontSize: 10, fontWeight: 700, textAlign: "center" }}>
                   {item.gstRate || 0}%
                 </div>
-                <div
-                  style={{
-                    width: 70,
-                    flexShrink: 0,
-                    padding: "4px 6px",
-                    borderRadius: 6,
-                    background: "#ff98001a",
-                    color: "#ff9800",
-                    fontSize: 10,
-                    fontWeight: 700,
-                    textAlign: "center",
-                  }}
-                >
+                <div style={{ width: 70, flexShrink: 0, padding: "4px 6px", borderRadius: 6, background: "#ff98001a", color: "#ff9800", fontSize: 10, fontWeight: 700, textAlign: "center" }}>
                   RL: {item.reorderLevel || 0}
                 </div>
 
                 {activeTab === "Finished Goods" && (
-                  <div style={{ position: "relative" }}>
+                  <div style={{ position: "relative", width: 110, flexShrink: 0 }}>
                     <button
                       onClick={() => {
                         setManualClient("");
                         setManualCode("");
-                        setShowClientCodes(
-                          showClientCodes === item._id ? null : item._id,
-                        );
+                        setShowClientCodes(showClientCodes === item._id ? null : item._id);
                       }}
-                      style={{
-                        padding: "4px 8px",
-                        borderRadius: 6,
-                        background: "#4f46e51a",
-                        color: "#818cf8",
-                        border: "1px solid #4f46e544",
-                        fontSize: 10,
-                        fontWeight: 700,
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 4,
-                        minWidth: 100,
-                      }}
+                      style={{ padding: "4px 8px", borderRadius: 6, background: "#4f46e51a", color: "#818cf8", border: "1px solid #4f46e544", fontSize: 10, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, width: "100%" }}
                     >
                       🎟️ Co. Codes {showClientCodes === item._id ? "▲" : "▼"}
                     </button>
                     {showClientCodes === item._id && (
-                      <div
-                        style={{
-                          position: "absolute",
-                          top: "100%",
-                          right: 0,
-                          zIndex: 100,
-                          background: "#1a1a1a",
-                          border: "1px solid #333",
-                          borderRadius: 8,
-                          padding: 8,
-                          minWidth: 150,
-                          boxShadow: "0 10px 25px rgba(0,0,0,0.5)",
-                          marginTop: 4,
-                        }}
-                      >
-                        {item.companyCodes &&
-                        Object.entries(item.companyCodes).filter(([_, v]) => v)
-                          .length > 0 ? (
-                          Object.entries(item.companyCodes)
-                            .filter(([_, v]) => v)
-                            .map(([client, code]) => (
-                              <div
-                                key={client}
-                                style={{
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  fontSize: 11,
-                                  padding: "4px 0",
-                                  borderBottom: "1px solid #222",
-                                  gap: 10,
-                                }}
-                              >
-                                <span style={{ color: "#666" }}>{client}:</span>
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 6,
-                                  }}
-                                >
-                                  <span
-                                    style={{
-                                      color: "#e0e0e0",
-                                      fontWeight: 700,
-                                    }}
-                                  >
-                                    {code}
-                                  </span>
-                                  <button
-                                    onClick={() =>
-                                      removeClientCode(item, client)
-                                    }
-                                    style={{
-                                      background: "transparent",
-                                      border: "none",
-                                      cursor: "pointer",
-                                      fontSize: 10,
-                                      color: "#ff4444",
-                                      padding: 0,
-                                    }}
-                                    title="Remove"
-                                  >
-                                    ✕
-                                  </button>
-                                </div>
+                      <div style={{ position: "absolute", top: "100%", right: 0, zIndex: 100, background: "#1a1a1a", border: "1px solid #333", borderRadius: 8, padding: 8, minWidth: 150, boxShadow: "0 10px 25px rgba(0,0,0,0.5)", marginTop: 4 }}>
+                        {item.companyCodes && Object.entries(item.companyCodes).filter(([_, v]) => v).length > 0 ? (
+                          Object.entries(item.companyCodes).filter(([_, v]) => v).map(([client, code]) => (
+                            <div key={client} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, padding: "4px 0", borderBottom: "1px solid #222", gap: 10 }}>
+                              <span style={{ color: "#666" }}>{client}:</span>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                <span style={{ color: "#e0e0e0", fontWeight: 700 }}>{code}</span>
+                                <button onClick={() => removeClientCode(item, client)} style={{ background: "transparent", border: "none", cursor: "pointer", fontSize: 10, color: "#ff4444", padding: 0 }} title="Remove">✕</button>
                               </div>
-                            ))
+                            </div>
+                          ))
                         ) : (
-                          <div
-                            style={{
-                              fontSize: 10,
-                              color: "#444",
-                              textAlign: "center",
-                              marginBottom: 8,
-                            }}
-                          >
-                            No client codes
-                          </div>
+                          <div style={{ fontSize: 10, color: "#444", textAlign: "center", marginBottom: 8 }}>No client codes</div>
                         )}
-
-                        <div
-                          style={{
-                            marginTop: 10,
-                            borderTop: "1px solid #333",
-                            paddingTop: 8,
-                          }}
-                        >
-                          <div
-                            style={{
-                              fontSize: 9,
-                              color: "#818cf8",
-                              marginBottom: 4,
-                              fontWeight: 700,
-                            }}
-                          >
-                            + ADD CLIENT CODE
-                          </div>
-                          <select
-                            value={manualClient}
-                            onChange={(e) => setManualClient(e.target.value)}
-                            style={{
-                              width: "100%",
-                              background: "#000",
-                              border: "1px solid #333",
-                              borderRadius: 4,
-                              fontSize: 10,
-                              color: "#fff",
-                              padding: 4,
-                              marginBottom: 4,
-                              outline: "none",
-                            }}
-                          >
+                        <div style={{ marginTop: 10, borderTop: "1px solid #333", paddingTop: 8 }}>
+                          <div style={{ fontSize: 9, color: "#818cf8", marginBottom: 4, fontWeight: 700 }}>+ ADD CLIENT CODE</div>
+                          <select value={manualClient} onChange={(e) => setManualClient(e.target.value)} style={{ width: "100%", background: "#000", border: "1px solid #333", borderRadius: 4, fontSize: 10, color: "#fff", padding: 4, marginBottom: 4, outline: "none" }}>
                             <option value="">-- Select Company --</option>
-                            {(companyMaster || []).map((c) => (
-                              <option key={c.name} value={c.name}>
-                                {c.name}
-                              </option>
-                            ))}
+                            {(companyMaster || []).map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
                           </select>
                           <div style={{ display: "flex", gap: 4 }}>
-                            <input
-                              placeholder="Code"
-                              value={manualCode}
-                              onChange={(e) => setManualCode(e.target.value)}
-                              style={{
-                                flex: 1,
-                                background: "#000",
-                                border: "1px solid #333",
-                                borderRadius: 4,
-                                fontSize: 10,
-                                color: "#fff",
-                                padding: 4,
-                                outline: "none",
-                              }}
-                            />
-                            <button
-                              onClick={() => handleManualClientCodeSave(item)}
-                              style={{
-                                background: "#4f46e5",
-                                border: "none",
-                                borderRadius: 4,
-                                color: "#fff",
-                                padding: "4px 8px",
-                                fontSize: 10,
-                                fontWeight: 700,
-                                cursor: "pointer",
-                              }}
-                            >
-                              SAVE
-                            </button>
+                            <input placeholder="Code" value={manualCode} onChange={(e) => setManualCode(e.target.value)} style={{ flex: 1, background: "#000", border: "1px solid #333", borderRadius: 4, fontSize: 10, color: "#fff", padding: 4, outline: "none" }} />
+                            <button onClick={() => handleManualClientCodeSave(item)} style={{ background: "#4f46e5", border: "none", borderRadius: 4, color: "#fff", padding: "4px 8px", fontSize: 10, fontWeight: 700, cursor: "pointer" }}>SAVE</button>
                           </div>
                         </div>
                       </div>
                     )}
                   </div>
                 )}
+
                 <div style={{ color: "#484f58", fontSize: 11, width: 88, flexShrink: 0 }}>
-                  {
-                    new Date(item.addedOn || item.createdAt)
-                      .toISOString()
-                      .split("T")[0]
-                  }
+                  {new Date(item.addedOn || item.createdAt).toISOString().split("T")[0]}
                 </div>
                 <div style={{ width: 160, flexShrink: 0, display: "flex", gap: 6, justifyContent: "flex-end" }}>
                   <button
                     onClick={() => handleEdit(item)}
-                    style={{
-                      background: "#1e293b",
-                      color: "#64b5f6",
-                      border: "1px solid #334155",
-                      borderRadius: 6,
-                      padding: "4px 10px",
-                      fontSize: 12,
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 4,
-                      whiteSpace: "nowrap",
-                    }}
+                    style={{ background: "#1e293b", color: "#64b5f6", border: "1px solid #334155", borderRadius: 6, padding: "4px 10px", fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}
                   >
                     ✏️ Edit
                   </button>
                   <button
                     onClick={() => handleDelete(item)}
-                    style={{
-                      background: "#450a0a",
-                      color: "#ef4444",
-                      border: "1px solid #7f1d1d",
-                      borderRadius: 6,
-                      padding: "4px 10px",
-                      fontSize: 12,
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 4,
-                      whiteSpace: "nowrap",
-                    }}
+                    style={{ background: "#450a0a", color: "#ef4444", border: "1px solid #7f1d1d", borderRadius: 6, padding: "4px 10px", fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}
                   >
                     🗑️ Delete
                   </button>
                 </div>
               </div>
             ))}
-          </>
-        )}
-      </div>
+          </div>
+        </div>
+      )}
 
       <ConfirmModal
         isOpen={confirmModal.isOpen}
@@ -2218,6 +2181,16 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
         title="Delete Items"
         message={`Are you sure you want to delete ${confirmModal.count} item${confirmModal.count !== 1 ? "s" : ""}? This action cannot be undone.`}
         confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+      />
+      <ConfirmModal
+        isOpen={deleteAllModal}
+        onClose={() => setDeleteAllModal(false)}
+        onConfirm={handleDeleteAll}
+        title={`Delete All ${activeTab} Items`}
+        message={`This will permanently delete all ${tabItems.length} ${activeTab} items. This cannot be undone.`}
+        confirmText="Delete All"
         cancelText="Cancel"
         type="danger"
       />

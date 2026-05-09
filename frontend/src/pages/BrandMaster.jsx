@@ -7,7 +7,7 @@ import {
   TemplateBtn,
   ImportModal,
 } from "../components/ui/BasicComponents";
-import { brandMasterAPI, companyMasterAPI } from "../api/auth";
+import { brandMasterAPI, companyMasterAPI, categoryMasterAPI } from "../api/auth";
 import ConfirmModal from "../components/ConfirmModal";
 import * as XLSX from "xlsx";
 
@@ -35,11 +35,13 @@ const cardStyle = {
 export default function BrandMaster({ toast }) {
   const [brands, setBrands] = useState([]);
   const [companies, setCompanies] = useState([]);
+  const [clientCategories, setClientCategories] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     companyId: null,
     companyName: "",
+    clientCategory: "",
   });
   const [searchTerm, setSearchTerm] = useState("");
   const [editingId, setEditingId] = useState(null);
@@ -56,6 +58,7 @@ export default function BrandMaster({ toast }) {
   useEffect(() => {
     fetchBrands();
     fetchCompanies();
+    fetchClientCategories();
   }, []);
 
   const fetchBrands = async () => {
@@ -73,6 +76,16 @@ export default function BrandMaster({ toast }) {
       setCompanies(res.companies || []);
     } catch (error) {
       console.error("Failed to fetch companies:", error);
+    }
+  };
+
+  const fetchClientCategories = async () => {
+    try {
+      const res = await categoryMasterAPI.getAll();
+      const clientDoc = (res.categories || []).find((c) => c.type === "Client");
+      setClientCategories(Object.keys(clientDoc?.subTypes || {}));
+    } catch (error) {
+      console.error("Failed to fetch client categories:", error);
     }
   };
 
@@ -122,6 +135,7 @@ export default function BrandMaster({ toast }) {
         description: "",
         companyId: null,
         companyName: "",
+        clientCategory: "",
       });
       fetchBrands();
     } catch (error) {
@@ -137,6 +151,7 @@ export default function BrandMaster({ toast }) {
       description: brand.description || "",
       companyId: brand.companyId || "",
       companyName: brand.companyName || "",
+      clientCategory: brand.clientCategory || "",
     });
     setEditingId(brand._id);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -163,7 +178,7 @@ export default function BrandMaster({ toast }) {
   };
 
   const handleTemplate = () => {
-    const header = ["Brand Name", "Linked Company", "Description"];
+    const header = ["Brand Name", "Linked Company", "Client Category", "Description"];
     const ws = XLSX.utils.aoa_to_sheet([header]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Brand Template");
@@ -221,6 +236,7 @@ export default function BrandMaster({ toast }) {
           description: row.Description || row.description,
           companyId,
           companyName: companyName || row["Linked Company"] || "",
+          clientCategory: row["Client Category"] || "",
         };
 
         if (payload.name) {
@@ -249,10 +265,11 @@ export default function BrandMaster({ toast }) {
       toast("No brands to export", "error");
       return;
     }
-    const header = ["Brand Name", "Linked Company", "Description", "Status"];
+    const header = ["Brand Name", "Linked Company", "Client Category", "Description", "Status"];
     const rows = brands.map((b) => [
       b.name,
       b.companyName || "",
+      b.clientCategory || "",
       b.description || "",
       b.status || "Active",
     ]);
@@ -341,6 +358,29 @@ export default function BrandMaster({ toast }) {
               ))}
             </select>
           </div>
+          <div>
+            <label
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                color: "#888",
+                display: "block",
+                marginBottom: 5,
+              }}
+            >
+              CLIENT CATEGORY
+            </label>
+            <select
+              style={inputStyle}
+              value={formData.clientCategory || ""}
+              onChange={(e) => handleChange("clientCategory", e.target.value)}
+            >
+              <option value="">-- Select Category --</option>
+              {clientCategories.map((cat) => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
           <div style={{ gridColumn: "span 2" }}>
             <label
               style={{
@@ -387,6 +427,7 @@ export default function BrandMaster({ toast }) {
                   description: "",
                   companyId: "",
                   companyName: "",
+                  clientCategory: "",
                 });
               }}
               style={{
@@ -459,7 +500,7 @@ export default function BrandMaster({ toast }) {
             >
               <thead>
                 <tr style={{ borderBottom: "1px solid #2a2a2a" }}>
-                  {["Brand Name", "Linked Company", "Description", "Status", "Actions"].map(
+                  {["Brand Name", "Linked Company", "Client Category", "Description", "Status", "Actions"].map(
                     (h) => (
                       <th
                         key={h}
@@ -492,6 +533,34 @@ export default function BrandMaster({ toast }) {
                     </td>
                     <td style={{ padding: "12px", color: "#aaa" }}>
                       {brand.companyName || "-"}
+                    </td>
+                    <td style={{ padding: "12px" }}>
+                      {brand.clientCategory ? (
+                        <span
+                          style={{
+                            padding: "3px 10px",
+                            borderRadius: 20,
+                            fontSize: 11,
+                            fontWeight: 700,
+                            background:
+                              brand.clientCategory === "HP"
+                                ? "#2196F322"
+                                : brand.clientCategory === "ZPL"
+                                ? "#9C27B022"
+                                : "#FF980022",
+                            color:
+                              brand.clientCategory === "HP"
+                                ? "#2196F3"
+                                : brand.clientCategory === "ZPL"
+                                ? "#9C27B0"
+                                : "#FF9800",
+                          }}
+                        >
+                          {brand.clientCategory}
+                        </span>
+                      ) : (
+                        "-"
+                      )}
                     </td>
                     <td style={{ padding: "12px", color: "#aaa" }}>
                       {brand.description || "-"}

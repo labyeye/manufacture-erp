@@ -5,6 +5,7 @@ const brandMasterSchema = new mongoose.Schema({
   description: { type: String },
   companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'CompanyMaster' },
   companyName: { type: String },
+  clientCategory: { type: String, default: null },
   status: { type: String, default: 'Active' },
 }, { timestamps: true });
 

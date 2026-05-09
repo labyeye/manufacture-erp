@@ -1,6 +1,8 @@
 const ItemMaster = require("../models/ItemMaster");
 const Counter = require("../models/Counter");
 
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 exports.getAllItems = async (req, res) => {
   try {
     const { type, status, category } = req.query;
@@ -107,7 +109,7 @@ exports.createItem = async (req, res) => {
     }
 
     const existingItem = await ItemMaster.findOne({
-      name: { $regex: new RegExp(`^${name.trim()}$`, "i") },
+      name: { $regex: new RegExp(`^${escapeRegex(name.trim())}$`, "i") },
       type,
     });
 
@@ -203,7 +205,7 @@ exports.updateItem = async (req, res) => {
 
     if (name && name !== item.name) {
       const existingItem = await ItemMaster.findOne({
-        name: { $regex: new RegExp(`^${name.trim()}$`, "i") },
+        name: { $regex: new RegExp(`^${escapeRegex(name.trim())}$`, "i") },
         type: item.type,
         _id: { $ne: req.params.id },
       });

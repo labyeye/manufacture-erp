@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   Card,
   SectionTitle,
@@ -10,52 +10,24 @@ import {
   Table,
 } from "../components/ui/BasicComponents";
 import { C } from "../constants/colors";
-import {
-  priceListAPI,
-  companyMasterAPI,
-  vendorMasterAPI,
-  itemMasterAPI,
-} from "../api/auth";
+import { priceListAPI, companyMasterAPI, vendorMasterAPI } from "../api/auth";
 import moment from "moment";
 import * as XLSX from "xlsx";
 
-const ACCENT = "#ff7800";
+const ACCENT_SELL = "#4ade80";
+const ACCENT_BUY  = "#60a5fa";
 
-
-const SUBTABS = [
-  { id: "selling",  icon: "💰", label: "Selling Prices" },
-  { id: "purchase", icon: "🛒", label: "Purchase Prices" },
-];
-
-function SubTabBar({ active, onChange }) {
-  return (
-    <div style={{ display: "flex", marginBottom: 24, borderBottom: `1px solid ${C.border}` }}>
-      {SUBTABS.map((t) => (
-        <button
-          key={t.id}
-          onClick={() => onChange(t.id)}
-          style={{
-            padding: "10px 22px",
-            border: "none",
-            borderBottom: active === t.id ? `2px solid ${ACCENT}` : "2px solid transparent",
-            background: "transparent",
-            color: active === t.id ? ACCENT : C.muted,
-            fontWeight: active === t.id ? 700 : 500,
-            fontSize: 13,
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            transition: "all 0.15s",
-          }}
-        >
-          <span>{t.icon}</span>{t.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
+const inputStyle = {
+  padding: "9px 12px",
+  border: "1px solid #2a2a2a",
+  borderRadius: 6,
+  fontSize: 13,
+  fontFamily: "inherit",
+  background: "#141414",
+  color: "#e0e0e0",
+  outline: "none",
+  boxSizing: "border-box",
+};
 
 const SELLING_COLS = [
   { header: "Item Code",      key: (r) => r.itemCode || "" },
@@ -70,28 +42,29 @@ const SELLING_COLS = [
 ];
 
 const PURCHASE_COLS = [
-  { header: "Item Code",      key: (r) => r.itemCode || "" },
-  { header: "Item Name",      key: (r) => r.itemName || "" },
-  { header: "Vendor",         key: (r) => r.vendorName || "" },
-  { header: "Unit Price",     key: (r) => r.unitPrice ?? "" },
-  { header: "UOM",            key: (r) => r.uom || "Pcs" },
-  { header: "Currency",       key: (r) => r.currency || "INR" },
-  { header: "MOQ",            key: (r) => r.moq ?? 1 },
+  { header: "Item Code",        key: (r) => r.itemCode || "" },
+  { header: "Item Name",        key: (r) => r.itemName || "" },
+  { header: "Vendor",           key: (r) => r.vendorName || "" },
+  { header: "Unit Price",       key: (r) => r.unitPrice ?? "" },
+  { header: "UOM",              key: (r) => r.uom || "Pcs" },
+  { header: "Currency",         key: (r) => r.currency || "INR" },
+  { header: "MOQ",              key: (r) => r.moq ?? 1 },
   { header: "Lead Time (days)", key: (r) => r.leadTimeDays ?? 0 },
-  { header: "Effective From", key: (r) => r.effectiveFrom ? moment(r.effectiveFrom).format("YYYY-MM-DD") : "" },
-  { header: "Status",         key: (r) => r.status || "Active" },
-  { header: "Remarks",        key: (r) => r.remarks || "" },
+  { header: "Effective From",   key: (r) => r.effectiveFrom ? moment(r.effectiveFrom).format("YYYY-MM-DD") : "" },
+  { header: "Status",           key: (r) => r.status || "Active" },
+  { header: "Remarks",          key: (r) => r.remarks || "" },
 ];
 
-
+/* ─── Selling Section ─── */
 function SellingSection({ toast }) {
-  const [records, setRecords]   = useState([]);
-  const [companies, setCompanies] = useState([]);
-  const [loading, setLoading]   = useState(false);
-  const [importing, setImporting] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [search, setSearch]     = useState("");
+  const [records, setRecords]       = useState([]);
+  const [companies, setCompanies]   = useState([]);
+  const [loading, setLoading]       = useState(false);
+  const [importing, setImporting]   = useState(false);
+  const [showModal, setShowModal]   = useState(false);
+  const [editingId, setEditingId]   = useState(null);
+  const [selectedClient, setSelectedClient] = useState("");
+  const [search, setSearch]         = useState("");
   const importRef = useRef(null);
 
   const emptyForm = {
@@ -121,7 +94,23 @@ function SellingSection({ toast }) {
 
   useEffect(() => { fetchData(); }, []);
 
-  
+  /* unique client names from records */
+  const clientNames = useMemo(() => {
+    const names = [...new Set(records.map((r) => r.companyName).filter(Boolean))].sort();
+    return names;
+  }, [records]);
+
+  /* filtered records */
+  const filtered = useMemo(() => {
+    return records.filter((r) => {
+      const matchClient = !selectedClient || r.companyName === selectedClient;
+      const matchSearch = !search ||
+        r.itemCode?.toLowerCase().includes(search.toLowerCase()) ||
+        r.itemName?.toLowerCase().includes(search.toLowerCase());
+      return matchClient && matchSearch;
+    });
+  }, [records, selectedClient, search]);
+
   const handleCompanyChange = (id) => {
     const co = companies.find((c) => c._id === id);
     setFormData((f) => ({ ...f, companyId: id, companyName: co?.name || co?.companyName || "" }));
@@ -169,29 +158,24 @@ function SellingSection({ toast }) {
       await priceListAPI.delete(id);
       toast?.("Deleted", "success");
       fetchData();
-    } catch {
-      toast?.("Failed to delete", "error");
-    }
+    } catch { toast?.("Failed to delete", "error"); }
   };
 
-  
   const handleTemplate = () => {
     const headers = SELLING_COLS.map((c) => c.header);
-    const example = { itemCode: "FG-001", itemName: "Product A", companyName: "ABC Ltd", unitPrice: 100, uom: "Pcs", currency: "INR", effectiveFrom: "2024-01-01", status: "Active", remarks: "" };
-    const ws = XLSX.utils.aoa_to_sheet([headers, SELLING_COLS.map((c) => c.key(example))]);
+    const ex = { itemCode: "FG-001", itemName: "Product A", companyName: "ABC Ltd", unitPrice: 100, uom: "Pcs", currency: "INR", effectiveFrom: "2024-01-01", status: "Active", remarks: "" };
+    const ws = XLSX.utils.aoa_to_sheet([headers, SELLING_COLS.map((c) => c.key(ex))]);
     ws["!cols"] = headers.map(() => ({ wch: 20 }));
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Selling Price Template");
+    XLSX.utils.book_append_sheet(wb, ws, "Template");
     XLSX.writeFile(wb, "selling_price_template.xlsx");
-    toast?.("Template downloaded", "success");
   };
 
-  
   const handleExport = () => {
-    if (!records.length) { toast?.("No data to export", "error"); return; }
+    const rows = filtered.length ? filtered : records;
+    if (!rows.length) { toast?.("No data to export", "error"); return; }
     const headers = SELLING_COLS.map((c) => c.header);
-    const rows = records.map((r) => SELLING_COLS.map((c) => c.key(r)));
-    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows.map((r) => SELLING_COLS.map((c) => c.key(r)))]);
     ws["!cols"] = headers.map(() => ({ wch: 20 }));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Selling Prices");
@@ -199,7 +183,6 @@ function SellingSection({ toast }) {
     toast?.("Exported", "success");
   };
 
-  
   const handleImport = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -210,73 +193,92 @@ function SellingSection({ toast }) {
       const rawData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 });
       if (rawData.length < 2) { toast?.("No data rows found", "error"); return; }
       const [, ...rows] = rawData;
-      const toImport = [];
-      for (const row of rows) {
-        if (!row[0]) continue;
-        const [itemCode, itemName, companyName, unitPrice, uom, currency, effectiveFrom, status, remarks] = row;
-        toImport.push({
-          listType: "selling",
-          itemCode: String(itemCode).trim(),
-          itemName: itemName ? String(itemName).trim() : "",
-          companyName: companyName ? String(companyName).trim() : "",
-          unitPrice: Number(unitPrice) || 0,
-          uom: uom || "Pcs",
-          currency: currency || "INR",
-          effectiveFrom: effectiveFrom ? new Date(effectiveFrom) : new Date(),
-          status: status || "Active",
-          remarks: remarks ? String(remarks).trim() : "",
-        });
-      }
+      const toImport = rows.filter((r) => r[0]).map(([itemCode, itemName, companyName, unitPrice, uom, currency, effectiveFrom, status, remarks]) => ({
+        listType: "selling",
+        itemCode: String(itemCode).trim(), itemName: itemName ? String(itemName).trim() : "",
+        companyName: companyName ? String(companyName).trim() : "",
+        unitPrice: Number(unitPrice) || 0, uom: uom || "Pcs", currency: currency || "INR",
+        effectiveFrom: effectiveFrom ? new Date(effectiveFrom) : new Date(),
+        status: status || "Active", remarks: remarks ? String(remarks).trim() : "",
+      }));
       if (!toImport.length) { toast?.("No valid rows found", "error"); return; }
       const res = await priceListAPI.bulkImport(toImport);
       toast?.(`Imported ${res.inserted} price(s)`, "success");
       fetchData();
-    } catch {
-      toast?.("Failed to process file", "error");
-    } finally {
-      setImporting(false);
-      e.target.value = "";
-    }
+    } catch { toast?.("Failed to process file", "error"); }
+    finally { setImporting(false); e.target.value = ""; }
   };
-
-  const filtered = records.filter((r) =>
-    !search ||
-    r.itemCode?.toLowerCase().includes(search.toLowerCase()) ||
-    r.itemName?.toLowerCase().includes(search.toLowerCase()) ||
-    r.companyName?.toLowerCase().includes(search.toLowerCase())
-  );
 
   return (
     <>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, gap: 12, flexWrap: "wrap" }}>
-        <Input
-          placeholder="Search SKU, item name, company…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{ width: 260 }}
-        />
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <Button text="⬇ Template" color="#555" onClick={handleTemplate} />
-          <Button text={importing ? "Importing…" : "⬆ Import"} color="#555" onClick={() => importRef.current?.click()} loading={importing} />
-          <input ref={importRef} type="file" accept=".xlsx,.xls" style={{ display: "none" }} onChange={handleImport} />
-          <Button text="⬇ Export" color="#555" onClick={handleExport} />
-          <Button text="+ Add Price" color={C.green} onClick={() => { resetForm(); setShowModal(true); }} />
+      {/* selector row */}
+      <div style={{ display: "flex", gap: 12, alignItems: "flex-end", marginBottom: 20, flexWrap: "wrap" }}>
+        <div style={{ flex: 1, minWidth: 200, maxWidth: 300 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#555", marginBottom: 5, letterSpacing: "0.5px" }}>SELECT CLIENT</div>
+          <select
+            value={selectedClient}
+            onChange={(e) => { setSelectedClient(e.target.value); setSearch(""); }}
+            style={{ ...inputStyle, width: "100%" }}
+          >
+            <option value="">— All Clients —</option>
+            {clientNames.map((n) => <option key={n} value={n}>{n}</option>)}
+          </select>
         </div>
+
+        {selectedClient && (
+          <div style={{ flex: 1, minWidth: 180, maxWidth: 260 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#555", marginBottom: 5, letterSpacing: "0.5px" }}>SEARCH ITEM</div>
+            <input
+              style={{ ...inputStyle, width: "100%" }}
+              placeholder="Item code or name…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+        )}
+
+        <div style={{ marginLeft: "auto", display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <Button text="⬇ Template" color="#444" onClick={handleTemplate} />
+          <Button text={importing ? "Importing…" : "⬆ Import"} color="#444" onClick={() => importRef.current?.click()} />
+          <input ref={importRef} type="file" accept=".xlsx,.xls" style={{ display: "none" }} onChange={handleImport} />
+          <Button text="⬇ Export" color="#444" onClick={handleExport} />
+          <Button
+            text="+ Add Price"
+            color={ACCENT_SELL}
+            onClick={() => {
+              resetForm();
+              if (selectedClient) setFormData((f) => ({ ...f, companyName: selectedClient }));
+              setShowModal(true);
+            }}
+          />
+        </div>
+        <input ref={importRef} type="file" accept=".xlsx,.xls" style={{ display: "none" }} onChange={handleImport} />
       </div>
+
+      {/* summary pill */}
+      {selectedClient && (
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+          <span style={{ padding: "4px 14px", borderRadius: 20, background: "#4ade8022", color: ACCENT_SELL, fontSize: 12, fontWeight: 700, border: "1px solid #4ade8044" }}>
+            {selectedClient}
+          </span>
+          <span style={{ fontSize: 12, color: "#555" }}>{filtered.length} item{filtered.length !== 1 ? "s" : ""}</span>
+          <button onClick={() => setSelectedClient("")} style={{ background: "none", border: "none", color: "#555", cursor: "pointer", fontSize: 12 }}>✕ Clear</button>
+        </div>
+      )}
 
       <Card>
         <Table
           loading={loading}
           headers={["ITEM CODE", "ITEM NAME", "COMPANY", "UNIT PRICE", "UOM", "EFFECTIVE FROM", "STATUS", "ACTIONS"]}
           data={filtered.map((r) => [
-            <span style={{ fontWeight: 700 }}>{r.itemCode}</span>,
+            <span style={{ fontWeight: 700, fontFamily: "monospace", color: ACCENT_SELL }}>{r.itemCode}</span>,
             r.itemName || "-",
             r.companyName || "-",
-            <span style={{ fontWeight: 700, color: C.green }}>₹ {Number(r.unitPrice).toLocaleString()}</span>,
+            <span style={{ fontWeight: 700, color: ACCENT_SELL }}>₹ {Number(r.unitPrice).toLocaleString()}</span>,
             r.uom,
             moment(r.effectiveFrom).format("DD/MM/YYYY"),
             <Badge text={r.status} color={r.status === "Active" ? C.green : C.muted} />,
-            <div style={{ display: "flex", gap: 8 }}>
+            <div style={{ display: "flex", gap: 6 }}>
               <Button small text="Edit" onClick={() => handleEdit(r)} />
               <Button small text="Delete" color={C.red} onClick={() => handleDelete(r._id)} />
             </div>,
@@ -291,7 +293,7 @@ function SellingSection({ toast }) {
               <Input label="Item Code (SKU)" value={formData.itemCode} onChange={(e) => setFormData({ ...formData, itemCode: e.target.value })} required />
               <Input label="Item Name" value={formData.itemName} onChange={(e) => setFormData({ ...formData, itemName: e.target.value })} />
               <Select
-                label="Company"
+                label="Company / Client"
                 value={formData.companyId}
                 onChange={(e) => handleCompanyChange(e.target.value)}
                 options={[{ label: "— Select Company —", value: "" }, ...companies.map((c) => ({ label: c.name || c.companyName, value: c._id }))]}
@@ -307,7 +309,7 @@ function SellingSection({ toast }) {
             </div>
             <div style={{ marginTop: 20, display: "flex", justifyContent: "flex-end", gap: 12 }}>
               <Button text="Cancel" color="#666" onClick={() => { setShowModal(false); resetForm(); }} />
-              <Button type="submit" text={editingId ? "Update" : "Save"} color={C.green} loading={loading} />
+              <Button type="submit" text={editingId ? "Update" : "Save"} color={ACCENT_SELL} loading={loading} />
             </div>
           </form>
         </Modal>
@@ -316,15 +318,16 @@ function SellingSection({ toast }) {
   );
 }
 
-
+/* ─── Purchase Section ─── */
 function PurchaseSection({ toast }) {
-  const [records, setRecords]   = useState([]);
-  const [vendors, setVendors]   = useState([]);
-  const [loading, setLoading]   = useState(false);
+  const [records, setRecords]     = useState([]);
+  const [vendors, setVendors]     = useState([]);
+  const [loading, setLoading]     = useState(false);
   const [importing, setImporting] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [search, setSearch]     = useState("");
+  const [selectedVendor, setSelectedVendor] = useState("");
+  const [search, setSearch]       = useState("");
   const importRef = useRef(null);
 
   const emptyForm = {
@@ -353,6 +356,23 @@ function PurchaseSection({ toast }) {
   };
 
   useEffect(() => { fetchData(); }, []);
+
+  /* unique vendor names from price records */
+  const vendorNames = useMemo(() => {
+    return [...new Set(records.map((r) => r.vendorName).filter(Boolean))].sort();
+  }, [records]);
+
+  /* filtered records — require a vendor to be selected */
+  const filtered = useMemo(() => {
+    if (!selectedVendor) return [];
+    return records.filter((r) => {
+      const matchVendor = r.vendorName === selectedVendor;
+      const matchSearch = !search ||
+        r.itemCode?.toLowerCase().includes(search.toLowerCase()) ||
+        r.itemName?.toLowerCase().includes(search.toLowerCase());
+      return matchVendor && matchSearch;
+    });
+  }, [records, selectedVendor, search]);
 
   const handleVendorChange = (id) => {
     const v = vendors.find((v) => v._id === id);
@@ -402,29 +422,24 @@ function PurchaseSection({ toast }) {
       await priceListAPI.delete(id);
       toast?.("Deleted", "success");
       fetchData();
-    } catch {
-      toast?.("Failed to delete", "error");
-    }
+    } catch { toast?.("Failed to delete", "error"); }
   };
 
-  
   const handleTemplate = () => {
     const headers = PURCHASE_COLS.map((c) => c.header);
-    const example = { itemCode: "RM-001", itemName: "Raw Material A", vendorName: "XYZ Suppliers", unitPrice: 50, uom: "Kg", currency: "INR", moq: 100, leadTimeDays: 7, effectiveFrom: "2024-01-01", status: "Active", remarks: "" };
-    const ws = XLSX.utils.aoa_to_sheet([headers, PURCHASE_COLS.map((c) => c.key(example))]);
+    const ex = { itemCode: "RM-001", itemName: "Raw Material A", vendorName: "XYZ Suppliers", unitPrice: 50, uom: "Kg", currency: "INR", moq: 100, leadTimeDays: 7, effectiveFrom: "2024-01-01", status: "Active", remarks: "" };
+    const ws = XLSX.utils.aoa_to_sheet([headers, PURCHASE_COLS.map((c) => c.key(ex))]);
     ws["!cols"] = headers.map(() => ({ wch: 20 }));
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Purchase Price Template");
+    XLSX.utils.book_append_sheet(wb, ws, "Template");
     XLSX.writeFile(wb, "purchase_price_template.xlsx");
-    toast?.("Template downloaded", "success");
   };
 
-  
   const handleExport = () => {
-    if (!records.length) { toast?.("No data to export", "error"); return; }
+    const rows = filtered.length ? filtered : records;
+    if (!rows.length) { toast?.("No data to export", "error"); return; }
     const headers = PURCHASE_COLS.map((c) => c.header);
-    const rows = records.map((r) => PURCHASE_COLS.map((c) => c.key(r)));
-    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows.map((r) => PURCHASE_COLS.map((c) => c.key(r)))]);
     ws["!cols"] = headers.map(() => ({ wch: 20 }));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Purchase Prices");
@@ -432,7 +447,6 @@ function PurchaseSection({ toast }) {
     toast?.("Exported", "success");
   };
 
-  
   const handleImport = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -443,77 +457,94 @@ function PurchaseSection({ toast }) {
       const rawData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 });
       if (rawData.length < 2) { toast?.("No data rows found", "error"); return; }
       const [, ...rows] = rawData;
-      const toImport = [];
-      for (const row of rows) {
-        if (!row[0]) continue;
-        const [itemCode, itemName, vendorName, unitPrice, uom, currency, moq, leadTimeDays, effectiveFrom, status, remarks] = row;
-        toImport.push({
-          listType: "purchase",
-          itemCode: String(itemCode).trim(),
-          itemName: itemName ? String(itemName).trim() : "",
-          vendorName: vendorName ? String(vendorName).trim() : "",
-          unitPrice: Number(unitPrice) || 0,
-          uom: uom || "Kg",
-          currency: currency || "INR",
-          moq: Number(moq) || 1,
-          leadTimeDays: Number(leadTimeDays) || 0,
-          effectiveFrom: effectiveFrom ? new Date(effectiveFrom) : new Date(),
-          status: status || "Active",
-          remarks: remarks ? String(remarks).trim() : "",
-        });
-      }
+      const toImport = rows.filter((r) => r[0]).map(([itemCode, itemName, vendorName, unitPrice, uom, currency, moq, leadTimeDays, effectiveFrom, status, remarks]) => ({
+        listType: "purchase",
+        itemCode: String(itemCode).trim(), itemName: itemName ? String(itemName).trim() : "",
+        vendorName: vendorName ? String(vendorName).trim() : "",
+        unitPrice: Number(unitPrice) || 0, uom: uom || "Kg", currency: currency || "INR",
+        moq: Number(moq) || 1, leadTimeDays: Number(leadTimeDays) || 0,
+        effectiveFrom: effectiveFrom ? new Date(effectiveFrom) : new Date(),
+        status: status || "Active", remarks: remarks ? String(remarks).trim() : "",
+      }));
       if (!toImport.length) { toast?.("No valid rows found", "error"); return; }
       const res = await priceListAPI.bulkImport(toImport);
       toast?.(`Imported ${res.inserted} price(s)`, "success");
       fetchData();
-    } catch {
-      toast?.("Failed to process file", "error");
-    } finally {
-      setImporting(false);
-      e.target.value = "";
-    }
+    } catch { toast?.("Failed to process file", "error"); }
+    finally { setImporting(false); e.target.value = ""; }
   };
-
-  const filtered = records.filter((r) =>
-    !search ||
-    r.itemCode?.toLowerCase().includes(search.toLowerCase()) ||
-    r.itemName?.toLowerCase().includes(search.toLowerCase()) ||
-    r.vendorName?.toLowerCase().includes(search.toLowerCase())
-  );
 
   return (
     <>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, gap: 12, flexWrap: "wrap" }}>
-        <Input
-          placeholder="Search SKU, item name, vendor…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{ width: 260 }}
-        />
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <Button text="⬇ Template" color="#555" onClick={handleTemplate} />
-          <Button text={importing ? "Importing…" : "⬆ Import"} color="#555" onClick={() => importRef.current?.click()} loading={importing} />
+      {/* selector row */}
+      <div style={{ display: "flex", gap: 12, alignItems: "flex-end", marginBottom: 20, flexWrap: "wrap" }}>
+        <div style={{ flex: 1, minWidth: 200, maxWidth: 300 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#555", marginBottom: 5, letterSpacing: "0.5px" }}>SELECT VENDOR</div>
+          <select
+            value={selectedVendor}
+            onChange={(e) => { setSelectedVendor(e.target.value); setSearch(""); }}
+            style={{ ...inputStyle, width: "100%" }}
+          >
+            <option value="">— Select Vendor —</option>
+            {vendorNames.map((n) => <option key={n} value={n}>{n}</option>)}
+          </select>
+        </div>
+
+        {selectedVendor && (
+          <div style={{ flex: 1, minWidth: 180, maxWidth: 260 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#555", marginBottom: 5, letterSpacing: "0.5px" }}>SEARCH ITEM</div>
+            <input
+              style={{ ...inputStyle, width: "100%" }}
+              placeholder="Item code or name…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+        )}
+
+        <div style={{ marginLeft: "auto", display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <Button text="⬇ Template" color="#444" onClick={handleTemplate} />
+          <Button text={importing ? "Importing…" : "⬆ Import"} color="#444" onClick={() => importRef.current?.click()} />
           <input ref={importRef} type="file" accept=".xlsx,.xls" style={{ display: "none" }} onChange={handleImport} />
-          <Button text="⬇ Export" color="#555" onClick={handleExport} />
-          <Button text="+ Add Price" color={C.blue} onClick={() => { resetForm(); setShowModal(true); }} />
+          <Button text="⬇ Export" color="#444" onClick={handleExport} />
+          <Button
+            text="+ Add Price"
+            color={ACCENT_BUY}
+            onClick={() => {
+              resetForm();
+              if (selectedVendor) setFormData((f) => ({ ...f, vendorName: selectedVendor }));
+              setShowModal(true);
+            }}
+          />
         </div>
       </div>
+
+      {/* summary pill */}
+      {selectedVendor && (
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+          <span style={{ padding: "4px 14px", borderRadius: 20, background: "#60a5fa22", color: ACCENT_BUY, fontSize: 12, fontWeight: 700, border: "1px solid #60a5fa44" }}>
+            {selectedVendor}
+          </span>
+          <span style={{ fontSize: 12, color: "#555" }}>{filtered.length} item{filtered.length !== 1 ? "s" : ""}</span>
+          <button onClick={() => setSelectedVendor("")} style={{ background: "none", border: "none", color: "#555", cursor: "pointer", fontSize: 12 }}>✕ Clear</button>
+        </div>
+      )}
 
       <Card>
         <Table
           loading={loading}
           headers={["ITEM CODE", "ITEM NAME", "VENDOR", "UNIT PRICE", "UOM", "MOQ", "LEAD TIME", "EFFECTIVE FROM", "STATUS", "ACTIONS"]}
           data={filtered.map((r) => [
-            <span style={{ fontWeight: 700 }}>{r.itemCode}</span>,
+            <span style={{ fontWeight: 700, fontFamily: "monospace", color: ACCENT_BUY }}>{r.itemCode}</span>,
             r.itemName || "-",
             r.vendorName || "-",
-            <span style={{ fontWeight: 700, color: C.blue }}>₹ {Number(r.unitPrice).toLocaleString()}</span>,
+            <span style={{ fontWeight: 700, color: ACCENT_BUY }}>₹ {Number(r.unitPrice).toLocaleString()}</span>,
             r.uom,
             r.moq ?? 1,
             r.leadTimeDays ? `${r.leadTimeDays} days` : "-",
             moment(r.effectiveFrom).format("DD/MM/YYYY"),
             <Badge text={r.status} color={r.status === "Active" ? C.green : C.muted} />,
-            <div style={{ display: "flex", gap: 8 }}>
+            <div style={{ display: "flex", gap: 6 }}>
               <Button small text="Edit" onClick={() => handleEdit(r)} />
               <Button small text="Delete" color={C.red} onClick={() => handleDelete(r._id)} />
             </div>,
@@ -546,7 +577,7 @@ function PurchaseSection({ toast }) {
             </div>
             <div style={{ marginTop: 20, display: "flex", justifyContent: "flex-end", gap: 12 }}>
               <Button text="Cancel" color="#666" onClick={() => { setShowModal(false); resetForm(); }} />
-              <Button type="submit" text={editingId ? "Update" : "Save"} color={C.blue} loading={loading} />
+              <Button type="submit" text={editingId ? "Update" : "Save"} color={ACCENT_BUY} loading={loading} />
             </div>
           </form>
         </Modal>
@@ -555,14 +586,43 @@ function PurchaseSection({ toast }) {
   );
 }
 
+/* ─── Root ─── */
+const SUBTABS = [
+  { id: "selling",  icon: "💰", label: "Selling Prices",  accent: ACCENT_SELL },
+  { id: "purchase", icon: "🛒", label: "Purchase Prices", accent: ACCENT_BUY  },
+];
 
 export default function PriceMaster({ toast }) {
   const [activeTab, setActiveTab] = useState("selling");
 
   return (
     <div className="fade">
-      <SectionTitle icon="💲" title="Price List Master" sub="Selling prices by company · Purchase prices by vendor" />
-      <SubTabBar active={activeTab} onChange={setActiveTab} />
+      <SectionTitle icon="💲" title="Price List Master" sub="Filter by client or vendor to view and manage their prices" />
+
+      <div style={{ display: "flex", marginBottom: 24, borderBottom: "1px solid #2a2a2a" }}>
+        {SUBTABS.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setActiveTab(t.id)}
+            style={{
+              padding: "10px 22px",
+              border: "none",
+              borderBottom: activeTab === t.id ? `2px solid ${t.accent}` : "2px solid transparent",
+              background: "transparent",
+              color: activeTab === t.id ? t.accent : "#555",
+              fontWeight: activeTab === t.id ? 700 : 500,
+              fontSize: 13,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            {t.icon} {t.label}
+          </button>
+        ))}
+      </div>
+
       {activeTab === "selling"  && <SellingSection  toast={toast} />}
       {activeTab === "purchase" && <PurchaseSection toast={toast} />}
     </div>

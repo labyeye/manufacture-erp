@@ -10,6 +10,7 @@ const ITEM_TABS = [
   { key: "Consumable", label: "Consumable" },
   { key: "Finished Goods", label: "Finished Goods" },
   { key: "Machine Spare", label: "Machine Spare" },
+  { key: "Client", label: "Client" },
 ];
 
 const inputStyle = {

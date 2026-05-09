@@ -7,7 +7,7 @@ const categoryMasterSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['Raw Material', 'Finished Goods', 'Consumable', 'Machine Spare'],
+    enum: ['Raw Material', 'Finished Goods', 'Consumable', 'Machine Spare', 'Client'],
     required: true
   },
   categories: {

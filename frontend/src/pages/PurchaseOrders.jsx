@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { C } from "../constants/colors";
-import { purchaseOrdersAPI, itemMasterAPI } from "../api/auth";
+import { purchaseOrdersAPI, itemMasterAPI, priceListAPI } from "../api/auth";
 import {
   Card,
   SectionTitle,
@@ -94,6 +94,7 @@ export default function PurchaseOrders({
   const [header, setHeader] = useState(blankHeader);
   const [items, setItems] = useState([blankItem()]);
   const [itemMasterItems, setItemMasterItems] = useState([]);
+  const [purchasePrices, setPurchasePrices] = useState([]);
   const [headerErrors, setHeaderErrors] = useState({});
   const [itemErrors, setItemErrors] = useState([{}]);
   const [view, setView] = useState("form");
@@ -106,7 +107,17 @@ export default function PurchaseOrders({
   useEffect(() => {
     fetchPOs();
     fetchItemMaster();
+    fetchPurchasePrices();
   }, []);
+
+  const fetchPurchasePrices = async () => {
+    try {
+      const data = await priceListAPI.getAll({ listType: "purchase", status: "Active" });
+      setPurchasePrices(Array.isArray(data) ? data : []);
+    } catch {
+      // non-critical
+    }
+  };
 
   useEffect(() => {
     if (!deepLinkId || !purchaseOrders.length) return;
@@ -420,6 +431,18 @@ export default function PurchaseOrders({
           it.itemName = (masterItem.name || "").trim();
           it.materialType = masterItem.type || "Raw Material";
           it.productCode = masterItem.code;
+
+          // auto-fill rate from purchase price list (vendor-specific first, then generic)
+          const vendorMatch = purchasePrices.find(
+            (p) => p.itemCode === masterItem.code && p.vendorName === header.vendorName
+          );
+          const genericMatch = purchasePrices.find(
+            (p) => p.itemCode === masterItem.code && !p.vendorName
+          );
+          const priceEntry = vendorMatch || genericMatch;
+          if (priceEntry && !it.rate) {
+            it.rate = priceEntry.unitPrice;
+          }
 
           if (it.materialType === "Raw Material") {
             it.category = (masterItem.category || "").trim();
