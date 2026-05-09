@@ -69,6 +69,17 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const refreshUser = async () => {
+    try {
+      const data = await authAPI.me();
+      const fresh = data.user;
+      setUser(fresh);
+      localStorage.setItem('user', JSON.stringify(fresh));
+    } catch (error) {
+      console.error('Refresh user failed:', error);
+    }
+  };
+
   const logout = () => {
     setUser(null);
     setToken(null);
@@ -93,6 +104,7 @@ export const AuthProvider = ({ children }) => {
     allowedTabs: user?.allowedTabs || [],
     login,
     logout,
+    refreshUser,
     canEdit,
     loading
   };

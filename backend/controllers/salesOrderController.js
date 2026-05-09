@@ -13,7 +13,11 @@ const getNextSONumber = async () => {
 
 exports.getAll = async (req, res) => {
   try {
-    const salesOrders = await SalesOrder.find()
+    const filter = {};
+    if (req.user.role === "Client" && req.user.clientTag) {
+      filter.companyCategory = req.user.clientTag;
+    }
+    const salesOrders = await SalesOrder.find(filter)
       .populate("createdBy", "name username")
       .sort({ createdAt: -1 });
     res.json({ salesOrders });
@@ -31,6 +35,13 @@ exports.getOne = async (req, res) => {
     );
     if (!salesOrder) {
       return res.status(404).json({ error: "Sales order not found" });
+    }
+    if (
+      req.user.role === "Client" &&
+      req.user.clientTag &&
+      salesOrder.companyCategory !== req.user.clientTag
+    ) {
+      return res.status(403).json({ error: "Access denied" });
     }
     res.json({ salesOrder });
   } catch (error) {

@@ -19,10 +19,13 @@ exports.getAll = async (req, res) => {
           createdBy: cat.createdBy,
           createdAt: cat.createdAt,
           updatedAt: cat.updatedAt,
+          categories: [...(cat.categories || [])],
           subTypes: cat.subTypes || {}
         };
       } else {
-        
+        const existing = grouped[cat.type].categories || [];
+        const incoming = cat.categories || [];
+        grouped[cat.type].categories = [...new Set([...existing, ...incoming])];
         grouped[cat.type].subTypes = {
           ...grouped[cat.type].subTypes,
           ...cat.subTypes

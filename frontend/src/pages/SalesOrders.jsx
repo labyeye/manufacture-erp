@@ -158,7 +158,10 @@ export default function SalesOrders(props) {
 
   const [header, setHeader] = useState(blankHeader);
   const [items, setItems] = useState([blankItem()]);
-  const uniqueClientCategories = useMemo(() => ["HP", "ZPL", "Others"], []);
+  const uniqueClientCategories = useMemo(() => {
+    const clientDoc = (categoryMaster || []).find((c) => c.type === "Client");
+    return Object.keys(clientDoc?.subTypes || {});
+  }, [categoryMaster]);
 
   const [headerErrors, setHeaderErrors] = useState({});
   const [itemErrors, setItemErrors] = useState([{}]);

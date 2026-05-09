@@ -75,7 +75,7 @@ function App() {
 }
 
 function AppContent() {
-  const { user, loading, logout } = useAuth();
+  const { user, loading, logout, refreshUser } = useAuth();
 
   useEffect(() => {
     const style = document.createElement("style");
@@ -120,21 +120,20 @@ function AppContent() {
   let allowedTabs = userRole.tabs;
   let editableTabs = userRole.tabs;
 
-  if (user.role !== "Admin") {
-    if (user.allowedTabs && user.allowedTabs.length > 0) {
-      allowedTabs = user.allowedTabs;
-    }
-    if (user.editableTabs && user.editableTabs.length > 0) {
-      editableTabs = user.editableTabs;
-    } else {
-      editableTabs = user.editableTabs || userRole.tabs;
-    }
+  if (user.allowedTabs && user.allowedTabs.length > 0) {
+    allowedTabs = user.allowedTabs;
+  }
+  if (user.editableTabs && user.editableTabs.length > 0) {
+    editableTabs = user.editableTabs;
+  } else {
+    editableTabs = user.editableTabs || userRole.tabs;
   }
 
   return (
     <AppInner
       session={user}
       onLogout={logout}
+      onRefreshUser={refreshUser}
       allowedTabs={allowedTabs}
       editableTabs={editableTabs}
     />
@@ -152,7 +151,7 @@ function useIsMobile() {
   return isMobile;
 }
 
-function AppInner({ session, onLogout, allowedTabs, editableTabs }) {
+function AppInner({ session, onLogout, onRefreshUser, allowedTabs, editableTabs }) {
   const [currentTab, setCurrentTab] = useState(() => {
     const lastTab = localStorage.getItem("erp_lastTab");
     return lastTab || "dashboard";
@@ -624,7 +623,7 @@ case "dispatch":
         return <BrandMaster {...data} toast={showToast} />;
       case "users":
         return (
-          <UserManagement {...data} currentUser={session} toast={showToast} />
+          <UserManagement {...data} currentUser={session} toast={showToast} onRefreshUser={onRefreshUser} />
         );
       case "erpconsole":
         return <ERPConsole session={session} toast={showToast} />;

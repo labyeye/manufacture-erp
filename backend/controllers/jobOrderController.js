@@ -348,7 +348,11 @@ async function upsertPrintingMaster(jobOrder) {
 
 exports.getAll = async (req, res) => {
   try {
-    const jobOrders = await JobOrder.find().sort({ createdAt: -1 });
+    const filter = {};
+    if (req.user.role === "Client" && req.user.clientTag) {
+      filter.companyCategory = req.user.clientTag;
+    }
+    const jobOrders = await JobOrder.find(filter).sort({ createdAt: -1 });
     res.json(jobOrders);
   } catch (error) {
     console.error("Get all job orders error:", error);
@@ -361,6 +365,13 @@ exports.getOne = async (req, res) => {
     const jobOrder = await JobOrder.findById(req.params.id);
     if (!jobOrder) {
       return res.status(404).json({ error: "Job order not found" });
+    }
+    if (
+      req.user.role === "Client" &&
+      req.user.clientTag &&
+      jobOrder.companyCategory !== req.user.clientTag
+    ) {
+      return res.status(403).json({ error: "Access denied" });
     }
     res.json(jobOrder);
   } catch (error) {
