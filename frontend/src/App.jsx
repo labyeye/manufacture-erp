@@ -117,17 +117,12 @@ function AppContent() {
   }
 
   const userRole = DEFAULT_ROLES[user.role] || DEFAULT_ROLES["Sales"];
-  let allowedTabs = userRole.tabs;
-  let editableTabs = userRole.tabs;
-
-  if (user.allowedTabs && user.allowedTabs.length > 0) {
-    allowedTabs = user.allowedTabs;
-  }
-  if (user.editableTabs && user.editableTabs.length > 0) {
-    editableTabs = user.editableTabs;
-  } else {
-    editableTabs = user.editableTabs || userRole.tabs;
-  }
+  const allowedTabs = Array.isArray(user.allowedTabs)
+    ? user.allowedTabs
+    : userRole.tabs;
+  const editableTabs = Array.isArray(user.editableTabs)
+    ? user.editableTabs
+    : userRole.tabs;
 
   return (
     <AppInner
