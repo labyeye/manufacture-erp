@@ -146,7 +146,7 @@ exports.getUserById = async (req, res) => {
 
 exports.createUser = async (req, res) => {
   try {
-    const { username, password, name, role, allowedTabs, editableTabs, clientTag } =
+    const { username, password, name, role, allowedTabs, editableTabs, clientTag, email } =
       req.body;
 
     if (!username || !password || !name) {
@@ -171,6 +171,7 @@ exports.createUser = async (req, res) => {
       allowedTabs: allowedTabs || [],
       editableTabs: editableTabs || null,
       clientTag: clientTag || null,
+      email: email ? email.toLowerCase() : null,
       isActive: true,
     });
 
@@ -192,7 +193,7 @@ exports.createUser = async (req, res) => {
 exports.updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, role, allowedTabs, editableTabs, isActive, password, clientTag } =
+    const { name, role, allowedTabs, editableTabs, isActive, password, clientTag, email } =
       req.body;
 
     const user = await User.findById(id);
@@ -206,7 +207,8 @@ exports.updateUser = async (req, res) => {
     if (editableTabs !== undefined) user.editableTabs = editableTabs;
     if (isActive !== undefined) user.isActive = isActive;
     if (clientTag !== undefined) user.clientTag = clientTag;
-    if (password) user.password = password; 
+    if (email !== undefined) user.email = email ? email.toLowerCase() : null;
+    if (password) user.password = password;
 
     await user.save();
 

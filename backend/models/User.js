@@ -34,6 +34,12 @@ const userSchema = new mongoose.Schema({
     type: [String],
     default: []
   },
+  email: {
+    type: String,
+    default: null,
+    trim: true,
+    lowercase: true
+  },
   isActive: {
     type: Boolean,
     default: true

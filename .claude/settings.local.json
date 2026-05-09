@@ -22,7 +22,9 @@
       "Bash(timeout 30 npx vite build --mode development)",
       "Bash(npx vite:*)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\labhb\\\\Desktop\\\\projects\\\\manufacture-erp\" -Recurse -Directory)",
-      "Bash(Select-Object -ExpandProperty FullName)"
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Get-ChildItem -Recurse \"C:\\\\Users\\\\labhb\\\\Desktop\\\\projects\\\\manufacture-erp\\\\frontend\\\\src\" -Filter \"*.js\")",
+      "Bash(Select-Object FullName)"
     ]
   }
 }

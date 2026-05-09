@@ -30,12 +30,12 @@ const PATH_TO_MODULE = {
 };
 
 function resolveModule(path) {
-  const sub = path.replace(/^\/api\//, "");
+  const sub = path.replace(/^\/api\//, "").replace(/^\//, "");
   if (sub.startsWith("auth/users")) return "User Management";
   if (sub.startsWith("auth/login")) return "Auth";
   if (sub.startsWith("auth/logout")) return "Auth";
   const segment = sub.split("/")[0];
-  return PATH_TO_MODULE[segment] || segment;
+  return PATH_TO_MODULE[segment] || segment || "Unknown";
 }
 
 function resolveAction(method, path) {
