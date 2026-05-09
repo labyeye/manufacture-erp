@@ -519,6 +519,35 @@ export default function PurchaseOrders({
       }
 
       const isRM = it.materialType === "Raw Material" || !it.materialType;
+      const isPaperSheet =
+        isRM &&
+        (it.category === "Paper Sheet" || it.category === "Paper Sheets");
+
+      if (isPaperSheet) {
+        const w = +(it.widthMm || 0);
+        const l = +(it.lengthMm || 0);
+        const gsm = +(it.gsm || 0);
+        if (w && l && gsm) {
+          const gramsPerSheet = (l * w * gsm) / 1_000_000;
+          if (k === "weight" && +v) {
+            const sheets = Math.round((+v * 1000) / gramsPerSheet);
+            it.qty = sheets;
+            it.noOfSheets = sheets;
+          } else if (k === "qty" && +v) {
+            const kg = ((+v * gramsPerSheet) / 1000).toFixed(3);
+            it.weight = kg;
+            it.noOfSheets = +v;
+          } else if (
+            (k === "widthMm" || k === "lengthMm" || k === "gsm") &&
+            it.weight
+          ) {
+            const sheets = Math.round((+(it.weight) * 1000) / gramsPerSheet);
+            it.qty = sheets;
+            it.noOfSheets = sheets;
+          }
+        }
+      }
+
       const weight = k === "weight" ? +v : +(it.weight || 0);
       const qty = k === "qty" ? +v : +(it.qty || 0);
       const rate = k === "rate" ? +v : +(it.rate || 0);
