@@ -416,15 +416,14 @@ function AppInner({ session, onLogout, onRefreshUser, allowedTabs, editableTabs 
 
     const filteredFG = fgStock.filter((s) => matchesClient(s, tag));
     const filteredItemMaster = itemMasterFG.filter(
-      (i) => i.clientCategory === tag,
+      (i) => i.companyCategory === tag,
     );
-    const filteredCodes = new Set(filteredItemMaster.map((i) => i.code));
+    const filteredSOs = salesOrders.filter((so) => so.companyCategory === tag);
+    const filteredSONos = new Set(filteredSOs.map((so) => so.soNo));
 
     return {
-      salesOrders: salesOrders.filter((so) =>
-        (so.items || []).some((it) => filteredCodes.has(it.productCode)),
-      ),
-      jobOrders: jobOrders.filter((jo) => filteredCodes.has(jo.productCode)),
+      salesOrders: filteredSOs,
+      jobOrders: jobOrders.filter((jo) => jo.companyCategory === tag),
       purchaseOrders: [],
       setPurchaseOrders,
       inward: [],
@@ -437,11 +436,7 @@ function AppInner({ session, onLogout, onRefreshUser, allowedTabs, editableTabs 
       setFgStock,
       consumableStock: [],
       setConsumableStock,
-      dispatches: dispatches.filter((d) =>
-        (d.items || []).some((it) =>
-          filteredCodes.has(it.productCode || it.code),
-        ),
-      ),
+      dispatches: dispatches.filter((d) => filteredSONos.has(d.soRef)),
       setDispatches,
       itemMasterFG: filteredItemMaster,
       setItemMasterFG,

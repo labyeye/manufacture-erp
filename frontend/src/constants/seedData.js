@@ -517,6 +517,11 @@ export const DEFAULT_ROLES = {
     color: "#a855f7",
     tabs: ["dashboard", "purchase", "sales", "pricemaster", "search", "rawstock", "fg"],
   },
+  Client: {
+    label: "Client",
+    color: "#888",
+    tabs: ["sales", "jobs", "dispatch", "fg"],
+  },
 };
 
 export const TABS = [
