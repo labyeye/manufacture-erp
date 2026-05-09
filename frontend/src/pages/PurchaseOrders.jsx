@@ -997,42 +997,58 @@ export default function PurchaseOrders({
                 {(it.materialType === "Raw Material" || !it.materialType) && (
                   <>
                     <Field label="RM Item *">
-                      <select
-                        value={it.category}
-                        onChange={(e) =>
-                          setItem(idx, "category", e.target.value)
-                        }
-                        style={EI(idx, "category")}
-                      >
-                        <option value="">-- Select Item --</option>
-                        {rmItems.map((i) => (
-                          <option key={i} value={i}>
-                            {i}
-                          </option>
-                        ))}
-                      </select>
+                      {it.productCode ? (
+                        <input
+                          readOnly
+                          value={it.category}
+                          style={{ background: "#0a0a0a", color: "#aaa" }}
+                        />
+                      ) : (
+                        <select
+                          value={it.category}
+                          onChange={(e) =>
+                            setItem(idx, "category", e.target.value)
+                          }
+                          style={EI(idx, "category")}
+                        >
+                          <option value="">-- Select Item --</option>
+                          {rmItems.map((i) => (
+                            <option key={i} value={i}>
+                              {i}
+                            </option>
+                          ))}
+                        </select>
+                      )}
                       {EIMsg(idx, "category")}
                     </Field>
                     <Field label="Paper Type *">
-                      <select
-                        value={it.subCategory}
-                        onChange={(e) =>
-                          setItem(idx, "subCategory", e.target.value)
-                        }
-                        disabled={!it.category}
-                        style={EI(idx, "subCategory")}
-                      >
-                        <option value="">
-                          {it.category
-                            ? "-- Select Paper Type --"
-                            : "-- Select RM Item first --"}
-                        </option>
-                        {(subCategoriesByItem[it.category] || []).map((p) => (
-                          <option key={p} value={p}>
-                            {p}
+                      {it.productCode ? (
+                        <input
+                          readOnly
+                          value={it.subCategory}
+                          style={{ background: "#0a0a0a", color: "#aaa" }}
+                        />
+                      ) : (
+                        <select
+                          value={it.subCategory}
+                          onChange={(e) =>
+                            setItem(idx, "subCategory", e.target.value)
+                          }
+                          disabled={!it.category}
+                          style={EI(idx, "subCategory")}
+                        >
+                          <option value="">
+                            {it.category
+                              ? "-- Select Paper Type --"
+                              : "-- Select RM Item first --"}
                           </option>
-                        ))}
-                      </select>
+                          {(subCategoriesByItem[it.category] || []).map((p) => (
+                            <option key={p} value={p}>
+                              {p}
+                            </option>
+                          ))}
+                        </select>
+                      )}
                       {EIMsg(idx, "subCategory")}
                     </Field>
                     <Field label="Width (mm) *">

@@ -102,8 +102,9 @@ function SellingSection({ toast }) {
 
   /* filtered records */
   const filtered = useMemo(() => {
+    if (!selectedClient) return [];
     return records.filter((r) => {
-      const matchClient = !selectedClient || r.companyName === selectedClient;
+      const matchClient = r.companyName === selectedClient;
       const matchSearch = !search ||
         r.itemCode?.toLowerCase().includes(search.toLowerCase()) ||
         r.itemName?.toLowerCase().includes(search.toLowerCase());
@@ -220,7 +221,7 @@ function SellingSection({ toast }) {
             onChange={(e) => { setSelectedClient(e.target.value); setSearch(""); }}
             style={{ ...inputStyle, width: "100%" }}
           >
-            <option value="">— All Clients —</option>
+            <option value="">— Select Client —</option>
             {clientNames.map((n) => <option key={n} value={n}>{n}</option>)}
           </select>
         </div>
@@ -263,6 +264,12 @@ function SellingSection({ toast }) {
           </span>
           <span style={{ fontSize: 12, color: "#555" }}>{filtered.length} item{filtered.length !== 1 ? "s" : ""}</span>
           <button onClick={() => setSelectedClient("")} style={{ background: "none", border: "none", color: "#555", cursor: "pointer", fontSize: 12 }}>✕ Clear</button>
+        </div>
+      )}
+
+      {!selectedClient && (
+        <div style={{ textAlign: "center", color: "#555", fontSize: 13, padding: "32px 0" }}>
+          Select a client to view their price list
         </div>
       )}
 
