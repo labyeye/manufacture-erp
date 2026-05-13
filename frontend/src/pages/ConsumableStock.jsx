@@ -312,10 +312,13 @@ export default function ConsumableStock({
             padding: "8px 16px",
             borderRadius: 6,
             fontSize: 13,
-            fontWeight: 700,
-            background: showZeroStock ? C.blue : "transparent",
-            color: showZeroStock ? "#fff" : C.muted,
-            border: `1px solid ${showZeroStock ? C.blue : C.border}`,
+            fontWeight: 500,
+            background: showZeroStock ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.05)",
+            color: "#fff",
+            border: `1px solid ${showZeroStock ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.18)"}`,
+            backdropFilter: "blur(12px) saturate(180%)",
+            WebkitBackdropFilter: "blur(12px) saturate(180%)",
+            boxShadow: showZeroStock ? "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" : "none",
             cursor: "pointer",
           }}
         >
@@ -336,10 +339,13 @@ export default function ConsumableStock({
             style={{
               padding: "8px 20px",
               borderRadius: 6,
-              border: `1px solid ${view === v ? C.orange || "#f97316" : C.border}`,
-              background: view === v ? C.orange || "#f97316" : "transparent",
-              color: view === v ? "#fff" : C.muted,
-              fontWeight: 700,
+              border: `1px solid ${view === v ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.18)"}`,
+              background: view === v ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.05)",
+              backdropFilter: "blur(12px) saturate(180%)",
+              WebkitBackdropFilter: "blur(12px) saturate(180%)",
+              color: "#fff",
+              boxShadow: view === v ? "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" : "none",
+              fontWeight: 500,
               fontSize: 13,
               cursor: "pointer",
             }}
@@ -394,8 +400,10 @@ export default function ConsumableStock({
                   onClick={() => setTypeFilter(t)}
                   style={{
                     padding: "7px 14px",
-                    background: typeFilter === t ? C.blue || "#3b82f6" : "transparent",
-                    color: typeFilter === t ? "#fff" : C.muted,
+                    background: typeFilter === t ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.05)",
+                    backdropFilter: "blur(12px) saturate(180%)",
+                    WebkitBackdropFilter: "blur(12px) saturate(180%)",
+                    color: "#fff",
                     fontWeight: typeFilter === t ? 700 : 400,
                     fontSize: 12,
                     border: "none",
@@ -465,7 +473,7 @@ export default function ConsumableStock({
                             padding: "11px 14px",
                             textAlign: "left",
                             fontSize: 11,
-                            fontWeight: 700,
+                            fontWeight: 500,
                             letterSpacing: "0.06em",
                             color: C.muted,
                             background: C.surface,
@@ -550,11 +558,14 @@ export default function ConsumableStock({
                                 style={{
                                   padding: "5px 10px",
                                   borderRadius: 4,
-                                  border: "none",
-                                  background: C.blue + "22",
-                                  color: C.blue,
+                                  border: "1px solid rgba(255,255,255,0.18)",
+                                  background: "rgba(255,255,255,0.08)",
+                                  backdropFilter: "blur(12px) saturate(180%)",
+                                  WebkitBackdropFilter: "blur(12px) saturate(180%)",
+                                  color: "#fff",
+                                  boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
                                   fontSize: 11,
-                                  fontWeight: 700,
+                                  fontWeight: 500,
                                   cursor: "pointer",
                                 }}
                               >
@@ -563,13 +574,16 @@ export default function ConsumableStock({
                               <button
                                 onClick={() => handleDelete(s._id || s.id)}
                                 style={{
-                                  background: "#450a0a",
-                                  color: "#ef4444",
-                                  border: "1px solid #7f1d1d",
+                                  background: "rgba(255,255,255,0.08)",
+                                  backdropFilter: "blur(12px) saturate(180%)",
+                                  WebkitBackdropFilter: "blur(12px) saturate(180%)",
+                                  color: "#fff",
+                                  border: "1px solid rgba(255,255,255,0.18)",
                                   borderRadius: 6,
                                   padding: "5px 14px",
+                                  boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
                                   fontSize: 12,
-                                  fontWeight: 700,
+                                  fontWeight: 500,
                                   cursor: "pointer",
                                 }}
                               >
@@ -590,7 +604,7 @@ export default function ConsumableStock({
                                 background: (C.blue || "#3b82f6") + "11",
                                 color: C.blue || "#3b82f6",
                                 fontSize: 11,
-                                fontWeight: 700,
+                                fontWeight: 500,
                                 cursor: "pointer",
                               }}
                             >
@@ -613,7 +627,7 @@ export default function ConsumableStock({
       {}
       {view === "issue" && (
         <Card>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: C.orange || "#f97316", marginBottom: 16 }}>Issue Spare / Consumable Item</h3>
+          <h3 style={{ fontSize: 14, fontWeight: 500, color: C.orange || "#f97316", marginBottom: 16 }}>Issue Spare / Consumable Item</h3>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 14, marginBottom: 16 }}>
             {machineSpareCategories.length > 0 && (
               <Field label="Filter by Category">
@@ -693,7 +707,7 @@ export default function ConsumableStock({
             <SubmitBtn label="Issue Item" color={C.green} onClick={handleIssue} />
             <button
               onClick={() => { setSelectedStock(null); setIssueQty(""); setIssueMachine(null); setIssueRemarks(""); setIssueCategoryFilter(""); }}
-              style={{ padding: "9px 20px", borderRadius: 6, border: `1px solid ${C.border}`, background: C.inputBg, color: C.muted, fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+              style={{ padding: "9px 20px", borderRadius: 6, border: `1px solid ${C.border}`, background: C.inputBg, color: C.muted, fontWeight: 500, fontSize: 13, cursor: "pointer" }}
             >
               Clear
             </button>
@@ -705,11 +719,11 @@ export default function ConsumableStock({
       {view === "log" && (
         <Card>
           <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 14, flexWrap: "wrap" }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: C.muted, margin: 0 }}>Spare Issue History</h3>
+            <h3 style={{ fontSize: 14, fontWeight: 500, color: C.muted, margin: 0 }}>Spare Issue History</h3>
             <DateRangeFilter dateFrom={drDateFrom} setDateFrom={setDrDateFrom} dateTo={drDateTo} setDateTo={setDrDateTo} />
             <button
               onClick={fetchLogs}
-              style={{ padding: "6px 14px", borderRadius: 6, border: `1px solid ${C.border}`, background: C.inputBg, color: C.muted, fontSize: 12, fontWeight: 700, cursor: "pointer" }}
+              style={{ padding: "6px 14px", borderRadius: 6, border: `1px solid ${C.border}`, background: C.inputBg, color: C.muted, fontSize: 12, fontWeight: 500, cursor: "pointer" }}
             >
               {logsLoading ? "Loading…" : "Refresh"}
             </button>
@@ -724,7 +738,7 @@ export default function ConsumableStock({
                 <thead>
                   <tr style={{ borderBottom: `1px solid ${C.border}` }}>
                     {["DATE", "ITEM", "CATEGORY", "QTY", "ISSUED TO MACHINE", "REMARKS", "ISSUED BY"].map((h) => (
-                      <th key={h} style={{ padding: "9px 12px", textAlign: "left", fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", color: C.muted, whiteSpace: "nowrap" }}>{h}</th>
+                      <th key={h} style={{ padding: "9px 12px", textAlign: "left", fontSize: 11, fontWeight: 500, letterSpacing: "0.06em", color: C.muted, whiteSpace: "nowrap" }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -737,7 +751,7 @@ export default function ConsumableStock({
                         {log.itemCode && <span style={{ fontSize: 10, color: C.muted, marginLeft: 6, fontFamily: "monospace" }}>{log.itemCode}</span>}
                       </td>
                       <td style={{ padding: "9px 12px", fontSize: 12, color: C.muted }}>{log.category || "—"}</td>
-                      <td style={{ padding: "9px 12px", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, color: C.orange || "#f97316", whiteSpace: "nowrap" }}>
+                      <td style={{ padding: "9px 12px", fontFamily: "'JetBrains Mono',monospace", fontWeight: 500, color: C.orange || "#f97316", whiteSpace: "nowrap" }}>
                         -{fmt(log.qty)} {log.unit || "nos"}
                       </td>
                       <td style={{ padding: "9px 12px" }}>
@@ -765,7 +779,7 @@ export default function ConsumableStock({
 
 function StatCard({ value, label, color }) {
   return (
-    <div style={{ padding: "16px 18px", border: `1px solid ${color}44`, borderLeft: `3px solid ${color}`, borderRadius: 8, background: color + "08" }}>
+    <div style={{ padding: "16px 18px", border: `1px solid ${color}44`, borderRadius: 8, background: color + "08" }}>
       <div style={{ fontSize: 22, fontWeight: 900, color, fontFamily: "'JetBrains Mono',monospace" }}>{value}</div>
       <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 4 }}>{label}</div>
     </div>
@@ -774,7 +788,7 @@ function StatCard({ value, label, color }) {
 
 function ActionBtn({ label, color, onClick }) {
   return (
-    <button onClick={onClick} style={{ padding: "9px 14px", borderRadius: 6, border: "none", background: color, color: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}>
+    <button onClick={onClick} style={{ padding: "9px 14px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.18)", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", color: "#fff", fontWeight: 500, fontSize: 12, cursor: "pointer", whiteSpace: "nowrap", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
       {label}
     </button>
   );

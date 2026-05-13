@@ -3,19 +3,12 @@ import { Card, SectionTitle, Input } from "../components/ui/BasicComponents";
 import { C } from "../constants/colors";
 import moment from "moment";
 
-
-
-
 function getMonthRange(n) {
   const out = [];
   for (let i = n - 1; i >= 0; i--)
     out.push(moment().subtract(i, "months").format("YYYY-MM"));
   return out;
 }
-
-
-
-
 
 function buildMonthlyDemand(salesOrders) {
   const map = {};
@@ -32,7 +25,6 @@ function buildMonthlyDemand(salesOrders) {
   return map;
 }
 
-
 function buildClientBreakdown(salesOrders) {
   const map = {};
   (salesOrders || []).forEach((so) => {
@@ -47,7 +39,6 @@ function buildClientBreakdown(salesOrders) {
   });
   return map;
 }
-
 
 function buildWeeklyDemand(salesOrders, clientCat) {
   const map = {};
@@ -65,21 +56,15 @@ function buildWeeklyDemand(salesOrders, clientCat) {
   return map;
 }
 
-
 function rollingAvg(series, n) {
   const slice = series.slice(-n);
   return slice.reduce((s, v) => s + v, 0) / n;
 }
 
-
-
-
-
 function weightedForecast(series) {
-  const [c, b, a] = series.slice(-3); 
+  const [c, b, a] = series.slice(-3);
   return (c || 0) * 0.5 + (b || 0) * 0.33 + (a || 0) * 0.17;
 }
-
 
 function stdDev(series) {
   const vals = series.filter((v) => v > 0);
@@ -108,19 +93,18 @@ function getMoMPct(series) {
   return ((last - prev) / prev) * 100;
 }
 
-
 const TREND_CFG = {
-  up:     { color: "#22c55e", label: "Trending ↑", bg: "#052e1688" },
-  down:   { color: "#ef4444", label: "Declining ↓", bg: "#450a0a88" },
-  stable: { color: "#f59e0b", label: "Stable →",   bg: "#451a0388" },
-  new:    { color: "#3b82f6", label: "New ✦",      bg: "#17254488" },
-  nodata: { color: "#555",    label: "No Data",    bg: "#11111188" },
+  up: { color: "#22c55e", label: "Trending ↑", bg: "#052e1688" },
+  down: { color: "#ef4444", label: "Declining ↓", bg: "#450a0a88" },
+  stable: { color: "#f59e0b", label: "Stable →", bg: "#451a0388" },
+  new: { color: "#3b82f6", label: "New ✦", bg: "#17254488" },
+  nodata: { color: "#555", label: "No Data", bg: "#11111188" },
 };
 
 const ACCENT = "#ff7800";
-const fmt  = (n) => (n == null || isNaN(n)) ? "—" : Math.round(n).toLocaleString("en-IN");
-const fmtD = (n) => (n == null || isNaN(n)) ? "—" : n.toFixed(1);
-
+const fmt = (n) =>
+  n == null || isNaN(n) ? "—" : Math.round(n).toLocaleString("en-IN");
+const fmtD = (n) => (n == null || isNaN(n) ? "—" : n.toFixed(1));
 
 function SortTh({ label, k, sortKey, sortDir, onSort, style = {} }) {
   const active = sortKey === k;
@@ -133,10 +117,10 @@ function SortTh({ label, k, sortKey, sortDir, onSort, style = {} }) {
         whiteSpace: "nowrap",
         padding: "10px 10px",
         fontSize: 10,
-        fontWeight: 700,
+        fontWeight: 500,
         color: active ? ACCENT : C.muted,
         letterSpacing: "0.05em",
-        borderBottom: `1px solid ${C.border}`,
+        borderBottom: "1px solid rgba(255,255,255,0.08)",
         textAlign: "right",
         ...style,
       }}
@@ -146,43 +130,56 @@ function SortTh({ label, k, sortKey, sortDir, onSort, style = {} }) {
   );
 }
 
-
 function HeatCell({ qty, maxQty }) {
   const intensity = maxQty > 0 ? qty / maxQty : 0;
   return (
     <td style={{ padding: "8px 6px", textAlign: "center" }}>
-      <div style={{
-        background: `rgba(255,120,0,${intensity * 0.75})`,
-        border: `1px solid rgba(255,120,0,${intensity * 0.4})`,
-        borderRadius: 5,
-        padding: "2px 6px",
-        color: intensity > 0.5 ? "#fff" : C.muted,
-        fontWeight: intensity > 0.3 ? 700 : 400,
-        fontSize: 11,
-        minWidth: 38,
-      }}>
+      <div
+        style={{
+          background: `rgba(255,120,0,${intensity * 0.75})`,
+          border: `1px solid rgba(255,120,0,${intensity * 0.4})`,
+          borderRadius: 5,
+          padding: "2px 6px",
+          color: intensity > 0.5 ? "#fff" : C.muted,
+          fontWeight: intensity > 0.3 ? 700 : 400,
+          fontSize: 11,
+          minWidth: 38,
+        }}
+      >
         {qty > 0 ? fmt(qty) : "—"}
       </div>
     </td>
   );
 }
 
-
-export default function DemandForecast({ salesOrders = [], itemMasterFG = [] }) {
-  const [search,       setSearch]       = useState("");
-  const [trendFilter,  setTrendFilter]  = useState("all");
+export default function DemandForecast({
+  salesOrders = [],
+  itemMasterFG = [],
+}) {
+  const [search, setSearch] = useState("");
+  const [trendFilter, setTrendFilter] = useState("all");
   const [clientFilter, setClientFilter] = useState("all");
-  const [sortKey,      setSortKey]      = useState("forecast");
-  const [sortDir,      setSortDir]      = useState("desc");
+  const [sortKey, setSortKey] = useState("forecast");
+  const [sortDir, setSortDir] = useState("desc");
 
-  
-  const MONTHS_12     = useMemo(() => getMonthRange(12), []);
-  const monthlyDemand = useMemo(() => buildMonthlyDemand(salesOrders), [salesOrders]);
-  const clientMap     = useMemo(() => buildClientBreakdown(salesOrders), [salesOrders]);
-  const weeklyHP      = useMemo(() => buildWeeklyDemand(salesOrders, "HP"),  [salesOrders]);
-  const weeklyZPL     = useMemo(() => buildWeeklyDemand(salesOrders, "ZPL"), [salesOrders]);
+  const MONTHS_12 = useMemo(() => getMonthRange(12), []);
+  const monthlyDemand = useMemo(
+    () => buildMonthlyDemand(salesOrders),
+    [salesOrders],
+  );
+  const clientMap = useMemo(
+    () => buildClientBreakdown(salesOrders),
+    [salesOrders],
+  );
+  const weeklyHP = useMemo(
+    () => buildWeeklyDemand(salesOrders, "HP"),
+    [salesOrders],
+  );
+  const weeklyZPL = useMemo(
+    () => buildWeeklyDemand(salesOrders, "ZPL"),
+    [salesOrders],
+  );
 
-  
   const allCodes = useMemo(() => {
     const fromMaster = (itemMasterFG || [])
       .filter((i) => i.type === "Finished Good" || i.type === "Finished Goods")
@@ -192,98 +189,116 @@ export default function DemandForecast({ salesOrders = [], itemMasterFG = [] }) 
     return [...new Set([...fromMaster, ...fromSOs])];
   }, [itemMasterFG, monthlyDemand]);
 
-  
   const rows = useMemo(() => {
     return allCodes.map((code) => {
-      const master  = (itemMasterFG || []).find((i) => i.code === code);
-      const demMap  = monthlyDemand[code] || {};
-      const series  = MONTHS_12.map((m) => demMap[m] || 0);
+      const master = (itemMasterFG || []).find((i) => i.code === code);
+      const demMap = monthlyDemand[code] || {};
+      const series = MONTHS_12.map((m) => demMap[m] || 0);
 
-      const avg3     = rollingAvg(series, 3);
-      const avg6     = rollingAvg(series, 6);
-      const avg12    = rollingAvg(series, 12);
-      const fcast    = weightedForecast(series);
-      const sd       = stdDev(series);
-      const trend    = getTrend(series);
-      const mom      = getMoMPct(series);
-      const clients  = clientMap[code] || { HP: 0, ZPL: 0, Others: 0 };
+      const avg3 = rollingAvg(series, 3);
+      const avg6 = rollingAvg(series, 6);
+      const avg12 = rollingAvg(series, 12);
+      const fcast = weightedForecast(series);
+      const sd = stdDev(series);
+      const trend = getTrend(series);
+      const mom = getMoMPct(series);
+      const clients = clientMap[code] || { HP: 0, ZPL: 0, Others: 0 };
 
       return {
         code,
-        name:     master?.name     || code,
+        name: master?.name || code,
         category: master?.category || "—",
         series,
-        avg3, avg6, avg12,
+        avg3,
+        avg6,
+        avg12,
         forecast: fcast,
-        lower:    Math.max(0, fcast - sd),
-        upper:    fcast + sd,
+        lower: Math.max(0, fcast - sd),
+        upper: fcast + sd,
         sd,
         trend,
         mom,
-        hp:      clients.HP,
-        zpl:     clients.ZPL,
-        others:  clients.Others,
-        total:   series.reduce((s, v) => s + v, 0),
-        weeklyHP:  weeklyHP[code]  || { 1: 0, 2: 0, 3: 0, 4: 0 },
+        hp: clients.HP,
+        zpl: clients.ZPL,
+        others: clients.Others,
+        total: series.reduce((s, v) => s + v, 0),
+        weeklyHP: weeklyHP[code] || { 1: 0, 2: 0, 3: 0, 4: 0 },
         weeklyZPL: weeklyZPL[code] || { 1: 0, 2: 0, 3: 0, 4: 0 },
       };
     });
-  }, [allCodes, itemMasterFG, monthlyDemand, clientMap, MONTHS_12, weeklyHP, weeklyZPL]);
+  }, [
+    allCodes,
+    itemMasterFG,
+    monthlyDemand,
+    clientMap,
+    MONTHS_12,
+    weeklyHP,
+    weeklyZPL,
+  ]);
 
-  
   const filtered = useMemo(() => {
     return rows
       .filter((r) => {
         if (r.trend === "nodata") return false;
         if (trendFilter !== "all" && r.trend !== trendFilter) return false;
-        if (clientFilter === "HP"  && r.hp  === 0) return false;
+        if (clientFilter === "HP" && r.hp === 0) return false;
         if (clientFilter === "ZPL" && r.zpl === 0) return false;
         if (search) {
           const q = search.toLowerCase();
-          if (!r.code.toLowerCase().includes(q) && !r.name.toLowerCase().includes(q)) return false;
+          if (
+            !r.code.toLowerCase().includes(q) &&
+            !r.name.toLowerCase().includes(q)
+          )
+            return false;
         }
         return true;
       })
       .sort((a, b) => {
         let av = a[sortKey] ?? 0;
         let bv = b[sortKey] ?? 0;
-        if (typeof av === "string") { av = av.toLowerCase(); bv = bv.toLowerCase(); }
+        if (typeof av === "string") {
+          av = av.toLowerCase();
+          bv = bv.toLowerCase();
+        }
         if (av === bv) return 0;
-        return sortDir === "asc" ? (av > bv ? 1 : -1) : (av < bv ? 1 : -1);
+        return sortDir === "asc" ? (av > bv ? 1 : -1) : av < bv ? 1 : -1;
       });
   }, [rows, trendFilter, clientFilter, search, sortKey, sortDir]);
 
-  
   const summary = useMemo(() => {
     const active = rows.filter((r) => r.trend !== "nodata");
     return {
       tracked: active.length,
-      up:      active.filter((r) => r.trend === "up").length,
-      down:    active.filter((r) => r.trend === "down").length,
-      stable:  active.filter((r) => r.trend === "stable").length,
+      up: active.filter((r) => r.trend === "up").length,
+      down: active.filter((r) => r.trend === "down").length,
+      stable: active.filter((r) => r.trend === "stable").length,
       newItem: active.filter((r) => r.trend === "new").length,
     };
   }, [rows]);
 
   const handleSort = (key) => {
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    else { setSortKey(key); setSortDir("desc"); }
+    else {
+      setSortKey(key);
+      setSortDir("desc");
+    }
   };
 
   const thBase = {
     padding: "10px 10px",
     fontSize: 10,
-    fontWeight: 700,
+    fontWeight: 500,
     color: C.muted,
     letterSpacing: "0.05em",
-    borderBottom: `1px solid ${C.border}`,
+    borderBottom: "1px solid rgba(255,255,255,0.08)",
     whiteSpace: "nowrap",
+    background: "rgba(255,255,255,0.04)",
   };
 
   const tdBase = { padding: "9px 10px", fontSize: 12 };
 
   const showWeekly = clientFilter === "HP" || clientFilter === "ZPL";
-  const weeklyKey  = clientFilter === "HP" ? "weeklyHP" : "weeklyZPL";
+  const weeklyKey = clientFilter === "HP" ? "weeklyHP" : "weeklyZPL";
 
   return (
     <div className="fade">
@@ -294,24 +309,60 @@ export default function DemandForecast({ salesOrders = [], itemMasterFG = [] }) 
       />
 
       {}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 12, marginBottom: 20 }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(5,1fr)",
+          gap: 12,
+          marginBottom: 20,
+        }}
+      >
         {[
-          { label: "Items Tracked",  value: summary.tracked, color: ACCENT },
-          { label: "Trending Up ↑",  value: summary.up,      color: "#22c55e" },
-          { label: "Declining ↓",    value: summary.down,    color: "#ef4444" },
-          { label: "Stable →",       value: summary.stable,  color: "#f59e0b" },
-          { label: "New Items ✦",    value: summary.newItem, color: "#3b82f6" },
+          { label: "Items Tracked", value: summary.tracked, color: ACCENT },
+          { label: "Trending Up ↑", value: summary.up, color: "#22c55e" },
+          { label: "Declining ↓", value: summary.down, color: "#ef4444" },
+          { label: "Stable →", value: summary.stable, color: "#f59e0b" },
+          { label: "New Items ✦", value: summary.newItem, color: "#3b82f6" },
         ].map(({ label, value, color }) => (
-          <div key={label} style={{ background: "#111", border: `1px solid ${C.border}`, borderRadius: 10, padding: "14px 18px" }}>
-            <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>{label}</div>
-            <div style={{ fontSize: 28, fontWeight: 800, color, fontFamily: "monospace" }}>{value}</div>
+          <div
+            key={label}
+            style={{
+              background: "rgba(255,255,255,0.05)",
+              backdropFilter: "blur(12px) saturate(180%)",
+              WebkitBackdropFilter: "blur(12px) saturate(180%)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
+              borderRadius: 10,
+              padding: "14px 18px",
+            }}
+          >
+            <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>
+              {label}
+            </div>
+            <div
+              style={{
+                fontSize: 28,
+                fontWeight: 800,
+                color,
+                fontFamily: "monospace",
+              }}
+            >
+              {value}
+            </div>
           </div>
         ))}
       </div>
 
       {}
       <Card style={{ marginBottom: 16, padding: "12px 18px" }}>
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 12,
+            flexWrap: "wrap",
+            alignItems: "center",
+          }}
+        >
           <Input
             placeholder="Search item code or name…"
             value={search}
@@ -331,10 +382,16 @@ export default function DemandForecast({ salesOrders = [], itemMasterFG = [] }) 
                   style={{
                     padding: "5px 13px",
                     borderRadius: 6,
-                    border: `1px solid ${active ? (cfg.color || ACCENT) : C.border}`,
-                    background: active ? (cfg.bg || ACCENT + "22") : "transparent",
-                    color: active ? (cfg.color || ACCENT) : C.muted,
-                    fontWeight: 600, fontSize: 11, cursor: "pointer",
+                    border: `1px solid ${active ? cfg.color || ACCENT : "rgba(255,255,255,0.12)"}`,
+                    background: active
+                      ? cfg.bg || ACCENT + "22"
+                      : "rgba(255,255,255,0.05)",
+                    backdropFilter: "blur(10px)",
+                    WebkitBackdropFilter: "blur(10px)",
+                    color: active ? cfg.color || ACCENT : "#999",
+                    fontWeight: 600,
+                    fontSize: 11,
+                    cursor: "pointer",
                   }}
                 >
                   {t === "all" ? "All Trends" : cfg.label}
@@ -346,9 +403,9 @@ export default function DemandForecast({ salesOrders = [], itemMasterFG = [] }) 
           {}
           <div style={{ display: "flex", gap: 5, marginLeft: "auto" }}>
             {[
-              { id: "all", label: "All Clients",  color: C.muted },
-              { id: "HP",  label: "Hyperpure",    color: "#3b82f6" },
-              { id: "ZPL", label: "Zepto",        color: "#a855f7" },
+              { id: "all", label: "All Clients", color: C.muted },
+              { id: "HP", label: "Hyperpure", color: "#3b82f6" },
+              { id: "ZPL", label: "Zepto", color: "#a855f7" },
             ].map(({ id, label, color }) => {
               const active = clientFilter === id;
               return (
@@ -358,10 +415,14 @@ export default function DemandForecast({ salesOrders = [], itemMasterFG = [] }) 
                   style={{
                     padding: "5px 13px",
                     borderRadius: 6,
-                    border: `1px solid ${active ? color : C.border}`,
-                    background: active ? color + "22" : "transparent",
-                    color: active ? color : C.muted,
-                    fontWeight: 600, fontSize: 11, cursor: "pointer",
+                    border: `1px solid ${active ? color : "rgba(255,255,255,0.12)"}`,
+                    background: active ? color + "22" : "rgba(255,255,255,0.05)",
+                    backdropFilter: "blur(10px)",
+                    WebkitBackdropFilter: "blur(10px)",
+                    color: active ? color : "#999",
+                    fontWeight: 600,
+                    fontSize: 11,
+                    cursor: "pointer",
                   }}
                 >
                   {label}
@@ -375,116 +436,233 @@ export default function DemandForecast({ salesOrders = [], itemMasterFG = [] }) 
       {}
       <Card>
         {filtered.length === 0 ? (
-          <div style={{ textAlign: "center", padding: 48, color: C.muted, fontSize: 13 }}>
+          <div
+            style={{
+              textAlign: "center",
+              padding: 48,
+              color: C.muted,
+              fontSize: 13,
+            }}
+          >
             No items with demand history match the current filters.
             <br />
             <span style={{ fontSize: 11, marginTop: 6, display: "block" }}>
-              Sales Orders must have a Product Code on line items for forecasting to work.
+              Sales Orders must have a Product Code on line items for
+              forecasting to work.
             </span>
           </div>
         ) : (
-          <div style={{ overflowX: "auto" }}>
+          <div style={{
+            overflowX: "auto",
+            background: "rgba(255,255,255,0.03)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: 12,
+            backdropFilter: "blur(12px) saturate(180%)",
+            WebkitBackdropFilter: "blur(12px) saturate(180%)",
+          }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr>
                   {}
                   {[
-                    { label: "CODE",  k: "code",  align: "left" },
-                    { label: "ITEM",  k: "name",  align: "left" },
+                    { label: "CODE", k: "code", align: "left" },
+                    { label: "ITEM", k: "name", align: "left" },
                   ].map(({ label, k, align }) => (
-                    <SortTh key={k} label={label} k={k} sortKey={sortKey} sortDir={sortDir} onSort={handleSort} style={{ ...thBase, textAlign: align }} />
+                    <SortTh
+                      key={k}
+                      label={label}
+                      k={k}
+                      sortKey={sortKey}
+                      sortDir={sortDir}
+                      onSort={handleSort}
+                      style={{ ...thBase, textAlign: align }}
+                    />
                   ))}
 
                   <th style={{ ...thBase, textAlign: "left" }}>TREND</th>
                   <th style={{ ...thBase, textAlign: "right" }}>MoM %</th>
 
                   {[
-                    { label: "3M AVG",  k: "avg3"  },
-                    { label: "6M AVG",  k: "avg6"  },
+                    { label: "3M AVG", k: "avg3" },
+                    { label: "6M AVG", k: "avg6" },
                     { label: "12M AVG", k: "avg12" },
                   ].map(({ label, k }) => (
-                    <SortTh key={k} label={label} k={k} sortKey={sortKey} sortDir={sortDir} onSort={handleSort} style={thBase} />
+                    <SortTh
+                      key={k}
+                      label={label}
+                      k={k}
+                      sortKey={sortKey}
+                      sortDir={sortDir}
+                      onSort={handleSort}
+                      style={thBase}
+                    />
                   ))}
 
-                  <th style={{ ...thBase, textAlign: "right", color: ACCENT, fontSize: 11 }}>
+                  <th
+                    style={{
+                      ...thBase,
+                      textAlign: "right",
+                      color: ACCENT,
+                      fontSize: 11,
+                    }}
+                  >
                     ▶ NEXT MONTH FORECAST
                   </th>
                   <th style={{ ...thBase, textAlign: "right" }}>± BAND</th>
 
-                  {showWeekly && [1, 2, 3, 4].map((w) => (
-                    <th key={w} style={{ ...thBase, textAlign: "center" }}>WK {w}</th>
-                  ))}
+                  {showWeekly &&
+                    [1, 2, 3, 4].map((w) => (
+                      <th key={w} style={{ ...thBase, textAlign: "center" }}>
+                        WK {w}
+                      </th>
+                    ))}
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((r, i) => {
                   const tc = TREND_CFG[r.trend] || TREND_CFG.stable;
                   const weekRow = r[weeklyKey];
-                  const maxWqty = showWeekly ? Math.max(...[1,2,3,4].map((w) => weekRow[w] || 0)) : 0;
+                  const maxWqty = showWeekly
+                    ? Math.max(...[1, 2, 3, 4].map((w) => weekRow[w] || 0))
+                    : 0;
 
                   return (
                     <tr
                       key={r.code}
-                      style={{ borderBottom: `1px solid ${C.border}22`, background: i % 2 === 0 ? "transparent" : "#ffffff04" }}
+                      style={{
+                        borderBottom: "1px solid rgba(255,255,255,0.06)",
+                        background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.04)",
+                      }}
                     >
                       {}
-                      <td style={{ ...tdBase, fontFamily: "monospace", fontWeight: 700, color: ACCENT, paddingLeft: 14 }}>
+                      <td
+                        style={{
+                          ...tdBase,
+                          fontFamily: "monospace",
+                          fontWeight: 500,
+                          color: ACCENT,
+                          paddingLeft: 14,
+                        }}
+                      >
                         {r.code}
                       </td>
 
                       {}
-                      <td style={{ ...tdBase, maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <td
+                        style={{
+                          ...tdBase,
+                          maxWidth: 220,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
                         {r.name}
                       </td>
 
                       {}
                       <td style={tdBase}>
-                        <span style={{
-                          background: tc.bg, color: tc.color,
-                          borderRadius: 5, padding: "3px 8px",
-                          fontSize: 11, fontWeight: 700, whiteSpace: "nowrap",
-                          border: `1px solid ${tc.color}44`,
-                        }}>
+                        <span
+                          style={{
+                            background: tc.bg,
+                            color: tc.color,
+                            borderRadius: 5,
+                            padding: "3px 8px",
+                            fontSize: 11,
+                            fontWeight: 500,
+                            whiteSpace: "nowrap",
+                            border: `1px solid ${tc.color}44`,
+                          }}
+                        >
                           {tc.label}
                         </span>
                       </td>
 
                       {}
-                      <td style={{ ...tdBase, textAlign: "right", fontWeight: 700, fontFamily: "monospace",
-                        color: r.mom == null ? C.muted : r.mom > 0 ? "#22c55e" : r.mom < 0 ? "#ef4444" : C.muted }}>
-                        {r.mom == null ? "—" : `${r.mom > 0 ? "+" : ""}${fmtD(r.mom)}%`}
+                      <td
+                        style={{
+                          ...tdBase,
+                          textAlign: "right",
+                          fontWeight: 500,
+                          fontFamily: "monospace",
+                          color:
+                            r.mom == null
+                              ? C.muted
+                              : r.mom > 0
+                                ? "#22c55e"
+                                : r.mom < 0
+                                  ? "#ef4444"
+                                  : C.muted,
+                        }}
+                      >
+                        {r.mom == null
+                          ? "—"
+                          : `${r.mom > 0 ? "+" : ""}${fmtD(r.mom)}%`}
                       </td>
 
                       {}
                       {["avg3", "avg6", "avg12"].map((k) => (
-                        <td key={k} style={{ ...tdBase, textAlign: "right", color: C.muted }}>
+                        <td
+                          key={k}
+                          style={{
+                            ...tdBase,
+                            textAlign: "right",
+                            color: C.muted,
+                          }}
+                        >
                           {fmt(r[k])}
                         </td>
                       ))}
 
                       {}
                       <td style={{ ...tdBase, textAlign: "right" }}>
-                        <span style={{
-                          fontWeight: 800, fontSize: 15,
-                          color: r.forecast > 0 ? "#fff" : C.muted,
-                          fontFamily: "monospace",
-                        }}>
+                        <span
+                          style={{
+                            fontWeight: 800,
+                            fontSize: 15,
+                            color: r.forecast > 0 ? "#fff" : C.muted,
+                            fontFamily: "monospace",
+                          }}
+                        >
                           {fmt(r.forecast)}
                         </span>
                         {r.forecast > 0 && (
-                          <span style={{ color: C.muted, fontSize: 10, marginLeft: 4 }}>units</span>
+                          <span
+                            style={{
+                              color: C.muted,
+                              fontSize: 10,
+                              marginLeft: 4,
+                            }}
+                          >
+                            units
+                          </span>
                         )}
                       </td>
 
                       {}
-                      <td style={{ ...tdBase, textAlign: "right", color: C.muted, fontSize: 11, fontFamily: "monospace" }}>
-                        {r.forecast > 0 ? `${fmt(r.lower)} – ${fmt(r.upper)}` : "—"}
+                      <td
+                        style={{
+                          ...tdBase,
+                          textAlign: "right",
+                          color: C.muted,
+                          fontSize: 11,
+                          fontFamily: "monospace",
+                        }}
+                      >
+                        {r.forecast > 0
+                          ? `${fmt(r.lower)} – ${fmt(r.upper)}`
+                          : "—"}
                       </td>
 
                       {}
-                      {showWeekly && [1, 2, 3, 4].map((w) => (
-                        <HeatCell key={w} qty={weekRow[w] || 0} maxQty={maxWqty} />
-                      ))}
+                      {showWeekly &&
+                        [1, 2, 3, 4].map((w) => (
+                          <HeatCell
+                            key={w}
+                            qty={weekRow[w] || 0}
+                            maxQty={maxWqty}
+                          />
+                        ))}
                     </tr>
                   );
                 })}
@@ -496,23 +674,49 @@ export default function DemandForecast({ salesOrders = [], itemMasterFG = [] }) 
 
       {}
       {showWeekly && (
-        <div style={{ marginTop: 12, padding: "10px 16px", background: "#111", borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 11, color: C.muted }}>
-          <b style={{ color: "#999" }}>Weekly Pattern:</b>{" "}
-          Columns WK1–WK4 show total ordered qty per week-of-month for{" "}
+        <div
+          style={{
+            marginTop: 12,
+            padding: "10px 16px",
+            background: "rgba(255,255,255,0.05)",
+            backdropFilter: "blur(12px) saturate(180%)",
+            WebkitBackdropFilter: "blur(12px) saturate(180%)",
+            borderRadius: 8,
+            border: "1px solid rgba(255,255,255,0.1)",
+            boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
+            fontSize: 11,
+            color: C.muted,
+          }}
+        >
+          <b style={{ color: "#999" }}>Weekly Pattern:</b> Columns WK1–WK4 show
+          total ordered qty per week-of-month for{" "}
           <b style={{ color: clientFilter === "HP" ? "#3b82f6" : "#a855f7" }}>
             {clientFilter === "HP" ? "Hyperpure" : "Zepto"}
           </b>{" "}
-          orders. Darker cell = higher demand in that week. Use this to anticipate which weeks production needs to front-load.
+          orders. Darker cell = higher demand in that week. Use this to
+          anticipate which weeks production needs to front-load.
         </div>
       )}
 
       {}
-      <div style={{ marginTop: 8, padding: "10px 16px", background: "#0d0d0d", borderRadius: 8, border: `1px solid ${C.border}22`, fontSize: 11, color: "#444" }}>
-        <b style={{ color: "#555" }}>Model:</b>{" "}
-        Forecast = weighted 3-month moving avg (last month 50 % · prior 33 % · two months ago 17 %).
-        Band = forecast ± 1σ of monthly series (≈68 % of outcomes fall in range).
-        Trend flags: MoM &gt; +20 % = Trending Up · &lt; −20 % = Declining.
-        Items with zero SO history are hidden.
+      <div
+        style={{
+          marginTop: 8,
+          padding: "10px 16px",
+          background: "rgba(255,255,255,0.03)",
+          backdropFilter: "blur(12px) saturate(180%)",
+          WebkitBackdropFilter: "blur(12px) saturate(180%)",
+          borderRadius: 8,
+          border: "1px solid rgba(255,255,255,0.1)",
+          fontSize: 11,
+          color: "#888",
+        }}
+      >
+        <b style={{ color: "#999" }}>Model:</b> Forecast = weighted 3-month
+        moving avg (last month 50 % · prior 33 % · two months ago 17 %). Band =
+        forecast ± 1σ of monthly series (≈68 % of outcomes fall in range). Trend
+        flags: MoM &gt; +20 % = Trending Up · &lt; −20 % = Declining. Items with
+        zero SO history are hidden.
       </div>
     </div>
   );

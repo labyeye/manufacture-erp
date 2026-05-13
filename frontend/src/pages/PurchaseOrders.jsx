@@ -827,11 +827,15 @@ export default function PurchaseOrders({
             style={{
               padding: "8px 20px",
               borderRadius: 6,
-              border: `1px solid ${view === v ? C.blue : C.border}`,
-              background: view === v ? C.blue + "22" : "transparent",
-              color: view === v ? C.blue : C.muted,
-              fontWeight: 700,
+              border: `1px solid ${view === v ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.1)"}`,
+              background: view === v ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.05)",
+              backdropFilter: "blur(10px) saturate(180%)",
+              WebkitBackdropFilter: "blur(10px) saturate(180%)",
+              color: view === v ? "#fff" : C.muted,
+              fontWeight: view === v ? 600 : 500,
               fontSize: 13,
+              cursor: "pointer",
+              boxShadow: view === v ? "inset 0 1px 0 rgba(255,255,255,0.15)" : "none",
             }}
           >
             {l}
@@ -844,8 +848,8 @@ export default function PurchaseOrders({
             <h3
               style={{
                 fontSize: 14,
-                fontWeight: 700,
-                color: C.blue,
+                fontWeight: 500,
+                color: C.white,
                 marginBottom: 16,
               }}
             >
@@ -952,20 +956,24 @@ export default function PurchaseOrders({
               marginBottom: 10,
             }}
           >
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: C.blue }}>
+            <h3 style={{ fontSize: 14, fontWeight: 500, color: C.white }}>
               Items ({items.length})
             </h3>
             {canEdit && (
               <button
                 onClick={addItem}
                 style={{
-                  background: C.blue,
+                  background: "rgba(255,255,255,0.08)",
+                  backdropFilter: "blur(12px) saturate(180%)",
+                  WebkitBackdropFilter: "blur(12px) saturate(180%)",
                   color: "#fff",
-                  border: "none",
+                  border: "1px solid rgba(255,255,255,0.18)",
                   borderRadius: 6,
                   padding: "8px 18px",
-                  fontWeight: 700,
+                  fontWeight: 500,
                   fontSize: 13,
+                  cursor: "pointer",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
                 }}
               >
                 + Add Item
@@ -976,7 +984,7 @@ export default function PurchaseOrders({
           {items.map((it, idx) => (
             <Card
               key={it._id}
-              style={{ marginBottom: 12, borderLeft: `3px solid ${C.blue}` }}
+              style={{ marginBottom: 12, }}
             >
               <div
                 style={{
@@ -986,7 +994,7 @@ export default function PurchaseOrders({
                   marginBottom: 14,
                 }}
               >
-                <span style={{ fontWeight: 700, color: C.blue, fontSize: 13 }}>
+                <span style={{ fontWeight: 500, color: C.white, fontSize: 13 }}>
                   Item {idx + 1}
                 </span>
                 {items.length > 1 && (
@@ -998,7 +1006,7 @@ export default function PurchaseOrders({
                       border: "none",
                       borderRadius: 5,
                       padding: "4px 12px",
-                      fontWeight: 700,
+                      fontWeight: 500,
                       fontSize: 12,
                     }}
                   >
@@ -1045,7 +1053,7 @@ export default function PurchaseOrders({
                         <input
                           readOnly
                           value={it.category}
-                          style={{ background: "#0a0a0a", color: "#aaa" }}
+                          style={{ background: "rgba(255,255,255,0.04)", color: "#aaa", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 6 }}
                         />
                       ) : (
                         <select
@@ -1070,7 +1078,7 @@ export default function PurchaseOrders({
                         <input
                           readOnly
                           value={it.subCategory}
-                          style={{ background: "#0a0a0a", color: "#aaa" }}
+                          style={{ background: "rgba(255,255,255,0.04)", color: "#aaa", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 6 }}
                         />
                       ) : (
                         <select
@@ -1468,12 +1476,12 @@ export default function PurchaseOrders({
             <button
               onClick={addItem}
               style={{
-                background: C.blue + "22",
-                color: C.blue,
-                border: `1px solid ${C.blue}44`,
+                background: C.white + "22",
+                color: C.white,
+                border: `1px solid ${C.white}44`,
                 borderRadius: 6,
                 padding: "9px 20px",
-                fontWeight: 700,
+                fontWeight: 500,
                 fontSize: 13,
               }}
             >
@@ -1485,7 +1493,7 @@ export default function PurchaseOrders({
                   ? `Update PO (${items.length} item${items.length > 1 ? "s" : ""})`
                   : `Create PO (${items.length} item${items.length > 1 ? "s" : ""})`
               }
-              color={C.blue}
+              color={C.white}
               onClick={submit}
             />
             {editingId && (
@@ -1503,7 +1511,7 @@ export default function PurchaseOrders({
                   border: `1px solid ${C.muted}44`,
                   borderRadius: 6,
                   padding: "9px 20px",
-                  fontWeight: 700,
+                  fontWeight: 500,
                   fontSize: 13,
                   cursor: "pointer",
                 }}
@@ -1635,7 +1643,6 @@ export default function PurchaseOrders({
                     data-record-id={r.poNo}
                     style={{
                       padding: "16px 20px",
-                      borderLeft: `4px solid ${r.poNo === highlightId ? C.accent : C.blue}`,
                       background:
                         r.poNo === highlightId ? `${C.accent}11` : "#161b22",
                       boxShadow:
@@ -1665,7 +1672,7 @@ export default function PurchaseOrders({
                           style={{
                             fontSize: 18,
                             fontWeight: 800,
-                            color: C.blue,
+                            color: C.white,
                             fontFamily: "'JetBrains Mono', monospace",
                           }}
                         >
@@ -1686,7 +1693,7 @@ export default function PurchaseOrders({
                             borderRadius: 6,
                             padding: "4px 12px",
                             fontSize: 12,
-                            fontWeight: 700,
+                            fontWeight: 500,
                           }}
                         >
                           {r.status || "Open"}
@@ -1695,17 +1702,20 @@ export default function PurchaseOrders({
                           <button
                             onClick={() => handleEdit(r)}
                             style={{
-                              background: "#1e293b",
-                              color: C.blue,
-                              border: "1px solid #334155",
+                              background: "rgba(255,255,255,0.08)",
+                              backdropFilter: "blur(12px) saturate(180%)",
+                              WebkitBackdropFilter: "blur(12px) saturate(180%)",
+                              color: "#fff",
+                              border: "1px solid rgba(255,255,255,0.18)",
                               borderRadius: 6,
                               padding: "4px 14px",
                               fontSize: 12,
-                              fontWeight: 700,
+                              fontWeight: 500,
                               cursor: "pointer",
                               display: "flex",
                               alignItems: "center",
                               gap: 6,
+                              boxShadow: "0 2px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.12)",
                             }}
                           >
                             Edit
@@ -1714,17 +1724,20 @@ export default function PurchaseOrders({
                         <button
                           onClick={() => generatePOPDF(r)}
                           style={{
-                            background: "#451a1a",
-                            color: "#ef4444",
-                            border: "1px solid #7f1d1d",
+                            background: "rgba(255,255,255,0.08)",
+                            backdropFilter: "blur(12px) saturate(180%)",
+                            WebkitBackdropFilter: "blur(12px) saturate(180%)",
+                            color: "#fff",
+                            border: "1px solid rgba(255,255,255,0.18)",
                             borderRadius: 6,
                             padding: "4px 14px",
                             fontSize: 12,
-                            fontWeight: 700,
+                            fontWeight: 500,
                             cursor: "pointer",
                             display: "flex",
                             alignItems: "center",
                             gap: 6,
+                            boxShadow: "0 2px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.12)",
                           }}
                         >
                           PDF
@@ -1733,17 +1746,20 @@ export default function PurchaseOrders({
                           <button
                             onClick={() => handleDelete(r._id)}
                             style={{
-                              background: "#450a0a",
-                              color: "#ef4444",
-                              border: "1px solid #7f1d1d",
+                              background: "rgba(255,255,255,0.08)",
+                              backdropFilter: "blur(12px) saturate(180%)",
+                              WebkitBackdropFilter: "blur(12px) saturate(180%)",
+                              color: "#fff",
+                              border: "1px solid rgba(255,255,255,0.18)",
                               borderRadius: 6,
                               padding: "4px 14px",
                               fontSize: 12,
-                              fontWeight: 700,
+                              fontWeight: 500,
                               cursor: "pointer",
                               display: "flex",
                               alignItems: "center",
                               gap: 6,
+                              boxShadow: "0 2px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.12)",
                             }}
                           >
                             Delete
@@ -1772,7 +1788,7 @@ export default function PurchaseOrders({
                             color: "#e2e8f0",
                           }}
                         >
-                          <span style={{ fontWeight: 700, flex: 1 }}>
+                          <span style={{ fontWeight: 500, flex: 1 }}>
                             {it.itemName}
                           </span>
                           <span style={{ color: C.muted }}>
@@ -1791,7 +1807,7 @@ export default function PurchaseOrders({
                           <span
                             style={{
                               color: C.green,
-                              fontWeight: 700,
+                              fontWeight: 500,
                               fontFamily: "'JetBrains Mono', monospace",
                               width: 100,
                               textAlign: "right",
@@ -1838,7 +1854,7 @@ export default function PurchaseOrders({
                         style={{
                           fontSize: 16,
                           fontWeight: 800,
-                          color: C.blue,
+                          color: C.white,
                           fontFamily: "'JetBrains Mono', monospace",
                         }}
                       >

@@ -25,7 +25,7 @@ const fmt = (n) => (n ?? 0).toLocaleString("en-IN");
 
 const sectionLabelStyle = {
   fontSize: 11,
-  fontWeight: 700,
+  fontWeight: 500,
   letterSpacing: "normal",
   color: C.green || "#4ade80",
   textTransform: "uppercase",
@@ -816,7 +816,7 @@ export default function SalesOrders(props) {
                 border: `1px solid ${view === v ? C.green : C.border}`,
                 background: view === v ? C.green : "transparent",
                 color: view === v ? "#000" : C.muted,
-                fontWeight: 700,
+                fontWeight: 500,
                 fontSize: 13,
                 cursor: "pointer",
               }}
@@ -834,7 +834,7 @@ export default function SalesOrders(props) {
             <h3
               style={{
                 fontSize: 15,
-                fontWeight: 700,
+                fontWeight: 500,
                 color: C.green || "#4ade80",
                 marginBottom: 20,
               }}
@@ -955,7 +955,7 @@ export default function SalesOrders(props) {
             <h3
               style={{
                 fontSize: 14,
-                fontWeight: 700,
+                fontWeight: 500,
                 color: C.green || "#4ade80",
               }}
             >
@@ -969,7 +969,7 @@ export default function SalesOrders(props) {
                 border: "none",
                 borderRadius: 6,
                 padding: "8px 18px",
-                fontWeight: 700,
+                fontWeight: 500,
                 fontSize: 13,
                 cursor: "pointer",
               }}
@@ -984,7 +984,6 @@ export default function SalesOrders(props) {
               key={it._id}
               style={{
                 marginBottom: 12,
-                borderLeft: `3px solid ${C.green || "#4ade80"}`,
               }}
             >
               {}
@@ -998,7 +997,7 @@ export default function SalesOrders(props) {
               >
                 <span
                   style={{
-                    fontWeight: 700,
+                    fontWeight: 500,
                     color: C.green || "#4ade80",
                     fontSize: 13,
                   }}
@@ -1014,7 +1013,7 @@ export default function SalesOrders(props) {
                       border: "none",
                       borderRadius: 5,
                       padding: "4px 12px",
-                      fontWeight: 700,
+                      fontWeight: 500,
                       fontSize: 12,
                       cursor: "pointer",
                     }}
@@ -1408,7 +1407,7 @@ export default function SalesOrders(props) {
                       borderRadius: 6,
                       fontSize: 13,
                       color: C.green || "#4ade80",
-                      fontWeight: 700,
+                      fontWeight: 500,
                     }}
                   >
                     {it.itemName || "— Auto-generated —"}
@@ -1447,7 +1446,7 @@ export default function SalesOrders(props) {
                 border: `1px solid ${C.green || "#4ade80"}44`,
                 borderRadius: 6,
                 padding: "9px 20px",
-                fontWeight: 700,
+                fontWeight: 500,
                 fontSize: 13,
                 cursor: "pointer",
               }}
@@ -1578,7 +1577,7 @@ export default function SalesOrders(props) {
               <h3
                 style={{
                   fontSize: 14,
-                  fontWeight: 700,
+                  fontWeight: 500,
                   color: C.muted,
                   margin: 0,
                 }}
@@ -1629,7 +1628,6 @@ export default function SalesOrders(props) {
                   data-record-id={r.soNo}
                   style={{
                     padding: "16px 20px",
-                    borderLeft: `4px solid ${r.soNo === highlightId ? C.accent : (C.green || "#4ade80")}`,
                     background: r.soNo === highlightId ? `${C.accent}11` : "#161b22",
                     boxShadow: r.soNo === highlightId ? `0 0 0 2px ${C.accent}66` : undefined,
                     transition: "all 0.4s ease",
@@ -1693,7 +1691,7 @@ export default function SalesOrders(props) {
                           borderRadius: 6,
                           padding: "4px 12px",
                           fontSize: 11,
-                          fontWeight: 700,
+                          fontWeight: 500,
                           textTransform: "uppercase",
                         }}
                       >
@@ -1710,7 +1708,7 @@ export default function SalesOrders(props) {
                               borderRadius: 6,
                               padding: "4px 14px",
                               fontSize: 12,
-                              fontWeight: 700,
+                              fontWeight: 500,
                               cursor: "pointer",
                             }}
                           >
@@ -1725,7 +1723,7 @@ export default function SalesOrders(props) {
                               borderRadius: 6,
                               padding: "4px 14px",
                               fontSize: 12,
-                              fontWeight: 700,
+                              fontWeight: 500,
                               cursor: "pointer",
                               display: "flex",
                               alignItems: "center",
@@ -1745,7 +1743,7 @@ export default function SalesOrders(props) {
                           borderRadius: 6,
                           padding: "4px 14px",
                           fontSize: 12,
-                          fontWeight: 700,
+                          fontWeight: 500,
                           cursor: "pointer",
                         }}
                       >
@@ -1779,7 +1777,7 @@ export default function SalesOrders(props) {
                               : "1px solid #30363d55",
                         }}
                       >
-                        <span style={{ fontWeight: 700, flex: 2 }}>
+                        <span style={{ fontWeight: 500, flex: 2 }}>
                           {it.itemName}
                         </span>
                         <span style={{ flex: 1, color: "#8b949e" }}>
@@ -1794,7 +1792,7 @@ export default function SalesOrders(props) {
                         <span
                           style={{
                             color: C.green || "#4ade80",
-                            fontWeight: 700,
+                            fontWeight: 500,
                             fontFamily: "'JetBrains Mono', monospace",
                             width: 100,
                             textAlign: "right",

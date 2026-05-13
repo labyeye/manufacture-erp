@@ -67,7 +67,12 @@ const ALL_REPORT_TABS = [
     icon: "fa-solid fa-triangle-exclamation",
     roles: ["Admin", "Manager", "Store", "Client"],
   },
-  { id: "monthly", label: "Monthly", icon: "fa-solid fa-calendar-days", roles: ["Admin", "Manager"] },
+  {
+    id: "monthly",
+    label: "Monthly",
+    icon: "fa-solid fa-calendar-days",
+    roles: ["Admin", "Manager"],
+  },
   {
     id: "vendor",
     label: "Vendor",
@@ -108,10 +113,10 @@ const ALL_REPORT_TABS = [
 
 const TH = {
   padding: "10px 12px",
-  background: "#1a1a1e",
-  borderBottom: "1px solid #2a2a2e",
+  background: "rgba(255,255,255,0.04)",
+  borderBottom: "1px solid rgba(255,255,255,0.08)",
   fontSize: 11,
-  fontWeight: 700,
+  fontWeight: 500,
   color: "#888",
   textTransform: "uppercase",
   letterSpacing: "0.04em",
@@ -210,9 +215,9 @@ export function Dashboard({ data, session, toast }) {
     localStorage.setItem("erp_pvtTargets", JSON.stringify(pvtTargets));
   }, [pvtTargets]);
 
-  const [oeeGranularity,    setOeeGranularity]    = useState("weekly");
+  const [oeeGranularity, setOeeGranularity] = useState("weekly");
   const [oeeSelectedMachine, setOeeSelectedMachine] = useState("all");
-  const [oeeTargetEdit,     setOeeTargetEdit]     = useState(null); 
+  const [oeeTargetEdit, setOeeTargetEdit] = useState(null);
 
   useEffect(() => {
     setAppliedFilters({
@@ -249,10 +254,8 @@ export function Dashboard({ data, session, toast }) {
 
   const activeJOs = useMemo(() => {
     return jobOrders.filter((j) => {
-      
       if (j.status === "Completed" || j.status === "Cancelled") return false;
 
-      
       const jobProcs = j.process || [];
       if (jobProcs.length === 0) return false;
 
@@ -450,28 +453,27 @@ export function Dashboard({ data, session, toast }) {
     return list.filter((r) => r.status === soReconStatus);
   }, [salesOrders, dispMap, jobOrders, dateFrom, dateTo, soReconStatus]);
 
-  
   const allAlerts = useMemo(() => {
     const alerts = [];
     const todayMs = Date.now();
-    const now     = new Date();
+    const now = new Date();
 
-    
     (salesOrders || []).forEach((so) => {
       if (so.status === "Completed" || so.status === "Closed") return;
       const dueStr = so.deliveryDate || so.expectedDelivery || so.dueDate;
       if (!dueStr) return;
-      const dueMs  = new Date(dueStr);
+      const dueMs = new Date(dueStr);
       if (isNaN(dueMs) || dueMs < now) return;
       const daysLeft = (dueMs - todayMs) / 86400000;
       if (daysLeft > 45) return;
 
       const soKey = so.soNo || so._id || "";
       const relatedJOs = (jobOrders || []).filter(
-        (jo) => jo.soRef === soKey || jo.soNo === soKey
+        (jo) => jo.soRef === soKey || jo.soNo === soKey,
       );
       const ordered = (so.items || []).reduce(
-        (s, it) => s + +(it.orderQty || it.qty || 0), 0
+        (s, it) => s + +(it.orderQty || it.qty || 0),
+        0,
       );
       const produced = relatedJOs.reduce((s, jo) => {
         const last = (jo.process || []).slice(-1)[0];
@@ -480,39 +482,46 @@ export function Dashboard({ data, session, toast }) {
       const remaining = Math.max(0, ordered - produced);
       if (remaining === 0) return;
 
-      const cut7 = new Date(now); cut7.setDate(cut7.getDate() - 7);
+      const cut7 = new Date(now);
+      cut7.setDate(cut7.getDate() - 7);
       const cut7str = cut7.toISOString().slice(0, 10);
       const recentQty = relatedJOs
-        .flatMap((jo) => (jo.stageHistory || []).filter((h) => (h.date || "") >= cut7str))
+        .flatMap((jo) =>
+          (jo.stageHistory || []).filter((h) => (h.date || "") >= cut7str),
+        )
         .reduce((s, h) => s + +(h.qtyCompleted || 0), 0);
       const velocity = recentQty / 7;
 
       const daysNeeded = velocity > 0 ? remaining / velocity : Infinity;
       if (daysNeeded > daysLeft + 1) {
         alerts.push({
-          id:       `delivery_${soKey}`,
-          type:     "delivery_risk",
+          id: `delivery_${soKey}`,
+          type: "delivery_risk",
           severity: velocity === 0 ? "critical" : "high",
-          icon:     "fa-solid fa-circle-exclamation",
-          title:    `${soKey} at risk of missing delivery`,
-          detail:   `${remaining.toLocaleString("en-IN")} units remaining · ${daysLeft.toFixed(0)} days left · ${
-            velocity > 0 ? `needs ${daysNeeded.toFixed(0)}d at current rate` : "no recent production activity"
+          icon: "fa-solid fa-circle-exclamation",
+          title: `${soKey} at risk of missing delivery`,
+          detail: `${remaining.toLocaleString("en-IN")} units remaining · ${daysLeft.toFixed(0)} days left · ${
+            velocity > 0
+              ? `needs ${daysNeeded.toFixed(0)}d at current rate`
+              : "no recent production activity"
           }`,
-          meta:   `Client: ${so.companyName || "—"} · Due: ${dueStr.slice(0, 10)}`,
+          meta: `Client: ${so.companyName || "—"} · Due: ${dueStr.slice(0, 10)}`,
           action: "Expedite production or negotiate delivery date",
         });
       }
     });
 
-    
     const vendorPts = {};
     (purchaseOrders || []).forEach((po) => {
       const v = po.vendor || po.vendorName;
       if (!v || !po.poDate) return;
       const grn = (inward || []).find(
-        (g) => g.poNo === po.poNo || g.poRef === po.poNo || g.poNumber === po.poNo
+        (g) =>
+          g.poNo === po.poNo || g.poRef === po.poNo || g.poNumber === po.poNo,
       );
-      const rcv = grn ? (grn.date || grn.grnDate || grn.receivedDate) : po.deliveryDate;
+      const rcv = grn
+        ? grn.date || grn.grnDate || grn.receivedDate
+        : po.deliveryDate;
       if (!rcv) return;
       const lt = (new Date(rcv) - new Date(po.poDate)) / 86400000;
       if (lt <= 0 || lt > 180) return;
@@ -522,38 +531,39 @@ export function Dashboard({ data, session, toast }) {
 
     Object.entries(vendorPts).forEach(([vendor, pts]) => {
       if (pts.length < 4) return;
-      const sorted  = [...pts].sort((a, b) => new Date(b.date) - new Date(a.date));
-      const recent  = sorted.slice(0, 3).map((p) => p.lt);
-      const older   = sorted.slice(3, 6).map((p) => p.lt);
+      const sorted = [...pts].sort(
+        (a, b) => new Date(b.date) - new Date(a.date),
+      );
+      const recent = sorted.slice(0, 3).map((p) => p.lt);
+      const older = sorted.slice(3, 6).map((p) => p.lt);
       if (!older.length) return;
       const avgR = recent.reduce((s, v) => s + v, 0) / recent.length;
       const avgO = older.reduce((s, v) => s + v, 0) / older.length;
       if (avgR > avgO * 1.3 && avgR - avgO > 2) {
-        const pctUp = Math.round(((avgR / avgO) - 1) * 100);
+        const pctUp = Math.round((avgR / avgO - 1) * 100);
         alerts.push({
-          id:       `vendor_${vendor}`,
-          type:     "vendor_lead",
+          id: `vendor_${vendor}`,
+          type: "vendor_lead",
           severity: pctUp >= 75 ? "high" : "medium",
-          icon:     "fa-solid fa-store",
-          title:    `${vendor}'s avg lead time up ${pctUp}%`,
-          detail:   `Lead time: ${avgO.toFixed(0)}d → ${avgR.toFixed(0)}d over last 3 POs`,
-          meta:     `Based on ${pts.length} purchase orders`,
-          action:   "Review contract SLA or evaluate alternate vendors",
+          icon: "fa-solid fa-store",
+          title: `${vendor}'s avg lead time up ${pctUp}%`,
+          detail: `Lead time: ${avgO.toFixed(0)}d → ${avgR.toFixed(0)}d over last 3 POs`,
+          meta: `Based on ${pts.length} purchase orders`,
+          action: "Review contract SLA or evaluate alternate vendors",
         });
       }
     });
 
-    
     const thisM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-    const prevD  = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const prevM  = `${prevD.getFullYear()}-${String(prevD.getMonth() + 1).padStart(2, "0")}`;
+    const prevD = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const prevM = `${prevD.getFullYear()}-${String(prevD.getMonth() + 1).padStart(2, "0")}`;
 
     const cc = {};
     (salesOrders || []).forEach((so) => {
       const m = (so.orderDate || so.createdAt || "").slice(0, 7);
       const c = so.companyName || "Unknown";
       if (!cc[c]) cc[c] = { cur: 0, prev: 0 };
-      if (m === thisM)  cc[c].cur++;
+      if (m === thisM) cc[c].cur++;
       if (m === prevM) cc[c].prev++;
     });
 
@@ -562,53 +572,57 @@ export function Dashboard({ data, session, toast }) {
       const drop = ((prev - cur) / prev) * 100;
       if (drop >= 40) {
         alerts.push({
-          id:       `churn_${client}`,
-          type:     "client_churn",
+          id: `churn_${client}`,
+          type: "client_churn",
           severity: drop >= 70 ? "high" : "medium",
-          icon:     "fa-solid fa-chart-line-down",
-          title:    `${client}'s order frequency dropped ${Math.round(drop)}%`,
-          detail:   `Previous month: ${prev} orders · This month so far: ${cur} orders`,
-          meta:     "Churn early warning",
-          action:   "Schedule an account review call or offer a follow-up quote",
+          icon: "fa-solid fa-chart-line-down",
+          title: `${client}'s order frequency dropped ${Math.round(drop)}%`,
+          detail: `Previous month: ${prev} orders · This month so far: ${cur} orders`,
+          meta: "Churn early warning",
+          action: "Schedule an account review call or offer a follow-up quote",
         });
       }
     });
 
-    
     (consumableStock || []).forEach((item) => {
-      const qty    = +(item.qty || 0);
+      const qty = +(item.qty || 0);
       const reorder = +(item.reorderLevel || 0);
       if (qty <= 0 || reorder <= 0) return;
-      
+
       const dailyRate = reorder / 14;
-      const daysLeft  = qty / dailyRate;
+      const daysLeft = qty / dailyRate;
       if (daysLeft < 14) {
         alerts.push({
-          id:       `consumable_${item._id || item.name}`,
-          type:     "consumable_low",
-          severity: daysLeft < 5 ? "critical" : daysLeft < 7 ? "high" : "medium",
-          icon:     "fa-solid fa-bucket",
-          title:    `${item.name || "Consumable"} will run out in ~${Math.round(daysLeft)} days`,
-          detail:   `Stock: ${qty} ${item.unit || "units"} · Reorder level: ${reorder} · Est. usage: ${dailyRate.toFixed(1)}/day`,
-          meta:     item.category || "Consumable",
-          action:   "Raise a purchase order immediately",
+          id: `consumable_${item._id || item.name}`,
+          type: "consumable_low",
+          severity:
+            daysLeft < 5 ? "critical" : daysLeft < 7 ? "high" : "medium",
+          icon: "fa-solid fa-bucket",
+          title: `${item.name || "Consumable"} will run out in ~${Math.round(daysLeft)} days`,
+          detail: `Stock: ${qty} ${item.unit || "units"} · Reorder level: ${reorder} · Est. usage: ${dailyRate.toFixed(1)}/day`,
+          meta: item.category || "Consumable",
+          action: "Raise a purchase order immediately",
         });
       }
     });
 
-    
     const daysElapsedThis = now.getDate();
     const daysInLast = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
 
     activeMachines.forEach((m) => {
       const mid = String(m._id);
-      const match = (e) => String(e.machineId) === mid || String(e.machine) === mid;
+      const match = (e) =>
+        String(e.machineId) === mid || String(e.machine) === mid;
 
       const thisActive = new Set(
-        allEntries.filter((e) => e.date?.slice(0, 7) === thisM && match(e)).map((e) => e.date)
+        allEntries
+          .filter((e) => e.date?.slice(0, 7) === thisM && match(e))
+          .map((e) => e.date),
       ).size;
       const lastActive = new Set(
-        allEntries.filter((e) => e.date?.slice(0, 7) === prevM && match(e)).map((e) => e.date)
+        allEntries
+          .filter((e) => e.date?.slice(0, 7) === prevM && match(e))
+          .map((e) => e.date),
       ).size;
 
       const thisDown = Math.max(0, daysElapsedThis - thisActive);
@@ -616,22 +630,31 @@ export function Dashboard({ data, session, toast }) {
 
       if (lastDown > 0 && thisDown >= lastDown * 2 && thisDown >= 3) {
         alerts.push({
-          id:       `mdowntime_${mid}`,
-          type:     "machine_downtime",
+          id: `mdowntime_${mid}`,
+          type: "machine_downtime",
           severity: thisDown >= lastDown * 3 ? "high" : "medium",
-          icon:     "fa-solid fa-gears",
-          title:    `${m.name} downtime up ${Math.round(thisDown / Math.max(lastDown, 1))}× vs last month`,
-          detail:   `This month: ${thisDown} inactive days · Last month: ${lastDown}`,
-          meta:     `Machine type: ${m.type || "—"}`,
-          action:   "Schedule preventive maintenance inspection",
+          icon: "fa-solid fa-gears",
+          title: `${m.name} downtime up ${Math.round(thisDown / Math.max(lastDown, 1))}× vs last month`,
+          detail: `This month: ${thisDown} inactive days · Last month: ${lastDown}`,
+          meta: `Machine type: ${m.type || "—"}`,
+          action: "Schedule preventive maintenance inspection",
         });
       }
     });
 
-    
     const sev = { critical: 0, high: 1, medium: 2, low: 3 };
-    return alerts.sort((a, b) => (sev[a.severity] ?? 3) - (sev[b.severity] ?? 3));
-  }, [salesOrders, jobOrders, purchaseOrders, inward, consumableStock, allEntries, activeMachines]);
+    return alerts.sort(
+      (a, b) => (sev[a.severity] ?? 3) - (sev[b.severity] ?? 3),
+    );
+  }, [
+    salesOrders,
+    jobOrders,
+    purchaseOrders,
+    inward,
+    consumableStock,
+    allEntries,
+    activeMachines,
+  ]);
 
   const DateFilter = () => (
     <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
@@ -643,10 +666,13 @@ export function Dashboard({ data, session, toast }) {
         style={{
           fontSize: 12,
           padding: "6px 10px",
-          background: "#1a1a1e",
+          background: "rgba(255,255,255,0.07)",
+          backdropFilter: "blur(8px) saturate(180%)",
+          WebkitBackdropFilter: "blur(8px) saturate(180%)",
           color: "#e0e0e0",
-          border: "1px solid #2a2a2e",
-          borderRadius: 6,
+          border: "1px solid rgba(255,255,255,0.13)",
+          borderRadius: 8,
+          colorScheme: "dark",
           fontStretch: "normal",
         }}
       />
@@ -658,10 +684,13 @@ export function Dashboard({ data, session, toast }) {
         style={{
           fontSize: 12,
           padding: "6px 10px",
-          background: "#1a1a1e",
+          background: "rgba(255,255,255,0.07)",
+          backdropFilter: "blur(8px) saturate(180%)",
+          WebkitBackdropFilter: "blur(8px) saturate(180%)",
           color: "#e0e0e0",
-          border: "1px solid #2a2a2e",
-          borderRadius: 6,
+          border: "1px solid rgba(255,255,255,0.13)",
+          borderRadius: 8,
+          colorScheme: "dark",
           fontStretch: "normal",
         }}
       />
@@ -674,7 +703,6 @@ export function Dashboard({ data, session, toast }) {
   return (
     <div
       style={{
-        background: "#0c0c0e",
         minHeight: "100vh",
         color: "#e0e0e0",
         paddingBottom: 40,
@@ -808,7 +836,6 @@ export function Dashboard({ data, session, toast }) {
               val: fmt(prodThis),
               icon: "fa-solid fa-gears",
               tab: "production",
-              color: C.yellow,
               trend: trend(prodThis, prodLast),
               unit: "pcs",
             },
@@ -817,7 +844,6 @@ export function Dashboard({ data, session, toast }) {
               val: soThis,
               icon: "fa-solid fa-receipt",
               tab: "so_recon",
-              color: C.blue,
               trend: trend(soThis, soLast),
               roles: ["Admin", "Manager", "Sales", "Client"],
             },
@@ -826,7 +852,6 @@ export function Dashboard({ data, session, toast }) {
               val: fmt(dispThis),
               icon: "fa-solid fa-truck",
               tab: "delivery",
-              color: C.purple,
               trend: trend(dispThis, dispLast),
             },
             {
@@ -834,7 +859,6 @@ export function Dashboard({ data, session, toast }) {
               val: activeJOs.length,
               icon: "fa-solid fa-clipboard-list",
               tab: "production",
-              color: C.yellow,
               roles: ["Admin", "Manager", "Production", "Client"],
             },
             {
@@ -842,7 +866,6 @@ export function Dashboard({ data, session, toast }) {
               val: agedOrders,
               icon: "⏳",
               tab: "so_ageing",
-              color: C.orange || "#f97316",
               roles: ["Admin", "Manager", "Sales", "Client"],
             },
             {
@@ -850,7 +873,6 @@ export function Dashboard({ data, session, toast }) {
               val: fmt(rejThis),
               icon: "fa-solid fa-xmark",
               tab: "yield",
-              color: C.red,
               trend: trend(rejThis, rejLast),
               inverse: true,
               roles: ["Admin", "Manager", "Production"],
@@ -860,7 +882,6 @@ export function Dashboard({ data, session, toast }) {
               val: lowStockItems.length,
               icon: "fa-solid fa-triangle-exclamation",
               tab: "low_stock",
-              color: C.red,
             },
           ]
             .filter((card) => !card.roles || card.roles.includes(userRole))
@@ -869,10 +890,10 @@ export function Dashboard({ data, session, toast }) {
                 key={card.label}
                 onClick={() => setReportTab(card.tab)}
                 style={{
-                  background: "rgba(20, 20, 22, 0.7)",
-                  backdropFilter: "blur(10px)",
-                  border: `1px solid ${reportTab === card.tab ? card.color : "rgba(255, 255, 255, 0.05)"}`,
-                  borderRadius: 16,
+                  background: "rgba(255,255,255,0.05)",
+                  backdropFilter: "blur(14px) saturate(180%)",
+                  WebkitBackdropFilter: "blur(14px) saturate(180%)",
+                  borderRadius: 18,
                   padding: "20px",
                   cursor: "pointer",
                   transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
@@ -880,26 +901,25 @@ export function Dashboard({ data, session, toast }) {
                   display: "flex",
                   flexDirection: "column",
                   justifyContent: "space-between",
-                  boxShadow:
-                    reportTab === card.tab
-                      ? `0 0 20px ${card.color}22`
-                      : "none",
+                  boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
                 }}
                 onMouseOver={(e) => {
-                  e.currentTarget.style.transform = "translateY(-6px)";
-                  e.currentTarget.style.boxShadow = `0 15px 30px -10px ${card.color}44`;
-                  e.currentTarget.style.borderColor = card.color + "66";
+                  e.currentTarget.style.transform = "translateY(-5px)";
+                  e.currentTarget.style.background = "rgba(255,255,255,0.1)";
+                  e.currentTarget.style.boxShadow = `0 16px 36px -8px ${card.color}44, inset 0 1px 0 rgba(255,255,255,0.15)`;
+                  e.currentTarget.style.borderColor = card.color + "77";
                 }}
                 onMouseOut={(e) => {
                   e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow =
-                    reportTab === card.tab
-                      ? `0 0 20px ${card.color}22`
-                      : "none";
-                  e.currentTarget.style.borderColor =
-                    reportTab === card.tab
-                      ? card.color
-                      : "rgba(255, 255, 255, 0.05)";
+                  e.currentTarget.style.background = reportTab === card.tab
+                    ? "rgba(255,255,255,0.09)"
+                    : "rgba(255,255,255,0.05)";
+                  e.currentTarget.style.boxShadow = reportTab === card.tab
+                    ? `0 0 24px ${card.color}28, inset 0 1px 0 rgba(255,255,255,0.12)`
+                    : "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)";
+                  e.currentTarget.style.borderColor = reportTab === card.tab
+                    ? card.color + "88"
+                    : "rgba(255,255,255,0.12)";
                 }}
               >
                 <div
@@ -925,7 +945,7 @@ export function Dashboard({ data, session, toast }) {
                       <div
                         style={{
                           fontSize: 11,
-                          fontWeight: 700,
+                          fontWeight: 500,
                           color: card.inverse
                             ? card.trend.isUp
                               ? C.red
@@ -947,7 +967,7 @@ export function Dashboard({ data, session, toast }) {
                       style={{
                         fontSize: 9,
                         color: "#666",
-                        fontWeight: 700,
+                        fontWeight: 500,
                         textTransform: "uppercase",
                         marginTop: 2,
                       }}
@@ -1011,7 +1031,7 @@ export function Dashboard({ data, session, toast }) {
                   <div
                     style={{
                       fontSize: 11,
-                      fontWeight: 700,
+                      fontWeight: 500,
                       color: card.color,
                       display: "flex",
                       alignItems: "center",
@@ -1045,21 +1065,63 @@ export function Dashboard({ data, session, toast }) {
       {}
       {allAlerts.length > 0 && (
         <div style={{ marginBottom: 16 }}>
-          <div style={{ display: "flex", gap: 8, alignItems: "center", overflowX: "auto", paddingBottom: 4 }}>
-            <span style={{ fontSize: 11, color: "#555", fontWeight: 700, flexShrink: 0 }}>
+          <div
+            style={{
+              display: "flex",
+              gap: 8,
+              alignItems: "center",
+              overflowX: "auto",
+              paddingBottom: 4,
+            }}
+          >
+            <span
+              style={{
+                fontSize: 11,
+                color: "#555",
+                fontWeight: 500,
+                flexShrink: 0,
+              }}
+            >
               {allAlerts.length} alert{allAlerts.length > 1 ? "s" : ""}
             </span>
             {allAlerts.slice(0, 5).map((a) => {
-              const col = a.severity === "critical" ? "#ef4444" : a.severity === "high" ? "#f97316" : "#f59e0b";
+              const col =
+                a.severity === "critical"
+                  ? "#ef4444"
+                  : a.severity === "high"
+                    ? "#f97316"
+                    : "#f59e0b";
               return (
                 <div
                   key={a.id}
                   onClick={() => setReportTab("alerts")}
-                  style={{ flexShrink: 0, background: `${col}11`, border: `1px solid ${col}44`, borderRadius: 8, padding: "6px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 7, maxWidth: 260 }}
+                  style={{
+                    flexShrink: 0,
+                    background: `${col}11`,
+                    border: `1px solid ${col}44`,
+                    borderRadius: 8,
+                    padding: "6px 12px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 7,
+                    maxWidth: 260,
+                  }}
                 >
                   <i className={a.icon} style={{ fontSize: 13 }} />
                   <div style={{ overflow: "hidden" }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: col, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.title}</div>
+                    <div
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 500,
+                        color: col,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {a.title}
+                    </div>
                     <div style={{ fontSize: 9, color: "#555" }}>{a.meta}</div>
                   </div>
                 </div>
@@ -1068,7 +1130,19 @@ export function Dashboard({ data, session, toast }) {
             {allAlerts.length > 5 && (
               <div
                 onClick={() => setReportTab("alerts")}
-                style={{ flexShrink: 0, background: "#1a1a1e", border: "1px solid #3a3a3e", borderRadius: 8, padding: "6px 12px", cursor: "pointer", color: "#888", fontSize: 10, fontWeight: 700 }}
+                style={{
+                  flexShrink: 0,
+                  background: "rgba(255,255,255,0.07)",
+                  backdropFilter: "blur(8px)",
+                  WebkitBackdropFilter: "blur(8px)",
+                  border: "1px solid rgba(255,255,255,0.13)",
+                  borderRadius: 8,
+                  padding: "6px 12px",
+                  cursor: "pointer",
+                  color: "#aaa",
+                  fontSize: 10,
+                  fontWeight: 500,
+                }}
               >
                 +{allAlerts.length - 5} more →
               </div>
@@ -1104,11 +1178,12 @@ export function Dashboard({ data, session, toast }) {
                   style={{
                     padding: "12px 14px",
                     borderRadius: 12,
-                    background:
-                      reportTab === t.id
-                        ? "rgba(255, 120, 0, 0.15)"
-                        : "rgba(255, 255, 255, 0.02)",
-                    border: `1px solid ${reportTab === t.id ? "#ff7800" : "rgba(255, 255, 255, 0.1)"}`,
+                    background: reportTab === t.id
+                      ? "rgba(255,120,0,0.15)"
+                      : "rgba(255,255,255,0.05)",
+                    backdropFilter: "blur(10px) saturate(160%)",
+                    WebkitBackdropFilter: "blur(10px) saturate(160%)",
+                    border: `1px solid ${reportTab === t.id ? "#ff7800aa" : "rgba(255,255,255,0.12)"}`,
                     color: reportTab === t.id ? "#ff7800" : "#999",
                     cursor: "pointer",
                     fontSize: 12,
@@ -1119,26 +1194,21 @@ export function Dashboard({ data, session, toast }) {
                     gap: 10,
                     fontFamily: "'Inter', sans-serif",
                     transition: "all 0.2s ease",
-                    boxShadow:
-                      reportTab === t.id
-                        ? "0 4px 15px rgba(255, 120, 0, 0.1)"
-                        : "none",
+                    boxShadow: reportTab === t.id
+                      ? "0 4px 20px rgba(255,120,0,0.18), inset 0 1px 0 rgba(255,255,255,0.1)"
+                      : "0 2px 10px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.06)",
                   }}
                   onMouseEnter={(e) => {
                     if (reportTab !== t.id) {
-                      e.currentTarget.style.background =
-                        "rgba(255, 255, 255, 0.05)";
-                      e.currentTarget.style.borderColor =
-                        "rgba(255, 255, 255, 0.2)";
+                      e.currentTarget.style.background = "rgba(255,255,255,0.09)";
+                      e.currentTarget.style.borderColor = "rgba(255,255,255,0.22)";
                       e.currentTarget.style.color = "#fff";
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (reportTab !== t.id) {
-                      e.currentTarget.style.background =
-                        "rgba(255, 255, 255, 0.02)";
-                      e.currentTarget.style.borderColor =
-                        "rgba(255, 255, 255, 0.1)";
+                      e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+                      e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)";
                       e.currentTarget.style.color = "#999";
                     }
                   }}
@@ -1158,16 +1228,22 @@ export function Dashboard({ data, session, toast }) {
           <div
             style={{
               padding: 20,
-              background: "#141416",
-              borderRadius: 10,
-              border: "1px solid #2a2a2e",
+              background: "rgba(255,255,255,0.05)",
+              backdropFilter: "blur(14px) saturate(180%)",
+              WebkitBackdropFilter: "blur(14px) saturate(180%)",
+              borderRadius: 16,
+              border: "1px solid rgba(255,255,255,0.12)",
+              boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
               marginBottom: 20,
               display: "flex",
               alignItems: "center",
               gap: 20,
             }}
           >
-            <i className="fa-solid fa-gears" style={{ fontSize: 36, color: "inherit" }} />
+            <i
+              className="fa-solid fa-gears"
+              style={{ fontSize: 36, color: "inherit" }}
+            />
             <div>
               <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
                 <span
@@ -1188,7 +1264,7 @@ export function Dashboard({ data, session, toast }) {
           <div
             style={{
               fontSize: 11,
-              fontWeight: 700,
+              fontWeight: 500,
               color: "#888",
               textTransform: "uppercase",
               letterSpacing: "0.08em",
@@ -1214,12 +1290,16 @@ export function Dashboard({ data, session, toast }) {
                     setSelectedProcessPending(isSelected ? null : proc)
                   }
                   style={{
-                    background: isSelected ? "#1a1a20" : "#141416",
-                    border: `1px solid ${isSelected ? C.blue : count > 0 ? C.blue + "55" : "#2a2a2e"}`,
-                    borderRadius: 8,
+                    background: isSelected ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.05)",
+                    backdropFilter: "blur(12px) saturate(180%)",
+                    WebkitBackdropFilter: "blur(12px) saturate(180%)",
+                    border: `1px solid ${isSelected ? C.blue + "99" : count > 0 ? C.blue + "44" : "rgba(255,255,255,0.1)"}`,
+                    borderRadius: 12,
                     padding: 14,
                     cursor: count > 0 ? "pointer" : "default",
-                    boxShadow: isSelected ? `0 0 10px ${C.blue}44` : "none",
+                    boxShadow: isSelected
+                      ? `0 0 16px ${C.blue}44, inset 0 1px 0 rgba(255,255,255,0.1)`
+                      : "0 2px 12px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.07)",
                     transform: isSelected ? "scale(1.02)" : "scale(1)",
                     transition: "all 0.2s ease",
                   }}
@@ -1234,7 +1314,7 @@ export function Dashboard({ data, session, toast }) {
                     {count}
                   </div>
                   <div
-                    style={{ fontSize: 13, fontWeight: 700, margin: "4px 0" }}
+                    style={{ fontSize: 13, fontWeight: 500, margin: "4px 0" }}
                   >
                     {proc}
                   </div>
@@ -1251,17 +1331,20 @@ export function Dashboard({ data, session, toast }) {
               <div
                 style={{
                   marginTop: 20,
-                  borderRadius: 8,
+                  borderRadius: 16,
                   overflow: "hidden",
-                  border: "1px solid #2a2a2e",
-                  background: "#141416",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  background: "rgba(255,255,255,0.05)",
+                  backdropFilter: "blur(14px) saturate(180%)",
+                  WebkitBackdropFilter: "blur(14px) saturate(180%)",
+                  boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
                 }}
               >
                 <div
                   style={{
                     padding: "12px 16px",
                     borderBottom: "1px solid #2a2a2e",
-                    fontWeight: 700,
+                    fontWeight: 500,
                     color: C.blue,
                   }}
                 >
@@ -1345,7 +1428,7 @@ export function Dashboard({ data, session, toast }) {
               gap: 16,
               marginBottom: 20,
               alignItems: "flex-end",
-              background: "#141416",
+              background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)",
               padding: 16,
               borderRadius: 8,
               border: "1px solid #2a2a2e",
@@ -1355,7 +1438,7 @@ export function Dashboard({ data, session, toast }) {
               <div
                 style={{
                   fontSize: 11,
-                  fontWeight: 700,
+                  fontWeight: 500,
                   color: "#888",
                   textTransform: "uppercase",
                   marginBottom: 6,
@@ -1415,7 +1498,7 @@ export function Dashboard({ data, session, toast }) {
               <div
                 style={{
                   fontSize: 11,
-                  fontWeight: 700,
+                  fontWeight: 500,
                   color: "#888",
                   textTransform: "uppercase",
                   marginBottom: 6,
@@ -1434,7 +1517,7 @@ export function Dashboard({ data, session, toast }) {
               <div
                 style={{
                   fontSize: 11,
-                  fontWeight: 700,
+                  fontWeight: 500,
                   color: "#888",
                   textTransform: "uppercase",
                   marginBottom: 6,
@@ -1460,14 +1543,18 @@ export function Dashboard({ data, session, toast }) {
               }}
               style={{
                 padding: "10px 24px",
-                background: C.accent || "#4CAF50",
-                color: "#000",
-                border: "none",
-                borderRadius: 6,
+                background: "rgba(255,255,255,0.08)",
+                backdropFilter: "blur(14px) saturate(180%)",
+                WebkitBackdropFilter: "blur(14px) saturate(180%)",
+                color: "#fff",
+                border: "1px solid rgba(255,255,255,0.18)",
+                borderRadius: 10,
                 fontWeight: 700,
                 fontSize: 13,
                 cursor: "pointer",
                 height: 38,
+                boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                transition: "all 0.18s ease",
               }}
             >
               Generate Report
@@ -1536,7 +1623,7 @@ export function Dashboard({ data, session, toast }) {
                                 (PROCESS_COLORS[e.stage] || "#555") + "33",
                               color: PROCESS_COLORS[e.stage] || "#aaa",
                               fontSize: 11,
-                              fontWeight: 700,
+                              fontWeight: 500,
                             }}
                           >
                             {e.stage || "—"}
@@ -1666,7 +1753,7 @@ export function Dashboard({ data, session, toast }) {
                   gap: 16,
                   marginBottom: 20,
                   alignItems: "flex-end",
-                  background: "#141416",
+                  background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)",
                   padding: 16,
                   borderRadius: 8,
                   border: "1px solid #2a2a2e",
@@ -1676,7 +1763,7 @@ export function Dashboard({ data, session, toast }) {
                   <div
                     style={{
                       fontSize: 11,
-                      fontWeight: 700,
+                      fontWeight: 500,
                       color: "#888",
                       marginBottom: 6,
                     }}
@@ -1692,7 +1779,7 @@ export function Dashboard({ data, session, toast }) {
                   <div
                     style={{
                       fontSize: 11,
-                      fontWeight: 700,
+                      fontWeight: 500,
                       color: "#888",
                       marginBottom: 6,
                     }}
@@ -1705,7 +1792,7 @@ export function Dashboard({ data, session, toast }) {
                   <div
                     style={{
                       fontSize: 11,
-                      fontWeight: 700,
+                      fontWeight: 500,
                       color: "#888",
                       marginBottom: 6,
                     }}
@@ -1770,9 +1857,8 @@ export function Dashboard({ data, session, toast }) {
                   <div
                     key={s.label}
                     style={{
-                      background: "#141416",
+                      background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)",
                       border: `1px solid ${s.color}44`,
-                      borderLeft: `4px solid ${s.color}`,
                       borderRadius: 8,
                       padding: 16,
                     }}
@@ -1785,7 +1871,7 @@ export function Dashboard({ data, session, toast }) {
                     <div
                       style={{
                         fontSize: 10,
-                        fontWeight: 700,
+                        fontWeight: 500,
                         color: "#888",
                         textTransform: "uppercase",
                         marginTop: 4,
@@ -1807,9 +1893,8 @@ export function Dashboard({ data, session, toast }) {
               >
                 <div
                   style={{
-                    background: "#141416",
+                    background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)",
                     border: `1px solid ${C.red}44`,
-                    borderLeft: `4px solid ${C.red}`,
                     borderRadius: 8,
                     padding: 16,
                   }}
@@ -1820,7 +1905,7 @@ export function Dashboard({ data, session, toast }) {
                   <div
                     style={{
                       fontSize: 10,
-                      fontWeight: 700,
+                      fontWeight: 500,
                       color: "#888",
                       textTransform: "uppercase",
                       marginTop: 4,
@@ -1831,9 +1916,8 @@ export function Dashboard({ data, session, toast }) {
                 </div>
                 <div
                   style={{
-                    background: "#141416",
+                    background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)",
                     border: `1px solid ${C.red}44`,
-                    borderLeft: `4px solid ${C.red}`,
                     borderRadius: 8,
                     padding: 16,
                   }}
@@ -1844,7 +1928,7 @@ export function Dashboard({ data, session, toast }) {
                   <div
                     style={{
                       fontSize: 10,
-                      fontWeight: 700,
+                      fontWeight: 500,
                       color: "#888",
                       textTransform: "uppercase",
                       marginTop: 4,
@@ -2028,7 +2112,7 @@ export function Dashboard({ data, session, toast }) {
                   gap: 16,
                   marginBottom: 20,
                   alignItems: "flex-end",
-                  background: "#141416",
+                  background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)",
                   padding: 16,
                   borderRadius: 8,
                   border: "1px solid #2a2a2e",
@@ -2038,7 +2122,7 @@ export function Dashboard({ data, session, toast }) {
                   <div
                     style={{
                       fontSize: 11,
-                      fontWeight: 700,
+                      fontWeight: 500,
                       color: "#888",
                       marginBottom: 6,
                     }}
@@ -2054,7 +2138,7 @@ export function Dashboard({ data, session, toast }) {
                   <div
                     style={{
                       fontSize: 11,
-                      fontWeight: 700,
+                      fontWeight: 500,
                       color: "#888",
                       marginBottom: 6,
                     }}
@@ -2067,7 +2151,7 @@ export function Dashboard({ data, session, toast }) {
                   <div
                     style={{
                       fontSize: 11,
-                      fontWeight: 700,
+                      fontWeight: 500,
                       color: "#888",
                       marginBottom: 6,
                     }}
@@ -2130,9 +2214,8 @@ export function Dashboard({ data, session, toast }) {
                   <div
                     key={s.label}
                     style={{
-                      background: "#141416",
+                      background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)",
                       border: `1px solid ${s.color}44`,
-                      borderLeft: `4px solid ${s.color}`,
                       borderRadius: 8,
                       padding: 16,
                     }}
@@ -2251,7 +2334,7 @@ export function Dashboard({ data, session, toast }) {
                             <div
                               style={{
                                 fontSize: 11,
-                                fontWeight: 700,
+                                fontWeight: 500,
                                 color: statusColor(r.status),
                                 marginBottom: 4,
                               }}
@@ -2297,7 +2380,7 @@ export function Dashboard({ data, session, toast }) {
                                   border: `1px solid ${C.green}44`,
                                   borderRadius: 4,
                                   fontSize: 10,
-                                  fontWeight: 700,
+                                  fontWeight: 500,
                                   cursor: "pointer",
                                 }}
                               >
@@ -2379,7 +2462,7 @@ export function Dashboard({ data, session, toast }) {
                   gap: 16,
                   marginBottom: 20,
                   alignItems: "flex-end",
-                  background: "#141416",
+                  background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)",
                   padding: 16,
                   borderRadius: 8,
                   border: "1px solid #2a2a2e",
@@ -2389,7 +2472,7 @@ export function Dashboard({ data, session, toast }) {
                   <div
                     style={{
                       fontSize: 11,
-                      fontWeight: 700,
+                      fontWeight: 500,
                       color: "#888",
                       marginBottom: 6,
                     }}
@@ -2405,7 +2488,7 @@ export function Dashboard({ data, session, toast }) {
                   <div
                     style={{
                       fontSize: 11,
-                      fontWeight: 700,
+                      fontWeight: 500,
                       color: "#888",
                       marginBottom: 6,
                     }}
@@ -2445,9 +2528,8 @@ export function Dashboard({ data, session, toast }) {
                   <div
                     key={s.label}
                     style={{
-                      background: "#141416",
+                      background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)",
                       border: `1px solid ${s.color}44`,
-                      borderLeft: `4px solid ${s.color}`,
                       borderRadius: 8,
                       padding: 16,
                     }}
@@ -2568,7 +2650,7 @@ export function Dashboard({ data, session, toast }) {
                                 background: C.green + "22",
                                 color: C.green,
                                 fontSize: 11,
-                                fontWeight: 700,
+                                fontWeight: 500,
                               }}
                             >
                               {r.status}
@@ -2626,9 +2708,8 @@ export function Dashboard({ data, session, toast }) {
                   <div
                     key={st.label}
                     style={{
-                      background: "#141416",
+                      background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)",
                       border: `1px solid ${st.color}44`,
-                      borderLeft: `5px solid ${st.color}`,
                       borderRadius: 8,
                       padding: 18,
                     }}
@@ -2639,7 +2720,7 @@ export function Dashboard({ data, session, toast }) {
                       {st.rows.length}
                     </div>
                     <div
-                      style={{ fontSize: 13, fontWeight: 700, marginTop: 4 }}
+                      style={{ fontSize: 13, fontWeight: 500, marginTop: 4 }}
                     >
                       {st.label}
                     </div>
@@ -2817,7 +2898,7 @@ export function Dashboard({ data, session, toast }) {
                         <td
                           style={{
                             ...TD,
-                            fontWeight: 700,
+                            fontWeight: 500,
                             color: actual > 0 ? C.green : "#555",
                           }}
                         >
@@ -2873,7 +2954,7 @@ export function Dashboard({ data, session, toast }) {
                   gap: 16,
                   marginBottom: 20,
                   alignItems: "flex-end",
-                  background: "#141416",
+                  background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)",
                   padding: 16,
                   borderRadius: 8,
                   border: "1px solid #2a2a2e",
@@ -2883,7 +2964,7 @@ export function Dashboard({ data, session, toast }) {
                   <div
                     style={{
                       fontSize: 11,
-                      fontWeight: 700,
+                      fontWeight: 500,
                       color: "#888",
                       marginBottom: 6,
                     }}
@@ -2899,7 +2980,7 @@ export function Dashboard({ data, session, toast }) {
                   <div
                     style={{
                       fontSize: 11,
-                      fontWeight: 700,
+                      fontWeight: 500,
                       color: "#888",
                       marginBottom: 6,
                     }}
@@ -2922,7 +3003,7 @@ export function Dashboard({ data, session, toast }) {
                   <div
                     key={y.stage}
                     style={{
-                      background: "#141416",
+                      background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)",
                       border: `1px solid ${y.pct > 95 ? C.green : C.yellow}44`,
                       borderTop: `4px solid ${y.pct > 95 ? C.green : C.yellow}`,
                       borderRadius: 8,
@@ -2930,7 +3011,7 @@ export function Dashboard({ data, session, toast }) {
                     }}
                   >
                     <div
-                      style={{ fontSize: 12, fontWeight: 700, color: "#888" }}
+                      style={{ fontSize: 12, fontWeight: 500, color: "#888" }}
                     >
                       {y.stage}
                     </div>
@@ -3039,7 +3120,7 @@ export function Dashboard({ data, session, toast }) {
                 textAlign: "center",
                 padding: 60,
                 color: C.green,
-                background: "#141416",
+                background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)",
                 borderRadius: 8,
                 border: "1px solid #2a2a2e",
               }}
@@ -3051,7 +3132,7 @@ export function Dashboard({ data, session, toast }) {
               <div
                 style={{
                   fontSize: 11,
-                  fontWeight: 700,
+                  fontWeight: 500,
                   color: "#888",
                   textTransform: "uppercase",
                   marginBottom: 14,
@@ -3073,7 +3154,7 @@ export function Dashboard({ data, session, toast }) {
                         lowStockFilter === f ? C.red + "22" : "transparent",
                       color: lowStockFilter === f ? C.red : "#888",
                       fontSize: 12,
-                      fontWeight: 700,
+                      fontWeight: 500,
                       cursor: "pointer",
                     }}
                   >
@@ -3204,7 +3285,7 @@ export function Dashboard({ data, session, toast }) {
                   style={{
                     color: "#888",
                     fontSize: 11,
-                    fontWeight: 700,
+                    fontWeight: 500,
                     textTransform: "uppercase",
                   }}
                 >
@@ -3216,7 +3297,7 @@ export function Dashboard({ data, session, toast }) {
                   onChange={(e) => setSelectedMonth(e.target.value)}
                   style={{
                     padding: "7px 12px",
-                    background: "#141416",
+                    background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)",
                     border: "1px solid #2a2a2e",
                     color: "#e0e0e0",
                     borderRadius: 6,
@@ -3251,9 +3332,8 @@ export function Dashboard({ data, session, toast }) {
                   <div
                     key={s.label}
                     style={{
-                      background: "#141416",
+                      background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)",
                       border: `1px solid ${s.color}44`,
-                      borderLeft: `4px solid ${s.color}`,
                       borderRadius: 8,
                       padding: 16,
                     }}
@@ -3281,9 +3361,9 @@ export function Dashboard({ data, session, toast }) {
                 <div
                   style={{
                     padding: "10px 14px",
-                    background: "#1a1a1e",
+                    background: "rgba(255,255,255,0.05)",
                     fontSize: 11,
-                    fontWeight: 700,
+                    fontWeight: 500,
                     color: C.yellow,
                     textTransform: "uppercase",
                   }}
@@ -3381,9 +3461,9 @@ export function Dashboard({ data, session, toast }) {
                   <div
                     style={{
                       padding: "10px 14px",
-                      background: "#1a1a1e",
+                      background: "rgba(255,255,255,0.05)",
                       fontSize: 11,
-                      fontWeight: 700,
+                      fontWeight: 500,
                       color: C.yellow,
                       textTransform: "uppercase",
                     }}
@@ -3432,7 +3512,7 @@ export function Dashboard({ data, session, toast }) {
                                 color:
                                   j.status === "Completed" ? C.green : C.yellow,
                                 fontSize: 11,
-                                fontWeight: 700,
+                                fontWeight: 500,
                               }}
                             >
                               {j.status || "—"}
@@ -3556,7 +3636,7 @@ export function Dashboard({ data, session, toast }) {
                   gap: 16,
                   marginBottom: 20,
                   alignItems: "flex-end",
-                  background: "#141416",
+                  background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)",
                   padding: 16,
                   borderRadius: 8,
                   border: "1px solid #2a2a2e",
@@ -3566,7 +3646,7 @@ export function Dashboard({ data, session, toast }) {
                   <div
                     style={{
                       fontSize: 11,
-                      fontWeight: 700,
+                      fontWeight: 500,
                       color: "#888",
                       marginBottom: 6,
                     }}
@@ -3582,7 +3662,7 @@ export function Dashboard({ data, session, toast }) {
                   <div
                     style={{
                       fontSize: 11,
-                      fontWeight: 700,
+                      fontWeight: 500,
                       color: "#888",
                       marginBottom: 6,
                     }}
@@ -3625,9 +3705,8 @@ export function Dashboard({ data, session, toast }) {
                   <div
                     key={s.label}
                     style={{
-                      background: "#141416",
+                      background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)",
                       border: `1px solid ${s.color}44`,
-                      borderLeft: `4px solid ${s.color}`,
                       borderRadius: 8,
                       padding: 16,
                     }}
@@ -3720,7 +3799,7 @@ export function Dashboard({ data, session, toast }) {
                             style={{
                               ...TD,
                               color: r.openPOs > 0 ? C.yellow : "#555",
-                              fontWeight: 700,
+                              fontWeight: 500,
                             }}
                           >
                             {r.openPOs}
@@ -3779,49 +3858,61 @@ export function Dashboard({ data, session, toast }) {
         (() => {
           const BENCHMARK = 85;
 
-          
           const pct = (n) => (n == null ? "—" : `${(n * 100).toFixed(1)}%`);
           const oeeColor = (v) =>
-            v == null ? "#555" : v >= 0.85 ? C.green : v >= 0.65 ? C.yellow : C.red;
+            v == null
+              ? "#555"
+              : v >= 0.85
+                ? C.green
+                : v >= 0.65
+                  ? C.yellow
+                  : C.red;
           const oeeLabel = (v) =>
-            v == null ? "—" : v >= 0.85 ? "World-class" : v >= 0.65 ? "Average" : "Poor";
+            v == null
+              ? "—"
+              : v >= 0.85
+                ? "World-class"
+                : v >= 0.65
+                  ? "Average"
+                  : "Poor";
 
-          
           const isoWeek = (dateStr) => {
             if (!dateStr) return "unknown";
             const d = new Date(dateStr);
             const jan1 = new Date(d.getFullYear(), 0, 1);
-            const wk = Math.ceil(((d - jan1) / 86400000 + jan1.getDay() + 1) / 7);
+            const wk = Math.ceil(
+              ((d - jan1) / 86400000 + jan1.getDay() + 1) / 7,
+            );
             return `${d.getFullYear()}-W${String(wk).padStart(2, "0")}`;
           };
           const monthKey = (dateStr) =>
             dateStr ? dateStr.slice(0, 7) : "unknown";
 
-          
           const oeeEntries = allEntries.filter((e) => {
             if (dateFrom && e.date < dateFrom) return false;
-            if (dateTo   && e.date > dateTo)   return false;
+            if (dateTo && e.date > dateTo) return false;
             return true;
           });
 
-          
           const fleetCombos = new Set(
-            oeeEntries.map((e) => `${e.date}|${e.shift || "_"}`)
+            oeeEntries.map((e) => `${e.date}|${e.shift || "_"}`),
           );
 
-          
           const machineData = activeMachines.map((m) => {
             const mid = String(m._id);
             const ents = oeeEntries.filter(
-              (e) => String(e.machineId) === mid || String(e.machine) === mid
+              (e) => String(e.machineId) === mid || String(e.machine) === mid,
             );
-            const good     = ents.reduce((s, e) => s + +(e.qtyCompleted || 0), 0);
-            const rejected = ents.reduce((s, e) => s + +(e.qtyRejected  || 0), 0);
-            const total    = good + rejected;
+            const good = ents.reduce((s, e) => s + +(e.qtyCompleted || 0), 0);
+            const rejected = ents.reduce(
+              (s, e) => s + +(e.qtyRejected || 0),
+              0,
+            );
+            const total = good + rejected;
             const Q = total > 0 ? good / total : null;
 
             const machineCombos = new Set(
-              ents.map((e) => `${e.date}|${e.shift || "_"}`)
+              ents.map((e) => `${e.date}|${e.shift || "_"}`),
             );
             const A =
               fleetCombos.size > 0
@@ -3834,39 +3925,46 @@ export function Dashboard({ data, session, toast }) {
                 ? Math.min(1, good / (machineCombos.size * tgt))
                 : null;
 
-            const oee =
-              A != null && P != null && Q != null ? A * P * Q : Q;
+            const oee = A != null && P != null && Q != null ? A * P * Q : Q;
 
-            
             const byShift = {};
             ents.forEach((e) => {
               const sh = e.shift || "Unknown";
               if (!byShift[sh])
                 byShift[sh] = { good: 0, rejected: 0, combos: new Set() };
-              byShift[sh].good     += +(e.qtyCompleted || 0);
-              byShift[sh].rejected += +(e.qtyRejected  || 0);
+              byShift[sh].good += +(e.qtyCompleted || 0);
+              byShift[sh].rejected += +(e.qtyRejected || 0);
               byShift[sh].combos.add(`${e.date}|${sh}`);
             });
 
             return {
-              m, mid, good, rejected, total, Q, A, P, oee,
-              activeShifts: machineCombos.size, byShift, ents,
+              m,
+              mid,
+              good,
+              rejected,
+              total,
+              Q,
+              A,
+              P,
+              oee,
+              activeShifts: machineCombos.size,
+              byShift,
+              ents,
             };
           });
 
-          
-          const fleetGood  = machineData.reduce((s, r) => s + r.good,     0);
-          const fleetRej   = machineData.reduce((s, r) => s + r.rejected, 0);
+          const fleetGood = machineData.reduce((s, r) => s + r.good, 0);
+          const fleetRej = machineData.reduce((s, r) => s + r.rejected, 0);
           const fleetTotal = fleetGood + fleetRej;
-          const fleetQ     = fleetTotal > 0 ? fleetGood / fleetTotal : null;
+          const fleetQ = fleetTotal > 0 ? fleetGood / fleetTotal : null;
 
-          const machinesWithA  = machineData.filter((r) => r.A != null);
-          const fleetA         = machinesWithA.length
+          const machinesWithA = machineData.filter((r) => r.A != null);
+          const fleetA = machinesWithA.length
             ? machinesWithA.reduce((s, r) => s + r.A, 0) / machinesWithA.length
             : null;
 
-          const machinesWithP  = machineData.filter((r) => r.P != null);
-          const fleetP         = machinesWithP.length
+          const machinesWithP = machineData.filter((r) => r.P != null);
+          const fleetP = machinesWithP.length
             ? machinesWithP.reduce((s, r) => s + r.P, 0) / machinesWithP.length
             : null;
 
@@ -3875,43 +3973,44 @@ export function Dashboard({ data, session, toast }) {
               ? fleetA * fleetP * fleetQ
               : fleetQ;
 
-          
           const trendEntries =
             oeeSelectedMachine === "all"
               ? oeeEntries
               : oeeEntries.filter((e) => {
                   const mid = oeeSelectedMachine;
-                  return String(e.machineId) === mid || String(e.machine) === mid;
+                  return (
+                    String(e.machineId) === mid || String(e.machine) === mid
+                  );
                 });
 
           const trendBuckets = {};
           trendEntries.forEach((e) => {
             const k =
               oeeGranularity === "weekly" ? isoWeek(e.date) : monthKey(e.date);
-            if (!trendBuckets[k]) trendBuckets[k] = { good: 0, rejected: 0, combos: new Set() };
-            trendBuckets[k].good     += +(e.qtyCompleted || 0);
-            trendBuckets[k].rejected += +(e.qtyRejected  || 0);
+            if (!trendBuckets[k])
+              trendBuckets[k] = { good: 0, rejected: 0, combos: new Set() };
+            trendBuckets[k].good += +(e.qtyCompleted || 0);
+            trendBuckets[k].rejected += +(e.qtyRejected || 0);
             trendBuckets[k].combos.add(`${e.date}|${e.shift || "_"}`);
           });
 
           const trendRows = Object.entries(trendBuckets)
             .sort(([a], [b]) => a.localeCompare(b))
-            .slice(-16) 
+            .slice(-16)
             .map(([label, b]) => {
               const tot = b.good + b.rejected;
-              const q   = tot > 0 ? b.good / tot : 0;
-              
+              const q = tot > 0 ? b.good / tot : 0;
+
               return { label, q: q * 100 };
             });
 
-          
           const TrendChart = () => {
             if (trendRows.length === 0) return null;
-            const chartH  = 180;
-            const padB    = 28;
-            const padTop  = 20;
-            const inner   = chartH - padB - padTop;
-            const barW    = `${(100 / trendRows.length).toFixed(2)}%`;
+            const chartH = 180;
+            const padB = 28;
+            const padTop = 20;
+            const inner = chartH - padB - padTop;
+            const barW = `${(100 / trendRows.length).toFixed(2)}%`;
             const benchmarkY = padTop + inner * (1 - BENCHMARK / 100);
 
             return (
@@ -3926,14 +4025,18 @@ export function Dashboard({ data, session, toast }) {
                   return (
                     <g key={v}>
                       <line
-                        x1="0" y1={y} x2="100%" y2={y}
+                        x1="0"
+                        y1={y}
+                        x2="100%"
+                        y2={y}
                         stroke={v === 85 ? "#22c55e" : "#2a2a2e"}
                         strokeWidth={v === 85 ? 1.5 : 1}
                         strokeDasharray={v === 85 ? "5 4" : "none"}
                         opacity={v === 85 ? 0.7 : 0.4}
                       />
                       <text
-                        x={2} y={y - 2}
+                        x={2}
+                        y={y - 2}
                         fontSize={8}
                         fill={v === 85 ? "#22c55e" : "#555"}
                         fontWeight={v === 85 ? 700 : 400}
@@ -3947,9 +4050,14 @@ export function Dashboard({ data, session, toast }) {
                 {}
                 {trendRows.map((row, i) => {
                   const barH = (row.q / 100) * inner;
-                  const x    = `${(i / trendRows.length) * 100}%`;
-                  const y    = padTop + inner - barH;
-                  const col  = row.q >= 85 ? "#22c55e" : row.q >= 65 ? "#f59e0b" : "#ef4444";
+                  const x = `${(i / trendRows.length) * 100}%`;
+                  const y = padTop + inner - barH;
+                  const col =
+                    row.q >= 85
+                      ? "#22c55e"
+                      : row.q >= 65
+                        ? "#f59e0b"
+                        : "#ef4444";
                   const wPct = `${(100 / trendRows.length - 0.8).toFixed(2)}%`;
                   return (
                     <g key={i}>
@@ -3990,12 +4098,26 @@ export function Dashboard({ data, session, toast }) {
             );
           };
 
-          
           const rootCause = (() => {
             const factors = [
-              { key: "A", label: "Availability", val: fleetA, fix: "Machine downtime or unplanned stops" },
-              { key: "P", label: "Performance",  val: fleetP, fix: "Speed loss or minor stoppages" },
-              { key: "Q", label: "Quality",      val: fleetQ, fix: "Defects / rework reducing yield" },
+              {
+                key: "A",
+                label: "Availability",
+                val: fleetA,
+                fix: "Machine downtime or unplanned stops",
+              },
+              {
+                key: "P",
+                label: "Performance",
+                val: fleetP,
+                fix: "Speed loss or minor stoppages",
+              },
+              {
+                key: "Q",
+                label: "Quality",
+                val: fleetQ,
+                fix: "Defects / rework reducing yield",
+              },
             ].filter((f) => f.val != null);
             if (factors.length === 0) return null;
             return factors.reduce((a, b) => (a.val < b.val ? a : b));
@@ -4010,7 +4132,7 @@ export function Dashboard({ data, session, toast }) {
                   gap: 14,
                   alignItems: "flex-end",
                   flexWrap: "wrap",
-                  background: "#141416",
+                  background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)",
                   padding: 16,
                   borderRadius: 8,
                   border: "1px solid #2a2a2e",
@@ -4018,13 +4140,32 @@ export function Dashboard({ data, session, toast }) {
                 }}
               >
                 <div>
-                  <div style={{ fontSize: 11, color: "#888", fontWeight: 700, marginBottom: 6, textTransform: "uppercase" }}>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: "#888",
+                      fontWeight: 500,
+                      marginBottom: 6,
+                      textTransform: "uppercase",
+                    }}
+                  >
                     Date From
                   </div>
-                  <DatePicker value={dateFrom} onChange={(v) => setDateFrom(v)} />
+                  <DatePicker
+                    value={dateFrom}
+                    onChange={(v) => setDateFrom(v)}
+                  />
                 </div>
                 <div>
-                  <div style={{ fontSize: 11, color: "#888", fontWeight: 700, marginBottom: 6, textTransform: "uppercase" }}>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: "#888",
+                      fontWeight: 500,
+                      marginBottom: 6,
+                      textTransform: "uppercase",
+                    }}
+                  >
                     Date To
                   </div>
                   <DatePicker value={dateTo} onChange={(v) => setDateTo(v)} />
@@ -4038,9 +4179,12 @@ export function Dashboard({ data, session, toast }) {
                         padding: "7px 16px",
                         borderRadius: 6,
                         border: `1px solid ${oeeGranularity === g ? "#ff7800" : "#3a3a3e"}`,
-                        background: oeeGranularity === g ? "#ff780022" : "transparent",
+                        background:
+                          oeeGranularity === g ? "#ff780022" : "transparent",
                         color: oeeGranularity === g ? "#ff7800" : "#888",
-                        fontWeight: 700, fontSize: 11, cursor: "pointer",
+                        fontWeight: 500,
+                        fontSize: 11,
+                        cursor: "pointer",
                         textTransform: "capitalize",
                       }}
                     >
@@ -4051,27 +4195,97 @@ export function Dashboard({ data, session, toast }) {
               </div>
 
               {}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12, marginBottom: 20 }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(5, 1fr)",
+                  gap: 12,
+                  marginBottom: 20,
+                }}
+              >
                 {[
-                  { label: "Fleet OEE",      val: fleetOEE, note: fleetP == null ? "Quality proxy" : "A×P×Q" },
-                  { label: "Availability",   val: fleetA,   note: "Active shifts / fleet planned" },
-                  { label: "Performance",    val: fleetP,   note: fleetP == null ? "Set shift target ↓" : "Output vs target" },
-                  { label: "Quality Rate",   val: fleetQ,   note: "Good / (Good+Rejected)" },
-                  { label: "Gap to 85%",
+                  {
+                    label: "Fleet OEE",
+                    val: fleetOEE,
+                    note: fleetP == null ? "Quality proxy" : "A×P×Q",
+                  },
+                  {
+                    label: "Availability",
+                    val: fleetA,
+                    note: "Active shifts / fleet planned",
+                  },
+                  {
+                    label: "Performance",
+                    val: fleetP,
+                    note:
+                      fleetP == null
+                        ? "Set shift target ↓"
+                        : "Output vs target",
+                  },
+                  {
+                    label: "Quality Rate",
+                    val: fleetQ,
+                    note: "Good / (Good+Rejected)",
+                  },
+                  {
+                    label: "Gap to 85%",
                     val: fleetOEE != null ? Math.max(0, 0.85 - fleetOEE) : null,
-                    note: fleetOEE != null && fleetOEE >= 0.85 ? "World-class" : "vs benchmark",
-                    isGap: true },
+                    note:
+                      fleetOEE != null && fleetOEE >= 0.85
+                        ? "World-class"
+                        : "vs benchmark",
+                    isGap: true,
+                  },
                 ].map(({ label, val, note, isGap }) => {
                   const col = isGap
-                    ? (val === 0 ? C.green : val != null ? C.red : "#555")
+                    ? val === 0
+                      ? C.green
+                      : val != null
+                        ? C.red
+                        : "#555"
                     : oeeColor(val);
                   return (
-                    <div key={label} style={{ background: "#141416", border: `1px solid ${col}44`, borderLeft: `4px solid ${col}`, borderRadius: 8, padding: 16 }}>
-                      <div style={{ fontSize: 11, color: "#888", fontWeight: 700, textTransform: "uppercase", marginBottom: 6 }}>{label}</div>
-                      <div style={{ fontSize: 30, fontWeight: 900, color: col, fontFamily: "monospace" }}>
-                        {val == null ? "—" : isGap ? (val === 0 ? "0%" : pct(val)) : pct(val)}
+                    <div
+                      key={label}
+                      style={{
+                        background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)",
+                        border: `1px solid ${col}44`,
+                        borderRadius: 8,
+                        padding: 16,
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: 11,
+                          color: "#888",
+                          fontWeight: 500,
+                          textTransform: "uppercase",
+                          marginBottom: 6,
+                        }}
+                      >
+                        {label}
                       </div>
-                      <div style={{ fontSize: 10, color: "#555", marginTop: 4 }}>{note}</div>
+                      <div
+                        style={{
+                          fontSize: 30,
+                          fontWeight: 900,
+                          color: col,
+                          fontFamily: "monospace",
+                        }}
+                      >
+                        {val == null
+                          ? "—"
+                          : isGap
+                            ? val === 0
+                              ? "0%"
+                              : pct(val)
+                            : pct(val)}
+                      </div>
+                      <div
+                        style={{ fontSize: 10, color: "#555", marginTop: 4 }}
+                      >
+                        {note}
+                      </div>
                     </div>
                   );
                 })}
@@ -4079,119 +4293,330 @@ export function Dashboard({ data, session, toast }) {
 
               {}
               {rootCause && (
-                <div style={{ marginBottom: 20, padding: "12px 18px", borderRadius: 8, background: `${oeeColor(rootCause.val)}11`, border: `1px solid ${oeeColor(rootCause.val)}44`, display: "flex", gap: 14, alignItems: "center" }}>
-                  <i className="fa-solid fa-triangle-exclamation" style={{ fontSize: 22, color: "#f59e0b" }} />
+                <div
+                  style={{
+                    marginBottom: 20,
+                    padding: "12px 18px",
+                    borderRadius: 8,
+                    background: `${oeeColor(rootCause.val)}11`,
+                    border: `1px solid ${oeeColor(rootCause.val)}44`,
+                    display: "flex",
+                    gap: 14,
+                    alignItems: "center",
+                  }}
+                >
+                  <i
+                    className="fa-solid fa-triangle-exclamation"
+                    style={{ fontSize: 22, color: "#f59e0b" }}
+                  />
                   <div>
-                    <div style={{ fontWeight: 700, color: oeeColor(rootCause.val), fontSize: 13 }}>
+                    <div
+                      style={{
+                        fontWeight: 500,
+                        color: oeeColor(rootCause.val),
+                        fontSize: 13,
+                      }}
+                    >
                       Lowest factor: {rootCause.label} ({pct(rootCause.val)})
                     </div>
                     <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>
-                      Root cause: <b style={{ color: "#bbb" }}>{rootCause.fix}</b>. This is dragging OEE below world-class levels.
+                      Root cause:{" "}
+                      <b style={{ color: "#bbb" }}>{rootCause.fix}</b>. This is
+                      dragging OEE below world-class levels.
                     </div>
                   </div>
-                  <div style={{ marginLeft: "auto", textAlign: "right", fontSize: 11, color: "#555" }}>
-                    World-class = 85% OEE<br />(ISO 22400 / discrete mfg benchmark)
+                  <div
+                    style={{
+                      marginLeft: "auto",
+                      textAlign: "right",
+                      fontSize: 11,
+                      color: "#555",
+                    }}
+                  >
+                    World-class = 85% OEE
+                    <br />
+                    (ISO 22400 / discrete mfg benchmark)
                   </div>
                 </div>
               )}
 
               {}
-              <div style={{ background: "#141416", border: "1px solid #2a2a2e", borderRadius: 8, padding: "16px 20px", marginBottom: 20 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#bbb" }}>
-                    Quality Rate Trend — {oeeGranularity === "weekly" ? "Weekly" : "Monthly"}
-                    {" "}<span style={{ fontSize: 10, color: "#555" }}>(basis: Good / Total produced)</span>
+              <div
+                style={{
+                  background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)",
+                  border: "1px solid #2a2a2e",
+                  borderRadius: 8,
+                  padding: "16px 20px",
+                  marginBottom: 20,
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    marginBottom: 14,
+                  }}
+                >
+                  <div style={{ fontSize: 12, fontWeight: 500, color: "#bbb" }}>
+                    Quality Rate Trend —{" "}
+                    {oeeGranularity === "weekly" ? "Weekly" : "Monthly"}{" "}
+                    <span style={{ fontSize: 10, color: "#555" }}>
+                      (basis: Good / Total produced)
+                    </span>
                   </div>
                   <select
                     value={oeeSelectedMachine}
                     onChange={(e) => setOeeSelectedMachine(e.target.value)}
-                    style={{ padding: "5px 10px", background: "#0c0c0e", border: "1px solid #3a3a3e", color: "#e0e0e0", borderRadius: 6, fontSize: 12 }}
+                    style={{
+                      padding: "5px 10px",
+                      background: "#0c0c0e",
+                      border: "1px solid #3a3a3e",
+                      color: "#e0e0e0",
+                      borderRadius: 6,
+                      fontSize: 12,
+                    }}
                   >
                     <option value="all">All Machines</option>
                     {activeMachines.map((m) => (
-                      <option key={m._id} value={String(m._id)}>{m.name}</option>
+                      <option key={m._id} value={String(m._id)}>
+                        {m.name}
+                      </option>
                     ))}
                   </select>
                 </div>
-                {trendRows.length === 0
-                  ? <div style={{ textAlign: "center", padding: 40, color: "#555" }}>No production data in selected range.</div>
-                  : <TrendChart />
-                }
+                {trendRows.length === 0 ? (
+                  <div
+                    style={{ textAlign: "center", padding: 40, color: "#555" }}
+                  >
+                    No production data in selected range.
+                  </div>
+                ) : (
+                  <TrendChart />
+                )}
               </div>
 
               {}
-              <div style={{ borderRadius: 8, overflow: "hidden", border: "1px solid #2a2a2e", marginBottom: 20 }}>
-                <div style={{ padding: "12px 16px", background: "#1a1a1e", borderBottom: "1px solid #2a2a2e", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <span style={{ fontWeight: 700, color: "#bbb", fontSize: 12 }}>Per-Machine OEE Breakdown</span>
+              <div
+                style={{
+                  borderRadius: 8,
+                  overflow: "hidden",
+                  border: "1px solid #2a2a2e",
+                  marginBottom: 20,
+                }}
+              >
+                <div
+                  style={{
+                    padding: "12px 16px",
+                    background: "rgba(255,255,255,0.05)",
+                    borderBottom: "1px solid #2a2a2e",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <span
+                    style={{ fontWeight: 500, color: "#bbb", fontSize: 12 }}
+                  >
+                    Per-Machine OEE Breakdown
+                  </span>
                   <span style={{ fontSize: 10, color: "#555" }}>
-                    A = Availability · P = Performance (needs shift target) · Q = Quality · OEE = A×P×Q
+                    A = Availability · P = Performance (needs shift target) · Q
+                    = Quality · OEE = A×P×Q
                   </span>
                 </div>
                 <table style={{ ...TABLE, tableLayout: "auto" }}>
                   <thead>
                     <tr>
-                      {["Machine", "Type", "Active Shifts", "Good / Total", "Availability (A)", "Performance (P)", "Quality (Q)", "OEE", "Status", "Shift Target"].map((h) => (
-                        <th key={h} style={TH}>{h}</th>
+                      {[
+                        "Machine",
+                        "Type",
+                        "Active Shifts",
+                        "Good / Total",
+                        "Availability (A)",
+                        "Performance (P)",
+                        "Quality (Q)",
+                        "OEE",
+                        "Status",
+                        "Shift Target",
+                      ].map((h) => (
+                        <th key={h} style={TH}>
+                          {h}
+                        </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {machineData.length === 0
-                      ? (
-                        <tr>
-                          <td colSpan={10} style={{ ...TD, textAlign: "center", color: "#555", padding: 40 }}>
-                            No production entries found. Add production records to see OEE.
-                          </td>
-                        </tr>
-                      )
-                      : machineData.map((r, i) => {
+                    {machineData.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={10}
+                          style={{
+                            ...TD,
+                            textAlign: "center",
+                            color: "#555",
+                            padding: 40,
+                          }}
+                        >
+                          No production entries found. Add production records to
+                          see OEE.
+                        </td>
+                      </tr>
+                    ) : (
+                      machineData.map((r, i) => {
                         const col = oeeColor(r.oee);
                         const mid = r.mid;
                         const isEditing = oeeTargetEdit === mid;
                         return (
-                          <tr key={mid} style={{ background: i % 2 === 0 ? "#0e0e12" : "#121216" }}>
-                            <td style={{ ...TD, fontWeight: 700 }}>{r.m.name}</td>
-                            <td style={{ ...TD, color: "#888" }}>{r.m.type || "—"}</td>
-                            <td style={{ ...TD, textAlign: "right" }}>{r.activeShifts}</td>
+                          <tr
+                            key={mid}
+                            style={{
+                              background: i % 2 === 0 ? "#0e0e12" : "#121216",
+                            }}
+                          >
+                            <td style={{ ...TD, fontWeight: 700 }}>
+                              {r.m.name}
+                            </td>
+                            <td style={{ ...TD, color: "#888" }}>
+                              {r.m.type || "—"}
+                            </td>
                             <td style={{ ...TD, textAlign: "right" }}>
-                              <span style={{ color: C.green }}>{r.good.toLocaleString("en-IN")}</span>
+                              {r.activeShifts}
+                            </td>
+                            <td style={{ ...TD, textAlign: "right" }}>
+                              <span style={{ color: C.green }}>
+                                {r.good.toLocaleString("en-IN")}
+                              </span>
                               {" / "}
-                              <span style={{ color: "#888" }}>{r.total.toLocaleString("en-IN")}</span>
+                              <span style={{ color: "#888" }}>
+                                {r.total.toLocaleString("en-IN")}
+                              </span>
                             </td>
                             {}
                             <td style={{ ...TD, textAlign: "right" }}>
-                              <div style={{ fontWeight: 700, color: oeeColor(r.A) }}>{pct(r.A)}</div>
-                              <div style={{ height: 3, background: "#2a2a2e", borderRadius: 2, marginTop: 3, width: 60 }}>
-                                <div style={{ height: 3, borderRadius: 2, background: oeeColor(r.A), width: `${((r.A ?? 0) * 100).toFixed(0)}%` }} />
+                              <div
+                                style={{
+                                  fontWeight: 500,
+                                  color: oeeColor(r.A),
+                                }}
+                              >
+                                {pct(r.A)}
+                              </div>
+                              <div
+                                style={{
+                                  height: 3,
+                                  background: "#2a2a2e",
+                                  borderRadius: 2,
+                                  marginTop: 3,
+                                  width: 60,
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    height: 3,
+                                    borderRadius: 2,
+                                    background: oeeColor(r.A),
+                                    width: `${((r.A ?? 0) * 100).toFixed(0)}%`,
+                                  }}
+                                />
                               </div>
                             </td>
                             {}
                             <td style={{ ...TD, textAlign: "right" }}>
-                              {r.P != null
-                                ? <>
-                                    <div style={{ fontWeight: 700, color: oeeColor(r.P) }}>{pct(r.P)}</div>
-                                    <div style={{ height: 3, background: "#2a2a2e", borderRadius: 2, marginTop: 3, width: 60 }}>
-                                      <div style={{ height: 3, borderRadius: 2, background: oeeColor(r.P), width: `${((r.P ?? 0) * 100).toFixed(0)}%` }} />
-                                    </div>
-                                  </>
-                                : <span style={{ color: "#555", fontSize: 10 }}>Set target →</span>
-                              }
+                              {r.P != null ? (
+                                <>
+                                  <div
+                                    style={{
+                                      fontWeight: 500,
+                                      color: oeeColor(r.P),
+                                    }}
+                                  >
+                                    {pct(r.P)}
+                                  </div>
+                                  <div
+                                    style={{
+                                      height: 3,
+                                      background: "#2a2a2e",
+                                      borderRadius: 2,
+                                      marginTop: 3,
+                                      width: 60,
+                                    }}
+                                  >
+                                    <div
+                                      style={{
+                                        height: 3,
+                                        borderRadius: 2,
+                                        background: oeeColor(r.P),
+                                        width: `${((r.P ?? 0) * 100).toFixed(0)}%`,
+                                      }}
+                                    />
+                                  </div>
+                                </>
+                              ) : (
+                                <span style={{ color: "#555", fontSize: 10 }}>
+                                  Set target →
+                                </span>
+                              )}
                             </td>
                             {}
                             <td style={{ ...TD, textAlign: "right" }}>
-                              <div style={{ fontWeight: 700, color: oeeColor(r.Q) }}>{pct(r.Q)}</div>
-                              <div style={{ height: 3, background: "#2a2a2e", borderRadius: 2, marginTop: 3, width: 60 }}>
-                                <div style={{ height: 3, borderRadius: 2, background: oeeColor(r.Q), width: `${((r.Q ?? 0) * 100).toFixed(0)}%` }} />
+                              <div
+                                style={{
+                                  fontWeight: 500,
+                                  color: oeeColor(r.Q),
+                                }}
+                              >
+                                {pct(r.Q)}
+                              </div>
+                              <div
+                                style={{
+                                  height: 3,
+                                  background: "#2a2a2e",
+                                  borderRadius: 2,
+                                  marginTop: 3,
+                                  width: 60,
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    height: 3,
+                                    borderRadius: 2,
+                                    background: oeeColor(r.Q),
+                                    width: `${((r.Q ?? 0) * 100).toFixed(0)}%`,
+                                  }}
+                                />
                               </div>
                             </td>
                             {}
                             <td style={{ ...TD, textAlign: "right" }}>
-                              <span style={{ fontWeight: 900, fontSize: 16, color: col }}>{pct(r.oee)}</span>
-                              {r.P == null && <div style={{ fontSize: 9, color: "#555" }}>Q only</div>}
+                              <span
+                                style={{
+                                  fontWeight: 900,
+                                  fontSize: 16,
+                                  color: col,
+                                }}
+                              >
+                                {pct(r.oee)}
+                              </span>
+                              {r.P == null && (
+                                <div style={{ fontSize: 9, color: "#555" }}>
+                                  Q only
+                                </div>
+                              )}
                             </td>
                             {}
                             <td style={{ ...TD, textAlign: "center" }}>
-                              <span style={{ padding: "3px 8px", borderRadius: 4, fontSize: 10, fontWeight: 700, background: `${col}22`, color: col, border: `1px solid ${col}44` }}>
+                              <span
+                                style={{
+                                  padding: "3px 8px",
+                                  borderRadius: 4,
+                                  fontSize: 10,
+                                  fontWeight: 500,
+                                  background: `${col}22`,
+                                  color: col,
+                                  border: `1px solid ${col}44`,
+                                }}
+                              >
                                 {oeeLabel(r.oee)}
                               </span>
                             </td>
@@ -4201,25 +4626,49 @@ export function Dashboard({ data, session, toast }) {
                                 <input
                                   type="number"
                                   autoFocus
-                                  defaultValue={pvtTargets[mid]?.targetPerShift || ""}
+                                  defaultValue={
+                                    pvtTargets[mid]?.targetPerShift || ""
+                                  }
                                   onBlur={(e) => {
                                     const v = Number(e.target.value);
                                     setPvtTargets((prev) => ({
                                       ...prev,
-                                      [mid]: { ...(prev[mid] || {}), targetPerShift: v || 0 },
+                                      [mid]: {
+                                        ...(prev[mid] || {}),
+                                        targetPerShift: v || 0,
+                                      },
                                     }));
                                     setOeeTargetEdit(null);
                                   }}
                                   onKeyDown={(e) => {
                                     if (e.key === "Enter") e.target.blur();
-                                    if (e.key === "Escape") setOeeTargetEdit(null);
+                                    if (e.key === "Escape")
+                                      setOeeTargetEdit(null);
                                   }}
-                                  style={{ width: 70, padding: "4px 6px", background: "#0c0c0e", border: "1px solid #ff7800", color: "#e0e0e0", borderRadius: 4, fontSize: 12 }}
+                                  style={{
+                                    width: 70,
+                                    padding: "4px 6px",
+                                    background: "#0c0c0e",
+                                    border: "1px solid #ff7800",
+                                    color: "#e0e0e0",
+                                    borderRadius: 4,
+                                    fontSize: 12,
+                                  }}
                                 />
                               ) : (
                                 <button
                                   onClick={() => setOeeTargetEdit(mid)}
-                                  style={{ background: "transparent", border: "1px solid #3a3a3e", color: pvtTargets[mid]?.targetPerShift ? "#e0e0e0" : "#555", borderRadius: 4, padding: "3px 10px", fontSize: 11, cursor: "pointer" }}
+                                  style={{
+                                    background: "transparent",
+                                    border: "1px solid #3a3a3e",
+                                    color: pvtTargets[mid]?.targetPerShift
+                                      ? "#e0e0e0"
+                                      : "#555",
+                                    borderRadius: 4,
+                                    padding: "3px 10px",
+                                    fontSize: 11,
+                                    cursor: "pointer",
+                                  }}
                                 >
                                   {pvtTargets[mid]?.targetPerShift
                                     ? `${pvtTargets[mid].targetPerShift} pcs/shift`
@@ -4229,25 +4678,59 @@ export function Dashboard({ data, session, toast }) {
                             </td>
                           </tr>
                         );
-                      })}
+                      })
+                    )}
                   </tbody>
                 </table>
               </div>
 
               {}
               {machineData.some((r) => Object.keys(r.byShift).length > 0) && (
-                <div style={{ borderRadius: 8, overflow: "hidden", border: "1px solid #2a2a2e", marginBottom: 20 }}>
-                  <div style={{ padding: "12px 16px", background: "#1a1a1e", borderBottom: "1px solid #2a2a2e", fontWeight: 700, color: "#bbb", fontSize: 12 }}>
+                <div
+                  style={{
+                    borderRadius: 8,
+                    overflow: "hidden",
+                    border: "1px solid #2a2a2e",
+                    marginBottom: 20,
+                  }}
+                >
+                  <div
+                    style={{
+                      padding: "12px 16px",
+                      background: "rgba(255,255,255,0.05)",
+                      borderBottom: "1px solid #2a2a2e",
+                      fontWeight: 500,
+                      color: "#bbb",
+                      fontSize: 12,
+                    }}
+                  >
                     Shift-wise Quality Breakdown
-                    <span style={{ fontSize: 10, fontWeight: 400, color: "#555", marginLeft: 10 }}>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 400,
+                        color: "#555",
+                        marginLeft: 10,
+                      }}
+                    >
                       Reveals operator / supervision patterns across shifts
                     </span>
                   </div>
                   <table style={{ ...TABLE, tableLayout: "auto" }}>
                     <thead>
                       <tr>
-                        {["Machine", "Shift", "Good Output", "Rejected", "Quality (Q)", "Q vs Fleet", "Observation"].map((h) => (
-                          <th key={h} style={TH}>{h}</th>
+                        {[
+                          "Machine",
+                          "Shift",
+                          "Good Output",
+                          "Rejected",
+                          "Quality (Q)",
+                          "Q vs Fleet",
+                          "Observation",
+                        ].map((h) => (
+                          <th key={h} style={TH}>
+                            {h}
+                          </th>
                         ))}
                       </tr>
                     </thead>
@@ -4257,35 +4740,126 @@ export function Dashboard({ data, session, toast }) {
                           .sort(([a], [b]) => a.localeCompare(b))
                           .map(([sh, sd], si) => {
                             const tot = sd.good + sd.rejected;
-                            const q   = tot > 0 ? sd.good / tot : null;
-                            const delta = q != null && r.Q != null ? q - r.Q : null;
+                            const q = tot > 0 ? sd.good / tot : null;
+                            const delta =
+                              q != null && r.Q != null ? q - r.Q : null;
                             const obs =
-                              q == null     ? "—"
-                              : q >= 0.97   ? "Excellent"
-                              : q >= 0.92   ? "Good"
-                              : q >= 0.85   ? "Acceptable"
-                              : "Needs attention";
+                              q == null
+                                ? "—"
+                                : q >= 0.97
+                                  ? "Excellent"
+                                  : q >= 0.92
+                                    ? "Good"
+                                    : q >= 0.85
+                                      ? "Acceptable"
+                                      : "Needs attention";
                             const col = oeeColor(q);
                             return (
-                              <tr key={`${r.mid}-${sh}`} style={{ background: si % 2 === 0 ? "#0e0e12" : "#121216" }}>
-                                <td style={{ ...TD, fontWeight: 700 }}>{r.m.name}</td>
+                              <tr
+                                key={`${r.mid}-${sh}`}
+                                style={{
+                                  background:
+                                    si % 2 === 0 ? "#0e0e12" : "#121216",
+                                }}
+                              >
+                                <td style={{ ...TD, fontWeight: 700 }}>
+                                  {r.m.name}
+                                </td>
                                 <td style={TD}>
-                                  <span style={{ padding: "2px 8px", borderRadius: 4, background: sh === "Morning" ? "#17254422" : sh === "Night" ? "#1e1b4b22" : "#1a110022", color: sh === "Morning" ? "#60a5fa" : sh === "Night" ? "#818cf8" : "#fb923c", fontSize: 11, fontWeight: 700 }}>
-                                    {sh === "Morning" ? "AM" : sh === "Night" ? "PM" : "EV"} {sh}
+                                  <span
+                                    style={{
+                                      padding: "2px 8px",
+                                      borderRadius: 4,
+                                      background:
+                                        sh === "Morning"
+                                          ? "#17254422"
+                                          : sh === "Night"
+                                            ? "#1e1b4b22"
+                                            : "#1a110022",
+                                      color:
+                                        sh === "Morning"
+                                          ? "#60a5fa"
+                                          : sh === "Night"
+                                            ? "#818cf8"
+                                            : "#fb923c",
+                                      fontSize: 11,
+                                      fontWeight: 500,
+                                    }}
+                                  >
+                                    {sh === "Morning"
+                                      ? "AM"
+                                      : sh === "Night"
+                                        ? "PM"
+                                        : "EV"}{" "}
+                                    {sh}
                                   </span>
                                 </td>
-                                <td style={{ ...TD, textAlign: "right", color: C.green, fontWeight: 700 }}>{sd.good.toLocaleString("en-IN")}</td>
-                                <td style={{ ...TD, textAlign: "right", color: sd.rejected > 0 ? C.red : "#555" }}>{sd.rejected > 0 ? sd.rejected.toLocaleString("en-IN") : "—"}</td>
-                                <td style={{ ...TD, textAlign: "right", fontWeight: 700, color: col }}>{pct(q)}</td>
-                                <td style={{ ...TD, textAlign: "right", color: delta == null ? "#555" : delta >= 0 ? C.green : C.red, fontSize: 11, fontWeight: 700 }}>
-                                  {delta == null ? "—" : `${delta >= 0 ? "+" : ""}${(delta * 100).toFixed(1)}%`}
+                                <td
+                                  style={{
+                                    ...TD,
+                                    textAlign: "right",
+                                    color: C.green,
+                                    fontWeight: 500,
+                                  }}
+                                >
+                                  {sd.good.toLocaleString("en-IN")}
                                 </td>
-                                <td style={{ ...TD, fontSize: 11, color: obs === "Needs attention" ? C.red : obs === "Excellent" ? C.green : "#888" }}>
+                                <td
+                                  style={{
+                                    ...TD,
+                                    textAlign: "right",
+                                    color: sd.rejected > 0 ? C.red : "#555",
+                                  }}
+                                >
+                                  {sd.rejected > 0
+                                    ? sd.rejected.toLocaleString("en-IN")
+                                    : "—"}
+                                </td>
+                                <td
+                                  style={{
+                                    ...TD,
+                                    textAlign: "right",
+                                    fontWeight: 500,
+                                    color: col,
+                                  }}
+                                >
+                                  {pct(q)}
+                                </td>
+                                <td
+                                  style={{
+                                    ...TD,
+                                    textAlign: "right",
+                                    color:
+                                      delta == null
+                                        ? "#555"
+                                        : delta >= 0
+                                          ? C.green
+                                          : C.red,
+                                    fontSize: 11,
+                                    fontWeight: 500,
+                                  }}
+                                >
+                                  {delta == null
+                                    ? "—"
+                                    : `${delta >= 0 ? "+" : ""}${(delta * 100).toFixed(1)}%`}
+                                </td>
+                                <td
+                                  style={{
+                                    ...TD,
+                                    fontSize: 11,
+                                    color:
+                                      obs === "Needs attention"
+                                        ? C.red
+                                        : obs === "Excellent"
+                                          ? C.green
+                                          : "#888",
+                                  }}
+                                >
                                   {obs}
                                 </td>
                               </tr>
                             );
-                          })
+                          }),
                       )}
                     </tbody>
                   </table>
@@ -4293,14 +4867,28 @@ export function Dashboard({ data, session, toast }) {
               )}
 
               {}
-              <div style={{ padding: "10px 16px", background: "#0d0d0d", borderRadius: 8, border: "1px solid #2a2a2e22", fontSize: 10, color: "#444", lineHeight: 1.7 }}>
-                <b style={{ color: "#666" }}>OEE = Availability × Performance × Quality</b>
+              <div
+                style={{
+                  padding: "10px 16px",
+                  background: "#0d0d0d",
+                  borderRadius: 8,
+                  border: "1px solid #2a2a2e22",
+                  fontSize: 10,
+                  color: "#444",
+                  lineHeight: 1.7,
+                }}
+              >
+                <b style={{ color: "#666" }}>
+                  OEE = Availability × Performance × Quality
+                </b>
                 {" · "}
                 <b>A</b> = machine active shifts / total fleet shifts in period.{" "}
-                <b>P</b> = units produced / (active shifts × shift target) — set per machine in table above.{" "}
-                <b>Q</b> = good units / (good + rejected) from production records.{" "}
-                When P is not configured, Quality is shown as proxy.{" "}
-                World-class benchmark: <b style={{ color: "#22c55e" }}>85% OEE</b> (ISO 22400, discrete manufacturing).
+                <b>P</b> = units produced / (active shifts × shift target) — set
+                per machine in table above. <b>Q</b> = good units / (good +
+                rejected) from production records. When P is not configured,
+                Quality is shown as proxy. World-class benchmark:{" "}
+                <b style={{ color: "#22c55e" }}>85% OEE</b> (ISO 22400, discrete
+                manufacturing).
               </div>
             </div>
           );
@@ -4310,24 +4898,41 @@ export function Dashboard({ data, session, toast }) {
       {reportTab === "alerts" &&
         (() => {
           const SEV_CFG = {
-            critical: { color: "#ef4444", bg: "#450a0a99", label: "Critical",   dot: "●" },
-            high:     { color: "#f97316", bg: "#431407aa", label: "High",       dot: "●" },
-            medium:   { color: "#f59e0b", bg: "#451a0399", label: "Medium",     dot: "●" },
-            low:      { color: "#22c55e", bg: "#052e1699", label: "Low",        dot: "●" },
+            critical: {
+              color: "#ef4444",
+              bg: "#450a0a99",
+              label: "Critical",
+              dot: "●",
+            },
+            high: {
+              color: "#f97316",
+              bg: "#431407aa",
+              label: "High",
+              dot: "●",
+            },
+            medium: {
+              color: "#f59e0b",
+              bg: "#451a0399",
+              label: "Medium",
+              dot: "●",
+            },
+            low: { color: "#22c55e", bg: "#052e1699", label: "Low", dot: "●" },
           };
           const TYPE_LABELS = {
-            delivery_risk:  "Delivery Risk",
-            vendor_lead:    "Vendor Lead Time",
-            client_churn:   "Client Churn",
+            delivery_risk: "Delivery Risk",
+            vendor_lead: "Vendor Lead Time",
+            client_churn: "Client Churn",
             consumable_low: "Stock Runout",
             machine_downtime: "Machine Downtime",
           };
 
           const counts = Object.fromEntries(
-            ["critical","high","medium","low"].map((s) => [s, allAlerts.filter((a) => a.severity === s).length])
+            ["critical", "high", "medium", "low"].map((s) => [
+              s,
+              allAlerts.filter((a) => a.severity === s).length,
+            ]),
           );
 
-          
           const byType = {};
           allAlerts.forEach((a) => {
             if (!byType[a.type]) byType[a.type] = [];
@@ -4338,24 +4943,92 @@ export function Dashboard({ data, session, toast }) {
             <div>
               {}
               {allAlerts.length === 0 ? (
-                <div style={{ textAlign: "center", padding: 60, background: "#141416", borderRadius: 12, border: "1px solid #2a2a2e" }}>
-                  <i className="fa-solid fa-circle-check" style={{ fontSize: 40, marginBottom: 12, display: "block", color: "#22c55e" }} />
-                  <div style={{ fontWeight: 700, fontSize: 16, color: C.green, marginBottom: 8 }}>All Clear — No Active Alerts</div>
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: 60,
+                    background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)",
+                    borderRadius: 12,
+                    border: "1px solid #2a2a2e",
+                  }}
+                >
+                  <i
+                    className="fa-solid fa-circle-check"
+                    style={{
+                      fontSize: 40,
+                      marginBottom: 12,
+                      display: "block",
+                      color: "#22c55e",
+                    }}
+                  />
+                  <div
+                    style={{
+                      fontWeight: 500,
+                      fontSize: 16,
+                      color: C.green,
+                      marginBottom: 8,
+                    }}
+                  >
+                    All Clear — No Active Alerts
+                  </div>
                   <div style={{ fontSize: 12, color: "#555" }}>
-                    All delivery schedules, vendor lead times, client orders, stock levels, and machine availability look healthy.
+                    All delivery schedules, vendor lead times, client orders,
+                    stock levels, and machine availability look healthy.
                   </div>
                 </div>
               ) : (
                 <>
                   {}
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 20 }}>
-                    {["critical","high","medium","low"].map((s) => {
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(4,1fr)",
+                      gap: 12,
+                      marginBottom: 20,
+                    }}
+                  >
+                    {["critical", "high", "medium", "low"].map((s) => {
                       const cfg = SEV_CFG[s];
                       return (
-                        <div key={s} style={{ background: "#141416", border: `1px solid ${cfg.color}44`, borderLeft: `4px solid ${cfg.color}`, borderRadius: 8, padding: 16 }}>
-                          <div style={{ fontSize: 11, color: "#888", fontWeight: 700, textTransform: "uppercase", marginBottom: 4 }}>{cfg.label}</div>
-                          <div style={{ fontSize: 32, fontWeight: 900, color: cfg.color, fontFamily: "monospace" }}>{counts[s]}</div>
-                          <div style={{ fontSize: 10, color: "#555", marginTop: 2 }}>alert{counts[s] !== 1 ? "s" : ""}</div>
+                        <div
+                          key={s}
+                          style={{
+                            background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)",
+                            border: `1px solid ${cfg.color}44`,
+                            borderRadius: 8,
+                            padding: 16,
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize: 11,
+                              color: "#888",
+                              fontWeight: 500,
+                              textTransform: "uppercase",
+                              marginBottom: 4,
+                            }}
+                          >
+                            {cfg.label}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 32,
+                              fontWeight: 900,
+                              color: cfg.color,
+                              fontFamily: "monospace",
+                            }}
+                          >
+                            {counts[s]}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 10,
+                              color: "#555",
+                              marginTop: 2,
+                            }}
+                          >
+                            alert{counts[s] !== 1 ? "s" : ""}
+                          </div>
                         </div>
                       );
                     })}
@@ -4364,42 +5037,118 @@ export function Dashboard({ data, session, toast }) {
                   {}
                   {Object.entries(byType).map(([type, typeAlerts]) => (
                     <div key={type} style={{ marginBottom: 20 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 10 }}>
+                      <div
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 500,
+                          color: "#888",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.07em",
+                          marginBottom: 10,
+                        }}
+                      >
                         {TYPE_LABELS[type] || type} ({typeAlerts.length})
                       </div>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 8,
+                        }}
+                      >
                         {typeAlerts.map((a) => {
                           const cfg = SEV_CFG[a.severity] || SEV_CFG.medium;
                           return (
                             <div
                               key={a.id}
-                              style={{ background: "#141416", border: `1px solid ${cfg.color}44`, borderLeft: `4px solid ${cfg.color}`, borderRadius: 10, padding: "14px 18px", display: "grid", gridTemplateColumns: "auto 1fr auto", gap: 14, alignItems: "start" }}
+                              style={{
+                                background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)",
+                                border: `1px solid ${cfg.color}44`,
+                                borderRadius: 10,
+                                padding: "14px 18px",
+                                display: "grid",
+                                gridTemplateColumns: "auto 1fr auto",
+                                gap: 14,
+                                alignItems: "start",
+                              }}
                             >
                               {}
                               <div style={{ textAlign: "center" }}>
-                                <i className={a.icon} style={{ fontSize: 22 }} />
-                                <div style={{ fontSize: 9, fontWeight: 700, color: cfg.color, marginTop: 4, whiteSpace: "nowrap" }}>
+                                <i
+                                  className={a.icon}
+                                  style={{ fontSize: 22 }}
+                                />
+                                <div
+                                  style={{
+                                    fontSize: 9,
+                                    fontWeight: 500,
+                                    color: cfg.color,
+                                    marginTop: 4,
+                                    whiteSpace: "nowrap",
+                                  }}
+                                >
                                   {cfg.dot} {cfg.label}
                                 </div>
                               </div>
 
                               {}
                               <div>
-                                <div style={{ fontWeight: 700, fontSize: 14, color: "#e0e0e0", marginBottom: 4 }}>
+                                <div
+                                  style={{
+                                    fontWeight: 500,
+                                    fontSize: 14,
+                                    color: "#e0e0e0",
+                                    marginBottom: 4,
+                                  }}
+                                >
                                   {a.title}
                                 </div>
-                                <div style={{ fontSize: 12, color: "#888", lineHeight: 1.5, marginBottom: 6 }}>
+                                <div
+                                  style={{
+                                    fontSize: 12,
+                                    color: "#888",
+                                    lineHeight: 1.5,
+                                    marginBottom: 6,
+                                  }}
+                                >
                                   {a.detail}
                                 </div>
-                                <div style={{ fontSize: 11, color: "#555" }}>{a.meta}</div>
+                                <div style={{ fontSize: 11, color: "#555" }}>
+                                  {a.meta}
+                                </div>
                               </div>
 
                               {}
-                              <div style={{ minWidth: 200, background: `${cfg.color}0d`, border: `1px solid ${cfg.color}33`, borderRadius: 7, padding: "10px 14px" }}>
-                                <div style={{ fontSize: 9, fontWeight: 700, color: cfg.color, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 5 }}>
+                              <div
+                                style={{
+                                  minWidth: 200,
+                                  background: `${cfg.color}0d`,
+                                  border: `1px solid ${cfg.color}33`,
+                                  borderRadius: 7,
+                                  padding: "10px 14px",
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    fontSize: 9,
+                                    fontWeight: 500,
+                                    color: cfg.color,
+                                    textTransform: "uppercase",
+                                    letterSpacing: "0.05em",
+                                    marginBottom: 5,
+                                  }}
+                                >
                                   Recommended Action
                                 </div>
-                                <div style={{ fontSize: 11, color: "#bbb", lineHeight: 1.5 }}>{a.action}</div>
+                                <div
+                                  style={{
+                                    fontSize: 11,
+                                    color: "#bbb",
+                                    lineHeight: 1.5,
+                                  }}
+                                >
+                                  {a.action}
+                                </div>
                               </div>
                             </div>
                           );
@@ -4409,13 +5158,27 @@ export function Dashboard({ data, session, toast }) {
                   ))}
 
                   {}
-                  <div style={{ padding: "10px 16px", background: "#0d0d0d", borderRadius: 8, border: "1px solid #2a2a2e22", fontSize: 10, color: "#444", lineHeight: 1.8 }}>
+                  <div
+                    style={{
+                      padding: "10px 16px",
+                      background: "#0d0d0d",
+                      borderRadius: 8,
+                      border: "1px solid #2a2a2e22",
+                      fontSize: 10,
+                      color: "#444",
+                      lineHeight: 1.8,
+                    }}
+                  >
                     <b style={{ color: "#666" }}>Alert logic:</b>{" "}
-                    <b>Delivery Risk</b> — production velocity (last 7d) × remaining units &gt; days until SO delivery date.{" "}
-                    <b>Vendor Lead Time</b> — avg lead time of last 3 POs vs prior 3 POs; flags &gt;30% increase.{" "}
-                    <b>Client Churn</b> — this month's SO count vs previous month per client; flags ≥40% drop.{" "}
-                    <b>Consumable Runout</b> — current qty ÷ estimated daily rate (reorderLevel ÷ 14); flags &lt;14 days cover.{" "}
-                    <b>Machine Downtime</b> — inactive calendar days this month vs last month; flags 2× increase.
+                    <b>Delivery Risk</b> — production velocity (last 7d) ×
+                    remaining units &gt; days until SO delivery date.{" "}
+                    <b>Vendor Lead Time</b> — avg lead time of last 3 POs vs
+                    prior 3 POs; flags &gt;30% increase. <b>Client Churn</b> —
+                    this month's SO count vs previous month per client; flags
+                    ≥40% drop. <b>Consumable Runout</b> — current qty ÷
+                    estimated daily rate (reorderLevel ÷ 14); flags &lt;14 days
+                    cover. <b>Machine Downtime</b> — inactive calendar days this
+                    month vs last month; flags 2× increase.
                   </div>
                 </>
               )}
@@ -4427,8 +5190,13 @@ export function Dashboard({ data, session, toast }) {
       {reportTab === "bottleneck" &&
         (() => {
           const todayMs = Date.now();
-          const FEEDER_STAGES = ["Printing", "Varnish", "Lamination", "Die Cutting"];
-          const SINK_STAGES   = ["Formation", "Manual Formation"];
+          const FEEDER_STAGES = [
+            "Printing",
+            "Varnish",
+            "Lamination",
+            "Die Cutting",
+          ];
+          const SINK_STAGES = ["Formation", "Manual Formation"];
           const ALL_BN_STAGES = [...FEEDER_STAGES, ...SINK_STAGES];
 
           const jobWaitDays = (jo) => {
@@ -4445,37 +5213,62 @@ export function Dashboard({ data, session, toast }) {
           };
 
           const stageStats = ALL_BN_STAGES.map((stage) => {
-            const jobs     = processPendingMap[stage] || [];
-            const waits    = jobs.map(jobWaitDays);
-            const count    = jobs.length;
-            const avgWait  = waits.length ? waits.reduce((s, v) => s + v, 0) / waits.length : 0;
-            const maxWait  = waits.length ? Math.max(...waits) : 0;
+            const jobs = processPendingMap[stage] || [];
+            const waits = jobs.map(jobWaitDays);
+            const count = jobs.length;
+            const avgWait = waits.length
+              ? waits.reduce((s, v) => s + v, 0) / waits.length
+              : 0;
+            const maxWait = waits.length ? Math.max(...waits) : 0;
             const pressure = count * avgWait;
             const isFeeder = FEEDER_STAGES.includes(stage);
             return { stage, count, avgWait, maxWait, pressure, jobs, isFeeder };
           });
 
-          const feederStats     = stageStats.filter((s) => s.isFeeder);
-          const sinkStats       = stageStats.filter((s) => !s.isFeeder);
-          const feederDepth     = feederStats.reduce((s, r) => s + r.count, 0);
-          const sinkDepth       = sinkStats.reduce((s, r) => s + r.count, 0);
-          const dieCuttingCount = (processPendingMap["Die Cutting"] || []).length;
-          const earlyPipeDepth  = feederDepth - dieCuttingCount;
+          const feederStats = stageStats.filter((s) => s.isFeeder);
+          const sinkStats = stageStats.filter((s) => !s.isFeeder);
+          const feederDepth = feederStats.reduce((s, r) => s + r.count, 0);
+          const sinkDepth = sinkStats.reduce((s, r) => s + r.count, 0);
+          const dieCuttingCount = (processPendingMap["Die Cutting"] || [])
+            .length;
+          const earlyPipeDepth = feederDepth - dieCuttingCount;
 
-          const maxCount    = Math.max(...stageStats.map((s) => s.count), 1);
-          const maxPressure = Math.max(...stageStats.map((s) => s.pressure), 0.001);
-          const bottleneck  = stageStats.reduce((b, s) => (s.pressure > b.pressure ? s : b), stageStats[0]);
-          const totalWIP    = feederDepth + sinkDepth;
+          const maxCount = Math.max(...stageStats.map((s) => s.count), 1);
+          const maxPressure = Math.max(
+            ...stageStats.map((s) => s.pressure),
+            0.001,
+          );
+          const bottleneck = stageStats.reduce(
+            (b, s) => (s.pressure > b.pressure ? s : b),
+            stageStats[0],
+          );
+          const totalWIP = feederDepth + sinkDepth;
 
           const noWIP = totalWIP === 0;
-          const starvationRisk =
-            noWIP ? "none"
-            : sinkDepth === 0 && dieCuttingCount === 0 ? "high"
-            : sinkDepth <= 1 && dieCuttingCount <= 1   ? "medium"
-            : "low";
+          const starvationRisk = noWIP
+            ? "none"
+            : sinkDepth === 0 && dieCuttingCount === 0
+              ? "high"
+              : sinkDepth <= 1 && dieCuttingCount <= 1
+                ? "medium"
+                : "low";
 
-          const starvationColor = starvationRisk === "high" ? C.red : starvationRisk === "medium" ? C.yellow : starvationRisk === "none" ? "#555" : C.green;
-          const starvationLabel = starvationRisk === "high" ? "High Risk" : starvationRisk === "medium" ? "Moderate" : starvationRisk === "none" ? "No WIP" : "Healthy";
+          const starvationColor =
+            starvationRisk === "high"
+              ? C.red
+              : starvationRisk === "medium"
+                ? C.yellow
+                : starvationRisk === "none"
+                  ? "#555"
+                  : C.green;
+          const starvationLabel =
+            starvationRisk === "high"
+              ? "High Risk"
+              : starvationRisk === "medium"
+                ? "Moderate"
+                : starvationRisk === "none"
+                  ? "No WIP"
+                  : "Healthy";
 
           const starvationText = (() => {
             if (starvationRisk === "high") {
@@ -4489,17 +5282,26 @@ export function Dashboard({ data, session, toast }) {
           })();
 
           const rec = (() => {
-            if (noWIP || bottleneck.count === 0) return "No active WIP queue. Production is flowing smoothly.";
+            if (noWIP || bottleneck.count === 0)
+              return "No active WIP queue. Production is flowing smoothly.";
             const { stage, count, avgWait, isFeeder } = bottleneck;
             const tips = {
-              Printing:           "Consider overtime or redistributing jobs across available printing machines.",
-              Varnish:            "Batch smaller jobs together to cut setup time. Check varnish machine drum speed.",
-              Lamination:         "Lamination queues build fast — review laminator speed or add a parallel pass.",
-              "Die Cutting":      "Inspect dies for wear; worn dies slow throughput significantly. Die Cutting directly gates Formation — clearing this queue is highest priority.",
-              Formation:          "Formation machines are backed up. Consider adding a night shift or a second operator per machine.",
-              "Manual Formation": "Manual Formation is operator-bound. Overtime or cross-training provides the fastest relief.",
+              Printing:
+                "Consider overtime or redistributing jobs across available printing machines.",
+              Varnish:
+                "Batch smaller jobs together to cut setup time. Check varnish machine drum speed.",
+              Lamination:
+                "Lamination queues build fast — review laminator speed or add a parallel pass.",
+              "Die Cutting":
+                "Inspect dies for wear; worn dies slow throughput significantly. Die Cutting directly gates Formation — clearing this queue is highest priority.",
+              Formation:
+                "Formation machines are backed up. Consider adding a night shift or a second operator per machine.",
+              "Manual Formation":
+                "Manual Formation is operator-bound. Overtime or cross-training provides the fastest relief.",
             };
-            const tip = tips[stage] || "Review machine capacity and operator allocation for this stage.";
+            const tip =
+              tips[stage] ||
+              "Review machine capacity and operator allocation for this stage.";
             const cascade = isFeeder
               ? ` As a feeder stage, this congestion will propagate downstream and starve Formation machines if not addressed.`
               : "";
@@ -4508,20 +5310,106 @@ export function Dashboard({ data, session, toast }) {
 
           const TankNode = ({ s, height = 90, fontSize = 24 }) => {
             const fillPct = s.count / maxCount;
-            const isBN    = s.stage === bottleneck.stage && s.count > 0;
-            const border  = isBN ? "#ef4444" : fillPct > 0.5 ? C.yellow : fillPct > 0 ? (s.isFeeder ? "#3b82f6" : "#22c55e") : "#2a2a2e";
-            const fillBg  = isBN ? "#ef444422" : fillPct > 0.5 ? "#f59e0b22" : s.isFeeder ? "#3b82f622" : "#22c55e22";
+            const isBN = s.stage === bottleneck.stage && s.count > 0;
+            const border = isBN
+              ? "#ef4444"
+              : fillPct > 0.5
+                ? C.yellow
+                : fillPct > 0
+                  ? s.isFeeder
+                    ? "#3b82f6"
+                    : "#22c55e"
+                  : "#2a2a2e";
+            const fillBg = isBN
+              ? "#ef444422"
+              : fillPct > 0.5
+                ? "#f59e0b22"
+                : s.isFeeder
+                  ? "#3b82f622"
+                  : "#22c55e22";
             return (
-              <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <div style={{ height: 22 }}>{isBN && <i className="fa-solid fa-crown" style={{ fontSize: 15, color: "#f59e0b" }} />}</div>
-                <div style={{ width: 82, height, border: `2px solid ${border}`, borderRadius: 6, background: "#0c0c0e", position: "relative", overflow: "hidden" }}>
-                  <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: `${fillPct * 100}%`, background: fillBg }} />
-                  <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: 2 }}>
-                    <div style={{ fontSize, fontWeight: 900, color: s.count > 0 ? (isBN ? "#ef4444" : "#e0e0e0") : "#2a2a2e", lineHeight: 1 }}>{s.count}</div>
-                    {s.count > 0 && <div style={{ fontSize: 9, color: "#888" }}>~{s.avgWait.toFixed(1)}d</div>}
+              <div
+                style={{
+                  flexShrink: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                }}
+              >
+                <div style={{ height: 22 }}>
+                  {isBN && (
+                    <i
+                      className="fa-solid fa-crown"
+                      style={{ fontSize: 15, color: "#f59e0b" }}
+                    />
+                  )}
+                </div>
+                <div
+                  style={{
+                    width: 82,
+                    height,
+                    border: `2px solid ${border}`,
+                    borderRadius: 6,
+                    background: "#0c0c0e",
+                    position: "relative",
+                    overflow: "hidden",
+                  }}
+                >
+                  <div
+                    style={{
+                      position: "absolute",
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      height: `${fillPct * 100}%`,
+                      background: fillBg,
+                    }}
+                  />
+                  <div
+                    style={{
+                      position: "relative",
+                      zIndex: 1,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      height: "100%",
+                      gap: 2,
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize,
+                        fontWeight: 900,
+                        color:
+                          s.count > 0
+                            ? isBN
+                              ? "#ef4444"
+                              : "#e0e0e0"
+                            : "#2a2a2e",
+                        lineHeight: 1,
+                      }}
+                    >
+                      {s.count}
+                    </div>
+                    {s.count > 0 && (
+                      <div style={{ fontSize: 9, color: "#888" }}>
+                        ~{s.avgWait.toFixed(1)}d
+                      </div>
+                    )}
                   </div>
                 </div>
-                <div style={{ fontSize: 9, color: isBN ? "#ef4444" : "#666", fontWeight: isBN ? 700 : 400, marginTop: 6, textAlign: "center", lineHeight: 1.3, maxWidth: 86 }}>
+                <div
+                  style={{
+                    fontSize: 9,
+                    color: isBN ? "#ef4444" : "#666",
+                    fontWeight: isBN ? 700 : 400,
+                    marginTop: 6,
+                    textAlign: "center",
+                    lineHeight: 1.3,
+                    maxWidth: 86,
+                  }}
+                >
                   {s.stage}
                 </div>
               </div>
@@ -4529,63 +5417,238 @@ export function Dashboard({ data, session, toast }) {
           };
 
           const Arrow = ({ color = "#2a2a2e", wide = false }) => (
-            <div style={{ display: "flex", alignItems: "center", flexShrink: 0, marginBottom: 32 }}>
-              <div style={{ width: wide ? 20 : 14, height: 2, background: color }} />
-              <div style={{ width: 0, height: 0, borderLeft: `${wide ? 8 : 6}px solid ${color}`, borderTop: `${wide ? 6 : 5}px solid transparent`, borderBottom: `${wide ? 6 : 5}px solid transparent` }} />
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                flexShrink: 0,
+                marginBottom: 32,
+              }}
+            >
+              <div
+                style={{ width: wide ? 20 : 14, height: 2, background: color }}
+              />
+              <div
+                style={{
+                  width: 0,
+                  height: 0,
+                  borderTop: `${wide ? 6 : 5}px solid transparent`,
+                  borderBottom: `${wide ? 6 : 5}px solid transparent`,
+                }}
+              />
             </div>
           );
 
           return (
             <div>
               {/* ── Summary cards ── */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 12, marginBottom: 20 }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(5,1fr)",
+                  gap: 12,
+                  marginBottom: 20,
+                }}
+              >
                 {[
-                  { label: "Total WIP Jobs",        val: totalWIP,                                                          color: C.yellow,        isText: false },
-                  { label: "Bottleneck Stage",       val: bottleneck.count > 0 ? bottleneck.stage : "None",                 color: C.red,           isText: true  },
-                  { label: "Avg Wait at Bottleneck", val: bottleneck.count > 0 ? `${bottleneck.avgWait.toFixed(1)}d` : "—", color: "#f97316",       isText: true  },
-                  { label: "Feeder Pipeline Depth",  val: feederDepth,                                                       color: "#3b82f6",       isText: false },
-                  { label: "Formation Starvation",   val: starvationLabel,                                                   color: starvationColor, isText: true  },
+                  {
+                    label: "Total WIP Jobs",
+                    val: totalWIP,
+                    color: C.yellow,
+                    isText: false,
+                  },
+                  {
+                    label: "Bottleneck Stage",
+                    val: bottleneck.count > 0 ? bottleneck.stage : "None",
+                    color: C.red,
+                    isText: true,
+                  },
+                  {
+                    label: "Avg Wait at Bottleneck",
+                    val:
+                      bottleneck.count > 0
+                        ? `${bottleneck.avgWait.toFixed(1)}d`
+                        : "—",
+                    color: "#f97316",
+                    isText: true,
+                  },
+                  {
+                    label: "Feeder Pipeline Depth",
+                    val: feederDepth,
+                    color: "#3b82f6",
+                    isText: false,
+                  },
+                  {
+                    label: "Formation Starvation",
+                    val: starvationLabel,
+                    color: starvationColor,
+                    isText: true,
+                  },
                 ].map(({ label, val, color, isText }) => (
-                  <div key={label} style={{ background: "#141416", border: `1px solid ${color}44`, borderLeft: `4px solid ${color}`, borderRadius: 8, padding: 16 }}>
-                    <div style={{ fontSize: 11, color: "#888", fontWeight: 700, textTransform: "uppercase", marginBottom: 6 }}>{label}</div>
-                    <div style={{ fontSize: isText ? 18 : 30, fontWeight: 900, color, fontFamily: isText ? "inherit" : "monospace" }}>{val}</div>
+                  <div
+                    key={label}
+                    style={{
+                      background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)",
+                      border: `1px solid ${color}44`,
+                      borderRadius: 8,
+                      padding: 16,
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 11,
+                        color: "#888",
+                        fontWeight: 500,
+                        textTransform: "uppercase",
+                        marginBottom: 6,
+                      }}
+                    >
+                      {label}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: isText ? 18 : 30,
+                        fontWeight: 900,
+                        color,
+                        fontFamily: isText ? "inherit" : "monospace",
+                      }}
+                    >
+                      {val}
+                    </div>
                   </div>
                 ))}
               </div>
 
               {/* ── Recommendation ── */}
               {!noWIP && bottleneck.count > 0 && (
-                <div style={{ marginBottom: 16, padding: "14px 18px", borderRadius: 8, background: "#1a0a0a", border: "1px solid #ef444466", display: "flex", gap: 14, alignItems: "flex-start" }}>
-                  <i className="fa-solid fa-lightbulb" style={{ fontSize: 20, flexShrink: 0, color: "#f59e0b" }} />
+                <div
+                  style={{
+                    marginBottom: 16,
+                    padding: "14px 18px",
+                    borderRadius: 8,
+                    background: "#1a0a0a",
+                    border: "1px solid #ef444466",
+                    display: "flex",
+                    gap: 14,
+                    alignItems: "flex-start",
+                  }}
+                >
+                  <i
+                    className="fa-solid fa-lightbulb"
+                    style={{ fontSize: 20, flexShrink: 0, color: "#f59e0b" }}
+                  />
                   <div>
-                    <div style={{ fontWeight: 700, color: "#ef4444", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Bottleneck Recommendation</div>
-                    <div style={{ fontSize: 13, color: "#bbb", lineHeight: 1.6 }}>{rec}</div>
+                    <div
+                      style={{
+                        fontWeight: 500,
+                        color: "#ef4444",
+                        fontSize: 11,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                        marginBottom: 4,
+                      }}
+                    >
+                      Bottleneck Recommendation
+                    </div>
+                    <div
+                      style={{ fontSize: 13, color: "#bbb", lineHeight: 1.6 }}
+                    >
+                      {rec}
+                    </div>
                   </div>
                 </div>
               )}
 
               {/* ── Starvation alert ── */}
-              {(starvationRisk === "high" || starvationRisk === "medium") && starvationText && (
-                <div style={{ marginBottom: 16, padding: "14px 18px", borderRadius: 8, background: starvationRisk === "high" ? "#1a0505" : "#1a1400", border: `1px solid ${starvationColor}66`, display: "flex", gap: 14, alignItems: "flex-start" }}>
-                  <i className="fa-solid fa-triangle-exclamation" style={{ fontSize: 20, flexShrink: 0, color: "#f59e0b" }} />
-                  <div>
-                    <div style={{ fontWeight: 700, color: starvationColor, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Formation Starvation {starvationRisk === "high" ? "Warning" : "Notice"}</div>
-                    <div style={{ fontSize: 13, color: "#bbb", lineHeight: 1.6 }}>{starvationText}</div>
+              {(starvationRisk === "high" || starvationRisk === "medium") &&
+                starvationText && (
+                  <div
+                    style={{
+                      marginBottom: 16,
+                      padding: "14px 18px",
+                      borderRadius: 8,
+                      background:
+                        starvationRisk === "high" ? "#1a0505" : "#1a1400",
+                      border: `1px solid ${starvationColor}66`,
+                      display: "flex",
+                      gap: 14,
+                      alignItems: "flex-start",
+                    }}
+                  >
+                    <i
+                      className="fa-solid fa-triangle-exclamation"
+                      style={{ fontSize: 20, flexShrink: 0, color: "#f59e0b" }}
+                    />
+                    <div>
+                      <div
+                        style={{
+                          fontWeight: 500,
+                          color: starvationColor,
+                          fontSize: 11,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.05em",
+                          marginBottom: 4,
+                        }}
+                      >
+                        Formation Starvation{" "}
+                        {starvationRisk === "high" ? "Warning" : "Notice"}
+                      </div>
+                      <div
+                        style={{ fontSize: 13, color: "#bbb", lineHeight: 1.6 }}
+                      >
+                        {starvationText}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {/* ── Pipeline flow diagram ── */}
-              <div style={{ background: "#141416", border: "1px solid #2a2a2e", borderRadius: 8, padding: "20px 20px 16px", marginBottom: 20 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: "0.05em" }}>Production Pipeline — Feeder Stages → Formation Sinks</div>
+              <div
+                style={{
+                  background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)",
+                  border: "1px solid #2a2a2e",
+                  borderRadius: 8,
+                  padding: "20px 20px 16px",
+                  marginBottom: 20,
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: 16,
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 500,
+                      color: "#888",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                    }}
+                  >
+                    Production Pipeline — Feeder Stages → Formation Sinks
+                  </div>
                   <div style={{ display: "flex", gap: 14 }}>
-                    <span style={{ fontSize: 10, color: "#3b82f6" }}>■ Feeder</span>
-                    <span style={{ fontSize: 10, color: "#22c55e" }}>■ Sink</span>
+                    <span style={{ fontSize: 10, color: "#3b82f6" }}>
+                      ■ Feeder
+                    </span>
+                    <span style={{ fontSize: 10, color: "#22c55e" }}>
+                      ■ Sink
+                    </span>
                   </div>
                 </div>
 
-                <div style={{ display: "flex", alignItems: "center", overflowX: "auto", paddingBottom: 8 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    overflowX: "auto",
+                    paddingBottom: 8,
+                  }}
+                >
                   {/* Feeder chain */}
                   {feederStats.map((s, i) => (
                     <React.Fragment key={s.stage}>
@@ -4598,8 +5661,26 @@ export function Dashboard({ data, session, toast }) {
                   <Arrow color="#3b82f6" wide />
 
                   {/* Sink column: Formation + Manual Formation stacked */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: 12, flexShrink: 0 }}>
-                    <div style={{ fontSize: 9, color: "#22c55e88", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", textAlign: "center" }}>Formation Sinks</div>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 12,
+                      flexShrink: 0,
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 9,
+                        color: "#22c55e88",
+                        fontWeight: 500,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                        textAlign: "center",
+                      }}
+                    >
+                      Formation Sinks
+                    </div>
                     {sinkStats.map((s) => (
                       <TankNode key={s.stage} s={s} height={72} fontSize={20} />
                     ))}
@@ -4607,57 +5688,186 @@ export function Dashboard({ data, session, toast }) {
                 </div>
 
                 <div style={{ fontSize: 10, color: "#444", marginTop: 8 }}>
-                  Fill = relative WIP queue depth · * = highest pressure (jobs × avg wait) · Blue arrow = feeder → Formation flow · Varnish & Lamination apply to ~20–25% of jobs
+                  Fill = relative WIP queue depth · * = highest pressure (jobs ×
+                  avg wait) · Blue arrow = feeder → Formation flow · Varnish &
+                  Lamination apply to ~20–25% of jobs
                 </div>
               </div>
 
               {/* ── Stage detail table ── */}
-              <div style={{ borderRadius: 8, overflow: "hidden", border: "1px solid #2a2a2e", marginBottom: 20 }}>
-                <div style={{ padding: "12px 16px", background: "#1a1a1e", borderBottom: "1px solid #2a2a2e", fontWeight: 700, color: "#bbb", fontSize: 12 }}>
+              <div
+                style={{
+                  borderRadius: 8,
+                  overflow: "hidden",
+                  border: "1px solid #2a2a2e",
+                  marginBottom: 20,
+                }}
+              >
+                <div
+                  style={{
+                    padding: "12px 16px",
+                    background: "rgba(255,255,255,0.05)",
+                    borderBottom: "1px solid #2a2a2e",
+                    fontWeight: 500,
+                    color: "#bbb",
+                    fontSize: 12,
+                  }}
+                >
                   Stage-wise Queue Detail
                 </div>
                 <table style={{ ...TABLE, tableLayout: "auto" }}>
                   <thead>
                     <tr>
-                      {["Stage", "Role", "Jobs Queued", "Avg Wait (d)", "Max Wait (d)", "Pressure Index", "Status"].map((h) => (
-                        <th key={h} style={TH}>{h}</th>
+                      {[
+                        "Stage",
+                        "Role",
+                        "Jobs Queued",
+                        "Avg Wait (d)",
+                        "Max Wait (d)",
+                        "Pressure Index",
+                        "Status",
+                      ].map((h) => (
+                        <th key={h} style={TH}>
+                          {h}
+                        </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {stageStats.map((s, i) => {
-                      const isBN      = s.stage === bottleneck.stage && s.count > 0;
-                      const col       = isBN ? C.red : s.count > 2 ? C.yellow : s.count > 0 ? C.green : "#555";
-                      const label     = s.count === 0 ? "Clear" : isBN ? "Bottleneck" : s.count > 2 ? "Congested" : "Manageable";
-                      const roleCol   = s.isFeeder ? "#3b82f6" : "#22c55e";
+                      const isBN = s.stage === bottleneck.stage && s.count > 0;
+                      const col = isBN
+                        ? C.red
+                        : s.count > 2
+                          ? C.yellow
+                          : s.count > 0
+                            ? C.green
+                            : "#555";
+                      const label =
+                        s.count === 0
+                          ? "Clear"
+                          : isBN
+                            ? "Bottleneck"
+                            : s.count > 2
+                              ? "Congested"
+                              : "Manageable";
+                      const roleCol = s.isFeeder ? "#3b82f6" : "#22c55e";
                       const roleLabel = s.isFeeder ? "Feeder" : "Sink";
                       return (
-                        <tr key={s.stage} style={{ background: i % 2 === 0 ? "#0e0e12" : "#121216" }}>
+                        <tr
+                          key={s.stage}
+                          style={{
+                            background: i % 2 === 0 ? "#0e0e12" : "#121216",
+                          }}
+                        >
                           <td style={{ ...TD, fontWeight: 700 }}>{s.stage}</td>
                           <td style={{ ...TD }}>
-                            <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 10, fontWeight: 700, background: `${roleCol}22`, color: roleCol, border: `1px solid ${roleCol}44` }}>
+                            <span
+                              style={{
+                                padding: "2px 8px",
+                                borderRadius: 4,
+                                fontSize: 10,
+                                fontWeight: 500,
+                                background: `${roleCol}22`,
+                                color: roleCol,
+                                border: `1px solid ${roleCol}44`,
+                              }}
+                            >
                               {roleLabel}
                             </span>
                           </td>
-                          <td style={{ ...TD, textAlign: "right", fontWeight: 700, color: s.count > 0 ? col : "#555" }}>{s.count || "—"}</td>
-                          <td style={{ ...TD, textAlign: "right", color: s.avgWait > 3 ? C.red : s.avgWait > 1 ? C.yellow : "#888" }}>
+                          <td
+                            style={{
+                              ...TD,
+                              textAlign: "right",
+                              fontWeight: 500,
+                              color: s.count > 0 ? col : "#555",
+                            }}
+                          >
+                            {s.count || "—"}
+                          </td>
+                          <td
+                            style={{
+                              ...TD,
+                              textAlign: "right",
+                              color:
+                                s.avgWait > 3
+                                  ? C.red
+                                  : s.avgWait > 1
+                                    ? C.yellow
+                                    : "#888",
+                            }}
+                          >
                             {s.count > 0 ? s.avgWait.toFixed(1) : "—"}
                           </td>
-                          <td style={{ ...TD, textAlign: "right", color: s.maxWait > 5 ? C.red : s.maxWait > 2 ? C.yellow : "#888" }}>
+                          <td
+                            style={{
+                              ...TD,
+                              textAlign: "right",
+                              color:
+                                s.maxWait > 5
+                                  ? C.red
+                                  : s.maxWait > 2
+                                    ? C.yellow
+                                    : "#888",
+                            }}
+                          >
                             {s.count > 0 ? s.maxWait.toFixed(1) : "—"}
                           </td>
                           <td style={{ ...TD }}>
                             {s.pressure > 0 ? (
-                              <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "flex-end" }}>
-                                <div style={{ width: 60, height: 4, background: "#2a2a2e", borderRadius: 2, overflow: "hidden" }}>
-                                  <div style={{ width: `${(s.pressure / maxPressure) * 100}%`, height: "100%", background: col, borderRadius: 2 }} />
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 8,
+                                  justifyContent: "flex-end",
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    width: 60,
+                                    height: 4,
+                                    background: "#2a2a2e",
+                                    borderRadius: 2,
+                                    overflow: "hidden",
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      width: `${(s.pressure / maxPressure) * 100}%`,
+                                      height: "100%",
+                                      background: col,
+                                      borderRadius: 2,
+                                    }}
+                                  />
                                 </div>
-                                <span style={{ color: col, fontWeight: 700, fontSize: 11 }}>{s.pressure.toFixed(1)}</span>
+                                <span
+                                  style={{
+                                    color: col,
+                                    fontWeight: 500,
+                                    fontSize: 11,
+                                  }}
+                                >
+                                  {s.pressure.toFixed(1)}
+                                </span>
                               </div>
-                            ) : <span style={{ color: "#555" }}>—</span>}
+                            ) : (
+                              <span style={{ color: "#555" }}>—</span>
+                            )}
                           </td>
                           <td style={{ ...TD }}>
-                            <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 10, fontWeight: 700, background: `${col}22`, color: col, border: `1px solid ${col}44` }}>
+                            <span
+                              style={{
+                                padding: "2px 8px",
+                                borderRadius: 4,
+                                fontSize: 10,
+                                fontWeight: 500,
+                                background: `${col}22`,
+                                color: col,
+                                border: `1px solid ${col}44`,
+                              }}
+                            >
                               {label}
                             </span>
                           </td>
@@ -4671,20 +5881,51 @@ export function Dashboard({ data, session, toast }) {
               {/* ── Longest-waiting jobs ── */}
               {(() => {
                 const stuck = stageStats
-                  .flatMap((s) => s.jobs.map((jo) => ({ jo, stage: s.stage, isFeeder: s.isFeeder, wait: jobWaitDays(jo) })))
+                  .flatMap((s) =>
+                    s.jobs.map((jo) => ({
+                      jo,
+                      stage: s.stage,
+                      isFeeder: s.isFeeder,
+                      wait: jobWaitDays(jo),
+                    })),
+                  )
                   .sort((a, b) => b.wait - a.wait)
                   .slice(0, 8);
                 if (!stuck.length) return null;
                 return (
-                  <div style={{ borderRadius: 8, overflow: "hidden", border: "1px solid #2a2a2e" }}>
-                    <div style={{ padding: "12px 16px", background: "#1a1a1e", borderBottom: "1px solid #2a2a2e", fontWeight: 700, color: "#bbb", fontSize: 12 }}>
+                  <div
+                    style={{
+                      borderRadius: 8,
+                      overflow: "hidden",
+                      border: "1px solid #2a2a2e",
+                    }}
+                  >
+                    <div
+                      style={{
+                        padding: "12px 16px",
+                        background: "rgba(255,255,255,0.05)",
+                        borderBottom: "1px solid #2a2a2e",
+                        fontWeight: 500,
+                        color: "#bbb",
+                        fontSize: 12,
+                      }}
+                    >
                       Longest-Waiting Jobs (top 8)
                     </div>
                     <table style={{ ...TABLE, tableLayout: "auto" }}>
                       <thead>
                         <tr>
-                          {["JO #", "Item", "Client", "Stuck at Stage", "Role", "Days Waiting"].map((h) => (
-                            <th key={h} style={TH}>{h}</th>
+                          {[
+                            "JO #",
+                            "Item",
+                            "Client",
+                            "Stuck at Stage",
+                            "Role",
+                            "Days Waiting",
+                          ].map((h) => (
+                            <th key={h} style={TH}>
+                              {h}
+                            </th>
                           ))}
                         </tr>
                       </thead>
@@ -4692,21 +5933,68 @@ export function Dashboard({ data, session, toast }) {
                         {stuck.map(({ jo, stage, isFeeder, wait }, i) => {
                           const roleCol = isFeeder ? "#3b82f6" : "#22c55e";
                           return (
-                            <tr key={jo._id || i} style={{ background: i % 2 === 0 ? "#0e0e12" : "#121216" }}>
-                              <td style={{ ...TD, color: C.yellow, fontWeight: 700 }}>{jo.joNo}</td>
+                            <tr
+                              key={jo._id || i}
+                              style={{
+                                background: i % 2 === 0 ? "#0e0e12" : "#121216",
+                              }}
+                            >
+                              <td
+                                style={{
+                                  ...TD,
+                                  color: C.yellow,
+                                  fontWeight: 500,
+                                }}
+                              >
+                                {jo.joNo}
+                              </td>
                               <td style={TD}>{jo.itemName || "—"}</td>
-                              <td style={{ ...TD, color: "#888" }}>{jo.companyName || "—"}</td>
+                              <td style={{ ...TD, color: "#888" }}>
+                                {jo.companyName || "—"}
+                              </td>
                               <td style={TD}>
-                                <span style={{ padding: "2px 8px", borderRadius: 4, background: (PROCESS_COLORS[stage] || "#555") + "33", color: PROCESS_COLORS[stage] || "#aaa", fontSize: 11, fontWeight: 700 }}>
+                                <span
+                                  style={{
+                                    padding: "2px 8px",
+                                    borderRadius: 4,
+                                    background:
+                                      (PROCESS_COLORS[stage] || "#555") + "33",
+                                    color: PROCESS_COLORS[stage] || "#aaa",
+                                    fontSize: 11,
+                                    fontWeight: 500,
+                                  }}
+                                >
                                   {stage}
                                 </span>
                               </td>
                               <td style={{ ...TD }}>
-                                <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 10, fontWeight: 700, background: `${roleCol}22`, color: roleCol, border: `1px solid ${roleCol}44` }}>
+                                <span
+                                  style={{
+                                    padding: "2px 8px",
+                                    borderRadius: 4,
+                                    fontSize: 10,
+                                    fontWeight: 500,
+                                    background: `${roleCol}22`,
+                                    color: roleCol,
+                                    border: `1px solid ${roleCol}44`,
+                                  }}
+                                >
                                   {isFeeder ? "Feeder" : "Sink"}
                                 </span>
                               </td>
-                              <td style={{ ...TD, textAlign: "right", fontWeight: 700, color: wait > 5 ? C.red : wait > 2 ? C.yellow : "#888" }}>
+                              <td
+                                style={{
+                                  ...TD,
+                                  textAlign: "right",
+                                  fontWeight: 500,
+                                  color:
+                                    wait > 5
+                                      ? C.red
+                                      : wait > 2
+                                        ? C.yellow
+                                        : "#888",
+                                }}
+                              >
                                 {wait.toFixed(1)}d
                               </td>
                             </tr>
@@ -4728,7 +6016,9 @@ export function Dashboard({ data, session, toast }) {
             if (!dateStr) return "unknown";
             const d = new Date(dateStr);
             const jan1 = new Date(d.getFullYear(), 0, 1);
-            const wk = Math.ceil(((d - jan1) / 86400000 + jan1.getDay() + 1) / 7);
+            const wk = Math.ceil(
+              ((d - jan1) / 86400000 + jan1.getDay() + 1) / 7,
+            );
             return `${d.getFullYear()}-W${String(wk).padStart(2, "0")}`;
           };
 
@@ -4747,96 +6037,204 @@ export function Dashboard({ data, session, toast }) {
           const opMap = {};
           rangeEntries.forEach((e) => {
             const op = e.operator || "Unknown";
-            if (!opMap[op]) opMap[op] = { good: 0, rejected: 0, days: new Set(), shifts: new Set(), weekly: {} };
-            opMap[op].good     += +(e.qtyCompleted || 0);
-            opMap[op].rejected += +(e.qtyRejected  || 0);
+            if (!opMap[op])
+              opMap[op] = {
+                good: 0,
+                rejected: 0,
+                days: new Set(),
+                shifts: new Set(),
+                weekly: {},
+              };
+            opMap[op].good += +(e.qtyCompleted || 0);
+            opMap[op].rejected += +(e.qtyRejected || 0);
             opMap[op].days.add(e.date);
             opMap[op].shifts.add(`${e.date}|${e.shift || "_"}`);
             const wk = isoWeekSC(e.date);
-            opMap[op].weekly[wk] = (opMap[op].weekly[wk] || 0) + +(e.qtyCompleted || 0);
+            opMap[op].weekly[wk] =
+              (opMap[op].weekly[wk] || 0) + +(e.qtyCompleted || 0);
           });
 
           const opRows = Object.entries(opMap)
             .map(([op, d]) => {
-              const productivity = d.shifts.size > 0 ? d.good / d.shifts.size : 0;
-              const quality      = (d.good + d.rejected) > 0 ? d.good / (d.good + d.rejected) : null;
-              const weeks        = Object.entries(d.weekly).sort(([a], [b]) => a.localeCompare(b));
-              const lastWeeks    = weeks.slice(-6).map(([, v]) => v);
+              const productivity =
+                d.shifts.size > 0 ? d.good / d.shifts.size : 0;
+              const quality =
+                d.good + d.rejected > 0 ? d.good / (d.good + d.rejected) : null;
+              const weeks = Object.entries(d.weekly).sort(([a], [b]) =>
+                a.localeCompare(b),
+              );
+              const lastWeeks = weeks.slice(-6).map(([, v]) => v);
 
               let trend = "—";
               if (lastWeeks.length >= 2) {
                 const last = lastWeeks[lastWeeks.length - 1] || 0;
                 const first = lastWeeks[0] || 0;
-                if (first === 0) { trend = "new"; }
-                else {
+                if (first === 0) {
+                  trend = "new";
+                } else {
                   const chg = ((last - first) / first) * 100;
-                  trend = chg >= 10 ? "improving" : chg <= -10 ? "declining" : "plateau";
+                  trend =
+                    chg >= 10
+                      ? "improving"
+                      : chg <= -10
+                        ? "declining"
+                        : "plateau";
                 }
               }
-              return { op, good: d.good, rejected: d.rejected, activeDays: d.days.size, activeShifts: d.shifts.size, productivity, quality, trend, lastWeeks };
+              return {
+                op,
+                good: d.good,
+                rejected: d.rejected,
+                activeDays: d.days.size,
+                activeShifts: d.shifts.size,
+                productivity,
+                quality,
+                trend,
+                lastWeeks,
+              };
             })
             .sort((a, b) => b.productivity - a.productivity);
 
           // ── Machine utilization ───────────────────────────────────────────
           const fleetCombosSC = new Set(
-            rangeEntries.map((e) => `${e.date}|${e.shift || "_"}`)
+            rangeEntries.map((e) => `${e.date}|${e.shift || "_"}`),
           );
-          const machineRows = activeMachines.map((m) => {
-            const mid  = String(m._id);
-            const ents = rangeEntries.filter((e) => String(e.machineId) === mid || String(e.machine) === mid);
-            const machCombos = new Set(ents.map((e) => `${e.date}|${e.shift || "_"}`));
-            const util   = fleetCombosSC.size > 0 ? machCombos.size / fleetCombosSC.size : 0;
-            const good   = ents.reduce((s, e) => s + +(e.qtyCompleted || 0), 0);
-            const rej    = ents.reduce((s, e) => s + +(e.qtyRejected  || 0), 0);
-            const quality = (good + rej) > 0 ? good / (good + rej) : null;
+          const machineRows = activeMachines
+            .map((m) => {
+              const mid = String(m._id);
+              const ents = rangeEntries.filter(
+                (e) => String(e.machineId) === mid || String(e.machine) === mid,
+              );
+              const machCombos = new Set(
+                ents.map((e) => `${e.date}|${e.shift || "_"}`),
+              );
+              const util =
+                fleetCombosSC.size > 0
+                  ? machCombos.size / fleetCombosSC.size
+                  : 0;
+              const good = ents.reduce((s, e) => s + +(e.qtyCompleted || 0), 0);
+              const rej = ents.reduce((s, e) => s + +(e.qtyRejected || 0), 0);
+              const quality = good + rej > 0 ? good / (good + rej) : null;
 
-            const opCount = {};
-            ents.forEach((e) => { const k = e.operator || "?"; opCount[k] = (opCount[k] || 0) + +(e.qtyCompleted || 0); });
-            const topOp = Object.entries(opCount).sort(([, a], [, b]) => b - a)[0]?.[0] || "—";
+              const opCount = {};
+              ents.forEach((e) => {
+                const k = e.operator || "?";
+                opCount[k] = (opCount[k] || 0) + +(e.qtyCompleted || 0);
+              });
+              const topOp =
+                Object.entries(opCount).sort(([, a], [, b]) => b - a)[0]?.[0] ||
+                "—";
 
-            const stgCount = {};
-            ents.forEach((e) => { const k = e.stage || "?"; stgCount[k] = (stgCount[k] || 0) + +(e.qtyCompleted || 0); });
-            const topStage = Object.entries(stgCount).sort(([, a], [, b]) => b - a)[0]?.[0] || "—";
+              const stgCount = {};
+              ents.forEach((e) => {
+                const k = e.stage || "?";
+                stgCount[k] = (stgCount[k] || 0) + +(e.qtyCompleted || 0);
+              });
+              const topStage =
+                Object.entries(stgCount).sort(
+                  ([, a], [, b]) => b - a,
+                )[0]?.[0] || "—";
 
-            // Weekly utilization trend (last 6 weeks)
-            const wkUtil = {};
-            ents.forEach((e) => {
-              const wk = isoWeekSC(e.date);
-              if (!wkUtil[wk]) wkUtil[wk] = new Set();
-              wkUtil[wk].add(`${e.date}|${e.shift || "_"}`);
-            });
-            // Fleet combos per week for normalization
-            const fleetWk = {};
-            rangeEntries.forEach((e) => {
-              const wk = isoWeekSC(e.date);
-              if (!fleetWk[wk]) fleetWk[wk] = new Set();
-              fleetWk[wk].add(`${e.date}|${e.shift || "_"}`);
-            });
-            const utilWkVals = Object.keys(fleetWk).sort().slice(-6).map((wk) =>
-              fleetWk[wk].size > 0 ? ((wkUtil[wk]?.size || 0) / fleetWk[wk].size) * 100 : 0
-            );
+              // Weekly utilization trend (last 6 weeks)
+              const wkUtil = {};
+              ents.forEach((e) => {
+                const wk = isoWeekSC(e.date);
+                if (!wkUtil[wk]) wkUtil[wk] = new Set();
+                wkUtil[wk].add(`${e.date}|${e.shift || "_"}`);
+              });
+              // Fleet combos per week for normalization
+              const fleetWk = {};
+              rangeEntries.forEach((e) => {
+                const wk = isoWeekSC(e.date);
+                if (!fleetWk[wk]) fleetWk[wk] = new Set();
+                fleetWk[wk].add(`${e.date}|${e.shift || "_"}`);
+              });
+              const utilWkVals = Object.keys(fleetWk)
+                .sort()
+                .slice(-6)
+                .map((wk) =>
+                  fleetWk[wk].size > 0
+                    ? ((wkUtil[wk]?.size || 0) / fleetWk[wk].size) * 100
+                    : 0,
+                );
 
-            return { m, util, good, rej, quality, topOp, topStage, activeShifts: machCombos.size, utilWkVals };
-          }).sort((a, b) => b.util - a.util);
+              return {
+                m,
+                util,
+                good,
+                rej,
+                quality,
+                topOp,
+                topStage,
+                activeShifts: machCombos.size,
+                utilWkVals,
+              };
+            })
+            .sort((a, b) => b.util - a.util);
 
           // Helpers
-          const pctFmt    = (n) => n == null ? "—" : `${(n * 100).toFixed(1)}%`;
-          const utilColor = (v) => v >= 0.7 ? C.green : v >= 0.4 ? C.yellow : C.red;
-          const trendColor = (t) => t === "improving" ? C.green : t === "declining" ? C.red : t === "plateau" ? C.yellow : "#555";
-          const trendLabel = (t) => t === "improving" ? "↑ Improving" : t === "declining" ? "↓ Declining" : t === "plateau" ? "→ Plateau" : t === "new" ? "New" : "—";
+          const pctFmt = (n) => (n == null ? "—" : `${(n * 100).toFixed(1)}%`);
+          const utilColor = (v) =>
+            v >= 0.7 ? C.green : v >= 0.4 ? C.yellow : C.red;
+          const trendColor = (t) =>
+            t === "improving"
+              ? C.green
+              : t === "declining"
+                ? C.red
+                : t === "plateau"
+                  ? C.yellow
+                  : "#555";
+          const trendLabel = (t) =>
+            t === "improving"
+              ? "↑ Improving"
+              : t === "declining"
+                ? "↓ Declining"
+                : t === "plateau"
+                  ? "→ Plateau"
+                  : t === "new"
+                    ? "New"
+                    : "—";
 
           // Mini SVG sparkline
           const Sparkline = ({ vals, color }) => {
-            if (!vals || vals.length < 2) return <span style={{ color: "#555", fontSize: 10 }}>—</span>;
+            if (!vals || vals.length < 2)
+              return <span style={{ color: "#555", fontSize: 10 }}>—</span>;
             const max = Math.max(...vals, 1);
-            const W = 52; const H = 22;
-            const pts = vals.map((v, i) => `${(i / (vals.length - 1)) * W},${H - 2 - (v / max) * (H - 4)}`).join(" ");
-            const col = color || (vals[vals.length - 1] >= vals[0] ? C.green : C.red);
+            const W = 52;
+            const H = 22;
+            const pts = vals
+              .map(
+                (v, i) =>
+                  `${(i / (vals.length - 1)) * W},${H - 2 - (v / max) * (H - 4)}`,
+              )
+              .join(" ");
+            const col =
+              color || (vals[vals.length - 1] >= vals[0] ? C.green : C.red);
             return (
-              <svg width={W} height={H} style={{ display: "inline-block", verticalAlign: "middle", overflow: "visible" }}>
-                <polyline points={pts} fill="none" stroke={col} strokeWidth={1.5} />
+              <svg
+                width={W}
+                height={H}
+                style={{
+                  display: "inline-block",
+                  verticalAlign: "middle",
+                  overflow: "visible",
+                }}
+              >
+                <polyline
+                  points={pts}
+                  fill="none"
+                  stroke={col}
+                  strokeWidth={1.5}
+                />
                 {vals.map((v, i) => (
-                  <circle key={i} cx={(i / (vals.length - 1)) * W} cy={H - 2 - (v / max) * (H - 4)} r={2.5} fill={col} opacity={0.8} />
+                  <circle
+                    key={i}
+                    cx={(i / (vals.length - 1)) * W}
+                    cy={H - 2 - (v / max) * (H - 4)}
+                    r={2.5}
+                    fill={col}
+                    opacity={0.8}
+                  />
                 ))}
               </svg>
             );
@@ -4845,63 +6243,191 @@ export function Dashboard({ data, session, toast }) {
           return (
             <div>
               <div style={{ fontSize: 11, color: "#555", marginBottom: 16 }}>
-                Period: {dateFrom || cut30str} → {dateTo || "today"} · Adjust using the Date From / To filter above.
+                Period: {dateFrom || cut30str} → {dateTo || "today"} · Adjust
+                using the Date From / To filter above.
               </div>
 
               {/* ── Operator scorecards table ── */}
-              <div style={{ borderRadius: 8, overflow: "hidden", border: "1px solid #2a2a2e", marginBottom: 24 }}>
-                <div style={{ padding: "12px 16px", background: "#1a1a1e", borderBottom: "1px solid #2a2a2e" }}>
-                  <span style={{ fontWeight: 700, color: "#bbb", fontSize: 12 }}>Operator Productivity Scorecards</span>
+              <div
+                style={{
+                  borderRadius: 8,
+                  overflow: "hidden",
+                  border: "1px solid #2a2a2e",
+                  marginBottom: 24,
+                }}
+              >
+                <div
+                  style={{
+                    padding: "12px 16px",
+                    background: "rgba(255,255,255,0.05)",
+                    borderBottom: "1px solid #2a2a2e",
+                  }}
+                >
+                  <span
+                    style={{ fontWeight: 500, color: "#bbb", fontSize: 12 }}
+                  >
+                    Operator Productivity Scorecards
+                  </span>
                   <span style={{ fontSize: 10, color: "#555", marginLeft: 10 }}>
-                    Ranked by units/shift · Sparkline = last 6 weeks output · Learning curve flag
+                    Ranked by units/shift · Sparkline = last 6 weeks output ·
+                    Learning curve flag
                   </span>
                 </div>
                 {opRows.length === 0 ? (
-                  <div style={{ textAlign: "center", padding: 40, color: "#555" }}>
+                  <div
+                    style={{ textAlign: "center", padding: 40, color: "#555" }}
+                  >
                     No production records with operator names in this period.
                   </div>
                 ) : (
                   <table style={{ ...TABLE, tableLayout: "auto" }}>
                     <thead>
                       <tr>
-                        {["Rank", "Operator", "Total Output", "Active Shifts", "Units / Shift", "Quality Rate", "6-Wk Trend", "Learning Curve"].map((h) => (
-                          <th key={h} style={TH}>{h}</th>
+                        {[
+                          "Rank",
+                          "Operator",
+                          "Total Output",
+                          "Active Shifts",
+                          "Units / Shift",
+                          "Quality Rate",
+                          "6-Wk Trend",
+                          "Learning Curve",
+                        ].map((h) => (
+                          <th key={h} style={TH}>
+                            {h}
+                          </th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {opRows.map((r, i) => {
-                        const medal    = i === 0 ? "1st" : i === 1 ? "2nd" : i === 2 ? "3rd" : `#${i + 1}`;
-                        const prodCol  = i === 0 ? C.green : i < 3 ? C.yellow : "#e0e0e0";
-                        const qualCol  = r.quality == null ? "#555" : r.quality >= 0.95 ? C.green : r.quality >= 0.85 ? C.yellow : C.red;
+                        const medal =
+                          i === 0
+                            ? "1st"
+                            : i === 1
+                              ? "2nd"
+                              : i === 2
+                                ? "3rd"
+                                : `#${i + 1}`;
+                        const prodCol =
+                          i === 0 ? C.green : i < 3 ? C.yellow : "#e0e0e0";
+                        const qualCol =
+                          r.quality == null
+                            ? "#555"
+                            : r.quality >= 0.95
+                              ? C.green
+                              : r.quality >= 0.85
+                                ? C.yellow
+                                : C.red;
                         return (
-                          <tr key={r.op} style={{ background: i % 2 === 0 ? "#0e0e12" : "#121216" }}>
-                            <td style={{ ...TD, textAlign: "center", fontSize: 16 }}>{medal}</td>
+                          <tr
+                            key={r.op}
+                            style={{
+                              background: i % 2 === 0 ? "#0e0e12" : "#121216",
+                            }}
+                          >
+                            <td
+                              style={{
+                                ...TD,
+                                textAlign: "center",
+                                fontSize: 16,
+                              }}
+                            >
+                              {medal}
+                            </td>
                             <td style={{ ...TD, fontWeight: 700 }}>{r.op}</td>
-                            <td style={{ ...TD, textAlign: "right", color: C.green, fontWeight: 700 }}>
+                            <td
+                              style={{
+                                ...TD,
+                                textAlign: "right",
+                                color: C.green,
+                                fontWeight: 500,
+                              }}
+                            >
                               {r.good.toLocaleString("en-IN")}
-                              {r.rejected > 0 && <div style={{ fontSize: 9, color: C.red }}>+{r.rejected} rej</div>}
+                              {r.rejected > 0 && (
+                                <div style={{ fontSize: 9, color: C.red }}>
+                                  +{r.rejected} rej
+                                </div>
+                              )}
                             </td>
-                            <td style={{ ...TD, textAlign: "right", color: "#888" }}>{r.activeShifts}</td>
+                            <td
+                              style={{
+                                ...TD,
+                                textAlign: "right",
+                                color: "#888",
+                              }}
+                            >
+                              {r.activeShifts}
+                            </td>
                             <td style={{ ...TD, textAlign: "right" }}>
-                              <span style={{ fontWeight: 900, fontSize: 15, color: prodCol }}>{r.productivity.toFixed(0)}</span>
-                              <span style={{ color: "#555", fontSize: 10, marginLeft: 3 }}>u/shift</span>
+                              <span
+                                style={{
+                                  fontWeight: 900,
+                                  fontSize: 15,
+                                  color: prodCol,
+                                }}
+                              >
+                                {r.productivity.toFixed(0)}
+                              </span>
+                              <span
+                                style={{
+                                  color: "#555",
+                                  fontSize: 10,
+                                  marginLeft: 3,
+                                }}
+                              >
+                                u/shift
+                              </span>
                             </td>
-                            <td style={{ ...TD, textAlign: "right", fontWeight: 700, color: qualCol }}>
+                            <td
+                              style={{
+                                ...TD,
+                                textAlign: "right",
+                                fontWeight: 500,
+                                color: qualCol,
+                              }}
+                            >
                               {pctFmt(r.quality)}
                             </td>
                             <td style={{ ...TD, textAlign: "center" }}>
                               <Sparkline vals={r.lastWeeks} />
                             </td>
                             <td style={{ ...TD }}>
-                              <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 10, fontWeight: 700, background: `${trendColor(r.trend)}22`, color: trendColor(r.trend), border: `1px solid ${trendColor(r.trend)}44` }}>
+                              <span
+                                style={{
+                                  padding: "2px 8px",
+                                  borderRadius: 4,
+                                  fontSize: 10,
+                                  fontWeight: 500,
+                                  background: `${trendColor(r.trend)}22`,
+                                  color: trendColor(r.trend),
+                                  border: `1px solid ${trendColor(r.trend)}44`,
+                                }}
+                              >
                                 {trendLabel(r.trend)}
                               </span>
                               {r.trend === "plateau" && r.activeShifts > 4 && (
-                                <div style={{ fontSize: 9, color: C.yellow, marginTop: 3 }}>Consider retraining</div>
+                                <div
+                                  style={{
+                                    fontSize: 9,
+                                    color: C.yellow,
+                                    marginTop: 3,
+                                  }}
+                                >
+                                  Consider retraining
+                                </div>
                               )}
                               {r.trend === "declining" && (
-                                <div style={{ fontSize: 9, color: C.red, marginTop: 3 }}>Investigate cause</div>
+                                <div
+                                  style={{
+                                    fontSize: 9,
+                                    color: C.red,
+                                    marginTop: 3,
+                                  }}
+                                >
+                                  Investigate cause
+                                </div>
                               )}
                             </td>
                           </tr>
@@ -4913,56 +6439,164 @@ export function Dashboard({ data, session, toast }) {
               </div>
 
               {/* ── Machine utilization ── */}
-              <div style={{ borderRadius: 8, overflow: "hidden", border: "1px solid #2a2a2e" }}>
-                <div style={{ padding: "12px 16px", background: "#1a1a1e", borderBottom: "1px solid #2a2a2e" }}>
-                  <span style={{ fontWeight: 700, color: "#bbb", fontSize: 12 }}>Machine Utilization</span>
+              <div
+                style={{
+                  borderRadius: 8,
+                  overflow: "hidden",
+                  border: "1px solid #2a2a2e",
+                }}
+              >
+                <div
+                  style={{
+                    padding: "12px 16px",
+                    background: "rgba(255,255,255,0.05)",
+                    borderBottom: "1px solid #2a2a2e",
+                  }}
+                >
+                  <span
+                    style={{ fontWeight: 500, color: "#bbb", fontSize: 12 }}
+                  >
+                    Machine Utilization
+                  </span>
                   <span style={{ fontSize: 10, color: "#555", marginLeft: 10 }}>
-                    Active shifts ÷ fleet shifts · Weekly utilization sparkline · Capacity planning input
+                    Active shifts ÷ fleet shifts · Weekly utilization sparkline
+                    · Capacity planning input
                   </span>
                 </div>
                 {machineRows.length === 0 ? (
-                  <div style={{ textAlign: "center", padding: 40, color: "#555" }}>
-                    No machine data in this period. Select a Machine in Production Update entries.
+                  <div
+                    style={{ textAlign: "center", padding: 40, color: "#555" }}
+                  >
+                    No machine data in this period. Select a Machine in
+                    Production Update entries.
                   </div>
                 ) : (
                   <table style={{ ...TABLE, tableLayout: "auto" }}>
                     <thead>
                       <tr>
-                        {["Machine", "Type", "Active Shifts", "Utilization %", "6-Wk Trend", "Good Output", "Quality", "Top Operator", "Top Stage"].map((h) => (
-                          <th key={h} style={TH}>{h}</th>
+                        {[
+                          "Machine",
+                          "Type",
+                          "Active Shifts",
+                          "Utilization %",
+                          "6-Wk Trend",
+                          "Good Output",
+                          "Quality",
+                          "Top Operator",
+                          "Top Stage",
+                        ].map((h) => (
+                          <th key={h} style={TH}>
+                            {h}
+                          </th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {machineRows.map((r, i) => {
-                        const col     = utilColor(r.util);
-                        const qualCol = r.quality == null ? "#555" : r.quality >= 0.95 ? C.green : r.quality >= 0.85 ? C.yellow : C.red;
+                        const col = utilColor(r.util);
+                        const qualCol =
+                          r.quality == null
+                            ? "#555"
+                            : r.quality >= 0.95
+                              ? C.green
+                              : r.quality >= 0.85
+                                ? C.yellow
+                                : C.red;
                         return (
-                          <tr key={r.m._id} style={{ background: i % 2 === 0 ? "#0e0e12" : "#121216" }}>
-                            <td style={{ ...TD, fontWeight: 700 }}>{r.m.name}</td>
-                            <td style={{ ...TD, color: "#888" }}>{r.m.type || "—"}</td>
-                            <td style={{ ...TD, textAlign: "right" }}>{r.activeShifts}</td>
+                          <tr
+                            key={r.m._id}
+                            style={{
+                              background: i % 2 === 0 ? "#0e0e12" : "#121216",
+                            }}
+                          >
+                            <td style={{ ...TD, fontWeight: 700 }}>
+                              {r.m.name}
+                            </td>
+                            <td style={{ ...TD, color: "#888" }}>
+                              {r.m.type || "—"}
+                            </td>
+                            <td style={{ ...TD, textAlign: "right" }}>
+                              {r.activeShifts}
+                            </td>
                             <td style={{ ...TD }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                <div style={{ flex: 1, height: 5, background: "#2a2a2e", borderRadius: 3, overflow: "hidden", minWidth: 64 }}>
-                                  <div style={{ width: `${Math.min(r.util, 1) * 100}%`, height: "100%", background: col, borderRadius: 3 }} />
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 8,
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    flex: 1,
+                                    height: 5,
+                                    background: "#2a2a2e",
+                                    borderRadius: 3,
+                                    overflow: "hidden",
+                                    minWidth: 64,
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      width: `${Math.min(r.util, 1) * 100}%`,
+                                      height: "100%",
+                                      background: col,
+                                      borderRadius: 3,
+                                    }}
+                                  />
                                 </div>
-                                <span style={{ fontWeight: 700, color: col, fontSize: 12, minWidth: 36 }}>{(r.util * 100).toFixed(0)}%</span>
+                                <span
+                                  style={{
+                                    fontWeight: 500,
+                                    color: col,
+                                    fontSize: 12,
+                                    minWidth: 36,
+                                  }}
+                                >
+                                  {(r.util * 100).toFixed(0)}%
+                                </span>
                               </div>
                             </td>
                             <td style={{ ...TD, textAlign: "center" }}>
                               <Sparkline vals={r.utilWkVals} color={col} />
                             </td>
-                            <td style={{ ...TD, textAlign: "right", color: C.green, fontWeight: 700 }}>
+                            <td
+                              style={{
+                                ...TD,
+                                textAlign: "right",
+                                color: C.green,
+                                fontWeight: 500,
+                              }}
+                            >
                               {r.good.toLocaleString("en-IN")}
                             </td>
-                            <td style={{ ...TD, textAlign: "right", fontWeight: 700, color: qualCol }}>
+                            <td
+                              style={{
+                                ...TD,
+                                textAlign: "right",
+                                fontWeight: 500,
+                                color: qualCol,
+                              }}
+                            >
                               {pctFmt(r.quality)}
                             </td>
-                            <td style={{ ...TD, color: "#888", fontSize: 11 }}>{r.topOp}</td>
+                            <td style={{ ...TD, color: "#888", fontSize: 11 }}>
+                              {r.topOp}
+                            </td>
                             <td style={{ ...TD }}>
                               {r.topStage && (
-                                <span style={{ padding: "2px 8px", borderRadius: 4, background: (PROCESS_COLORS[r.topStage] || "#555") + "33", color: PROCESS_COLORS[r.topStage] || "#aaa", fontSize: 10, fontWeight: 700 }}>
+                                <span
+                                  style={{
+                                    padding: "2px 8px",
+                                    borderRadius: 4,
+                                    background:
+                                      (PROCESS_COLORS[r.topStage] || "#555") +
+                                      "33",
+                                    color: PROCESS_COLORS[r.topStage] || "#aaa",
+                                    fontSize: 10,
+                                    fontWeight: 500,
+                                  }}
+                                >
                                   {r.topStage}
                                 </span>
                               )}
@@ -4978,9 +6612,11 @@ export function Dashboard({ data, session, toast }) {
           );
         })()}
 
-        {/* ── SO → Dispatch Funnel ── */}
-        {reportTab === "funnel" && (() => {
-          const avgFn = (arr) => arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : null;
+      {/* ── SO → Dispatch Funnel ── */}
+      {reportTab === "funnel" &&
+        (() => {
+          const avgFn = (arr) =>
+            arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : null;
           const medFn = (arr) => {
             if (!arr.length) return null;
             const s = [...arr].sort((a, b) => a - b);
@@ -4991,28 +6627,38 @@ export function Dashboard({ data, session, toast }) {
           const journey = (salesOrders || []).map((so) => {
             const soKey = so.soNo || so._id || "";
             const relJOs = (jobOrders || []).filter(
-              (jo) => jo.soRef === soKey || jo.soNo === soKey
+              (jo) => jo.soRef === soKey || jo.soNo === soKey,
             );
             const hasJO = relJOs.length > 0;
             const allHistory = relJOs.flatMap((jo) => jo.stageHistory || []);
             const hasProduction = allHistory.length > 0;
             const relDisps = (dispatches || []).filter(
-              (d) => d.soRef === soKey || d.soNo === soKey || d.so === soKey
+              (d) => d.soRef === soKey || d.soNo === soKey || d.so === soKey,
             );
             const hasDispatch = relDisps.length > 0;
 
             const soTs = +new Date(so.orderDate || so.createdAt);
             const joTs = hasJO
-              ? Math.min(...relJOs.map((jo) => +new Date(jo.jobcardDate || jo.createdAt)))
+              ? Math.min(
+                  ...relJOs.map(
+                    (jo) => +new Date(jo.jobcardDate || jo.createdAt),
+                  ),
+                )
               : null;
             const prodStartTs = hasProduction
-              ? Math.min(...allHistory.map((h) => +new Date(h.date || h.enteredAt)))
+              ? Math.min(
+                  ...allHistory.map((h) => +new Date(h.date || h.enteredAt)),
+                )
               : null;
             const prodEndTs = hasProduction
-              ? Math.max(...allHistory.map((h) => +new Date(h.date || h.enteredAt)))
+              ? Math.max(
+                  ...allHistory.map((h) => +new Date(h.date || h.enteredAt)),
+                )
               : null;
             const dispTs = hasDispatch
-              ? Math.min(...relDisps.map((d) => +new Date(d.date || d.dispatchDate)))
+              ? Math.min(
+                  ...relDisps.map((d) => +new Date(d.date || d.dispatchDate)),
+                )
               : null;
 
             const soToJO =
@@ -5026,15 +6672,17 @@ export function Dashboard({ data, session, toast }) {
                 ? (dispTs - prodEndTs) / 86400000
                 : null;
             const totalCycle =
-              dispTs && soTs && dispTs > soTs ? (dispTs - soTs) / 86400000 : null;
+              dispTs && soTs && dispTs > soTs
+                ? (dispTs - soTs) / 86400000
+                : null;
 
             const currentStage = hasDispatch
               ? "Dispatched"
               : hasProduction
-              ? "In Production"
-              : hasJO
-              ? "JO Created"
-              : "SO Only";
+                ? "In Production"
+                : hasJO
+                  ? "JO Created"
+                  : "SO Only";
 
             const latestTs = dispTs || prodEndTs || joTs || soTs;
             const daysAtStage = latestTs
@@ -5065,10 +6713,18 @@ export function Dashboard({ data, session, toast }) {
           const convJOToProd = withJO > 0 ? (withProd / withJO) * 100 : 0;
           const convProdToDisp = withProd > 0 ? (withDisp / withProd) * 100 : 0;
 
-          const soToJOTimes = journey.map((d) => d.soToJO).filter((v) => v != null);
-          const joToProdTimes = journey.map((d) => d.joToProd).filter((v) => v != null);
-          const prodToDispTimes = journey.map((d) => d.prodToDisp).filter((v) => v != null);
-          const totalTimes = journey.map((d) => d.totalCycle).filter((v) => v != null);
+          const soToJOTimes = journey
+            .map((d) => d.soToJO)
+            .filter((v) => v != null);
+          const joToProdTimes = journey
+            .map((d) => d.joToProd)
+            .filter((v) => v != null);
+          const prodToDispTimes = journey
+            .map((d) => d.prodToDisp)
+            .filter((v) => v != null);
+          const totalTimes = journey
+            .map((d) => d.totalCycle)
+            .filter((v) => v != null);
 
           const FUNNEL_STAGES = [
             {
@@ -5098,8 +6754,18 @@ export function Dashboard({ data, session, toast }) {
           ];
 
           const convRates = [convSoToJO, convJOToProd, convProdToDisp];
-          const cycleLabels = ["SO → JO", "JO → Prod", "Prod → Dispatch", "Total"];
-          const cycleTimes = [soToJOTimes, joToProdTimes, prodToDispTimes, totalTimes];
+          const cycleLabels = [
+            "SO → JO",
+            "JO → Prod",
+            "Prod → Dispatch",
+            "Total",
+          ];
+          const cycleTimes = [
+            soToJOTimes,
+            joToProdTimes,
+            prodToDispTimes,
+            totalTimes,
+          ];
           const cycleColors = ["#3b82f6", "#8b5cf6", "#f97316", "#22c55e"];
 
           const inFlight = journey
@@ -5129,8 +6795,7 @@ export function Dashboard({ data, session, toast }) {
                   SO → Dispatch Funnel
                 </div>
                 <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
-                  Conversion rates and cycle times across{" "}
-                  {total} sales orders
+                  Conversion rates and cycle times across {total} sales orders
                 </div>
               </div>
 
@@ -5144,7 +6809,7 @@ export function Dashboard({ data, session, toast }) {
                   marginBottom: 20,
                 }}
               >
-                <div style={{ fontWeight: 700, marginBottom: 16 }}>
+                <div style={{ fontWeight: 500, marginBottom: 16 }}>
                   Pipeline Funnel
                 </div>
                 {FUNNEL_STAGES.map((stage, i) => {
@@ -5169,9 +6834,9 @@ export function Dashboard({ data, session, toast }) {
                                 conv >= 80
                                   ? "#22c55e"
                                   : conv >= 50
-                                  ? "#f59e0b"
-                                  : "#ef4444",
-                              fontWeight: 700,
+                                    ? "#f59e0b"
+                                    : "#ef4444",
+                              fontWeight: 500,
                             }}
                           >
                             ↓ {conv.toFixed(1)}% conversion
@@ -5199,7 +6864,7 @@ export function Dashboard({ data, session, toast }) {
                         <div
                           style={{
                             flex: 1,
-                            background: "#1a1a1e",
+                            background: "rgba(255,255,255,0.05)",
                             borderRadius: 4,
                             height: 32,
                             position: "relative",
@@ -5221,7 +6886,7 @@ export function Dashboard({ data, session, toast }) {
                             <span
                               style={{
                                 fontSize: 11,
-                                fontWeight: 700,
+                                fontWeight: 500,
                                 color: "#fff",
                                 whiteSpace: "nowrap",
                               }}
@@ -5274,7 +6939,7 @@ export function Dashboard({ data, session, toast }) {
                         style={{
                           fontSize: 10,
                           color: "#888",
-                          fontWeight: 700,
+                          fontWeight: 500,
                           textTransform: "uppercase",
                           letterSpacing: "0.05em",
                           marginBottom: 8,
@@ -5291,16 +6956,27 @@ export function Dashboard({ data, session, toast }) {
                         }}
                       >
                         {avg != null ? avg.toFixed(1) : "—"}
-                        <span style={{ fontSize: 12, color: "#888", fontWeight: 400 }}>
-                          {" "}d avg
+                        <span
+                          style={{
+                            fontSize: 12,
+                            color: "#888",
+                            fontWeight: 400,
+                          }}
+                        >
+                          {" "}
+                          d avg
                         </span>
                       </div>
                       {med != null && (
-                        <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>
+                        <div
+                          style={{ fontSize: 11, color: "#888", marginTop: 4 }}
+                        >
                           Median: {med.toFixed(1)}d
                         </div>
                       )}
-                      <div style={{ fontSize: 10, color: "#666", marginTop: 2 }}>
+                      <div
+                        style={{ fontSize: 10, color: "#666", marginTop: 2 }}
+                      >
                         {times.length} completed
                       </div>
                     </div>
@@ -5319,20 +6995,25 @@ export function Dashboard({ data, session, toast }) {
                     marginBottom: 20,
                   }}
                 >
-                  <div style={{ fontWeight: 700, marginBottom: 16 }}>
+                  <div style={{ fontWeight: 500, marginBottom: 16 }}>
                     Monthly Avg Total Cycle Time (days)
                   </div>
-                  <svg width="100%" height={120} style={{ overflow: "visible" }}>
+                  <svg
+                    width="100%"
+                    height={120}
+                    style={{ overflow: "visible" }}
+                  >
                     {monthKeys.map((mo, i) => {
-                      const barH = maxMonthAvg > 0 ? (monthAvgs[i] / maxMonthAvg) * 90 : 0;
-                      const barW = Math.max(1, (100 / monthKeys.length) - 1);
+                      const barH =
+                        maxMonthAvg > 0 ? (monthAvgs[i] / maxMonthAvg) * 90 : 0;
+                      const barW = Math.max(1, 100 / monthKeys.length - 1);
                       const x = (i / monthKeys.length) * 100;
                       const col =
                         monthAvgs[i] <= 7
                           ? "#22c55e"
                           : monthAvgs[i] <= 14
-                          ? "#f59e0b"
-                          : "#ef4444";
+                            ? "#f59e0b"
+                            : "#ef4444";
                       return (
                         <g key={mo}>
                           <rect
@@ -5387,11 +7068,13 @@ export function Dashboard({ data, session, toast }) {
                     padding: 24,
                   }}
                 >
-                  <div style={{ fontWeight: 700, marginBottom: 12 }}>
+                  <div style={{ fontWeight: 500, marginBottom: 12 }}>
                     In-Flight Orders ({inFlight.length})
                   </div>
                   <div style={{ overflowX: "auto" }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <table
+                      style={{ width: "100%", borderCollapse: "collapse" }}
+                    >
                       <thead>
                         <tr>
                           {[
@@ -5415,15 +7098,20 @@ export function Dashboard({ data, session, toast }) {
                             d.currentStage === "In Production"
                               ? "#f97316"
                               : d.currentStage === "JO Created"
-                              ? "#8b5cf6"
-                              : "#3b82f6";
+                                ? "#8b5cf6"
+                                : "#3b82f6";
                           return (
                             <tr key={d.soKey}>
                               <td style={TD}>
                                 {stuck && (
-                                  <i className="fa-solid fa-triangle-exclamation" style={{ color: "#f59e0b", marginRight: 4 }} />
+                                  <i
+                                    className="fa-solid fa-triangle-exclamation"
+                                    style={{ color: "#f59e0b", marginRight: 4 }}
+                                  />
                                 )}
-                                <span style={{ fontWeight: 600 }}>{d.soKey}</span>
+                                <span style={{ fontWeight: 600 }}>
+                                  {d.soKey}
+                                </span>
                               </td>
                               <td style={{ ...TD, color: "#aaa" }}>
                                 {d.so.clientName || d.so.client || "—"}
@@ -5436,7 +7124,7 @@ export function Dashboard({ data, session, toast }) {
                                     background: stageColor + "22",
                                     color: stageColor,
                                     fontSize: 11,
-                                    fontWeight: 700,
+                                    fontWeight: 500,
                                   }}
                                 >
                                   {d.currentStage}
@@ -5452,11 +7140,27 @@ export function Dashboard({ data, session, toast }) {
                               >
                                 {d.daysAtStage.toFixed(1)}d
                               </td>
-                              <td style={{ ...TD, color: "#aaa", textAlign: "right" }}>
-                                {d.soToJO != null ? `${d.soToJO.toFixed(1)}d` : "—"}
+                              <td
+                                style={{
+                                  ...TD,
+                                  color: "#aaa",
+                                  textAlign: "right",
+                                }}
+                              >
+                                {d.soToJO != null
+                                  ? `${d.soToJO.toFixed(1)}d`
+                                  : "—"}
                               </td>
-                              <td style={{ ...TD, color: "#aaa", textAlign: "right" }}>
-                                {d.joToProd != null ? `${d.joToProd.toFixed(1)}d` : "—"}
+                              <td
+                                style={{
+                                  ...TD,
+                                  color: "#aaa",
+                                  textAlign: "right",
+                                }}
+                              >
+                                {d.joToProd != null
+                                  ? `${d.joToProd.toFixed(1)}d`
+                                  : "—"}
                               </td>
                             </tr>
                           );

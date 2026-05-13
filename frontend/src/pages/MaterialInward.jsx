@@ -814,7 +814,7 @@ export default function MaterialInward({
               border: `1px solid ${view === v ? C.blue : C.border}`,
               background: view === v ? C.blue + "22" : "transparent",
               color: view === v ? C.blue : C.muted,
-              fontWeight: 700,
+              fontWeight: 500,
               fontSize: 13,
             }}
           >
@@ -855,7 +855,7 @@ export default function MaterialInward({
                   border: `1px solid ${C.blue}`,
                   borderRadius: 5,
                   padding: "4px 12px",
-                  fontWeight: 700,
+                  fontWeight: 500,
                   fontSize: 12,
                   cursor: "pointer",
                 }}
@@ -868,7 +868,7 @@ export default function MaterialInward({
             <h3
               style={{
                 fontSize: 14,
-                fontWeight: 700,
+                fontWeight: 500,
                 color: C.blue,
                 marginBottom: 16,
               }}
@@ -998,7 +998,7 @@ export default function MaterialInward({
               marginBottom: 10,
             }}
           >
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: C.accent }}>
+            <h3 style={{ fontSize: 14, fontWeight: 500, color: C.accent }}>
               Material Items ({items.length})
             </h3>
             <button
@@ -1009,7 +1009,7 @@ export default function MaterialInward({
                 border: "none",
                 borderRadius: 6,
                 padding: "8px 18px",
-                fontWeight: 700,
+                fontWeight: 500,
                 fontSize: 13,
               }}
             >
@@ -1020,7 +1020,7 @@ export default function MaterialInward({
           {items.map((it, idx) => (
             <Card
               key={it._id}
-              style={{ marginBottom: 12, borderLeft: `3px solid ${C.accent}` }}
+              style={{ marginBottom: 12, }}
             >
               <div
                 style={{
@@ -1031,7 +1031,7 @@ export default function MaterialInward({
                 }}
               >
                 <span
-                  style={{ fontWeight: 700, color: C.accent, fontSize: 13 }}
+                  style={{ fontWeight: 500, color: C.accent, fontSize: 13 }}
                 >
                   Item {idx + 1}
                 </span>
@@ -1044,7 +1044,7 @@ export default function MaterialInward({
                       border: "none",
                       borderRadius: 5,
                       padding: "4px 12px",
-                      fontWeight: 700,
+                      fontWeight: 500,
                       fontSize: 12,
                     }}
                   >
@@ -1205,7 +1205,7 @@ export default function MaterialInward({
                         }
                         style={{
                           background: C.border + "22",
-                          fontWeight: 700,
+                          fontWeight: 500,
                           color: it.amount ? C.green : C.muted,
                           fontFamily: "'JetBrains Mono', monospace",
                         }}
@@ -1377,7 +1377,7 @@ export default function MaterialInward({
                               border: "1px solid #2a2a2e",
                               borderRadius: 6,
                               color: "#4ade80",
-                              fontWeight: 700,
+                              fontWeight: 500,
                               minHeight: 40,
                               fontSize: 13,
                             }}
@@ -1453,7 +1453,7 @@ export default function MaterialInward({
                             style={{
                               background: "#0c0c0e",
                               color: it.amount ? C.green : C.muted,
-                              fontWeight: 700,
+                              fontWeight: 500,
                             }}
                           />
                         </Field>
@@ -1531,7 +1531,7 @@ export default function MaterialInward({
                             style={{
                               background: "#0c0c0e",
                               color: it.amount ? C.green : C.muted,
-                              fontWeight: 700,
+                              fontWeight: 500,
                             }}
                           />
                         </Field>
@@ -1610,7 +1610,7 @@ export default function MaterialInward({
                 border: `1px solid ${C.accent}44`,
                 borderRadius: 6,
                 padding: "9px 20px",
-                fontWeight: 700,
+                fontWeight: 500,
                 fontSize: 13,
               }}
             >
@@ -1637,7 +1637,7 @@ export default function MaterialInward({
                 <span
                   style={{
                     fontFamily: "'JetBrains Mono',monospace",
-                    fontWeight: 700,
+                    fontWeight: 500,
                     color: C.green,
                     fontSize: 14,
                   }}
@@ -1704,7 +1704,7 @@ export default function MaterialInward({
                   borderRadius: 6,
                   padding: "8px 16px",
                   fontSize: 12,
-                  fontWeight: 700,
+                  fontWeight: 500,
                   cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
@@ -1738,7 +1738,6 @@ export default function MaterialInward({
                     data-record-id={r.inwardNo || r.grnNo}
                     style={{
                       padding: "16px 20px",
-                      borderLeft: `4px solid ${(r.inwardNo || r.grnNo) === highlightId ? C.accent : C.blue}`,
                       background: (r.inwardNo || r.grnNo) === highlightId ? `${C.accent}11` : "#111114",
                       boxShadow: (r.inwardNo || r.grnNo) === highlightId ? `0 0 0 2px ${C.accent}66` : undefined,
                       transition: "all 0.4s ease",
@@ -1798,7 +1797,7 @@ export default function MaterialInward({
                               borderRadius: 6,
                               padding: "6px 14px",
                               fontSize: 11,
-                              fontWeight: 700,
+                              fontWeight: 500,
                               cursor: "pointer",
                             }}
                           >
@@ -1814,7 +1813,7 @@ export default function MaterialInward({
                             borderRadius: 6,
                             padding: "6px 14px",
                             fontSize: 11,
-                            fontWeight: 700,
+                            fontWeight: 500,
                             cursor: "pointer",
                           }}
                         >
@@ -1830,7 +1829,7 @@ export default function MaterialInward({
                               borderRadius: 6,
                               padding: "6px 14px",
                               fontSize: 11,
-                              fontWeight: 700,
+                              fontWeight: 500,
                               cursor: "pointer",
                             }}
                           >
@@ -1862,7 +1861,7 @@ export default function MaterialInward({
                           }}
                         >
                           <span
-                            style={{ fontWeight: 700, flex: 1, color: "#ddd" }}
+                            style={{ fontWeight: 500, flex: 1, color: "#ddd" }}
                           >
                             {it.rmItem}{" "}
                             <span style={{ color: "#555", fontWeight: 400 }}>

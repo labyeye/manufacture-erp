@@ -7,22 +7,27 @@ import * as XLSX from "xlsx";
 const inputStyle = {
   width: "100%",
   padding: "9px 12px",
-  border: "1px solid #333",
+  border: "1px solid rgba(255,255,255,0.13)",
   borderRadius: 6,
   fontSize: 13,
   fontFamily: "inherit",
-  background: "#1a1a1a",
+  background: "rgba(255,255,255,0.07)",
+  backdropFilter: "blur(8px) saturate(180%)",
+  WebkitBackdropFilter: "blur(8px) saturate(180%)",
   color: "#e0e0e0",
   outline: "none",
   boxSizing: "border-box",
 };
 
 const cardStyle = {
-  background: "#1e1e1e",
-  border: "1px solid #2a2a2a",
+  background: "rgba(255,255,255,0.05)",
+  backdropFilter: "blur(12px) saturate(180%)",
+  WebkitBackdropFilter: "blur(12px) saturate(180%)",
+  border: "1px solid rgba(255,255,255,0.1)",
   borderRadius: 10,
   padding: 20,
   marginBottom: 16,
+  boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
 };
 
 export default function VendorMaster({
@@ -283,8 +288,10 @@ export default function VendorMaster({
             style={{
               width: "100%",
               maxWidth: 400,
-              background: "#1a1a1a",
-              border: "1px solid #333",
+              background: "rgba(255,255,255,0.05)",
+              backdropFilter: "blur(12px) saturate(180%)",
+              WebkitBackdropFilter: "blur(12px) saturate(180%)",
+              border: "1px solid rgba(255,255,255,0.1)",
               borderRadius: 16,
               padding: 30,
               textAlign: "center",
@@ -294,7 +301,7 @@ export default function VendorMaster({
             <div
               style={{
                 fontSize: 18,
-                fontWeight: 700,
+                fontWeight: 500,
                 color: "#4CAF50",
                 marginBottom: 8,
               }}
@@ -309,7 +316,7 @@ export default function VendorMaster({
               style={{
                 height: 8,
                 width: "100%",
-                background: "#0d0d0d",
+                background: "rgba(255,255,255,0.04)",
                 borderRadius: 10,
                 overflow: "hidden",
                 marginBottom: 16,
@@ -331,7 +338,7 @@ export default function VendorMaster({
                 display: "flex",
                 justifyContent: "space-between",
                 fontSize: 12,
-                fontWeight: 700,
+                fontWeight: 500,
                 color: "#888",
                 marginBottom: 20,
               }}
@@ -361,7 +368,7 @@ export default function VendorMaster({
         <h2
           style={{
             fontSize: 22,
-            fontWeight: 700,
+            fontWeight: 500,
             color: "#e0e0e0",
             display: "flex",
             alignItems: "center",
@@ -382,7 +389,7 @@ export default function VendorMaster({
           style={{
             marginBottom: 14,
             fontSize: 14,
-            fontWeight: 700,
+            fontWeight: 500,
             color: "#4CAF50",
           }}
         >
@@ -502,7 +509,7 @@ export default function VendorMaster({
               color: "#fff",
               border: "none",
               borderRadius: 6,
-              fontWeight: 700,
+              fontWeight: 500,
               fontSize: 13,
               cursor: loading ? "not-allowed" : "pointer",
             }}
@@ -527,11 +534,11 @@ export default function VendorMaster({
               }}
               style={{
                 padding: "9px 20px",
-                background: "#333",
+                background: "rgba(255,255,255,0.05)",
                 color: "#aaa",
-                border: "1px solid #444",
+                border: "1px solid rgba(255,255,255,0.1)",
                 borderRadius: 6,
-                fontWeight: 700,
+                fontWeight: 500,
                 fontSize: 13,
                 cursor: "pointer",
               }}
@@ -562,7 +569,7 @@ export default function VendorMaster({
             marginBottom: 14,
           }}
         >
-          <span style={{ fontSize: 14, fontWeight: 700, color: "#e0e0e0" }}>
+          <span style={{ fontSize: 14, fontWeight: 500, color: "#e0e0e0" }}>
             Vendors ({vendorMaster.length})
           </span>
           <input
@@ -570,7 +577,7 @@ export default function VendorMaster({
             placeholder="🔍 Search..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ ...inputStyle, width: 220, background: "#141414" }}
+            style={{ ...inputStyle, width: 220 }}
           />
         </div>
 
@@ -597,7 +604,7 @@ export default function VendorMaster({
               }}
             >
               <thead>
-                <tr style={{ borderBottom: "1px solid #2a2a2a" }}>
+                <tr style={{ background: "rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
                   {[
                     "Vendor Name",
                     "Category",
@@ -627,7 +634,9 @@ export default function VendorMaster({
                 {filtered.map((vendor) => (
                   <tr
                     key={vendor._id}
-                    style={{ borderBottom: "1px solid #222" }}
+                    style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+                    onMouseEnter={e => e.currentTarget.style.background="rgba(255,255,255,0.04)"}
+                    onMouseLeave={e => e.currentTarget.style.background="transparent"}
                   >
                     <td
                       style={{
@@ -663,7 +672,7 @@ export default function VendorMaster({
                           padding: "3px 10px",
                           borderRadius: 20,
                           fontSize: 11,
-                          fontWeight: 700,
+                          fontWeight: 500,
                           background:
                             vendor.status === "Active"
                               ? "#4CAF5022"
@@ -685,7 +694,7 @@ export default function VendorMaster({
                             color: "#1976D2",
                             border: "none",
                             borderRadius: 4,
-                            fontWeight: 700,
+                            fontWeight: 500,
                             fontSize: 11,
                             cursor: "pointer",
                           }}
@@ -700,7 +709,7 @@ export default function VendorMaster({
                             color: "#FF9800",
                             border: "none",
                             borderRadius: 4,
-                            fontWeight: 700,
+                            fontWeight: 500,
                             fontSize: 11,
                             cursor: "pointer",
                           }}
@@ -716,7 +725,7 @@ export default function VendorMaster({
                             borderRadius: 6,
                             padding: "4px 14px",
                             fontSize: 12,
-                            fontWeight: 700,
+                            fontWeight: 500,
                             cursor: "pointer",
                             display: "flex",
                             alignItems: "center",

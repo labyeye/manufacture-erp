@@ -309,13 +309,16 @@ export default function RMStock({
             }}
             disabled={saving}
             style={{
-              background: C.green,
-              border: "none",
+              background: "rgba(255,255,255,0.08)",
+              backdropFilter: "blur(12px) saturate(180%)",
+              WebkitBackdropFilter: "blur(12px) saturate(180%)",
+              border: "1px solid rgba(255,255,255,0.18)",
               borderRadius: 4,
               color: "#fff",
               padding: "4px 8px",
               fontSize: 10,
               cursor: "pointer",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
             }}
           >
             {saving ? "..." : "✓"}
@@ -382,7 +385,7 @@ export default function RMStock({
                   style={{
                     display: "block",
                     fontSize: 11,
-                    fontWeight: 700,
+                    fontWeight: 500,
                     color: "#666",
                     marginBottom: 6,
                   }}
@@ -416,7 +419,7 @@ export default function RMStock({
                     style={{
                       display: "block",
                       fontSize: 11,
-                      fontWeight: 700,
+                      fontWeight: 500,
                       color: "#666",
                       marginBottom: 6,
                     }}
@@ -443,7 +446,7 @@ export default function RMStock({
                     style={{
                       display: "block",
                       fontSize: 11,
-                      fontWeight: 700,
+                      fontWeight: 500,
                       color: "#666",
                       marginBottom: 6,
                     }}
@@ -483,7 +486,7 @@ export default function RMStock({
                     style={{
                       display: "block",
                       fontSize: 11,
-                      fontWeight: 700,
+                      fontWeight: 500,
                       color: "#666",
                       marginBottom: 6,
                     }}
@@ -511,7 +514,7 @@ export default function RMStock({
                     style={{
                       display: "block",
                       fontSize: 11,
-                      fontWeight: 700,
+                      fontWeight: 500,
                       color: "#666",
                       marginBottom: 6,
                     }}
@@ -551,7 +554,7 @@ export default function RMStock({
                     style={{
                       display: "block",
                       fontSize: 11,
-                      fontWeight: 700,
+                      fontWeight: 500,
                       color: "#666",
                       marginBottom: 6,
                     }}
@@ -579,7 +582,7 @@ export default function RMStock({
                     style={{
                       display: "block",
                       fontSize: 11,
-                      fontWeight: 700,
+                      fontWeight: 500,
                       color: "#666",
                       marginBottom: 6,
                     }}
@@ -618,7 +621,7 @@ export default function RMStock({
                   border: "1px solid #2a2a2e",
                   background: "transparent",
                   color: "#888",
-                  fontWeight: 700,
+                  fontWeight: 500,
                   cursor: "pointer",
                 }}
               >
@@ -630,11 +633,14 @@ export default function RMStock({
                   flex: 1,
                   padding: 12,
                   borderRadius: 6,
-                  border: "none",
-                  background: C.blue,
+                  border: "1px solid rgba(255,255,255,0.18)",
+                  background: "rgba(255,255,255,0.08)",
+                  backdropFilter: "blur(12px) saturate(180%)",
+                  WebkitBackdropFilter: "blur(12px) saturate(180%)",
                   color: "#fff",
-                  fontWeight: 700,
+                  fontWeight: 500,
                   cursor: "pointer",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
                 }}
               >
                 Save Changes
@@ -671,7 +677,7 @@ export default function RMStock({
             padding: "6px 12px",
             borderRadius: 6,
             fontSize: 12,
-            fontWeight: 700,
+            fontWeight: 500,
             background: showZeroStock ? C.blue : "#141416",
             color: "#fff",
             border: `1px solid ${showZeroStock ? C.blue : "#2a2a2e"}`,
@@ -801,7 +807,7 @@ export default function RMStock({
               padding: "6px 16px",
               borderRadius: 6,
               fontSize: 12,
-              fontWeight: 700,
+              fontWeight: 500,
               cursor: "pointer",
               background: activeFilter === cat ? C.blue : "#141416",
               color: activeFilter === cat ? "#fff" : "#888",
@@ -864,7 +870,7 @@ export default function RMStock({
                     padding: "14px 16px",
                     textAlign: "left",
                     fontSize: 11,
-                    fontWeight: 700,
+                    fontWeight: 500,
                     color: "#666",
                     letterSpacing: "0.05em",
                   }}
@@ -910,7 +916,7 @@ export default function RMStock({
                     style={{
                       padding: "16px",
                       color: C.blue,
-                      fontWeight: 700,
+                      fontWeight: 500,
                       fontSize: 12,
                       fontFamily: "monospace",
                     }}
@@ -940,7 +946,7 @@ export default function RMStock({
                         padding: "3px 8px",
                         borderRadius: 4,
                         fontSize: 10,
-                        fontWeight: 700,
+                        fontWeight: 500,
                         background: C.blue + "22",
                         color: C.blue,
                       }}
@@ -952,7 +958,7 @@ export default function RMStock({
                     style={{
                       padding: "16px",
                       color: qty > 0 ? C.green : "#333",
-                      fontWeight: 700,
+                      fontWeight: 500,
                       fontSize: 13,
                       fontFamily: "monospace",
                     }}
@@ -963,7 +969,7 @@ export default function RMStock({
                     style={{
                       padding: "16px",
                       color: weight > 0 ? C.green : "#333",
-                      fontWeight: 700,
+                      fontWeight: 500,
                       fontSize: 13,
                       fontFamily: "monospace",
                     }}
@@ -987,7 +993,7 @@ export default function RMStock({
                     style={{
                       padding: "16px",
                       color: C.green,
-                      fontWeight: 700,
+                      fontWeight: 500,
                       fontSize: 13,
                       fontFamily: "monospace",
                     }}
@@ -1008,7 +1014,7 @@ export default function RMStock({
                               borderRadius: 4,
                               fontSize: 11,
                               cursor: "pointer",
-                              fontWeight: 700,
+                              fontWeight: 500,
                             }}
                           >
                             ✏️
@@ -1016,13 +1022,16 @@ export default function RMStock({
                           <button
                             onClick={() => handleDelete(s._id || s.id)}
                             style={{
-                              background: "#450a0a",
-                              color: "#ef4444",
-                              border: "1px solid #7f1d1d",
+                              background: "rgba(255,255,255,0.08)",
+                              backdropFilter: "blur(12px) saturate(180%)",
+                              WebkitBackdropFilter: "blur(12px) saturate(180%)",
+                              color: "#fff",
+                              border: "1px solid rgba(255,255,255,0.18)",
                               borderRadius: 6,
                               padding: "4px 14px",
                               fontSize: 12,
-                              fontWeight: 700,
+                              fontWeight: 500,
+                              boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
                               cursor: "pointer",
                             }}
                           >
@@ -1085,7 +1094,6 @@ function StatCard({ label, val, color, prefix = "", suffix = "" }) {
       style={{
         background: "#141416",
         border: `1px solid ${color}44`,
-        borderLeft: `4px solid ${color}`,
         padding: "16px 20px",
         borderRadius: 8,
       }}
@@ -1127,7 +1135,7 @@ function ActionBtn({ label, icon, color, textColor, border, onClick }) {
         border: border ? `1px solid ${border}` : "none",
         padding: "8px 16px",
         borderRadius: 6,
-        fontWeight: 700,
+        fontWeight: 500,
         fontSize: 12,
         cursor: "pointer",
         display: "flex",

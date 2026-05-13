@@ -377,7 +377,7 @@ export function Toast({ msg, onClose, type = "success" }) {
           <div
             style={{
               fontSize: 17,
-              fontWeight: 700,
+              fontWeight: 500,
               color: c.color,
               marginBottom: type === "validation" && msgs.length > 1 ? 8 : 4,
               letterSpacing: "0.01em",
@@ -588,7 +588,7 @@ export function DatePicker({ value, onChange, style = {} }) {
             >
               ‹
             </button>
-            <span style={{ fontWeight: 700, fontSize: 13, color: C.text }}>
+            <span style={{ fontWeight: 500, fontSize: 13, color: C.text }}>
               {MONTHS[viewDate.month]} {viewDate.year}
             </span>
             <button
@@ -620,7 +620,7 @@ export function DatePicker({ value, onChange, style = {} }) {
                   textAlign: "center",
                   fontSize: 10,
                   color: C.muted,
-                  fontWeight: 700,
+                  fontWeight: 500,
                   padding: "2px 0",
                 }}
               >
@@ -745,7 +745,7 @@ export function DateRangeFilter({ dateFrom, setDateFrom, dateTo, setDateTo }) {
             borderRadius: 5,
             padding: "5px 12px",
             fontSize: 12,
-            fontWeight: 700,
+            fontWeight: 500,
           }}
         >
           {" "}
@@ -884,7 +884,7 @@ export function ExcelImportBtn({
           border: "1px solid" + col + "44",
           borderRadius: 10,
           padding: "7px 14px",
-          fontWeight: 700,
+          fontWeight: 500,
           fontSize: 12,
           cursor: "pointer",
         }}
@@ -900,7 +900,7 @@ export function ExcelImportBtn({
           border: "none",
           borderRadius: 10,
           padding: "7px 14px",
-          fontWeight: 700,
+          fontWeight: 500,
           fontSize: 12,
           cursor: "pointer",
         }}

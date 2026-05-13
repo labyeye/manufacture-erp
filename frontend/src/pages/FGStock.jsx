@@ -132,13 +132,16 @@ export default function FGStock({
             }}
             disabled={saving}
             style={{
-              background: "#4CAF50",
-              border: "none",
+              background: "rgba(255,255,255,0.08)",
+              backdropFilter: "blur(12px) saturate(180%)",
+              WebkitBackdropFilter: "blur(12px) saturate(180%)",
+              border: "1px solid rgba(255,255,255,0.18)",
               borderRadius: 4,
               color: "#fff",
               padding: "4px 8px",
               fontSize: 10,
               cursor: "pointer",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
             }}
           >
             {saving ? "..." : "✓"}
@@ -176,7 +179,7 @@ export default function FGStock({
             borderRadius: 4,
             color: "#2196F3",
             fontSize: 12,
-            fontWeight: 700,
+            fontWeight: 500,
             outline: "none",
             textAlign: "right",
           }}
@@ -191,13 +194,16 @@ export default function FGStock({
             }}
             disabled={saving}
             style={{
-              background: "#2196F3",
-              border: "none",
+              background: "rgba(255,255,255,0.08)",
+              backdropFilter: "blur(12px) saturate(180%)",
+              WebkitBackdropFilter: "blur(12px) saturate(180%)",
+              border: "1px solid rgba(255,255,255,0.18)",
               borderRadius: 4,
               color: "#fff",
               padding: "4px 8px",
               fontSize: 10,
               cursor: "pointer",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
             }}
           >
             {saving ? "..." : "✓"}
@@ -234,7 +240,7 @@ export default function FGStock({
             borderRadius: 4,
             color: hasChanged && !isClient ? "#4CAF50" : "#e0e0e0",
             fontSize: 12,
-            fontWeight: 700,
+            fontWeight: 500,
             outline: "none",
             textAlign: "right",
           }}
@@ -266,13 +272,16 @@ export default function FGStock({
             }}
             disabled={saving}
             style={{
-              background: "#4CAF50",
-              border: "none",
+              background: "rgba(255,255,255,0.08)",
+              backdropFilter: "blur(12px) saturate(180%)",
+              WebkitBackdropFilter: "blur(12px) saturate(180%)",
+              border: "1px solid rgba(255,255,255,0.18)",
               borderRadius: 4,
               color: "#fff",
               padding: "4px 8px",
               fontSize: 10,
               cursor: "pointer",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
             }}
           >
             {saving ? "..." : "✓"}
@@ -590,7 +599,7 @@ export default function FGStock({
             <h2
               style={{
                 fontSize: 22,
-                fontWeight: 700,
+                fontWeight: 500,
                 color: "#e0e0e0",
                 margin: 0,
               }}
@@ -608,7 +617,7 @@ export default function FGStock({
               padding: "8px 16px",
               borderRadius: 8,
               fontSize: 13,
-              fontWeight: 700,
+              fontWeight: 500,
               background: showZeroStock ? "#2196F3" : "#1a1a1a",
               color: "#fff",
               border: `1px solid ${showZeroStock ? "#2196F3" : "#2a2a2a"}`,
@@ -643,7 +652,7 @@ export default function FGStock({
             <div
               style={{
                 fontSize: 28,
-                fontWeight: 700,
+                fontWeight: 500,
                 color: card.color,
                 lineHeight: 1,
               }}
@@ -695,7 +704,7 @@ export default function FGStock({
             ...inputStyle,
             width: 250,
             cursor: "pointer",
-            fontWeight: 700,
+            fontWeight: 500,
             background: filterCat !== "All" ? "#2196F311" : "#141414",
             borderColor: filterCat !== "All" ? "#2196F3" : "#2a2a2a",
           }}
@@ -844,9 +853,11 @@ export default function FGStock({
                           padding: "10px 14px",
                           fontWeight: 600,
                           color: "#e0e0e0",
-                          minWidth: 200,
+                          minWidth: 250,
+                          whiteSpace: "normal",
                           wordBreak: "break-word",
                         }}
+                        title={s.itemName}
                       >
                         {s.itemName}
                       </td>
@@ -878,7 +889,7 @@ export default function FGStock({
                             padding: "2px 8px",
                             borderRadius: 20,
                             fontSize: 11,
-                            fontWeight: 700,
+                            fontWeight: 500,
                             background:
                               (s.qty || 0) > 0 ? "#4CAF5022" : "#f4433622",
                             color: (s.qty || 0) > 0 ? "#4CAF50" : "#f44336",
@@ -891,7 +902,7 @@ export default function FGStock({
                         style={{
                           padding: "10px 14px",
                           textAlign: "right",
-                          fontWeight: 700,
+                          fontWeight: 500,
                           color: isLow ? "#f44336" : "#e0e0e0",
                         }}
                       >
@@ -941,7 +952,7 @@ export default function FGStock({
                                 borderRadius: 4,
                                 fontSize: 11,
                                 cursor: "pointer",
-                                fontWeight: 700,
+                                fontWeight: 500,
                               }}
                             >
                               ✏️
@@ -964,14 +975,17 @@ export default function FGStock({
                                 }
                               }}
                               style={{
-                                background: "#450a0a",
-                                color: "#ef4444",
-                                border: "1px solid #7f1d1d",
+                                background: "rgba(255,255,255,0.08)",
+                                backdropFilter: "blur(12px) saturate(180%)",
+                                WebkitBackdropFilter: "blur(12px) saturate(180%)",
+                                color: "#fff",
+                                border: "1px solid rgba(255,255,255,0.18)",
                                 borderRadius: 6,
                                 padding: "4px 14px",
                                 fontSize: 12,
-                                fontWeight: 700,
+                                fontWeight: 500,
                                 cursor: "pointer",
+                                boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
                                 display: "flex",
                                 alignItems: "center",
                                 gap: 6,
@@ -1224,12 +1238,15 @@ function EditModal({ item, onClose, onSave }) {
             }}
             style={{
               padding: "10px 24px",
-              background: "#2196F3",
-              border: "none",
+              background: "rgba(255,255,255,0.08)",
+              backdropFilter: "blur(12px) saturate(180%)",
+              WebkitBackdropFilter: "blur(12px) saturate(180%)",
+              border: "1px solid rgba(255,255,255,0.18)",
               color: "#fff",
               borderRadius: 6,
               cursor: "pointer",
-              fontWeight: 700,
+              fontWeight: 500,
+              boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
             }}
           >
             Save Changes

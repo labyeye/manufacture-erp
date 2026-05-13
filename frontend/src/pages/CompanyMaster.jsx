@@ -14,22 +14,27 @@ import * as XLSX from "xlsx";
 const inputStyle = {
   width: "100%",
   padding: "9px 12px",
-  border: "1px solid #333",
+  border: "1px solid rgba(255,255,255,0.13)",
   borderRadius: 6,
   fontSize: 13,
   fontFamily: "inherit",
-  background: "#1a1a1a",
+  background: "rgba(255,255,255,0.07)",
+  backdropFilter: "blur(8px) saturate(180%)",
+  WebkitBackdropFilter: "blur(8px) saturate(180%)",
   color: "#e0e0e0",
   outline: "none",
   boxSizing: "border-box",
 };
 
 const cardStyle = {
-  background: "#1e1e1e",
-  border: "1px solid #2a2a2a",
+  background: "rgba(255,255,255,0.05)",
+  backdropFilter: "blur(12px) saturate(180%)",
+  WebkitBackdropFilter: "blur(12px) saturate(180%)",
+  border: "1px solid rgba(255,255,255,0.1)",
   borderRadius: 10,
   padding: 20,
   marginBottom: 16,
+  boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
 };
 
 export default function CompanyMaster({ toast }) {
@@ -258,7 +263,7 @@ export default function CompanyMaster({ toast }) {
           style={{
             marginBottom: 14,
             fontSize: 14,
-            fontWeight: 700,
+            fontWeight: 500,
             color: C.accent || "#4CAF50",
           }}
         >
@@ -404,7 +409,7 @@ export default function CompanyMaster({ toast }) {
               color: "#000",
               border: "none",
               borderRadius: 6,
-              fontWeight: 700,
+              fontWeight: 500,
               fontSize: 13,
               cursor: loading ? "not-allowed" : "pointer",
             }}
@@ -429,11 +434,11 @@ export default function CompanyMaster({ toast }) {
               }}
               style={{
                 padding: "9px 20px",
-                background: "#333",
+                background: "rgba(255,255,255,0.05)",
                 color: "#aaa",
-                border: "1px solid #444",
+                border: "1px solid rgba(255,255,255,0.1)",
                 borderRadius: 6,
-                fontWeight: 700,
+                fontWeight: 500,
                 fontSize: 13,
                 cursor: "pointer",
               }}
@@ -464,7 +469,7 @@ export default function CompanyMaster({ toast }) {
             marginBottom: 14,
           }}
         >
-          <span style={{ fontSize: 14, fontWeight: 700, color: "#e0e0e0" }}>
+          <span style={{ fontSize: 14, fontWeight: 500, color: "#e0e0e0" }}>
             Companies ({companies.length})
           </span>
           <input
@@ -472,7 +477,7 @@ export default function CompanyMaster({ toast }) {
             placeholder="🔍 Search entities..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ ...inputStyle, width: 220, background: "#141414" }}
+            style={{ ...inputStyle, width: 220 }}
           />
         </div>
 
@@ -497,7 +502,7 @@ export default function CompanyMaster({ toast }) {
               }}
             >
               <thead>
-                <tr style={{ borderBottom: "1px solid #2a2a2a" }}>
+                <tr style={{ background: "rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
                   {[
                     "Company Name",
                     "Type",
@@ -528,7 +533,9 @@ export default function CompanyMaster({ toast }) {
                 {filtered.map((company) => (
                   <tr
                     key={company._id}
-                    style={{ borderBottom: "1px solid #222" }}
+                    style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+                    onMouseEnter={e => e.currentTarget.style.background="rgba(255,255,255,0.04)"}
+                    onMouseLeave={e => e.currentTarget.style.background="transparent"}
                   >
                     <td
                       style={{
@@ -567,7 +574,7 @@ export default function CompanyMaster({ toast }) {
                               : company.priority === 2
                                 ? C.orange
                                 : C.muted,
-                          fontWeight: 700,
+                          fontWeight: 500,
                         }}
                       >
                         P{company.priority || 3}
@@ -579,7 +586,7 @@ export default function CompanyMaster({ toast }) {
                           padding: "3px 10px",
                           borderRadius: 20,
                           fontSize: 11,
-                          fontWeight: 700,
+                          fontWeight: 500,
                           background:
                             company.status === "Active"
                               ? "#4CAF5022"
@@ -601,7 +608,7 @@ export default function CompanyMaster({ toast }) {
                             color: "#1976D2",
                             border: "none",
                             borderRadius: 4,
-                            fontWeight: 700,
+                            fontWeight: 500,
                             fontSize: 11,
                             cursor: "pointer",
                           }}
@@ -616,7 +623,7 @@ export default function CompanyMaster({ toast }) {
                             color: "#FF9800",
                             border: "none",
                             borderRadius: 4,
-                            fontWeight: 700,
+                            fontWeight: 500,
                             fontSize: 11,
                             cursor: "pointer",
                           }}
@@ -634,7 +641,7 @@ export default function CompanyMaster({ toast }) {
                             borderRadius: 6,
                             padding: "4px 14px",
                             fontSize: 12,
-                            fontWeight: 700,
+                            fontWeight: 500,
                             cursor: "pointer",
                             display: "flex",
                             alignItems: "center",

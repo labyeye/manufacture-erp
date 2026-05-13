@@ -320,7 +320,7 @@ export default function ProductionUpdate({
           style={{
             fontSize: 11,
             color: C.blue,
-            fontWeight: 700,
+            fontWeight: 500,
             marginBottom: 10,
           }}
         >
@@ -345,7 +345,7 @@ export default function ProductionUpdate({
               border: `1px solid ${view === v ? "#FF7F11" : C.border}`,
               background: view === v ? "#FF7F1122" : "transparent",
               color: view === v ? "#FF7F11" : C.muted,
-              fontWeight: 700,
+              fontWeight: 500,
               fontSize: 13,
               display: "flex",
               alignItems: "center",
@@ -363,7 +363,7 @@ export default function ProductionUpdate({
             <h3
               style={{
                 fontSize: 16,
-                fontWeight: 700,
+                fontWeight: 500,
                 color: "#FF7F11",
                 marginBottom: 20,
                 textTransform: "capitalize",
@@ -503,7 +503,7 @@ export default function ProductionUpdate({
                       fontSize: 10,
                       color: C.muted,
                       marginTop: 4,
-                      fontWeight: 700,
+                      fontWeight: 500,
                     }}
                   >
                     {(() => {
@@ -628,7 +628,7 @@ export default function ProductionUpdate({
                       fontSize: 10,
                       color: C.blue,
                       marginTop: 4,
-                      fontWeight: 700,
+                      fontWeight: 500,
                     }}
                   >
                     Available: {availableQty}
@@ -707,7 +707,7 @@ export default function ProductionUpdate({
                     border: `1px solid ${C.border}`,
                     background: "transparent",
                     color: C.muted,
-                    fontWeight: 700,
+                    fontWeight: 500,
                     fontSize: 13,
                     cursor: "pointer",
                   }}
@@ -910,7 +910,7 @@ export default function ProductionUpdate({
                               padding: "4px 10px",
                               borderRadius: 4,
                               fontSize: 11,
-                              fontWeight: 700,
+                              fontWeight: 500,
                               minWidth: 80,
                               textAlign: "center",
                               border: "1px solid #FF7F1144",
@@ -987,7 +987,7 @@ export default function ProductionUpdate({
                               padding: "6px 12px",
                               borderRadius: 6,
                               fontSize: 11,
-                              fontWeight: 700,
+                              fontWeight: 500,
                               cursor: "pointer",
                               display: "flex",
                               alignItems: "center",
@@ -1005,7 +1005,7 @@ export default function ProductionUpdate({
                               borderRadius: 6,
                               padding: "4px 14px",
                               fontSize: 12,
-                              fontWeight: 700,
+                              fontWeight: 500,
                               cursor: "pointer",
                               display: "flex",
                               alignItems: "center",
@@ -1029,7 +1029,7 @@ export default function ProductionUpdate({
           <h3
             style={{
               fontSize: 14,
-              fontWeight: 700,
+              fontWeight: 500,
               color: C.muted,
               marginBottom: 14,
             }}
@@ -1092,7 +1092,7 @@ export default function ProductionUpdate({
           <h3
             style={{
               fontSize: 14,
-              fontWeight: 700,
+              fontWeight: 500,
               color: C.muted,
               marginBottom: 14,
             }}
@@ -1146,7 +1146,7 @@ export default function ProductionUpdate({
                       style={{
                         fontFamily: "'JetBrains Mono',monospace",
                         color: C.blue,
-                        fontWeight: 700,
+                        fontWeight: 500,
                       }}
                     >
                       {jo.joNo}
@@ -1165,7 +1165,7 @@ export default function ProductionUpdate({
                       <span
                         style={{
                           fontSize: 12,
-                          fontWeight: 700,
+                          fontWeight: 500,
                           color: C.green,
                         }}
                       >

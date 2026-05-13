@@ -377,7 +377,7 @@ function ToolTypeSection({ tabId, toast }) {
               <span style={{ fontWeight: 700 }}>{tool.designCode}</span>,
               tool.linkedSKU ? (
                 <div>
-                  <div style={{ fontWeight: 700, color: "#ff7800", fontSize: 12 }}>{tool.linkedSKU}</div>
+                  <div style={{ fontWeight: 500, color: "#ff7800", fontSize: 12 }}>{tool.linkedSKU}</div>
                   {linkedItem && <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>{linkedItem.name}</div>}
                 </div>
               ) : <span style={{ color: "#444" }}>—</span>,
@@ -499,7 +499,7 @@ function ToolTypeSection({ tabId, toast }) {
 
             {allMachines.length > 0 && (
               <div style={{ marginTop: 16 }}>
-                <label style={{ display: "block", fontSize: 11, color: "#666", fontWeight: 700, marginBottom: 8, textTransform: "uppercase" }}>
+                <label style={{ display: "block", fontSize: 11, color: "#666", fontWeight: 500, marginBottom: 8, textTransform: "uppercase" }}>
                   Compatible Machines
                   {formData.compatibleMachines.length > 0 && (
                     <span style={{ marginLeft: 8, color: "#ff7800" }}>

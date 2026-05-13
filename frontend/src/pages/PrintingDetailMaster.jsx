@@ -428,7 +428,7 @@ export default function PrintingDetailMaster({ toast }) {
                 background: "none",
                 border: "none",
                 cursor: "pointer",
-                fontWeight: 700,
+                fontWeight: 500,
               }}
             >
               ✕ Close
@@ -711,7 +711,7 @@ export default function PrintingDetailMaster({ toast }) {
                 background: "transparent",
                 border: `1px solid ${C.border}`,
                 color: C.muted,
-                fontWeight: 700,
+                fontWeight: 500,
                 fontSize: 13,
               }}
             >
@@ -774,7 +774,7 @@ export default function PrintingDetailMaster({ toast }) {
                           border: "none",
                           color: "#FF7F11",
                           fontSize: 11,
-                          fontWeight: 700,
+                          fontWeight: 500,
                           cursor: "pointer",
                           padding: 0,
                         }}
@@ -788,7 +788,7 @@ export default function PrintingDetailMaster({ toast }) {
                           border: "none",
                           color: "#ef4444",
                           fontSize: 11,
-                          fontWeight: 700,
+                          fontWeight: 500,
                           cursor: "pointer",
                           padding: 0,
                         }}

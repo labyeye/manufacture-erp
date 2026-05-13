@@ -35,11 +35,13 @@ const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "S
 
 const inputStyle = {
   padding: "9px 12px",
-  border: "1px solid #2a2a2a",
+  border: "1px solid rgba(255,255,255,0.13)",
   borderRadius: 6,
   fontSize: 13,
   fontFamily: "inherit",
-  background: "#141414",
+  background: "rgba(255,255,255,0.07)",
+  backdropFilter: "blur(8px) saturate(180%)",
+  WebkitBackdropFilter: "blur(8px) saturate(180%)",
   color: "#e0e0e0",
   outline: "none",
   width: "100%",
@@ -58,7 +60,7 @@ const labelStyle = {
 
 const sectionHeaderStyle = {
   gridColumn: "1 / -1",
-  borderBottom: "1px solid #2a2a2a",
+  borderBottom: "1px solid rgba(255,255,255,0.08)",
   paddingBottom: 10,
   marginTop: 10,
 };
@@ -386,8 +388,10 @@ export default function MachineMaster({ toast }) {
       >
         <div
           style={{
-            background: "#121212",
-            border: "1px solid #2a2a2a",
+            background: "rgba(255,255,255,0.05)",
+            backdropFilter: "blur(12px) saturate(180%)",
+            WebkitBackdropFilter: "blur(12px) saturate(180%)",
+            border: "1px solid rgba(255,255,255,0.1)",
             borderRadius: 16,
             width: "100%",
             maxWidth: 960,
@@ -652,9 +656,9 @@ export default function MachineMaster({ toast }) {
                         borderRadius: 20,
                         fontSize: 12,
                         fontWeight: 600,
-                        background: checked ? "#FF9800" : "#1a1a1a",
+                        background: checked ? "#FF9800" : "rgba(255,255,255,0.05)",
                         color: checked ? "#000" : "#666",
-                        border: `1px solid ${checked ? "#FF9800" : "#333"}`,
+                        border: `1px solid ${checked ? "#FF9800" : "rgba(255,255,255,0.1)"}`,
                         cursor: "pointer",
                         transition: "all 0.15s",
                       }}
@@ -672,8 +676,8 @@ export default function MachineMaster({ toast }) {
                     fontSize: 11,
                     padding: "3px 10px",
                     borderRadius: 4,
-                    border: "1px solid #333",
-                    background: "#1a1a1a",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    background: "rgba(255,255,255,0.05)",
                     color: "#888",
                     cursor: "pointer",
                   }}
@@ -687,8 +691,8 @@ export default function MachineMaster({ toast }) {
                     fontSize: 11,
                     padding: "3px 10px",
                     borderRadius: 4,
-                    border: "1px solid #333",
-                    background: "#1a1a1a",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    background: "rgba(255,255,255,0.05)",
                     color: "#888",
                     cursor: "pointer",
                   }}
@@ -711,10 +715,10 @@ export default function MachineMaster({ toast }) {
                       padding: "6px 12px",
                       borderRadius: 4,
                       fontSize: 11,
-                      fontWeight: 700,
-                      background: (form.workingDays || []).includes(day) ? "#FF9800" : "#1a1a1a",
+                      fontWeight: 500,
+                      background: (form.workingDays || []).includes(day) ? "#FF9800" : "rgba(255,255,255,0.05)",
                       color: (form.workingDays || []).includes(day) ? "#000" : "#666",
-                      border: "1px solid #333",
+                      border: "1px solid rgba(255,255,255,0.1)",
                       cursor: "pointer",
                     }}
                   >
@@ -727,7 +731,7 @@ export default function MachineMaster({ toast }) {
 
           {}
           <div style={{ gridColumn: "1 / -1", marginTop: 24 }}>
-            <div style={{ borderBottom: "1px solid #2a2a2a", paddingBottom: 10, marginBottom: 16 }}>
+            <div style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: 10, marginBottom: 16 }}>
               <span style={{ fontSize: 12, fontWeight: 800, color: "#FF9800" }}>CHANGEOVER RULES</span>
               <span style={{ fontSize: 11, color: "#666", marginLeft: 10 }}>
                 Define setup time per transition type to enable smart job batching
@@ -741,13 +745,13 @@ export default function MachineMaster({ toast }) {
                   <thead>
                     <tr>
                       {["From Transition", "To Transition", "Minutes", ""].map((h) => (
-                        <th key={h} style={{ textAlign: "left", padding: "6px 8px", color: "#666", fontWeight: 700, fontSize: 10, textTransform: "uppercase", borderBottom: "1px solid #2a2a2a" }}>{h}</th>
+                        <th key={h} style={{ textAlign: "left", padding: "6px 8px", color: "#666", fontWeight: 500, fontSize: 10, textTransform: "uppercase", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.04)" }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {changeoverRules.map((rule, idx) => (
-                      <tr key={idx} style={{ borderBottom: "1px solid #1a1a1a" }}>
+                      <tr key={idx} style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                         <td style={{ padding: "6px 8px", color: "#ccc" }}>{rule.fromType}</td>
                         <td style={{ padding: "6px 8px", color: "#ccc" }}>→ {rule.toType}</td>
                         <td style={{ padding: "6px 8px" }}>
@@ -805,7 +809,7 @@ export default function MachineMaster({ toast }) {
               </div>
               <button
                 onClick={addChangeoverRule}
-                style={{ padding: "9px 16px", background: "#FF980022", border: "1px solid #FF9800", borderRadius: 6, color: "#FF9800", fontWeight: 700, cursor: "pointer", fontSize: 12, whiteSpace: "nowrap" }}
+                style={{ padding: "9px 16px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, cursor: "pointer", fontSize: 12, whiteSpace: "nowrap", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
               >
                 + Add
               </button>
@@ -824,11 +828,14 @@ export default function MachineMaster({ toast }) {
               style={{
                 flex: 1,
                 padding: "12px",
-                background: "#FF9800",
-                color: "#000",
-                border: "none",
+                background: "rgba(255,255,255,0.08)",
+                backdropFilter: "blur(12px) saturate(180%)",
+                WebkitBackdropFilter: "blur(12px) saturate(180%)",
+                color: "#fff",
+                border: "1px solid rgba(255,255,255,0.18)",
                 borderRadius: 8,
                 fontWeight: 800,
+                boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
                 cursor: "pointer",
               }}
             >
@@ -838,11 +845,11 @@ export default function MachineMaster({ toast }) {
               onClick={() => setEditingMachine(null)}
               style={{
                 padding: "12px 25px",
-                background: "#222",
+                background: "rgba(255,255,255,0.05)",
                 color: "#fff",
-                border: "1px solid #333",
+                border: "1px solid rgba(255,255,255,0.1)",
                 borderRadius: 8,
-                fontWeight: 700,
+                fontWeight: 500,
                 cursor: "pointer",
               }}
             >
@@ -867,7 +874,7 @@ export default function MachineMaster({ toast }) {
 
       <div style={{ marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
         <div>
-          <h2 style={{ fontSize: 22, fontWeight: 700, color: "#e0e0e0", margin: 0 }}>🏭 Machine Master</h2>
+          <h2 style={{ fontSize: 22, fontWeight: 500, color: "#e0e0e0", margin: 0 }}>🏭 Machine Master</h2>
           <p style={{ fontSize: 13, color: "#777", margin: "4px 0 0" }}>
             Configure capacity, shifts, parallel groups, and product compatibility per machine
           </p>
@@ -880,12 +887,12 @@ export default function MachineMaster({ toast }) {
             title="Download a blank XLSX template with all columns"
             style={{
               padding: "8px 14px",
-              background: "#1a1a1a",
+              background: "rgba(255,255,255,0.05)",
               color: "#9C27B0",
               border: "1px solid #9C27B044",
               borderRadius: 6,
               fontSize: 12,
-              fontWeight: 700,
+              fontWeight: 500,
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
@@ -899,12 +906,12 @@ export default function MachineMaster({ toast }) {
             title="Export all machines to XLSX"
             style={{
               padding: "8px 14px",
-              background: "#1a1a1a",
+              background: "rgba(255,255,255,0.05)",
               color: "#4CAF50",
               border: "1px solid #4CAF5044",
               borderRadius: 6,
               fontSize: 12,
-              fontWeight: 700,
+              fontWeight: 500,
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
@@ -919,12 +926,12 @@ export default function MachineMaster({ toast }) {
             title="Import machines from XLSX (updates existing by name, creates new)"
             style={{
               padding: "8px 14px",
-              background: importing ? "#1a1a1a" : "#2196F322",
+              background: importing ? "rgba(255,255,255,0.05)" : "#2196F322",
               color: importing ? "#555" : "#2196F3",
-              border: `1px solid ${importing ? "#333" : "#2196F344"}`,
+              border: `1px solid ${importing ? "rgba(255,255,255,0.1)" : "#2196F344"}`,
               borderRadius: 6,
               fontSize: 12,
-              fontWeight: 700,
+              fontWeight: 500,
               cursor: importing ? "not-allowed" : "pointer",
               display: "flex",
               alignItems: "center",
@@ -937,7 +944,7 @@ export default function MachineMaster({ toast }) {
       </div>
 
       {}
-      <div style={{ background: "#1a1a1a", border: "1px solid #2a2a2a", borderRadius: 10, padding: "16px 20px", marginBottom: 20 }}>
+      <div style={{ background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "16px 20px", marginBottom: 20, boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
         <div style={{ fontSize: 11, fontWeight: 800, color: "#FF9800", marginBottom: 12, letterSpacing: 1 }}>ADD NEW MACHINE</div>
         <div style={{ display: "flex", gap: 12 }}>
           <input
@@ -955,7 +962,7 @@ export default function MachineMaster({ toast }) {
           <button
             onClick={handleAdd}
             disabled={loading}
-            style={{ padding: "0 25px", background: "#FF9800", color: "#000", border: "none", borderRadius: 6, fontWeight: 800, cursor: "pointer" }}
+            style={{ padding: "0 25px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 800, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
           >
             {loading ? "..." : "ADD MACHINE"}
           </button>
@@ -992,10 +999,10 @@ export default function MachineMaster({ toast }) {
       </div>
 
       {}
-      <div style={{ background: "#1a1a1a", border: "1px solid #2a2a2a", borderRadius: 12, overflow: "hidden" }}>
+      <div style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, overflow: "hidden" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
           <thead>
-            <tr style={{ background: "#111", borderBottom: "1px solid #2a2a2a" }}>
+            <tr style={{ background: "rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
               {["Machine", "Type", "Division", "Run Rate", "Shifts", "OT", "Product Compatibility", "Status", "Actions"].map((h) => (
                 <th
                   key={h}
@@ -1028,8 +1035,8 @@ export default function MachineMaster({ toast }) {
               const compat = Array.isArray(m.productCompatibility) ? m.productCompatibility : [];
 
               return (
-                <tr key={m._id} style={{ borderBottom: "1px solid #1e1e1e" }}>
-                  <td style={{ padding: "12px 16px", fontWeight: 700, color: "#fff" }}>
+                <tr key={m._id} style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }} onMouseEnter={e => e.currentTarget.style.background="rgba(255,255,255,0.04)"} onMouseLeave={e => e.currentTarget.style.background="transparent"}>
+                  <td style={{ padding: "12px 16px", fontWeight: 500, color: "#fff" }}>
                     {m.name}
                     {m.parallelMachineGroup && (
                       <div style={{ fontSize: 10, color: "#9C27B0", marginTop: 2 }}>↔ {m.parallelMachineGroup}</div>
@@ -1043,7 +1050,7 @@ export default function MachineMaster({ toast }) {
                         background: typeColor + "22",
                         color: typeColor,
                         fontSize: 11,
-                        fontWeight: 700,
+                        fontWeight: 500,
                       }}
                     >
                       {m.type}
@@ -1057,7 +1064,7 @@ export default function MachineMaster({ toast }) {
                         background: divColor + "22",
                         color: divColor,
                         fontSize: 11,
-                        fontWeight: 700,
+                        fontWeight: 500,
                       }}
                     >
                       {m.division || "—"}
@@ -1069,7 +1076,7 @@ export default function MachineMaster({ toast }) {
                   <td style={{ padding: "12px 16px", color: "#aaa" }}>{m.maxShiftsAllowed || 1} × {m.standardShiftHours || 8}h</td>
                   <td style={{ padding: "12px 16px" }}>
                     {m.overtimeAllowed ? (
-                      <span style={{ color: "#FF9800", fontWeight: 700, fontSize: 11 }}>+{m.maxOvertimeHours}h</span>
+                      <span style={{ color: "#FF9800", fontWeight: 500, fontSize: 11 }}>+{m.maxOvertimeHours}h</span>
                     ) : (
                       <span style={{ color: "#444", fontSize: 11 }}>No</span>
                     )}
@@ -1136,7 +1143,7 @@ export default function MachineMaster({ toast }) {
                           border: "1px solid #3b82f644",
                           borderRadius: 4,
                           fontSize: 11,
-                          fontWeight: 700,
+                          fontWeight: 500,
                           cursor: "pointer",
                         }}
                       >
@@ -1151,7 +1158,7 @@ export default function MachineMaster({ toast }) {
                           border: "1px solid #f4433644",
                           borderRadius: 4,
                           fontSize: 11,
-                          fontWeight: 700,
+                          fontWeight: 500,
                           cursor: "pointer",
                         }}
                       >

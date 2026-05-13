@@ -27,9 +27,9 @@ export default function Forecast({
       <div
         style={{
           display: "flex",
-          gap: 4,
+          gap: 6,
           marginBottom: 24,
-          borderBottom: `1px solid ${C.border}`,
+          borderBottom: "1px solid rgba(255,255,255,0.1)",
           paddingBottom: 0,
         }}
       >
@@ -41,10 +41,17 @@ export default function Forecast({
               onClick={() => setActiveTab(tab.id)}
               style={{
                 padding: "10px 20px",
-                border: "none",
-                borderBottom: `2px solid ${active ? ACCENT : "transparent"}`,
-                background: "transparent",
-                color: active ? ACCENT : C.muted,
+                borderRadius: "8px 8px 0 0",
+                border: active
+                  ? "1px solid rgba(255,120,0,0.5)"
+                  : "1px solid rgba(255,255,255,0.12)",
+                borderBottom: active ? "1px solid transparent" : "1px solid rgba(255,255,255,0.12)",
+                background: active
+                  ? "rgba(255,120,0,0.15)"
+                  : "rgba(255,255,255,0.05)",
+                backdropFilter: "blur(10px)",
+                WebkitBackdropFilter: "blur(10px)",
+                color: active ? "#ff7800" : "#999",
                 fontWeight: active ? 700 : 500,
                 fontSize: 13,
                 cursor: "pointer",

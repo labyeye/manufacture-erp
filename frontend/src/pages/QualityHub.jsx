@@ -170,7 +170,7 @@ function FAITab({ jobOrders, toast }) {
         </div>
         <button
           onClick={() => { setForm(blankForm); setEditId(null); setView(view === "form" ? "list" : "form"); }}
-          style={{ padding: "8px 18px", background: view === "form" ? "transparent" : "#3b82f6", border: "1px solid #3b82f6", borderRadius: 6, color: view === "form" ? "#3b82f6" : "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer" }}
+          style={{ padding: "8px 18px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, fontSize: 12, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
         >
           {view === "form" ? "← Back to List" : "+ New Inspection"}
         </button>
@@ -181,7 +181,7 @@ function FAITab({ jobOrders, toast }) {
         {Object.entries(FAI_STATUS).map(([s, { color }]) => {
           const n = records.filter((r) => r.status === s).length;
           return n > 0 ? (
-            <div key={s} style={{ padding: "4px 12px", background: color + "22", border: `1px solid ${color}44`, borderRadius: 20, fontSize: 12, color, fontWeight: 700, cursor: "pointer" }} onClick={() => setFilterStatus(filterStatus === s ? "All" : s)}>
+            <div key={s} style={{ padding: "4px 12px", background: color + "22", border: `1px solid ${color}44`, borderRadius: 20, fontSize: 12, color, fontWeight: 500, cursor: "pointer" }} onClick={() => setFilterStatus(filterStatus === s ? "All" : s)}>
               {s}: {n}
             </div>
           ) : null;
@@ -196,7 +196,7 @@ function FAITab({ jobOrders, toast }) {
       {}
       {view === "form" && (
         <div style={{ ...card("#3b82f6"), marginBottom: 20 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#facc15", marginBottom: 20 }}>
+          <div style={{ fontSize: 14, fontWeight: 500, color: "#facc15", marginBottom: 20 }}>
             {editId ? "Edit FAI Record" : "New First Article Inspection"}
           </div>
 
@@ -268,7 +268,7 @@ function FAITab({ jobOrders, toast }) {
               ))}
               <button
                 onClick={() => setF("measurements", [...form.measurements, { key: "", value: "" }])}
-                style={{ padding: "6px 12px", background: "#3b82f622", border: "1px solid #3b82f644", borderRadius: 5, color: "#3b82f6", fontSize: 11, cursor: "pointer" }}
+                style={{ padding: "6px 12px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 5, color: "#fff", fontSize: 11, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
               >
                 + Add Parameter
               </button>
@@ -301,10 +301,10 @@ function FAITab({ jobOrders, toast }) {
           </div>
 
           <div style={{ display: "flex", gap: 10 }}>
-            <button onClick={handleSubmit} style={{ padding: "10px 24px", background: "#3b82f6", border: "none", borderRadius: 6, color: "#fff", fontWeight: 700, cursor: "pointer" }}>
+            <button onClick={handleSubmit} style={{ padding: "10px 24px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
               {editId ? "Save Changes" : "Submit Inspection"}
             </button>
-            <button onClick={() => { setForm(blankForm); setEditId(null); setView("list"); }} style={{ padding: "10px 18px", background: "transparent", border: "1px solid #2a2a2a", borderRadius: 6, color: "#888", cursor: "pointer" }}>
+            <button onClick={() => { setForm(blankForm); setEditId(null); setView("list"); }} style={{ padding: "10px 18px", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, color: "#aaa", cursor: "pointer" }}>
               Cancel
             </button>
           </div>
@@ -371,7 +371,7 @@ function FAITab({ jobOrders, toast }) {
       {}
       {view === "list" && (
         <div style={{ marginTop: 16, ...card("#f59e0b"), borderColor: "#f59e0b33" }}>
-          <div style={{ fontWeight: 700, fontSize: 12, color: "#f59e0b", marginBottom: 10 }}>
+          <div style={{ fontWeight: 500, fontSize: 12, color: "#f59e0b", marginBottom: 10 }}>
             🔬 FAI Gate Status — Active Job Orders
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -511,7 +511,7 @@ function SupplierTab({ purchaseOrders, inward, vendorMaster, toast }) {
       {}
       {editVendor && (
         <div style={{ ...card("#8b5cf6"), marginBottom: 16 }}>
-          <div style={{ fontWeight: 700, color: "#a78bfa", marginBottom: 12 }}>
+          <div style={{ fontWeight: 500, color: "#a78bfa", marginBottom: 12 }}>
             Set Responsiveness Score — {editVendor}
           </div>
           <div style={{ display: "flex", gap: 12, alignItems: "flex-end", flexWrap: "wrap" }}>
@@ -523,8 +523,8 @@ function SupplierTab({ purchaseOrders, inward, vendorMaster, toast }) {
               <label style={lbl}>Notes</label>
               <input value={rForm.notes} onChange={(e) => setRForm((f) => ({ ...f, notes: e.target.value }))} style={inp} placeholder="e.g. replies same day, tracks PO proactively" />
             </div>
-            <button onClick={saveResponsiveness} style={{ padding: "9px 18px", background: "#8b5cf6", border: "none", borderRadius: 6, color: "#fff", fontWeight: 700, cursor: "pointer" }}>Save</button>
-            <button onClick={() => setEditVendor(null)} style={{ padding: "9px 14px", background: "transparent", border: "1px solid #2a2a2a", borderRadius: 6, color: "#888", cursor: "pointer" }}>Cancel</button>
+            <button onClick={saveResponsiveness} style={{ padding: "9px 18px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>Save</button>
+            <button onClick={() => setEditVendor(null)} style={{ padding: "9px 14px", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, color: "#aaa", cursor: "pointer" }}>Cancel</button>
           </div>
         </div>
       )}
@@ -535,7 +535,7 @@ function SupplierTab({ purchaseOrders, inward, vendorMaster, toast }) {
           <thead>
             <tr>
               {["Vendor", "Grade", "On-Time Delivery", "Responsiveness", "POs", "Score", "Recommended Action"].map((h) => (
-                <th key={h} style={{ textAlign: "left", padding: "10px 12px", color: "#666", fontWeight: 700, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.05em", borderBottom: "1px solid #2a2a2a", background: "#0a0a0a", whiteSpace: "nowrap" }}>{h}</th>
+                <th key={h} style={{ textAlign: "left", padding: "10px 12px", color: "#666", fontWeight: 500, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.05em", borderBottom: "1px solid #2a2a2a", background: "#0a0a0a", whiteSpace: "nowrap" }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -560,14 +560,14 @@ function SupplierTab({ purchaseOrders, inward, vendorMaster, toast }) {
                       <div style={{ width: 60, height: 6, background: "#1a1a1a", borderRadius: 3, overflow: "hidden" }}>
                         <div style={{ height: "100%", width: `${s.onTimePct}%`, background: s.onTimePct >= 80 ? "#22c55e" : s.onTimePct >= 60 ? "#f59e0b" : "#ef4444", borderRadius: 3 }} />
                       </div>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: s.onTimePct >= 80 ? "#22c55e" : s.onTimePct >= 60 ? "#f59e0b" : "#ef4444" }}>{s.onTimePct}%</span>
+                      <span style={{ fontSize: 12, fontWeight: 500, color: s.onTimePct >= 80 ? "#22c55e" : s.onTimePct >= 60 ? "#f59e0b" : "#ef4444" }}>{s.onTimePct}%</span>
                       <span style={{ fontSize: 10, color: "#555" }}>{s.deliveredPOs}/{s.totalPOs} POs</span>
                     </div>
                   ) : <span style={{ color: "#555", fontSize: 11 }}>No GRNs yet</span>}
                 </td>
                 <td style={{ padding: "12px 12px" }}>
                   {s.responsiveness != null
-                    ? <span style={{ fontSize: 12, fontWeight: 700, color: s.responsiveness >= 70 ? "#22c55e" : s.responsiveness >= 40 ? "#f59e0b" : "#ef4444" }}>{s.responsiveness}/100</span>
+                    ? <span style={{ fontSize: 12, fontWeight: 500, color: s.responsiveness >= 70 ? "#22c55e" : s.responsiveness >= 40 ? "#f59e0b" : "#ef4444" }}>{s.responsiveness}/100</span>
                     : <span style={{ fontSize: 11, color: "#3b82f6", textDecoration: "underline" }}>Click to score →</span>}
                 </td>
                 <td style={{ padding: "12px 12px", fontSize: 12, color: "#888" }}>{s.totalPOs}</td>

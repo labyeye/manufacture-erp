@@ -440,7 +440,7 @@ export function GlobalSearch({
                 <div
                   style={{
                     fontSize: 11,
-                    fontWeight: 700,
+                    fontWeight: 500,
                     color,
                     letterSpacing: 1,
                     textTransform: "uppercase",
@@ -464,7 +464,7 @@ export function GlobalSearch({
                         background: color + "15",
                         color,
                         cursor: "pointer",
-                        fontWeight: 700,
+                        fontWeight: 500,
                         letterSpacing: 0.5,
                       }}
                     >
@@ -491,7 +491,7 @@ export function GlobalSearch({
                     }}
                   >
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 700, color: C.text, fontSize: 14 }}>
+                      <div style={{ fontWeight: 500, color: C.text, fontSize: 14 }}>
                         {result.name}
                       </div>
                       {result.detail && (

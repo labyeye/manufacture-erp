@@ -42,11 +42,13 @@ const CONSUMABLE_DIM_CONFIG = {
 const inputStyle = {
   width: "100%",
   padding: "9px 12px",
-  border: "1px solid #2a2a2a",
+  border: "1px solid rgba(255,255,255,0.13)",
   borderRadius: 6,
   fontSize: 13,
   fontFamily: "inherit",
-  background: "#141414",
+  background: "rgba(255,255,255,0.07)",
+  backdropFilter: "blur(8px) saturate(180%)",
+  WebkitBackdropFilter: "blur(8px) saturate(180%)",
   color: "#e0e0e0",
   outline: "none",
   boxSizing: "border-box",
@@ -895,7 +897,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
       />
       <div style={{ marginBottom: 20 }}>
         <h2
-          style={{ fontSize: 22, fontWeight: 700, color: "#e0e0e0", margin: 0 }}
+          style={{ fontSize: 22, fontWeight: 500, color: "#e0e0e0", margin: 0 }}
         >
           Item Master
         </h2>
@@ -908,11 +910,13 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
         style={{
           display: "flex",
           gap: 10,
-          background: "#1a1a1a",
+          background: "rgba(255,255,255,0.05)",
+          backdropFilter: "blur(12px) saturate(180%)",
+          WebkitBackdropFilter: "blur(12px) saturate(180%)",
           padding: 4,
           borderRadius: 12,
           marginBottom: 20,
-          border: "1px solid #2a2a2a",
+          border: "1px solid rgba(255,255,255,0.1)",
         }}
       >
         {ITEM_TABS.map((tab) => (
@@ -935,9 +939,12 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
               padding: "10px 0",
               borderRadius: 8,
               border: "none",
-              background: activeTab === tab.key ? "#2196F3" : "transparent",
-              color: activeTab === tab.key ? "#fff" : "#888",
-              fontWeight: 700,
+              background: activeTab === tab.key ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.05)",
+              backdropFilter: "blur(12px) saturate(180%)",
+              WebkitBackdropFilter: "blur(12px) saturate(180%)",
+              color: "#fff",
+              boxShadow: activeTab === tab.key ? "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" : "none",
+              fontWeight: 500,
               fontSize: 13,
               cursor: "pointer",
               transition: "all 0.2s",
@@ -982,8 +989,10 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                 left: "50%",
                 transform: "translate(-50%, -50%)",
                 zIndex: 1000,
-                background: "#1a1a1a",
-                border: "1px solid #333",
+                background: "rgba(255,255,255,0.05)",
+                backdropFilter: "blur(12px) saturate(180%)",
+                WebkitBackdropFilter: "blur(12px) saturate(180%)",
+                border: "1px solid rgba(255,255,255,0.1)",
                 borderRadius: 12,
                 padding: "20px 24px",
                 width: "90%",
@@ -992,8 +1001,10 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                 overflowY: "auto",
               }
             : {
-                background: "#1a1a1a",
-                border: "1px solid #2a2a2a",
+                background: "rgba(255,255,255,0.05)",
+                backdropFilter: "blur(12px) saturate(180%)",
+                WebkitBackdropFilter: "blur(12px) saturate(180%)",
+                border: "1px solid rgba(255,255,255,0.1)",
                 borderRadius: 10,
                 padding: "16px 20px",
                 marginBottom: 14,
@@ -1011,7 +1022,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
           <div
             style={{
               fontSize: 12,
-              fontWeight: 700,
+              fontWeight: 500,
               color: "#2196F3",
               letterSpacing: "1px",
               textTransform: "uppercase",
@@ -1474,7 +1485,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                   activeTab !== "Machine Spare" &&
                   selectedSubCategory !== "Polycoated Blanks" &&
                   selectedCategory !== "Polycoated Blanks"
-                    ? "#0a0a0a"
+                    ? "rgba(255,255,255,0.03)"
                     : inputStyle.background,
               }}
               readOnly={
@@ -1560,7 +1571,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
               style={{
                 flex: 1,
                 padding: "12px 16px",
-                background: "#111",
+                background: "rgba(255,255,255,0.04)",
                 border: "1px dashed #2196F344",
                 borderRadius: 8,
                 display: "flex",
@@ -1572,7 +1583,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
               <span
                 style={{
                   fontSize: 15,
-                  fontWeight: 700,
+                  fontWeight: 500,
                   color: "#4CAF50",
                   fontFamily: "monospace",
                 }}
@@ -1584,8 +1595,8 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
               style={{
                 width: 160,
                 padding: "12px 16px",
-                background: "#0d0d0d",
-                border: "1px solid #222",
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.1)",
                 borderRadius: 8,
                 display: "flex",
                 alignItems: "center",
@@ -1596,7 +1607,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
               <span
                 style={{
                   fontSize: 14,
-                  fontWeight: 700,
+                  fontWeight: 500,
                   color: "#4CAF50",
                   fontFamily: "monospace",
                 }}
@@ -1613,13 +1624,16 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
             onClick={handleAddItem}
             style={{
               padding: "9px 20px",
-              background: "#2196F3",
+              background: "rgba(255,255,255,0.08)",
+              backdropFilter: "blur(12px) saturate(180%)",
+              WebkitBackdropFilter: "blur(12px) saturate(180%)",
               color: "#fff",
-              border: "none",
+              border: "1px solid rgba(255,255,255,0.18)",
               borderRadius: 6,
-              fontWeight: 700,
+              fontWeight: 500,
               fontSize: 13,
               cursor: "pointer",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
             }}
           >
             {editingItem ? "Update Item" : `+ Add ${activeTab} Item`}
@@ -1642,11 +1656,11 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
               }}
               style={{
                 padding: "9px 18px",
-                background: "#222",
+                background: "rgba(255,255,255,0.05)",
                 color: "#aaa",
-                border: "1px solid #333",
+                border: "1px solid rgba(255,255,255,0.1)",
                 borderRadius: 6,
-                fontWeight: 700,
+                fontWeight: 500,
                 fontSize: 13,
                 cursor: "pointer",
               }}
@@ -1660,7 +1674,9 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
       {activeTab === "Finished Goods" && (
         <div
           style={{
-            background: "linear-gradient(135deg, #1e1b4b, #0d0d0d)",
+            background: "rgba(79,70,229,0.12)",
+            backdropFilter: "blur(12px) saturate(180%)",
+            WebkitBackdropFilter: "blur(12px) saturate(180%)",
             border: "1px solid #4f46e544",
             borderRadius: 10,
             padding: "16px 20px",
@@ -1676,7 +1692,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
               alignItems: "center",
               gap: 10,
               color: "#818cf8",
-              fontWeight: 700,
+              fontWeight: 500,
               fontSize: 13,
             }}
           >
@@ -1698,7 +1714,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                 borderRadius: 6,
                 color: "#818cf8",
                 fontSize: 12,
-                fontWeight: 700,
+                fontWeight: 500,
                 cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
@@ -1711,13 +1727,16 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
               onClick={() => companyCodesFileRef.current.click()}
               style={{
                 padding: "8px 16px",
-                background: "#4f46e5",
-                border: "none",
+                background: "rgba(255,255,255,0.08)",
+                backdropFilter: "blur(12px) saturate(180%)",
+                WebkitBackdropFilter: "blur(12px) saturate(180%)",
+                border: "1px solid rgba(255,255,255,0.18)",
                 borderRadius: 6,
                 color: "#fff",
                 fontSize: 12,
-                fontWeight: 700,
+                fontWeight: 500,
                 cursor: "pointer",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
                 display: "flex",
                 alignItems: "center",
                 gap: 8,
@@ -1757,8 +1776,8 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
               ...inputStyle,
               maxWidth: 300,
               minWidth: 120,
-              background: "#1a1a1a",
-              borderColor: "#2a2a2a",
+              background: "rgba(255,255,255,0.07)",
+              borderColor: "rgba(255,255,255,0.13)",
             }}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -1770,8 +1789,8 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
               ...inputStyle,
               maxWidth: 160,
               minWidth: 120,
-              background: "#1a1a1a",
-              borderColor: "#2a2a2a",
+              background: "rgba(255,255,255,0.07)",
+              borderColor: "rgba(255,255,255,0.13)",
             }}
           >
             <option value="All">All Categories</option>
@@ -1790,14 +1809,17 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                 setConfirmModal({ isOpen: true, count: selectedIds.length })
               }
               style={{
-                background: "#450a0a",
-                color: "#ef4444",
-                border: "1px solid #7f1d1d",
+                background: "rgba(255,255,255,0.08)",
+                backdropFilter: "blur(12px) saturate(180%)",
+                WebkitBackdropFilter: "blur(12px) saturate(180%)",
+                color: "#fff",
+                border: "1px solid rgba(255,255,255,0.18)",
                 borderRadius: 6,
                 padding: "6px 16px",
                 fontSize: 12,
-                fontWeight: 700,
+                fontWeight: 500,
                 cursor: "pointer",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
                 display: "flex",
                 alignItems: "center",
                 gap: 6,
@@ -1813,18 +1835,21 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
             onClick={() => fileInputRef.current?.click()}
             label="Bulk Import"
           />
-          {tabItems.length > 0 && (
+          {tabItems.length > 0 && activeTab === "Machine Spare" && (
             <button
               onClick={() => setDeleteAllModal(true)}
               style={{
-                background: "#450a0a",
-                color: "#ef4444",
-                border: "1px solid #7f1d1d",
+                background: "rgba(255,255,255,0.08)",
+                backdropFilter: "blur(12px) saturate(180%)",
+                WebkitBackdropFilter: "blur(12px) saturate(180%)",
+                color: "#fff",
+                border: "1px solid rgba(255,255,255,0.18)",
                 borderRadius: 6,
                 padding: "6px 14px",
                 fontSize: 12,
-                fontWeight: 700,
+                fontWeight: 500,
                 cursor: "pointer",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
                 whiteSpace: "nowrap",
               }}
             >
@@ -1847,8 +1872,8 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
             display: "flex",
             alignItems: "center",
             padding: "10px 16px",
-            background: "#1a1a1a",
-            border: "1px solid #2a2a2a",
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.1)",
             borderRadius: "8px 8px 0 0",
             marginBottom: -1,
             gap: 16,
@@ -1860,7 +1885,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
             onChange={toggleSelectAll}
             style={{ cursor: "pointer", width: 16, height: 16 }}
           />
-          <span style={{ fontSize: 11, fontWeight: 700, color: "#666" }}>
+          <span style={{ fontSize: 11, fontWeight: 500, color: "#666" }}>
             SELECT ALL {activeTab} ITEMS
           </span>
         </div>
@@ -1871,8 +1896,8 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
           style={{
             textAlign: "center",
             padding: "40px",
-            background: "#1a1a1a",
-            border: "1px solid #2a2a2a",
+            background: "rgba(255,255,255,0.05)",
+            border: "1px solid rgba(255,255,255,0.1)",
             borderRadius: 10,
             color: "#444",
           }}
@@ -1881,16 +1906,18 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
         </div>
       ) : isMobile ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", background: "#1a1a1a", border: "1px solid #2a2a2a", borderRadius: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }}>
             <input type="checkbox" checked={selectedIds.length === sorted.length} onChange={toggleSelectAll} style={{ cursor: "pointer", width: 16, height: 16 }} />
-            <span style={{ fontSize: 11, fontWeight: 700, color: "#666" }}>SELECT ALL ({sorted.length})</span>
+            <span style={{ fontSize: 11, fontWeight: 500, color: "#666" }}>SELECT ALL ({sorted.length})</span>
           </div>
           {sorted.map((item) => (
             <div
               key={item._id}
               style={{
-                background: "#1a1a1a",
-                border: "1px solid #2a2a2a",
+                background: "rgba(255,255,255,0.05)",
+                backdropFilter: "blur(12px) saturate(180%)",
+                WebkitBackdropFilter: "blur(12px) saturate(180%)",
+                border: "1px solid rgba(255,255,255,0.1)",
                 borderRadius: 10,
                 padding: "14px 16px",
               }}
@@ -1911,7 +1938,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                     borderRadius: 6,
                     color: "#2196F3",
                     fontSize: 11,
-                    fontWeight: 700,
+                    fontWeight: 500,
                     background: "#2196F30a",
                     fontFamily: "monospace",
                     cursor: "pointer",
@@ -1970,7 +1997,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                       color: "#818cf8",
                       border: "1px solid #4f46e544",
                       fontSize: 11,
-                      fontWeight: 700,
+                      fontWeight: 500,
                       cursor: "pointer",
                       width: "100%",
                       textAlign: "left",
@@ -1979,10 +2006,10 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                     Co. Codes {showClientCodes === item._id ? "▲" : "▼"}
                   </button>
                   {showClientCodes === item._id && (
-                    <div style={{ marginTop: 8, background: "#111", border: "1px solid #333", borderRadius: 8, padding: 10 }}>
+                    <div style={{ marginTop: 8, background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: 10 }}>
                       {item.companyCodes && Object.entries(item.companyCodes).filter(([_, v]) => v).length > 0 ? (
                         Object.entries(item.companyCodes).filter(([_, v]) => v).map(([client, code]) => (
-                          <div key={client} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "5px 0", borderBottom: "1px solid #222", gap: 10 }}>
+                          <div key={client} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "5px 0", borderBottom: "1px solid rgba(255,255,255,0.06)", gap: 10 }}>
                             <span style={{ color: "#666" }}>{client}:</span>
                             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                               <span style={{ color: "#e0e0e0", fontWeight: 700 }}>{code}</span>
@@ -1993,15 +2020,15 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                       ) : (
                         <div style={{ fontSize: 11, color: "#444", textAlign: "center", marginBottom: 8 }}>No client codes</div>
                       )}
-                      <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid #333" }}>
+                      <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
                         <div style={{ fontSize: 10, color: "#818cf8", marginBottom: 4, fontWeight: 700 }}>+ ADD CLIENT CODE</div>
-                        <select value={manualClient} onChange={(e) => setManualClient(e.target.value)} style={{ width: "100%", background: "#000", border: "1px solid #333", borderRadius: 4, fontSize: 11, color: "#fff", padding: 5, marginBottom: 6, outline: "none" }}>
+                        <select value={manualClient} onChange={(e) => setManualClient(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.07)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.13)", borderRadius: 4, fontSize: 11, color: "#e0e0e0", padding: 5, marginBottom: 6, outline: "none" }}>
                           <option value="">-- Select Company --</option>
                           {(companyMaster || []).map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
                         </select>
                         <div style={{ display: "flex", gap: 6 }}>
-                          <input placeholder="Code" value={manualCode} onChange={(e) => setManualCode(e.target.value)} style={{ flex: 1, background: "#000", border: "1px solid #333", borderRadius: 4, fontSize: 11, color: "#fff", padding: 5, outline: "none" }} />
-                          <button onClick={() => handleManualClientCodeSave(item)} style={{ background: "#4f46e5", border: "none", borderRadius: 4, color: "#fff", padding: "5px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>SAVE</button>
+                          <input placeholder="Code" value={manualCode} onChange={(e) => setManualCode(e.target.value)} style={{ flex: 1, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.13)", borderRadius: 4, fontSize: 11, color: "#e0e0e0", padding: 5, outline: "none" }} />
+                          <button onClick={() => handleManualClientCodeSave(item)} style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 4, color: "#fff", padding: "5px 12px", fontSize: 11, fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>SAVE</button>
                         </div>
                       </div>
                     </div>
@@ -2013,13 +2040,13 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
               <div style={{ display: "flex", gap: 8 }}>
                 <button
                   onClick={() => handleEdit(item)}
-                  style={{ flex: 1, padding: "8px 0", background: "#1e293b", color: "#64b5f6", border: "1px solid #334155", borderRadius: 6, fontSize: 13, fontWeight: 700, cursor: "pointer" }}
+                  style={{ flex: 1, padding: "8px 0", background: "rgba(255,255,255,0.05)", color: "#64b5f6", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, fontSize: 13, fontWeight: 500, cursor: "pointer" }}
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => handleDelete(item)}
-                  style={{ flex: 1, padding: "8px 0", background: "#450a0a", color: "#ef4444", border: "1px solid #7f1d1d", borderRadius: 6, fontSize: 13, fontWeight: 700, cursor: "pointer" }}
+                  style={{ flex: 1, padding: "8px 0", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", color: "#fff", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, fontSize: 13, fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
                 >
                   Delete
                 </button>
@@ -2030,7 +2057,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
       ) : (
         <div
           style={{
-            border: "1px solid #2a2a2a",
+            border: "1px solid rgba(255,255,255,0.1)",
             borderRadius: "0 0 10px 10px",
             overflowX: "auto",
             WebkitOverflowScrolling: "touch",
@@ -2043,8 +2070,8 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                 display: "flex",
                 alignItems: "center",
                 padding: "8px 16px",
-                background: "#0a0a0a",
-                borderBottom: "1px solid #2a2a2a",
+                background: "rgba(255,255,255,0.04)",
+                borderBottom: "1px solid rgba(255,255,255,0.08)",
                 gap: 10,
                 fontSize: 10,
                 fontWeight: 800,
@@ -2078,8 +2105,8 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                   display: "flex",
                   alignItems: "center",
                   padding: "10px 16px",
-                  background: idx % 2 === 0 ? "#0d1117" : "#11151c",
-                  borderBottom: idx === sorted.length - 1 ? "none" : "1px solid #21262d",
+                  background: "transparent",
+                  borderBottom: idx === sorted.length - 1 ? "none" : "1px solid rgba(255,255,255,0.06)",
                   gap: 10,
                 }}
               >
@@ -2090,12 +2117,12 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                   style={{ cursor: "pointer", width: 16, height: 16, flexShrink: 0 }}
                 />
                 <div
-                  style={{ width: 72, flexShrink: 0, padding: "5px 0", border: "1px solid #2196F344", borderRadius: 6, textAlign: "center", color: "#2196F3", fontSize: 11, fontWeight: 700, background: "#2196F30a", fontFamily: "monospace", cursor: "pointer", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                  style={{ width: 72, flexShrink: 0, padding: "5px 0", border: "1px solid #2196F344", borderRadius: 6, textAlign: "center", color: "#2196F3", fontSize: 11, fontWeight: 500, background: "#2196F30a", fontFamily: "monospace", cursor: "pointer", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
                   onClick={() => handleEdit(item)}
                 >
                   {item.code}
                 </div>
-                <div style={{ flex: 1, minWidth: 180, color: "#e6edf3", fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <div style={{ flex: 1, minWidth: 200, color: "#e6edf3", fontSize: 13, fontWeight: 600, wordBreak: "break-word" }} title={item.name}>
                   {item.name}
                 </div>
                 {activeTab === "Finished Goods" && (
@@ -2109,10 +2136,10 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                 <div style={{ width: 110, flexShrink: 0, padding: "4px 8px", borderRadius: 6, background: "#4CAF501a", color: "#4CAF50", fontSize: 11, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {item.subCategory || "-"}
                 </div>
-                <div style={{ width: 50, flexShrink: 0, padding: "4px 6px", borderRadius: 6, background: "#64B5F614", color: "#64B5F6", fontSize: 10, fontWeight: 700, textAlign: "center" }}>
+                <div style={{ width: 50, flexShrink: 0, padding: "4px 6px", borderRadius: 6, background: "#64B5F614", color: "#64B5F6", fontSize: 10, fontWeight: 500, textAlign: "center" }}>
                   {item.gstRate || 0}%
                 </div>
-                <div style={{ width: 70, flexShrink: 0, padding: "4px 6px", borderRadius: 6, background: "#ff98001a", color: "#ff9800", fontSize: 10, fontWeight: 700, textAlign: "center" }}>
+                <div style={{ width: 70, flexShrink: 0, padding: "4px 6px", borderRadius: 6, background: "#ff98001a", color: "#ff9800", fontSize: 10, fontWeight: 500, textAlign: "center" }}>
                   RL: {item.reorderLevel || 0}
                 </div>
 
@@ -2124,15 +2151,15 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                         setManualCode("");
                         setShowClientCodes(showClientCodes === item._id ? null : item._id);
                       }}
-                      style={{ padding: "4px 8px", borderRadius: 6, background: "#4f46e51a", color: "#818cf8", border: "1px solid #4f46e544", fontSize: 10, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, width: "100%" }}
+                      style={{ padding: "4px 8px", borderRadius: 6, background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", color: "#fff", fontSize: 10, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, width: "100%", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
                     >
                       Co. Codes {showClientCodes === item._id ? "▲" : "▼"}
                     </button>
                     {showClientCodes === item._id && (
-                      <div style={{ position: "absolute", top: "100%", right: 0, zIndex: 100, background: "#1a1a1a", border: "1px solid #333", borderRadius: 8, padding: 8, minWidth: 150, boxShadow: "0 10px 25px rgba(0,0,0,0.5)", marginTop: 4 }}>
+                      <div style={{ position: "absolute", top: "100%", right: 0, zIndex: 100, background: "rgba(20,20,30,0.95)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: 8, minWidth: 150, boxShadow: "0 10px 25px rgba(0,0,0,0.5)", marginTop: 4 }}>
                         {item.companyCodes && Object.entries(item.companyCodes).filter(([_, v]) => v).length > 0 ? (
                           Object.entries(item.companyCodes).filter(([_, v]) => v).map(([client, code]) => (
-                            <div key={client} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, padding: "4px 0", borderBottom: "1px solid #222", gap: 10 }}>
+                            <div key={client} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, padding: "4px 0", borderBottom: "1px solid rgba(255,255,255,0.06)", gap: 10 }}>
                               <span style={{ color: "#666" }}>{client}:</span>
                               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                                 <span style={{ color: "#e0e0e0", fontWeight: 700 }}>{code}</span>
@@ -2143,15 +2170,15 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                         ) : (
                           <div style={{ fontSize: 10, color: "#444", textAlign: "center", marginBottom: 8 }}>No client codes</div>
                         )}
-                        <div style={{ marginTop: 10, borderTop: "1px solid #333", paddingTop: 8 }}>
+                        <div style={{ marginTop: 10, borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 8 }}>
                           <div style={{ fontSize: 9, color: "#818cf8", marginBottom: 4, fontWeight: 700 }}>+ ADD CLIENT CODE</div>
-                          <select value={manualClient} onChange={(e) => setManualClient(e.target.value)} style={{ width: "100%", background: "#000", border: "1px solid #333", borderRadius: 4, fontSize: 10, color: "#fff", padding: 4, marginBottom: 4, outline: "none" }}>
+                          <select value={manualClient} onChange={(e) => setManualClient(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.07)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.13)", borderRadius: 4, fontSize: 10, color: "#e0e0e0", padding: 4, marginBottom: 4, outline: "none" }}>
                             <option value="">-- Select Company --</option>
                             {(companyMaster || []).map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
                           </select>
                           <div style={{ display: "flex", gap: 4 }}>
-                            <input placeholder="Code" value={manualCode} onChange={(e) => setManualCode(e.target.value)} style={{ flex: 1, background: "#000", border: "1px solid #333", borderRadius: 4, fontSize: 10, color: "#fff", padding: 4, outline: "none" }} />
-                            <button onClick={() => handleManualClientCodeSave(item)} style={{ background: "#4f46e5", border: "none", borderRadius: 4, color: "#fff", padding: "4px 8px", fontSize: 10, fontWeight: 700, cursor: "pointer" }}>SAVE</button>
+                            <input placeholder="Code" value={manualCode} onChange={(e) => setManualCode(e.target.value)} style={{ flex: 1, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.13)", borderRadius: 4, fontSize: 10, color: "#e0e0e0", padding: 4, outline: "none" }} />
+                            <button onClick={() => handleManualClientCodeSave(item)} style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 4, color: "#fff", padding: "4px 8px", fontSize: 10, fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>SAVE</button>
                           </div>
                         </div>
                       </div>
@@ -2165,13 +2192,13 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                 <div style={{ width: 160, flexShrink: 0, display: "flex", gap: 6, justifyContent: "flex-end" }}>
                   <button
                     onClick={() => handleEdit(item)}
-                    style={{ background: "#1e293b", color: "#64b5f6", border: "1px solid #334155", borderRadius: 6, padding: "4px 10px", fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}
+                    style={{ background: "rgba(255,255,255,0.05)", color: "#64b5f6", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "4px 10px", fontSize: 12, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => handleDelete(item)}
-                    style={{ background: "#450a0a", color: "#ef4444", border: "1px solid #7f1d1d", borderRadius: 6, padding: "4px 10px", fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}
+                    style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", color: "#fff", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, padding: "4px 10px", fontSize: 12, fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)", display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}
                   >
                     Delete
                   </button>

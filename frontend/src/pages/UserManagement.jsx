@@ -16,11 +16,13 @@ const ROLE_COLORS = {
 const inputStyle = {
   width: "100%",
   padding: "9px 12px",
-  border: "1px solid #2a2a2a",
+  border: "1px solid rgba(255,255,255,0.13)",
   borderRadius: 6,
   fontSize: 13,
   fontFamily: "inherit",
-  background: "#141414",
+  background: "rgba(255,255,255,0.07)",
+  backdropFilter: "blur(8px) saturate(180%)",
+  WebkitBackdropFilter: "blur(8px) saturate(180%)",
   color: "#e0e0e0",
   outline: "none",
   boxSizing: "border-box",
@@ -185,7 +187,7 @@ export default function UserManagement({ currentUser, toast, onRefreshUser, cate
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
         <div>
-          <h2 style={{ fontSize: 22, fontWeight: 700, color: "#e0e0e0", margin: 0 }}>
+          <h2 style={{ fontSize: 22, fontWeight: 500, color: "#e0e0e0", margin: 0 }}>
             👥 User Management
           </h2>
           <p style={{ fontSize: 13, color: "#777", margin: "4px 0 0" }}>
@@ -196,8 +198,8 @@ export default function UserManagement({ currentUser, toast, onRefreshUser, cate
           <button
             onClick={() => { setShowForm(true); setEditingId(null); setForm(emptyForm); }}
             style={{
-              padding: "10px 22px", background: "#FF9800", color: "#fff",
-              border: "none", borderRadius: 7, fontWeight: 700, fontSize: 13, cursor: "pointer",
+              padding: "10px 22px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", color: "#fff",
+              border: "1px solid rgba(255,255,255,0.18)", borderRadius: 7, fontWeight: 500, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
             }}
           >
             + Add User
@@ -208,10 +210,11 @@ export default function UserManagement({ currentUser, toast, onRefreshUser, cate
       {/* Form */}
       {showForm && (
         <div style={{
-          background: "#1a1a1a", border: "2px solid #FF980055",
+          background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)",
+          border: "2px solid #FF980055",
           borderRadius: 12, padding: "22px 24px", marginBottom: 20,
         }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: "#FF9800", letterSpacing: "1.5px", marginBottom: 18, textTransform: "uppercase" }}>
+          <div style={{ fontSize: 12, fontWeight: 500, color: "#FF9800", letterSpacing: "1.5px", marginBottom: 18, textTransform: "uppercase" }}>
             {editingId ? "Edit User" : "New User"}
           </div>
 
@@ -271,16 +274,16 @@ export default function UserManagement({ currentUser, toast, onRefreshUser, cate
           {/* Page permissions */}
           <div style={{ marginBottom: 16 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: "#666", letterSpacing: "0.5px" }}>
+              <span style={{ fontSize: 11, fontWeight: 500, color: "#666", letterSpacing: "0.5px" }}>
                 PAGE ACCESS ({form.allowedTabs?.length || 0}/{TABS.length})
               </span>
               <button onClick={handleAllAccess} style={{
                 padding: "3px 12px", background: "#4CAF5022", color: "#4CAF50",
-                border: "1px solid #4CAF5044", borderRadius: 20, fontSize: 11, fontWeight: 700, cursor: "pointer",
+                border: "1px solid #4CAF5044", borderRadius: 20, fontSize: 11, fontWeight: 500, cursor: "pointer",
               }}>All Access</button>
               <button onClick={handleNoneAccess} style={{
                 padding: "3px 12px", background: "#f4433622", color: "#f44336",
-                border: "1px solid #f4433644", borderRadius: 20, fontSize: 11, fontWeight: 700, cursor: "pointer",
+                border: "1px solid #f4433644", borderRadius: 20, fontSize: 11, fontWeight: 500, cursor: "pointer",
               }}>None</button>
             </div>
 
@@ -291,7 +294,7 @@ export default function UserManagement({ currentUser, toast, onRefreshUser, cate
                 return (
                   <div key={tab.id} style={{
                     display: "flex", alignItems: "center", justifyContent: "space-between",
-                    padding: "10px 14px", background: "#111", borderRadius: 8, border: "1px solid #222",
+                    padding: "10px 14px", background: "rgba(255,255,255,0.05)", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)",
                   }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                       <span style={{ fontSize: 16 }}>{tab.icon}</span>
@@ -307,7 +310,7 @@ export default function UserManagement({ currentUser, toast, onRefreshUser, cate
                           width: 18, height: 18,
                           border: `2px solid ${hasView ? "#4CAF50" : "#444"}`,
                           borderRadius: 4,
-                          background: hasView ? "#4CAF5022" : "#000",
+                          background: hasView ? "#4CAF5022" : "rgba(255,255,255,0.05)",
                           display: "flex", alignItems: "center", justifyContent: "center",
                         }}>
                           {hasView && <span style={{ fontSize: 11, color: "#4CAF50" }}>✓</span>}
@@ -321,7 +324,7 @@ export default function UserManagement({ currentUser, toast, onRefreshUser, cate
                           width: 18, height: 18,
                           border: `2px solid ${hasEdit ? "#FF9800" : "#444"}`,
                           borderRadius: 4,
-                          background: hasEdit ? "#FF980022" : "#000",
+                          background: hasEdit ? "#FF980022" : "rgba(255,255,255,0.05)",
                           display: "flex", alignItems: "center", justifyContent: "center",
                         }}>
                           {hasEdit && <span style={{ fontSize: 11, color: "#FF9800" }}>✓</span>}
@@ -338,14 +341,14 @@ export default function UserManagement({ currentUser, toast, onRefreshUser, cate
           {/* Actions */}
           <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
             <button onClick={handleSubmit} style={{
-              padding: "10px 24px", background: "#4CAF50", color: "#fff",
-              border: "none", borderRadius: 7, fontWeight: 700, fontSize: 13, cursor: "pointer",
+              padding: "10px 24px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", color: "#fff",
+              border: "1px solid rgba(255,255,255,0.18)", borderRadius: 7, fontWeight: 500, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
             }}>
               {editingId ? "✅ Update User" : "✓ Create User"}
             </button>
             <button onClick={() => { setShowForm(false); setEditingId(null); setForm(emptyForm); }} style={{
-              padding: "10px 20px", background: "#1e1e1e", color: "#aaa",
-              border: "1px solid #333", borderRadius: 7, fontWeight: 700, fontSize: 13, cursor: "pointer",
+              padding: "10px 20px", background: "rgba(255,255,255,0.05)", color: "#aaa",
+              border: "1px solid rgba(255,255,255,0.1)", borderRadius: 7, fontWeight: 500, fontSize: 13, cursor: "pointer",
             }}>
               Cancel
             </button>
@@ -374,29 +377,29 @@ export default function UserManagement({ currentUser, toast, onRefreshUser, cate
 
           return (
             <div key={user._id} style={{
-              background: "#1a1a1a", border: "1px solid #2a2a2a", borderRadius: 10,
+              background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10,
               padding: "16px 20px", display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap",
             }}>
               <div style={{
                 width: 42, height: 42, borderRadius: "50%",
                 background: roleColor + "33", border: `2px solid ${roleColor}55`,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 15, fontWeight: 700, color: roleColor, flexShrink: 0,
+                fontSize: 15, fontWeight: 500, color: roleColor, flexShrink: 0,
               }}>{initials}</div>
 
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                  <span style={{ fontWeight: 700, fontSize: 14, color: "#e0e0e0" }}>
+                  <span style={{ fontWeight: 500, fontSize: 14, color: "#e0e0e0" }}>
                     {user.name || user.username}
                   </span>
                   <span style={{
-                    padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700,
+                    padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 500,
                     background: roleColor + "22", color: roleColor,
                   }}>{user.role}</span>
                   <span style={{ fontSize: 12, color: "#555" }}>{modCount} pages</span>
                   {!user.isActive && (
                     <span style={{
-                      padding: "2px 8px", borderRadius: 20, fontSize: 11, fontWeight: 700,
+                      padding: "2px 8px", borderRadius: 20, fontSize: 11, fontWeight: 500,
                       background: "#f4433622", color: "#f44336",
                     }}>Inactive</span>
                   )}
@@ -407,19 +410,19 @@ export default function UserManagement({ currentUser, toast, onRefreshUser, cate
               <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
                 <button onClick={() => handleEdit(user)} style={{
                   padding: "7px 18px", background: "#1976D222", color: "#64B5F6",
-                  border: "1px solid #1976D244", borderRadius: 6, fontWeight: 700, fontSize: 12, cursor: "pointer",
+                  border: "1px solid #1976D244", borderRadius: 6, fontWeight: 500, fontSize: 12, cursor: "pointer",
                 }}>Edit</button>
                 <button onClick={() => handleToggleStatus(user._id, user.isActive)} style={{
                   padding: "7px 18px",
                   background: user.isActive ? "#f4433611" : "#4CAF5011",
                   color: user.isActive ? "#f44336" : "#4CAF50",
                   border: `1px solid ${user.isActive ? "#f4433633" : "#4CAF5033"}`,
-                  borderRadius: 6, fontWeight: 700, fontSize: 12, cursor: "pointer",
+                  borderRadius: 6, fontWeight: 500, fontSize: 12, cursor: "pointer",
                 }}>{user.isActive ? "Deactivate" : "Activate"}</button>
                 <button onClick={() => handleDelete(user._id)} style={{
-                  background: "#450a0a", color: "#ef4444", border: "1px solid #7f1d1d",
-                  borderRadius: 6, padding: "4px 14px", fontSize: 12, fontWeight: 700,
-                  cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
+                  background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", color: "#fff", border: "1px solid rgba(255,255,255,0.18)",
+                  borderRadius: 6, padding: "4px 14px", fontSize: 12, fontWeight: 500,
+                  cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)", display: "flex", alignItems: "center", gap: 6,
                 }}>🗑️ Delete</button>
               </div>
             </div>

@@ -127,7 +127,7 @@ export function DatePicker({ value, onChange, style = {} }) {
             >
               ‹
             </button>
-            <span style={{ fontWeight: 700, fontSize: 13, color: COLORS.text }}>
+            <span style={{ fontWeight: 500, fontSize: 13, color: COLORS.text }}>
               {MONTHS[viewDate.month]} {viewDate.year}
             </span>
             <button
@@ -161,7 +161,7 @@ export function DatePicker({ value, onChange, style = {} }) {
                   textAlign: "center",
                   fontSize: 10,
                   color: COLORS.muted,
-                  fontWeight: 700,
+                  fontWeight: 500,
                   padding: "2px 0"
                 }}
               >

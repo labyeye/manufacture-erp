@@ -123,7 +123,7 @@ export default function SizeMaster({ toast }) {
           style={{
             padding: '9px 20px',
             borderRadius: '6px 6px 0 0',
-            fontWeight: 700,
+            fontWeight: 500,
             fontSize: 13,
             border: `1px solid ${tab === 'list' ? C.blue : C.border}`,
             background: tab === 'list' ? C.card : 'transparent',
@@ -139,7 +139,7 @@ export default function SizeMaster({ toast }) {
           style={{
             padding: '9px 20px',
             borderRadius: '6px 6px 0 0',
-            fontWeight: 700,
+            fontWeight: 500,
             fontSize: 13,
             border: `1px solid ${tab === 'new' ? C.blue : C.border}`,
             background: tab === 'new' ? C.card : 'transparent',
@@ -225,7 +225,7 @@ export default function SizeMaster({ toast }) {
                         border: 'none',
                         borderRadius: 4,
                         padding: '4px 8px',
-                        fontWeight: 700,
+                        fontWeight: 500,
                         fontSize: 11,
                         cursor: 'pointer',
                       }}
@@ -256,7 +256,7 @@ export default function SizeMaster({ toast }) {
           <h3
             style={{
               fontSize: 14,
-              fontWeight: 700,
+              fontWeight: 500,
               color: C.blue,
               marginBottom: 16,
             }}
@@ -329,7 +329,7 @@ export default function SizeMaster({ toast }) {
                 border: `1px solid ${C.border}`,
                 background: C.inputBg,
                 color: C.text,
-                fontWeight: 700,
+                fontWeight: 500,
                 fontSize: 13,
                 cursor: 'pointer',
               }}

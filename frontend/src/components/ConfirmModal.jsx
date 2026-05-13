@@ -64,7 +64,7 @@ const ConfirmModal = ({
             style={{
               margin: 0,
               fontSize: 17,
-              fontWeight: 700,
+              fontWeight: 500,
               color: color,
               display: "flex",
               alignItems: "center",

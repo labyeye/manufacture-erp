@@ -15,11 +15,13 @@ const ITEM_TABS = [
 
 const inputStyle = {
   padding: "9px 12px",
-  border: "1px solid #2a2a2a",
+  border: "1px solid rgba(255,255,255,0.13)",
   borderRadius: 6,
   fontSize: 13,
   fontFamily: "inherit",
-  background: "#141414",
+  background: "rgba(255,255,255,0.07)",
+  backdropFilter: "blur(8px) saturate(180%)",
+  WebkitBackdropFilter: "blur(8px) saturate(180%)",
   color: "#e0e0e0",
   outline: "none",
   boxSizing: "border-box",
@@ -387,7 +389,7 @@ export default function CategoryMaster({ toast }) {
       {}
       <div style={{ marginBottom: 20 }}>
         <h2
-          style={{ fontSize: 22, fontWeight: 700, color: "#e0e0e0", margin: 0 }}
+          style={{ fontSize: 22, fontWeight: 500, color: "#e0e0e0", margin: 0 }}
         >
           📂 Category Master
         </h2>
@@ -408,7 +410,7 @@ export default function CategoryMaster({ toast }) {
               padding: "8px 20px",
               borderRadius: 7,
               fontSize: 13,
-              fontWeight: 700,
+              fontWeight: 500,
               cursor: "pointer",
               background: "transparent",
               color: activeTab === tab.key ? "#e0e0e0" : "#555",
@@ -433,8 +435,10 @@ export default function CategoryMaster({ toast }) {
         {}
         <div
           style={{
-            background: "#1a1a1a",
-            border: "1px solid #2a2a2a",
+            background: "rgba(255,255,255,0.05)",
+            backdropFilter: "blur(12px) saturate(180%)",
+            WebkitBackdropFilter: "blur(12px) saturate(180%)",
+            border: "1px solid rgba(255,255,255,0.1)",
             borderRadius: "10px 0 0 10px",
             padding: "16px",
             borderRight: "none",
@@ -452,7 +456,7 @@ export default function CategoryMaster({ toast }) {
             <span
               style={{
                 fontSize: 11,
-                fontWeight: 700,
+                fontWeight: 500,
                 color: "#2196F3",
                 letterSpacing: "1px",
                 textTransform: "uppercase",
@@ -487,7 +491,7 @@ export default function CategoryMaster({ toast }) {
                 color: "#fff",
                 border: "none",
                 borderRadius: 6,
-                fontWeight: 700,
+                fontWeight: 500,
                 fontSize: 16,
                 cursor: "pointer",
                 lineHeight: 1,
@@ -636,8 +640,10 @@ export default function CategoryMaster({ toast }) {
         {}
         <div
           style={{
-            background: "#161616",
-            border: "1px solid #2a2a2a",
+            background: "rgba(255,255,255,0.04)",
+            backdropFilter: "blur(12px) saturate(180%)",
+            WebkitBackdropFilter: "blur(12px) saturate(180%)",
+            border: "1px solid rgba(255,255,255,0.1)",
             borderRadius: "0 10px 10px 0",
             padding: "20px 24px",
           }}
@@ -670,7 +676,7 @@ export default function CategoryMaster({ toast }) {
                   <h3
                     style={{
                       fontSize: 18,
-                      fontWeight: 700,
+                      fontWeight: 500,
                       color: "#e0e0e0",
                       margin: 0,
                     }}
@@ -686,7 +692,7 @@ export default function CategoryMaster({ toast }) {
                     padding: "4px 12px",
                     borderRadius: 6,
                     fontSize: 11,
-                    fontWeight: 700,
+                    fontWeight: 500,
                     background: "#2196F322",
                     color: "#64B5F6",
                     border: "1px solid #2196F344",
@@ -713,7 +719,7 @@ export default function CategoryMaster({ toast }) {
                     color: "#fff",
                     border: "none",
                     borderRadius: 6,
-                    fontWeight: 700,
+                    fontWeight: 500,
                     fontSize: 13,
                     cursor: "pointer",
                     whiteSpace: "nowrap",
@@ -740,8 +746,8 @@ export default function CategoryMaster({ toast }) {
                           alignItems: "center",
                           gap: 6,
                           padding: isEditing ? "4px 8px" : "6px 12px",
-                          background: "#222",
-                          border: "1px solid #333",
+                          background: "rgba(255,255,255,0.07)",
+                          border: "1px solid rgba(255,255,255,0.1)",
                           borderRadius: 6,
                           fontSize: 13,
                           color: "#ccc",

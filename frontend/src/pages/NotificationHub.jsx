@@ -195,7 +195,7 @@ To configure: go to Notification Hub in your ERP.
 
       {}
       <div style={{ background: "#111", border: "1px solid #2a2a2a", borderRadius: 10, padding: 20, marginBottom: 20 }}>
-        <div style={{ fontWeight: 700, color: "#facc15", marginBottom: 14, fontSize: 13 }}>Configuration</div>
+        <div style={{ fontWeight: 500, color: "#facc15", marginBottom: 14, fontSize: 13 }}>Configuration</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginBottom: 14 }}>
           <div>
             <label style={lbl}>Owner / Recipient Name</label>
@@ -207,13 +207,13 @@ To configure: go to Notification Hub in your ERP.
           </div>
         </div>
         <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={saveConfig} style={{ padding: "8px 18px", background: "#3b82f6", border: "none", borderRadius: 6, color: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>Save Config</button>
+          <button onClick={saveConfig} style={{ padding: "8px 18px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, fontSize: 12, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>Save Config</button>
           {recipientEmail && (
-            <a href={mailtoLink} style={{ padding: "8px 18px", background: "#22c55e22", border: "1px solid #22c55e44", borderRadius: 6, color: "#22c55e", fontWeight: 700, fontSize: 12, cursor: "pointer", textDecoration: "none" }}>
+            <a href={mailtoLink} style={{ padding: "8px 18px", background: "#22c55e22", border: "1px solid #22c55e44", borderRadius: 6, color: "#22c55e", fontWeight: 500, fontSize: 12, cursor: "pointer", textDecoration: "none" }}>
               Open in Mail App
             </a>
           )}
-          <button onClick={copyToClipboard} style={{ padding: "8px 18px", background: copied ? "#22c55e22" : "#ffffff11", border: `1px solid ${copied ? "#22c55e" : "#2a2a2a"}`, borderRadius: 6, color: copied ? "#22c55e" : "#888", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
+          <button onClick={copyToClipboard} style={{ padding: "8px 18px", background: copied ? "#22c55e22" : "#ffffff11", border: `1px solid ${copied ? "#22c55e" : "#2a2a2a"}`, borderRadius: 6, color: copied ? "#22c55e" : "#888", fontWeight: 500, fontSize: 12, cursor: "pointer" }}>
             {copied ? "Copied!" : "Copy Text"}
           </button>
         </div>
@@ -226,7 +226,7 @@ To configure: go to Notification Hub in your ERP.
 
       {}
       <div style={{ background: "#0a0a0a", border: "1px solid #2a2a2a", borderRadius: 10, padding: 24 }}>
-        <div style={{ fontWeight: 700, color: "#888", marginBottom: 14, fontSize: 12, textTransform: "uppercase" }}>Email Preview</div>
+        <div style={{ fontWeight: 500, color: "#888", marginBottom: 14, fontSize: 12, textTransform: "uppercase" }}>Email Preview</div>
         <pre style={{ fontFamily: "monospace", fontSize: 12, color: "#d1d5db", lineHeight: 1.7, margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
           {emailText}
         </pre>
@@ -354,7 +354,7 @@ Have a productive day!
 
       {}
       <div style={{ background: "#111", border: "1px solid #2a2a2a", borderRadius: 10, padding: 20, marginBottom: 20 }}>
-        <div style={{ fontWeight: 700, color: "#facc15", marginBottom: 14, fontSize: 13 }}>Company Settings</div>
+        <div style={{ fontWeight: 500, color: "#facc15", marginBottom: 14, fontSize: 13 }}>Company Settings</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginBottom: 10 }}>
           <div>
             <label style={lbl}>Company Name</label>
@@ -371,9 +371,9 @@ Have a productive day!
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginBottom: 20 }}>
         {TEMPLATES.map((t) => (
           <button key={t.id} onClick={() => { setActiveTemplate(t.id); setPreviewMsg(""); }}
-            style={{ padding: 16, background: activeTemplate === t.id ? "#25d36622" : "#111", border: `1px solid ${activeTemplate === t.id ? "#25d36644" : "#2a2a2a"}`, borderRadius: 10, cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}>
+            style={{ padding: 16, background: activeTemplate === t.id ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.05)", border: `1px solid ${activeTemplate === t.id ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.1)"}`, borderRadius: 10, cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}>
             <i className={t.icon} style={{ fontSize: 20, marginBottom: 6, display: 'block' }} />
-            <div style={{ fontWeight: 700, fontSize: 13, color: activeTemplate === t.id ? "#25d366" : "#e0e0e0", marginBottom: 4 }}>{t.label}</div>
+            <div style={{ fontWeight: 500, fontSize: 13, color: activeTemplate === t.id ? "#fff" : "#e0e0e0", marginBottom: 4 }}>{t.label}</div>
             <div style={{ fontSize: 11, color: "#666" }}>{t.desc}</div>
           </button>
         ))}
@@ -399,7 +399,7 @@ Have a productive day!
                 <label style={lbl}>Client Phone</label>
                 <input value={customPhone} onChange={(e) => setCustomPhone(e.target.value)} placeholder="10-digit" style={inp} />
               </div>
-              <button onClick={generateDispatchMsg} style={{ padding: "9px 18px", background: "#25d36622", border: "1px solid #25d36644", color: "#25d366", borderRadius: 6, fontWeight: 700, cursor: "pointer" }}>
+              <button onClick={generateDispatchMsg} style={{ padding: "9px 18px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
                 Generate
               </button>
             </div>
@@ -423,7 +423,7 @@ Have a productive day!
                 <label style={lbl}>Vendor Phone</label>
                 <input value={customPhone} onChange={(e) => setCustomPhone(e.target.value)} placeholder="10-digit" style={inp} />
               </div>
-              <button onClick={generatePOAckMsg} style={{ padding: "9px 18px", background: "#25d36622", border: "1px solid #25d36644", color: "#25d366", borderRadius: 6, fontWeight: 700, cursor: "pointer" }}>
+              <button onClick={generatePOAckMsg} style={{ padding: "9px 18px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
                 Generate
               </button>
             </div>
@@ -437,7 +437,7 @@ Have a productive day!
                 <label style={lbl}>Owner Phone</label>
                 <input value={customPhone || settings.ownerPhone || ""} onChange={(e) => setCustomPhone(e.target.value)} placeholder="10-digit" style={inp} />
               </div>
-              <button onClick={generateDailySummary} style={{ padding: "9px 18px", background: "#25d36622", border: "1px solid #25d36644", color: "#25d366", borderRadius: 6, fontWeight: 700, cursor: "pointer" }}>
+              <button onClick={generateDailySummary} style={{ padding: "9px 18px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
                 Generate
               </button>
             </div>
@@ -447,7 +447,7 @@ Have a productive day!
         {}
         {previewMsg && (
           <div style={{ marginTop: 10 }}>
-            <div style={{ fontSize: 11, color: "#888", fontWeight: 700, textTransform: "uppercase", marginBottom: 8 }}>Message Preview</div>
+            <div style={{ fontSize: 11, color: "#888", fontWeight: 500, textTransform: "uppercase", marginBottom: 8 }}>Message Preview</div>
             <div style={{ background: "#0a2d1a", border: "1px solid #25d36633", borderRadius: 10, padding: 16, marginBottom: 14 }}>
               <pre style={{ fontFamily: "inherit", fontSize: 13, color: "#dcfce7", lineHeight: 1.6, margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
                 {previewMsg}
@@ -459,14 +459,14 @@ Have a productive day!
                   href={waLink(customPhone, previewMsg)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ padding: "10px 20px", background: "#25d366", border: "none", borderRadius: 6, color: "#000", fontWeight: 800, cursor: "pointer", textDecoration: "none", display: "flex", alignItems: "center", gap: 6 }}
+                  style={{ padding: "10px 20px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 800, cursor: "pointer", textDecoration: "none", display: "flex", alignItems: "center", gap: 6, boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
                 >
                   Send via WhatsApp Web
                 </a>
               )}
               <button
                 onClick={() => { navigator.clipboard.writeText(previewMsg); toast?.("Message copied", "success"); }}
-                style={{ padding: "10px 16px", background: "#ffffff11", border: "1px solid #2a2a2a", borderRadius: 6, color: "#888", fontWeight: 700, cursor: "pointer" }}
+                style={{ padding: "10px 16px", background: "#ffffff11", border: "1px solid #2a2a2a", borderRadius: 6, color: "#888", fontWeight: 500, cursor: "pointer" }}
               >
                 Copy Text
               </button>

@@ -19,11 +19,13 @@ const ACCENT_BUY  = "#60a5fa";
 
 const inputStyle = {
   padding: "9px 12px",
-  border: "1px solid #2a2a2a",
+  border: "1px solid rgba(255,255,255,0.13)",
   borderRadius: 6,
   fontSize: 13,
   fontFamily: "inherit",
-  background: "#141414",
+  background: "rgba(255,255,255,0.07)",
+  backdropFilter: "blur(8px) saturate(180%)",
+  WebkitBackdropFilter: "blur(8px) saturate(180%)",
   color: "#e0e0e0",
   outline: "none",
   boxSizing: "border-box",
@@ -215,7 +217,7 @@ function SellingSection({ toast }) {
       {/* selector row */}
       <div style={{ display: "flex", gap: 12, alignItems: "flex-end", marginBottom: 20, flexWrap: "wrap" }}>
         <div style={{ flex: 1, minWidth: 200, maxWidth: 300 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#555", marginBottom: 5, letterSpacing: "0.5px" }}>SELECT CLIENT</div>
+          <div style={{ fontSize: 11, fontWeight: 500, color: "#555", marginBottom: 5, letterSpacing: "0.5px" }}>SELECT CLIENT</div>
           <select
             value={selectedClient}
             onChange={(e) => { setSelectedClient(e.target.value); setSearch(""); }}
@@ -228,7 +230,7 @@ function SellingSection({ toast }) {
 
         {selectedClient && (
           <div style={{ flex: 1, minWidth: 180, maxWidth: 260 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#555", marginBottom: 5, letterSpacing: "0.5px" }}>SEARCH ITEM</div>
+            <div style={{ fontSize: 11, fontWeight: 500, color: "#555", marginBottom: 5, letterSpacing: "0.5px" }}>SEARCH ITEM</div>
             <input
               style={{ ...inputStyle, width: "100%" }}
               placeholder="Item code or name…"
@@ -259,7 +261,7 @@ function SellingSection({ toast }) {
       {/* summary pill */}
       {selectedClient && (
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-          <span style={{ padding: "4px 14px", borderRadius: 20, background: "#4ade8022", color: ACCENT_SELL, fontSize: 12, fontWeight: 700, border: "1px solid #4ade8044" }}>
+          <span style={{ padding: "4px 14px", borderRadius: 20, background: "#4ade8022", color: ACCENT_SELL, fontSize: 12, fontWeight: 500, border: "1px solid #4ade8044" }}>
             {selectedClient}
           </span>
           <span style={{ fontSize: 12, color: "#555" }}>{filtered.length} item{filtered.length !== 1 ? "s" : ""}</span>
@@ -278,10 +280,10 @@ function SellingSection({ toast }) {
           loading={loading}
           headers={["ITEM CODE", "ITEM NAME", "COMPANY", "UNIT PRICE", "UOM", "EFFECTIVE FROM", "STATUS", "ACTIONS"]}
           data={filtered.map((r) => [
-            <span style={{ fontWeight: 700, fontFamily: "monospace", color: ACCENT_SELL }}>{r.itemCode}</span>,
+            <span style={{ fontWeight: 500, fontFamily: "monospace", color: ACCENT_SELL }}>{r.itemCode}</span>,
             r.itemName || "-",
             r.companyName || "-",
-            <span style={{ fontWeight: 700, color: ACCENT_SELL }}>₹ {Number(r.unitPrice).toLocaleString()}</span>,
+            <span style={{ fontWeight: 500, color: ACCENT_SELL }}>₹ {Number(r.unitPrice).toLocaleString()}</span>,
             r.uom,
             moment(r.effectiveFrom).format("DD/MM/YYYY"),
             <Badge text={r.status} color={r.status === "Active" ? C.green : C.muted} />,
@@ -486,7 +488,7 @@ function PurchaseSection({ toast }) {
       {/* selector row */}
       <div style={{ display: "flex", gap: 12, alignItems: "flex-end", marginBottom: 20, flexWrap: "wrap" }}>
         <div style={{ flex: 1, minWidth: 200, maxWidth: 300 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#555", marginBottom: 5, letterSpacing: "0.5px" }}>SELECT VENDOR</div>
+          <div style={{ fontSize: 11, fontWeight: 500, color: "#555", marginBottom: 5, letterSpacing: "0.5px" }}>SELECT VENDOR</div>
           <select
             value={selectedVendor}
             onChange={(e) => { setSelectedVendor(e.target.value); setSearch(""); }}
@@ -499,7 +501,7 @@ function PurchaseSection({ toast }) {
 
         {selectedVendor && (
           <div style={{ flex: 1, minWidth: 180, maxWidth: 260 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#555", marginBottom: 5, letterSpacing: "0.5px" }}>SEARCH ITEM</div>
+            <div style={{ fontSize: 11, fontWeight: 500, color: "#555", marginBottom: 5, letterSpacing: "0.5px" }}>SEARCH ITEM</div>
             <input
               style={{ ...inputStyle, width: "100%" }}
               placeholder="Item code or name…"
@@ -529,7 +531,7 @@ function PurchaseSection({ toast }) {
       {/* summary pill */}
       {selectedVendor && (
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-          <span style={{ padding: "4px 14px", borderRadius: 20, background: "#60a5fa22", color: ACCENT_BUY, fontSize: 12, fontWeight: 700, border: "1px solid #60a5fa44" }}>
+          <span style={{ padding: "4px 14px", borderRadius: 20, background: "#60a5fa22", color: ACCENT_BUY, fontSize: 12, fontWeight: 500, border: "1px solid #60a5fa44" }}>
             {selectedVendor}
           </span>
           <span style={{ fontSize: 12, color: "#555" }}>{filtered.length} item{filtered.length !== 1 ? "s" : ""}</span>
@@ -542,10 +544,10 @@ function PurchaseSection({ toast }) {
           loading={loading}
           headers={["ITEM CODE", "ITEM NAME", "VENDOR", "UNIT PRICE", "UOM", "MOQ", "LEAD TIME", "EFFECTIVE FROM", "STATUS", "ACTIONS"]}
           data={filtered.map((r) => [
-            <span style={{ fontWeight: 700, fontFamily: "monospace", color: ACCENT_BUY }}>{r.itemCode}</span>,
+            <span style={{ fontWeight: 500, fontFamily: "monospace", color: ACCENT_BUY }}>{r.itemCode}</span>,
             r.itemName || "-",
             r.vendorName || "-",
-            <span style={{ fontWeight: 700, color: ACCENT_BUY }}>₹ {Number(r.unitPrice).toLocaleString()}</span>,
+            <span style={{ fontWeight: 500, color: ACCENT_BUY }}>₹ {Number(r.unitPrice).toLocaleString()}</span>,
             r.uom,
             r.moq ?? 1,
             r.leadTimeDays ? `${r.leadTimeDays} days` : "-",
@@ -606,7 +608,7 @@ export default function PriceMaster({ toast }) {
     <div className="fade">
       <SectionTitle icon="💲" title="Price List Master" sub="Filter by client or vendor to view and manage their prices" />
 
-      <div style={{ display: "flex", marginBottom: 24, borderBottom: "1px solid #2a2a2a" }}>
+      <div style={{ display: "flex", marginBottom: 24, borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
         {SUBTABS.map((t) => (
           <button
             key={t.id}

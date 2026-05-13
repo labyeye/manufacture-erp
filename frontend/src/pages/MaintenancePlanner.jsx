@@ -184,7 +184,7 @@ function PMSchedulerTab({ machineMaster, toast }) {
         const m = machines.find((x) => (x._id || x.id) === editMachineId);
         return (
           <div style={{ background: "#111", border: "1px solid #3b82f633", borderRadius: 10, padding: 20, marginBottom: 16 }}>
-            <div style={{ fontWeight: 700, color: "#60a5fa", marginBottom: 14 }}>Configure PM — {m?.name}</div>
+            <div style={{ fontWeight: 500, color: "#60a5fa", marginBottom: 14 }}>Configure PM — {m?.name}</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
               <div>
                 <label style={lbl}>PM Interval</label>
@@ -202,8 +202,8 @@ function PMSchedulerTab({ machineMaster, toast }) {
               </div>
             </div>
             <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
-              <button onClick={saveInterval} style={{ padding: "9px 20px", background: "#3b82f6", border: "none", borderRadius: 6, color: "#fff", fontWeight: 700, cursor: "pointer" }}>Save Schedule</button>
-              <button onClick={() => setEditMachineId(null)} style={{ padding: "9px 14px", background: "transparent", border: "1px solid #2a2a2a", borderRadius: 6, color: "#888", cursor: "pointer" }}>Cancel</button>
+              <button onClick={saveInterval} style={{ padding: "9px 20px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>Save Schedule</button>
+              <button onClick={() => setEditMachineId(null)} style={{ padding: "9px 14px", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, color: "#aaa", cursor: "pointer" }}>Cancel</button>
             </div>
           </div>
         );
@@ -215,13 +215,12 @@ function PMSchedulerTab({ machineMaster, toast }) {
           <thead>
             <tr>
               {["Machine", "Type", "Interval", "Last PM", "Next PM", "Status", "PM Count", ""].map((h) => (
-                <th key={h} style={{ textAlign: "left", padding: "10px 12px", color: "#666", fontWeight: 700, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.05em", borderBottom: "1px solid #2a2a2a", background: "#0a0a0a", whiteSpace: "nowrap" }}>{h}</th>
+                <th key={h} style={{ textAlign: "left", padding: "10px 12px", color: "#666", fontWeight: 500, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.05em", borderBottom: "1px solid #2a2a2a", background: "#0a0a0a", whiteSpace: "nowrap" }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {schedule.map((s) => {
-              const borderLeft = s.isOverdue ? "3px solid #ef4444" : s.isDueSoon ? "3px solid #f59e0b" : "3px solid transparent";
               const statusColor = s.isOverdue ? "#ef4444" : s.isDueSoon ? "#f59e0b" : s.nextPMDate ? "#22c55e" : "#6b7280";
               const statusLabel = !s.intervalDays ? "Not configured"
                 : s.isOverdue ? `${Math.abs(s.daysUntil)}d overdue`
@@ -229,7 +228,7 @@ function PMSchedulerTab({ machineMaster, toast }) {
                 : s.nextPMDate ? `${s.daysUntil}d`
                 : "—";
               return (
-                <tr key={s.mid} style={{ borderBottom: "1px solid #1a1a1a", borderLeft }}>
+                <tr key={s.mid} style={{ borderBottom: "1px solid #1a1a1a" }}>
                   <td style={{ padding: "12px 12px", fontWeight: 600 }}>
                     {s.machine.name}
                     <div style={{ fontSize: 10, color: "#555" }}>{s.machine.type}</div>
@@ -256,7 +255,7 @@ function PMSchedulerTab({ machineMaster, toast }) {
                         <button
                           onClick={() => createPMWorkOrder(s)}
                           disabled={creating[s.mid]}
-                          style={{ padding: "4px 10px", background: "#f59e0b22", border: "1px solid #f59e0b44", color: "#f59e0b", borderRadius: 4, fontSize: 11, fontWeight: 700, cursor: "pointer" }}
+                          style={{ padding: "4px 10px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 4, color: "#fff", fontSize: 11, fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
                         >
                           {creating[s.mid] ? "..." : "⚡ Create WO"}
                         </button>
@@ -267,7 +266,7 @@ function PMSchedulerTab({ machineMaster, toast }) {
                           setEditForm({ intervalDays: cfg.intervalDays || 30, lastPMDate: s.lastPMDate || today(), notes: cfg.notes || "" });
                           setEditMachineId(s.mid);
                         }}
-                        style={{ padding: "4px 10px", border: "1px solid #2a2a2a", background: "transparent", color: "#888", borderRadius: 4, fontSize: 11, cursor: "pointer" }}
+                        style={{ padding: "4px 10px", border: "1px solid rgba(255,255,255,0.15)", background: "transparent", color: "#aaa", borderRadius: 4, fontSize: 11, cursor: "pointer" }}
                       >
                         Configure
                       </button>
@@ -414,11 +413,14 @@ function SparePartsTab({ machineMaster, itemMasterFG = [], categoryMaster = [], 
               onClick={() => { if (v !== "form") { setView(v); } else { setForm(blankForm); setEditId(null); setView("form"); } }}
               style={{
                 padding: "7px 16px",
-                background: view === v ? "#3b82f6" : "transparent",
-                border: "1px solid #3b82f6",
+                background: view === v ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.05)",
+                backdropFilter: "blur(12px) saturate(180%)",
+                WebkitBackdropFilter: "blur(12px) saturate(180%)",
+                border: `1px solid ${view === v ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.18)"}`,
                 borderRadius: 6,
-                color: view === v ? "#fff" : "#3b82f6",
-                fontWeight: 700, fontSize: 12, cursor: "pointer",
+                color: "#fff",
+                fontWeight: 500, fontSize: 12, cursor: "pointer",
+                boxShadow: view === v ? "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" : "none",
               }}
             >
               {v === "list" ? "📋 Inventory" : v === "form" ? (editId ? "✏️ Edit" : "+ Add Part") : "📊 Usage History"}
@@ -429,7 +431,7 @@ function SparePartsTab({ machineMaster, itemMasterFG = [], categoryMaster = [], 
 
       {view === "form" && (
         <div style={{ background: "#111", border: "1px solid #2a2a2a", borderRadius: 10, padding: 20, marginBottom: 16 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#facc15", marginBottom: 18 }}>{editId ? "Edit Part" : "Add Spare Part"}</div>
+          <div style={{ fontSize: 14, fontWeight: 500, color: "#facc15", marginBottom: 18 }}>{editId ? "Edit Part" : "Add Spare Part"}</div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14, marginBottom: 16 }}>
             <div>
               <label style={lbl}>Category {machineSpareCategories.length > 0 ? "(from Master)" : ""}</label>
@@ -496,8 +498,8 @@ function SparePartsTab({ machineMaster, itemMasterFG = [], categoryMaster = [], 
             </div>
           </div>
           <div style={{ display: "flex", gap: 10 }}>
-            <button onClick={handleSubmit} style={{ padding: "9px 22px", background: "#3b82f6", border: "none", borderRadius: 6, color: "#fff", fontWeight: 700, cursor: "pointer" }}>{editId ? "Update" : "Add Part"}</button>
-            <button onClick={() => { setForm(blankForm); setEditId(null); setView("list"); }} style={{ padding: "9px 14px", background: "transparent", border: "1px solid #2a2a2a", borderRadius: 6, color: "#888", cursor: "pointer" }}>Cancel</button>
+            <button onClick={handleSubmit} style={{ padding: "9px 22px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>{editId ? "Update" : "Add Part"}</button>
+            <button onClick={() => { setForm(blankForm); setEditId(null); setView("list"); }} style={{ padding: "9px 14px", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, color: "#aaa", cursor: "pointer" }}>Cancel</button>
           </div>
         </div>
       )}
@@ -512,7 +514,7 @@ function SparePartsTab({ machineMaster, itemMasterFG = [], categoryMaster = [], 
               <thead>
                 <tr>
                   {["Category", "Part", "Machine", "Stock", "Reorder At", "Status", "Location", "Cost", ""].map((h) => (
-                    <th key={h} style={{ textAlign: "left", padding: "10px 12px", color: "#666", fontWeight: 700, fontSize: 10, textTransform: "uppercase", borderBottom: "1px solid #2a2a2a", background: "#0a0a0a", whiteSpace: "nowrap" }}>{h}</th>
+                    <th key={h} style={{ textAlign: "left", padding: "10px 12px", color: "#666", fontWeight: 500, fontSize: 10, textTransform: "uppercase", borderBottom: "1px solid #2a2a2a", background: "#0a0a0a", whiteSpace: "nowrap" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -530,7 +532,7 @@ function SparePartsTab({ machineMaster, itemMasterFG = [], categoryMaster = [], 
                   const statusCol = isOut ? "#ef4444" : isLow ? "#f59e0b" : "#22c55e";
                   const statusLabel = isOut ? "OUT OF STOCK" : isLow ? "LOW — reorder" : "OK";
                   return (
-                    <tr key={p.id} style={{ borderBottom: "1px solid #1a1a1a", borderLeft: isOut ? "3px solid #ef4444" : isLow ? "3px solid #f59e0b" : "3px solid transparent" }}>
+                    <tr key={p.id} style={{ borderBottom: "1px solid #1a1a1a" }}>
                       <td style={{ padding: "10px 12px", fontSize: 11, color: "#888" }}>{p.category || "—"}</td>
                       <td style={{ padding: "10px 12px" }}>
                         <div style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
@@ -584,7 +586,7 @@ function SparePartsTab({ machineMaster, itemMasterFG = [], categoryMaster = [], 
       {view === "usage" && (
         <div>
           <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#888" }}>Spare Part Usage History</div>
+            <div style={{ fontSize: 14, fontWeight: 500, color: "#888" }}>Spare Part Usage History</div>
             <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
               <div>
                 <label style={{ ...lbl, display: "inline-block", marginRight: 6 }}>From</label>
@@ -602,7 +604,7 @@ function SparePartsTab({ machineMaster, itemMasterFG = [], categoryMaster = [], 
               />
               <button
                 onClick={fetchUsageLogs}
-                style={{ padding: "6px 14px", background: "#3b82f622", border: "1px solid #3b82f644", color: "#3b82f6", borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: "pointer" }}
+                style={{ padding: "6px 14px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontSize: 12, fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
               >
                 {logsLoading ? "Loading…" : "Refresh"}
               </button>
@@ -618,7 +620,7 @@ function SparePartsTab({ machineMaster, itemMasterFG = [], categoryMaster = [], 
                 <thead>
                   <tr>
                     {["Date", "Part Name", "Category", "Qty Used", "Machine", "Issued By", "Remarks"].map((h) => (
-                      <th key={h} style={{ textAlign: "left", padding: "10px 12px", color: "#666", fontWeight: 700, fontSize: 10, textTransform: "uppercase", borderBottom: "1px solid #2a2a2a", background: "#0a0a0a", whiteSpace: "nowrap" }}>{h}</th>
+                      <th key={h} style={{ textAlign: "left", padding: "10px 12px", color: "#666", fontWeight: 500, fontSize: 10, textTransform: "uppercase", borderBottom: "1px solid #2a2a2a", background: "#0a0a0a", whiteSpace: "nowrap" }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -631,7 +633,7 @@ function SparePartsTab({ machineMaster, itemMasterFG = [], categoryMaster = [], 
                         {log.itemCode && <div style={{ fontSize: 10, color: "#555" }}>{log.itemCode}</div>}
                       </td>
                       <td style={{ padding: "10px 12px", fontSize: 12, color: "#888" }}>{log.category || "—"}</td>
-                      <td style={{ padding: "10px 12px", fontWeight: 700, color: "#f59e0b" }}>
+                      <td style={{ padding: "10px 12px", fontWeight: 500, color: "#f59e0b" }}>
                         {log.qty} {log.unit || "nos"}
                       </td>
                       <td style={{ padding: "10px 12px" }}>

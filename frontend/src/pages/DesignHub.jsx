@@ -172,7 +172,7 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
           </div>
         </div>
         <button onClick={() => { setForm(blankForm); setEditId(null); setView(view === "form" ? "list" : "form"); }}
-          style={{ padding: "8px 18px", background: view === "form" ? "transparent" : "#3b82f6", border: "1px solid #3b82f6", borderRadius: 6, color: view === "form" ? "#3b82f6" : "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
+          style={{ padding: "8px 18px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, fontSize: 12, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
           {view === "form" ? "← Back" : "+ New Artwork"}
         </button>
       </div>
@@ -194,7 +194,7 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
       {}
       {view === "form" && (
         <div style={{ background: "#111", border: "1px solid #2a2a2a", borderRadius: 10, padding: 20, marginBottom: 16 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#facc15", marginBottom: 18 }}>{editId ? "Edit Artwork Record" : "Register New Artwork"}</div>
+          <div style={{ fontSize: 14, fontWeight: 500, color: "#facc15", marginBottom: 18 }}>{editId ? "Edit Artwork Record" : "Register New Artwork"}</div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginBottom: 14 }}>
             <div>
               <label style={lbl}>Artwork Name *</label>
@@ -226,8 +226,8 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
             </div>
           </div>
           <div style={{ display: "flex", gap: 10 }}>
-            <button onClick={handleSubmit} style={{ padding: "9px 22px", background: "#3b82f6", border: "none", borderRadius: 6, color: "#fff", fontWeight: 700, cursor: "pointer" }}>{editId ? "Save Changes" : "Register Artwork"}</button>
-            <button onClick={() => { setForm(blankForm); setEditId(null); setView("list"); }} style={{ padding: "9px 14px", background: "transparent", border: "1px solid #2a2a2a", borderRadius: 6, color: "#888", cursor: "pointer" }}>Cancel</button>
+            <button onClick={handleSubmit} style={{ padding: "9px 22px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>{editId ? "Save Changes" : "Register Artwork"}</button>
+            <button onClick={() => { setForm(blankForm); setEditId(null); setView("list"); }} style={{ padding: "9px 14px", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, color: "#aaa", cursor: "pointer" }}>Cancel</button>
           </div>
         </div>
       )}
@@ -252,7 +252,7 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
                 {}
                 <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
                   <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                    <span style={{ fontWeight: 700, fontSize: 14 }}>{rec.artworkName}</span>
+                    <span style={{ fontWeight: 500, fontSize: 14 }}>{rec.artworkName}</span>
                     <span style={{ padding: "1px 8px", background: "#ffffff11", borderRadius: 4, fontSize: 11, color: "#888" }}>{rec.version}</span>
                     {rec.soRef && <span style={{ fontSize: 12, color: "#facc15" }}>{rec.soRef}</span>}
                     <span style={{ padding: "2px 8px", background: stage.color + "22", border: `1px solid ${stage.color}33`, borderRadius: 4, fontSize: 11, color: stage.color, fontWeight: 700 }}>
@@ -262,18 +262,18 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
                   </div>
                   <div style={{ display: "flex", gap: 6 }}>
                     <button onClick={() => setExpandId(isExpanded ? null : rec.id)}
-                      style={{ padding: "4px 10px", border: "1px solid #2a2a2a", background: "transparent", color: "#888", borderRadius: 4, fontSize: 11, cursor: "pointer" }}>
+                      style={{ padding: "4px 10px", border: "1px solid rgba(255,255,255,0.15)", background: "transparent", color: "#aaa", borderRadius: 4, fontSize: 11, cursor: "pointer" }}>
                       {isExpanded ? "▲ Collapse" : "▼ Timeline"}
                     </button>
                     {rec.fileDataUrl && (
                       <button onClick={() => window.open(rec.fileDataUrl, "_blank")}
-                        style={{ padding: "4px 10px", border: "1px solid #8b5cf633", background: "#8b5cf611", color: "#a78bfa", borderRadius: 4, fontSize: 11, cursor: "pointer" }}>
+                        style={{ padding: "4px 10px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 4, color: "#fff", fontSize: 11, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
                         📎 File
                       </button>
                     )}
                     {rec.currentStage === "client_approved" && (
                       <button onClick={() => versionUp(rec)}
-                        style={{ padding: "4px 10px", border: "1px solid #f59e0b33", background: "#f59e0b11", color: "#f59e0b", borderRadius: 4, fontSize: 11, cursor: "pointer" }}>
+                        style={{ padding: "4px 10px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 4, color: "#fff", fontSize: 11, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
                         + New Version
                       </button>
                     )}
@@ -313,12 +313,12 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
                       <input value={advanceUser} onChange={(e) => setAdvanceUser(e.target.value)} placeholder="Your name *" style={{ ...inp, flex: 1, minWidth: 160 }} />
                       <input value={advanceNotes} onChange={(e) => setAdvanceNotes(e.target.value)} placeholder="Notes (optional)" style={{ ...inp, flex: 2, minWidth: 200 }} />
                       {nextStage && (
-                        <button onClick={() => advanceStage(rec)} style={{ padding: "9px 16px", background: nextStage.color + "22", border: `1px solid ${nextStage.color}44`, color: nextStage.color, borderRadius: 6, fontWeight: 700, cursor: "pointer", fontSize: 12 }}>
+                        <button onClick={() => advanceStage(rec)} style={{ padding: "9px 16px", background: nextStage.color + "22", border: `1px solid ${nextStage.color}44`, color: nextStage.color, borderRadius: 6, fontWeight: 500, cursor: "pointer", fontSize: 12 }}>
                           → {nextStage.label}
                         </button>
                       )}
                       {rec.currentStage !== "rejected" && (
-                        <button onClick={() => rejectArtwork(rec)} style={{ padding: "9px 16px", background: "#ef444411", border: "1px solid #ef444433", color: "#ef4444", borderRadius: 6, fontWeight: 700, cursor: "pointer", fontSize: 12 }}>
+                        <button onClick={() => rejectArtwork(rec)} style={{ padding: "9px 16px", background: "#ef444411", border: "1px solid #ef444433", color: "#ef4444", borderRadius: 6, fontWeight: 500, cursor: "pointer", fontSize: 12 }}>
                           ✕ Reject
                         </button>
                       )}
@@ -334,7 +334,7 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
                       return (
                         <div key={i} style={{ display: "flex", gap: 10, paddingBottom: 8, fontSize: 12 }}>
                           <span style={{ color: stg?.color || "#888", minWidth: 20 }}>{stg?.icon || "•"}</span>
-                          <span style={{ color: stg?.color || "#888", fontWeight: 700, minWidth: 130 }}>{stg?.label || h.stage}</span>
+                          <span style={{ color: stg?.color || "#888", fontWeight: 500, minWidth: 130 }}>{stg?.label || h.stage}</span>
                           <span style={{ color: "#666", minWidth: 90 }}>{fmtDate(h.date)}</span>
                           <span style={{ color: "#888" }}>{h.user}</span>
                           {h.notes && <span style={{ color: "#555" }}>· {h.notes}</span>}
@@ -411,14 +411,14 @@ function DielineTab({ jobOrders, toast }) {
           <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>Cutting patterns as versioned assets · dimensions · compatible machines · client history</div>
         </div>
         <button onClick={() => { setForm(blankForm); setEditId(null); setView(view === "form" ? "list" : "form"); }}
-          style={{ padding: "8px 18px", background: view === "form" ? "transparent" : "#3b82f6", border: "1px solid #3b82f6", borderRadius: 6, color: view === "form" ? "#3b82f6" : "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
+          style={{ padding: "8px 18px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, fontSize: 12, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
           {view === "form" ? "← Back" : "+ Add Dieline"}
         </button>
       </div>
 
       {view === "form" && (
         <div style={{ background: "#111", border: "1px solid #2a2a2a", borderRadius: 10, padding: 20, marginBottom: 16 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#facc15", marginBottom: 18 }}>{editId ? "Edit Dieline" : "Add Dieline to Library"}</div>
+          <div style={{ fontSize: 14, fontWeight: 500, color: "#facc15", marginBottom: 18 }}>{editId ? "Edit Dieline" : "Add Dieline to Library"}</div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginBottom: 14 }}>
             <div><label style={lbl}>Die Code *</label><input value={form.dieCode} onChange={(e) => setF("dieCode", e.target.value)} placeholder="e.g. DIE-2412-A3" style={inp} /></div>
             <div><label style={lbl}>Description</label><input value={form.description} onChange={(e) => setF("description", e.target.value)} placeholder="e.g. Retail Box 500g" style={inp} /></div>
@@ -434,8 +434,8 @@ function DielineTab({ jobOrders, toast }) {
             </div>
           </div>
           <div style={{ display: "flex", gap: 10 }}>
-            <button onClick={handleSubmit} style={{ padding: "9px 22px", background: "#3b82f6", border: "none", borderRadius: 6, color: "#fff", fontWeight: 700, cursor: "pointer" }}>{editId ? "Save" : "Add Dieline"}</button>
-            <button onClick={() => { setForm(blankForm); setEditId(null); setView("list"); }} style={{ padding: "9px 14px", background: "transparent", border: "1px solid #2a2a2a", borderRadius: 6, color: "#888", cursor: "pointer" }}>Cancel</button>
+            <button onClick={handleSubmit} style={{ padding: "9px 22px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>{editId ? "Save" : "Add Dieline"}</button>
+            <button onClick={() => { setForm(blankForm); setEditId(null); setView("list"); }} style={{ padding: "9px 14px", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, color: "#aaa", cursor: "pointer" }}>Cancel</button>
           </div>
         </div>
       )}

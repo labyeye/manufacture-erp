@@ -64,7 +64,7 @@ const SubLabel = ({ text }) => (
   <div
     style={{
       fontSize: 11,
-      fontWeight: 700,
+      fontWeight: 500,
       letterSpacing: "normal",
       color: C.yellow || "#facc15",
       textTransform: "uppercase",
@@ -916,7 +916,7 @@ export default function JobOrders(props) {
               border: `1px solid ${view === v ? C.yellow || "#facc15" : C.border}`,
               background: view === v ? C.yellow || "#facc15" : "transparent",
               color: view === v ? "#000" : C.muted,
-              fontWeight: 700,
+              fontWeight: 500,
               fontSize: 13,
               cursor: "pointer",
             }}
@@ -932,7 +932,7 @@ export default function JobOrders(props) {
           <h3
             style={{
               fontSize: 15,
-              fontWeight: 700,
+              fontWeight: 500,
               color: C.yellow || "#facc15",
               marginBottom: 24,
             }}
@@ -1397,7 +1397,7 @@ export default function JobOrders(props) {
                         fontSize: 10,
                         color: matchedStock?.qty > 0 ? C.green : C.red,
                         marginTop: 4,
-                        fontWeight: 700,
+                        fontWeight: 500,
                       }}
                     >
                       {matchedStock?.qty > 0
@@ -1427,7 +1427,7 @@ export default function JobOrders(props) {
                         fontSize: 10,
                         color: matchedStock?.weight > 0 ? C.green : C.red,
                         marginTop: 4,
-                        fontWeight: 700,
+                        fontWeight: 500,
                       }}
                     >
                       {matchedStock?.weight > 0
@@ -1568,7 +1568,7 @@ export default function JobOrders(props) {
               <div
                 style={{
                   fontSize: 11,
-                  fontWeight: 700,
+                  fontWeight: 500,
                   letterSpacing: "normal",
                   color: C.muted,
                   textTransform: "uppercase",
@@ -1705,7 +1705,7 @@ export default function JobOrders(props) {
             <h3
               style={{
                 fontSize: 14,
-                fontWeight: 700,
+                fontWeight: 500,
                 color: C.muted,
                 margin: 0,
               }}
@@ -1803,7 +1803,6 @@ export default function JobOrders(props) {
                     borderBottom: `1px solid ${C.border}22`,
                     padding: "12px 4px",
                     background: r.joNo === highlightId ? `${C.accent}11` : "transparent",
-                    borderLeft: r.joNo === highlightId ? `3px solid ${C.accent}` : "3px solid transparent",
                     paddingLeft: "10px",
                     boxShadow: r.joNo === highlightId ? `0 0 0 1px ${C.accent}44` : undefined,
                     borderRadius: r.joNo === highlightId ? 6 : 0,
@@ -1831,7 +1830,7 @@ export default function JobOrders(props) {
                         style={{
                           fontFamily: "'JetBrains Mono', monospace",
                           color: C.yellow || "#facc15",
-                          fontWeight: 700,
+                          fontWeight: 500,
                         }}
                       >
                         {r.joNo}
@@ -1906,7 +1905,7 @@ export default function JobOrders(props) {
                           borderRadius: 6,
                           padding: "4px 14px",
                           fontSize: 12,
-                          fontWeight: 700,
+                          fontWeight: 500,
                           cursor: "pointer",
                           display: "flex",
                           alignItems: "center",

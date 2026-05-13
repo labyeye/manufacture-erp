@@ -551,10 +551,13 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
             style={{
               padding: "8px 20px",
               borderRadius: 6,
-              border: `1px solid ${view === v ? col : C.border}`,
-              background: view === v ? col : "transparent",
-              color: view === v ? "#fff" : C.muted,
-              fontWeight: 700,
+              border: `1px solid ${view === v ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.18)"}`,
+              background: view === v ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.05)",
+              backdropFilter: "blur(12px) saturate(180%)",
+              WebkitBackdropFilter: "blur(12px) saturate(180%)",
+              color: "#fff",
+              boxShadow: view === v ? "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" : "none",
+              fontWeight: 500,
               fontSize: 13,
               cursor: "pointer",
             }}
@@ -571,7 +574,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
             <h3
               style={{
                 fontSize: 14,
-                fontWeight: 700,
+                fontWeight: 500,
                 color: C.purple,
                 marginBottom: 18,
               }}
@@ -668,20 +671,23 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
               marginBottom: 10,
             }}
           >
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: C.purple }}>
+            <h3 style={{ fontSize: 14, fontWeight: 500, color: C.purple }}>
               Items ({items.length})
             </h3>
             <button
               onClick={addItem}
               style={{
-                background: C.purple,
+                background: "rgba(255,255,255,0.08)",
+                backdropFilter: "blur(12px) saturate(180%)",
+                WebkitBackdropFilter: "blur(12px) saturate(180%)",
                 color: "#fff",
-                border: "none",
+                border: "1px solid rgba(255,255,255,0.18)",
                 borderRadius: 6,
                 padding: "8px 18px",
-                fontWeight: 700,
+                fontWeight: 500,
                 fontSize: 13,
                 cursor: "pointer",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
               }}
             >
               + Add Item
@@ -692,7 +698,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
           {items.map((it, idx) => (
             <Card
               key={it._id}
-              style={{ marginBottom: 12, borderLeft: `3px solid ${C.purple}` }}
+              style={{ marginBottom: 12, }}
             >
               <div
                 style={{
@@ -703,7 +709,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                 }}
               >
                 <span
-                  style={{ fontWeight: 700, color: C.purple, fontSize: 13 }}
+                  style={{ fontWeight: 500, color: C.purple, fontSize: 13 }}
                 >
                   Item {idx + 1}
                 </span>
@@ -711,14 +717,17 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                   <button
                     onClick={() => removeItem(idx)}
                     style={{
-                      background: (C.red || "#ef4444") + "22",
-                      color: C.red || "#ef4444",
-                      border: "none",
+                      background: "rgba(255,255,255,0.08)",
+                      backdropFilter: "blur(12px) saturate(180%)",
+                      WebkitBackdropFilter: "blur(12px) saturate(180%)",
+                      color: "#fff",
+                      border: "1px solid rgba(255,255,255,0.18)",
                       borderRadius: 5,
                       padding: "4px 12px",
-                      fontWeight: 700,
+                      fontWeight: 500,
                       fontSize: 12,
                       cursor: "pointer",
+                      boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
                     }}
                   >
                     Remove
@@ -762,7 +771,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                           fontSize: 10,
                           color: isLow ? C.red : C.green,
                           marginTop: 4,
-                          fontWeight: 700,
+                          fontWeight: 500,
                         }}
                       >
                         Stock Available: {fmt(st.qty || 0)} {st.unit || ""}
@@ -874,7 +883,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                 border: `1px solid ${C.purple || "#a855f7"}44`,
                 borderRadius: 6,
                 padding: "9px 20px",
-                fontWeight: 700,
+                fontWeight: 500,
                 fontSize: 13,
                 cursor: "pointer",
               }}
@@ -893,7 +902,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
       {view === "return" && (
         <div>
           <Card style={{ marginBottom: 16 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: C.orange || "#f97316", marginBottom: 18 }}>
+            <h3 style={{ fontSize: 14, fontWeight: 500, color: C.orange || "#f97316", marginBottom: 18 }}>
               Material Return Details
             </h3>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 14, marginBottom: 14 }}>
@@ -980,25 +989,25 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
           </Card>
 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: C.orange || "#f97316" }}>
+            <h3 style={{ fontSize: 14, fontWeight: 500, color: C.orange || "#f97316" }}>
               Return Items ({returnItems.length})
             </h3>
             <button
               onClick={() => setReturnItems((prev) => [...prev, blankItem()])}
-              style={{ background: C.orange || "#f97316", color: "#fff", border: "none", borderRadius: 6, padding: "8px 18px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+              style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", color: "#fff", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, padding: "8px 18px", fontWeight: 500, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
             >
               + Add Item
             </button>
           </div>
 
           {returnItems.map((it, idx) => (
-            <Card key={it._id} style={{ marginBottom: 12, borderLeft: `3px solid ${C.orange || "#f97316"}` }}>
+            <Card key={it._id} style={{ marginBottom: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-                <span style={{ fontWeight: 700, color: C.orange || "#f97316", fontSize: 13 }}>Item {idx + 1}</span>
+                <span style={{ fontWeight: 500, color: C.orange || "#f97316", fontSize: 13 }}>Item {idx + 1}</span>
                 {returnItems.length > 1 && (
                   <button
                     onClick={() => setReturnItems((prev) => prev.filter((_, i) => i !== idx))}
-                    style={{ background: (C.red || "#ef4444") + "22", color: C.red || "#ef4444", border: "none", borderRadius: 5, padding: "4px 12px", fontWeight: 700, fontSize: 12, cursor: "pointer" }}
+                    style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", color: "#fff", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 5, padding: "4px 12px", fontWeight: 500, fontSize: 12, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
                   >
                     Remove
                   </button>
@@ -1114,12 +1123,16 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                 }
               }}
               style={{
-                background: returnLoading ? "#333" : (C.orange || "#f97316"),
+                background: "rgba(255,255,255,0.08)",
+                backdropFilter: "blur(12px) saturate(180%)",
+                WebkitBackdropFilter: "blur(12px) saturate(180%)",
                 color: "#fff",
-                border: "none",
+                border: "1px solid rgba(255,255,255,0.18)",
                 borderRadius: 6,
                 padding: "10px 24px",
-                fontWeight: 700,
+                fontWeight: 500,
+                boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                opacity: returnLoading ? 0.6 : 1,
                 fontSize: 13,
                 cursor: returnLoading ? "not-allowed" : "pointer",
               }}
@@ -1144,7 +1157,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
             <h3
               style={{
                 fontSize: 14,
-                fontWeight: 700,
+                fontWeight: 500,
                 color: C.muted,
                 margin: 0,
               }}
@@ -1263,7 +1276,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                         style={{
                           fontFamily: "'JetBrains Mono',monospace",
                           color: r.type === "Return" ? (C.orange || "#f97316") : C.purple,
-                          fontWeight: 700,
+                          fontWeight: 500,
                         }}
                       >
                         {r.dispatchNo}
@@ -1311,7 +1324,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                           border: "none",
                           borderRadius: 5,
                           padding: "4px 12px",
-                          fontWeight: 700,
+                          fontWeight: 500,
                           fontSize: 12,
                           cursor: "pointer",
                         }}
@@ -1326,7 +1339,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                           border: "none",
                           borderRadius: 5,
                           padding: "4px 12px",
-                          fontWeight: 700,
+                          fontWeight: 500,
                           fontSize: 12,
                           cursor: "pointer",
                         }}
@@ -1336,14 +1349,17 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                       <button
                         onClick={handleDelete}
                         style={{
-                          background: "#450a0a",
-                          color: "#ef4444",
-                          border: "1px solid #7f1d1d",
+                          background: "rgba(255,255,255,0.08)",
+                          backdropFilter: "blur(12px) saturate(180%)",
+                          WebkitBackdropFilter: "blur(12px) saturate(180%)",
+                          color: "#fff",
+                          border: "1px solid rgba(255,255,255,0.18)",
                           borderRadius: 6,
                           padding: "4px 14px",
                           fontSize: 12,
-                          fontWeight: 700,
+                          fontWeight: 500,
                           cursor: "pointer",
+                          boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
                           display: "flex",
                           alignItems: "center",
                           gap: 6,
