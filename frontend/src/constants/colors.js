@@ -1,65 +1,77 @@
 
 export const C = {
-  bg: "#0d1117",
-  surface: "#161b22",
-  card: "#1c2128",
-  border: "#30363d",
-  accent: "#f97316",
+  bg: "#07070f",
+  surface: "#0d0d1a",
+  card: "rgba(255,255,255,0.23)",
+  border: "rgba(255,255,255,0.18)",
+  divider: "rgba(255,255,255,0.1)",
+  accent: "#6366f1",
+  accentBg: "rgba(99,102,241,0.15)",
+  badge: "rgba(255,255,255,0.15)",
   green: "#22c55e",
   blue: "#3b82f6",
   yellow: "#eab308",
   red: "#ef4444",
-  purple: "#a855f7",
-  text: "#e6edf3",
-  muted: "#8b949e",
-  inputBg: "#0d1117",
+  purple: "#a78bfa",
+  text: "#ffffff",
+  muted: "#64748b",
+  placeholder: "#475569",
+  inputBg: "rgba(255,255,255,0.23)",
+  scrollbar: "rgba(255,255,255,0.18)",
+};
+
+export const GLASS = {
+  background: "rgba(255,255,255,0.23)",
+  backdropFilter: "blur(8px) saturate(200%)",
+  WebkitBackdropFilter: "blur(8px) saturate(200%)",
+  border: "1px solid rgba(255,255,255,0.18)",
 };
 
 export const PROCESS_COLORS = {
   "Printing":         C.blue,
-  "Varnish":          "#06b6d4",
+  "Varnish":          "#0891b2",
   "Lamination":       C.purple,
-  "Die Cutting":      C.accent,
+  "Die Cutting":      "#ea580c",
   "Formation":        C.green,
-  "Manual Formation": "#10b981",
+  "Manual Formation": "#059669",
 };
 
 export const PROCESS_ICONS = {
-  "Printing":         "🖨️",
-  "Varnish":          "✨",
-  "Lamination":       "📋",
-  "Die Cutting":      "✂️",
-  "Formation":        "📦",
-  "Manual Formation": "🤲",
+  "Printing":         "fa-solid fa-print",
+  "Varnish":          "fa-solid fa-droplet",
+  "Lamination":       "fa-solid fa-layer-group",
+  "Die Cutting":      "fa-solid fa-scissors",
+  "Formation":        "fa-solid fa-box",
+  "Manual Formation": "fa-solid fa-hands",
 };
 
 export const MACHINE_TYPE_COLORS = {
   "Printing":      C.blue,
-  "Cutting":       "#f97316",
-  "Die Cutting":   C.accent,
+  "Cutting":       "#ea580c",
+  "Die Cutting":   "#ea580c",
   "Bag Making":    C.purple,
-  "Sheeting":      "#06b6d4",
-  "Sheet Cutting": "#06b6d4",
+  "Sheeting":      "#0891b2",
+  "Sheet Cutting": "#0891b2",
   "Formation":     C.green,
   "Handmade":      C.yellow,
 };
 
 export const MACHINE_TYPE_ICONS = {
-  "Printing":      "🖨️",
-  "Cutting":       "✂️",
-  "Die Cutting":   "🔪",
-  "Bag Making":    "🛍️",
-  "Sheeting":      "📄",
-  "Sheet Cutting": "📄",
-  "Formation":     "🏭",
-  "Handmade":      "🙌",
+  "Printing":      "fa-solid fa-print",
+  "Cutting":       "fa-solid fa-scissors",
+  "Die Cutting":   "fa-solid fa-scissors",
+  "Bag Making":    "fa-solid fa-bag-shopping",
+  "Sheeting":      "fa-solid fa-file",
+  "Sheet Cutting": "fa-solid fa-file",
+  "Formation":     "fa-solid fa-industry",
+  "Handmade":      "fa-solid fa-hands",
 };
 
 export const ITEM_TYPE_COLORS = {
-  "Raw Material": "#3b82f6",
-  "Consumable": "#eab308",
-  "Finished Goods": "#22c55e",
-  "Machine Spare": "#ef4444"
+  "Raw Material":    C.blue,
+  "Consumable":      C.yellow,
+  "Finished Goods":  C.green,
+  "Machine Spare":   C.red,
 };
 
 export const STAGES = ["Printing", "Varnish", "Lamination", "Die Cutting", "Formation", "Manual Formation"];

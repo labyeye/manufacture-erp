@@ -811,15 +811,15 @@ export default function PurchaseOrders({
   return (
     <div className="fade">
       <SectionTitle
-        icon="📋"
+        icon="fa-solid fa-file-invoice"
         title="Purchase Orders"
         sub="Create POs for raw materials and consumables"
       />
 
       <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
         {[
-          ["form", "📝 New PO"],
-          ["records", `📋 POs (${purchaseOrders.length})`],
+          ["form", "New PO"],
+          ["records", `POs (${purchaseOrders.length})`],
         ].map(([v, l]) => (
           <button
             key={v}
@@ -866,7 +866,7 @@ export default function PurchaseOrders({
                   style={{ color: C.muted, background: "transparent" }}
                 />
               </Field>
-              <Field label="PO Date 📅 *">
+              <Field label="PO Date *">
                 <DatePicker
                   value={header.poDate}
                   onChange={(v) => setH("poDate", v)}
@@ -874,7 +874,7 @@ export default function PurchaseOrders({
                 />
                 {EHMsg("poDate")}
               </Field>
-              <Field label="Delivery Date 📅 *">
+              <Field label="Delivery Date *">
                 <DatePicker
                   value={header.deliveryDate}
                   onChange={(v) => setH("deliveryDate", v)}
@@ -893,6 +893,21 @@ export default function PurchaseOrders({
                     if (vendor) {
                       setH("vendorContact", vendor.phone || vendor.email || "");
                     }
+                    // Re-lookup rates for items already entered when vendor changes
+                    setItems((prev) =>
+                      prev.map((it) => {
+                        if (!it.productCode) return it;
+                        const vendorMatch = purchasePrices.find(
+                          (p) => p.itemCode === it.productCode && p.vendorName === v
+                        );
+                        const genericMatch = purchasePrices.find(
+                          (p) => p.itemCode === it.productCode && !p.vendorName
+                        );
+                        const priceEntry = vendorMatch || genericMatch;
+                        if (priceEntry) return { ...it, rate: priceEntry.unitPrice };
+                        return it;
+                      })
+                    );
                   }}
                   suggestions={(vendorMaster || []).map((v) => v.name)}
                   placeholder="Type to search vendors..."
@@ -987,7 +1002,7 @@ export default function PurchaseOrders({
                       fontSize: 12,
                     }}
                   >
-                    ✕ Remove
+                    Remove
                   </button>
                 )}
               </div>
@@ -1693,7 +1708,7 @@ export default function PurchaseOrders({
                               gap: 6,
                             }}
                           >
-                            ✏️ Edit
+                            Edit
                           </button>
                         )}
                         <button
@@ -1712,7 +1727,7 @@ export default function PurchaseOrders({
                             gap: 6,
                           }}
                         >
-                          🖨️ PDF
+                          PDF
                         </button>
                         {canEdit && (
                           <button
@@ -1731,7 +1746,7 @@ export default function PurchaseOrders({
                               gap: 6,
                             }}
                           >
-                            🗑️ Delete
+                            Delete
                           </button>
                         )}
                       </div>

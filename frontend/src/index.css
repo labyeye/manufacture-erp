@@ -1,121 +1,227 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+:root {
+  /* ── Canonical glassmorphism tokens ── */
+  --glass-bg:        rgba(255, 255, 255, 0.05);
+  --glass-blur:      blur(8px);
+  --glass-border:    rgba(255, 255, 255, 0.3);
+  --glass-radius:    20px;
+  --glass-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 0 0px 0px rgba(255, 255, 255, 0);
+  --glass-sheen-top:  linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
+  --glass-sheen-left: linear-gradient(180deg, rgba(255,255,255,0.8), transparent, rgba(255,255,255,0.3));
+
+  --bg: #07070f;
+  --surface: #0d0d1a;
+  --card-bg: var(--glass-bg);
+  --card-border: var(--glass-border);
+  --card-shadow: var(--glass-shadow);
+  --accent: #6366f1;
+  --accent-bg: rgba(99, 102, 241, 0.15);
+  --badge-bg: rgba(0, 0, 0, 0);
+  --text: #ffffff;
+  --muted: #64748b;
+  --placeholder: #475569;
+  --divider: rgba(255, 255, 255, 0.1);
+  --border: var(--glass-border);
+  --input-bg: var(--glass-bg);
+  --scrollbar: rgba(255, 255, 255, 0.18);
+  --radius-lg: 20px;
+  --radius-md: 14px;
+  --radius-sm: 10px;
+  --radius-tag: 8px;
+}
+
 body {
-  background: #0d1117;
-  color: #e6edf3;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: linear-gradient(135deg, #07070f 0%, #0c0c1a 50%, #09090e 100%);
+  background-attachment: fixed;
+  color: var(--text);
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.01em;
 }
 
-::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-}
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scrollbar); border-radius: 4px; }
 
-::-webkit-scrollbar-track {
-  background: #0d1117;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #30363d;
-  border-radius: 3px;
-}
-
+/* ── Global Glassmorphism Inputs ── */
 input,
 select,
 textarea {
-  background: #0d1117;
-  color: #e6edf3;
-  border: 1px solid #30363d;
-  border-radius: 6px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  color: var(--text);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
   padding: 9px 12px;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 13px;
   outline: none;
   width: 100%;
-  transition: border 0.2s;
+  transition: border 0.2s, box-shadow 0.2s, background 0.2s;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--placeholder);
+  font-style: italic;
+  font-weight: 300;
 }
 
 input:focus,
 select:focus,
 textarea:focus {
-  border-color: #f97316;
+  border-color: rgba(99, 102, 241, 0.6);
+  box-shadow:
+    0 0 0 3px rgba(99, 102, 241, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 select option {
-  background: #161b22;
+  background: #0d0d1a;
+  color: #ffffff;
 }
 
 button {
   cursor: pointer;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Poppins', sans-serif;
 }
 
+/* ══════════════════════════════════════════
+   Canonical Glassmorphism — single source
+   All glass surfaces use these rules.
+   ══════════════════════════════════════════ */
+
+/* shared mixin applied via the class below */
+.glass,
+.glass-card,
+.glass-panel,
+.glass-table-wrap {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-radius: var(--glass-radius);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+/* top-edge sheen */
+.glass::before,
+.glass-card::before,
+.glass-panel::before,
+.glass-table-wrap::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: var(--glass-sheen-top);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* left-edge sheen */
+.glass::after,
+.glass-card::after,
+.glass-panel::after,
+.glass-table-wrap::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 1px; height: 100%;
+  background: var(--glass-sheen-left);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── Glassmorphism Table ── */
+table { border-collapse: collapse; width: 100%; }
+
+thead tr {
+  background: rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  transition: background 0.15s ease;
+}
+
+tbody tr:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+th {
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 12px 16px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+td {
+  color: #ffffff;
+  font-size: 13px;
+  padding: 11px 16px;
+  vertical-align: middle;
+}
+
+/* Animations */
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-
 @keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-10px); }
 }
 
-.fade,
-.fade-in {
-  animation: fadeIn 0.25s ease;
+.fade, .fade-in { animation: fadeIn 0.22s ease; }
+.modal-backdrop { animation: fadeIn 0.2s ease; }
+.loading { animation: pulse 1.5s ease-in-out infinite; }
+.mono { font-family: 'Fira Code', monospace; }
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: 'Fira Code', monospace;
 }
 
-.modal-backdrop {
-  animation: fadeIn 0.2s ease;
-}
-
-.loading {
-  animation: pulse 1.5s ease-in-out infinite;
-}
-
-/* Mobile utilities */
 @media (max-width: 767px) {
-  /* Ensure tables scroll horizontally */
-  table {
-    min-width: 600px;
-  }
-
-  /* Prevent overflow on modal/drawer content */
-  .modal-content,
-  [class*="modal"] {
+  table { min-width: 600px; }
+  .modal-content, [class*="modal"] {
     max-width: 100vw !important;
     width: 100% !important;
     margin: 0 !important;
-    border-radius: 12px 12px 0 0 !important;
+    border-radius: 16px 16px 0 0 !important;
   }
-
-  /* Larger tap targets */
-  button {
-    min-height: 36px;
-  }
-
-  input,
-  select,
-  textarea {
-    font-size: 16px; /* prevents iOS zoom on focus */
-  }
+  button { min-height: 36px; }
+  input, select, textarea { font-size: 16px; }
 }

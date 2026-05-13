@@ -795,15 +795,15 @@ export default function MaterialInward({
   return (
     <div className="fade">
       <SectionTitle
-        icon="🚚"
+        icon="fa-solid fa-truck-ramp-box"
         title="Material Inward"
         sub="Record incoming paper / board material receipts"
       />
 
       <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
         {[
-          ["form", "📝 New Entry"],
-          ["records", `📋 Records (${inward.length})`],
+          ["form", "New Entry"],
+          ["records", `Records (${inward.length})`],
         ].map(([v, l]) => (
           <button
             key={v}
@@ -839,7 +839,7 @@ export default function MaterialInward({
               }}
             >
               <span style={{ fontSize: 13, color: C.blue, fontWeight: 600 }}>
-                ✎ Edit Mode
+                Edit Mode
               </span>
               <button
                 onClick={() => {
@@ -890,7 +890,7 @@ export default function MaterialInward({
                   style={{ color: C.muted, background: "transparent" }}
                 />
               </Field>
-              <Field label="Date 📅 *">
+              <Field label="Date *">
                 <DatePicker
                   value={header.date}
                   onChange={(v) => setH("date", v)}
@@ -1048,7 +1048,7 @@ export default function MaterialInward({
                       fontSize: 12,
                     }}
                   >
-                    ✕ Remove
+                    Remove
                   </button>
                 )}
               </div>
@@ -1670,7 +1670,7 @@ export default function MaterialInward({
                     color: "#555",
                   }}
                 >
-                  🔍
+                  <i className="fa-solid fa-magnifying-glass" />
                 </span>
                 <input
                   placeholder="Search records..."
@@ -1711,7 +1711,7 @@ export default function MaterialInward({
                   gap: 8,
                 }}
               >
-                📥 Export Excel
+                Export Excel
               </button>
               <span style={{ fontSize: 12, color: C.muted }}>
                 {filteredInwards.length} records found
@@ -1802,7 +1802,7 @@ export default function MaterialInward({
                               cursor: "pointer",
                             }}
                           >
-                            ✏️ Edit
+                            Edit
                           </button>
                         )}
                         <button
@@ -1818,7 +1818,7 @@ export default function MaterialInward({
                             cursor: "pointer",
                           }}
                         >
-                          🖨️ PDF
+                          PDF
                         </button>
                         {canEdit && (
                           <button
@@ -1834,7 +1834,7 @@ export default function MaterialInward({
                               cursor: "pointer",
                             }}
                           >
-                            🗑️ Delete
+                            Delete
                           </button>
                         )}
                       </div>

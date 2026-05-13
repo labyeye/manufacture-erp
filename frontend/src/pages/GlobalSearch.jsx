@@ -41,22 +41,22 @@ const TYPE_TO_TAB = {
 };
 
 const TYPE_ICONS = {
-  "Sales Order":      "🧾",
-  "Job Order":        "📋",
-  "Purchase Order":   "🛒",
-  "Material Inward":  "📦",
-  "Dispatch":         "🚚",
-  "Material Return":  "↩️",
-  "FG Stock":         "🏭",
-  "RM Stock":         "📊",
-  "Consumable Stock": "🔧",
-  "Vendor Master":    "🏪",
-  "Company Master":   "🏢",
-  "Item Master":      "📝",
-  "Machine Master":   "⚙️",
-  "Price List":       "💰",
-  "Printing Master":  "🖨️",
-  "Category":         "🗂️",
+  "Sales Order":      "fa-solid fa-receipt",
+  "Job Order":        "fa-solid fa-gears",
+  "Purchase Order":   "fa-solid fa-cart-shopping",
+  "Material Inward":  "fa-solid fa-boxes-stacked",
+  "Dispatch":         "fa-solid fa-truck-fast",
+  "Material Return":  "fa-solid fa-rotate-left",
+  "FG Stock":         "fa-solid fa-warehouse",
+  "RM Stock":         "fa-solid fa-boxes-stacked",
+  "Consumable Stock": "fa-solid fa-wrench",
+  "Vendor Master":    "fa-solid fa-store",
+  "Company Master":   "fa-solid fa-building",
+  "Item Master":      "fa-solid fa-list-check",
+  "Machine Master":   "fa-solid fa-screwdriver-wrench",
+  "Price List":       "fa-solid fa-tags",
+  "Printing Master":  "fa-solid fa-print",
+  "Category":         "fa-solid fa-folder-open",
 };
 
 export function GlobalSearch({
@@ -377,7 +377,7 @@ export function GlobalSearch({
   return (
     <div className="fade">
       <SectionTitle
-        icon="🔍"
+        icon="fa-solid fa-magnifying-glass"
         title="Global Search"
         sub="Search across all modules — orders, stock, vendors, masters, and more"
       />
@@ -452,7 +452,7 @@ export function GlobalSearch({
                     justifyContent: "space-between",
                   }}
                 >
-                  <span>{TYPE_ICONS[type] || "📄"} {type} — {items.length} result{items.length !== 1 ? "s" : ""}</span>
+                  <span><i className={TYPE_ICONS[type] || "fa-solid fa-file"} style={{marginRight:6}} />{type} — {items.length} result{items.length !== 1 ? "s" : ""}</span>
                   {tab && onNavigate && (
                     <button
                       onClick={() => handleNavigate(type)}
@@ -549,7 +549,7 @@ export function GlobalSearch({
         </Card>
       ) : (
         <Card style={{ padding: 40, textAlign: "center", color: C.muted }}>
-          <div style={{ fontSize: 32, marginBottom: 8 }}>🔍</div>
+          <i className="fa-solid fa-magnifying-glass" style={{fontSize:32, marginBottom:8, display:'block', color:'#444'}} />
           <div>Start typing to search across all modules</div>
           <div style={{ fontSize: 12, marginTop: 6 }}>
             Orders · Stock · Vendors · Masters · Categories · and more

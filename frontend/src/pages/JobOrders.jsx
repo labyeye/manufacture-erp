@@ -896,7 +896,7 @@ export default function JobOrders(props) {
   return (
     <div className="fade">
       <SectionTitle
-        icon="⚙️"
+        icon="fa-solid fa-gears"
         title="Job Orders"
         sub="Create production job orders linked to sales orders"
       />
@@ -904,8 +904,8 @@ export default function JobOrders(props) {
       {}
       <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
         {[
-          ["form", "📝 New Job Order"],
-          ["records", `📋 Records (${jobOrders.length})`],
+          ["form", "New Job Order"],
+          ["records", `Records (${jobOrders.length})`],
         ].map(([v, l]) => (
           <button
             key={v}
@@ -950,7 +950,7 @@ export default function JobOrders(props) {
               marginBottom: 24,
             }}
           >
-            <Field label="Jobcard Date 📅 *">
+            <Field label="Jobcard Date *">
               <DatePicker
                 value={header.joDate}
                 onChange={(v) => setH("joDate", v)}
@@ -973,7 +973,7 @@ export default function JobOrders(props) {
               </select>
               {EHMsg("soRef")}
             </Field>
-            <Field label="Order Date 📅">
+            <Field label="Order Date">
               <AutoField
                 value={
                   header.orderDate
@@ -983,7 +983,7 @@ export default function JobOrders(props) {
                 placeholder="DD/MM/YYYY"
               />
             </Field>
-            <Field label="Delivery Date 📅">
+            <Field label="Delivery Date">
               <AutoField
                 value={
                   header.deliveryDate
@@ -993,7 +993,7 @@ export default function JobOrders(props) {
                 placeholder="DD/MM/YYYY"
               />
             </Field>
-            <Field label="Priority 🚦">
+            <Field label="Priority">
               <select
                 value={header.priority || "Standard"}
                 onChange={(e) => setH("priority", e.target.value)}
@@ -1109,7 +1109,7 @@ export default function JobOrders(props) {
                           }
                         >
                           {it.itemName} (Qty: {fmt(it.orderQty)}){" "}
-                          {alreadyHasJO ? "✓ JO DONE" : ""}
+                          {alreadyHasJO ? "JO DONE" : ""}
                         </option>
                       );
                     });
@@ -1401,8 +1401,8 @@ export default function JobOrders(props) {
                       }}
                     >
                       {matchedStock?.qty > 0
-                        ? `✓ ${fmt(matchedStock.qty)} sheets available`
-                        : `❌ 0 sheets available`}
+                        ? `${fmt(matchedStock.qty)} sheets available`
+                        : `0 sheets available`}
                     </div>
                   )}
               </Field>
@@ -1431,8 +1431,8 @@ export default function JobOrders(props) {
                       }}
                     >
                       {matchedStock?.weight > 0
-                        ? `✓ ${fmt(Math.round(matchedStock.weight))} kg available`
-                        : `❌ 0 kg available`}
+                        ? `${fmt(Math.round(matchedStock.weight))} kg available`
+                        : `0 kg available`}
                     </div>
                   )}
               </Field>
@@ -1875,8 +1875,8 @@ export default function JobOrders(props) {
                             letterSpacing: "0.04em",
                           }}
                         >
-                          {r.priority === "VIP" ? "⭐ VIP"
-                           : r.priority === "Rush" ? "⚡ RUSH"
+                          {r.priority === "VIP" ? "VIP"
+                           : r.priority === "Rush" ? "RUSH"
                            : "↓ FILL-IN"}
                         </span>
                       )}
@@ -1895,7 +1895,7 @@ export default function JobOrders(props) {
                           cursor: "pointer",
                         }}
                       >
-                        ✏️ Edit
+                        Edit
                       </button>
                       <button
                         onClick={() => handleDelete(r._id || r.id)}
@@ -1913,7 +1913,7 @@ export default function JobOrders(props) {
                           gap: 6,
                         }}
                       >
-                        🗑️ Delete
+                        Delete
                       </button>
                       <button
                         onClick={() => generateJobCardPDF(r)}
@@ -1928,7 +1928,7 @@ export default function JobOrders(props) {
                           cursor: "pointer",
                         }}
                       >
-                        🖨️ PDF
+                        PDF
                       </button>
                     </div>
                   </div>

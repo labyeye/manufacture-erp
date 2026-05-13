@@ -16,31 +16,31 @@ const ALL_REPORT_TABS = [
   {
     id: "production",
     label: "Production",
-    icon: "⚙️",
+    icon: "fa-solid fa-gears",
     roles: ["Admin", "Manager", "Operator", "Production", "Client"],
   },
   {
     id: "operator",
     label: "Operator",
-    icon: "👤",
+    icon: "fa-solid fa-user",
     roles: ["Admin", "Manager", "Production"],
   },
   {
     id: "machine",
     label: "Machine",
-    icon: "🏭",
+    icon: "fa-solid fa-industry",
     roles: ["Admin", "Manager", "Production"],
   },
   {
     id: "po_recon",
     label: "PO Recon",
-    icon: "🛒",
+    icon: "fa-solid fa-cart-shopping",
     roles: ["Admin", "Manager", "Store"],
   },
   {
     id: "so_recon",
     label: "SO Recon",
-    icon: "📋",
+    icon: "fa-solid fa-clipboard-list",
     roles: ["Admin", "Manager", "Sales", "Client"],
   },
   {
@@ -52,56 +52,56 @@ const ALL_REPORT_TABS = [
   {
     id: "yield",
     label: "Yield",
-    icon: "📈",
+    icon: "fa-solid fa-chart-line",
     roles: ["Admin", "Manager", "Production"],
   },
   {
     id: "delivery",
     label: "Delivery",
-    icon: "🚛",
+    icon: "fa-solid fa-truck",
     roles: ["Admin", "Manager", "Sales", "Client"],
   },
   {
     id: "low_stock",
     label: "Low Stock",
-    icon: "⚠️",
+    icon: "fa-solid fa-triangle-exclamation",
     roles: ["Admin", "Manager", "Store", "Client"],
   },
-  { id: "monthly", label: "Monthly", icon: "📅", roles: ["Admin", "Manager"] },
+  { id: "monthly", label: "Monthly", icon: "fa-solid fa-calendar-days", roles: ["Admin", "Manager"] },
   {
     id: "vendor",
     label: "Vendor",
-    icon: "🏭",
+    icon: "fa-solid fa-industry",
     roles: ["Admin", "Manager", "Store"],
   },
   {
     id: "oee",
     label: "OEE",
-    icon: "🎯",
+    icon: "fa-solid fa-bullseye",
     roles: ["Admin", "Manager", "Production"],
   },
   {
     id: "bottleneck",
     label: "Bottleneck",
-    icon: "🔴",
+    icon: "fa-solid fa-circle",
     roles: ["Admin", "Manager", "Production"],
   },
   {
     id: "scorecards",
     label: "Scorecards",
-    icon: "🏆",
+    icon: "fa-solid fa-trophy",
     roles: ["Admin", "Manager", "Production"],
   },
   {
     id: "alerts",
     label: "Alerts",
-    icon: "🔔",
+    icon: "fa-solid fa-bell",
     roles: ["Admin", "Manager", "Production", "Sales", "Store", "Accounts"],
   },
   {
     id: "funnel",
     label: "Funnel",
-    icon: "🔽",
+    icon: "fa-solid fa-chevron-down",
     roles: ["Admin", "Manager", "Production", "Sales"],
   },
 ];
@@ -493,7 +493,7 @@ export function Dashboard({ data, session, toast }) {
           id:       `delivery_${soKey}`,
           type:     "delivery_risk",
           severity: velocity === 0 ? "critical" : "high",
-          icon:     "🚨",
+          icon:     "fa-solid fa-circle-exclamation",
           title:    `${soKey} at risk of missing delivery`,
           detail:   `${remaining.toLocaleString("en-IN")} units remaining · ${daysLeft.toFixed(0)} days left · ${
             velocity > 0 ? `needs ${daysNeeded.toFixed(0)}d at current rate` : "no recent production activity"
@@ -534,7 +534,7 @@ export function Dashboard({ data, session, toast }) {
           id:       `vendor_${vendor}`,
           type:     "vendor_lead",
           severity: pctUp >= 75 ? "high" : "medium",
-          icon:     "🏪",
+          icon:     "fa-solid fa-store",
           title:    `${vendor}'s avg lead time up ${pctUp}%`,
           detail:   `Lead time: ${avgO.toFixed(0)}d → ${avgR.toFixed(0)}d over last 3 POs`,
           meta:     `Based on ${pts.length} purchase orders`,
@@ -565,7 +565,7 @@ export function Dashboard({ data, session, toast }) {
           id:       `churn_${client}`,
           type:     "client_churn",
           severity: drop >= 70 ? "high" : "medium",
-          icon:     "📉",
+          icon:     "fa-solid fa-chart-line-down",
           title:    `${client}'s order frequency dropped ${Math.round(drop)}%`,
           detail:   `Previous month: ${prev} orders · This month so far: ${cur} orders`,
           meta:     "Churn early warning",
@@ -587,7 +587,7 @@ export function Dashboard({ data, session, toast }) {
           id:       `consumable_${item._id || item.name}`,
           type:     "consumable_low",
           severity: daysLeft < 5 ? "critical" : daysLeft < 7 ? "high" : "medium",
-          icon:     "🪣",
+          icon:     "fa-solid fa-bucket",
           title:    `${item.name || "Consumable"} will run out in ~${Math.round(daysLeft)} days`,
           detail:   `Stock: ${qty} ${item.unit || "units"} · Reorder level: ${reorder} · Est. usage: ${dailyRate.toFixed(1)}/day`,
           meta:     item.category || "Consumable",
@@ -619,7 +619,7 @@ export function Dashboard({ data, session, toast }) {
           id:       `mdowntime_${mid}`,
           type:     "machine_downtime",
           severity: thisDown >= lastDown * 3 ? "high" : "medium",
-          icon:     "⚙️",
+          icon:     "fa-solid fa-gears",
           title:    `${m.name} downtime up ${Math.round(thisDown / Math.max(lastDown, 1))}× vs last month`,
           detail:   `This month: ${thisDown} inactive days · Last month: ${lastDown}`,
           meta:     `Machine type: ${m.type || "—"}`,
@@ -692,7 +692,7 @@ export function Dashboard({ data, session, toast }) {
           marginBottom: 20,
         }}
       >
-        <span style={{ fontSize: 22 }}>📊</span>
+        <i className="fa-solid fa-chart-pie" style={{ fontSize: 22 }} />
         <h1
           style={{
             fontSize: 20,
@@ -806,7 +806,7 @@ export function Dashboard({ data, session, toast }) {
             {
               label: "Production",
               val: fmt(prodThis),
-              icon: "⚙️",
+              icon: "fa-solid fa-gears",
               tab: "production",
               color: C.yellow,
               trend: trend(prodThis, prodLast),
@@ -815,7 +815,7 @@ export function Dashboard({ data, session, toast }) {
             {
               label: "Sales Orders",
               val: soThis,
-              icon: "🧾",
+              icon: "fa-solid fa-receipt",
               tab: "so_recon",
               color: C.blue,
               trend: trend(soThis, soLast),
@@ -824,7 +824,7 @@ export function Dashboard({ data, session, toast }) {
             {
               label: "Dispatched",
               val: fmt(dispThis),
-              icon: "🚛",
+              icon: "fa-solid fa-truck",
               tab: "delivery",
               color: C.purple,
               trend: trend(dispThis, dispLast),
@@ -832,7 +832,7 @@ export function Dashboard({ data, session, toast }) {
             {
               label: "Active Jobs",
               val: activeJOs.length,
-              icon: "📋",
+              icon: "fa-solid fa-clipboard-list",
               tab: "production",
               color: C.yellow,
               roles: ["Admin", "Manager", "Production", "Client"],
@@ -848,7 +848,7 @@ export function Dashboard({ data, session, toast }) {
             {
               label: "Rejections",
               val: fmt(rejThis),
-              icon: "✕",
+              icon: "fa-solid fa-xmark",
               tab: "yield",
               color: C.red,
               trend: trend(rejThis, rejLast),
@@ -858,7 +858,7 @@ export function Dashboard({ data, session, toast }) {
             {
               label: "Low Stock",
               val: lowStockItems.length,
-              icon: "⚠️",
+              icon: "fa-solid fa-triangle-exclamation",
               tab: "low_stock",
               color: C.red,
             },
@@ -918,7 +918,7 @@ export function Dashboard({ data, session, toast }) {
                       background: card.color + "11",
                     }}
                   >
-                    {card.icon}
+                    <i className={card.icon} />
                   </span>
                   <div style={{ textAlign: "right" }}>
                     {card.trend && (
@@ -1047,7 +1047,7 @@ export function Dashboard({ data, session, toast }) {
         <div style={{ marginBottom: 16 }}>
           <div style={{ display: "flex", gap: 8, alignItems: "center", overflowX: "auto", paddingBottom: 4 }}>
             <span style={{ fontSize: 11, color: "#555", fontWeight: 700, flexShrink: 0 }}>
-              🔔 {allAlerts.length} alert{allAlerts.length > 1 ? "s" : ""}
+              {allAlerts.length} alert{allAlerts.length > 1 ? "s" : ""}
             </span>
             {allAlerts.slice(0, 5).map((a) => {
               const col = a.severity === "critical" ? "#ef4444" : a.severity === "high" ? "#f97316" : "#f59e0b";
@@ -1057,7 +1057,7 @@ export function Dashboard({ data, session, toast }) {
                   onClick={() => setReportTab("alerts")}
                   style={{ flexShrink: 0, background: `${col}11`, border: `1px solid ${col}44`, borderRadius: 8, padding: "6px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 7, maxWidth: 260 }}
                 >
-                  <span style={{ fontSize: 13 }}>{a.icon}</span>
+                  <i className={a.icon} style={{ fontSize: 13 }} />
                   <div style={{ overflow: "hidden" }}>
                     <div style={{ fontSize: 10, fontWeight: 700, color: col, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.title}</div>
                     <div style={{ fontSize: 9, color: "#555" }}>{a.meta}</div>
@@ -1143,7 +1143,7 @@ export function Dashboard({ data, session, toast }) {
                     }
                   }}
                 >
-                  <span style={{ fontSize: 16 }}>{t.icon}</span>
+                  <i className={t.icon} style={{ fontSize: 16 }} />
                   <span style={{ whiteSpace: "nowrap" }}>{t.label} Report</span>
                 </button>
               ))}
@@ -1167,7 +1167,7 @@ export function Dashboard({ data, session, toast }) {
               gap: 20,
             }}
           >
-            <span style={{ fontSize: 36 }}>⚙️</span>
+            <i className="fa-solid fa-gears" style={{ fontSize: 36, color: "inherit" }} />
             <div>
               <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
                 <span
@@ -2301,7 +2301,7 @@ export function Dashboard({ data, session, toast }) {
                                   cursor: "pointer",
                                 }}
                               >
-                                ✓ Close SO
+                                Close SO
                               </button>
                             )}
                           </td>
@@ -3044,7 +3044,7 @@ export function Dashboard({ data, session, toast }) {
                 border: "1px solid #2a2a2e",
               }}
             >
-              ✅ All items are within healthy stock levels.
+              All items are within healthy stock levels.
             </div>
           ) : (
             <div>
@@ -3938,7 +3938,7 @@ export function Dashboard({ data, session, toast }) {
                         fill={v === 85 ? "#22c55e" : "#555"}
                         fontWeight={v === 85 ? 700 : 400}
                       >
-                        {v === 85 ? "85% ★" : `${v}%`}
+                        {v === 85 ? "85%" : `${v}%`}
                       </text>
                     </g>
                   );
@@ -4059,7 +4059,7 @@ export function Dashboard({ data, session, toast }) {
                   { label: "Quality Rate",   val: fleetQ,   note: "Good / (Good+Rejected)" },
                   { label: "Gap to 85%",
                     val: fleetOEE != null ? Math.max(0, 0.85 - fleetOEE) : null,
-                    note: fleetOEE != null && fleetOEE >= 0.85 ? "World-class ✓" : "vs benchmark",
+                    note: fleetOEE != null && fleetOEE >= 0.85 ? "World-class" : "vs benchmark",
                     isGap: true },
                 ].map(({ label, val, note, isGap }) => {
                   const col = isGap
@@ -4069,7 +4069,7 @@ export function Dashboard({ data, session, toast }) {
                     <div key={label} style={{ background: "#141416", border: `1px solid ${col}44`, borderLeft: `4px solid ${col}`, borderRadius: 8, padding: 16 }}>
                       <div style={{ fontSize: 11, color: "#888", fontWeight: 700, textTransform: "uppercase", marginBottom: 6 }}>{label}</div>
                       <div style={{ fontSize: 30, fontWeight: 900, color: col, fontFamily: "monospace" }}>
-                        {val == null ? "—" : isGap ? (val === 0 ? "★ 0%" : pct(val)) : pct(val)}
+                        {val == null ? "—" : isGap ? (val === 0 ? "0%" : pct(val)) : pct(val)}
                       </div>
                       <div style={{ fontSize: 10, color: "#555", marginTop: 4 }}>{note}</div>
                     </div>
@@ -4080,7 +4080,7 @@ export function Dashboard({ data, session, toast }) {
               {}
               {rootCause && (
                 <div style={{ marginBottom: 20, padding: "12px 18px", borderRadius: 8, background: `${oeeColor(rootCause.val)}11`, border: `1px solid ${oeeColor(rootCause.val)}44`, display: "flex", gap: 14, alignItems: "center" }}>
-                  <span style={{ fontSize: 22 }}>⚠️</span>
+                  <i className="fa-solid fa-triangle-exclamation" style={{ fontSize: 22, color: "#f59e0b" }} />
                   <div>
                     <div style={{ fontWeight: 700, color: oeeColor(rootCause.val), fontSize: 13 }}>
                       Lowest factor: {rootCause.label} ({pct(rootCause.val)})
@@ -4271,7 +4271,7 @@ export function Dashboard({ data, session, toast }) {
                                 <td style={{ ...TD, fontWeight: 700 }}>{r.m.name}</td>
                                 <td style={TD}>
                                   <span style={{ padding: "2px 8px", borderRadius: 4, background: sh === "Morning" ? "#17254422" : sh === "Night" ? "#1e1b4b22" : "#1a110022", color: sh === "Morning" ? "#60a5fa" : sh === "Night" ? "#818cf8" : "#fb923c", fontSize: 11, fontWeight: 700 }}>
-                                    {sh === "Morning" ? "🌅" : sh === "Night" ? "🌙" : "⚡"} {sh}
+                                    {sh === "Morning" ? "AM" : sh === "Night" ? "PM" : "EV"} {sh}
                                   </span>
                                 </td>
                                 <td style={{ ...TD, textAlign: "right", color: C.green, fontWeight: 700 }}>{sd.good.toLocaleString("en-IN")}</td>
@@ -4310,10 +4310,10 @@ export function Dashboard({ data, session, toast }) {
       {reportTab === "alerts" &&
         (() => {
           const SEV_CFG = {
-            critical: { color: "#ef4444", bg: "#450a0a99", label: "Critical",   dot: "🔴" },
-            high:     { color: "#f97316", bg: "#431407aa", label: "High",       dot: "🟠" },
-            medium:   { color: "#f59e0b", bg: "#451a0399", label: "Medium",     dot: "🟡" },
-            low:      { color: "#22c55e", bg: "#052e1699", label: "Low",        dot: "🟢" },
+            critical: { color: "#ef4444", bg: "#450a0a99", label: "Critical",   dot: "●" },
+            high:     { color: "#f97316", bg: "#431407aa", label: "High",       dot: "●" },
+            medium:   { color: "#f59e0b", bg: "#451a0399", label: "Medium",     dot: "●" },
+            low:      { color: "#22c55e", bg: "#052e1699", label: "Low",        dot: "●" },
           };
           const TYPE_LABELS = {
             delivery_risk:  "Delivery Risk",
@@ -4339,7 +4339,7 @@ export function Dashboard({ data, session, toast }) {
               {}
               {allAlerts.length === 0 ? (
                 <div style={{ textAlign: "center", padding: 60, background: "#141416", borderRadius: 12, border: "1px solid #2a2a2e" }}>
-                  <div style={{ fontSize: 40, marginBottom: 12 }}>✅</div>
+                  <i className="fa-solid fa-circle-check" style={{ fontSize: 40, marginBottom: 12, display: "block", color: "#22c55e" }} />
                   <div style={{ fontWeight: 700, fontSize: 16, color: C.green, marginBottom: 8 }}>All Clear — No Active Alerts</div>
                   <div style={{ fontSize: 12, color: "#555" }}>
                     All delivery schedules, vendor lead times, client orders, stock levels, and machine availability look healthy.
@@ -4377,7 +4377,7 @@ export function Dashboard({ data, session, toast }) {
                             >
                               {}
                               <div style={{ textAlign: "center" }}>
-                                <div style={{ fontSize: 22 }}>{a.icon}</div>
+                                <i className={a.icon} style={{ fontSize: 22 }} />
                                 <div style={{ fontSize: 9, fontWeight: 700, color: cfg.color, marginTop: 4, whiteSpace: "nowrap" }}>
                                   {cfg.dot} {cfg.label}
                                 </div>
@@ -4513,7 +4513,7 @@ export function Dashboard({ data, session, toast }) {
             const fillBg  = isBN ? "#ef444422" : fillPct > 0.5 ? "#f59e0b22" : s.isFeeder ? "#3b82f622" : "#22c55e22";
             return (
               <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <div style={{ height: 22 }}>{isBN && <span style={{ fontSize: 15 }}>👑</span>}</div>
+                <div style={{ height: 22 }}>{isBN && <i className="fa-solid fa-crown" style={{ fontSize: 15, color: "#f59e0b" }} />}</div>
                 <div style={{ width: 82, height, border: `2px solid ${border}`, borderRadius: 6, background: "#0c0c0e", position: "relative", overflow: "hidden" }}>
                   <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: `${fillPct * 100}%`, background: fillBg }} />
                   <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: 2 }}>
@@ -4556,7 +4556,7 @@ export function Dashboard({ data, session, toast }) {
               {/* ── Recommendation ── */}
               {!noWIP && bottleneck.count > 0 && (
                 <div style={{ marginBottom: 16, padding: "14px 18px", borderRadius: 8, background: "#1a0a0a", border: "1px solid #ef444466", display: "flex", gap: 14, alignItems: "flex-start" }}>
-                  <span style={{ fontSize: 20, flexShrink: 0 }}>💡</span>
+                  <i className="fa-solid fa-lightbulb" style={{ fontSize: 20, flexShrink: 0, color: "#f59e0b" }} />
                   <div>
                     <div style={{ fontWeight: 700, color: "#ef4444", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Bottleneck Recommendation</div>
                     <div style={{ fontSize: 13, color: "#bbb", lineHeight: 1.6 }}>{rec}</div>
@@ -4567,7 +4567,7 @@ export function Dashboard({ data, session, toast }) {
               {/* ── Starvation alert ── */}
               {(starvationRisk === "high" || starvationRisk === "medium") && starvationText && (
                 <div style={{ marginBottom: 16, padding: "14px 18px", borderRadius: 8, background: starvationRisk === "high" ? "#1a0505" : "#1a1400", border: `1px solid ${starvationColor}66`, display: "flex", gap: 14, alignItems: "flex-start" }}>
-                  <span style={{ fontSize: 20, flexShrink: 0 }}>⚠️</span>
+                  <i className="fa-solid fa-triangle-exclamation" style={{ fontSize: 20, flexShrink: 0, color: "#f59e0b" }} />
                   <div>
                     <div style={{ fontWeight: 700, color: starvationColor, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Formation Starvation {starvationRisk === "high" ? "Warning" : "Notice"}</div>
                     <div style={{ fontSize: 13, color: "#bbb", lineHeight: 1.6 }}>{starvationText}</div>
@@ -4607,7 +4607,7 @@ export function Dashboard({ data, session, toast }) {
                 </div>
 
                 <div style={{ fontSize: 10, color: "#444", marginTop: 8 }}>
-                  Fill = relative WIP queue depth · 👑 = highest pressure (jobs × avg wait) · Blue arrow = feeder → Formation flow · Varnish & Lamination apply to ~20–25% of jobs
+                  Fill = relative WIP queue depth · * = highest pressure (jobs × avg wait) · Blue arrow = feeder → Formation flow · Varnish & Lamination apply to ~20–25% of jobs
                 </div>
               </div>
 
@@ -4628,7 +4628,7 @@ export function Dashboard({ data, session, toast }) {
                     {stageStats.map((s, i) => {
                       const isBN      = s.stage === bottleneck.stage && s.count > 0;
                       const col       = isBN ? C.red : s.count > 2 ? C.yellow : s.count > 0 ? C.green : "#555";
-                      const label     = s.count === 0 ? "Clear" : isBN ? "Bottleneck 👑" : s.count > 2 ? "Congested" : "Manageable";
+                      const label     = s.count === 0 ? "Clear" : isBN ? "Bottleneck" : s.count > 2 ? "Congested" : "Manageable";
                       const roleCol   = s.isFeeder ? "#3b82f6" : "#22c55e";
                       const roleLabel = s.isFeeder ? "Feeder" : "Sink";
                       return (
@@ -4823,7 +4823,7 @@ export function Dashboard({ data, session, toast }) {
           const pctFmt    = (n) => n == null ? "—" : `${(n * 100).toFixed(1)}%`;
           const utilColor = (v) => v >= 0.7 ? C.green : v >= 0.4 ? C.yellow : C.red;
           const trendColor = (t) => t === "improving" ? C.green : t === "declining" ? C.red : t === "plateau" ? C.yellow : "#555";
-          const trendLabel = (t) => t === "improving" ? "↑ Improving" : t === "declining" ? "↓ Declining" : t === "plateau" ? "→ Plateau" : t === "new" ? "✦ New" : "—";
+          const trendLabel = (t) => t === "improving" ? "↑ Improving" : t === "declining" ? "↓ Declining" : t === "plateau" ? "→ Plateau" : t === "new" ? "New" : "—";
 
           // Mini SVG sparkline
           const Sparkline = ({ vals, color }) => {
@@ -4851,7 +4851,7 @@ export function Dashboard({ data, session, toast }) {
               {/* ── Operator scorecards table ── */}
               <div style={{ borderRadius: 8, overflow: "hidden", border: "1px solid #2a2a2e", marginBottom: 24 }}>
                 <div style={{ padding: "12px 16px", background: "#1a1a1e", borderBottom: "1px solid #2a2a2e" }}>
-                  <span style={{ fontWeight: 700, color: "#bbb", fontSize: 12 }}>🏆 Operator Productivity Scorecards</span>
+                  <span style={{ fontWeight: 700, color: "#bbb", fontSize: 12 }}>Operator Productivity Scorecards</span>
                   <span style={{ fontSize: 10, color: "#555", marginLeft: 10 }}>
                     Ranked by units/shift · Sparkline = last 6 weeks output · Learning curve flag
                   </span>
@@ -4871,7 +4871,7 @@ export function Dashboard({ data, session, toast }) {
                     </thead>
                     <tbody>
                       {opRows.map((r, i) => {
-                        const medal    = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`;
+                        const medal    = i === 0 ? "1st" : i === 1 ? "2nd" : i === 2 ? "3rd" : `#${i + 1}`;
                         const prodCol  = i === 0 ? C.green : i < 3 ? C.yellow : "#e0e0e0";
                         const qualCol  = r.quality == null ? "#555" : r.quality >= 0.95 ? C.green : r.quality >= 0.85 ? C.yellow : C.red;
                         return (
@@ -4898,10 +4898,10 @@ export function Dashboard({ data, session, toast }) {
                                 {trendLabel(r.trend)}
                               </span>
                               {r.trend === "plateau" && r.activeShifts > 4 && (
-                                <div style={{ fontSize: 9, color: C.yellow, marginTop: 3 }}>⚠️ Consider retraining</div>
+                                <div style={{ fontSize: 9, color: C.yellow, marginTop: 3 }}>Consider retraining</div>
                               )}
                               {r.trend === "declining" && (
-                                <div style={{ fontSize: 9, color: C.red, marginTop: 3 }}>⚠️ Investigate cause</div>
+                                <div style={{ fontSize: 9, color: C.red, marginTop: 3 }}>Investigate cause</div>
                               )}
                             </td>
                           </tr>
@@ -4915,7 +4915,7 @@ export function Dashboard({ data, session, toast }) {
               {/* ── Machine utilization ── */}
               <div style={{ borderRadius: 8, overflow: "hidden", border: "1px solid #2a2a2e" }}>
                 <div style={{ padding: "12px 16px", background: "#1a1a1e", borderBottom: "1px solid #2a2a2e" }}>
-                  <span style={{ fontWeight: 700, color: "#bbb", fontSize: 12 }}>🏭 Machine Utilization</span>
+                  <span style={{ fontWeight: 700, color: "#bbb", fontSize: 12 }}>Machine Utilization</span>
                   <span style={{ fontSize: 10, color: "#555", marginLeft: 10 }}>
                     Active shifts ÷ fleet shifts · Weekly utilization sparkline · Capacity planning input
                   </span>
@@ -5075,25 +5075,25 @@ export function Dashboard({ data, session, toast }) {
               label: "SO Created",
               count: total,
               color: "#3b82f6",
-              icon: "📋",
+              icon: "fa-solid fa-clipboard-list",
             },
             {
               label: "JO Created",
               count: withJO,
               color: "#8b5cf6",
-              icon: "📝",
+              icon: "fa-solid fa-file-pen",
             },
             {
               label: "In Production",
               count: withProd,
               color: "#f97316",
-              icon: "⚙️",
+              icon: "fa-solid fa-gears",
             },
             {
               label: "Dispatched",
               count: withDisp,
               color: "#22c55e",
-              icon: "🚛",
+              icon: "fa-solid fa-truck",
             },
           ];
 
@@ -5194,7 +5194,7 @@ export function Dashboard({ data, session, toast }) {
                             textAlign: "right",
                           }}
                         >
-                          {stage.icon} {stage.label}
+                          <i className={stage.icon} /> {stage.label}
                         </div>
                         <div
                           style={{
@@ -5421,9 +5421,7 @@ export function Dashboard({ data, session, toast }) {
                             <tr key={d.soKey}>
                               <td style={TD}>
                                 {stuck && (
-                                  <span style={{ color: "#f59e0b", marginRight: 4 }}>
-                                    ⚠️
-                                  </span>
+                                  <i className="fa-solid fa-triangle-exclamation" style={{ color: "#f59e0b", marginRight: 4 }} />
                                 )}
                                 <span style={{ fontWeight: 600 }}>{d.soKey}</span>
                               </td>

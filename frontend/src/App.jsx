@@ -35,7 +35,6 @@ import {
 } from "./api/auth";
 import { AuthContext, AuthProvider, useAuth } from "./context/AuthContext";
 import { Toast } from "./components/ui/AdvancedComponents";
-
 import { Dashboard } from "./pages/Dashboard";
 import MaterialInward from "./pages/MaterialInward";
 import SalesOrders from "./pages/SalesOrders";
@@ -65,7 +64,7 @@ import QualityHub from "./pages/QualityHub";
 import DesignHub from "./pages/DesignHub";
 import NotificationHub from "./pages/NotificationHub";
 import ERPConsole from "./pages/ERPConsole";
-
+import companylogo from "../src/assets/logo.png";
 function App() {
   return (
     <AuthProvider>
@@ -92,22 +91,37 @@ function AppContent() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: C.bg,
+          background:
+            "linear-gradient(135deg, #07070f 0%, #0c0c1a 50%, #09090e 100%)",
           color: C.text,
           flexDirection: "column",
           gap: 20,
         }}
       >
-        <div style={{ fontSize: 40, animation: "bounce 1s infinite" }}>🏭</div>
-        <div style={{ fontWeight: 600, letterSpacing: 1 }}>
-          LOADING SYSTEM...
+        <i
+          className="fa-solid fa-industry"
+          style={{
+            fontSize: 36,
+            color: "#6366f1",
+            animation: "bounce 1s infinite",
+          }}
+        />
+        <div
+          style={{
+            fontWeight: 500,
+            letterSpacing: "0.04em",
+            color: C.muted,
+            fontSize: 13,
+          }}
+        >
+          Loading system...
         </div>
         <style>{`
-          @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-          }
-        `}</style>
+ @keyframes bounce {
+ 0%, 100% { transform: translateY(0); }
+ 50% { transform: translateY(-10px); }
+ }
+ `}</style>
       </div>
     );
   }
@@ -146,7 +160,13 @@ function useIsMobile() {
   return isMobile;
 }
 
-function AppInner({ session, onLogout, onRefreshUser, allowedTabs, editableTabs }) {
+function AppInner({
+  session,
+  onLogout,
+  onRefreshUser,
+  allowedTabs,
+  editableTabs,
+}) {
   const [currentTab, setCurrentTab] = useState(() => {
     const lastTab = localStorage.getItem("erp_lastTab");
     return lastTab || "dashboard";
@@ -521,13 +541,41 @@ function AppInner({ session, onLogout, onRefreshUser, allowedTabs, editableTabs 
           />
         );
       case "purchase":
-        return <PurchaseOrders {...data} deepLinkId={deepLink?.tab === "purchase" ? deepLink.recordId : null} onDeepLinkConsumed={() => setDeepLink(null)} />;
+        return (
+          <PurchaseOrders
+            {...data}
+            deepLinkId={deepLink?.tab === "purchase" ? deepLink.recordId : null}
+            onDeepLinkConsumed={() => setDeepLink(null)}
+          />
+        );
       case "inward":
-        return <MaterialInward {...data} toast={showToast} deepLinkId={deepLink?.tab === "inward" ? deepLink.recordId : null} onDeepLinkConsumed={() => setDeepLink(null)} />;
+        return (
+          <MaterialInward
+            {...data}
+            toast={showToast}
+            deepLinkId={deepLink?.tab === "inward" ? deepLink.recordId : null}
+            onDeepLinkConsumed={() => setDeepLink(null)}
+          />
+        );
       case "sales":
-        return <SalesOrders {...data} session={session} toast={showToast} deepLinkId={deepLink?.tab === "sales" ? deepLink.recordId : null} onDeepLinkConsumed={() => setDeepLink(null)} />;
+        return (
+          <SalesOrders
+            {...data}
+            session={session}
+            toast={showToast}
+            deepLinkId={deepLink?.tab === "sales" ? deepLink.recordId : null}
+            onDeepLinkConsumed={() => setDeepLink(null)}
+          />
+        );
       case "jobs":
-        return <JobOrders {...data} toast={showToast} deepLinkId={deepLink?.tab === "jobs" ? deepLink.recordId : null} onDeepLinkConsumed={() => setDeepLink(null)} />;
+        return (
+          <JobOrders
+            {...data}
+            toast={showToast}
+            deepLinkId={deepLink?.tab === "jobs" ? deepLink.recordId : null}
+            onDeepLinkConsumed={() => setDeepLink(null)}
+          />
+        );
       case "production":
         return <ProductionUpdate {...data} toast={showToast} />;
       case "printingmaster":
@@ -574,7 +622,14 @@ function AppInner({ session, onLogout, onRefreshUser, allowedTabs, editableTabs 
           />
         );
       case "machinetools":
-        return <MachineTools machineMaster={data.machineMaster} itemMasterFG={data.itemMasterFG} categoryMaster={data.categoryMaster} toast={showToast} />;
+        return (
+          <MachineTools
+            machineMaster={data.machineMaster}
+            itemMasterFG={data.itemMasterFG}
+            categoryMaster={data.categoryMaster}
+            toast={showToast}
+          />
+        );
       case "pricemaster":
         return <PriceMaster toast={showToast} />;
       case "forecast":
@@ -589,7 +644,7 @@ function AppInner({ session, onLogout, onRefreshUser, allowedTabs, editableTabs 
             refreshData={fetchMasters}
           />
         );
-case "dispatch":
+      case "dispatch":
         return <Dispatch {...data} toast={showToast} />;
       case "rawstock":
         return <RMStock {...data} session={session} toast={showToast} />;
@@ -613,7 +668,12 @@ case "dispatch":
         return <BrandMaster {...data} toast={showToast} />;
       case "users":
         return (
-          <UserManagement {...data} currentUser={session} toast={showToast} onRefreshUser={onRefreshUser} />
+          <UserManagement
+            {...data}
+            currentUser={session}
+            toast={showToast}
+            onRefreshUser={onRefreshUser}
+          />
         );
       case "erpconsole":
         return <ERPConsole session={session} toast={showToast} />;
@@ -634,37 +694,40 @@ case "dispatch":
     <>
       <div
         style={{
-          padding: "24px 20px",
-          borderBottom: `1px solid ${C.border}44`,
+          padding: "22px 20px 18px",
+          borderBottom: `1px solid rgba(255,255,255,0.07)`,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
         }}
       >
-        <div>
+        <div
+          style={{
+            alignItems: "center",
+            justifyContent: "center",
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <img
+            src={companylogo}
+            alt="Logo"
+            style={{
+              width: 64,
+              height: 64,
+              marginRight: 12,
+            }}
+          />
           <div
             style={{
-              color: C.accent,
-              fontWeight: 900,
-              fontSize: 13,
-              letterSpacing: "normal",
-              textTransform: "uppercase",
+              color: "#ffffff",
+              fontSize: 14,
+              marginTop: 3,
+              fontWeight: 400,
             }}
           >
-            MANUFACTUREIQ
-          </div>
-          <div
-            style={{
-              color: "#fff",
-              fontWeight: 800,
-              fontSize: 22,
-              marginTop: -2,
-            }}
-          >
-            ERP System
-          </div>
-          <div style={{ color: C.muted, fontSize: 10, marginTop: 4 }}>
-            Manufacturing Suite
+            Manufacturing ERP
           </div>
         </div>
         {isMobile && (
@@ -673,99 +736,112 @@ case "dispatch":
             style={{
               background: "transparent",
               border: "none",
-              color: "#94a3b8",
-              fontSize: 22,
+              color: "#ffffff",
+              fontSize: 16,
               cursor: "pointer",
               padding: "4px 8px",
             }}
           >
-            ✕
+            <i className="fa-solid fa-xmark" />
           </button>
         )}
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: "10px 0" }}>
-        {TABS.filter((tab) => allowedTabs.includes(tab.id)).map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => {
-              setCurrentTab(tab.id);
-              if (isMobile) setSidebarOpen(false);
-            }}
-            style={{
-              width: "100%",
-              padding: "14px 24px",
-              textAlign: "left",
-              border: "none",
-              background:
-                currentTab === tab.id
-                  ? "rgba(255, 120, 0, 0.08)"
-                  : "transparent",
-              color: currentTab === tab.id ? "#ff7800" : "#94a3b8",
-              borderLeft: `4px solid ${currentTab === tab.id ? "#ff7800" : "transparent"}`,
-              cursor: "pointer",
-              transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-              fontSize: 13,
-              fontWeight: currentTab === tab.id ? 700 : 500,
-              display: "flex",
-              alignItems: "center",
-              gap: 14,
-            }}
-            onMouseEnter={(e) => {
-              if (currentTab !== tab.id) {
-                e.currentTarget.style.background = "rgba(255, 255, 255, 0.03)";
-                e.currentTarget.style.color = "#fff";
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (currentTab !== tab.id) {
-                e.currentTarget.style.background = "transparent";
-                e.currentTarget.style.color = "#94a3b8";
-              }
-            }}
-          >
-            <span
+      <div style={{ flex: 1, overflowY: "auto", padding: "8px 12px" }}>
+        {TABS.filter((tab) => allowedTabs.includes(tab.id)).map((tab) => {
+          const isActive = currentTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => {
+                setCurrentTab(tab.id);
+                if (isMobile) setSidebarOpen(false);
+              }}
               style={{
-                fontSize: 20,
-                opacity: currentTab === tab.id ? 1 : 0.6,
-                filter:
-                  currentTab === tab.id
-                    ? "drop-shadow(0 0 5px #ff780044)"
-                    : "none",
+                width: "100%",
+                padding: "11px 14px",
+                textAlign: "left",
+                border: "none",
+                background: isActive ? "rgba(99,102,241,0.18)" : "transparent",
+                color: isActive ? "#ffffff" : "#ffffff",
+                borderRadius: 14,
+                cursor: "pointer",
+                transition: "all 0.18s ease",
+                fontSize: 13,
+                fontWeight: isActive ? 600 : 400,
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                marginBottom: 2,
+                boxShadow: isActive ? "0 0 0 1px rgba(99,102,241,0.3)" : "none",
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+                  e.currentTarget.style.color = C.text;
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.color = C.muted;
+                }
               }}
             >
-              {tab.icon}
-            </span>
-            <span style={{ letterSpacing: "0.02em" }}>{tab.label}</span>
-          </button>
-        ))}
+              <i
+                className={tab.icon}
+                style={{
+                  fontSize: 14,
+                  opacity: isActive ? 1 : 0.65,
+                  flexShrink: 0,
+                  width: 16,
+                  textAlign: "center",
+                }}
+              />
+              <span style={{ letterSpacing: "-0.01em" }}>{tab.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       <div
         style={{
-          padding: 16,
-          borderTop: `1px solid ${C.border}44`,
-          background: "#0a0a0a",
+          padding: "14px 16px",
+          borderTop: `1px solid rgba(255,255,255,0.07)`,
         }}
       >
-        <div style={{ fontSize: 11, color: C.muted, marginBottom: 8 }}>
-          👤 {session.username} ({session.role})
+        <div
+          style={{
+            fontSize: 12,
+            color: C.muted,
+            marginBottom: 10,
+            fontWeight: 400,
+          }}
+        >
+          {session.username} · {session.role}
         </div>
         <button
           onClick={onLogout}
           style={{
             width: "100%",
-            background: "#450a0a",
-            color: "#ef4444",
-            border: "1px solid #7f1d1d",
-            borderRadius: 6,
+            background: "rgba(239,68,68,0.1)",
+            color: "#f87171",
+            border: "1px solid rgba(239,68,68,0.2)",
+            borderRadius: 10,
             padding: "8px",
-            fontWeight: 700,
-            fontSize: 11,
+            fontWeight: 600,
+            fontSize: 12,
             cursor: "pointer",
+            transition: "all 0.18s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "rgba(239,68,68,0.18)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "rgba(239,68,68,0.1)";
           }}
         >
-          Logout System
+          Sign out
         </button>
       </div>
     </>
@@ -777,10 +853,12 @@ case "dispatch":
         height: "100vh",
         display: "flex",
         flexDirection: "column",
-        background: C.bg,
+        background:
+          "linear-gradient(135deg, #07070f 0%, #0c0c1a 50%, #09090e 100%)",
+        backgroundAttachment: "fixed",
         color: C.text,
         overflow: "hidden",
-        fontFamily: "'Inter', sans-serif",
+        fontFamily: "'Poppins', sans-serif",
       }}
     >
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
@@ -791,7 +869,8 @@ case "dispatch":
             style={{
               position: "fixed",
               inset: 0,
-              background: "rgba(0,0,0,0.6)",
+              background: "rgba(0,0,0,0.5)",
+              backdropFilter: "blur(4px)",
               zIndex: 40,
             }}
           />
@@ -801,13 +880,16 @@ case "dispatch":
         {!isMobile ? (
           <div
             style={{
-              background: "#0a0a0a",
-              borderRight: `1px solid ${C.border}`,
-              width: 240,
+              background: "rgba(0, 0, 0, 0)",
+              backdropFilter: "blur(20px)",
+              //WebkitBackdropFilter: "blur(20px)",
+              borderRight: "1px solid rgba(255,255,255,0.18)",
+              width: 230,
               display: "flex",
               flexDirection: "column",
               flexShrink: 0,
               maxHeight: "100%",
+              boxShadow: "2px 0 24px rgba(0,0,0,0.3)",
             }}
           >
             {sidebarContent}
@@ -820,13 +902,16 @@ case "dispatch":
               left: 0,
               height: "100%",
               width: 260,
-              background: "#0a0a0a",
-              borderRight: `1px solid ${C.border}`,
+              background: "rgba(0, 0, 0, 0)",
+              backdropFilter: "blur(20px)",
+              //WebkitBackdropFilter: "blur(20px)",
+              borderRight: "1px solid rgba(255,255,255,0.18)",
               display: "flex",
               flexDirection: "column",
               zIndex: 50,
               transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)",
               transition: "transform 0.25s ease",
+              boxShadow: "4px 0 32px rgba(0,0,0,0.4)",
             }}
           >
             {sidebarContent}
@@ -846,12 +931,14 @@ case "dispatch":
           {/* Top header */}
           <div
             style={{
-              height: 56,
-              background: "#0d0d0d",
-              borderBottom: `1px solid ${C.border}44`,
+              height: 54,
+              background: "rgba(0, 0, 0, 0)",
+              backdropFilter: "blur(20px)",
+              //WebkitBackdropFilter: "blur(20px)",
+              borderBottom: "1px solid rgba(255,255,255,0.18)",
               display: "flex",
               alignItems: "center",
-              padding: isMobile ? "0 12px" : "0 24px",
+              padding: isMobile ? "0 12px" : "0 28px",
               justifyContent: "space-between",
               gap: 12,
               flexShrink: 0,
@@ -863,45 +950,65 @@ case "dispatch":
                 style={{
                   background: "transparent",
                   border: "none",
-                  color: "#94a3b8",
-                  fontSize: 22,
+                  color: C.muted,
+                  fontSize: 16,
                   cursor: "pointer",
                   padding: "4px",
                   flexShrink: 0,
                 }}
               >
-                ☰
+                <i className="fa-solid fa-bars" />
               </button>
             )}
             <div
               style={{
-                background: "#1a1a1a",
-                borderRadius: 8,
+                background: "rgba(0, 0, 0, 0)",
+                backdropFilter: "blur(20px)",
+                //WebkitBackdropFilter: "blur(20px)",
+                border: "1px solid rgba(255,255,255,0.18)",
+                borderRadius: 12,
                 padding: isMobile ? "7px 12px" : "8px 16px",
                 display: "flex",
                 alignItems: "center",
                 gap: 10,
                 flex: 1,
-                maxWidth: isMobile ? "100%" : 300,
-                color: "#555",
+                maxWidth: isMobile ? "100%" : 320,
+                color: C.placeholder,
                 fontSize: 13,
                 cursor: "pointer",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+                transition: "all 0.18s ease",
               }}
               onClick={() => {
                 setCurrentTab("search");
                 if (isMobile) setSidebarOpen(false);
               }}
             >
-              <span>🔍</span>
-              <span style={{ flex: 1 }}>Search anything...</span>
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke={C.muted}
+                strokeWidth="2"
+              >
+                <circle cx="9" cy="9" r="6" />
+                <path d="m15 15 3 3" />
+              </svg>
+              <span style={{ flex: 1, fontWeight: 300, fontStyle: "italic" }}>
+                Search anything...
+              </span>
               {!isMobile && (
                 <span
                   style={{
                     fontSize: 10,
-                    background: "#333",
-                    padding: "2px 6px",
-                    borderRadius: 4,
+                    background: "rgba(255,255,255,0.08)",
+                    color: C.muted,
+                    padding: "2px 7px",
+                    borderRadius: 10,
                     flexShrink: 0,
+                    fontFamily: "'Fira Code', monospace",
+                    fontWeight: 500,
                   }}
                 >
                   Ctrl+K
@@ -914,7 +1021,7 @@ case "dispatch":
           <div
             style={{
               flex: 1,
-              padding: isMobile ? 12 : 24,
+              padding: isMobile ? 12 : 28,
               overflowY: "auto",
               overflowX: "hidden",
               position: "relative",

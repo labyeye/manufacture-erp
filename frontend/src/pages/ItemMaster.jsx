@@ -616,23 +616,31 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
       const [headers, ...rows] = rawData;
       const colsDef = getTabColumns();
 
+      // Build Excel header → column index map (case-insensitive, trimmed)
+      const xlColIdx = {};
+      (headers || []).forEach((h, i) => {
+        if (h != null) xlColIdx[String(h).toLowerCase().trim()] = i;
+      });
+
+      // Get a cell value: prefer matching by the actual Excel header name,
+      // fall back to the definition's positional index.
+      const getCell = (rowData, defHeader, defIdx) => {
+        const key = defHeader.toLowerCase().trim();
+        if (xlColIdx[key] !== undefined) return rowData[xlColIdx[key]];
+        return rowData[defIdx];
+      };
+
       const imported = [];
       for (const rowData of rows) {
         if (!rowData || rowData.length === 0) continue;
 
-        
         if (!rowData[1] && !rowData[2]) continue;
 
         const item = { type: activeTab };
 
-        
         colsDef.forEach((col, idx) => {
-          const val = rowData[idx];
+          const val = getCell(rowData, col.header, idx);
           if (val === undefined || val === null) return;
-
-          
-          
-          
 
           const header = col.header.toLowerCase();
           if (header.includes("product code")) item.code = String(val).trim();
@@ -889,7 +897,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
         <h2
           style={{ fontSize: 22, fontWeight: 700, color: "#e0e0e0", margin: 0 }}
         >
-          📋 Item Master
+          Item Master
         </h2>
         <p style={{ fontSize: 13, color: "#777", margin: "4px 0 0" }}>
           Manage your items, raw materials, and components
@@ -1614,7 +1622,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
               cursor: "pointer",
             }}
           >
-            {editingItem ? "✅ Update Item" : `+ Add ${activeTab} Item`}
+            {editingItem ? "Update Item" : `+ Add ${activeTab} Item`}
           </button>
           {editingItem && (
             <button
@@ -1672,7 +1680,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
               fontSize: 13,
             }}
           >
-            <span style={{ fontSize: 16 }}>🏭</span> Bulk Import Company Product
+            <i className="fa-solid fa-industry" style={{ fontSize: 16 }} /> Bulk Import Company Product
             Codes
           </div>
           <div style={{ fontSize: 12, color: "#6366f199", lineHeight: 1.5 }}>
@@ -1697,7 +1705,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                 gap: 8,
               }}
             >
-              ⬇️ Download Template
+              Download Template
             </button>
             <button
               onClick={() => companyCodesFileRef.current.click()}
@@ -1715,7 +1723,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                 gap: 8,
               }}
             >
-              ⬆️ Import Codes
+              Import Codes
             </button>
             <input
               type="file"
@@ -1796,7 +1804,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                 marginRight: 10,
               }}
             >
-              🗑️ Delete {selectedIds.length} Selected
+              Delete {selectedIds.length} Selected
             </button>
           )}
           <ExportBtn onClick={handleExport} label="Export" />
@@ -1820,7 +1828,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                 whiteSpace: "nowrap",
               }}
             >
-              🗑️ Delete All
+              Delete All
             </button>
           )}
           <input
@@ -1968,7 +1976,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                       textAlign: "left",
                     }}
                   >
-                    🎟️ Co. Codes {showClientCodes === item._id ? "▲" : "▼"}
+                    Co. Codes {showClientCodes === item._id ? "▲" : "▼"}
                   </button>
                   {showClientCodes === item._id && (
                     <div style={{ marginTop: 8, background: "#111", border: "1px solid #333", borderRadius: 8, padding: 10 }}>
@@ -2007,13 +2015,13 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                   onClick={() => handleEdit(item)}
                   style={{ flex: 1, padding: "8px 0", background: "#1e293b", color: "#64b5f6", border: "1px solid #334155", borderRadius: 6, fontSize: 13, fontWeight: 700, cursor: "pointer" }}
                 >
-                  ✏️ Edit
+                  Edit
                 </button>
                 <button
                   onClick={() => handleDelete(item)}
                   style={{ flex: 1, padding: "8px 0", background: "#450a0a", color: "#ef4444", border: "1px solid #7f1d1d", borderRadius: 6, fontSize: 13, fontWeight: 700, cursor: "pointer" }}
                 >
-                  🗑️ Delete
+                  Delete
                 </button>
               </div>
             </div>
@@ -2118,7 +2126,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                       }}
                       style={{ padding: "4px 8px", borderRadius: 6, background: "#4f46e51a", color: "#818cf8", border: "1px solid #4f46e544", fontSize: 10, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, width: "100%" }}
                     >
-                      🎟️ Co. Codes {showClientCodes === item._id ? "▲" : "▼"}
+                      Co. Codes {showClientCodes === item._id ? "▲" : "▼"}
                     </button>
                     {showClientCodes === item._id && (
                       <div style={{ position: "absolute", top: "100%", right: 0, zIndex: 100, background: "#1a1a1a", border: "1px solid #333", borderRadius: 8, padding: 8, minWidth: 150, boxShadow: "0 10px 25px rgba(0,0,0,0.5)", marginTop: 4 }}>
@@ -2159,13 +2167,13 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
                     onClick={() => handleEdit(item)}
                     style={{ background: "#1e293b", color: "#64b5f6", border: "1px solid #334155", borderRadius: 6, padding: "4px 10px", fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}
                   >
-                    ✏️ Edit
+                    Edit
                   </button>
                   <button
                     onClick={() => handleDelete(item)}
                     style={{ background: "#450a0a", color: "#ef4444", border: "1px solid #7f1d1d", borderRadius: 6, padding: "4px 10px", fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}
                   >
-                    🗑️ Delete
+                    Delete
                   </button>
                 </div>
               </div>

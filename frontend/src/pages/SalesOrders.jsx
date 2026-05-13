@@ -794,7 +794,7 @@ export default function SalesOrders(props) {
   return (
     <div className="fade">
       <SectionTitle
-        icon="📋"
+        icon="fa-solid fa-file-invoice-dollar"
         title="Sales Orders"
         sub="Create and track customer sales orders"
       />
@@ -802,8 +802,8 @@ export default function SalesOrders(props) {
       {}
       <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
         {[
-          ["form", "📝 New Order"],
-          ["records", `📋 Records (${salesOrders.length})`],
+          ["form", "New Order"],
+          ["records", `Records (${salesOrders.length})`],
         ]
           .filter(([v]) => !(isClient && v === "records"))
           .map(([v, l]) => (
@@ -852,7 +852,7 @@ export default function SalesOrders(props) {
                 marginBottom: 20,
               }}
             >
-              <Field label="Order Date 📅 *">
+              <Field label="Order Date *">
                 <DatePicker
                   value={header.orderDate}
                   onChange={(v) => setH("orderDate", v)}
@@ -860,7 +860,7 @@ export default function SalesOrders(props) {
                 />
                 {EHMsg("orderDate")}
               </Field>
-              <Field label="Delivery Date 📅 *">
+              <Field label="Delivery Date *">
                 <DatePicker
                   value={header.deliveryDate}
                   onChange={(v) => setH("deliveryDate", v)}
@@ -1019,7 +1019,7 @@ export default function SalesOrders(props) {
                       cursor: "pointer",
                     }}
                   >
-                    ✕ Remove
+                    Remove
                   </button>
                 )}
               </div>
@@ -1583,7 +1583,7 @@ export default function SalesOrders(props) {
                   margin: 0,
                 }}
               >
-                📊 Sales Order History
+                Sales Order History
               </h3>
               <DateRangeFilter
                 dateFrom={drDateFrom}
@@ -1714,7 +1714,7 @@ export default function SalesOrders(props) {
                               cursor: "pointer",
                             }}
                           >
-                            ✏️ Edit
+                            Edit
                           </button>
                           <button
                             onClick={() => handleDelete(r._id)}
@@ -1732,7 +1732,7 @@ export default function SalesOrders(props) {
                               gap: 6,
                             }}
                           >
-                            🗑️ Delete
+                            Delete
                           </button>
                         </>
                       )}
@@ -1749,7 +1749,7 @@ export default function SalesOrders(props) {
                           cursor: "pointer",
                         }}
                       >
-                        🖨️ PDF
+                        PDF
                       </button>
                     </div>
                   </div>

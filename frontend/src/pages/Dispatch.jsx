@@ -534,16 +534,16 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
   return (
     <div className="fade">
       <SectionTitle
-        icon="🚚"
+        icon="fa-solid fa-truck-fast"
         title="Dispatch"
         sub="Record outgoing dispatches against sales orders"
       />
 
       <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
         {[
-          ["form", "📝 New Dispatch", C.purple],
-          ["return", "↩️ Material Return", C.orange || "#f97316"],
-          ["records", `📋 Records (${dispatch.length})`, C.blue],
+          ["form", "New Dispatch", C.purple],
+          ["return", "Material Return", C.orange || "#f97316"],
+          ["records", `Records (${dispatch.length})`, C.blue],
         ].map(([v, l, col]) => (
           <button
             key={v}
@@ -721,7 +721,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                       cursor: "pointer",
                     }}
                   >
-                    ✕ Remove
+                    Remove
                   </button>
                 )}
               </div>
@@ -1000,7 +1000,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                     onClick={() => setReturnItems((prev) => prev.filter((_, i) => i !== idx))}
                     style={{ background: (C.red || "#ef4444") + "22", color: C.red || "#ef4444", border: "none", borderRadius: 5, padding: "4px 12px", fontWeight: 700, fontSize: 12, cursor: "pointer" }}
                   >
-                    ✕ Remove
+                    Remove
                   </button>
                 )}
               </div>
@@ -1124,7 +1124,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                 cursor: returnLoading ? "not-allowed" : "pointer",
               }}
             >
-              {returnLoading ? "Saving…" : `↩️ Record Material Return (${returnItems.filter((it) => it.itemName && it.qty).length} item${returnItems.filter((it) => it.itemName && it.qty).length !== 1 ? "s" : ""})`}
+              {returnLoading ? "Saving…" : `Record Material Return (${returnItems.filter((it) => it.itemName && it.qty).length} item${returnItems.filter((it) => it.itemName && it.qty).length !== 1 ? "s" : ""})`}
             </button>
           </div>
         </div>
@@ -1270,7 +1270,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                       </span>
                       {r.type === "Return" && (
                         <span style={{ fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 4, background: (C.orange || "#f97316") + "22", color: C.orange || "#f97316" }}>
-                          ↩️ RETURN
+                          RETURN
                         </span>
                       )}
                       <span style={{ fontSize: 12, color: C.muted }}>
@@ -1316,7 +1316,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                           cursor: "pointer",
                         }}
                       >
-                        🖨️ Print
+                        Print
                       </button>
                       <button
                         onClick={handleEdit}
@@ -1331,7 +1331,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                           cursor: "pointer",
                         }}
                       >
-                        ✏️ Edit
+                        Edit
                       </button>
                       <button
                         onClick={handleDelete}
@@ -1349,7 +1349,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                           gap: 6,
                         }}
                       >
-                        🗑️ Delete
+                        Delete
                       </button>
                     </div>
                   </div>
@@ -1378,7 +1378,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                     ))}
                     {r.vehicleNo && (
                       <span style={{ fontSize: 11, color: C.muted }}>
-                        🚗 {r.vehicleNo}
+                        {r.vehicleNo}
                       </span>
                     )}
                   </div>

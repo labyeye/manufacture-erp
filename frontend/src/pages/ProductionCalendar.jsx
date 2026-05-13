@@ -83,14 +83,14 @@ const DEFAULT_MACHINES = [
 ];
 
 const MACHINE_ICON = {
-  "Bag Making": "🖨️",
-  Printing: "🖨️",
-  Cutting: "✂️",
-  "Die Cutting": "✂️",
-  Handmade: "👐",
-  Lamination: "📄",
-  Pasting: "🗂️",
-  Formation: "📦",
+  "Bag Making": "fa-solid fa-industry",
+  Printing: "fa-solid fa-print",
+  Cutting: "fa-solid fa-scissors",
+  "Die Cutting": "fa-solid fa-scissors",
+  Handmade: "fa-solid fa-hands",
+  Lamination: "fa-solid fa-layer-group",
+  Pasting: "fa-solid fa-folder-open",
+  Formation: "fa-solid fa-box",
 };
 
 const TYPE_COLOR = {
@@ -572,7 +572,7 @@ export default function ProductionCalendar({
                   borderRadius: 12,
                 }}
               >
-                🏭
+                <i className="fa-solid fa-industry" />
               </div>
               <div>
                 <h2
@@ -809,7 +809,7 @@ export default function ProductionCalendar({
                                 fontWeight: 700,
                               }}
                             >
-                              ✓ on target
+                              on target
                             </div>
                           )}
                         </div>
@@ -927,7 +927,7 @@ export default function ProductionCalendar({
 
     return (
       <Modal
-        title={`🤖 Scheduling Insight: Job ${entry.jobCardNo}`}
+        title={`Scheduling Insight: Job ${entry.jobCardNo}`}
         onClose={() => setInsightModal(null)}
       >
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -1000,8 +1000,8 @@ export default function ProductionCalendar({
                 style={{ fontWeight: 700, color: isOverdue ? C.red : C.green }}
               >
                 {isOverdue
-                  ? "⚠️ Likely to be delayed"
-                  : "✅ On track for delivery"}
+                  ? "Likely to be delayed"
+                  : "On track for delivery"}
               </span>
             </div>
           </div>
@@ -1026,7 +1026,7 @@ export default function ProductionCalendar({
                 }}
               >
                 <div style={{ fontSize: 10, color: "#93c5fd", marginBottom: 4, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1 }}>
-                  ⚙ Total Setup
+                  Total Setup
                 </div>
                 <div style={{ fontSize: 20, fontWeight: 800, color: "#93c5fd" }}>
                   {fmtHrs(totalSetupTime)}
@@ -1082,7 +1082,7 @@ export default function ProductionCalendar({
                       {e.shift}
                     </span>
                     <span style={{ color: "#93c5fd", fontSize: 11 }}>
-                      ⚙ {fmtHrs(setupT)}
+                      {fmtHrs(setupT)}
                     </span>
                     <span style={{ color: "#86efac", fontSize: 11 }}>
                       ▶ {fmtHrs(runT)}
@@ -1396,7 +1396,7 @@ export default function ProductionCalendar({
         }}>
           {/* Header */}
           <div style={{ background: "#ef444411", borderBottom: "1px solid #ef444433", padding: "16px 20px", display: "flex", alignItems: "center", gap: 12 }}>
-            <span style={{ fontSize: 22 }}>{bdForm.reasonCode === "Operator Absent" ? "👤" : "⚠️"}</span>
+            <i className={bdForm.reasonCode === "Operator Absent" ? "fa-solid fa-user" : "fa-solid fa-triangle-exclamation"} style={{ fontSize: 22 }} />
             <div>
               <div style={{ fontWeight: 800, fontSize: 15, color: "#ef4444" }}>
                 {bdForm.reasonCode === "Operator Absent" ? "Log Operator Absence" : "Log Machine Breakdown"}
@@ -1557,7 +1557,7 @@ export default function ProductionCalendar({
         <div onClick={() => setPowerCutModal(false)} style={{ position: "fixed", inset: 0, background: "#00000088", backdropFilter: "blur(4px)", zIndex: 3000 }} />
         <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 460, maxWidth: "92vw", background: "#1c2128", border: "1px solid #30363d", borderRadius: 12, zIndex: 3001, boxShadow: "0 24px 60px #000000cc", overflow: "hidden" }}>
           <div style={{ background: "#eab30811", borderBottom: "1px solid #eab30833", padding: "16px 20px", display: "flex", alignItems: "center", gap: 12 }}>
-            <span style={{ fontSize: 22 }}>⚡</span>
+            <i className="fa-solid fa-bolt" style={{ fontSize: 22 }} />
             <div>
               <div style={{ fontWeight: 800, fontSize: 15, color: "#eab308" }}>Log Power Cut</div>
               <div style={{ fontSize: 12, color: "#8b949e", marginTop: 2 }}>Select affected machines — their jobs will be auto-shifted</div>
@@ -1627,13 +1627,13 @@ export default function ProductionCalendar({
 
     return (
       <div style={{ background: "#ef444411", border: "1px solid #ef444433", borderRadius: 8, padding: "12px 16px", marginBottom: 12, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 16 }}>🚨</span>
+        <i className="fa-solid fa-circle-exclamation" style={{ fontSize: 16, color: '#ef4444' }} />
         <span style={{ fontWeight: 800, fontSize: 13, color: "#ef4444" }}>Rush Orders Awaiting Approval</span>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginLeft: "auto" }}>
           {rushJobs.map((jo) => (
             <div key={jo._id} style={{ background: "#0d1117", border: "1px solid #ef444444", borderRadius: 6, padding: "6px 10px", display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ fontSize: 12, fontWeight: 800, color: jo.orderPriorityOverride === "Critical" ? "#ef4444" : "#f97316" }}>
-                {jo.orderPriorityOverride === "Critical" ? "🔴" : "🟠"} {jo.joNo}
+                <span style={{color: jo.orderPriorityOverride === "Critical" ? "#ef4444" : "#f97316", marginRight:4}}>●</span>{jo.joNo}
               </span>
               <span style={{ fontSize: 11, color: "#8b949e" }}>{jo.itemName}</span>
               {canApproveRush ? (
@@ -1657,7 +1657,7 @@ export default function ProductionCalendar({
   return (
     <div className="fade">
       <SectionTitle
-        icon="📅"
+        icon="fa-solid fa-calendar-days"
         title="Production Calendar"
         sub="Machine-wise schedule — click any job to log actual production"
       >
@@ -1676,7 +1676,7 @@ export default function ProductionCalendar({
             marginLeft: "auto",
           }}
         >
-          {loading ? "Planning..." : "⚡ Regenerate Rolling Plan"}
+          {loading ? "Planning..." : "Regenerate Rolling Plan"}
         </button>
       </SectionTitle>
 
@@ -1701,19 +1701,19 @@ export default function ProductionCalendar({
           onClick={() => setMainView("machine")}
           style={tabBtn(mainView === "machine", C.blue)}
         >
-          🖨️ Machine View
+          Machine View
         </button>
         <button
           onClick={() => setMainView("date")}
           style={tabBtn(mainView === "date", C.blue)}
         >
-          📅 Date View
+          Date View
         </button>
         <button
           onClick={() => setMainView("gantt")}
           style={tabBtn(mainView === "gantt", "#8b5cf6")}
         >
-          📊 Gantt
+          Gantt
         </button>
 
         <div
@@ -1791,7 +1791,7 @@ export default function ProductionCalendar({
           }}
           style={{ padding: "7px 12px", borderRadius: 6, border: "1px solid #eab30888", background: "transparent", color: "#eab308", fontWeight: 700, fontSize: 12, cursor: "pointer" }}
         >
-          ⚡ Power Cut
+          Power Cut
         </button>
 
         {canApproveRush && (
@@ -1811,7 +1811,7 @@ export default function ProductionCalendar({
             disabled={isSettingUpPm}
             style={{ padding: "7px 12px", borderRadius: 6, border: "1px solid #9ca3af44", background: "transparent", color: "#9ca3af", fontWeight: 700, fontSize: 12, cursor: "pointer" }}
           >
-            {isSettingUpPm ? "..." : "🔧 Setup PM"}
+            {isSettingUpPm ? "..." : "Setup PM"}
           </button>
         )}
 
@@ -1901,7 +1901,7 @@ export default function ProductionCalendar({
                   textTransform: "uppercase",
                 }}
               >
-                {MACHINE_ICON[stat.category] || "⚙️"} {stat.category}
+                <i className={MACHINE_ICON[stat.category] || "fa-solid fa-gears"} style={{marginRight:4}} /> {stat.category}
               </span>
               <Badge text={`${stat.machineCount} Machines`} color="#ffffff11" />
             </div>
@@ -2138,7 +2138,7 @@ export default function ProductionCalendar({
                     </div>
                     {isHoliday && (
                       <div style={{ fontSize: 8, color: "#8b5cf6", marginTop: 1, fontWeight: 700 }}>
-                        {hDay.type === "Holiday" ? "🏖 HOL" : hDay.type === "Shutdown" ? "🔒 OFF" : hDay.type === "Half-day" ? "½ DAY" : hDay.type}
+                        {hDay.type === "Holiday" ? "HOL" : hDay.type === "Shutdown" ? "OFF" : hDay.type === "Half-day" ? "½ DAY" : hDay.type}
                       </div>
                     )}
                   </th>
@@ -2154,7 +2154,7 @@ export default function ProductionCalendar({
                   )
                 : machine;
               const typeColor = TYPE_COLOR[machine.type] || C.muted;
-              const icon = MACHINE_ICON[machine.type] || "⚙️";
+              const icon = MACHINE_ICON[machine.type] || "fa-solid fa-gears";
               return (
                 <tr
                   key={machine.id}
@@ -2191,7 +2191,7 @@ export default function ProductionCalendar({
                     <div
                       style={{ display: "flex", alignItems: "center", gap: 8 }}
                     >
-                      <span style={{ fontSize: 14 }}>{icon}</span>
+                      <i className={icon} style={{ fontSize: 14 }} />
                       <div>
                         <div
                           style={{
@@ -2233,9 +2233,9 @@ export default function ProductionCalendar({
                             lineHeight: 1.4,
                           }}
                         >
-                          ⚠ BD
+                          BD
                         </button>
-                        <span style={{ color: C.border, fontSize: 12, cursor: "pointer" }}>⚙</span>
+                        <i className="fa-solid fa-gears" style={{ color: C.border, fontSize: 12, cursor: "pointer" }} />
                       </div>
                     </div>
                   </td>
@@ -2283,7 +2283,7 @@ export default function ProductionCalendar({
                             title={`Breakdown: ${bdOnDay.reasonCode}${bdOnDay.issueDescription ? " — " + bdOnDay.issueDescription : ""}`}
                             style={{ background: "#ef444422", border: "1px solid #ef444488", borderLeft: "4px solid #ef4444", borderRadius: "4px 8px 8px 4px", color: "#ef4444", fontSize: 9, fontWeight: 800, padding: "6px 6px", marginBottom: 6, textAlign: "left" }}
                           >
-                            <div>⚠ BREAKDOWN</div>
+                            <div><i className="fa-solid fa-triangle-exclamation" style={{marginRight:4}} />BREAKDOWN</div>
                             <div style={{ opacity: 0.8, fontWeight: 600, marginTop: 2 }}>{bdOnDay.reasonCode}</div>
                             {bdOnDay.status === "Open" && <div style={{ opacity: 0.7, fontSize: 8, marginTop: 2 }}>● Open</div>}
                           </div>
@@ -2293,7 +2293,7 @@ export default function ProductionCalendar({
                             title={`Operator Absent${oaOnDay.operatorName ? ": " + oaOnDay.operatorName : ""}${oaOnDay.backupOperator ? " → Backup: " + oaOnDay.backupOperator : ""}`}
                             style={{ background: "#f9731622", border: "1px solid #f9731688", borderLeft: "4px solid #f97316", borderRadius: "4px 8px 8px 4px", color: "#f97316", fontSize: 9, fontWeight: 800, padding: "6px 6px", marginBottom: 6, textAlign: "left" }}
                           >
-                            <div>👤 OPERATOR ABSENT</div>
+                            <div><i className="fa-solid fa-user" style={{marginRight:4}} />OPERATOR ABSENT</div>
                             {oaOnDay.operatorName && <div style={{ opacity: 0.8, fontWeight: 600, marginTop: 2 }}>{oaOnDay.operatorName}</div>}
                             {oaOnDay.backupOperator && <div style={{ opacity: 0.7, fontSize: 8, marginTop: 2 }}>Backup: {oaOnDay.backupOperator}</div>}
                           </div>
@@ -2303,7 +2303,7 @@ export default function ProductionCalendar({
                             title={`PM: ${pmOnDay.type} — ${pmOnDay.hoursBlocked}h blocked`}
                             style={{ background: "#6b728022", border: "1px solid #6b728055", borderLeft: "4px solid #9ca3af", borderRadius: "4px 8px 8px 4px", color: "#9ca3af", fontSize: 9, fontWeight: 800, padding: "6px 6px", marginBottom: 6, textAlign: "left" }}
                           >
-                            <div>🔧 PM</div>
+                            <div>PM</div>
                             <div style={{ opacity: 0.8, fontWeight: 600, marginTop: 2 }}>{pmOnDay.hoursBlocked}h</div>
                           </div>
                         )}
@@ -2312,7 +2312,7 @@ export default function ProductionCalendar({
                             title={`Power Cut${powerCutOnDay.reason ? ": " + powerCutOnDay.reason : ""}`}
                             style={{ background: "#eab30822", border: "1px solid #eab30855", borderLeft: "4px solid #eab308", borderRadius: "4px 8px 8px 4px", color: "#eab308", fontSize: 9, fontWeight: 800, padding: "6px 6px", marginBottom: 6, textAlign: "left" }}
                           >
-                            <div>⚡ POWER CUT</div>
+                            <div>POWER CUT</div>
                           </div>
                         )}
                         {jobs.length === 0 && !bdOnDay ? (
@@ -2547,7 +2547,7 @@ export default function ProductionCalendar({
                                   }}
                                 >
                                   <span style={{ fontSize: 8, color: C.muted }}>
-                                    ⚙ Setup
+                                    Setup
                                   </span>
                                   <span style={{ fontSize: 9, fontWeight: 700, color: "#93c5fd" }}>
                                     {fmtHrs(cardSetupTime)}
@@ -2750,7 +2750,7 @@ export default function ProductionCalendar({
                   </div>
                   {jo.deliveryDate && (
                     <span style={{ fontSize: 12, color: C.muted }}>
-                      📦 {jo.deliveryDate}
+                      {jo.deliveryDate}
                     </span>
                   )}
                 </div>
@@ -2836,7 +2836,7 @@ export default function ProductionCalendar({
             {}
             {riskSet.size > 0 && (
               <div style={{ background: "#ef444411", border: "1px solid #ef444433", borderRadius: 8, padding: "10px 16px", marginBottom: 12, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-                <span style={{ color: "#ef4444", fontWeight: 800, fontSize: 12 }}>⚠️ DELIVERY RISK</span>
+                <span style={{ color: "#ef4444", fontWeight: 800, fontSize: 12 }}>DELIVERY RISK</span>
                 {[...riskSet].slice(0, 6).map((jc) => (
                   <span key={jc} style={{ padding: "2px 8px", background: "#ef444422", borderRadius: 4, fontSize: 11, color: "#fca5a5", fontWeight: 700 }}>{jc}</span>
                 ))}
@@ -2851,7 +2851,7 @@ export default function ProductionCalendar({
               <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 12, height: 12, borderRadius: 2, background: "#22c55e66", display: "inline-block" }} />≤80%</span>
               <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 12, height: 12, borderRadius: 2, background: "#f59e0b66", display: "inline-block" }} />81–100%</span>
               <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 12, height: 12, borderRadius: 2, background: "#ef444466", display: "inline-block" }} />&gt;100% OVERLOAD</span>
-              <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 12, height: 12, borderRadius: 2, background: "#ef4444", display: "inline-block" }} />⚠ Delivery risk</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 12, height: 12, borderRadius: 2, background: "#ef4444", display: "inline-block" }} />Delivery risk</span>
               <span style={{ marginLeft: "auto", color: "#555" }}>Drag jobs to reschedule</span>
             </div>
 
@@ -2902,7 +2902,7 @@ export default function ProductionCalendar({
                         }}
                       >
                         <div style={{ fontSize: 11, fontWeight: 700, color: TYPE_COLOR[machine.type] || "#888" }}>
-                          {MACHINE_ICON[machine.type] || "⚙️"} {machine.name}
+                          <i className={MACHINE_ICON[machine.type] || "fa-solid fa-gears"} style={{marginRight:4}} />{machine.name}
                         </div>
                         <div style={{ fontSize: 9, color: "#555" }}>{machine.type}</div>
                       </td>
@@ -2965,7 +2965,7 @@ export default function ProductionCalendar({
                                   key={entry._id || i}
                                   draggable
                                   onDragStart={(e) => handleDragStart(e, entry, machine.id, date)}
-                                  title={`${entry.jobCardNo} · ${entry.process} · ${(entry.scheduledQty || 0).toLocaleString()} units${isRisk ? " ⚠️ DELIVERY RISK" : ""}${priority && priority !== "Standard" ? ` · ${priority}` : ""}`}
+                                  title={`${entry.jobCardNo} · ${entry.process} · ${(entry.scheduledQty || 0).toLocaleString()} units${isRisk ? " DELIVERY RISK" : ""}${priority && priority !== "Standard" ? ` · ${priority}` : ""}`}
                                   style={{
                                     background: chipColor + "22",
                                     border: `1px solid ${chipColor}55`,
@@ -2984,9 +2984,9 @@ export default function ProductionCalendar({
                                     gap: 3,
                                   }}
                                 >
-                                  {isRisk && <span style={{ fontSize: 8 }}>⚠️</span>}
-                                  {priority === "VIP" && <span style={{ fontSize: 8 }}>⭐</span>}
-                                  {priority === "Rush" && <span style={{ fontSize: 8 }}>⚡</span>}
+                                  {isRisk && <i className="fa-solid fa-triangle-exclamation" style={{ fontSize: 8 }} />}
+                                  {priority === "VIP" && <i className="fa-solid fa-star" style={{ fontSize: 8, color: '#f59e0b' }} />}
+                                  {priority === "Rush" && <i className="fa-solid fa-bolt" style={{ fontSize: 8 }} />}
                                   <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
                                     {rangeView === "week" ? entry.jobCardNo : entry.jobCardNo?.slice(-4)}
                                   </span>
@@ -3056,7 +3056,7 @@ export default function ProductionCalendar({
               return (
                 <div style={{ marginTop: 16, background: "#8b5cf611", border: "1px solid #8b5cf633", borderRadius: 8, padding: 16 }}>
                   <div style={{ fontWeight: 700, color: "#a78bfa", marginBottom: 10, fontSize: 13 }}>
-                    💡 Batching Opportunities — batch similar jobs to cut setup time 30–40%
+                    Batching Opportunities — batch similar jobs to cut setup time 30–40%
                   </div>
                   {suggestions.slice(0, 5).map((s, i) => (
                     <div key={i} style={{ fontSize: 12, color: "#ccc", padding: "6px 0", borderBottom: "1px solid #8b5cf622" }}>

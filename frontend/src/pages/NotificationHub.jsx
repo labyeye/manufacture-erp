@@ -18,8 +18,8 @@ const inp = {
 const lbl = { fontSize: 11, fontWeight: 600, color: "#666", display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.04em" };
 
 const TABS = [
-  { id: "email",    icon: "📧", label: "Executive Email" },
-  { id: "whatsapp", icon: "💬", label: "WhatsApp" },
+  { id: "email",    icon: "fa-solid fa-envelope", label: "Executive Email" },
+  { id: "whatsapp", icon: "fa-brands fa-whatsapp", label: "WhatsApp" },
 ];
 
 
@@ -47,7 +47,7 @@ export default function NotificationHub({
               fontWeight: active ? 700 : 500, fontSize: 13, cursor: "pointer",
               display: "flex", alignItems: "center", gap: 7,
             }}>
-              <span style={{ fontSize: 16 }}>{t.icon}</span>{t.label}
+              <i className={t.icon} style={{ fontSize: 16 }} />{t.label}
             </button>
           );
         })}
@@ -210,11 +210,11 @@ To configure: go to Notification Hub in your ERP.
           <button onClick={saveConfig} style={{ padding: "8px 18px", background: "#3b82f6", border: "none", borderRadius: 6, color: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>Save Config</button>
           {recipientEmail && (
             <a href={mailtoLink} style={{ padding: "8px 18px", background: "#22c55e22", border: "1px solid #22c55e44", borderRadius: 6, color: "#22c55e", fontWeight: 700, fontSize: 12, cursor: "pointer", textDecoration: "none" }}>
-              📤 Open in Mail App
+              Open in Mail App
             </a>
           )}
           <button onClick={copyToClipboard} style={{ padding: "8px 18px", background: copied ? "#22c55e22" : "#ffffff11", border: `1px solid ${copied ? "#22c55e" : "#2a2a2a"}`, borderRadius: 6, color: copied ? "#22c55e" : "#888", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
-            {copied ? "✓ Copied!" : "📋 Copy Text"}
+            {copied ? "Copied!" : "Copy Text"}
           </button>
         </div>
         {!recipientEmail && (
@@ -340,9 +340,9 @@ Have a productive day!
   };
 
   const TEMPLATES = [
-    { id: "dispatch",     label: "Dispatch Notification", icon: "🚛", desc: "Notify client when goods are dispatched" },
-    { id: "po_ack",       label: "PO Acknowledgment",     icon: "📋", desc: "Confirm PO to vendor with delivery expectations" },
-    { id: "daily",        label: "Daily Owner Summary",   icon: "📊", desc: "Morning briefing to owner/manager" },
+    { id: "dispatch",     label: "Dispatch Notification", icon: "fa-solid fa-truck", desc: "Notify client when goods are dispatched" },
+    { id: "po_ack",       label: "PO Acknowledgment",     icon: "fa-solid fa-clipboard-list", desc: "Confirm PO to vendor with delivery expectations" },
+    { id: "daily",        label: "Daily Owner Summary",   icon: "fa-solid fa-chart-bar", desc: "Morning briefing to owner/manager" },
   ];
 
   return (
@@ -372,7 +372,7 @@ Have a productive day!
         {TEMPLATES.map((t) => (
           <button key={t.id} onClick={() => { setActiveTemplate(t.id); setPreviewMsg(""); }}
             style={{ padding: 16, background: activeTemplate === t.id ? "#25d36622" : "#111", border: `1px solid ${activeTemplate === t.id ? "#25d36644" : "#2a2a2a"}`, borderRadius: 10, cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}>
-            <div style={{ fontSize: 20, marginBottom: 6 }}>{t.icon}</div>
+            <i className={t.icon} style={{ fontSize: 20, marginBottom: 6, display: 'block' }} />
             <div style={{ fontWeight: 700, fontSize: 13, color: activeTemplate === t.id ? "#25d366" : "#e0e0e0", marginBottom: 4 }}>{t.label}</div>
             <div style={{ fontSize: 11, color: "#666" }}>{t.desc}</div>
           </button>
@@ -461,14 +461,14 @@ Have a productive day!
                   rel="noopener noreferrer"
                   style={{ padding: "10px 20px", background: "#25d366", border: "none", borderRadius: 6, color: "#000", fontWeight: 800, cursor: "pointer", textDecoration: "none", display: "flex", alignItems: "center", gap: 6 }}
                 >
-                  💬 Send via WhatsApp Web
+                  Send via WhatsApp Web
                 </a>
               )}
               <button
                 onClick={() => { navigator.clipboard.writeText(previewMsg); toast?.("Message copied", "success"); }}
                 style={{ padding: "10px 16px", background: "#ffffff11", border: "1px solid #2a2a2a", borderRadius: 6, color: "#888", fontWeight: 700, cursor: "pointer" }}
               >
-                📋 Copy Text
+                Copy Text
               </button>
               {!customPhone && (
                 <div style={{ fontSize: 11, color: "#f59e0b", display: "flex", alignItems: "center" }}>

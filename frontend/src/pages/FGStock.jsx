@@ -26,6 +26,7 @@ export default function FGStock({
   fgStock = [],
   setFgStock,
   itemMasterFG = [],
+  categoryMaster,
   session,
   toast,
   refreshData,
@@ -337,24 +338,30 @@ export default function FGStock({
     return [...fromMaster, ...fromStockOnly];
   }, [itemMasterFG, fgStock]);
 
-  const categories = useMemo(
-    () => [...new Set(allItems.map((s) => s.category).filter(Boolean))],
-    [allItems],
-  );
+  const categories = useMemo(() => {
+    const masterArr = Array.isArray(categoryMaster) ? categoryMaster : [];
+    const fgType = masterArr.find((c) => c.type === "Finished Goods");
+    const masterCats = Object.keys(fgType?.subTypes || {});
+    if (masterCats.length) return masterCats;
+    return [...new Set(allItems.map((s) => s.category).filter(Boolean))];
+  }, [categoryMaster, allItems]);
 
-  const filtered = useMemo(
-    () =>
-      allItems.filter((s) => {
-        const matchSearch =
-          !search ||
-          s.itemName?.toLowerCase().includes(search.toLowerCase()) ||
-          s.itemCode?.toLowerCase().includes(search.toLowerCase());
-        const matchCat = filterCat === "All" || s.category === filterCat;
-        const matchZero = showZeroStock || (s.qty || 0) > 0;
-        return matchSearch && matchCat && matchZero;
-      }),
-    [allItems, search, filterCat, showZeroStock],
-  );
+  const filtered = useMemo(() => {
+    const result = allItems.filter((s) => {
+      const matchSearch =
+        !search ||
+        s.itemName?.toLowerCase().includes(search.toLowerCase()) ||
+        s.itemCode?.toLowerCase().includes(search.toLowerCase());
+      const matchCat = filterCat === "All" || s.category === filterCat;
+      const matchZero = showZeroStock || (s.qty || 0) > 0;
+      return matchSearch && matchCat && matchZero;
+    });
+    return result.sort((a, b) => {
+      const ca = a.itemCode || a.code || "";
+      const cb = b.itemCode || b.code || "";
+      return ca.localeCompare(cb, undefined, { numeric: true });
+    });
+  }, [allItems, search, filterCat, showZeroStock]);
 
   const totalItems = filtered.length;
   const inStock = filtered.filter((s) => (s.qty || 0) > 0).length;
@@ -837,6 +844,8 @@ export default function FGStock({
                           padding: "10px 14px",
                           fontWeight: 600,
                           color: "#e0e0e0",
+                          minWidth: 200,
+                          wordBreak: "break-word",
                         }}
                       >
                         {s.itemName}
@@ -939,14 +948,15 @@ export default function FGStock({
                             </button>
                             <button
                               onClick={async () => {
+                                if (s.isFromMaster) {
+                                  toast("This item has no stock record to delete. Remove it from Item Master if needed.", "error");
+                                  return;
+                                }
                                 if (confirm("Delete this item from stock?")) {
                                   try {
-                                    if (s._id) {
-                                      await fgStockAPI.delete(s._id);
-                                    }
-                                    setFgStock((prev) =>
-                                      prev.filter((item) => item._id !== s._id),
-                                    );
+                                    await fgStockAPI.delete(s._id);
+                                    if (refreshData) await refreshData();
+                                    else setFgStock((prev) => prev.filter((item) => item._id !== s._id));
                                     toast("Deleted successfully", "success");
                                   } catch (err) {
                                     toast("Failed to delete", "error");
