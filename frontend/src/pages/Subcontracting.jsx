@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { Modal } from "../components/ui/BasicComponents";
 import { C } from "../constants/colors";
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -85,7 +86,8 @@ export default function Subcontracting({
   toast,
 }) {
   const [records, setRecords] = useState(loadRecords);
-  const [view, setView] = useState("list");
+  const [showModal, setShowModal] = useState(false);
+  const [showReceiveModal, setShowReceiveModal] = useState(false);
   const [editId, setEditId] = useState(null);
   const [receiveId, setReceiveId] = useState(null);
   const [filterStatus, setFilterStatus] = useState("All");
@@ -173,7 +175,7 @@ export default function Subcontracting({
     }
     setForm(blankForm);
     setEditId(null);
-    setView("list");
+    setShowModal(false);
   };
 
   const handleReceive = () => {
@@ -205,7 +207,7 @@ export default function Subcontracting({
     toast?.("Receipt recorded", "success");
     setReceiveId(null);
     setReceiveForm(blankReceive);
-    setView("list");
+    setShowReceiveModal(false);
   };
 
   const handleReconcile = (id) => {
@@ -242,8 +244,7 @@ export default function Subcontracting({
       priority: r.priority || "Standard",
     });
     setEditId(r.id);
-    setView("form");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setShowModal(true);
   };
 
   const filteredRecords = useMemo(() => {
@@ -326,20 +327,11 @@ export default function Subcontracting({
           onClick={() => {
             setForm(blankForm);
             setEditId(null);
-            setView(view === "form" ? "list" : "form");
+            setShowModal(true);
           }}
-          style={{
-            padding: "8px 18px",
-            background: view === "form" ? "transparent" : "#3b82f6",
-            border: "1px solid #3b82f6",
-            borderRadius: 6,
-            color: view === "form" ? "#3b82f6" : "#fff",
-            fontWeight: 500,
-            fontSize: 12,
-            cursor: "pointer",
-          }}
+          style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", color: "#fff", padding: "9px 18px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
         >
-          {view === "form" ? "← Back to List" : "+ Issue to Vendor"}
+          + Issue to Vendor
         </button>
       </div>
 
@@ -397,7 +389,8 @@ export default function Subcontracting({
       </div>
 
       {}
-      {view === "form" && (
+      {showModal && (
+        <Modal title={editId ? "Edit Subcontracting Record" : "Issue Material to Vendor"} onClose={() => { setShowModal(false); setForm(blankForm); setEditId(null); }}>
         <div
           style={{
             background: "rgba(255,255,255,0.05)",
@@ -406,7 +399,6 @@ export default function Subcontracting({
             border: "1px solid rgba(255,255,255,0.1)",
             borderRadius: 10,
             padding: 24,
-            marginBottom: 20,
             boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
           }}
         >
@@ -562,11 +554,7 @@ export default function Subcontracting({
               {editId ? "Update Record" : "Issue to Vendor"}
             </button>
             <button
-              onClick={() => {
-                setForm(blankForm);
-                setEditId(null);
-                setView("list");
-              }}
+              onClick={() => { setForm(blankForm); setEditId(null); setShowModal(false); }}
               style={{
                 padding: "10px 18px",
                 background: "transparent",
@@ -581,10 +569,11 @@ export default function Subcontracting({
             </button>
           </div>
         </div>
+        </Modal>
       )}
 
       {}
-      {view === "receive" &&
+      {showReceiveModal &&
         receiveId &&
         (() => {
           const rec = records.find((r) => r.id === receiveId);
@@ -595,6 +584,7 @@ export default function Subcontracting({
           );
           const remaining = rec.qtyIssued - totalReceived;
           return (
+            <Modal title={`Record Receipt — ${rec.joNo} / ${rec.stage}`} onClose={() => { setReceiveId(null); setReceiveForm(blankReceive); setShowReceiveModal(false); }}>
             <div
               style={{
                 background: "rgba(255,255,255,0.05)",
@@ -603,7 +593,6 @@ export default function Subcontracting({
                 border: "1px solid #3b82f633",
                 borderRadius: 10,
                 padding: 24,
-                marginBottom: 20,
               }}
             >
               <div
@@ -723,11 +712,7 @@ export default function Subcontracting({
                   Record Receipt
                 </button>
                 <button
-                  onClick={() => {
-                    setReceiveId(null);
-                    setReceiveForm(blankReceive);
-                    setView("list");
-                  }}
+                  onClick={() => { setReceiveId(null); setReceiveForm(blankReceive); setShowReceiveModal(false); }}
                   style={{
                     padding: "10px 16px",
                     background: "transparent",
@@ -741,21 +726,21 @@ export default function Subcontracting({
                 </button>
               </div>
             </div>
+            </Modal>
           );
         })()}
 
       {}
-      {view === "list" && (
-        <div
-          style={{
-            background: "rgba(255,255,255,0.05)",
-            backdropFilter: "blur(12px) saturate(180%)",
-            WebkitBackdropFilter: "blur(12px) saturate(180%)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: 10,
-            padding: 20,
-          }}
-        >
+      <div
+        style={{
+          background: "rgba(255,255,255,0.05)",
+          backdropFilter: "blur(12px) saturate(180%)",
+          WebkitBackdropFilter: "blur(12px) saturate(180%)",
+          border: "1px solid rgba(255,255,255,0.1)",
+          borderRadius: 10,
+          padding: 20,
+        }}
+      >
           {}
           <div
             style={{
@@ -929,7 +914,7 @@ export default function Subcontracting({
                         onClick={() => {
                           setReceiveId(r.id);
                           setReceiveForm(blankReceive);
-                          setView("receive");
+                          setShowReceiveModal(true);
                         }}
                         style={{
                           padding: "4px 12px",
@@ -1081,8 +1066,7 @@ export default function Subcontracting({
               </div>
             );
           })}
-        </div>
-      )}
+      </div>
     </div>
   );
 }

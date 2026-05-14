@@ -12,6 +12,7 @@ import {
   SubmitBtn,
   AutocompleteInput,
   DateRangeFilter,
+  Modal,
 } from "../components/ui/BasicComponents";
 import { DatePicker } from "../components/ui/DatePicker";
 import {
@@ -247,7 +248,7 @@ export default function JobOrders(props) {
     header.paperGsm2,
   ]);
   const [headerErrors, setHeaderErrors] = useState({});
-  const [view, setView] = useState("form");
+  const [showModal, setShowModal] = useState(false);
   const [editId, setEditId] = useState(null);
   const [highlightId, setHighlightId] = useState(null);
 
@@ -295,15 +296,13 @@ export default function JobOrders(props) {
       remarks: jo.remarks || "",
       machineAssignments: jo.machineAssignments || {},
     });
-    setView("form");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setShowModal(true);
   };
 
   useEffect(() => {
     if (!deepLinkId || !jobOrders.length) return;
     const jo = jobOrders.find((j) => j.joNo === deepLinkId);
     if (jo) {
-      setView("records");
       setHighlightId(deepLinkId);
       onDeepLinkConsumed?.();
     }
@@ -340,7 +339,7 @@ export default function JobOrders(props) {
   };
 
   useEffect(() => {
-    if (header.itemName && header.companyName && view === "form" && !editId) {
+    if (header.itemName && header.companyName && showModal && !editId) {
       const fetchPrintingDetails = async () => {
         try {
           const res = await printingDetailMasterAPI.getByItemAndClient(
@@ -372,7 +371,7 @@ export default function JobOrders(props) {
       };
       fetchPrintingDetails();
     }
-  }, [header.itemName, header.companyName, view, editId]);
+  }, [header.itemName, header.companyName, showModal, editId]);
 
   const [drDateFrom, setDrDateFrom] = useState("");
   const [drDateTo, setDrDateTo] = useState("");
@@ -637,7 +636,7 @@ export default function JobOrders(props) {
 
       setHeader(blankHeader);
       setHeaderErrors({});
-      setView("records");
+      setShowModal(false);
       fetchJobOrders();
     } catch (error) {
       toast(error.response?.data?.error || "Failed to save job order", "error");
@@ -901,33 +900,35 @@ export default function JobOrders(props) {
         sub="Create production job orders linked to sales orders"
       />
 
-      {}
-      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-        {[
-          ["form", "New Job Order"],
-          ["records", `Records (${jobOrders.length})`],
-        ].map(([v, l]) => (
-          <button
-            key={v}
-            onClick={() => setView(v)}
-            style={{
-              padding: "8px 20px",
-              borderRadius: 6,
-              border: `1px solid ${view === v ? C.yellow || "#facc15" : C.border}`,
-              background: view === v ? C.yellow || "#facc15" : "transparent",
-              color: view === v ? "#000" : C.muted,
-              fontWeight: 500,
-              fontSize: 13,
-              cursor: "pointer",
-            }}
-          >
-            {l}
-          </button>
-        ))}
+      <div style={{ marginBottom: 20 }}>
+        <button
+          onClick={() => {
+            setEditId(null);
+            setHeader(blankHeader);
+            setHeaderErrors({});
+            setShowModal(true);
+          }}
+          style={{
+            background: "rgba(255,255,255,0.08)",
+            backdropFilter: "blur(12px) saturate(180%)",
+            WebkitBackdropFilter: "blur(12px) saturate(180%)",
+            border: "1px solid rgba(255,255,255,0.18)",
+            color: "#fff",
+            padding: "9px 18px",
+            borderRadius: 10,
+            fontWeight: 600,
+            fontSize: 13,
+            cursor: "pointer",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+          }}
+        >
+          + New Job Order
+        </button>
       </div>
 
       {}
-      {view === "form" && (
+      {showModal && (
+        <Modal title={editId ? "Edit Job Order" : "New Job Order"} onClose={() => { setShowModal(false); setEditId(null); setHeader(blankHeader); setHeaderErrors({}); }}>
         <Card>
           <h3
             style={{
@@ -1672,6 +1673,7 @@ export default function JobOrders(props) {
                   setEditId(null);
                   setHeader(blankHeader);
                   setHeaderErrors({});
+                  setShowModal(false);
                 }}
                 style={{
                   padding: "10px 20px",
@@ -1688,11 +1690,11 @@ export default function JobOrders(props) {
             )}
           </div>
         </Card>
+        </Modal>
       )}
 
       {}
-      {view === "records" && (
-        <Card>
+      <Card>
           <div
             style={{
               display: "flex",
@@ -1723,23 +1725,51 @@ export default function JobOrders(props) {
             </span>
           </div>
 
-          {jobOrders.length === 0 && (
-            <div
-              style={{
-                textAlign: "center",
-                color: C.muted,
-                padding: 32,
-                fontSize: 13,
-              }}
-            >
-              No job orders yet.
-            </div>
-          )}
+          {(() => {
+            const filteredJOs = (jobOrders || []).slice().reverse().filter(r => {
+              if (!drDateFrom && !drDateTo) return true;
+              const d = r.jobcardDate ? new Date(r.jobcardDate).toISOString().slice(0, 10) : "";
+              if (drDateFrom && d < drDateFrom) return false;
+              if (drDateTo && d > drDateTo) return false;
+              return true;
+            });
+            const activeCount = filteredJOs.filter(r => r.status !== "Completed").length;
+            const completedCount = filteredJOs.filter(r => r.status === "Completed").length;
+            const totalQty = filteredJOs.reduce((s, r) => s + +(r.orderQty || 0), 0);
+            const statCards = [
+              { label: "Total JOs", value: filteredJOs.length, icon: "fa-solid fa-gears", color: "#facc15" },
+              { label: "Active", value: activeCount, icon: "fa-solid fa-spinner", color: "#f97316" },
+              { label: "Completed", value: completedCount, icon: "fa-solid fa-circle-check", color: "#10b981" },
+              { label: "Total Qty", value: fmt(totalQty) + " pcs", icon: "fa-solid fa-boxes-stacked", color: "#60a5fa" },
+            ];
+            return (
+              <>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 16 }}>
+                  {statCards.map(({ label, value, icon, color }) => (
+                    <div key={label} style={{ padding: "16px 20px", background: "#0d1117", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, borderLeft: `3px solid ${color}` }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                        <span style={{ fontSize: 11, color: C.muted, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
+                        <i className={icon} style={{ color, fontSize: 13, opacity: 0.8 }} />
+                      </div>
+                      <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", fontFamily: "'JetBrains Mono', monospace" }}>{value}</div>
+                    </div>
+                  ))}
+                </div>
 
-          {(jobOrders || [])
-            .slice()
-            .reverse()
-            .map((r) => {
+                {filteredJOs.length === 0 ? (
+                  <div style={{ textAlign: "center", color: C.muted, padding: 32, fontSize: 13 }}>No job orders yet.</div>
+                ) : (
+                  <div style={{ background: "#0d1117", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                      <thead>
+                        <tr style={{ background: "#161b22", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                          {["JO No", "Date", "Client", "Item", "Qty", "Process", "Priority", "Status", "Actions"].map(h => (
+                            <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredJOs.map((r, i) => {
               const handleEdit = (jo) => {
                 setEditId(jo._id);
                 setHeader({
@@ -1777,8 +1807,7 @@ export default function JobOrders(props) {
                   remarks: jo.remarks || "",
                   machineAssignments: jo.machineAssignments || {},
                 });
-                setView("form");
-                window.scrollTo({ top: 0, behavior: "smooth" });
+                setShowModal(true);
               };
 
               const handleDelete = async (id) => {
@@ -1795,212 +1824,49 @@ export default function JobOrders(props) {
                 }
               };
 
+              const priorityColor = r.priority === "VIP" ? "#ef4444" : r.priority === "Rush" ? "#f97316" : r.priority === "Fill-in" ? "#6b7280" : null;
               return (
-                <div
+                <tr
                   key={r._id || r.id}
                   data-record-id={r.joNo}
                   style={{
-                    borderBottom: `1px solid ${C.border}22`,
-                    padding: "12px 4px",
-                    background: r.joNo === highlightId ? `${C.accent}11` : "transparent",
-                    paddingLeft: "10px",
-                    boxShadow: r.joNo === highlightId ? `0 0 0 1px ${C.accent}44` : undefined,
-                    borderRadius: r.joNo === highlightId ? 6 : 0,
+                    borderBottom: "1px solid rgba(255,255,255,0.04)",
+                    background: r.joNo === highlightId ? `${C.accent}11` : i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)",
                     transition: "all 0.4s ease",
                   }}
                 >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                      gap: 8,
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: 14,
-                        alignItems: "center",
-                        flexWrap: "wrap",
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontFamily: "'JetBrains Mono', monospace",
-                          color: C.yellow || "#facc15",
-                          fontWeight: 500,
-                        }}
-                      >
-                        {r.joNo}
-                      </span>
-                      <span style={{ fontSize: 12, color: C.muted }}>
-                        {r.jobcardDate
-                          ? new Date(r.jobcardDate).toLocaleDateString("en-GB")
-                          : "N/A"}
-                      </span>
-                      <span style={{ fontSize: 13, fontWeight: 600 }}>
-                        {r.companyName}
-                      </span>
-                      <Badge text={r.itemName} color={C.blue} />
-                      <span style={{ fontSize: 13, color: C.muted }}>
-                        Qty: {fmt(r.orderQty)}
-                      </span>
-                      <Badge
-                        text={r.status}
-                        color={r.status === "Completed" ? C.green : C.orange}
-                      />
-                      {r.priority && r.priority !== "Standard" && (
-                        <span
-                          style={{
-                            padding: "2px 8px",
-                            borderRadius: 4,
-                            fontSize: 10,
-                            fontWeight: 800,
-                            background:
-                              r.priority === "VIP" ? "#ef444422"
-                              : r.priority === "Rush" ? "#f9731622"
-                              : "#6b728022",
-                            color:
-                              r.priority === "VIP" ? "#ef4444"
-                              : r.priority === "Rush" ? "#f97316"
-                              : "#9ca3af",
-                            border: `1px solid ${
-                              r.priority === "VIP" ? "#ef444444"
-                              : r.priority === "Rush" ? "#f9731644"
-                              : "#6b728044"
-                            }`,
-                            letterSpacing: "0.04em",
-                          }}
-                        >
-                          {r.priority === "VIP" ? "VIP"
-                           : r.priority === "Rush" ? "RUSH"
-                           : "↓ FILL-IN"}
-                        </span>
-                      )}
+                  <td style={{ padding: "11px 14px", fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: "#facc15", whiteSpace: "nowrap" }}>{r.joNo}</td>
+                  <td style={{ padding: "11px 14px", color: C.muted, whiteSpace: "nowrap", fontSize: 12 }}>{r.jobcardDate ? new Date(r.jobcardDate).toLocaleDateString("en-GB") : "—"}</td>
+                  <td style={{ padding: "11px 14px", fontWeight: 500 }}>{r.companyName}</td>
+                  <td style={{ padding: "11px 14px", color: "#94a3b8", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.itemName}</td>
+                  <td style={{ padding: "11px 14px", fontFamily: "'JetBrains Mono', monospace", color: "#e2e8f0" }}>{fmt(r.orderQty)}</td>
+                  <td style={{ padding: "11px 14px", color: C.muted, fontSize: 12 }}>{(r.process || r.processes || []).join(", ") || "—"}</td>
+                  <td style={{ padding: "11px 14px" }}>
+                    {priorityColor ? (
+                      <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 10, fontWeight: 800, background: priorityColor + "22", color: priorityColor, border: `1px solid ${priorityColor}44` }}>{r.priority}</span>
+                    ) : <span style={{ color: C.muted, fontSize: 12 }}>—</span>}
+                  </td>
+                  <td style={{ padding: "11px 14px" }}>
+                    <span style={{ padding: "3px 10px", borderRadius: 5, fontSize: 11, fontWeight: 600, background: r.status === "Completed" ? "#06422233" : "#451a0333", color: r.status === "Completed" ? "#10b981" : "#f59e0b", border: `1px solid ${r.status === "Completed" ? "#065f4622" : "#78350f22"}` }}>{r.status || "Open"}</span>
+                  </td>
+                  <td style={{ padding: "11px 14px" }}>
+                    <div style={{ display: "flex", gap: 5 }}>
+                      <button onClick={() => handleEdit(r)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid rgba(250,204,21,0.4)", background: "rgba(250,204,21,0.08)", color: "#facc15", fontSize: 11, fontWeight: 500, cursor: "pointer" }}>Edit</button>
+                      <button onClick={() => generateJobCardPDF(r)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid rgba(96,165,250,0.3)", background: "rgba(96,165,250,0.08)", color: "#60a5fa", fontSize: 11, fontWeight: 500, cursor: "pointer" }}>PDF</button>
+                      <button onClick={() => handleDelete(r._id || r.id)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.08)", color: "#ef4444", fontSize: 11, fontWeight: 500, cursor: "pointer" }}>Del</button>
                     </div>
-                    <div style={{ display: "flex", gap: 6 }}>
-                      <button
-                        onClick={() => handleEdit(r)}
-                        style={{
-                          padding: "5px 12px",
-                          borderRadius: 4,
-                          border: `1px solid ${C.yellow || "#facc15"}`,
-                          background: (C.yellow || "#facc15") + "22",
-                          color: C.yellow || "#facc15",
-                          fontWeight: 600,
-                          fontSize: 12,
-                          cursor: "pointer",
-                        }}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(r._id || r.id)}
-                        style={{
-                          background: "#450a0a",
-                          color: "#ef4444",
-                          border: "1px solid #7f1d1d",
-                          borderRadius: 6,
-                          padding: "4px 14px",
-                          fontSize: 12,
-                          fontWeight: 500,
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 6,
-                        }}
-                      >
-                        Delete
-                      </button>
-                      <button
-                        onClick={() => generateJobCardPDF(r)}
-                        style={{
-                          padding: "5px 12px",
-                          borderRadius: 4,
-                          border: `1px solid ${C.blue}`,
-                          background: C.blue + "22",
-                          color: C.blue,
-                          fontWeight: 600,
-                          fontSize: 12,
-                          cursor: "pointer",
-                        }}
-                      >
-                        PDF
-                      </button>
-                    </div>
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 8,
-                      flexWrap: "wrap",
-                      marginTop: 6,
-                    }}
-                  >
-                    {r.soRef && (
-                      <span
-                        style={{
-                          fontSize: 11,
-                          background: C.surface,
-                          border: `1px solid ${C.border}`,
-                          borderRadius: 4,
-                          padding: "2px 8px",
-                          color: C.muted,
-                        }}
-                      >
-                        SO: {r.soRef}
-                      </span>
-                    )}
-                    {r.itemName && (
-                      <span
-                        style={{
-                          fontSize: 11,
-                          background: C.surface,
-                          border: `1px solid ${C.border}`,
-                          borderRadius: 4,
-                          padding: "2px 8px",
-                          color: C.muted,
-                        }}
-                      >
-                        {r.itemName}
-                      </span>
-                    )}
-                    {r.paperType && (
-                      <span
-                        style={{
-                          fontSize: 11,
-                          background: C.surface,
-                          border: `1px solid ${C.border}`,
-                          borderRadius: 4,
-                          padding: "2px 8px",
-                          color: C.muted,
-                        }}
-                      >
-                        {r.paperType} {r.paperGsm}gsm
-                      </span>
-                    )}
-                    {(r.processes || []).length > 0 && (
-                      <span
-                        style={{
-                          fontSize: 11,
-                          background: C.surface,
-                          border: `1px solid ${C.border}`,
-                          borderRadius: 4,
-                          padding: "2px 8px",
-                          color: C.muted,
-                        }}
-                      >
-                        {(r.processes || []).join(", ")}
-                      </span>
-                    )}
-                  </div>
-                </div>
+                  </td>
+                </tr>
               );
             })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </Card>
-      )}
     </div>
   );
 }

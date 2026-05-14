@@ -177,6 +177,7 @@ export function Dashboard({ data, session, toast }) {
     inward = [],
     vendorMaster = [],
     consumableStock = [],
+    operatorMaster = [],
     refreshData,
   } = data;
 
@@ -1474,17 +1475,22 @@ export function Dashboard({ data, session, toast }) {
                     {reportTab === "operator" ? "Operator" : "Machine"} --
                   </option>
                   {reportTab === "operator"
-                    ? [
-                        ...new Set(
-                          allEntries.map((e) => e.operator).filter(Boolean),
-                        ),
-                      ]
-                        .sort()
-                        .map((o) => (
-                          <option key={o} value={o}>
-                            {o}
-                          </option>
-                        ))
+                    ? (operatorMaster.length > 0
+                        ? operatorMaster.filter((op) => op.isActive !== false).map((op) => (
+                            <option key={op._id} value={op.name}>{op.name}</option>
+                          ))
+                        : [
+                            ...new Set(
+                              allEntries.map((e) => e.operator).filter(Boolean),
+                            ),
+                          ]
+                            .sort()
+                            .map((o) => (
+                              <option key={o} value={o}>
+                                {o}
+                              </option>
+                            ))
+                      )
                     : activeMachines.map((m) => (
                         <option key={m._id} value={m._id}>
                           {m.name} ({m.type})

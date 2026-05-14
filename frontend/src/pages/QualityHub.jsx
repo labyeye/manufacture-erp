@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { C } from "../constants/colors";
+import { Modal } from "../components/ui/BasicComponents";
 
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -97,7 +98,7 @@ export default function QualityHub({
 
 function FAITab({ jobOrders, toast }) {
   const [records, setRecords] = useState(load(LS_FAI));
-  const [view, setView]       = useState("list"); 
+  const [showModal, setShowModal] = useState(false);
   const [editId, setEditId]   = useState(null);
   const [filterStatus, setFilterStatus] = useState("All");
 
@@ -150,7 +151,7 @@ function FAITab({ jobOrders, toast }) {
       persist([rec, ...records]);
       toast?.("FAI record created", "success");
     }
-    setForm(blankForm); setEditId(null); setView("list");
+    setForm(blankForm); setEditId(null); setShowModal(false);
   };
 
   const filteredRecords = useMemo(() =>
@@ -169,10 +170,10 @@ function FAITab({ jobOrders, toast }) {
           </div>
         </div>
         <button
-          onClick={() => { setForm(blankForm); setEditId(null); setView(view === "form" ? "list" : "form"); }}
-          style={{ padding: "8px 18px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, fontSize: 12, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
+          onClick={() => { setForm(blankForm); setEditId(null); setShowModal(true); }}
+          style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", color: "#fff", padding: "9px 18px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
         >
-          {view === "form" ? "← Back to List" : "+ New Inspection"}
+          + New Inspection
         </button>
       </div>
 
@@ -194,11 +195,9 @@ function FAITab({ jobOrders, toast }) {
       </div>
 
       {}
-      {view === "form" && (
-        <div style={{ ...card("#3b82f6"), marginBottom: 20 }}>
-          <div style={{ fontSize: 14, fontWeight: 500, color: "#facc15", marginBottom: 20 }}>
-            {editId ? "Edit FAI Record" : "New First Article Inspection"}
-          </div>
+      {showModal && (
+        <Modal title={editId ? "Edit FAI Record" : "New First Article Inspection"} onClose={() => { setForm(blankForm); setEditId(null); setShowModal(false); }}>
+          <div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginBottom: 16 }}>
             <div>
@@ -304,16 +303,16 @@ function FAITab({ jobOrders, toast }) {
             <button onClick={handleSubmit} style={{ padding: "10px 24px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
               {editId ? "Save Changes" : "Submit Inspection"}
             </button>
-            <button onClick={() => { setForm(blankForm); setEditId(null); setView("list"); }} style={{ padding: "10px 18px", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, color: "#aaa", cursor: "pointer" }}>
+            <button onClick={() => { setForm(blankForm); setEditId(null); setShowModal(false); }} style={{ padding: "10px 18px", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, color: "#aaa", cursor: "pointer" }}>
               Cancel
             </button>
           </div>
-        </div>
+          </div>
+        </Modal>
       )}
 
       {}
-      {view === "list" && (
-        <div style={{ ...card(), background: "#111" }}>
+      <div style={{ ...card(), background: "#111" }}>
           {filteredRecords.length === 0 && (
             <div style={{ textAlign: "center", color: "#555", padding: 40 }}>
               {records.length === 0
@@ -340,7 +339,7 @@ function FAITab({ jobOrders, toast }) {
                     </span>
                   </div>
                   <div style={{ display: "flex", gap: 6 }}>
-                    <button onClick={() => { setForm({ ...r }); setEditId(r.id); setView("form"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                    <button onClick={() => { setForm({ ...r }); setEditId(r.id); setShowModal(true); }}
                       style={{ padding: "4px 10px", border: "1px solid #facc1533", background: "#facc1511", color: "#facc15", borderRadius: 4, fontSize: 11, cursor: "pointer" }}>✏️</button>
                     <button onClick={() => { if (confirm("Delete?")) { const recs = records.filter((x) => x.id !== r.id); persist(recs); } }}
                       style={{ padding: "4px 10px", border: "1px solid #ef444433", background: "transparent", color: "#ef4444", borderRadius: 4, fontSize: 11, cursor: "pointer" }}>🗑</button>
@@ -366,11 +365,9 @@ function FAITab({ jobOrders, toast }) {
             );
           })}
         </div>
-      )}
 
       {}
-      {view === "list" && (
-        <div style={{ marginTop: 16, ...card("#f59e0b"), borderColor: "#f59e0b33" }}>
+      <div style={{ marginTop: 16, ...card("#f59e0b"), borderColor: "#f59e0b33" }}>
           <div style={{ fontWeight: 500, fontSize: 12, color: "#f59e0b", marginBottom: 10 }}>
             🔬 FAI Gate Status — Active Job Orders
           </div>
@@ -389,7 +386,6 @@ function FAITab({ jobOrders, toast }) {
             })}
           </div>
         </div>
-      )}
     </div>
   );
 }

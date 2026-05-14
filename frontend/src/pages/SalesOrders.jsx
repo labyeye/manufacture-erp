@@ -8,6 +8,7 @@ import {
   SubmitBtn,
   AutocompleteInput,
   DateRangeFilter,
+  Modal,
 } from "../components/ui/BasicComponents";
 import { DatePicker } from "../components/ui/DatePicker";
 import {
@@ -165,7 +166,7 @@ export default function SalesOrders(props) {
 
   const [headerErrors, setHeaderErrors] = useState({});
   const [itemErrors, setItemErrors] = useState([{}]);
-  const [view, setView] = useState("form");
+  const [showModal, setShowModal] = useState(false);
   const [drDateFrom, setDrDateFrom] = useState("");
   const [drDateTo, setDrDateTo] = useState("");
   const [editId, setEditId] = useState(null);
@@ -183,7 +184,6 @@ export default function SalesOrders(props) {
     if (!deepLinkId || !salesOrders.length) return;
     const so = salesOrders.find((s) => s.soNo === deepLinkId);
     if (so) {
-      setView("records");
       setHighlightId(deepLinkId);
       onDeepLinkConsumed?.();
     }
@@ -493,8 +493,7 @@ export default function SalesOrders(props) {
         remarks: it.remarks || "",
       })),
     );
-    setView("form");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setShowModal(true);
   };
 
   const handleDelete = async (id) => {
@@ -600,7 +599,7 @@ export default function SalesOrders(props) {
       setItems([blankItem()]);
       setHeaderErrors({});
       setItemErrors([{}]);
-      setView("records");
+      setShowModal(false);
       fetchSalesOrders();
       fetchCompanies();
       if (refreshData) refreshData();
@@ -793,41 +792,40 @@ export default function SalesOrders(props) {
 
   return (
     <div className="fade">
-      <SectionTitle
-        icon="fa-solid fa-file-invoice-dollar"
-        title="Sales Orders"
-        sub="Create and track customer sales orders"
-      />
-
-      {}
-      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-        {[
-          ["form", "New Order"],
-          ["records", `Records (${salesOrders.length})`],
-        ]
-          .filter(([v]) => !(isClient && v === "records"))
-          .map(([v, l]) => (
-            <button
-              key={v}
-              onClick={() => setView(v)}
-              style={{
-                padding: "8px 20px",
-                borderRadius: 6,
-                border: `1px solid ${view === v ? C.green : C.border}`,
-                background: view === v ? C.green : "transparent",
-                color: view === v ? "#000" : C.muted,
-                fontWeight: 500,
-                fontSize: 13,
-                cursor: "pointer",
-              }}
-            >
-              {l}
-            </button>
-          ))}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
+        <SectionTitle
+          icon="fa-solid fa-file-invoice-dollar"
+          title="Sales Orders"
+          sub="Create and track customer sales orders"
+        />
+        {!isClient && (
+          <button
+            onClick={() => { setHeader(blankHeader); setItems([blankItem()]); setHeaderErrors({}); setItemErrors([{}]); setEditId(null); setShowModal(true); }}
+            style={{
+              background: "rgba(255,255,255,0.08)",
+              backdropFilter: "blur(12px) saturate(180%)",
+              WebkitBackdropFilter: "blur(12px) saturate(180%)",
+              border: "1px solid rgba(255,255,255,0.18)",
+              color: "#fff",
+              padding: "9px 18px",
+              borderRadius: 10,
+              fontWeight: 600,
+              fontSize: 13,
+              cursor: "pointer",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+            }}
+          >
+            + New SO
+          </button>
+        )}
       </div>
 
       {}
-      {view === "form" && (
+      {showModal && (
+        <Modal
+          title={editId ? "Edit Sales Order" : "New Sales Order"}
+          onClose={() => { setShowModal(false); setEditId(null); setHeader(blankHeader); setItems([blankItem()]); setHeaderErrors({}); setItemErrors([{}]); }}
+        >
         <div>
           {}
           <Card style={{ marginBottom: 16 }}>
@@ -964,14 +962,17 @@ export default function SalesOrders(props) {
             <button
               onClick={addItem}
               style={{
-                background: C.green || "#4ade80",
-                color: "#000",
-                border: "none",
+                background: "rgba(255,255,255,0.08)",
+                backdropFilter: "blur(12px) saturate(180%)",
+                WebkitBackdropFilter: "blur(12px) saturate(180%)",
+                color: "#fff",
+                border: "1px solid rgba(255,255,255,0.18)",
                 borderRadius: 6,
                 padding: "8px 18px",
                 fontWeight: 500,
                 fontSize: 13,
                 cursor: "pointer",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
               }}
             >
               + Add Item
@@ -1463,15 +1464,8 @@ export default function SalesOrders(props) {
               onClick={submit}
               disabled={loading}
             />
-            {editId && (
-              <button
-                onClick={() => {
-                  setEditId(null);
-                  setHeader(blankHeader);
-                  setItems([blankItem()]);
-                  setHeaderErrors({});
-                  setItemErrors([{}]);
-                }}
+            <button
+                onClick={() => { setShowModal(false); setEditId(null); setHeader(blankHeader); setItems([blankItem()]); setHeaderErrors({}); setItemErrors([{}]); }}
                 style={{
                   padding: "10px 20px",
                   borderRadius: 6,
@@ -1484,7 +1478,6 @@ export default function SalesOrders(props) {
               >
                 Cancel
               </button>
-            )}
             {items.some((it) => it.amount) && (
               <div
                 style={{
@@ -1560,11 +1553,11 @@ export default function SalesOrders(props) {
             )}
           </div>
         </div>
+        </Modal>
       )}
 
       {}
-      {view === "records" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <Card style={{ padding: "12px 20px" }}>
             <div
               style={{
@@ -1598,12 +1591,43 @@ export default function SalesOrders(props) {
             </div>
           </Card>
 
-          {salesOrders.length === 0 && (
-            <div
-              style={{
-                textAlign: "center",
-                color: C.muted,
-                padding: 32,
+          {(() => {
+            const filteredSOs = (salesOrders || []).slice().reverse().filter(r => {
+              if (!drDateFrom && !drDateTo) return true;
+              const d = r.orderDate ? new Date(r.orderDate).toISOString().slice(0, 10) : "";
+              if (drDateFrom && d < drDateFrom) return false;
+              if (drDateTo && d > drDateTo) return false;
+              return true;
+            });
+            const totalValue = filteredSOs.reduce((s, r) => s + (r.items || []).reduce((ss, it) => ss + +(it.amount || 0), 0), 0);
+            const openCount = filteredSOs.filter(r => !r.status || r.status === "Open").length;
+            const completedCount = filteredSOs.filter(r => r.status === "Completed" || r.status === "Complated" || r.status === "Closed").length;
+            const statCards = [
+              { label: "Total SOs", value: filteredSOs.length, icon: "fa-solid fa-file-lines", color: "#4ade80" },
+              { label: "Open", value: openCount, icon: "fa-solid fa-clock", color: "#f59e0b" },
+              { label: "Completed", value: completedCount, icon: "fa-solid fa-circle-check", color: "#10b981" },
+              { label: "Total Value", value: `₹${fmt(totalValue)}`, icon: "fa-solid fa-indian-rupee-sign", color: "#a78bfa" },
+            ];
+            return (
+              <>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 16 }}>
+                  {statCards.map(({ label, value, icon, color }) => (
+                    <div key={label} style={{ padding: "16px 20px", background: "#0d1117", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, borderLeft: `3px solid ${color}` }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                        <span style={{ fontSize: 11, color: C.muted, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
+                        <i className={icon} style={{ color, fontSize: 13, opacity: 0.8 }} />
+                      </div>
+                      <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", fontFamily: "'JetBrains Mono', monospace" }}>{value}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {filteredSOs.length === 0 && (
+                  <div
+                    style={{
+                      textAlign: "center",
+                      color: C.muted,
+                      padding: 32,
                 fontSize: 13,
                 background: "#1a1a1a",
                 borderRadius: 10,
@@ -1611,259 +1635,63 @@ export default function SalesOrders(props) {
             >
               No sales orders yet.
             </div>
-          )}
+                )}
 
-          {(salesOrders || [])
-            .slice()
-            .reverse()
-            .map((r) => {
+                {filteredSOs.length > 0 && (
+                  <div style={{ background: "#0d1117", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                      <thead>
+                        <tr style={{ background: "#161b22", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                          {["SO No", "Date", "Client", "Items", "Delivery", "Sales Person", "Total", "Status", "Actions"].map(h => (
+                            <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredSOs.map((r, i) => {
               const total = (r.items || []).reduce(
                 (s, it) => s + +(it.amount || 0),
                 0,
               );
 
               return (
-                <Card
+                <tr
                   key={r._id}
                   data-record-id={r.soNo}
                   style={{
-                    padding: "16px 20px",
-                    background: r.soNo === highlightId ? `${C.accent}11` : "#161b22",
-                    boxShadow: r.soNo === highlightId ? `0 0 0 2px ${C.accent}66` : undefined,
+                    borderBottom: "1px solid rgba(255,255,255,0.04)",
+                    background: r.soNo === highlightId ? `${C.accent}11` : i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)",
                     transition: "all 0.4s ease",
                   }}
                 >
-                  {}
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "flex-start",
-                      marginBottom: 16,
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: 12,
-                        alignItems: "center",
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: 16,
-                          fontWeight: 800,
-                          color: C.green || "#4ade80",
-                          fontFamily: "'JetBrains Mono', monospace",
-                        }}
-                      >
-                        {r.soNo}
-                      </span>
-                      <span
-                        style={{
-                          color: "#8b949e",
-                          fontSize: 13,
-                          fontWeight: 600,
-                        }}
-                      >
-                        {r.companyName} ·{" "}
-                        {r.orderDate
-                          ? new Date(r.orderDate).toLocaleDateString("en-GB")
-                          : "N/A"}
-                      </span>
+                  <td style={{ padding: "12px 14px", fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: "#4ade80", whiteSpace: "nowrap" }}>{r.soNo}</td>
+                  <td style={{ padding: "12px 14px", color: C.muted, whiteSpace: "nowrap", fontSize: 12 }}>{r.orderDate ? new Date(r.orderDate).toLocaleDateString("en-GB") : "—"}</td>
+                  <td style={{ padding: "12px 14px", fontWeight: 500 }}>{r.companyName}</td>
+                  <td style={{ padding: "12px 14px", color: C.muted }}>{(r.items || []).length} item{(r.items || []).length !== 1 ? "s" : ""}</td>
+                  <td style={{ padding: "12px 14px", color: C.muted, whiteSpace: "nowrap", fontSize: 12 }}>{r.deliveryDate ? new Date(r.deliveryDate).toLocaleDateString("en-GB") : "—"}</td>
+                  <td style={{ padding: "12px 14px", color: C.muted, fontSize: 12 }}>{r.salesPerson || "—"}</td>
+                  <td style={{ padding: "12px 14px", fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: "#4ade80", whiteSpace: "nowrap" }}>₹{fmt(total)}</td>
+                  <td style={{ padding: "12px 14px" }}>
+                    <span style={{ padding: "3px 10px", borderRadius: 5, fontSize: 11, fontWeight: 600, background: (r.status === "Complated" || r.status === "Completed" || r.status === "Received") ? "#06422233" : "#453b0333", color: (r.status === "Complated" || r.status === "Completed" || r.status === "Received") ? "#10b981" : "#f59e0b", border: "1px solid rgba(255,255,255,0.06)" }}>{r.status || "Open"}</span>
+                  </td>
+                  <td style={{ padding: "12px 14px" }}>
+                    <div style={{ display: "flex", gap: 5 }}>
+                      {!isClient && <button onClick={() => handleEdit(r)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid rgba(74,222,128,0.3)", background: "rgba(74,222,128,0.08)", color: "#4ade80", fontSize: 11, fontWeight: 500, cursor: "pointer" }}>Edit</button>}
+                      <button onClick={() => generateSOPDF(r)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.06)", color: "#fff", fontSize: 11, fontWeight: 500, cursor: "pointer" }}>PDF</button>
+                      {!isClient && <button onClick={() => handleDelete(r._id)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.08)", color: "#ef4444", fontSize: 11, fontWeight: 500, cursor: "pointer" }}>Del</button>}
                     </div>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <div
-                        style={{
-                          background:
-                            r.status === "Complated" || r.status === "Received"
-                              ? "#064e3b"
-                              : "#453b03",
-                          color:
-                            r.status === "Complated" || r.status === "Received"
-                              ? "#10b981"
-                              : "#f59e0b",
-                          border: `1px solid ${
-                            r.status === "Complated" || r.status === "Received"
-                              ? "#065f46"
-                              : "#78650f"
-                          }`,
-                          borderRadius: 6,
-                          padding: "4px 12px",
-                          fontSize: 11,
-                          fontWeight: 500,
-                          textTransform: "uppercase",
-                        }}
-                      >
-                        {r.status || "Open"}
-                      </div>
-                      {!isClient && (
-                        <>
-                          <button
-                            onClick={() => handleEdit(r)}
-                            style={{
-                              background: "#1e293b",
-                              color: C.green || "#4ade80",
-                              border: "1px solid #334155",
-                              borderRadius: 6,
-                              padding: "4px 14px",
-                              fontSize: 12,
-                              fontWeight: 500,
-                              cursor: "pointer",
-                            }}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDelete(r._id)}
-                            style={{
-                              background: "#450a0a",
-                              color: "#ef4444",
-                              border: "1px solid #7f1d1d",
-                              borderRadius: 6,
-                              padding: "4px 14px",
-                              fontSize: 12,
-                              fontWeight: 500,
-                              cursor: "pointer",
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 6,
-                            }}
-                          >
-                            Delete
-                          </button>
-                        </>
-                      )}
-                      <button
-                        onClick={() => generateSOPDF(r)}
-                        style={{
-                          background: "#1e293b",
-                          color: C.green || "#4ade80",
-                          border: "1px solid #334155",
-                          borderRadius: 6,
-                          padding: "4px 14px",
-                          fontSize: 12,
-                          fontWeight: 500,
-                          cursor: "pointer",
-                        }}
-                      >
-                        PDF
-                      </button>
-                    </div>
-                  </div>
-
-                  {}
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 8,
-                      marginBottom: 16,
-                    }}
-                  >
-                    {(r.items || []).map((it, idx) => (
-                      <div
-                        key={idx}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 12,
-                          fontSize: 12,
-                          color: "#c9d1d9",
-                          paddingBottom: idx === r.items.length - 1 ? 0 : 4,
-                          borderBottom:
-                            idx === r.items.length - 1
-                              ? "none"
-                              : "1px solid #30363d55",
-                        }}
-                      >
-                        <span style={{ fontWeight: 500, flex: 2 }}>
-                          {it.itemName}
-                        </span>
-                        <span style={{ flex: 1, color: "#8b949e" }}>
-                          Qty:{" "}
-                          <b style={{ color: "#e6edf3" }}>
-                            {fmt(it.orderQty)} {it.qtyUnit || "pcs"}
-                          </b>
-                        </span>
-                        <span style={{ flex: 1, color: "#8b949e" }}>
-                          Rate: ₹{fmt(it.price)}
-                        </span>
-                        <span
-                          style={{
-                            color: C.green || "#4ade80",
-                            fontWeight: 500,
-                            fontFamily: "'JetBrains Mono', monospace",
-                            width: 100,
-                            textAlign: "right",
-                          }}
-                        >
-                          ₹{fmt(it.amount)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {}
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "flex-end",
-                      paddingTop: 12,
-                      borderTop: "1px solid #30363d",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: 20,
-                        color: "#8b949e",
-                        fontSize: 11,
-                      }}
-                    >
-                      <span>
-                        Delivery:{" "}
-                        <b style={{ color: "#c9d1d9" }}>
-                          {r.deliveryDate
-                            ? new Date(r.deliveryDate).toLocaleDateString(
-                                "en-GB",
-                              )
-                            : "—"}
-                        </b>
-                      </span>
-                      <span>
-                        Sales Person:{" "}
-                        <b style={{ color: "#c9d1d9" }}>
-                          {r.salesPerson || "None"}
-                        </b>
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 16,
-                        fontWeight: 800,
-                        color: C.green || "#4ade80",
-                        fontFamily: "'JetBrains Mono', monospace",
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: 11,
-                          color: "#8b949e",
-                          fontWeight: 400,
-                        }}
-                      >
-                        Total:{" "}
-                      </span>
-                      ₹{fmt(total)}
-                    </div>
-                  </div>
-                </Card>
+                  </td>
+                </tr>
               );
             })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
-      )}
     </div>
   );
 }

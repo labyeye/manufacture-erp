@@ -9,6 +9,7 @@ import {
   ImportBtn,
   ExportBtn,
   TemplateBtn,
+  Modal,
 } from "../components/ui/BasicComponents";
 import { printingDetailMasterAPI, companyMasterAPI, toolingMasterAPI, itemMasterAPI } from "../api/auth";
 import * as XLSX from "xlsx";
@@ -50,7 +51,7 @@ export default function PrintingDetailMaster({ toast }) {
 
   const [entry, setEntry] = useState(blankEntry);
   const [errors, setErrors] = useState({});
-  const [view, setView] = useState("records"); 
+  const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [catFilter, setCatFilter] = useState("All");
 
@@ -247,7 +248,7 @@ export default function PrintingDetailMaster({ toast }) {
         toast("Detail saved successfully", "success");
       }
       setEntry(blankEntry);
-      setView("records");
+      setShowModal(false);
       fetchPrintingDetails();
     } catch (error) {
       toast(error.response?.data?.error || "Failed to save detail", "error");
@@ -259,8 +260,7 @@ export default function PrintingDetailMaster({ toast }) {
   const handleEdit = (item) => {
     setEditingId(item._id);
     setEntry({ ...item });
-    setView("form");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setShowModal(true);
   };
 
   const handleDelete = async (id) => {
@@ -376,64 +376,17 @@ export default function PrintingDetailMaster({ toast }) {
           <ExportBtn onClick={exportToExcel} />
 
           <button
-            onClick={() => setView("form")}
-            style={{
-              background: "#FF7F11",
-              color: "#fff",
-              border: "none",
-              padding: "10px 18px",
-              borderRadius: 8,
-              fontWeight: 800,
-              fontSize: 13,
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              cursor: "pointer",
-              transition: "all 0.2s",
-              boxShadow: "0 4px 14px 0 rgba(255, 127, 17, 0.39)",
-            }}
+            onClick={() => { setEditingId(null); setEntry(blankEntry); setShowModal(true); }}
+            style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", color: "#fff", padding: "9px 18px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
           >
-            {editingId ? (
-              <span style={{ fontSize: 16 }}>✏️</span>
-            ) : (
-              <span style={{ fontSize: 16 }}>➕</span>
-            )}
-            {editingId ? "Edit Spec" : "Add Spec"}
+            ➕ Add Spec
           </button>
         </div>
       </div>
 
-      {view === "form" && (
-        <Card style={{ marginBottom: 24 }}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              marginBottom: 20,
-            }}
-          >
-            <h3 style={{ fontSize: 16, fontWeight: 800, color: "#FF7F11" }}>
-              {editingId
-                ? "Edit Printing Specification"
-                : "New Printing Specification"}
-            </h3>
-            <button
-              onClick={() => {
-                setView("records");
-                setEditingId(null);
-                setEntry(blankEntry);
-              }}
-              style={{
-                color: C.muted,
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                fontWeight: 500,
-              }}
-            >
-              ✕ Close
-            </button>
-          </div>
+      {showModal && (
+        <Modal title={editingId ? "Edit Printing Specification" : "New Printing Specification"} onClose={() => { setShowModal(false); setEditingId(null); setEntry(blankEntry); }}>
+        <Card style={{ marginBottom: 0 }}>
 
           <div
             style={{
@@ -700,11 +653,7 @@ export default function PrintingDetailMaster({ toast }) {
               onClick={submit}
             />
             <button
-              onClick={() => {
-                setView("records");
-                setEditingId(null);
-                setEntry(blankEntry);
-              }}
+              onClick={() => { setShowModal(false); setEditingId(null); setEntry(blankEntry); }}
               style={{
                 padding: "10px 24px",
                 borderRadius: 8,
@@ -719,6 +668,7 @@ export default function PrintingDetailMaster({ toast }) {
             </button>
           </div>
         </Card>
+        </Modal>
       )}
 
       <Card style={{ padding: 0, overflow: "hidden" }}>

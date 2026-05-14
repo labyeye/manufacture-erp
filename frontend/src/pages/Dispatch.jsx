@@ -9,6 +9,7 @@ import {
   AutocompleteInput,
   DatePicker,
   DateRangeFilter,
+  Modal,
 } from "../components/ui/BasicComponents";
 import { dispatchAPI, salesOrdersAPI, jobOrdersAPI } from "../api/auth";
 
@@ -55,7 +56,8 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
   const [items, setItems] = useState([blankItem()]);
   const [headerErrors, setHeaderErrors] = useState({});
   const [itemErrors, setItemErrors] = useState([{}]);
-  const [view, setView] = useState("form");
+  const [showModal, setShowModal] = useState(false);
+  const [showReturnModal, setShowReturnModal] = useState(false);
   const [drDateFrom, setDrDateFrom] = useState("");
   const [drDateTo, setDrDateTo] = useState("");
   const [editId, setEditId] = useState(null);
@@ -360,7 +362,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
       setItems([blankItem()]);
       setHeaderErrors({});
       setItemErrors([{}]);
-      setView("records");
+      setShowModal(false);
       fetchDispatches();
     } catch (error) {
       toast(error.response?.data?.error || "Failed to save dispatch", "error");
@@ -540,34 +542,22 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
       />
 
       <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
-        {[
-          ["form", "New Dispatch", C.purple],
-          ["return", "Material Return", C.orange || "#f97316"],
-          ["records", `Records (${dispatch.length})`, C.blue],
-        ].map(([v, l, col]) => (
-          <button
-            key={v}
-            onClick={() => setView(v)}
-            style={{
-              padding: "8px 20px",
-              borderRadius: 6,
-              border: `1px solid ${view === v ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.18)"}`,
-              background: view === v ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.05)",
-              backdropFilter: "blur(12px) saturate(180%)",
-              WebkitBackdropFilter: "blur(12px) saturate(180%)",
-              color: "#fff",
-              boxShadow: view === v ? "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" : "none",
-              fontWeight: 500,
-              fontSize: 13,
-              cursor: "pointer",
-            }}
-          >
-            {l}
-          </button>
-        ))}
+        <button
+          onClick={() => { setHeader(blankHeader); setItems([blankItem()]); setHeaderErrors({}); setItemErrors([{}]); setEditId(null); setShowModal(true); }}
+          style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", color: "#fff", padding: "9px 18px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
+        >
+          + New Dispatch
+        </button>
+        <button
+          onClick={() => { setReturnHeader(blankReturnHeader); setReturnItems([blankItem()]); setShowReturnModal(true); }}
+          style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", color: "#fff", padding: "9px 18px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
+        >
+          Material Return
+        </button>
       </div>
 
-      {view === "form" && (
+      {showModal && (
+        <Modal title={editId ? "Edit Dispatch" : "New Dispatch"} onClose={() => { setShowModal(false); setEditId(null); setHeader(blankHeader); setItems([blankItem()]); setHeaderErrors({}); setItemErrors([{}]); }}>
         <div>
           {}
           <Card style={{ marginBottom: 16 }}>
@@ -897,9 +887,11 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
             />
           </div>
         </div>
+        </Modal>
       )}
 
-      {view === "return" && (
+      {showReturnModal && (
+        <Modal title="Material Return" onClose={() => { setShowReturnModal(false); setReturnHeader(blankReturnHeader); setReturnItems([blankItem()]); }}>
         <div>
           <Card style={{ marginBottom: 16 }}>
             <h3 style={{ fontSize: 14, fontWeight: 500, color: C.orange || "#f97316", marginBottom: 18 }}>
@@ -1115,7 +1107,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                   setReturnHeader(blankReturnHeader);
                   setReturnItems([blankItem()]);
                   fetchDispatches();
-                  setView("records");
+                  setShowReturnModal(false);
                 } catch (err) {
                   toast(err.response?.data?.error || "Failed to record return", "error");
                 } finally {
@@ -1141,10 +1133,10 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
             </button>
           </div>
         </div>
+        </Modal>
       )}
 
-      {view === "records" && (
-        <Card>
+      <Card>
           <div
             style={{
               display: "flex",
@@ -1226,8 +1218,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                     totalWithTax: it.totalWithTax || "",
                   })),
                 );
-                setView("form");
-                window.scrollTo({ top: 0, behavior: "smooth" });
+                setShowModal(true);
               };
 
               const handleDelete = async () => {
@@ -1402,7 +1393,6 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
               );
             })}
         </Card>
-      )}
     </div>
   );
 }

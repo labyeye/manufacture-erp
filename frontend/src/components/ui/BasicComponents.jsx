@@ -338,7 +338,7 @@ export function Modal({ title, children, onClose }) {
         padding: 20,
       }}
     >
-      <div style={{ ...GLASS_CARD, width: "100%", maxWidth: 600, padding: 28 }}>
+      <div style={{ ...GLASS_CARD, width: "100%", maxWidth: 1200, padding: 28 }}>
         <div
           style={{
             display: "flex",

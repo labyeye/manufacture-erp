@@ -115,6 +115,7 @@ export default function ProductionCalendar({
   jobOrders = [],
   salesOrders = [],
   machineMaster = {},
+  operatorMaster = [],
   refreshData,
   toast,
 }) {
@@ -814,16 +815,28 @@ export default function ProductionCalendar({
                         </div>
                       </td>
                       <td style={tdS}>
-                        <input
-                          id={`${mId}-${date}-operator`}
-                          name={`${mId}-${date}-operator`}
-                          style={miniInp}
-                          placeholder="e.g. Operator"
-                          value={row.operator || ""}
-                          onChange={(e) =>
-                            updateReport(date, "operator", e.target.value)
-                          }
-                        />
+                        {operatorMaster.length > 0 ? (
+                          <select
+                            id={`${mId}-${date}-operator`}
+                            style={{ ...miniInp, padding: "2px 4px" }}
+                            value={row.operator || ""}
+                            onChange={(e) => updateReport(date, "operator", e.target.value)}
+                          >
+                            <option value="">—</option>
+                            {operatorMaster.filter((op) => op.isActive !== false).map((op) => (
+                              <option key={op._id} value={op.name}>{op.name}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input
+                            id={`${mId}-${date}-operator`}
+                            name={`${mId}-${date}-operator`}
+                            style={miniInp}
+                            placeholder="e.g. Operator"
+                            value={row.operator || ""}
+                            onChange={(e) => updateReport(date, "operator", e.target.value)}
+                          />
+                        )}
                       </td>
                     </tr>
                   );
@@ -1430,25 +1443,31 @@ export default function ProductionCalendar({
                   <label style={{ fontSize: 11, color: "#8b949e", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 5 }}>
                     Absent Operator Name
                   </label>
-                  <input
-                    type="text"
-                    value={bdForm.operatorName}
-                    onChange={(e) => setBdForm((p) => ({ ...p, operatorName: e.target.value }))}
-                    placeholder="Name of absent operator"
-                    style={inputStyle}
-                  />
+                  {operatorMaster.length > 0 ? (
+                    <select value={bdForm.operatorName} onChange={(e) => setBdForm((p) => ({ ...p, operatorName: e.target.value }))} style={inputStyle}>
+                      <option value="">-- Select Operator --</option>
+                      {operatorMaster.filter((op) => op.isActive !== false).map((op) => (
+                        <option key={op._id} value={op.name}>{op.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input type="text" value={bdForm.operatorName} onChange={(e) => setBdForm((p) => ({ ...p, operatorName: e.target.value }))} placeholder="Name of absent operator" style={inputStyle} />
+                  )}
                 </div>
                 <div>
                   <label style={{ fontSize: 11, color: "#8b949e", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 5 }}>
                     Backup Operator (if any)
                   </label>
-                  <input
-                    type="text"
-                    value={bdForm.backupOperator}
-                    onChange={(e) => setBdForm((p) => ({ ...p, backupOperator: e.target.value }))}
-                    placeholder="Name of backup operator"
-                    style={inputStyle}
-                  />
+                  {operatorMaster.length > 0 ? (
+                    <select value={bdForm.backupOperator} onChange={(e) => setBdForm((p) => ({ ...p, backupOperator: e.target.value }))} style={inputStyle}>
+                      <option value="">-- Select Backup --</option>
+                      {operatorMaster.filter((op) => op.isActive !== false).map((op) => (
+                        <option key={op._id} value={op.name}>{op.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input type="text" value={bdForm.backupOperator} onChange={(e) => setBdForm((p) => ({ ...p, backupOperator: e.target.value }))} placeholder="Name of backup operator" style={inputStyle} />
+                  )}
                 </div>
               </>
             ) : null}

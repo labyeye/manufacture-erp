@@ -32,6 +32,7 @@ import {
   companyMasterAPI,
   consumableStockAPI,
   priceListAPI,
+  operatorMasterAPI,
 } from "./api/auth";
 import { AuthContext, AuthProvider, useAuth } from "./context/AuthContext";
 import { Toast } from "./components/ui/AdvancedComponents";
@@ -64,6 +65,8 @@ import QualityHub from "./pages/QualityHub";
 import DesignHub from "./pages/DesignHub";
 import NotificationHub from "./pages/NotificationHub";
 import ERPConsole from "./pages/ERPConsole";
+import Reports from "./pages/Reports";
+import OperatorMaster from "./pages/OperatorMaster";
 import companylogo from "../src/assets/logo.png";
 function App() {
   return (
@@ -131,12 +134,15 @@ function AppContent() {
   }
 
   const userRole = DEFAULT_ROLES[user.role] || DEFAULT_ROLES["Sales"];
-  const allowedTabs = Array.isArray(user.allowedTabs)
-    ? user.allowedTabs
-    : userRole.tabs;
-  const editableTabs = Array.isArray(user.editableTabs)
+  const allowedTabs = Array.from(
+    new Set([
+      ...userRole.tabs,
+      ...(Array.isArray(user.allowedTabs) ? user.allowedTabs : []),
+    ]),
+  ).filter((tabId) => user.role !== "Operator" || tabId !== "dashboard");
+  const editableTabs = (Array.isArray(user.editableTabs)
     ? user.editableTabs
-    : userRole.tabs;
+    : userRole.tabs).filter((tabId) => user.role !== "Operator" || tabId !== "dashboard");
 
   return (
     <AppInner
@@ -230,6 +236,7 @@ function AppInner({
     [],
   );
   const [priceList, setPriceList] = usePersistedState("erp_priceList", []);
+  const [operatorMaster, setOperatorMaster] = useState([]);
 
   const [soCounter, setSoCounter] = usePersistedState("erp_soCounter", {
     SO: 1,
@@ -346,6 +353,7 @@ function AppInner({
         "consumableStock",
       ),
       run(priceListAPI.getAll, setPriceList, "priceLists", "priceList"),
+      run(operatorMasterAPI.getAll, setOperatorMaster, "operators", "operator"),
     ]);
   };
 
@@ -422,6 +430,8 @@ function AppInner({
         companyMaster,
         setCompanyMaster,
         priceList,
+        operatorMaster,
+        setOperatorMaster,
         editableTabs,
         allowedTabs,
         currentTab,
@@ -478,6 +488,8 @@ function AppInner({
       companyMaster,
       setCompanyMaster,
       priceList,
+      operatorMaster,
+      setOperatorMaster,
       editableTabs,
       allowedTabs,
       currentTab,
@@ -502,6 +514,7 @@ function AppInner({
     printingMaster,
     companyMaster,
     priceList,
+    operatorMaster,
   ]);
 
   const data = filteredData;
@@ -519,6 +532,8 @@ function AppInner({
             setMachineReportData={setMachineReportData}
           />
         );
+      case "reports":
+        return <Reports />;
       case "search":
         return (
           <GlobalSearch
@@ -577,11 +592,25 @@ function AppInner({
           />
         );
       case "production":
-        return <ProductionUpdate {...data} toast={showToast} />;
+        return (
+          <ProductionUpdate
+            {...data}
+            operatorMaster={data.operatorMaster}
+            toast={showToast}
+          />
+        );
+      case "operatormaster":
+        return <OperatorMaster toast={showToast} />;
       case "printingmaster":
         return <PrintingDetailMaster {...data} toast={showToast} />;
       case "calendar":
-        return <ProductionCalendar {...data} toast={showToast} />;
+        return (
+          <ProductionCalendar
+            {...data}
+            operatorMaster={data.operatorMaster}
+            toast={showToast}
+          />
+        );
       case "subcontracting":
         return (
           <Subcontracting

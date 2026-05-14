@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { usersAPI } from "../api/auth";
+import { Modal } from "../components/ui/BasicComponents";
 import { TABS } from "../constants/seedData";
 
 const ROLE_COLORS = {
@@ -36,7 +37,7 @@ export default function UserManagement({ currentUser, toast, onRefreshUser, cate
 
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [showForm, setShowForm] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -132,7 +133,7 @@ export default function UserManagement({ currentUser, toast, onRefreshUser, cate
         await onRefreshUser();
       }
       setForm(emptyForm);
-      setShowForm(false);
+      setShowModal(false);
       setEditingId(null);
     } catch (error) {
       toast(error.response?.data?.error || "Failed to save user", "error");
@@ -150,8 +151,7 @@ export default function UserManagement({ currentUser, toast, onRefreshUser, cate
       clientTag: user.clientTag || "",
     });
     setEditingId(user._id);
-    setShowForm(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setShowModal(true);
   };
 
   const handleToggleStatus = async (id, currentStatus) => {
@@ -194,26 +194,17 @@ export default function UserManagement({ currentUser, toast, onRefreshUser, cate
             Add users and assign exactly which pages they can access
           </p>
         </div>
-        {!showForm && (
-          <button
-            onClick={() => { setShowForm(true); setEditingId(null); setForm(emptyForm); }}
-            style={{
-              padding: "10px 22px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", color: "#fff",
-              border: "1px solid rgba(255,255,255,0.18)", borderRadius: 7, fontWeight: 500, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
-            }}
-          >
-            + Add User
-          </button>
-        )}
+        <button
+          onClick={() => { setShowModal(true); setEditingId(null); setForm(emptyForm); }}
+          style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", color: "#fff", padding: "9px 18px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
+        >
+          + Add User
+        </button>
       </div>
 
-      {/* Form */}
-      {showForm && (
-        <div style={{
-          background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)",
-          border: "2px solid #FF980055",
-          borderRadius: 12, padding: "22px 24px", marginBottom: 20,
-        }}>
+      {/* Form Modal */}
+      {showModal && (
+        <Modal title={editingId ? "Edit User" : "New User"} onClose={() => { setShowModal(false); setEditingId(null); setForm(emptyForm); }}>
           <div style={{ fontSize: 12, fontWeight: 500, color: "#FF9800", letterSpacing: "1.5px", marginBottom: 18, textTransform: "uppercase" }}>
             {editingId ? "Edit User" : "New User"}
           </div>
@@ -346,25 +337,23 @@ export default function UserManagement({ currentUser, toast, onRefreshUser, cate
             }}>
               {editingId ? "✅ Update User" : "✓ Create User"}
             </button>
-            <button onClick={() => { setShowForm(false); setEditingId(null); setForm(emptyForm); }} style={{
+            <button onClick={() => { setShowModal(false); setEditingId(null); setForm(emptyForm); }} style={{
               padding: "10px 20px", background: "rgba(255,255,255,0.05)", color: "#aaa",
               border: "1px solid rgba(255,255,255,0.1)", borderRadius: 7, fontWeight: 500, fontSize: 13, cursor: "pointer",
             }}>
               Cancel
             </button>
           </div>
-        </div>
+        </Modal>
       )}
 
       {/* Search */}
-      {!showForm && (
-        <div style={{ marginBottom: 14 }}>
-          <input style={{ ...inputStyle, maxWidth: 300 }}
-            placeholder="🔍 Search users..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)} />
-        </div>
-      )}
+      <div style={{ marginBottom: 14 }}>
+        <input style={{ ...inputStyle, maxWidth: 300 }}
+          placeholder="🔍 Search users..."
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)} />
+      </div>
 
       {/* User list */}
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>

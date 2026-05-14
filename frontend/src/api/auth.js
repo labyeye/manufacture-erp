@@ -766,6 +766,25 @@ export const priceListAPI = {
   },
 };
 
+export const operatorMasterAPI = {
+  getAll: async () => {
+    const response = await api.get("/operator-master");
+    return response.data;
+  },
+  create: async (data) => {
+    const response = await api.post("/operator-master", data);
+    return response.data;
+  },
+  update: async (id, data) => {
+    const response = await api.put(`/operator-master/${id}`, data);
+    return response.data;
+  },
+  delete: async (id) => {
+    const response = await api.delete(`/operator-master/${id}`);
+    return response.data;
+  },
+};
+
 export const activityLogAPI = {
   getLogs: async (params = {}) => {
     const response = await api.get("/activity-log", { params });

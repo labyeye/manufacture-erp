@@ -60,6 +60,7 @@ exports.login = async (req, res) => {
         allowedTabs: user.allowedTabs,
         editableTabs: user.editableTabs,
         clientTag: user.clientTag,
+        phone: user.phone || null,
       },
     });
   } catch (error) {
@@ -146,7 +147,7 @@ exports.getUserById = async (req, res) => {
 
 exports.createUser = async (req, res) => {
   try {
-    const { username, password, name, role, allowedTabs, editableTabs, clientTag, email } =
+    const { username, password, name, role, allowedTabs, editableTabs, clientTag, email, phone } =
       req.body;
 
     if (!username || !password || !name) {
@@ -172,6 +173,7 @@ exports.createUser = async (req, res) => {
       editableTabs: editableTabs || null,
       clientTag: clientTag || null,
       email: email ? email.toLowerCase() : null,
+      phone: phone || null,
       isActive: true,
     });
 

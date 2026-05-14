@@ -9,6 +9,7 @@ import {
   SubmitBtn,
   AutocompleteInput,
   DateRangeFilter,
+  Modal,
 } from "../components/ui/BasicComponents";
 import { DatePicker } from "../components/ui/DatePicker";
 import {
@@ -95,7 +96,7 @@ export default function MaterialInward({
   const [poList, setPoList] = useState([]);
   const [headerErrors, setHeaderErrors] = useState({});
   const [itemErrors, setItemErrors] = useState([{}]);
-  const [view, setView] = useState("form");
+  const [showModal, setShowModal] = useState(false);
   const [editId, setEditId] = useState(null);
   const [editData, setEditData] = useState({});
   const [highlightId, setHighlightId] = useState(null);
@@ -144,7 +145,6 @@ export default function MaterialInward({
     if (!deepLinkId || !inward.length) return;
     const record = inward.find((r) => (r.inwardNo || r.grnNo) === deepLinkId);
     if (record) {
-      setView("records");
       setHighlightId(deepLinkId);
       onDeepLinkConsumed?.();
     }
@@ -551,7 +551,7 @@ export default function MaterialInward({
       setItems(data.items || [{ ...blankItem, _id: uid() }]);
       setItemErrors((data.items || []).map(() => ({})));
       setEditId(data._id);
-      setView("form");
+      setShowModal(true);
     } catch (error) {
       toast("Failed to load inward details", "error");
       console.error(error);
@@ -659,7 +659,15 @@ export default function MaterialInward({
   };
 
   const generateGRNPDF = (r) => {
-    const total = (r.items || []).reduce((s, it) => s + +(it.amount || 0), 0);
+    const itemsArr = (r.items || []).map((it) => {
+      const amt = Number(it.amount || 0);
+      const gst = Number(it.gstRate !== undefined && it.gstRate !== null ? it.gstRate : 18);
+      const rowTax = (amt * gst) / 100;
+      return { ...it, rowTax, gross: amt + rowTax, usedGst: gst };
+    });
+    const subtotal = itemsArr.reduce((s, it) => s + Number(it.amount || 0), 0);
+    const totalTax = itemsArr.reduce((s, it) => s + it.rowTax, 0);
+    const total = subtotal + totalTax;
     const fd = (d) => (d ? d.toString().split("T")[0] : "—");
 
     const html = `
@@ -735,11 +743,13 @@ export default function MaterialInward({
                 <th class="col-qty">No of Sheets</th>
                 <th class="col-qty">Weight</th>
                 <th class="col-amt">Rate</th>
-                <th class="col-amt">Amount</th>
+                <th style="width:5%;">GST(%)</th>
+                <th class="col-amt">Taxable</th>
+                <th class="col-amt">GST Amt</th>
               </tr>
             </thead>
             <tbody>
-              ${(r.items || [])
+              ${itemsArr
                 .map(
                   (it) => `
                 <tr>
@@ -750,8 +760,10 @@ export default function MaterialInward({
                   <td>${it.widthMm}${it.lengthMm ? "x" + it.lengthMm : ""}mm</td>
                   <td class="col-qty">${it.noOfSheets ? fmt(it.noOfSheets) : "—"}</td>
                   <td class="col-qty">${fmt(it.weight)} kg</td>
-                  <td class="col-amt">${fmt(it.rate)}</td>
-                  <td class="col-amt">${fmt(it.amount)}</td>
+                  <td class="col-amt">₹${fmt(it.rate)}</td>
+                  <td style="text-align:center;">${it.usedGst}%</td>
+                  <td class="col-amt" style="white-space:nowrap;">₹${fmt(it.amount)}</td>
+                  <td class="col-amt" style="white-space:nowrap;">₹${fmt(it.rowTax)}</td>
                 </tr>
               `,
                 )
@@ -760,7 +772,21 @@ export default function MaterialInward({
           </table>
 
           <div class="total-row">
-            <div class="total-box">₹${fmt(total)}</div>
+            <div style="width: 220px;">
+              <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
+                <label>Taxable Amount:</label>
+                <span>₹${fmt(subtotal)}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
+                <label>Total GST:</label>
+                <span>₹${fmt(totalTax)}</span>
+              </div>
+              <div class="hr"></div>
+              <div class="total-box">
+                <label>Net Total:</label>
+                ₹${fmt(total)}
+              </div>
+            </div>
           </div>
 
           <div style="margin-top: 50px; display: flex; justify-content: space-between;">
@@ -800,30 +826,38 @@ export default function MaterialInward({
         sub="Record incoming paper / board material receipts"
       />
 
-      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-        {[
-          ["form", "New Entry"],
-          ["records", `Records (${inward.length})`],
-        ].map(([v, l]) => (
+      {canEdit && (
+        <div style={{ marginBottom: 20 }}>
           <button
-            key={v}
-            onClick={() => setView(v)}
+            onClick={() => {
+              setEditId(null);
+              setHeader(blankHeader);
+              setItems([{ ...blankItem, _id: uid() }]);
+              setHeaderErrors({});
+              setItemErrors([{}]);
+              setShowModal(true);
+            }}
             style={{
-              padding: "8px 20px",
-              borderRadius: 6,
-              border: `1px solid ${view === v ? C.blue : C.border}`,
-              background: view === v ? C.blue + "22" : "transparent",
-              color: view === v ? C.blue : C.muted,
-              fontWeight: 500,
+              background: "rgba(255,255,255,0.08)",
+              backdropFilter: "blur(12px) saturate(180%)",
+              WebkitBackdropFilter: "blur(12px) saturate(180%)",
+              border: "1px solid rgba(255,255,255,0.18)",
+              color: "#fff",
+              padding: "9px 18px",
+              borderRadius: 10,
+              fontWeight: 600,
               fontSize: 13,
+              cursor: "pointer",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
             }}
           >
-            {l}
+            + New Material Inward
           </button>
-        ))}
-      </div>
+        </div>
+      )}
 
-      {view === "form" && (
+      {showModal && (
+        <Modal title={editId ? "Edit Material Inward" : "New Material Inward"} onClose={() => { setShowModal(false); setEditId(null); setHeader(blankHeader); setItems([{ ...blankItem, _id: uid() }]); setHeaderErrors({}); setItemErrors([{}]); }}>
         <div>
           {editId && (
             <div
@@ -848,6 +882,7 @@ export default function MaterialInward({
                   setItems([{ ...blankItem, _id: uid() }]);
                   setHeaderErrors({});
                   setItemErrors([{}]);
+                  setShowModal(false);
                 }}
                 style={{
                   background: "transparent",
@@ -1004,13 +1039,16 @@ export default function MaterialInward({
             <button
               onClick={addItem}
               style={{
-                background: C.accent,
+                background: "rgba(255,255,255,0.08)",
+                backdropFilter: "blur(12px) saturate(180%)",
+                WebkitBackdropFilter: "blur(12px) saturate(180%)",
                 color: "#fff",
-                border: "none",
+                border: "1px solid rgba(255,255,255,0.18)",
                 borderRadius: 6,
                 padding: "8px 18px",
                 fontWeight: 500,
                 fontSize: 13,
+                boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
               }}
             >
               + Add Item
@@ -1648,10 +1686,10 @@ export default function MaterialInward({
             )}
           </div>
         </div>
+        </Modal>
       )}
 
-      {view === "records" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div
             style={{
               display: "flex",
@@ -1719,73 +1757,68 @@ export default function MaterialInward({
             </div>
           </div>
 
-          {filteredInwards.length === 0 ? (
-            <Card style={{ textAlign: "center", padding: 40, color: C.muted }}>
-              No material inward records found.
-            </Card>
-          ) : (
-            filteredInwards
-              .slice()
-              .reverse()
-              .map((r) => {
+          {(() => {
+            const listData = filteredInwards.slice().reverse();
+            const totalValue = listData.reduce((s, r) => s + (r.items || []).reduce((ss, it) => ss + +(it.amount || 0), 0), 0);
+            const totalWeight = listData.reduce((s, r) => s + (r.items || []).reduce((ss, it) => ss + +(it.weight || 0), 0), 0);
+            const thisMonth = new Date().toISOString().slice(0, 7);
+            const thisMonthCount = listData.filter(r => (r.inwardDate || "").slice(0, 7) === thisMonth).length;
+            const statCards = [
+              { label: "Total GRNs", value: listData.length, icon: "fa-solid fa-truck-ramp-box", color: "#60a5fa" },
+              { label: "This Month", value: thisMonthCount, icon: "fa-solid fa-calendar-days", color: "#f59e0b" },
+              { label: "Total Weight", value: fmt(Math.round(totalWeight)) + " kg", icon: "fa-solid fa-weight-hanging", color: "#10b981" },
+              { label: "Total Value", value: `₹${fmt(totalValue)}`, icon: "fa-solid fa-indian-rupee-sign", color: "#a78bfa" },
+            ];
+            return (
+              <>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 16 }}>
+                  {statCards.map(({ label, value, icon, color }) => (
+                    <div key={label} style={{ padding: "16px 20px", background: "#0d1117", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, borderLeft: `3px solid ${color}` }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                        <span style={{ fontSize: 11, color: C.muted, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
+                        <i className={icon} style={{ color, fontSize: 13, opacity: 0.8 }} />
+                      </div>
+                      <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", fontFamily: "'JetBrains Mono', monospace" }}>{value}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {listData.length === 0 ? (
+                  <Card style={{ textAlign: "center", padding: 40, color: C.muted }}>No material inward records found.</Card>
+                ) : (
+                  <div style={{ background: "#0d1117", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                      <thead>
+                        <tr style={{ background: "#161b22", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                          {["GRN No", "Date", "Vendor", "Invoice", "Location", "Items", "Total", "Actions"].map(h => (
+                            <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {listData.map((r, i) => {
                 const total = (r.items || []).reduce(
                   (s, it) => s + +(it.amount || 0),
                   0,
                 );
                 return (
-                  <Card
+                  <tr
                     key={r._id}
                     data-record-id={r.inwardNo || r.grnNo}
                     style={{
-                      padding: "16px 20px",
-                      background: (r.inwardNo || r.grnNo) === highlightId ? `${C.accent}11` : "#111114",
-                      boxShadow: (r.inwardNo || r.grnNo) === highlightId ? `0 0 0 2px ${C.accent}66` : undefined,
+                      borderBottom: "1px solid rgba(255,255,255,0.04)",
+                      background: (r.inwardNo || r.grnNo) === highlightId ? `${C.accent}11` : i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)",
                       transition: "all 0.4s ease",
                     }}
                   >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "flex-start",
-                        marginBottom: 16,
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: 16,
-                          alignItems: "center",
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: 18,
-                            fontWeight: 900,
-                            color: C.blue,
-                            fontFamily: "monospace",
-                          }}
-                        >
-                          {r.inwardNo}
-                        </span>
-                        <div
-                          style={{
-                            fontSize: 11,
-                            padding: "4px 10px",
-                            background: "#064e3b",
-                            color: "#10b981",
-                            borderRadius: 4,
-                            fontWeight: 800,
-                            textTransform: "uppercase",
-                          }}
-                        >
-                          Verified
-                        </div>
-                        <span style={{ color: "#555", fontSize: 13 }}>
-                          {formatDateForInput(r.inwardDate)} ·{" "}
-                          <b style={{ color: "#aaa" }}>{r.vendorName}</b>
-                        </span>
-                      </div>
+                    <td style={{ padding: "12px 14px", fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: "#60a5fa", whiteSpace: "nowrap" }}>{r.inwardNo}</td>
+                    <td style={{ padding: "12px 14px", color: C.muted, whiteSpace: "nowrap", fontSize: 12 }}>{formatDateForInput(r.inwardDate)}</td>
+                    <td style={{ padding: "12px 14px", fontWeight: 500 }}>{r.vendorName}</td>
+                    <td style={{ padding: "12px 14px", color: C.muted, fontSize: 12 }}>{r.invoiceNo || "—"}</td>
+                    <td style={{ padding: "12px 14px", color: C.muted, fontSize: 12 }}>{r.location || "—"}</td>
+                    <td style={{ padding: "12px 14px", color: C.muted }}>{(r.items || []).length} item{(r.items || []).length !== 1 ? "s" : ""}</td>
+                    <td style={{ padding: "12px 14px", fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: "#10b981", whiteSpace: "nowrap" }}>₹{fmt(total)}</td>
+                    <td style={{ padding: "12px 14px" }}>
                       <div style={{ display: "flex", gap: 8 }}>
                         {canEdit && (
                           <button
@@ -1837,122 +1870,18 @@ export default function MaterialInward({
                           </button>
                         )}
                       </div>
-                    </div>
-
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 8,
-                        marginBottom: 16,
-                      }}
-                    >
-                      {(r.items || []).map((it, idx) => (
-                        <div
-                          key={idx}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 12,
-                            fontSize: 12,
-                            color: "#888",
-                            padding: "8px 0",
-                            borderBottom: "1px solid #ffffff05",
-                          }}
-                        >
-                          <span
-                            style={{ fontWeight: 500, flex: 1, color: "#ddd" }}
-                          >
-                            {it.rmItem}{" "}
-                            <span style={{ color: "#555", fontWeight: 400 }}>
-                              · {it.itemName}
-                            </span>
-                          </span>
-                          <span style={{ width: 120 }}>
-                            Sheets:{" "}
-                            <b>{it.noOfSheets ? fmt(it.noOfSheets) : "—"}</b>
-                          </span>
-                          <span style={{ width: 100 }}>
-                            Weight: <b>{fmt(it.weight)} kg</b>
-                          </span>
-                          <span style={{ width: 80 }}>
-                            Rate: ₹{fmt(it.rate)}
-                          </span>
-                          <span
-                            style={{
-                              color: C.green,
-                              fontWeight: 800,
-                              width: 110,
-                              textAlign: "right",
-                              fontFamily: "monospace",
-                            }}
-                          >
-                            ₹{fmt(it.amount)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        paddingTop: 12,
-                        borderTop: "1px solid #ffffff05",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: 24,
-                          fontSize: 11,
-                          color: "#444",
-                        }}
-                      >
-                        <span>
-                          Invoice:{" "}
-                          <b style={{ color: "#777" }}>{r.invoiceNo}</b>
-                        </span>
-                        <span>
-                          Vehicle:{" "}
-                          <b style={{ color: "#777" }}>{r.vehicleNo}</b>
-                        </span>
-                        <span>
-                          Location:{" "}
-                          <b style={{ color: "#777" }}>{r.location}</b>
-                        </span>
-                        <span>
-                          Received by:{" "}
-                          <b style={{ color: "#777" }}>{r.receivedBy}</b>
-                        </span>
-                      </div>
-                      <div
-                        style={{
-                          fontSize: 16,
-                          fontWeight: 900,
-                          color: C.blue,
-                          fontFamily: "monospace",
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: 11,
-                            color: "#444",
-                            fontWeight: 600,
-                          }}
-                        >
-                          Total Value:{" "}
-                        </span>
-                        ₹{fmt(total)}
-                      </div>
-                    </div>
-                  </Card>
+                    </td>
+                  </tr>
                 );
-              })
-          )}
+              })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
-      )}
     </div>
   );
 }

@@ -31,6 +31,7 @@ export default function ProductionUpdate({
   pudCounter = 0,
   setPudCounter,
   machineMaster = [],
+  operatorMaster = [],
   toast,
 }) {
   const readonlyStyle = {
@@ -310,7 +311,7 @@ export default function ProductionUpdate({
   return (
     <div className="fade">
       <SectionTitle
-        icon="🛠️"
+        icon="fa-solid fa-screwdriver-wrench"
         title="Production"
         sub="Record and track stage-wise production progress"
       />
@@ -332,10 +333,10 @@ export default function ProductionUpdate({
         style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}
       >
         {[
-          ["entry", `🛠️ Production Details`],
-          ["records", `📋 Records`],
-          ["status", `📊 Production Status`],
-        ].map(([v, l]) => (
+          ["entry", "fa-solid fa-screwdriver-wrench", "Production Details"],
+          ["records", "fa-solid fa-clipboard-list", "Records"],
+          ["status", "fa-solid fa-chart-column", "Production Status"],
+        ].map(([v, iconClass, label]) => (
           <button
             key={v}
             onClick={() => setView(v)}
@@ -352,7 +353,8 @@ export default function ProductionUpdate({
               gap: 8,
             }}
           >
-            {l}
+            <i className={iconClass} />
+            <span>{label}</span>
           </button>
         ))}
       </div>
@@ -556,12 +558,16 @@ export default function ProductionUpdate({
               }}
             >
               <Field label="OPERATOR / WORKER *">
-                <input
-                  placeholder="Name of operator"
+                <select
                   value={entry.operator}
                   onChange={(e) => setField("operator", e.target.value)}
                   style={E("operator")}
-                />
+                >
+                  <option value="">-- Select Operator --</option>
+                  {operatorMaster.filter((op) => op.isActive !== false).map((op) => (
+                    <option key={op._id} value={op.name}>{op.name}</option>
+                  ))}
+                </select>
                 {EMsg("operator")}
               </Field>
 
@@ -815,33 +821,85 @@ export default function ProductionUpdate({
             />
           </div>
 
-          {}
-          {jobOrders.length === 0 && (
-            <div style={{ textAlign: "center", color: C.muted, padding: 32 }}>
-              No job orders found.
-            </div>
-          )}
+          {(() => {
+            const allRecs = [];
+            jobOrders.forEach(jo => {
+              if (searchTerm && !jo.joNo.toLowerCase().includes(searchTerm.toLowerCase()) && !jo.companyName.toLowerCase().includes(searchTerm.toLowerCase())) return;
+              (jo.stageHistory || []).forEach(r => {
+                if (dateFrom && r.date < dateFrom) return;
+                if (dateTo && r.date > dateTo) return;
+                allRecs.push({ ...r, jo });
+              });
+            });
+            allRecs.sort((a, b) => new Date(b.enteredAt || b.date) - new Date(a.enteredAt || a.date));
 
-          {jobOrders
-            .filter((jo) => {
-              const matchesSearch =
-                jo.joNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                jo.companyName.toLowerCase().includes(searchTerm.toLowerCase());
-              return matchesSearch;
-            })
-            .map((jo) => {
-              const records = (jo.stageHistory || [])
-                .filter((r) => {
-                  if (dateFrom && r.date < dateFrom) return false;
-                  if (dateTo && r.date > dateTo) return false;
-                  return true;
-                })
-                .sort((a, b) => new Date(b.enteredAt) - new Date(a.enteredAt));
+            const totalDone = allRecs.reduce((s, r) => s + +(r.qtyCompleted || 0), 0);
+            const totalRejected = allRecs.reduce((s, r) => s + +(r.qtyRejected || 0), 0);
+            const uniqueJOs = new Set(allRecs.map(r => r.jo.joNo)).size;
+            const statCards = [
+              { label: "Total Records", value: allRecs.length, icon: "fa-solid fa-clipboard-list", color: "#FF7F11" },
+              { label: "Unique JOs", value: uniqueJOs, icon: "fa-solid fa-gears", color: "#facc15" },
+              { label: "Total Done", value: fmt(totalDone), icon: "fa-solid fa-circle-check", color: "#10b981" },
+              { label: "Total Rejected", value: fmt(totalRejected), icon: "fa-solid fa-circle-xmark", color: "#ef4444" },
+            ];
+            return (
+              <>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 16 }}>
+                  {statCards.map(({ label, value, icon, color }) => (
+                    <div key={label} style={{ padding: "16px 20px", background: "#0d1117", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, borderLeft: `3px solid ${color}` }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                        <span style={{ fontSize: 11, color: C.muted, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
+                        <i className={icon} style={{ color, fontSize: 13, opacity: 0.8 }} />
+                      </div>
+                      <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", fontFamily: "'JetBrains Mono', monospace" }}>{value}</div>
+                    </div>
+                  ))}
+                </div>
 
-              if (records.length === 0 && searchTerm) return null;
-              if (records.length === 0 && (dateFrom || dateTo)) return null;
-              if (records.length === 0) return null;
+                {allRecs.length === 0 ? (
+                  <div style={{ textAlign: "center", color: C.muted, padding: 32 }}>No production records found.</div>
+                ) : (
+                  <div style={{ background: "#0d1117", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                      <thead>
+                        <tr style={{ background: "#161b22", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                          {["JO No", "Client", "Item", "Stage", "Date", "Done", "Rejected", "Operator", "Shift", "Actions"].map(h => (
+                            <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {allRecs.map((rec, i) => {
+                          const { jo, ...r } = rec;
+                          return (
+                            <tr key={r._id || i} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)" }}>
+                              <td style={{ padding: "11px 14px", fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: "#facc15", whiteSpace: "nowrap" }}>{jo.joNo}</td>
+                              <td style={{ padding: "11px 14px", color: C.muted, fontSize: 12 }}>{jo.companyName}</td>
+                              <td style={{ padding: "11px 14px", color: "#94a3b8", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{jo.itemName}</td>
+                              <td style={{ padding: "11px 14px" }}><span style={{ padding: "3px 10px", borderRadius: 4, fontSize: 11, fontWeight: 600, background: "#FF7F1122", color: "#FF7F11", border: "1px solid #FF7F1144" }}>{r.stage}</span></td>
+                              <td style={{ padding: "11px 14px", color: C.muted, whiteSpace: "nowrap", fontSize: 12 }}>{fmtDate(r.date)}</td>
+                              <td style={{ padding: "11px 14px", fontWeight: 700, color: "#10b981", fontFamily: "'JetBrains Mono', monospace" }}>{fmt(r.qtyCompleted)}</td>
+                              <td style={{ padding: "11px 14px", color: r.qtyRejected > 0 ? "#ef4444" : C.muted, fontFamily: "'JetBrains Mono', monospace" }}>{r.qtyRejected || 0}</td>
+                              <td style={{ padding: "11px 14px", color: C.muted, fontSize: 12 }}>{r.operator || "—"}</td>
+                              <td style={{ padding: "11px 14px", color: C.muted, fontSize: 12 }}>{r.shift || "—"}</td>
+                              <td style={{ padding: "11px 14px" }}>
+                                <div style={{ display: "flex", gap: 5 }}>
+                                  <button onClick={() => handleEdit(jo, r)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid rgba(96,165,250,0.3)", background: "rgba(96,165,250,0.08)", color: "#60a5fa", fontSize: 11, fontWeight: 500, cursor: "pointer" }}>Edit</button>
+                                  <button onClick={() => handleDelete(jo._id, r._id)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.08)", color: "#ef4444", fontSize: 11, fontWeight: 500, cursor: "pointer" }}>Del</button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
+            );
+          })()}
 
+          {false && [].map((jo) => {
               return (
                 <Card key={jo._id} style={{ marginBottom: 20, padding: 20 }}>
                   <div
@@ -954,7 +1012,7 @@ export default function ProductionUpdate({
                                 gap: 4,
                               }}
                             >
-                              🕒 {r.shift}
+                              <i className="fa-solid fa-clock" /> {r.shift}
                             </span>
                             {r.machineId && (
                               <span
@@ -965,7 +1023,7 @@ export default function ProductionUpdate({
                                   gap: 4,
                                 }}
                               >
-                                🏭{" "}
+                                  <i className="fa-solid fa-industry" />{" "}
                                 {machineMaster.find(
                                   (m) => m._id === r.machineId,
                                 )?.name || r.machineId}
@@ -999,9 +1057,11 @@ export default function ProductionUpdate({
                           <button
                             onClick={() => handleDelete(jo._id, r._id)}
                             style={{
-                              background: "#450a0a",
-                              color: "#ef4444",
-                              border: "1px solid #7f1d1d",
+                              background: "rgba(255,255,255,0.08)",
+                              backdropFilter: "blur(12px) saturate(180%)",
+                              WebkitBackdropFilter: "blur(12px) saturate(180%)",
+                              color: "#fff",
+                              border: "1px solid rgba(255,255,255,0.18)",
                               borderRadius: 6,
                               padding: "4px 14px",
                               fontSize: 12,
@@ -1010,6 +1070,7 @@ export default function ProductionUpdate({
                               display: "flex",
                               alignItems: "center",
                               gap: 6,
+                              boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
                             }}
                           >
                             🗑️ Delete

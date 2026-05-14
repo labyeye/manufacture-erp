@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { C } from "../constants/colors";
 import { machineMaintenanceAPI, spareIssueLogAPI } from "../api/auth";
+import { Modal } from "../components/ui/BasicComponents";
 
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -292,6 +293,7 @@ function PMSchedulerTab({ machineMaster, toast }) {
 function SparePartsTab({ machineMaster, itemMasterFG = [], categoryMaster = [], toast }) {
   const [parts, setParts] = useState(loadArr(LS_PARTS));
   const [view, setView]   = useState("list");
+  const [showModal, setShowModal] = useState(false);
   const [editId, setEditId] = useState(null);
   const [search, setSearch] = useState("");
 
@@ -356,7 +358,7 @@ function SparePartsTab({ machineMaster, itemMasterFG = [], categoryMaster = [], 
     const rec = { id: editId || uid(), ...form, qty: Number(form.qty), reorderPoint: Number(form.reorderPoint), unitCost: Number(form.unitCost), updatedAt: new Date().toISOString() };
     if (editId) { persist(parts.map((p) => (p.id === editId ? rec : p))); toast?.("Part updated", "success"); }
     else { persist([rec, ...parts]); toast?.("Part added to inventory", "success"); }
-    setForm(blankForm); setEditId(null); setView("list");
+    setForm(blankForm); setEditId(null); setShowModal(false);
   };
 
   const fetchUsageLogs = useCallback(async () => {
@@ -407,10 +409,16 @@ function SparePartsTab({ machineMaster, itemMasterFG = [], categoryMaster = [], 
               🔔 {reorderCount} Reorder{reorderCount > 1 ? "s" : ""} Needed
             </div>
           )}
-          {["list", "form", "usage"].map((v) => (
+          <button
+            onClick={() => { setForm(blankForm); setEditId(null); setShowModal(true); }}
+            style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", color: "#fff", padding: "9px 18px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
+          >
+            + Add Part
+          </button>
+          {["list", "usage"].map((v) => (
             <button
               key={v}
-              onClick={() => { if (v !== "form") { setView(v); } else { setForm(blankForm); setEditId(null); setView("form"); } }}
+              onClick={() => setView(v)}
               style={{
                 padding: "7px 16px",
                 background: view === v ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.05)",
@@ -423,15 +431,15 @@ function SparePartsTab({ machineMaster, itemMasterFG = [], categoryMaster = [], 
                 boxShadow: view === v ? "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" : "none",
               }}
             >
-              {v === "list" ? "📋 Inventory" : v === "form" ? (editId ? "✏️ Edit" : "+ Add Part") : "📊 Usage History"}
+              {v === "list" ? "📋 Inventory" : "📊 Usage History"}
             </button>
           ))}
         </div>
       </div>
 
-      {view === "form" && (
-        <div style={{ background: "#111", border: "1px solid #2a2a2a", borderRadius: 10, padding: 20, marginBottom: 16 }}>
-          <div style={{ fontSize: 14, fontWeight: 500, color: "#facc15", marginBottom: 18 }}>{editId ? "Edit Part" : "Add Spare Part"}</div>
+      {showModal && (
+        <Modal title={editId ? "Edit Part" : "Add Spare Part"} onClose={() => { setForm(blankForm); setEditId(null); setShowModal(false); }}>
+          <div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14, marginBottom: 16 }}>
             <div>
               <label style={lbl}>Category {machineSpareCategories.length > 0 ? "(from Master)" : ""}</label>
@@ -499,9 +507,10 @@ function SparePartsTab({ machineMaster, itemMasterFG = [], categoryMaster = [], 
           </div>
           <div style={{ display: "flex", gap: 10 }}>
             <button onClick={handleSubmit} style={{ padding: "9px 22px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>{editId ? "Update" : "Add Part"}</button>
-            <button onClick={() => { setForm(blankForm); setEditId(null); setView("list"); }} style={{ padding: "9px 14px", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, color: "#aaa", cursor: "pointer" }}>Cancel</button>
+            <button onClick={() => { setForm(blankForm); setEditId(null); setShowModal(false); }} style={{ padding: "9px 14px", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, color: "#aaa", cursor: "pointer" }}>Cancel</button>
           </div>
-        </div>
+          </div>
+        </Modal>
       )}
 
       {view === "list" && (
@@ -558,8 +567,7 @@ function SparePartsTab({ machineMaster, itemMasterFG = [], categoryMaster = [], 
                           <button
                             onClick={() => {
                               setForm({ ...p, qty: p.qty, reorderPoint: p.reorderPoint, unitCost: p.unitCost });
-                              setEditId(p.id); setView("form");
-                              window.scrollTo({ top: 0, behavior: "smooth" });
+                              setEditId(p.id); setShowModal(true);
                             }}
                             style={{ padding: "3px 8px", border: "1px solid #facc1533", background: "#facc1511", color: "#facc15", borderRadius: 4, fontSize: 10, cursor: "pointer" }}>✏️</button>
                           <button

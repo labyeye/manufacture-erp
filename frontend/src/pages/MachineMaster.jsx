@@ -716,9 +716,12 @@ export default function MachineMaster({ toast }) {
                       borderRadius: 4,
                       fontSize: 11,
                       fontWeight: 500,
-                      background: (form.workingDays || []).includes(day) ? "#FF9800" : "rgba(255,255,255,0.05)",
-                      color: (form.workingDays || []).includes(day) ? "#000" : "#666",
-                      border: "1px solid rgba(255,255,255,0.1)",
+                      background: (form.workingDays || []).includes(day) ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.05)",
+                      backdropFilter: "blur(12px) saturate(180%)",
+                      WebkitBackdropFilter: "blur(12px) saturate(180%)",
+                      color: "#fff",
+                      border: `1px solid ${(form.workingDays || []).includes(day) ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.1)"}`,
+                      boxShadow: (form.workingDays || []).includes(day) ? "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" : "none",
                       cursor: "pointer",
                     }}
                   >

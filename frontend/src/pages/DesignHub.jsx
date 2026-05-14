@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { C } from "../constants/colors";
+import { Modal } from "../components/ui/BasicComponents";
 
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -68,7 +69,7 @@ export default function DesignHub({ salesOrders = [], jobOrders = [], toast }) {
 
 function ArtworkTab({ salesOrders, jobOrders, toast }) {
   const [records, setRecords] = useState(load(LS_ART));
-  const [view, setView]       = useState("list");
+  const [showModal, setShowModal] = useState(false);
   const [editId, setEditId]   = useState(null);
   const [expandId, setExpandId] = useState(null);
   const [filterStage, setFilterStage] = useState("All");
@@ -114,7 +115,7 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
     };
     if (editId) { persist(records.map((r) => (r.id === editId ? rec : r))); toast?.("Artwork record updated", "success"); }
     else { persist([rec, ...records]); toast?.("Artwork record created", "success"); }
-    setForm(blankForm); setEditId(null); setView("list");
+    setForm(blankForm); setEditId(null); setShowModal(false);
   };
 
   const advanceStage = (rec) => {
@@ -171,9 +172,9 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
             Received → Internal Review → Proof Sent → Client Approved → Production Release · Eliminates version conflicts
           </div>
         </div>
-        <button onClick={() => { setForm(blankForm); setEditId(null); setView(view === "form" ? "list" : "form"); }}
-          style={{ padding: "8px 18px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, fontSize: 12, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
-          {view === "form" ? "← Back" : "+ New Artwork"}
+        <button onClick={() => { setForm(blankForm); setEditId(null); setShowModal(true); }}
+          style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", color: "#fff", padding: "9px 18px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
+          + New Artwork
         </button>
       </div>
 
@@ -192,9 +193,8 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
       </div>
 
       {}
-      {view === "form" && (
-        <div style={{ background: "#111", border: "1px solid #2a2a2a", borderRadius: 10, padding: 20, marginBottom: 16 }}>
-          <div style={{ fontSize: 14, fontWeight: 500, color: "#facc15", marginBottom: 18 }}>{editId ? "Edit Artwork Record" : "Register New Artwork"}</div>
+      {showModal && (
+        <Modal title={editId ? "Edit Artwork Record" : "Register New Artwork"} onClose={() => { setForm(blankForm); setEditId(null); setShowModal(false); }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginBottom: 14 }}>
             <div>
               <label style={lbl}>Artwork Name *</label>
@@ -227,14 +227,13 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
           </div>
           <div style={{ display: "flex", gap: 10 }}>
             <button onClick={handleSubmit} style={{ padding: "9px 22px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>{editId ? "Save Changes" : "Register Artwork"}</button>
-            <button onClick={() => { setForm(blankForm); setEditId(null); setView("list"); }} style={{ padding: "9px 14px", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, color: "#aaa", cursor: "pointer" }}>Cancel</button>
+            <button onClick={() => { setForm(blankForm); setEditId(null); setShowModal(false); }} style={{ padding: "9px 14px", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, color: "#aaa", cursor: "pointer" }}>Cancel</button>
           </div>
-        </div>
+        </Modal>
       )}
 
       {}
-      {view === "list" && (
-        <div style={{ background: "#111", border: "1px solid #2a2a2a", borderRadius: 10, padding: 20 }}>
+      <div style={{ background: "#111", border: "1px solid #2a2a2a", borderRadius: 10, padding: 20 }}>
           {filtered.length === 0 && (
             <div style={{ textAlign: "center", color: "#555", padding: 40 }}>
               {records.length === 0 ? "No artwork records. Register the first artwork to start the approval workflow." : "No records match the filter."}
@@ -277,7 +276,7 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
                         + New Version
                       </button>
                     )}
-                    <button onClick={() => { setForm({ ...rec }); setEditId(rec.id); setView("form"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                    <button onClick={() => { setForm({ ...rec }); setEditId(rec.id); setShowModal(true); }}
                       style={{ padding: "4px 10px", border: "1px solid #facc1533", background: "#facc1511", color: "#facc15", borderRadius: 4, fontSize: 11, cursor: "pointer" }}>✏️</button>
                     <button onClick={() => { if (confirm("Delete?")) persist(records.filter((r) => r.id !== rec.id)); }}
                       style={{ padding: "4px 10px", border: "1px solid #ef444433", background: "transparent", color: "#ef4444", borderRadius: 4, fontSize: 11, cursor: "pointer" }}>🗑</button>
@@ -347,7 +346,6 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
             );
           })}
         </div>
-      )}
     </div>
   );
 }
@@ -357,7 +355,7 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
 
 function DielineTab({ jobOrders, toast }) {
   const [dielines, setDielines] = useState(load(LS_DIEL));
-  const [view, setView]         = useState("list");
+  const [showModal, setShowModal] = useState(false);
   const [editId, setEditId]     = useState(null);
   const [search, setSearch]     = useState("");
 
@@ -385,7 +383,7 @@ function DielineTab({ jobOrders, toast }) {
     const rec = { id: editId || uid(), ...form, updatedAt: new Date().toISOString() };
     if (editId) { persist(dielines.map((d) => (d.id === editId ? rec : d))); toast?.("Dieline updated", "success"); }
     else { persist([rec, ...dielines]); toast?.("Dieline added to library", "success"); }
-    setForm(blankForm); setEditId(null); setView("list");
+    setForm(blankForm); setEditId(null); setShowModal(false);
   };
 
   
@@ -410,15 +408,14 @@ function DielineTab({ jobOrders, toast }) {
           <div style={{ fontSize: 17, fontWeight: 800 }}>Dieline Library</div>
           <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>Cutting patterns as versioned assets · dimensions · compatible machines · client history</div>
         </div>
-        <button onClick={() => { setForm(blankForm); setEditId(null); setView(view === "form" ? "list" : "form"); }}
-          style={{ padding: "8px 18px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, fontSize: 12, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
-          {view === "form" ? "← Back" : "+ Add Dieline"}
+        <button onClick={() => { setForm(blankForm); setEditId(null); setShowModal(true); }}
+          style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", color: "#fff", padding: "9px 18px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
+          + Add Dieline
         </button>
       </div>
 
-      {view === "form" && (
-        <div style={{ background: "#111", border: "1px solid #2a2a2a", borderRadius: 10, padding: 20, marginBottom: 16 }}>
-          <div style={{ fontSize: 14, fontWeight: 500, color: "#facc15", marginBottom: 18 }}>{editId ? "Edit Dieline" : "Add Dieline to Library"}</div>
+      {showModal && (
+        <Modal title={editId ? "Edit Dieline" : "Add Dieline to Library"} onClose={() => { setForm(blankForm); setEditId(null); setShowModal(false); }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginBottom: 14 }}>
             <div><label style={lbl}>Die Code *</label><input value={form.dieCode} onChange={(e) => setF("dieCode", e.target.value)} placeholder="e.g. DIE-2412-A3" style={inp} /></div>
             <div><label style={lbl}>Description</label><input value={form.description} onChange={(e) => setF("description", e.target.value)} placeholder="e.g. Retail Box 500g" style={inp} /></div>
@@ -435,16 +432,15 @@ function DielineTab({ jobOrders, toast }) {
           </div>
           <div style={{ display: "flex", gap: 10 }}>
             <button onClick={handleSubmit} style={{ padding: "9px 22px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>{editId ? "Save" : "Add Dieline"}</button>
-            <button onClick={() => { setForm(blankForm); setEditId(null); setView("list"); }} style={{ padding: "9px 14px", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, color: "#aaa", cursor: "pointer" }}>Cancel</button>
+            <button onClick={() => { setForm(blankForm); setEditId(null); setShowModal(false); }} style={{ padding: "9px 14px", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, color: "#aaa", cursor: "pointer" }}>Cancel</button>
           </div>
-        </div>
+        </Modal>
       )}
 
-      {view === "list" && (
-        <>
-          <div style={{ marginBottom: 14 }}>
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search die code, description, client..." style={{ ...inp, maxWidth: 320 }} />
-          </div>
+      <>
+        <div style={{ marginBottom: 14 }}>
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search die code, description, client..." style={{ ...inp, maxWidth: 320 }} />
+        </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 14 }}>
             {filtered.length === 0 && (
               <div style={{ gridColumn: "1/-1", textAlign: "center", color: "#555", padding: 40 }}>
@@ -483,7 +479,7 @@ function DielineTab({ jobOrders, toast }) {
                         Last used: {fmtDate(d.lastUsedDate)} · {usage} JO{usage !== 1 ? "s" : ""}
                       </div>
                       <div style={{ display: "flex", gap: 4 }}>
-                        <button onClick={() => { setForm({ ...d }); setEditId(d.id); setView("form"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                        <button onClick={() => { setForm({ ...d }); setEditId(d.id); setShowModal(true); }}
                           style={{ padding: "3px 8px", border: "1px solid #facc1533", background: "#facc1511", color: "#facc15", borderRadius: 4, fontSize: 10, cursor: "pointer" }}>✏️</button>
                         <button onClick={() => { if (confirm("Delete?")) persist(dielines.filter((x) => x.id !== d.id)); }}
                           style={{ padding: "3px 8px", border: "1px solid #ef444433", background: "transparent", color: "#ef4444", borderRadius: 4, fontSize: 10, cursor: "pointer" }}>🗑</button>
@@ -496,7 +492,6 @@ function DielineTab({ jobOrders, toast }) {
             })}
           </div>
         </>
-      )}
     </div>
   );
 }

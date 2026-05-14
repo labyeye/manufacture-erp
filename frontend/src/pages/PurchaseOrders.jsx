@@ -9,6 +9,7 @@ import {
   SubmitBtn,
   AutocompleteInput,
   DateRangeFilter,
+  Modal,
 } from "../components/ui/BasicComponents";
 import { DatePicker } from "../components/ui/DatePicker";
 
@@ -97,7 +98,7 @@ export default function PurchaseOrders({
   const [purchasePrices, setPurchasePrices] = useState([]);
   const [headerErrors, setHeaderErrors] = useState({});
   const [itemErrors, setItemErrors] = useState([{}]);
-  const [view, setView] = useState("form");
+  const [showModal, setShowModal] = useState(false);
   const [drDateFrom, setDrDateFrom] = useState("");
   const [drDateTo, setDrDateTo] = useState("");
   const [loading, setLoading] = useState(false);
@@ -123,7 +124,6 @@ export default function PurchaseOrders({
     if (!deepLinkId || !purchaseOrders.length) return;
     const po = purchaseOrders.find((p) => p.poNo === deepLinkId);
     if (po) {
-      setView("records");
       setHighlightId(deepLinkId);
       onDeepLinkConsumed?.();
     }
@@ -716,7 +716,7 @@ export default function PurchaseOrders({
       setItems([blankItem()]);
       setHeaderErrors({});
       setItemErrors([{}]);
-      setView("records");
+      setShowModal(false);
     } catch (error) {
       console.error("Save error:", error);
       toast(error.response?.data?.error || "Failed to save PO", "error");
@@ -787,8 +787,7 @@ export default function PurchaseOrders({
       }),
     );
     setEditingId(po._id);
-    setView("form");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setShowModal(true);
   };
 
   const handleDelete = async (id) => {
@@ -810,39 +809,39 @@ export default function PurchaseOrders({
 
   return (
     <div className="fade">
-      <SectionTitle
-        icon="fa-solid fa-file-invoice"
-        title="Purchase Orders"
-        sub="Create POs for raw materials and consumables"
-      />
-
-      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-        {[
-          ["form", "New PO"],
-          ["records", `POs (${purchaseOrders.length})`],
-        ].map(([v, l]) => (
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
+        <SectionTitle
+          icon="fa-solid fa-file-invoice"
+          title="Purchase Orders"
+          sub="Create POs for raw materials and consumables"
+        />
+        {canEdit && (
           <button
-            key={v}
-            onClick={() => setView(v)}
+            onClick={() => { setHeader(blankHeader); setItems([blankItem()]); setHeaderErrors({}); setItemErrors([{}]); setEditingId(null); setShowModal(true); }}
             style={{
-              padding: "8px 20px",
-              borderRadius: 6,
-              border: `1px solid ${view === v ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.1)"}`,
-              background: view === v ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.05)",
-              backdropFilter: "blur(10px) saturate(180%)",
-              WebkitBackdropFilter: "blur(10px) saturate(180%)",
-              color: view === v ? "#fff" : C.muted,
-              fontWeight: view === v ? 600 : 500,
+              background: "rgba(255,255,255,0.08)",
+              backdropFilter: "blur(12px) saturate(180%)",
+              WebkitBackdropFilter: "blur(12px) saturate(180%)",
+              border: "1px solid rgba(255,255,255,0.18)",
+              color: "#fff",
+              padding: "9px 18px",
+              borderRadius: 10,
+              fontWeight: 600,
               fontSize: 13,
               cursor: "pointer",
-              boxShadow: view === v ? "inset 0 1px 0 rgba(255,255,255,0.15)" : "none",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
             }}
           >
-            {l}
+            + New PO
           </button>
-        ))}
+        )}
       </div>
-      {view === "form" && (
+
+      {showModal && (
+        <Modal
+          title={editingId ? "Edit Purchase Order" : "New Purchase Order"}
+          onClose={() => { setShowModal(false); setEditingId(null); setHeader(blankHeader); setItems([blankItem()]); setHeaderErrors({}); setItemErrors([{}]); }}
+        >
         <div>
           <Card style={{ marginBottom: 16 }}>
             <h3
@@ -1496,15 +1495,8 @@ export default function PurchaseOrders({
               color={C.white}
               onClick={submit}
             />
-            {editingId && (
-              <button
-                onClick={() => {
-                  setEditingId(null);
-                  setHeader(blankHeader);
-                  setItems([blankItem()]);
-                  setHeaderErrors({});
-                  setItemErrors([{}]);
-                }}
+            <button
+                onClick={() => { setShowModal(false); setEditingId(null); setHeader(blankHeader); setItems([blankItem()]); setHeaderErrors({}); setItemErrors([{}]); }}
                 style={{
                   background: C.muted + "22",
                   color: C.muted,
@@ -1518,7 +1510,6 @@ export default function PurchaseOrders({
               >
                 Cancel
               </button>
-            )}
             {items.some((it) => it.amount) && (
               <div
                 style={{
@@ -1594,10 +1585,10 @@ export default function PurchaseOrders({
             )}
           </div>
         </div>
+        </Modal>
       )}
 
-      {view === "records" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div
             style={{
               display: "flex",
@@ -1622,260 +1613,96 @@ export default function PurchaseOrders({
             </div>
           </div>
 
-          {purchaseOrders.length === 0 ? (
-            <Card style={{ textAlign: "center", padding: 40, color: C.muted }}>
-              No purchase orders found.
-            </Card>
-          ) : (
-            (purchaseOrders || [])
-              .slice()
-              .reverse()
-              .map((r) => {
-                const total = (r.items || []).reduce(
-                  (s, it) => s + +(it.amount || 0),
-                  0,
-                );
-                const vendorDisplayName = r.vendorName || "Unknown Vendor";
-
-                return (
-                  <Card
-                    key={r._id}
-                    data-record-id={r.poNo}
-                    style={{
-                      padding: "16px 20px",
-                      background:
-                        r.poNo === highlightId ? `${C.accent}11` : "#161b22",
-                      boxShadow:
-                        r.poNo === highlightId
-                          ? `0 0 0 2px ${C.accent}66`
-                          : undefined,
-                      transition: "all 0.4s ease",
-                    }}
-                  >
-                    {}
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "flex-start",
-                        marginBottom: 16,
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: 12,
-                          alignItems: "center",
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: 18,
-                            fontWeight: 800,
-                            color: C.white,
-                            fontFamily: "'JetBrains Mono', monospace",
-                          }}
-                        >
-                          {r.poNo}
-                        </span>
-                        <span style={{ color: C.muted, fontSize: 13 }}>
-                          {vendorDisplayName} · {r.poDate}
-                        </span>
-                      </div>
-                      <div style={{ display: "flex", gap: 8 }}>
-                        <div
-                          style={{
-                            background:
-                              r.status === "Received" ? "#064e3b" : "#451a03",
-                            color:
-                              r.status === "Received" ? "#10b981" : "#f59e0b",
-                            border: `1px solid ${r.status === "Received" ? "#065f46" : "#78350f"}`,
-                            borderRadius: 6,
-                            padding: "4px 12px",
-                            fontSize: 12,
-                            fontWeight: 500,
-                          }}
-                        >
-                          {r.status || "Open"}
-                        </div>
-                        {canEdit && (
-                          <button
-                            onClick={() => handleEdit(r)}
+          {(() => {
+            const filteredPOs = (purchaseOrders || []).slice().reverse().filter(r => {
+              if (!drDateFrom && !drDateTo) return true;
+              const d = (r.poDate || "").slice(0, 10);
+              if (drDateFrom && d < drDateFrom) return false;
+              if (drDateTo && d > drDateTo) return false;
+              return true;
+            });
+            const totalValue = filteredPOs.reduce((s, r) => s + (r.items || []).reduce((ss, it) => ss + +(it.amount || 0), 0), 0);
+            const openCount = filteredPOs.filter(r => !r.status || r.status === "Open").length;
+            const receivedCount = filteredPOs.filter(r => r.status === "Received").length;
+            const statCards = [
+              { label: "Total POs", value: filteredPOs.length, icon: "fa-solid fa-file-invoice", },
+              { label: "Open", value: openCount, icon: "fa-solid fa-clock", },
+              { label: "Received", value: receivedCount, icon: "fa-solid fa-circle-check",},
+              { label: "Total Value", value: `₹${fmt(totalValue)}`, icon: "fa-solid fa-indian-rupee-sign", },
+            ];
+            return (
+              <>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 16 }}>
+                  {statCards.map(({ label, value, icon, color }) => (
+                    <div key={label} style={{ padding: "16px 20px", background: "#0d1117", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, borderLeft: `3px solid ${color}` }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                          <span style={{ fontSize: 19, color: C.muted, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
+                          <i
+                            className={icon}
                             style={{
-                              background: "rgba(255,255,255,0.08)",
-                              backdropFilter: "blur(12px) saturate(180%)",
-                              WebkitBackdropFilter: "blur(12px) saturate(180%)",
-                              color: "#fff",
-                              border: "1px solid rgba(255,255,255,0.18)",
-                              borderRadius: 6,
-                              padding: "4px 14px",
-                              fontSize: 12,
-                              fontWeight: 500,
-                              cursor: "pointer",
-                              display: "flex",
+                              color,
+                              fontSize: 20,
+                              opacity: 0.9,
+                              display: "inline-flex",
                               alignItems: "center",
-                              gap: 6,
-                              boxShadow: "0 2px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.12)",
+                              justifyContent: "center",
+                              height: 28,
+                              width: 28,
+                              lineHeight: 1,
                             }}
-                          >
-                            Edit
-                          </button>
-                        )}
-                        <button
-                          onClick={() => generatePOPDF(r)}
-                          style={{
-                            background: "rgba(255,255,255,0.08)",
-                            backdropFilter: "blur(12px) saturate(180%)",
-                            WebkitBackdropFilter: "blur(12px) saturate(180%)",
-                            color: "#fff",
-                            border: "1px solid rgba(255,255,255,0.18)",
-                            borderRadius: 6,
-                            padding: "4px 14px",
-                            fontSize: 12,
-                            fontWeight: 500,
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 6,
-                            boxShadow: "0 2px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.12)",
-                          }}
-                        >
-                          PDF
-                        </button>
-                        {canEdit && (
-                          <button
-                            onClick={() => handleDelete(r._id)}
-                            style={{
-                              background: "rgba(255,255,255,0.08)",
-                              backdropFilter: "blur(12px) saturate(180%)",
-                              WebkitBackdropFilter: "blur(12px) saturate(180%)",
-                              color: "#fff",
-                              border: "1px solid rgba(255,255,255,0.18)",
-                              borderRadius: 6,
-                              padding: "4px 14px",
-                              fontSize: 12,
-                              fontWeight: 500,
-                              cursor: "pointer",
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 6,
-                              boxShadow: "0 2px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.12)",
-                            }}
-                          >
-                            Delete
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    {}
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 8,
-                        marginBottom: 16,
-                      }}
-                    >
-                      {(r.items || []).map((it, idx) => (
-                        <div
-                          key={idx}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 12,
-                            fontSize: 13,
-                            color: "#e2e8f0",
-                          }}
-                        >
-                          <span style={{ fontWeight: 500, flex: 1 }}>
-                            {it.itemName}
-                          </span>
-                          <span style={{ color: C.muted }}>
-                            Qty:{" "}
-                            <b style={{ color: "#fff" }}>
-                              {it.weight || it.qty}{" "}
-                              {it.uom ||
-                                (it.materialType === "Raw Material"
-                                  ? "kg"
-                                  : "kg")}
-                            </b>
-                          </span>
-                          <span style={{ color: C.muted }}>
-                            Rate: ₹{it.rate}
-                          </span>
-                          <span
-                            style={{
-                              color: C.green,
-                              fontWeight: 500,
-                              fontFamily: "'JetBrains Mono', monospace",
-                              width: 100,
-                              textAlign: "right",
-                            }}
-                          >
-                            ₹{fmt(it.amount)}
-                          </span>
+                          />
                         </div>
-                      ))}
+                      <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", fontFamily: "'JetBrains Mono', monospace" }}>{value}</div>
                     </div>
+                  ))}
+                </div>
 
-                    {}
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "flex-end",
-                        paddingTop: 12,
-                        borderTop: "1px solid #33415544",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: 20,
-                          color: C.muted,
-                          fontSize: 11,
-                        }}
-                      >
-                        <span>
-                          Delivery:{" "}
-                          <span style={{ color: "#94a3b8" }}>
-                            {r.deliveryDate || "—"}
-                          </span>
-                        </span>
-                        <span>
-                          Contact:{" "}
-                          <span style={{ color: "#94a3b8" }}>
-                            {r.vendorContact || "—"}
-                          </span>
-                        </span>
-                      </div>
-                      <div
-                        style={{
-                          fontSize: 16,
-                          fontWeight: 800,
-                          color: C.white,
-                          fontFamily: "'JetBrains Mono', monospace",
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: 12,
-                            color: C.muted,
-                            fontWeight: 400,
-                          }}
-                        >
-                          Total:{" "}
-                        </span>
-                        ₹{fmt(total)}
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })
-          )}
+                {filteredPOs.length === 0 ? (
+                  <Card style={{ textAlign: "center", padding: 40, color: C.muted }}>No purchase orders found.</Card>
+                ) : (
+                  <div style={{ background: "#0d1117", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                      <thead>
+                        <tr style={{ background: "#161b22", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                          {["PO No", "Date", "Vendor", "Items", "Delivery", "Total", "Status", "Actions"].map(h => (
+                            <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredPOs.map((r, i) => {
+                          const total = (r.items || []).reduce((s, it) => s + +(it.amount || 0), 0);
+                          const vendorDisplayName = typeof r.vendor === "object" ? r.vendor?.name : (r.vendor || r.vendorName || "—");
+
+                          return (
+                            <tr key={r._id} data-record-id={r.poNo} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", background: r.poNo === highlightId ? `${C.accent}11` : i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)", transition: "background 0.2s" }}>
+                              <td style={{ padding: "12px 14px", fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: "#60a5fa", whiteSpace: "nowrap" }}>{r.poNo}</td>
+                              <td style={{ padding: "12px 14px", color: C.muted, whiteSpace: "nowrap" }}>{(r.poDate || "").slice(0, 10)}</td>
+                              <td style={{ padding: "12px 14px", fontWeight: 500 }}>{vendorDisplayName}</td>
+                              <td style={{ padding: "12px 14px", color: C.muted }}>{(r.items || []).length} item{(r.items || []).length !== 1 ? "s" : ""}</td>
+                              <td style={{ padding: "12px 14px", color: C.muted, whiteSpace: "nowrap" }}>{(r.deliveryDate || "—").slice(0, 10)}</td>
+                              <td style={{ padding: "12px 14px", fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: "#10b981", whiteSpace: "nowrap" }}>₹{fmt(total)}</td>
+                              <td style={{ padding: "12px 14px" }}>
+                                <span style={{ padding: "3px 10px", borderRadius: 5, fontSize: 11, fontWeight: 600, background: r.status === "Received" ? "#06422233" : "#451a0333", color: r.status === "Received" ? "#10b981" : "#f59e0b", border: `1px solid ${r.status === "Received" ? "#065f4622" : "#78350f22"}` }}>{r.status || "Open"}</span>
+                              </td>
+                              <td style={{ padding: "12px 14px" }}>
+                                <div style={{ display: "flex", gap: 5 }}>
+                                  {canEdit && <button onClick={() => handleEdit(r)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.06)", color: "#fff", fontSize: 11, fontWeight: 500, cursor: "pointer" }}>Edit</button>}
+                                  <button onClick={() => generatePOPDF(r)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.06)", color: "#fff", fontSize: 11, fontWeight: 500, cursor: "pointer" }}>PDF</button>
+                                  {canEdit && <button onClick={() => handleDelete(r._id)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.08)", color: "#ef4444", fontSize: 11, fontWeight: 500, cursor: "pointer" }}>Del</button>}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
-      )}
     </div>
   );
 }
