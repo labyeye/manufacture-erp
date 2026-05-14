@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "https://manufacture-erp-backend.vercel.app/api";
+const API_URL = "https://backend.packbetter.in/api";
 
 const api = axios.create({
   baseURL: API_URL,
