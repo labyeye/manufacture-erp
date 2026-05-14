@@ -2,6 +2,7 @@ const PurchaseOrder = require("../models/PurchaseOrder");
 const VendorMaster = require("../models/VendorMaster");
 const ItemMaster = require("../models/ItemMaster");
 const MaterialInward = require("../models/MaterialInward");
+const TrashItem = require("../models/TrashItem");
 const mongoose = require("mongoose");
 const { generatePONo } = require("../utils/counters");
 
@@ -180,14 +181,17 @@ exports.deletePurchaseOrder = async (req, res) => {
       });
     }
 
-    const deleted = await PurchaseOrder.findByIdAndDelete(cleanId);
-    if (!deleted) {
-      return res
-        .status(404)
-        .json({ error: "Purchase order could not be deleted" });
-    }
+    await TrashItem.create({
+      modelName: "PurchaseOrder",
+      collectionName: "purchaseorders",
+      displayId: po.poNo,
+      label: "Purchase Order",
+      data: po.toObject(),
+      deletedBy: req.user?.username || "system",
+    });
 
-    res.json({ message: "Purchase order deleted successfully" });
+    await PurchaseOrder.findByIdAndDelete(cleanId);
+    res.json({ message: "Purchase order moved to trash" });
   } catch (error) {
     console.error("Delete PO error:", error);
     res.status(500).json({

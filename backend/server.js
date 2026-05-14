@@ -71,6 +71,7 @@ const breakdownLogRoutes = require("./routes/breakdownLog");
 const priceListRoutes = require("./routes/priceList");
 const spareIssueLogRoutes = require("./routes/spareIssueLog");
 const operatorMasterRoutes = require("./routes/operatorMaster");
+const trashRoutes = require("./routes/trash");
 
 app.use("/api/activity-log", activityLogRoutes);
 app.use("/api/auth", authRoutes);
@@ -98,6 +99,7 @@ app.use("/api/breakdown-log", breakdownLogRoutes);
 app.use("/api/price-list", priceListRoutes);
 app.use("/api/spare-issue-log", spareIssueLogRoutes);
 app.use("/api/operator-master", operatorMasterRoutes);
+app.use("/api/trash", trashRoutes);
 
 app.get("/api/health", (req, res) => {
   res.json({

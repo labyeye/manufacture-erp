@@ -1,6 +1,7 @@
 const SalesOrder = require("../models/SalesOrder");
 const Counter = require("../models/Counter");
 const CompanyMaster = require("../models/CompanyMaster");
+const TrashItem = require("../models/TrashItem");
 
 const getNextSONumber = async () => {
   const counter = await Counter.findOneAndUpdate(
@@ -189,9 +190,17 @@ exports.delete = async (req, res) => {
         .json({ error: "Cannot delete dispatched or closed sales orders" });
     }
 
-    await SalesOrder.findByIdAndDelete(id);
+    await TrashItem.create({
+      modelName: "SalesOrder",
+      collectionName: "salesorders",
+      displayId: salesOrder.soNo,
+      label: "Sales Order",
+      data: salesOrder.toObject(),
+      deletedBy: req.user?.username || "system",
+    });
 
-    res.json({ message: "Sales order deleted successfully" });
+    await SalesOrder.findByIdAndDelete(id);
+    res.json({ message: "Sales order moved to trash" });
   } catch (error) {
     console.error("Delete sales order error:", error);
     res.status(500).json({ error: "Failed to delete sales order" });

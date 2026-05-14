@@ -1,4 +1,5 @@
 const JobOrder = require("../models/JobOrder");
+const TrashItem = require("../models/TrashItem");
 const RawMaterialStock = require("../models/RawMaterialStock");
 const FGStock = require("../models/FGStock");
 const PrintingDetailMaster = require("../models/PrintingDetailMaster");
@@ -527,8 +528,17 @@ exports.delete = async (req, res) => {
     
     await adjustRMStock(jobOrder, 1);
 
+    await TrashItem.create({
+      modelName: "JobOrder",
+      collectionName: "joborders",
+      displayId: jobOrder.joNo,
+      label: "Job Order",
+      data: jobOrder.toObject(),
+      deletedBy: req.user?.username || "system",
+    });
+
     await JobOrder.findByIdAndDelete(req.params.id);
-    res.json({ message: "Job order deleted successfully" });
+    res.json({ message: "Job order moved to trash" });
   } catch (error) {
     console.error("Delete job order error:", error);
     res.status(500).json({ error: "Failed to delete job order" });

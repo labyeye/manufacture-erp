@@ -3,6 +3,7 @@ import { COLORS } from '../../constants';
 
 export function DatePicker({ value, onChange, style = {} }) {
   const [open, setOpen] = useState(false);
+  const [openUp, setOpenUp] = useState(false);
   const [viewDate, setViewDate] = useState(() => {
     const d = value ? new Date(value + "T00:00:00") : new Date();
     return { year: d.getFullYear(), month: d.getMonth() };
@@ -70,7 +71,13 @@ export function DatePicker({ value, onChange, style = {} }) {
   return (
     <div ref={ref} style={{ position: "relative", ...style }}>
       <div
-        onClick={() => setOpen(o => !o)}
+        onClick={() => {
+          if (!open && ref.current) {
+            const rect = ref.current.getBoundingClientRect();
+            setOpenUp(rect.bottom + 300 > window.innerHeight);
+          }
+          setOpen(o => !o);
+        }}
         style={{
           background: COLORS.inputBg,
           border: `1px solid ${open ? COLORS.accent : COLORS.border}`,
@@ -94,7 +101,9 @@ export function DatePicker({ value, onChange, style = {} }) {
         <div
           style={{
             position: "absolute",
-            top: "calc(100% + 6px)",
+            ...(openUp
+              ? { bottom: "calc(100% + 6px)" }
+              : { top: "calc(100% + 6px)" }),
             left: 0,
             zIndex: 9999,
             background: COLORS.card,

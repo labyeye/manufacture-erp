@@ -65,6 +65,7 @@ import QualityHub from "./pages/QualityHub";
 import DesignHub from "./pages/DesignHub";
 import NotificationHub from "./pages/NotificationHub";
 import ERPConsole from "./pages/ERPConsole";
+import Trash from "./pages/Trash";
 import Reports from "./pages/Reports";
 import OperatorMaster from "./pages/OperatorMaster";
 import companylogo from "../src/assets/logo.png";
@@ -706,6 +707,8 @@ function AppInner({
         );
       case "erpconsole":
         return <ERPConsole session={session} toast={showToast} />;
+      case "trash":
+        return <Trash session={session} toast={showToast} />;
       default:
         return (
           <Dashboard

@@ -487,6 +487,7 @@ export const DEFAULT_ROLES = {
       "reports",
       "users",
       "erpconsole",
+      "trash",
     ],
   },
   Operator: {
@@ -562,6 +563,7 @@ export const TABS = [
   { id: "designhub", icon: "fa-solid fa-pen-ruler", label: "Design Hub" },
   { id: "users", icon: "fa-solid fa-users", label: "User Management" },
   { id: "erpconsole", icon: "fa-solid fa-terminal", label: "ERP Console" },
+  { id: "trash", icon: "fa-solid fa-trash", label: "Trash" },
 ];
 
 export const SEED_VERSION = "v14";

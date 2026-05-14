@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import ConfirmModal from "../components/ConfirmModal";
 import { C, PROCESS_COLORS } from "../constants/colors";
 import {
   PROCESS_MACHINE_TYPE,
@@ -106,6 +107,7 @@ export default function JobOrders(props) {
   const [jobOrders, setJobOrders] = useState([]);
   const [salesOrders, setSalesOrders] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const blankHeader = {
     joDate: today(),
     soRef: "",
@@ -324,6 +326,19 @@ export default function JobOrders(props) {
       setJobOrders(res || []);
     } catch (error) {
       toast?.("Failed to load job orders", "error");
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    try {
+      await jobOrdersAPI.delete(deleteTarget);
+      toast("Job order moved to trash", "success");
+      fetchJobOrders();
+    } catch (error) {
+      toast(error.response?.data?.error || "Failed to delete job order", "error");
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -893,6 +908,7 @@ export default function JobOrders(props) {
   };
 
   return (
+    <>
     <div className="fade">
       <SectionTitle
         icon="fa-solid fa-gears"
@@ -1810,19 +1826,7 @@ export default function JobOrders(props) {
                 setShowModal(true);
               };
 
-              const handleDelete = async (id) => {
-                if (!confirm("Delete this job order?")) return;
-                try {
-                  await jobOrdersAPI.delete(id);
-                  toast("Job order deleted successfully", "success");
-                  fetchJobOrders();
-                } catch (error) {
-                  toast(
-                    error.response?.data?.error || "Failed to delete job order",
-                    "error",
-                  );
-                }
-              };
+              const handleDelete = (id) => setDeleteTarget(id);
 
               const priorityColor = r.priority === "VIP" ? "#ef4444" : r.priority === "Rush" ? "#f97316" : r.priority === "Fill-in" ? "#6b7280" : null;
               return (
@@ -1868,5 +1872,17 @@ export default function JobOrders(props) {
           })()}
         </Card>
     </div>
+
+    <ConfirmModal
+      isOpen={!!deleteTarget}
+      onClose={() => setDeleteTarget(null)}
+      onConfirm={handleDeleteConfirm}
+      title="Move to Trash"
+      message="This job order will be moved to trash. RM stock will be reversed. You can restore it within 7 days."
+      confirmText="Move to Trash"
+      cancelText="Cancel"
+      type="danger"
+    />
+    </>
   );
 }

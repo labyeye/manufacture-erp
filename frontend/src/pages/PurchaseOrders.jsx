@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import ConfirmModal from "../components/ConfirmModal";
 import { C } from "../constants/colors";
 import { purchaseOrdersAPI, itemMasterAPI, priceListAPI } from "../api/auth";
 import {
@@ -102,6 +103,7 @@ export default function PurchaseOrders({
   const [drDateFrom, setDrDateFrom] = useState("");
   const [drDateTo, setDrDateTo] = useState("");
   const [loading, setLoading] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [highlightId, setHighlightId] = useState(null);
 
@@ -640,8 +642,8 @@ export default function PurchaseOrders({
       if (isRM) {
         if (!it.category) e.category = true;
         if (!it.subCategory) e.subCategory = true;
-        if (!it.widthMm) e.widthMm = true;
-        if (it.category !== "Paper Reel" && !it.lengthMm) e.lengthMm = true;
+        if (it.subCategory !== "Polycoated Blanks" && !it.widthMm) e.widthMm = true;
+        if (it.subCategory !== "Polycoated Blanks" && it.category !== "Paper Reel" && !it.lengthMm) e.lengthMm = true;
         if (!it.gsm) e.gsm = true;
         if (!it.weight) e.weight = true;
       } else {
@@ -790,24 +792,25 @@ export default function PurchaseOrders({
     setShowModal(true);
   };
 
-  const handleDelete = async (id) => {
-    if (confirm("Delete this purchase order?")) {
-      try {
-        setLoading(true);
-        await purchaseOrdersAPI.delete(id);
-        await fetchPOs();
-        if (toast) toast("Purchase Order deleted successfully", "success");
-      } catch (error) {
-        console.error("Failed to delete PO:", error);
-        if (toast)
-          toast(error.response?.data?.error || "Failed to delete PO", "error");
-      } finally {
-        setLoading(false);
-      }
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      setLoading(true);
+      await purchaseOrdersAPI.delete(deleteTarget);
+      await fetchPOs();
+      if (toast) toast("Purchase Order moved to trash", "success");
+    } catch (error) {
+      console.error("Failed to delete PO:", error);
+      if (toast)
+        toast(error.response?.data?.error || "Failed to delete PO", "error");
+    } finally {
+      setLoading(false);
+      setDeleteTarget(null);
     }
   };
 
   return (
+    <>
     <div className="fade">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
         <SectionTitle
@@ -1102,21 +1105,24 @@ export default function PurchaseOrders({
                       )}
                       {EIMsg(idx, "subCategory")}
                     </Field>
-                    <Field label="Width (mm) *">
-                      <input
-                        type="number"
-                        placeholder="700"
-                        value={it.widthMm}
-                        onChange={(e) =>
-                          setItem(idx, "widthMm", e.target.value)
-                        }
-                        style={EI(idx, "widthMm")}
-                      />
-                      {EIMsg(idx, "widthMm")}
-                    </Field>
+                    {it.subCategory !== "Polycoated Blanks" && (
+                      <Field label="Width (mm) *">
+                        <input
+                          type="number"
+                          placeholder="700"
+                          value={it.widthMm}
+                          onChange={(e) =>
+                            setItem(idx, "widthMm", e.target.value)
+                          }
+                          style={EI(idx, "widthMm")}
+                        />
+                        {EIMsg(idx, "widthMm")}
+                      </Field>
+                    )}
 
-                    {(it.category === "Paper Sheets" ||
-                      it.category === "Paper Sheet") && (
+                    {it.subCategory !== "Polycoated Blanks" &&
+                      (it.category === "Paper Sheets" ||
+                        it.category === "Paper Sheet") && (
                       <Field label="Length (mm) *">
                         <input
                           type="number"
@@ -1141,8 +1147,9 @@ export default function PurchaseOrders({
                       />
                       {EIMsg(idx, "gsm")}
                     </Field>
-                    {(it.category === "Paper Sheets" ||
-                      it.category === "Paper Sheet") && (
+                    {it.subCategory !== "Polycoated Blanks" &&
+                      (it.category === "Paper Sheets" ||
+                        it.category === "Paper Sheet") && (
                       <Field label="No. of Sheets *">
                         <input
                           type="number"
@@ -1689,7 +1696,7 @@ export default function PurchaseOrders({
                                 <div style={{ display: "flex", gap: 5 }}>
                                   {canEdit && <button onClick={() => handleEdit(r)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.06)", color: "#fff", fontSize: 11, fontWeight: 500, cursor: "pointer" }}>Edit</button>}
                                   <button onClick={() => generatePOPDF(r)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.06)", color: "#fff", fontSize: 11, fontWeight: 500, cursor: "pointer" }}>PDF</button>
-                                  {canEdit && <button onClick={() => handleDelete(r._id)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.08)", color: "#ef4444", fontSize: 11, fontWeight: 500, cursor: "pointer" }}>Del</button>}
+                                  {canEdit && <button onClick={() => setDeleteTarget(r._id)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.08)", color: "#ef4444", fontSize: 11, fontWeight: 500, cursor: "pointer" }}>Del</button>}
                                 </div>
                               </td>
                             </tr>
@@ -1704,5 +1711,17 @@ export default function PurchaseOrders({
           })()}
         </div>
     </div>
+
+    <ConfirmModal
+      isOpen={!!deleteTarget}
+      onClose={() => setDeleteTarget(null)}
+      onConfirm={handleDelete}
+      title="Move to Trash"
+      message="This purchase order will be moved to trash. You can restore it within 7 days."
+      confirmText="Move to Trash"
+      cancelText="Cancel"
+      type="danger"
+    />
+    </>
   );
 }

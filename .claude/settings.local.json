@@ -31,7 +31,11 @@
       "Bash(node -e \"const fs=require\\('fs'\\);const text=fs.readFileSync\\('frontend/src/pages/Dashboard.jsx','utf8'\\);const emojiRe=/[\\\\u{1F000}-\\\\u{1FFFF}]|[\\\\u{2190}-\\\\u{2BFF}][️]/gu;const lines=text.split\\('\\\\n'\\);lines.forEach\\(\\(l,i\\)=>{const m=l.match\\(emojiRe\\);if\\(m\\)console.log\\(i+1,JSON.stringify\\(m\\),l.trim\\(\\).slice\\(0,80\\)\\)}\\);\")",
       "Bash(xargs grep -l \"white\")",
       "Bash(grep -rn \"background:.*\\\\\"#[0-9a-fA-F]\\\\{3,6\\\\}\\\\\"\" \"C:/Users/labhb/Desktop/projects/manufacture-erp/frontend/src/pages/\" --include=\"*.jsx\")",
-      "Bash(grep -v \"rgba\\\\|//\\\\|print\\\\|@media\\\\|Toast\\\\|toast\\\\|badge\\\\|Badge\\\\|pill\\\\|Pill\\\\|severity\\\\|color.*\\\\\"#\\\\|C\\\\.\\\\|status\\\\|\\\\\"#0\\\\{6\\\\}\\\\\"\\\\|\\\\\"#111\\\\\"\\\\|\\\\\"#1[0-9a-f]\\\\{4,5\\\\}\\\\\"\")"
+      "Bash(grep -v \"rgba\\\\|//\\\\|print\\\\|@media\\\\|Toast\\\\|toast\\\\|badge\\\\|Badge\\\\|pill\\\\|Pill\\\\|severity\\\\|color.*\\\\\"#\\\\|C\\\\.\\\\|status\\\\|\\\\\"#0\\\\{6\\\\}\\\\\"\\\\|\\\\\"#111\\\\\"\\\\|\\\\\"#1[0-9a-f]\\\\{4,5\\\\}\\\\\"\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\labhb\\\\Desktop\\\\projects\\\\manufacture-erp\\\\backend\" -Directory)",
+      "Bash(Select-Object -ExpandProperty Name)",
+      "Read(//mnt/c/Users/labhb/Desktop/projects/manufacture-erp/**)",
+      "Bash(node -e \"require\\('./server'\\)\")"
     ]
   }
 }

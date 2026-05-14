@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import ConfirmModal from "../components/ConfirmModal";
 import * as XLSX from "xlsx";
 import { C } from "../constants/colors";
 import {
@@ -50,6 +51,7 @@ export default function MaterialInward({
 }) {
   const canEdit = editableTabs.includes("inward");
   const [loading, setLoading] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const today = () => new Date().toISOString().split("T")[0];
   const uid = () => Math.random().toString(36).substr(2, 9);
   const fmt = (n) => (+n || 0).toLocaleString("en-IN");
@@ -157,7 +159,10 @@ export default function MaterialInward({
       if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 100);
     const clear = setTimeout(() => setHighlightId(null), 3500);
-    return () => { clearTimeout(timer); clearTimeout(clear); };
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(clear);
+    };
   }, [highlightId]);
 
   const fetchItemMaster = async () => {
@@ -323,8 +328,12 @@ export default function MaterialInward({
               it.category = masterItem.category.trim();
             } else {
               const lowName = (it.itemName || "").toLowerCase();
-              if (lowName.includes("ldpe polybag")) it.category = "LDPE Polybag";
-              else if (lowName.includes("box") || lowName.includes("corrugated"))
+              if (lowName.includes("ldpe polybag"))
+                it.category = "LDPE Polybag";
+              else if (
+                lowName.includes("box") ||
+                lowName.includes("corrugated")
+              )
                 it.category = "Corrugated Box";
               else if (lowName.includes("tape")) it.category = "Tape";
               else if (lowName.includes("glue")) it.category = "Glue";
@@ -452,10 +461,17 @@ export default function MaterialInward({
       if (it.materialType === "Raw Material" || !it.materialType) {
         if (!it.category) e.category = true;
         if (!it.subCategory) e.subCategory = true;
-        if (!it.widthMm) e.widthMm = true;
-        if (it.category !== "Paper Reel" && !it.lengthMm) e.lengthMm = true;
+        if (it.subCategory !== "Polycoated Blanks" && !it.widthMm)
+          e.widthMm = true;
+        if (
+          it.subCategory !== "Polycoated Blanks" &&
+          it.category !== "Paper Reel" &&
+          !it.lengthMm
+        )
+          e.lengthMm = true;
         if (!it.gsm) e.gsm = true;
         if (
+          it.subCategory !== "Polycoated Blanks" &&
           (it.category === "Paper Sheets" || it.category === "Paper Sheet") &&
           !it.noOfSheets
         )
@@ -560,19 +576,19 @@ export default function MaterialInward({
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm("Are you sure you want to delete this inward?")) return;
-
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
     try {
       setLoading(true);
-      await materialInwardAPI.delete(id);
-      toast("Material Inward deleted successfully", "success");
+      await materialInwardAPI.delete(deleteTarget);
+      toast("Material Inward moved to trash", "success");
       fetchInwards();
     } catch (error) {
       toast("Failed to delete", "error");
       console.error(error);
     } finally {
       setLoading(false);
+      setDeleteTarget(null);
     }
   };
 
@@ -661,7 +677,9 @@ export default function MaterialInward({
   const generateGRNPDF = (r) => {
     const itemsArr = (r.items || []).map((it) => {
       const amt = Number(it.amount || 0);
-      const gst = Number(it.gstRate !== undefined && it.gstRate !== null ? it.gstRate : 18);
+      const gst = Number(
+        it.gstRate !== undefined && it.gstRate !== null ? it.gstRate : 18,
+      );
       const rowTax = (amt * gst) / 100;
       return { ...it, rowTax, gross: amt + rowTax, usedGst: gst };
     });
@@ -819,6 +837,7 @@ export default function MaterialInward({
   };
 
   return (
+    <>
     <div className="fade">
       <SectionTitle
         icon="fa-solid fa-truck-ramp-box"
@@ -848,7 +867,8 @@ export default function MaterialInward({
               fontWeight: 600,
               fontSize: 13,
               cursor: "pointer",
-              boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+              boxShadow:
+                "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
             }}
           >
             + New Material Inward
@@ -857,1031 +877,1246 @@ export default function MaterialInward({
       )}
 
       {showModal && (
-        <Modal title={editId ? "Edit Material Inward" : "New Material Inward"} onClose={() => { setShowModal(false); setEditId(null); setHeader(blankHeader); setItems([{ ...blankItem, _id: uid() }]); setHeaderErrors({}); setItemErrors([{}]); }}>
-        <div>
-          {editId && (
-            <div
-              style={{
-                marginBottom: 16,
-                padding: "12px 14px",
-                background: C.blue + "11",
-                border: `1px solid ${C.blue}22`,
-                borderRadius: 6,
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <span style={{ fontSize: 13, color: C.blue, fontWeight: 600 }}>
-                Edit Mode
-              </span>
-              <button
-                onClick={() => {
-                  setEditId(null);
-                  setHeader(blankHeader);
-                  setItems([{ ...blankItem, _id: uid() }]);
-                  setHeaderErrors({});
-                  setItemErrors([{}]);
-                  setShowModal(false);
-                }}
-                style={{
-                  background: "transparent",
-                  color: C.blue,
-                  border: `1px solid ${C.blue}`,
-                  borderRadius: 5,
-                  padding: "4px 12px",
-                  fontWeight: 500,
-                  fontSize: 12,
-                  cursor: "pointer",
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          )}
-          <Card style={{ marginBottom: 16 }}>
-            <h3
-              style={{
-                fontSize: 14,
-                fontWeight: 500,
-                color: C.blue,
-                marginBottom: 16,
-              }}
-            >
-              Invoice Details
-            </h3>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-                gap: 14,
-              }}
-            >
-              <Field label="GRN No">
-                <input
-                  readOnly
-                  placeholder="— Auto-generated —"
-                  value={header.inwardNo}
-                  style={{ color: C.muted, background: "transparent" }}
-                />
-              </Field>
-              <Field label="Date *">
-                <DatePicker
-                  value={header.date}
-                  onChange={(v) => setH("date", v)}
-                  style={EH("date")}
-                />
-                {EHMsg("date")}
-              </Field>
-              <Field label="PO Reference">
-                <select
-                  value={header.poRef || ""}
-                  onChange={(e) => setH("poRef", e.target.value)}
-                >
-                  <option value="">-- Link to PO (optional) --</option>
-                  {(poList && poList.length > 0 ? poList : purchaseOrders || [])
-                    .filter((p) => {
-                      const s = (p.status || p.poStatus || "Open")
-                        .toString()
-                        .trim()
-                        .toLowerCase();
-                      return (
-                        s !== "received" &&
-                        s !== "fulfilled" &&
-                        s !== "closed" &&
-                        s !== "completed"
-                      );
-                    })
-                    .map((p) => (
-                      <option key={p.poNo} value={p.poNo}>
-                        {p.poNo} ({p.status || p.poStatus || "Open"}) —{" "}
-                        {p.vendor?.name ||
-                          p.vendor ||
-                          p.vendorName ||
-                          "Unknown Vendor"}
-                      </option>
-                    ))}
-                </select>
-              </Field>
-              <Field label="Vendor Name *">
-                <AutocompleteInput
-                  value={header.vendorName}
-                  onChange={(v) => setH("vendorName", v)}
-                  suggestions={(vendorMaster || []).map((v) => v.name)}
-                  placeholder="Supplier / Vendor name"
-                  inputStyle={EH("vendorName")}
-                />
-                {EHMsg("vendorName")}
-              </Field>
-              <Field label="Invoice Number *">
-                <input
-                  placeholder="Invoice / DC number"
-                  value={header.invoiceNo}
-                  onChange={(e) => setH("invoiceNo", e.target.value)}
-                  style={EH("invoiceNo")}
-                />
-                {EHMsg("invoiceNo")}
-              </Field>
-              <Field label="Vehicle Number *">
-                <input
-                  placeholder="e.g. DL01AB1234"
-                  value={header.vehicleNo}
-                  onChange={(e) => setH("vehicleNo", e.target.value)}
-                  style={EH("vehicleNo")}
-                />
-                {EHMsg("vehicleNo")}
-              </Field>
-              <Field label="Location / Store *">
-                <select
-                  value={header.location}
-                  onChange={(e) => setH("location", e.target.value)}
-                  style={EH("location")}
-                >
-                  <option value="">-- Select Location --</option>
-                  {LOCATIONS.map((l) => (
-                    <option key={l}>{l}</option>
-                  ))}
-                </select>
-                {EHMsg("location")}
-              </Field>
-              <Field label="Received By *">
-                <input
-                  placeholder="Staff name"
-                  value={header.receivedBy}
-                  onChange={(e) => setH("receivedBy", e.target.value)}
-                  style={EH("receivedBy")}
-                />
-                {EHMsg("receivedBy")}
-              </Field>
-              <Field label="Remarks *" span={2}>
-                <input
-                  placeholder="Condition of material, special notes..."
-                  value={header.remarks}
-                  onChange={(e) => setH("remarks", e.target.value)}
-                  style={EH("remarks")}
-                />
-                {EHMsg("remarks")}
-              </Field>
-            </div>
-          </Card>
-
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 10,
-            }}
-          >
-            <h3 style={{ fontSize: 14, fontWeight: 500, color: C.accent }}>
-              Material Items ({items.length})
-            </h3>
-            <button
-              onClick={addItem}
-              style={{
-                background: "rgba(255,255,255,0.08)",
-                backdropFilter: "blur(12px) saturate(180%)",
-                WebkitBackdropFilter: "blur(12px) saturate(180%)",
-                color: "#fff",
-                border: "1px solid rgba(255,255,255,0.18)",
-                borderRadius: 6,
-                padding: "8px 18px",
-                fontWeight: 500,
-                fontSize: 13,
-                boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
-              }}
-            >
-              + Add Item
-            </button>
-          </div>
-
-          {items.map((it, idx) => (
-            <Card
-              key={it._id}
-              style={{ marginBottom: 12, }}
-            >
+        <Modal
+          title={editId ? "Edit Material Inward" : "New Material Inward"}
+          onClose={() => {
+            setShowModal(false);
+            setEditId(null);
+            setHeader(blankHeader);
+            setItems([{ ...blankItem, _id: uid() }]);
+            setHeaderErrors({});
+            setItemErrors([{}]);
+          }}
+        >
+          <div>
+            {editId && (
               <div
                 style={{
+                  marginBottom: 16,
+                  padding: "12px 14px",
+                  background: C.blue + "11",
+                  border: `1px solid ${C.blue}22`,
+                  borderRadius: 6,
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  marginBottom: 14,
                 }}
               >
-                <span
-                  style={{ fontWeight: 500, color: C.accent, fontSize: 13 }}
-                >
-                  Item {idx + 1}
+                <span style={{ fontSize: 13, color: C.blue, fontWeight: 600 }}>
+                  Edit Mode
                 </span>
-                {items.length > 1 && (
-                  <button
-                    onClick={() => removeItem(idx)}
-                    style={{
-                      background: C.red + "22",
-                      color: C.red,
-                      border: "none",
-                      borderRadius: 5,
-                      padding: "4px 12px",
-                      fontWeight: 500,
-                      fontSize: 12,
-                    }}
-                  >
-                    Remove
-                  </button>
-                )}
+                <button
+                  onClick={() => {
+                    setEditId(null);
+                    setHeader(blankHeader);
+                    setItems([{ ...blankItem, _id: uid() }]);
+                    setHeaderErrors({});
+                    setItemErrors([{}]);
+                    setShowModal(false);
+                  }}
+                  style={{
+                    background: "transparent",
+                    color: C.blue,
+                    border: `1px solid ${C.blue}`,
+                    borderRadius: 5,
+                    padding: "4px 12px",
+                    fontWeight: 500,
+                    fontSize: 12,
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
               </div>
+            )}
+            <Card style={{ marginBottom: 16 }}>
+              <h3
+                style={{
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: C.blue,
+                  marginBottom: 16,
+                }}
+              >
+                Invoice Details
+              </h3>
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(5, 1fr)",
-                  gap: 12,
+                  gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+                  gap: 14,
                 }}
               >
-                <Field label="Product Code">
-                  <AutocompleteInput
-                    value={it.productCode}
-                    onChange={(v) => setItem(idx, "productCode", v)}
-                    suggestions={sortedItemMasterItems.map(
-                      (i) => `${i.code} — ${i.name}`,
-                    )}
-                    placeholder="Type or select code (optional)"
+                <Field label="GRN No">
+                  <input
+                    readOnly
+                    placeholder="— Auto-generated —"
+                    value={header.inwardNo}
+                    style={{ color: C.muted, background: "transparent" }}
                   />
                 </Field>
-                <Field label="Material Type *">
+                <Field label="Date *">
+                  <DatePicker
+                    value={header.date}
+                    onChange={(v) => setH("date", v)}
+                    style={EH("date")}
+                  />
+                  {EHMsg("date")}
+                </Field>
+                <Field label="PO Reference">
                   <select
-                    value={it.materialType || "Raw Material"}
-                    onChange={(e) =>
-                      setItem(idx, "materialType", e.target.value)
-                    }
+                    value={header.poRef || ""}
+                    onChange={(e) => setH("poRef", e.target.value)}
                   >
-                    <option value="Raw Material">Raw Material</option>
-                    <option value="Consumable">Consumable</option>
-                    <option value="Finished Goods">Finished Goods</option>
+                    <option value="">-- Link to PO (optional) --</option>
+                    {(poList && poList.length > 0
+                      ? poList
+                      : purchaseOrders || []
+                    )
+                      .filter((p) => {
+                        const s = (p.status || p.poStatus || "Open")
+                          .toString()
+                          .trim()
+                          .toLowerCase();
+                        return (
+                          s !== "received" &&
+                          s !== "fulfilled" &&
+                          s !== "closed" &&
+                          s !== "completed"
+                        );
+                      })
+                      .map((p) => (
+                        <option key={p.poNo} value={p.poNo}>
+                          {p.poNo} ({p.status || p.poStatus || "Open"}) —{" "}
+                          {p.vendor?.name ||
+                            p.vendor ||
+                            p.vendorName ||
+                            "Unknown Vendor"}
+                        </option>
+                      ))}
                   </select>
                 </Field>
-                {(it.materialType === "Raw Material" || !it.materialType) && (
-                  <>
-                    <Field label="RM Item *">
-                      <select
-                        value={it.category}
-                        onChange={(e) =>
-                          setItem(idx, "category", e.target.value)
-                        }
-                        style={EI(idx, "category")}
-                      >
-                        <option value="">-- Select Item --</option>
-                        {rmItems.map((i) => (
-                          <option key={i} value={i}>
-                            {i}
-                          </option>
-                        ))}
-                      </select>
-                      {EIMsg(idx, "category")}
-                    </Field>
-                    <Field label="Paper Type *">
-                      <select
-                        value={it.subCategory}
-                        onChange={(e) =>
-                          setItem(idx, "subCategory", e.target.value)
-                        }
-                        disabled={!it.category}
-                        style={EI(idx, "subCategory")}
-                      >
-                        <option value="">
-                          {it.category
-                            ? "-- Select Paper Type --"
-                            : "-- Select RM Item first --"}
-                        </option>
-                        {(subCategoriesByItem[it.category] || []).map((p) => (
-                          <option key={p} value={p}>
-                            {p}
-                          </option>
-                        ))}
-                      </select>
-                      {EIMsg(idx, "subCategory")}
-                    </Field>
-                    <Field label="Width (mm) *">
-                      <input
-                        type="number"
-                        placeholder="e.g. 700"
-                        value={it.widthMm}
-                        onChange={(e) =>
-                          setItem(idx, "widthMm", e.target.value)
-                        }
-                        style={EI(idx, "widthMm")}
-                      />
-                      {EIMsg(idx, "widthMm")}
-                    </Field>
-
-                    {(it.category === "Paper Sheets" ||
-                      it.category === "Paper Sheet") && (
-                      <Field label="Length (mm) *">
-                        <input
-                          type="number"
-                          placeholder="e.g. 1000"
-                          value={it.lengthMm}
-                          onChange={(e) =>
-                            setItem(idx, "lengthMm", e.target.value)
-                          }
-                          style={EI(idx, "lengthMm")}
-                        />
-                        {EIMsg(idx, "lengthMm")}
-                      </Field>
-                    )}
-                    <Field label="GSM *">
-                      <input
-                        type="number"
-                        placeholder="e.g. 90, 130, 250"
-                        value={it.gsm}
-                        onChange={(e) => setItem(idx, "gsm", e.target.value)}
-                        style={EI(idx, "gsm")}
-                      />
-                      {EIMsg(idx, "gsm")}
-                    </Field>
-                    {(it.category === "Paper Sheets" ||
-                      it.category === "Paper Sheet") && (
-                      <Field label="# of Sheets *">
-                        <input
-                          type="number"
-                          placeholder="No. of sheets"
-                          value={it.noOfSheets}
-                          onChange={(e) =>
-                            setItem(idx, "noOfSheets", e.target.value)
-                          }
-                          style={EI(idx, "noOfSheets")}
-                        />
-                        {EIMsg(idx, "noOfSheets")}
-                      </Field>
-                    )}
-                    <Field label="Weight (kg) *">
-                      <input
-                        type="number"
-                        placeholder="Total weight"
-                        value={it.weight}
-                        onChange={(e) => setItem(idx, "weight", e.target.value)}
-                        style={EI(idx, "weight")}
-                      />
-                      {EIMsg(idx, "weight")}
-                    </Field>
-                    <Field label="Rate (₹/kg) *">
-                      <input
-                        type="number"
-                        placeholder="Rate per kg"
-                        value={it.rate}
-                        onChange={(e) => setItem(idx, "rate", e.target.value)}
-                        style={EI(idx, "rate")}
-                      />
-                      {EIMsg(idx, "rate")}
-                    </Field>
-                    <Field label="Amount (₹)">
-                      <input
-                        readOnly
-                        value={
-                          it.amount
-                            ? `₹${fmt(+it.amount)}`
-                            : "-- Weight × Rate --"
-                        }
-                        style={{
-                          background: C.border + "22",
-                          fontWeight: 500,
-                          color: it.amount ? C.green : C.muted,
-                          fontFamily: "'JetBrains Mono', monospace",
-                        }}
-                      />
-                    </Field>
-                    <div style={{ gridColumn: "span 3" }} />
-                  </>
-                )}
-                {it.materialType === "Finished Goods" && (
-                  <>
-                    <Field label="Category">
-                      <input
-                        placeholder="e.g. Corrugated Box"
-                        value={it.category}
-                        onChange={(e) =>
-                          setItem(idx, "category", e.target.value)
-                        }
-                      />
-                    </Field>
-                    <Field label="Qty *">
-                      <input
-                        type="number"
-                        placeholder="0"
-                        value={it.qty}
-                        onChange={(e) => setItem(idx, "qty", e.target.value)}
-                        style={EI(idx, "qty")}
-                      />
-                    </Field>
-                    <div style={{ gridColumn: "span 3" }} />
-                  </>
-                )}
-
-                {it.materialType === "Consumable" && (
-                  <>
-                    <Field label="Category *">
-                      <select
-                        value={it.category}
-                        onChange={(e) =>
-                          setItem(idx, "category", e.target.value)
-                        }
-                        style={EI(idx, "category")}
-                      >
-                        <option value="">-- Select Category --</option>
-                        {consumableCategories.map((c) => (
-                          <option key={c} value={c}>
-                            {c}
-                          </option>
-                        ))}
-                      </select>
-                      {EIMsg(idx, "category")}
-                    </Field>
-
-                    <Field label="Size">
-                      <input
-                        placeholder="e.g. 200mm"
-                        value={it.size}
-                        onChange={(e) => setItem(idx, "size", e.target.value)}
-                      />
-                    </Field>
-
-                    {it.category === "Corrugated Box" ||
-                    it.category === "LDPE Polybag" ? (
-                      <>
-                        <div
-                          style={{
-                            gridColumn: "1 / -1",
-                            height: 1,
-                            margin: "4px 0",
-                          }}
-                        />
-                        <Field label="UOM">
-                          <select
-                            value={it.uom || "nos"}
-                            onChange={(e) =>
-                              setItem(idx, "uom", e.target.value)
-                            }
-                          >
-                            <option value="nos">nos</option>
-                            <option value="kg">kg</option>
-                            <option value="set">set</option>
-                            <option value="pcs">pcs</option>
-                            <option value="pkt">pkt</option>
-                            <option value="mm">mm</option>
-                            <option value="cm">cm</option>
-                            <option value="inch">inch</option>
-                          </select>
-                        </Field>
-                        {it.category === "Corrugated Box" && (
-                          <>
-                            <Field label="Width *">
-                              <input
-                                type="number"
-                                placeholder="Width"
-                                value={it.widthMm || ""}
-                                onChange={(e) =>
-                                  setItem(idx, "widthMm", e.target.value)
-                                }
-                                style={EI(idx, "widthMm")}
-                              />
-                            </Field>
-                            <Field label="Length *">
-                              <input
-                                type="number"
-                                placeholder="Length"
-                                value={it.lengthMm || ""}
-                                onChange={(e) =>
-                                  setItem(idx, "lengthMm", e.target.value)
-                                }
-                                style={EI(idx, "lengthMm")}
-                              />
-                            </Field>
-                            <Field label="Height *">
-                              <input
-                                type="number"
-                                placeholder="Height"
-                                value={it.height || ""}
-                                onChange={(e) =>
-                                  setItem(idx, "height", e.target.value)
-                                }
-                                style={EI(idx, "height")}
-                              />
-                            </Field>
-                            <div style={{ gridColumn: "span 1" }} />
-                          </>
-                        )}
-                        {it.category === "LDPE Polybag" && (
-                          <>
-                            <Field label="Width *">
-                              <input
-                                type="number"
-                                placeholder="Width"
-                                value={it.widthMm || ""}
-                                onChange={(e) =>
-                                  setItem(idx, "widthMm", e.target.value)
-                                }
-                                style={EI(idx, "widthMm")}
-                              />
-                            </Field>
-                            <Field label="Height *">
-                              <input
-                                type="number"
-                                placeholder="Height"
-                                value={it.height || ""}
-                                onChange={(e) =>
-                                  setItem(idx, "height", e.target.value)
-                                }
-                                style={EI(idx, "height")}
-                              />
-                            </Field>
-                            <div style={{ gridColumn: "span 2" }} />
-                          </>
-                        )}
-
-                        <div
-                          style={{
-                            gridColumn: "1 / -1",
-                            height: 1,
-                            margin: "4px 0",
-                          }}
-                        />
-                        <Field
-                          label="ITEM NAME"
-                          style={{ gridColumn: "span 2" }}
-                        >
-                          <div
-                            style={{
-                              padding: "10px 14px",
-                              background: "#0c0c0e",
-                              border: "1px solid #2a2a2e",
-                              borderRadius: 6,
-                              color: "#4ade80",
-                              fontWeight: 500,
-                              minHeight: 40,
-                              fontSize: 13,
-                            }}
-                          >
-                            {it.itemName}
-                            {it.poRemarks && (
-                              <div
-                                style={{
-                                  fontSize: 10,
-                                  color: "#3b82f6",
-                                  marginTop: 4,
-                                  fontStyle: "italic",
-                                }}
-                              >
-                                PO Note: {it.poRemarks}
-                              </div>
-                            )}
-                          </div>
-                        </Field>
-                        <Field label="QUANTITY *">
-                          <input
-                            type="number"
-                            placeholder="Qty"
-                            value={it.qty}
-                            onChange={(e) =>
-                              setItem(idx, "qty", e.target.value)
-                            }
-                            style={EI(idx, "qty")}
-                          />
-                        </Field>
-                        <Field label="UNIT *">
-                          <select
-                            value={it.unit || "nos"}
-                            onChange={(e) =>
-                              setItem(idx, "unit", e.target.value)
-                            }
-                          >
-                            <option value="nos">nos</option>
-                            <option value="kg">kg</option>
-                            <option value="pcs">pcs</option>
-                            <option value="mm">mm</option>
-                            <option value="cm">cm</option>
-                            <option value="inch">inch</option>
-                          </select>
-                        </Field>
-                        <Field label="RATE (₹/NOS) *">
-                          <input
-                            type="number"
-                            placeholder="Rate per unit"
-                            value={it.rate}
-                            onChange={(e) =>
-                              setItem(idx, "rate", e.target.value)
-                            }
-                            style={EI(idx, "rate")}
-                          />
-                        </Field>
-
-                        <div
-                          style={{
-                            gridColumn: "1 / -1",
-                            height: 1,
-                            margin: "4px 0",
-                          }}
-                        />
-                        <Field label="AMOUNT (₹)">
-                          <input
-                            readOnly
-                            value={
-                              it.amount
-                                ? `₹${fmt(+it.amount)}`
-                                : "— Qty × Rate —"
-                            }
-                            style={{
-                              background: "#0c0c0e",
-                              color: it.amount ? C.green : C.muted,
-                              fontWeight: 500,
-                            }}
-                          />
-                        </Field>
-                        <div style={{ gridColumn: "span 4" }} />
-                      </>
-                    ) : (
-                      <>
-                        <div
-                          style={{
-                            gridColumn: "1 / -1",
-                            height: 1,
-                            margin: "4px 0",
-                          }}
-                        />
-                        <Field label="UOM">
-                          <select
-                            value={it.uom || "nos"}
-                            onChange={(e) =>
-                              setItem(idx, "uom", e.target.value)
-                            }
-                          >
-                            <option value="nos">nos</option>
-                            <option value="kg">kg</option>
-                            <option value="set">set</option>
-                            <option value="pcs">pcs</option>
-                            <option value="pkt">pkt</option>
-                            <option value="mtr">mtr</option>
-                          </select>
-                        </Field>
-                        <Field label="QUANTITY *">
-                          <input
-                            type="number"
-                            placeholder="e.g. 10"
-                            value={it.qty}
-                            onChange={(e) =>
-                              setItem(idx, "qty", e.target.value)
-                            }
-                            style={EI(idx, "qty")}
-                          />
-                        </Field>
-                        <Field label="UNIT">
-                          <select
-                            value={it.unit || "nos"}
-                            onChange={(e) =>
-                              setItem(idx, "unit", e.target.value)
-                            }
-                          >
-                            <option value="nos">nos</option>
-                            <option value="kg">kg</option>
-                            <option value="pcs">pcs</option>
-                            <option value="mm">mm</option>
-                            <option value="cm">cm</option>
-                            <option value="inch">inch</option>
-                          </select>
-                        </Field>
-                        <Field label="RATE (₹/NOS) *">
-                          <input
-                            type="number"
-                            placeholder="Rate per unit"
-                            value={it.rate}
-                            onChange={(e) =>
-                              setItem(idx, "rate", e.target.value)
-                            }
-                            style={EI(idx, "rate")}
-                          />
-                        </Field>
-                        <Field label="AMOUNT (₹)">
-                          <input
-                            readOnly
-                            value={
-                              it.amount
-                                ? `₹${fmt(+it.amount)}`
-                                : "— Qty × Rate —"
-                            }
-                            style={{
-                              background: "#0c0c0e",
-                              color: it.amount ? C.green : C.muted,
-                              fontWeight: 500,
-                            }}
-                          />
-                        </Field>
-                      </>
-                    )}
-                  </>
-                )}
-
-                <div
-                  style={{
-                    gridColumn: "1 / -1",
-                    height: 1,
-                    borderTop: `1px dashed ${C.border}`,
-                    margin: "4px 0",
-                  }}
-                />
-
-                <Field label="GST (%)">
-                  <input
-                    type="number"
-                    placeholder="18"
-                    value={it.gstRate || 18}
-                    onChange={(e) => setItem(idx, "gstRate", e.target.value)}
+                <Field label="Vendor Name *">
+                  <AutocompleteInput
+                    value={header.vendorName}
+                    onChange={(v) => setH("vendorName", v)}
+                    suggestions={(vendorMaster || []).map((v) => v.name)}
+                    placeholder="Supplier / Vendor name"
+                    inputStyle={EH("vendorName")}
                   />
+                  {EHMsg("vendorName")}
                 </Field>
-                <Field label="HSN">
+                <Field label="Invoice Number *">
                   <input
-                    placeholder="HSN code"
-                    value={it.hsnCode || ""}
-                    onChange={(e) => setItem(idx, "hsnCode", e.target.value)}
+                    placeholder="Invoice / DC number"
+                    value={header.invoiceNo}
+                    onChange={(e) => setH("invoiceNo", e.target.value)}
+                    style={EH("invoiceNo")}
                   />
+                  {EHMsg("invoiceNo")}
                 </Field>
-                <Field label="Total (incl Tax)">
-                  <div
-                    style={{
-                      padding: "9px 12px",
-                      background: "#0c0c0e",
-                      border: "1px solid #2a2a2e",
-                      borderRadius: 6,
-                      fontSize: 13,
-                      color: it.totalWithTax ? C.green : C.muted,
-                      fontWeight: it.totalWithTax ? 700 : 400,
-                      fontFamily: "'JetBrains Mono',monospace",
-                    }}
+                <Field label="Vehicle Number *">
+                  <input
+                    placeholder="e.g. DL01AB1234"
+                    value={header.vehicleNo}
+                    onChange={(e) => setH("vehicleNo", e.target.value)}
+                    style={EH("vehicleNo")}
+                  />
+                  {EHMsg("vehicleNo")}
+                </Field>
+                <Field label="Location / Store *">
+                  <select
+                    value={header.location}
+                    onChange={(e) => setH("location", e.target.value)}
+                    style={EH("location")}
                   >
-                    {it.totalWithTax ? `₹${fmt(+it.totalWithTax)}` : "—"}
-                  </div>
+                    <option value="">-- Select Location --</option>
+                    {LOCATIONS.map((l) => (
+                      <option key={l}>{l}</option>
+                    ))}
+                  </select>
+                  {EHMsg("location")}
                 </Field>
-                <div style={{ gridColumn: "span 2" }} />
+                <Field label="Received By *">
+                  <input
+                    placeholder="Staff name"
+                    value={header.receivedBy}
+                    onChange={(e) => setH("receivedBy", e.target.value)}
+                    style={EH("receivedBy")}
+                  />
+                  {EHMsg("receivedBy")}
+                </Field>
+                <Field label="Remarks *" span={2}>
+                  <input
+                    placeholder="Condition of material, special notes..."
+                    value={header.remarks}
+                    onChange={(e) => setH("remarks", e.target.value)}
+                    style={EH("remarks")}
+                  />
+                  {EHMsg("remarks")}
+                </Field>
               </div>
-              <Field label="Item Name" span={2}>
-                <input
-                  readOnly
-                  placeholder="Auto-filled from material details"
-                  value={it.itemName || ""}
-                  style={{ background: C.border + "22", fontSize: 13 }}
-                />
-              </Field>
             </Card>
-          ))}
 
-          <div
-            style={{
-              display: "flex",
-              gap: 10,
-              marginTop: 4,
-              alignItems: "center",
-              flexWrap: "wrap",
-            }}
-          >
-            <button
-              onClick={addItem}
+            <div
               style={{
-                background: C.accent + "22",
-                color: C.accent,
-                border: `1px solid ${C.accent}44`,
-                borderRadius: 6,
-                padding: "9px 20px",
-                fontWeight: 500,
-                fontSize: 13,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 10,
               }}
             >
-              + Add Another Item
-            </button>
-            <SubmitBtn
-              label={`Submit GRN (${items.length} item${items.length > 1 ? "s" : ""})`}
-              color={C.blue}
-              onClick={submit}
-            />
-            {items.some((it) => it.amount) && (
-              <div
+              <h3 style={{ fontSize: 14, fontWeight: 500, color: C.accent }}>
+                Material Items ({items.length})
+              </h3>
+              <button
+                onClick={addItem}
                 style={{
-                  marginLeft: "auto",
-                  padding: "9px 16px",
-                  background: C.green + "22",
-                  border: `1px solid ${C.green}44`,
+                  background: "rgba(255,255,255,0.08)",
+                  backdropFilter: "blur(12px) saturate(180%)",
+                  WebkitBackdropFilter: "blur(12px) saturate(180%)",
+                  color: "#fff",
+                  border: "1px solid rgba(255,255,255,0.18)",
                   borderRadius: 6,
+                  padding: "8px 18px",
+                  fontWeight: 500,
+                  fontSize: 13,
+                  boxShadow:
+                    "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
                 }}
               >
-                <span style={{ fontSize: 12, color: C.muted }}>
-                  Total Amount:{" "}
-                </span>
-                <span
+                + Add Item
+              </button>
+            </div>
+
+            {items.map((it, idx) => (
+              <Card key={it._id} style={{ marginBottom: 12 }}>
+                <div
                   style={{
-                    fontFamily: "'JetBrains Mono',monospace",
-                    fontWeight: 500,
-                    color: C.green,
-                    fontSize: 14,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: 14,
                   }}
                 >
-                  ₹{fmt(items.reduce((sum, it) => sum + +(it.amount || 0), 0))}
-                </span>
-              </div>
-            )}
+                  <span
+                    style={{ fontWeight: 500, color: C.accent, fontSize: 13 }}
+                  >
+                    Item {idx + 1}
+                  </span>
+                  {items.length > 1 && (
+                    <button
+                      onClick={() => removeItem(idx)}
+                      style={{
+                        background: C.red + "22",
+                        color: C.red,
+                        border: "none",
+                        borderRadius: 5,
+                        padding: "4px 12px",
+                        fontWeight: 500,
+                        fontSize: 12,
+                      }}
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(5, 1fr)",
+                    gap: 12,
+                  }}
+                >
+                  <Field label="Product Code">
+                    <AutocompleteInput
+                      value={it.productCode}
+                      onChange={(v) => setItem(idx, "productCode", v)}
+                      suggestions={sortedItemMasterItems.map(
+                        (i) => `${i.code} — ${i.name}`,
+                      )}
+                      placeholder="Type or select code (optional)"
+                    />
+                  </Field>
+                  <Field label="Material Type *">
+                    <select
+                      value={it.materialType || "Raw Material"}
+                      onChange={(e) =>
+                        setItem(idx, "materialType", e.target.value)
+                      }
+                    >
+                      <option value="Raw Material">Raw Material</option>
+                      <option value="Consumable">Consumable</option>
+                      <option value="Finished Goods">Finished Goods</option>
+                    </select>
+                  </Field>
+                  {(it.materialType === "Raw Material" || !it.materialType) && (
+                    <>
+                      <Field label="RM Item *">
+                        <select
+                          value={it.category}
+                          onChange={(e) =>
+                            setItem(idx, "category", e.target.value)
+                          }
+                          style={EI(idx, "category")}
+                        >
+                          <option value="">-- Select Item --</option>
+                          {rmItems.map((i) => (
+                            <option key={i} value={i}>
+                              {i}
+                            </option>
+                          ))}
+                        </select>
+                        {EIMsg(idx, "category")}
+                      </Field>
+                      <Field label="Paper Type *">
+                        <select
+                          value={it.subCategory}
+                          onChange={(e) =>
+                            setItem(idx, "subCategory", e.target.value)
+                          }
+                          disabled={!it.category}
+                          style={EI(idx, "subCategory")}
+                        >
+                          <option value="">
+                            {it.category
+                              ? "-- Select Paper Type --"
+                              : "-- Select RM Item first --"}
+                          </option>
+                          {(subCategoriesByItem[it.category] || []).map((p) => (
+                            <option key={p} value={p}>
+                              {p}
+                            </option>
+                          ))}
+                        </select>
+                        {EIMsg(idx, "subCategory")}
+                      </Field>
+                      {it.subCategory !== "Polycoated Blanks" && (
+                        <Field label="Width (mm) *">
+                          <input
+                            type="number"
+                            placeholder="e.g. 700"
+                            value={it.widthMm}
+                            onChange={(e) =>
+                              setItem(idx, "widthMm", e.target.value)
+                            }
+                            style={EI(idx, "widthMm")}
+                          />
+                          {EIMsg(idx, "widthMm")}
+                        </Field>
+                      )}
+
+                      {it.subCategory !== "Polycoated Blanks" &&
+                        (it.category === "Paper Sheets" ||
+                          it.category === "Paper Sheet") && (
+                          <Field label="Length (mm) *">
+                            <input
+                              type="number"
+                              placeholder="e.g. 1000"
+                              value={it.lengthMm}
+                              onChange={(e) =>
+                                setItem(idx, "lengthMm", e.target.value)
+                              }
+                              style={EI(idx, "lengthMm")}
+                            />
+                            {EIMsg(idx, "lengthMm")}
+                          </Field>
+                        )}
+                      <Field label="GSM *">
+                        <input
+                          type="number"
+                          placeholder="e.g. 90, 130, 250"
+                          value={it.gsm}
+                          onChange={(e) => setItem(idx, "gsm", e.target.value)}
+                          style={EI(idx, "gsm")}
+                        />
+                        {EIMsg(idx, "gsm")}
+                      </Field>
+                      {it.subCategory !== "Polycoated Blanks" &&
+                        (it.category === "Paper Sheets" ||
+                          it.category === "Paper Sheet") && (
+                          <Field label="# of Sheets *">
+                            <input
+                              type="number"
+                              placeholder="No. of sheets"
+                              value={it.noOfSheets}
+                              onChange={(e) =>
+                                setItem(idx, "noOfSheets", e.target.value)
+                              }
+                              style={EI(idx, "noOfSheets")}
+                            />
+                            {EIMsg(idx, "noOfSheets")}
+                          </Field>
+                        )}
+                      <Field label="Weight (kg) *">
+                        <input
+                          type="number"
+                          placeholder="Total weight"
+                          value={it.weight}
+                          onChange={(e) =>
+                            setItem(idx, "weight", e.target.value)
+                          }
+                          style={EI(idx, "weight")}
+                        />
+                        {EIMsg(idx, "weight")}
+                      </Field>
+                      <Field label="Rate (₹/kg) *">
+                        <input
+                          type="number"
+                          placeholder="Rate per kg"
+                          value={it.rate}
+                          onChange={(e) => setItem(idx, "rate", e.target.value)}
+                          style={EI(idx, "rate")}
+                        />
+                        {EIMsg(idx, "rate")}
+                      </Field>
+                      <Field label="Amount (₹)">
+                        <input
+                          readOnly
+                          value={
+                            it.amount
+                              ? `₹${fmt(+it.amount)}`
+                              : "-- Weight × Rate --"
+                          }
+                          style={{
+                            background: C.border + "22",
+                            fontWeight: 500,
+                            color: it.amount ? C.green : C.muted,
+                            fontFamily: "'JetBrains Mono', monospace",
+                          }}
+                        />
+                      </Field>
+                      <div style={{ gridColumn: "span 3" }} />
+                    </>
+                  )}
+                  {it.materialType === "Finished Goods" && (
+                    <>
+                      <Field label="Category">
+                        <input
+                          placeholder="e.g. Corrugated Box"
+                          value={it.category}
+                          onChange={(e) =>
+                            setItem(idx, "category", e.target.value)
+                          }
+                        />
+                      </Field>
+                      <Field label="Qty *">
+                        <input
+                          type="number"
+                          placeholder="0"
+                          value={it.qty}
+                          onChange={(e) => setItem(idx, "qty", e.target.value)}
+                          style={EI(idx, "qty")}
+                        />
+                      </Field>
+                      <div style={{ gridColumn: "span 3" }} />
+                    </>
+                  )}
+
+                  {it.materialType === "Consumable" && (
+                    <>
+                      <Field label="Category *">
+                        <select
+                          value={it.category}
+                          onChange={(e) =>
+                            setItem(idx, "category", e.target.value)
+                          }
+                          style={EI(idx, "category")}
+                        >
+                          <option value="">-- Select Category --</option>
+                          {consumableCategories.map((c) => (
+                            <option key={c} value={c}>
+                              {c}
+                            </option>
+                          ))}
+                        </select>
+                        {EIMsg(idx, "category")}
+                      </Field>
+
+                      <Field label="Size">
+                        <input
+                          placeholder="e.g. 200mm"
+                          value={it.size}
+                          onChange={(e) => setItem(idx, "size", e.target.value)}
+                        />
+                      </Field>
+
+                      {it.category === "Corrugated Box" ||
+                      it.category === "LDPE Polybag" ? (
+                        <>
+                          <div
+                            style={{
+                              gridColumn: "1 / -1",
+                              height: 1,
+                              margin: "4px 0",
+                            }}
+                          />
+                          <Field label="UOM">
+                            <select
+                              value={it.uom || "nos"}
+                              onChange={(e) =>
+                                setItem(idx, "uom", e.target.value)
+                              }
+                            >
+                              <option value="nos">nos</option>
+                              <option value="kg">kg</option>
+                              <option value="set">set</option>
+                              <option value="pcs">pcs</option>
+                              <option value="pkt">pkt</option>
+                              <option value="mm">mm</option>
+                              <option value="cm">cm</option>
+                              <option value="inch">inch</option>
+                            </select>
+                          </Field>
+                          {it.category === "Corrugated Box" && (
+                            <>
+                              <Field label="Width *">
+                                <input
+                                  type="number"
+                                  placeholder="Width"
+                                  value={it.widthMm || ""}
+                                  onChange={(e) =>
+                                    setItem(idx, "widthMm", e.target.value)
+                                  }
+                                  style={EI(idx, "widthMm")}
+                                />
+                              </Field>
+                              <Field label="Length *">
+                                <input
+                                  type="number"
+                                  placeholder="Length"
+                                  value={it.lengthMm || ""}
+                                  onChange={(e) =>
+                                    setItem(idx, "lengthMm", e.target.value)
+                                  }
+                                  style={EI(idx, "lengthMm")}
+                                />
+                              </Field>
+                              <Field label="Height *">
+                                <input
+                                  type="number"
+                                  placeholder="Height"
+                                  value={it.height || ""}
+                                  onChange={(e) =>
+                                    setItem(idx, "height", e.target.value)
+                                  }
+                                  style={EI(idx, "height")}
+                                />
+                              </Field>
+                              <div style={{ gridColumn: "span 1" }} />
+                            </>
+                          )}
+                          {it.category === "LDPE Polybag" && (
+                            <>
+                              <Field label="Width *">
+                                <input
+                                  type="number"
+                                  placeholder="Width"
+                                  value={it.widthMm || ""}
+                                  onChange={(e) =>
+                                    setItem(idx, "widthMm", e.target.value)
+                                  }
+                                  style={EI(idx, "widthMm")}
+                                />
+                              </Field>
+                              <Field label="Height *">
+                                <input
+                                  type="number"
+                                  placeholder="Height"
+                                  value={it.height || ""}
+                                  onChange={(e) =>
+                                    setItem(idx, "height", e.target.value)
+                                  }
+                                  style={EI(idx, "height")}
+                                />
+                              </Field>
+                              <div style={{ gridColumn: "span 2" }} />
+                            </>
+                          )}
+
+                          <div
+                            style={{
+                              gridColumn: "1 / -1",
+                              height: 1,
+                              margin: "4px 0",
+                            }}
+                          />
+                          <Field
+                            label="ITEM NAME"
+                            style={{ gridColumn: "span 2" }}
+                          >
+                            <div
+                              style={{
+                                padding: "10px 14px",
+                                background: "#0c0c0e",
+                                border: "1px solid #2a2a2e",
+                                borderRadius: 6,
+                                color: "#4ade80",
+                                fontWeight: 500,
+                                minHeight: 40,
+                                fontSize: 13,
+                              }}
+                            >
+                              {it.itemName}
+                              {it.poRemarks && (
+                                <div
+                                  style={{
+                                    fontSize: 10,
+                                    color: "#3b82f6",
+                                    marginTop: 4,
+                                    fontStyle: "italic",
+                                  }}
+                                >
+                                  PO Note: {it.poRemarks}
+                                </div>
+                              )}
+                            </div>
+                          </Field>
+                          <Field label="QUANTITY *">
+                            <input
+                              type="number"
+                              placeholder="Qty"
+                              value={it.qty}
+                              onChange={(e) =>
+                                setItem(idx, "qty", e.target.value)
+                              }
+                              style={EI(idx, "qty")}
+                            />
+                          </Field>
+                          <Field label="UNIT *">
+                            <select
+                              value={it.unit || "nos"}
+                              onChange={(e) =>
+                                setItem(idx, "unit", e.target.value)
+                              }
+                            >
+                              <option value="nos">nos</option>
+                              <option value="kg">kg</option>
+                              <option value="pcs">pcs</option>
+                              <option value="mm">mm</option>
+                              <option value="cm">cm</option>
+                              <option value="inch">inch</option>
+                            </select>
+                          </Field>
+                          <Field label="RATE (₹/NOS) *">
+                            <input
+                              type="number"
+                              placeholder="Rate per unit"
+                              value={it.rate}
+                              onChange={(e) =>
+                                setItem(idx, "rate", e.target.value)
+                              }
+                              style={EI(idx, "rate")}
+                            />
+                          </Field>
+
+                          <div
+                            style={{
+                              gridColumn: "1 / -1",
+                              height: 1,
+                              margin: "4px 0",
+                            }}
+                          />
+                          <Field label="AMOUNT (₹)">
+                            <input
+                              readOnly
+                              value={
+                                it.amount
+                                  ? `₹${fmt(+it.amount)}`
+                                  : "— Qty × Rate —"
+                              }
+                              style={{
+                                background: "#0c0c0e",
+                                color: it.amount ? C.green : C.muted,
+                                fontWeight: 500,
+                              }}
+                            />
+                          </Field>
+                          <div style={{ gridColumn: "span 4" }} />
+                        </>
+                      ) : (
+                        <>
+                          <div
+                            style={{
+                              gridColumn: "1 / -1",
+                              height: 1,
+                              margin: "4px 0",
+                            }}
+                          />
+                          <Field label="UOM">
+                            <select
+                              value={it.uom || "nos"}
+                              onChange={(e) =>
+                                setItem(idx, "uom", e.target.value)
+                              }
+                            >
+                              <option value="nos">nos</option>
+                              <option value="kg">kg</option>
+                              <option value="set">set</option>
+                              <option value="pcs">pcs</option>
+                              <option value="pkt">pkt</option>
+                              <option value="mtr">mtr</option>
+                            </select>
+                          </Field>
+                          <Field label="QUANTITY *">
+                            <input
+                              type="number"
+                              placeholder="e.g. 10"
+                              value={it.qty}
+                              onChange={(e) =>
+                                setItem(idx, "qty", e.target.value)
+                              }
+                              style={EI(idx, "qty")}
+                            />
+                          </Field>
+                          <Field label="UNIT">
+                            <select
+                              value={it.unit || "nos"}
+                              onChange={(e) =>
+                                setItem(idx, "unit", e.target.value)
+                              }
+                            >
+                              <option value="nos">nos</option>
+                              <option value="kg">kg</option>
+                              <option value="pcs">pcs</option>
+                              <option value="mm">mm</option>
+                              <option value="cm">cm</option>
+                              <option value="inch">inch</option>
+                            </select>
+                          </Field>
+                          <Field label="RATE (₹/NOS) *">
+                            <input
+                              type="number"
+                              placeholder="Rate per unit"
+                              value={it.rate}
+                              onChange={(e) =>
+                                setItem(idx, "rate", e.target.value)
+                              }
+                              style={EI(idx, "rate")}
+                            />
+                          </Field>
+                          <Field label="AMOUNT (₹)">
+                            <input
+                              readOnly
+                              value={
+                                it.amount
+                                  ? `₹${fmt(+it.amount)}`
+                                  : "— Qty × Rate —"
+                              }
+                              style={{
+                                background: "#0c0c0e",
+                                color: it.amount ? C.green : C.muted,
+                                fontWeight: 500,
+                              }}
+                            />
+                          </Field>
+                        </>
+                      )}
+                    </>
+                  )}
+
+                  <div
+                    style={{
+                      gridColumn: "1 / -1",
+                      height: 1,
+                      borderTop: `1px dashed ${C.border}`,
+                      margin: "4px 0",
+                    }}
+                  />
+
+                  <Field label="GST (%)">
+                    <input
+                      type="number"
+                      placeholder="18"
+                      value={it.gstRate || 18}
+                      onChange={(e) => setItem(idx, "gstRate", e.target.value)}
+                    />
+                  </Field>
+                  <Field label="HSN">
+                    <input
+                      placeholder="HSN code"
+                      value={it.hsnCode || ""}
+                      onChange={(e) => setItem(idx, "hsnCode", e.target.value)}
+                    />
+                  </Field>
+                  <Field label="Total (incl Tax)">
+                    <div
+                      style={{
+                        padding: "9px 12px",
+                        background: "#0c0c0e",
+                        border: "1px solid #2a2a2e",
+                        borderRadius: 6,
+                        fontSize: 13,
+                        color: it.totalWithTax ? C.green : C.muted,
+                        fontWeight: it.totalWithTax ? 700 : 400,
+                        fontFamily: "'JetBrains Mono',monospace",
+                      }}
+                    >
+                      {it.totalWithTax ? `₹${fmt(+it.totalWithTax)}` : "—"}
+                    </div>
+                  </Field>
+                  <div style={{ gridColumn: "span 2" }} />
+                </div>
+                <Field label="Item Name" span={2}>
+                  <input
+                    readOnly
+                    placeholder="Auto-filled from material details"
+                    value={it.itemName || ""}
+                    style={{ background: C.border + "22", fontSize: 13 }}
+                  />
+                </Field>
+              </Card>
+            ))}
+
+            <div
+              style={{
+                display: "flex",
+                gap: 10,
+                marginTop: 4,
+                alignItems: "center",
+                flexWrap: "wrap",
+              }}
+            >
+              <button
+                onClick={addItem}
+                style={{
+                  background: C.accent + "22",
+                  color: C.accent,
+                  border: `1px solid ${C.accent}44`,
+                  borderRadius: 6,
+                  padding: "9px 20px",
+                  fontWeight: 500,
+                  fontSize: 13,
+                }}
+              >
+                + Add Another Item
+              </button>
+              <SubmitBtn
+                label={`Submit GRN (${items.length} item${items.length > 1 ? "s" : ""})`}
+                color={C.blue}
+                onClick={submit}
+              />
+              {items.some((it) => it.amount) && (
+                <div
+                  style={{
+                    marginLeft: "auto",
+                    padding: "9px 16px",
+                    background: C.green + "22",
+                    border: `1px solid ${C.green}44`,
+                    borderRadius: 6,
+                  }}
+                >
+                  <span style={{ fontSize: 12, color: C.muted }}>
+                    Total Amount:{" "}
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: "'JetBrains Mono',monospace",
+                      fontWeight: 500,
+                      color: C.green,
+                      fontSize: 14,
+                    }}
+                  >
+                    ₹
+                    {fmt(items.reduce((sum, it) => sum + +(it.amount || 0), 0))}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
         </Modal>
       )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <div style={{ display: "flex", gap: 12, flex: 1 }}>
-              <div style={{ position: "relative", width: 300 }}>
-                <span
-                  style={{
-                    position: "absolute",
-                    left: 12,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    color: "#555",
-                  }}
-                >
-                  <i className="fa-solid fa-magnifying-glass" />
-                </span>
-                <input
-                  placeholder="Search records..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "9px 12px 9px 36px",
-                    background: "#141416",
-                    border: "1px solid #2a2a2e",
-                    borderRadius: 6,
-                    color: "#fff",
-                    fontSize: 13,
-                  }}
-                />
-              </div>
-              <DateRangeFilter
-                dateFrom={drDateFrom}
-                setDateFrom={setDrDateFrom}
-                dateTo={drDateTo}
-                setDateTo={setDrDateTo}
-              />
-            </div>
-            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-              <button
-                onClick={handleExportExcel}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <div style={{ display: "flex", gap: 12, flex: 1 }}>
+            <div style={{ position: "relative", width: 300 }}>
+              <span
                 style={{
-                  background: "#141416",
-                  color: C.green,
-                  border: `1px solid ${C.green}44`,
-                  borderRadius: 6,
-                  padding: "8px 16px",
-                  fontSize: 12,
-                  fontWeight: 500,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
+                  position: "absolute",
+                  left: 12,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  color: "#555",
                 }}
               >
-                Export Excel
-              </button>
-              <span style={{ fontSize: 12, color: C.muted }}>
-                {filteredInwards.length} records found
+                <i className="fa-solid fa-magnifying-glass" />
               </span>
+              <input
+                placeholder="Search records..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "9px 12px 9px 36px",
+                  background: "#141416",
+                  border: "1px solid #2a2a2e",
+                  borderRadius: 6,
+                  color: "#fff",
+                  fontSize: 13,
+                }}
+              />
             </div>
+            <DateRangeFilter
+              dateFrom={drDateFrom}
+              setDateFrom={setDrDateFrom}
+              dateTo={drDateTo}
+              setDateTo={setDrDateTo}
+            />
           </div>
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <button
+              onClick={handleExportExcel}
+              style={{
+                background: "#141416",
+                color: C.green,
+                border: `1px solid ${C.green}44`,
+                borderRadius: 6,
+                padding: "8px 16px",
+                fontSize: 12,
+                fontWeight: 500,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              Export Excel
+            </button>
+            <span style={{ fontSize: 12, color: C.muted }}>
+              {filteredInwards.length} records found
+            </span>
+          </div>
+        </div>
 
-          {(() => {
-            const listData = filteredInwards.slice().reverse();
-            const totalValue = listData.reduce((s, r) => s + (r.items || []).reduce((ss, it) => ss + +(it.amount || 0), 0), 0);
-            const totalWeight = listData.reduce((s, r) => s + (r.items || []).reduce((ss, it) => ss + +(it.weight || 0), 0), 0);
-            const thisMonth = new Date().toISOString().slice(0, 7);
-            const thisMonthCount = listData.filter(r => (r.inwardDate || "").slice(0, 7) === thisMonth).length;
-            const statCards = [
-              { label: "Total GRNs", value: listData.length, icon: "fa-solid fa-truck-ramp-box", color: "#60a5fa" },
-              { label: "This Month", value: thisMonthCount, icon: "fa-solid fa-calendar-days", color: "#f59e0b" },
-              { label: "Total Weight", value: fmt(Math.round(totalWeight)) + " kg", icon: "fa-solid fa-weight-hanging", color: "#10b981" },
-              { label: "Total Value", value: `₹${fmt(totalValue)}`, icon: "fa-solid fa-indian-rupee-sign", color: "#a78bfa" },
-            ];
-            return (
-              <>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 16 }}>
-                  {statCards.map(({ label, value, icon, color }) => (
-                    <div key={label} style={{ padding: "16px 20px", background: "#0d1117", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, borderLeft: `3px solid ${color}` }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                        <span style={{ fontSize: 11, color: C.muted, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
-                        <i className={icon} style={{ color, fontSize: 13, opacity: 0.8 }} />
-                      </div>
-                      <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", fontFamily: "'JetBrains Mono', monospace" }}>{value}</div>
-                    </div>
-                  ))}
-                </div>
-
-                {listData.length === 0 ? (
-                  <Card style={{ textAlign: "center", padding: 40, color: C.muted }}>No material inward records found.</Card>
-                ) : (
-                  <div style={{ background: "#0d1117", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-                      <thead>
-                        <tr style={{ background: "#161b22", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-                          {["GRN No", "Date", "Vendor", "Invoice", "Location", "Items", "Total", "Actions"].map(h => (
-                            <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {listData.map((r, i) => {
-                const total = (r.items || []).reduce(
-                  (s, it) => s + +(it.amount || 0),
-                  0,
-                );
-                return (
-                  <tr
-                    key={r._id}
-                    data-record-id={r.inwardNo || r.grnNo}
+        {(() => {
+          const listData = filteredInwards.slice().reverse();
+          const totalValue = listData.reduce(
+            (s, r) =>
+              s + (r.items || []).reduce((ss, it) => ss + +(it.amount || 0), 0),
+            0,
+          );
+          const totalWeight = listData.reduce(
+            (s, r) =>
+              s + (r.items || []).reduce((ss, it) => ss + +(it.weight || 0), 0),
+            0,
+          );
+          const thisMonth = new Date().toISOString().slice(0, 7);
+          const thisMonthCount = listData.filter(
+            (r) => (r.inwardDate || "").slice(0, 7) === thisMonth,
+          ).length;
+          const statCards = [
+            {
+              label: "Total GRNs",
+              value: listData.length,
+              icon: "fa-solid fa-truck-ramp-box",
+            },
+            {
+              label: "This Month",
+              value: thisMonthCount,
+              icon: "fa-solid fa-calendar-days",
+            },
+            {
+              label: "Total Weight",
+              value: fmt(Math.round(totalWeight)) + " kg",
+              icon: "fa-solid fa-weight-hanging",
+            },
+            {
+              label: "Total Value",
+              value: `₹${fmt(totalValue)}`,
+              icon: "fa-solid fa-indian-rupee-sign",
+            },
+          ];
+          return (
+            <>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(4, 1fr)",
+                  gap: 12,
+                  marginBottom: 16,
+                }}
+              >
+                {statCards.map(({ label, value, icon, color }) => (
+                  <div
+                    key={label}
                     style={{
-                      borderBottom: "1px solid rgba(255,255,255,0.04)",
-                      background: (r.inwardNo || r.grnNo) === highlightId ? `${C.accent}11` : i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)",
-                      transition: "all 0.4s ease",
+                      padding: "16px 20px",
+                      background: "#0d1117",
+                      border: "1px solid rgba(255,255,255,0.07)",
+                      borderRadius: 12,
+                      borderLeft: `3px solid ${color}`,
                     }}
                   >
-                    <td style={{ padding: "12px 14px", fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: "#60a5fa", whiteSpace: "nowrap" }}>{r.inwardNo}</td>
-                    <td style={{ padding: "12px 14px", color: C.muted, whiteSpace: "nowrap", fontSize: 12 }}>{formatDateForInput(r.inwardDate)}</td>
-                    <td style={{ padding: "12px 14px", fontWeight: 500 }}>{r.vendorName}</td>
-                    <td style={{ padding: "12px 14px", color: C.muted, fontSize: 12 }}>{r.invoiceNo || "—"}</td>
-                    <td style={{ padding: "12px 14px", color: C.muted, fontSize: 12 }}>{r.location || "—"}</td>
-                    <td style={{ padding: "12px 14px", color: C.muted }}>{(r.items || []).length} item{(r.items || []).length !== 1 ? "s" : ""}</td>
-                    <td style={{ padding: "12px 14px", fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: "#10b981", whiteSpace: "nowrap" }}>₹{fmt(total)}</td>
-                    <td style={{ padding: "12px 14px" }}>
-                      <div style={{ display: "flex", gap: 8 }}>
-                        {canEdit && (
-                          <button
-                            onClick={() => handleEdit(r)}
-                            style={{
-                              background: "#1e293b",
-                              color: C.blue,
-                              border: "1px solid #334155",
-                              borderRadius: 6,
-                              padding: "6px 14px",
-                              fontSize: 11,
-                              fontWeight: 500,
-                              cursor: "pointer",
-                            }}
-                          >
-                            Edit
-                          </button>
-                        )}
-                        <button
-                          onClick={() => generateGRNPDF(r)}
-                          style={{
-                            background: "#2a1a45",
-                            color: "#a855f7",
-                            border: "1px solid #4c1d95",
-                            borderRadius: 6,
-                            padding: "6px 14px",
-                            fontSize: 11,
-                            fontWeight: 500,
-                            cursor: "pointer",
-                          }}
-                        >
-                          PDF
-                        </button>
-                        {canEdit && (
-                          <button
-                            onClick={() => handleDelete(r._id)}
-                            style={{
-                              background: "#450a0a",
-                              color: "#ef4444",
-                              border: "1px solid #7f1d1d",
-                              borderRadius: 6,
-                              padding: "6px 14px",
-                              fontSize: 11,
-                              fontWeight: 500,
-                              cursor: "pointer",
-                            }}
-                          >
-                            Delete
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-                      </tbody>
-                    </table>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: 8,
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: 19,
+                          color: C.muted,
+                          fontWeight: 600,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.05em",
+                        }}
+                      >
+                        {label}
+                      </span>
+                      <i
+                        className={icon}
+                        style={{
+                          color,
+                          fontSize: 20,
+                          opacity: 0.9,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          height: 28,
+                          width: 28,
+                          lineHeight: 1,
+                        }}
+                      />
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 20,
+                        fontWeight: 800,
+                        color: "#fff",
+                        fontFamily: "'JetBrains Mono', monospace",
+                      }}
+                    >
+                      {value}
+                    </div>
                   </div>
-                )}
-              </>
-            );
-          })()}
-        </div>
+                ))}
+              </div>
+
+              {listData.length === 0 ? (
+                <Card
+                  style={{ textAlign: "center", padding: 40, color: C.muted }}
+                >
+                  No material inward records found.
+                </Card>
+              ) : (
+                <div
+                  style={{
+                    background: "#0d1117",
+                    border: "1px solid rgba(255,255,255,0.07)",
+                    borderRadius: 12,
+                    overflow: "hidden",
+                  }}
+                >
+                  <table
+                    style={{
+                      width: "100%",
+                      borderCollapse: "collapse",
+                      fontSize: 13,
+                    }}
+                  >
+                    <thead>
+                      <tr
+                        style={{
+                          background: "#161b22",
+                          borderBottom: "1px solid rgba(255,255,255,0.08)",
+                        }}
+                      >
+                        {[
+                          "GRN No",
+                          "Date",
+                          "Vendor",
+                          "Invoice",
+                          "Location",
+                          "Items",
+                          "Total",
+                          "Actions",
+                        ].map((h) => (
+                          <th
+                            key={h}
+                            style={{
+                              padding: "10px 14px",
+                              textAlign: "left",
+                              fontSize: 11,
+                              fontWeight: 700,
+                              color: C.muted,
+                              textTransform: "uppercase",
+                              letterSpacing: "0.05em",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {listData.map((r, i) => {
+                        const total = (r.items || []).reduce(
+                          (s, it) => s + +(it.amount || 0),
+                          0,
+                        );
+                        return (
+                          <tr
+                            key={r._id}
+                            data-record-id={r.inwardNo || r.grnNo}
+                            style={{
+                              borderBottom: "1px solid rgba(255,255,255,0.04)",
+                              background:
+                                (r.inwardNo || r.grnNo) === highlightId
+                                  ? `${C.accent}11`
+                                  : i % 2 === 0
+                                    ? "transparent"
+                                    : "rgba(255,255,255,0.01)",
+                              transition: "all 0.4s ease",
+                            }}
+                          >
+                            <td
+                              style={{
+                                padding: "12px 14px",
+                                fontFamily: "'JetBrains Mono', monospace",
+                                fontWeight: 700,
+                                color: "#60a5fa",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {r.inwardNo}
+                            </td>
+                            <td
+                              style={{
+                                padding: "12px 14px",
+                                color: C.muted,
+                                whiteSpace: "nowrap",
+                                fontSize: 12,
+                              }}
+                            >
+                              {formatDateForInput(r.inwardDate)}
+                            </td>
+                            <td
+                              style={{ padding: "12px 14px", fontWeight: 500 }}
+                            >
+                              {r.vendorName}
+                            </td>
+                            <td
+                              style={{
+                                padding: "12px 14px",
+                                color: C.muted,
+                                fontSize: 12,
+                              }}
+                            >
+                              {r.invoiceNo || "—"}
+                            </td>
+                            <td
+                              style={{
+                                padding: "12px 14px",
+                                color: C.muted,
+                                fontSize: 12,
+                              }}
+                            >
+                              {r.location || "—"}
+                            </td>
+                            <td
+                              style={{ padding: "12px 14px", color: C.muted }}
+                            >
+                              {(r.items || []).length} item
+                              {(r.items || []).length !== 1 ? "s" : ""}
+                            </td>
+                            <td
+                              style={{
+                                padding: "12px 14px",
+                                fontFamily: "'JetBrains Mono', monospace",
+                                fontWeight: 700,
+                                color: "#10b981",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              ₹{fmt(total)}
+                            </td>
+                            <td style={{ padding: "12px 14px" }}>
+                              <div style={{ display: "flex", gap: 8 }}>
+                                {canEdit && (
+                                  <button
+                                    onClick={() => handleEdit(r)}
+                                    style={{
+                                      background: "#1e293b",
+                                      color: C.blue,
+                                      border: "1px solid #334155",
+                                      borderRadius: 6,
+                                      padding: "6px 14px",
+                                      fontSize: 11,
+                                      fontWeight: 500,
+                                      cursor: "pointer",
+                                    }}
+                                  >
+                                    Edit
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => generateGRNPDF(r)}
+                                  style={{
+                                    background: "#2a1a45",
+                                    color: "#a855f7",
+                                    border: "1px solid #4c1d95",
+                                    borderRadius: 6,
+                                    padding: "6px 14px",
+                                    fontSize: 11,
+                                    fontWeight: 500,
+                                    cursor: "pointer",
+                                  }}
+                                >
+                                  PDF
+                                </button>
+                                {canEdit && (
+                                  <button
+                                    onClick={() => setDeleteTarget(r._id)}
+                                    style={{
+                                      background: "#450a0a",
+                                      color: "#ef4444",
+                                      border: "1px solid #7f1d1d",
+                                      borderRadius: 6,
+                                      padding: "6px 14px",
+                                      fontSize: 11,
+                                      fontWeight: 500,
+                                      cursor: "pointer",
+                                    }}
+                                  >
+                                    Delete
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          );
+        })()}
+      </div>
     </div>
+
+    <ConfirmModal
+      isOpen={!!deleteTarget}
+      onClose={() => setDeleteTarget(null)}
+      onConfirm={handleDelete}
+      title="Move to Trash"
+      message="This material inward will be moved to trash. Stock will be reversed. You can restore it within 7 days."
+      confirmText="Move to Trash"
+      cancelText="Cancel"
+      type="danger"
+    />
+    </>
   );
 }

@@ -1,5 +1,6 @@
 const MaterialInward = require("../models/MaterialInward");
 const PurchaseOrder = require("../models/PurchaseOrder");
+const TrashItem = require("../models/TrashItem");
 
 exports.getAll = async (req, res) => {
   try {
@@ -401,10 +402,18 @@ exports.delete = async (req, res) => {
     
     await adjustStock(inward.items, -1, inward.location);
 
-    await MaterialInward.findByIdAndDelete(req.params.id);
-    res.json({ message: "Inward deleted successfully" });
+    await TrashItem.create({
+      modelName: "MaterialInward",
+      collectionName: "materialinwards",
+      displayId: inward.inwardNo,
+      label: "Material Inward",
+      data: inward.toObject(),
+      deletedBy: req.user?.username || "system",
+    });
 
-    
+    await MaterialInward.findByIdAndDelete(req.params.id);
+    res.json({ message: "Material inward moved to trash" });
+
     if (inward.poRef) {
       await updatePurchaseOrderStatus(inward.poRef);
     }

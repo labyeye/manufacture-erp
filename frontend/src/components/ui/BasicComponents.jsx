@@ -338,13 +338,15 @@ export function Modal({ title, children, onClose }) {
         padding: 20,
       }}
     >
-      <div style={{ ...GLASS_CARD, width: "100%", maxWidth: 1200, padding: 28 }}>
+      <div style={{ ...GLASS_CARD, width: "100%", maxWidth: 1200, padding: 0, display: "flex", flexDirection: "column", maxHeight: "90vh" }}>
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: 22,
+            padding: "22px 28px 18px",
+            flexShrink: 0,
+            borderBottom: "1px solid rgba(255,255,255,0.07)",
           }}
         >
           <h3
@@ -384,7 +386,9 @@ export function Modal({ title, children, onClose }) {
             <i className="fa-solid fa-xmark" />
           </button>
         </div>
-        {children}
+        <div style={{ overflowY: "auto", padding: "22px 28px 28px", flex: 1 }}>
+          {children}
+        </div>
       </div>
     </div>
   );

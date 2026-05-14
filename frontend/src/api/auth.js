@@ -799,3 +799,22 @@ export const activityLogAPI = {
     return response.data;
   },
 };
+
+export const trashAPI = {
+  getAll: async () => {
+    const response = await api.get("/trash");
+    return response.data;
+  },
+  restore: async (id) => {
+    const response = await api.post(`/trash/${id}/restore`);
+    return response.data;
+  },
+  permanentDelete: async (id) => {
+    const response = await api.delete(`/trash/${id}`);
+    return response.data;
+  },
+  emptyTrash: async () => {
+    const response = await api.delete("/trash/empty");
+    return response.data;
+  },
+};

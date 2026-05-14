@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import ConfirmModal from "../components/ConfirmModal";
 import { C } from "../constants/colors";
 import {
   Card,
@@ -53,6 +54,7 @@ export default function SalesOrders(props) {
   const [sellingPrices, setSellingPrices] = useState([]);
   const [companyCategories, setCompanyCategories] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const today_val = today();
 
   const fgItems = useMemo(() => {
@@ -496,12 +498,12 @@ export default function SalesOrders(props) {
     setShowModal(true);
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm("Delete this sales order?")) return;
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
     try {
       setLoading(true);
-      await salesOrdersAPI.delete(id);
-      toast("Sales order deleted successfully", "success");
+      await salesOrdersAPI.delete(deleteTarget);
+      toast("Sales order moved to trash", "success");
       fetchSalesOrders();
     } catch (error) {
       toast(
@@ -510,6 +512,7 @@ export default function SalesOrders(props) {
       );
     } finally {
       setLoading(false);
+      setDeleteTarget(null);
     }
   };
 
@@ -791,6 +794,7 @@ export default function SalesOrders(props) {
   };
 
   return (
+    <>
     <div className="fade">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
         <SectionTitle
@@ -1678,7 +1682,7 @@ export default function SalesOrders(props) {
                     <div style={{ display: "flex", gap: 5 }}>
                       {!isClient && <button onClick={() => handleEdit(r)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid rgba(74,222,128,0.3)", background: "rgba(74,222,128,0.08)", color: "#4ade80", fontSize: 11, fontWeight: 500, cursor: "pointer" }}>Edit</button>}
                       <button onClick={() => generateSOPDF(r)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.06)", color: "#fff", fontSize: 11, fontWeight: 500, cursor: "pointer" }}>PDF</button>
-                      {!isClient && <button onClick={() => handleDelete(r._id)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.08)", color: "#ef4444", fontSize: 11, fontWeight: 500, cursor: "pointer" }}>Del</button>}
+                      {!isClient && <button onClick={() => setDeleteTarget(r._id)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.08)", color: "#ef4444", fontSize: 11, fontWeight: 500, cursor: "pointer" }}>Del</button>}
                     </div>
                   </td>
                 </tr>
@@ -1693,5 +1697,17 @@ export default function SalesOrders(props) {
           })()}
         </div>
     </div>
+
+    <ConfirmModal
+      isOpen={!!deleteTarget}
+      onClose={() => setDeleteTarget(null)}
+      onConfirm={handleDelete}
+      title="Move to Trash"
+      message="This sales order will be moved to trash. You can restore it within 7 days."
+      confirmText="Move to Trash"
+      cancelText="Cancel"
+      type="danger"
+    />
+    </>
   );
 }
