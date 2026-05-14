@@ -214,6 +214,7 @@ export default function PurchaseOrders({
   };
 
   const generatePOPDF = (po) => {
+    const rfmt = (n) => Math.round(n ?? 0).toLocaleString("en-IN");
     const itemsArr = (po.items || []).map((it) => {
       const amt = Number(it.amount || 0);
       const gst = Number(
@@ -345,10 +346,10 @@ export default function PurchaseOrders({
                   <td style="white-space: nowrap;">${it.sheetSize || (it.widthMm ? it.widthMm + (it.lengthMm ? "x" + it.lengthMm : "") + "mm" : "—")}</td>
                   <td style="text-align: center;">${it.noOfSheets || (it.category?.includes("Sheet") ? fmt(it.qty) : "—") || "—"}</td>
                   <td class="col-qty" style="white-space: nowrap;">${it.weight ? fmt(it.weight) + " kg" : it.qty ? fmt(it.qty) + " " + (it.unit || "nos") : "—"}</td>
-                  <td style="white-space: nowrap;">₹${fmt(it.rate)}</td>
+                  <td style="white-space: nowrap;">₹${rfmt(it.rate)}</td>
                   <td style="text-align: center;">${it.usedGst}%</td>
-                  <td class="col-amt" style="white-space: nowrap;">₹${fmt(it.amount)}</td>
-                  <td class="col-amt" style="white-space: nowrap;">₹${fmt(it.rowTax)}</td>
+                  <td class="col-amt" style="white-space: nowrap;">₹${rfmt(it.amount)}</td>
+                  <td class="col-amt" style="white-space: nowrap;">₹${rfmt(it.rowTax)}</td>
                 </tr>
               `,
                 )
@@ -360,16 +361,16 @@ export default function PurchaseOrders({
             <div style="width: 220px;">
               <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
                 <label>Taxable Amount:</label>
-                <span>₹${fmt(subtotal)}</span>
+                <span>₹${rfmt(subtotal)}</span>
               </div>
               <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
                 <label>Total GST:</label>
-                <span>₹${fmt(totalTax)}</span>
+                <span>₹${rfmt(totalTax)}</span>
               </div>
               <div class="hr"></div>
               <div class="total-box">
                 <label>Net Total:</label>
-                ₹${fmt(total)}
+                ₹${rfmt(total)}
               </div>
             </div>
           </div>
@@ -1539,7 +1540,7 @@ export default function PurchaseOrders({
                     color: C.muted,
                   }}
                 >
-                  <span>Subtotal:</span>
+                  <span>Base Amount:</span>
                   <span>
                     ₹
                     {fmt(items.reduce((sum, it) => sum + +(it.amount || 0), 0))}
@@ -1553,7 +1554,7 @@ export default function PurchaseOrders({
                     color: C.muted,
                   }}
                 >
-                  <span>Total GST:</span>
+                  <span>Tax Amount:</span>
                   <span>
                     ₹
                     {fmt(
@@ -1577,7 +1578,7 @@ export default function PurchaseOrders({
                     fontSize: 15,
                   }}
                 >
-                  <span>Net Total:</span>
+                  <span>Total:</span>
                   <span>
                     ₹
                     {fmt(

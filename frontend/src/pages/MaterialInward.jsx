@@ -675,6 +675,7 @@ export default function MaterialInward({
   };
 
   const generateGRNPDF = (r) => {
+    const rfmt = (n) => Math.round(n ?? 0).toLocaleString("en-IN");
     const itemsArr = (r.items || []).map((it) => {
       const amt = Number(it.amount || 0);
       const gst = Number(
@@ -778,10 +779,10 @@ export default function MaterialInward({
                   <td>${it.widthMm}${it.lengthMm ? "x" + it.lengthMm : ""}mm</td>
                   <td class="col-qty">${it.noOfSheets ? fmt(it.noOfSheets) : "—"}</td>
                   <td class="col-qty">${fmt(it.weight)} kg</td>
-                  <td class="col-amt">₹${fmt(it.rate)}</td>
+                  <td class="col-amt">₹${rfmt(it.rate)}</td>
                   <td style="text-align:center;">${it.usedGst}%</td>
-                  <td class="col-amt" style="white-space:nowrap;">₹${fmt(it.amount)}</td>
-                  <td class="col-amt" style="white-space:nowrap;">₹${fmt(it.rowTax)}</td>
+                  <td class="col-amt" style="white-space:nowrap;">₹${rfmt(it.amount)}</td>
+                  <td class="col-amt" style="white-space:nowrap;">₹${rfmt(it.rowTax)}</td>
                 </tr>
               `,
                 )
@@ -793,16 +794,16 @@ export default function MaterialInward({
             <div style="width: 220px;">
               <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
                 <label>Taxable Amount:</label>
-                <span>₹${fmt(subtotal)}</span>
+                <span>₹${rfmt(subtotal)}</span>
               </div>
               <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
                 <label>Total GST:</label>
-                <span>₹${fmt(totalTax)}</span>
+                <span>₹${rfmt(totalTax)}</span>
               </div>
               <div class="hr"></div>
               <div class="total-box">
                 <label>Net Total:</label>
-                ₹${fmt(total)}
+                ₹${rfmt(total)}
               </div>
             </div>
           </div>
@@ -1700,26 +1701,29 @@ export default function MaterialInward({
                 <div
                   style={{
                     marginLeft: "auto",
-                    padding: "9px 16px",
-                    background: C.green + "22",
-                    border: `1px solid ${C.green}44`,
-                    borderRadius: 6,
+                    padding: "12px 20px",
+                    background: C.green + "11",
+                    border: `1px solid ${C.green}33`,
+                    borderRadius: 10,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 4,
+                    minWidth: 200,
                   }}
                 >
-                  <span style={{ fontSize: 12, color: C.muted }}>
-                    Total Amount:{" "}
-                  </span>
-                  <span
-                    style={{
-                      fontFamily: "'JetBrains Mono',monospace",
-                      fontWeight: 500,
-                      color: C.green,
-                      fontSize: 14,
-                    }}
-                  >
-                    ₹
-                    {fmt(items.reduce((sum, it) => sum + +(it.amount || 0), 0))}
-                  </span>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: C.muted }}>
+                    <span>Base Amount:</span>
+                    <span>₹{fmt(items.reduce((sum, it) => sum + +(it.amount || 0), 0))}</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: C.muted }}>
+                    <span>Tax Amount:</span>
+                    <span>₹{fmt(items.reduce((sum, it) => sum + +(it.taxAmount || 0), 0))}</span>
+                  </div>
+                  <div style={{ height: 1, background: C.green + "22", margin: "4px 0" }} />
+                  <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 800, color: C.green, fontSize: 15 }}>
+                    <span>Total:</span>
+                    <span>₹{fmt(items.reduce((sum, it) => sum + +(it.totalWithTax || 0), 0))}</span>
+                  </div>
                 </div>
               )}
             </div>

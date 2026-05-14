@@ -617,6 +617,7 @@ export default function SalesOrders(props) {
   };
 
   const generateSOPDF = (so) => {
+    const rfmt = (n) => Math.round(n ?? 0).toLocaleString("en-IN");
     const subtotal = (so.items || []).reduce(
       (s, it) => s + +(it.amount || 0),
       0,
@@ -731,9 +732,9 @@ export default function SalesOrders(props) {
                       <span style="font-size: 9px; color: #64748b;">${it.qtyUnit || "pcs"}</span>
                     </div>
                   </td>
-                  <td style="text-align: right;">₹${fmt(it.price)}</td>
+                  <td style="text-align: right;">₹${rfmt(it.price)}</td>
                   <td style="text-align: center;">${it.gstRate || 18}%</td>
-                  <td class="col-amt">₹${fmt(it.amount)}</td>
+                  <td class="col-amt">₹${rfmt(it.amount)}</td>
                 </tr>
               `,
                 )
@@ -745,16 +746,16 @@ export default function SalesOrders(props) {
             <div style="width: 250px;">
               <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; padding: 0 5px;">
                 <label style="color: #64748b; font-weight: 600;">Subtotal:</label>
-                <span style="font-weight: 700;">₹${fmt(subtotal)}</span>
+                <span style="font-weight: 700;">₹${rfmt(subtotal)}</span>
               </div>
               <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; padding: 0 5px;">
                 <label style="color: #64748b; font-weight: 600;">GST Total:</label>
-                <span style="font-weight: 700;">₹${fmt(totalTax)}</span>
+                <span style="font-weight: 700;">₹${rfmt(totalTax)}</span>
               </div>
               <div class="hr"></div>
               <div class="total-box">
                 <label>NET TOTAL</label>
-                <span>₹${fmt(total)}</span>
+                <span>₹${rfmt(total)}</span>
               </div>
             </div>
           </div>

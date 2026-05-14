@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import { COLORS } from '../../constants';
 
 export function DatePicker({ value, onChange, style = {} }) {
@@ -9,10 +10,14 @@ export function DatePicker({ value, onChange, style = {} }) {
     return { year: d.getFullYear(), month: d.getMonth() };
   });
   const ref = useRef(null);
+  const portalRef = useRef(null);
 
   useEffect(() => {
     const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+      const target = e.target;
+      const clickedOutsideTrigger = ref.current && !ref.current.contains(target);
+      const clickedOutsidePortal = portalRef.current && !portalRef.current.contains(target);
+      if (clickedOutsideTrigger && (portalRef.current ? clickedOutsidePortal : true)) setOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -97,23 +102,30 @@ export function DatePicker({ value, onChange, style = {} }) {
         <span style={{ fontSize: 14, color: COLORS.muted }}>📅</span>
       </div>
 
-      {open && (
-        <div
-          style={{
-            position: "absolute",
-            ...(openUp
-              ? { bottom: "calc(100% + 6px)" }
-              : { top: "calc(100% + 6px)" }),
-            left: 0,
-            zIndex: 9999,
-            background: COLORS.card,
-            border: `1px solid ${COLORS.border}`,
-            borderRadius: 10,
-            padding: 14,
-            width: 260,
-            boxShadow: "0 8px 32px #0004"
-          }}
-        >
+      {open && (() => {
+        const rect = ref.current?.getBoundingClientRect();
+        const left = rect ? rect.left + window.scrollX : 0;
+        const top = rect ? rect.bottom + window.scrollY + 6 : 0;
+        const bottom = rect ? window.innerHeight - rect.top + 6 : 0;
+        const style = {
+          position: 'fixed',
+          left,
+          zIndex: 9999,
+          background: COLORS.card,
+          border: `1px solid ${COLORS.border}`,
+          borderRadius: 10,
+          padding: 14,
+          width: 260,
+          boxShadow: '0 8px 32px #0004'
+        };
+        if (openUp) {
+          style.bottom = bottom;
+        } else {
+          style.top = top;
+        }
+
+        return ReactDOM.createPortal(
+          <div ref={portalRef} style={style}>
           {}
           <div
             style={{
@@ -256,8 +268,8 @@ export function DatePicker({ value, onChange, style = {} }) {
               Today
             </button>
           </div>
-        </div>
-      )}
+        </div>, document.body)
+      })}
     </div>
   );
 }
