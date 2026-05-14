@@ -10,7 +10,7 @@ import {
   Table,
 } from "../components/ui/BasicComponents";
 import { C } from "../constants/colors";
-import { priceListAPI, companyMasterAPI, vendorMasterAPI } from "../api/auth";
+import { priceListAPI, companyMasterAPI, vendorMasterAPI, itemMasterAPI, brandMasterAPI } from "../api/auth";
 import moment from "moment";
 import * as XLSX from "xlsx";
 
@@ -34,6 +34,7 @@ const inputStyle = {
 const SELLING_COLS = [
   { header: "Item Code",      key: (r) => r.itemCode || "" },
   { header: "Item Name",      key: (r) => r.itemName || "" },
+  { header: "Brand Name",     key: (r) => r.brandName || "" },
   { header: "Company",        key: (r) => r.companyName || "" },
   { header: "Unit Price",     key: (r) => r.unitPrice ?? "" },
   { header: "UOM",            key: (r) => r.uom || "Pcs" },
@@ -61,6 +62,8 @@ const PURCHASE_COLS = [
 function SellingSection({ toast }) {
   const [records, setRecords]       = useState([]);
   const [companies, setCompanies]   = useState([]);
+  const [fgItems, setFgItems]       = useState([]);
+  const [brands, setBrands]         = useState([]);
   const [loading, setLoading]       = useState(false);
   const [importing, setImporting]   = useState(false);
   const [showModal, setShowModal]   = useState(false);
@@ -70,7 +73,8 @@ function SellingSection({ toast }) {
   const importRef = useRef(null);
 
   const emptyForm = {
-    itemCode: "", itemName: "", companyId: "", companyName: "",
+    itemCode: "", itemName: "", brandId: "", brandName: "",
+    companyId: "", companyName: "",
     unitPrice: "", uom: "Pcs", currency: "INR",
     effectiveFrom: moment().format("YYYY-MM-DD"),
     status: "Active", remarks: "",
@@ -80,13 +84,19 @@ function SellingSection({ toast }) {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [priceData, compData] = await Promise.all([
+      const [priceData, compData, fgData, brandData] = await Promise.all([
         priceListAPI.getAll({ listType: "selling" }),
         companyMasterAPI.getAll(),
+        itemMasterAPI.getAll({ type: "Finished Goods" }),
+        brandMasterAPI.getAll(),
       ]);
       setRecords(Array.isArray(priceData) ? priceData : []);
       const comps = compData?.companies || compData || [];
       setCompanies(Array.isArray(comps) ? comps : []);
+      const items = fgData?.items || fgData || [];
+      setFgItems(Array.isArray(items) ? items.filter((i) => i.type === "Finished Goods") : []);
+      const brnds = brandData?.brands || brandData || [];
+      setBrands(Array.isArray(brnds) ? brnds : []);
     } catch {
       toast?.("Failed to fetch selling prices", "error");
     } finally {
@@ -114,9 +124,23 @@ function SellingSection({ toast }) {
     });
   }, [records, selectedClient, search]);
 
+  const handleItemCodeChange = (code) => {
+    const match = fgItems.find((i) => i.code === code);
+    setFormData((f) => ({
+      ...f,
+      itemCode: code,
+      itemName: match ? match.name : f.itemName,
+    }));
+  };
+
   const handleCompanyChange = (id) => {
     const co = companies.find((c) => c._id === id);
     setFormData((f) => ({ ...f, companyId: id, companyName: co?.name || co?.companyName || "" }));
+  };
+
+  const handleBrandChange = (id) => {
+    const br = brands.find((b) => b._id === id);
+    setFormData((f) => ({ ...f, brandId: id, brandName: br?.name || "" }));
   };
 
   const resetForm = () => { setFormData(emptyForm); setEditingId(null); };
@@ -146,6 +170,7 @@ function SellingSection({ toast }) {
   const handleEdit = (r) => {
     setFormData({
       itemCode: r.itemCode, itemName: r.itemName || "",
+      brandId: r.brandId || "", brandName: r.brandName || "",
       companyId: r.companyId || "", companyName: r.companyName || "",
       unitPrice: r.unitPrice, uom: r.uom || "Pcs", currency: r.currency || "INR",
       effectiveFrom: r.effectiveFrom ? moment(r.effectiveFrom).format("YYYY-MM-DD") : moment().format("YYYY-MM-DD"),
@@ -166,7 +191,7 @@ function SellingSection({ toast }) {
 
   const handleTemplate = () => {
     const headers = SELLING_COLS.map((c) => c.header);
-    const ex = { itemCode: "FG-001", itemName: "Product A", companyName: "ABC Ltd", unitPrice: 100, uom: "Pcs", currency: "INR", effectiveFrom: "2024-01-01", status: "Active", remarks: "" };
+    const ex = { itemCode: "FG0001", itemName: "Product A", brandName: "Brand X", companyName: "ABC Ltd", unitPrice: 100, uom: "Pcs", currency: "INR", effectiveFrom: "2024-01-01", status: "Active", remarks: "" };
     const ws = XLSX.utils.aoa_to_sheet([headers, SELLING_COLS.map((c) => c.key(ex))]);
     ws["!cols"] = headers.map(() => ({ wch: 20 }));
     const wb = XLSX.utils.book_new();
@@ -196,9 +221,11 @@ function SellingSection({ toast }) {
       const rawData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 });
       if (rawData.length < 2) { toast?.("No data rows found", "error"); return; }
       const [, ...rows] = rawData;
-      const toImport = rows.filter((r) => r[0]).map(([itemCode, itemName, companyName, unitPrice, uom, currency, effectiveFrom, status, remarks]) => ({
+      // columns: Item Code, Item Name, Brand Name, Company, Unit Price, UOM, Currency, Effective From, Status, Remarks
+      const toImport = rows.filter((r) => r[0]).map(([itemCode, itemName, brandName, companyName, unitPrice, uom, currency, effectiveFrom, status, remarks]) => ({
         listType: "selling",
         itemCode: String(itemCode).trim(), itemName: itemName ? String(itemName).trim() : "",
+        brandName: brandName ? String(brandName).trim() : "",
         companyName: companyName ? String(companyName).trim() : "",
         unitPrice: Number(unitPrice) || 0, uom: uom || "Pcs", currency: currency || "INR",
         effectiveFrom: effectiveFrom ? new Date(effectiveFrom) : new Date(),
@@ -255,7 +282,6 @@ function SellingSection({ toast }) {
             }}
           />
         </div>
-        <input ref={importRef} type="file" accept=".xlsx,.xls" style={{ display: "none" }} onChange={handleImport} />
       </div>
 
       {/* summary pill */}
@@ -278,10 +304,11 @@ function SellingSection({ toast }) {
       <Card>
         <Table
           loading={loading}
-          headers={["ITEM CODE", "ITEM NAME", "COMPANY", "UNIT PRICE", "UOM", "EFFECTIVE FROM", "STATUS", "ACTIONS"]}
+          headers={["ITEM CODE", "ITEM NAME", "BRAND", "COMPANY", "UNIT PRICE", "UOM", "EFFECTIVE FROM", "STATUS", "ACTIONS"]}
           data={filtered.map((r) => [
             <span style={{ fontWeight: 500, fontFamily: "monospace", color: ACCENT_SELL }}>{r.itemCode}</span>,
             r.itemName || "-",
+            r.brandName || "-",
             r.companyName || "-",
             <span style={{ fontWeight: 500, color: ACCENT_SELL }}>₹ {Number(r.unitPrice).toLocaleString()}</span>,
             r.uom,
@@ -299,8 +326,46 @@ function SellingSection({ toast }) {
         <Modal title={editingId ? "Edit Selling Price" : "Add Selling Price"} onClose={() => { setShowModal(false); resetForm(); }}>
           <form onSubmit={handleSubmit}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-              <Input label="Item Code (SKU)" value={formData.itemCode} onChange={(e) => setFormData({ ...formData, itemCode: e.target.value })} required />
-              <Input label="Item Name" value={formData.itemName} onChange={(e) => setFormData({ ...formData, itemName: e.target.value })} />
+              {/* Item Code — dropdown from FG Item Master */}
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "#888", marginBottom: 6, letterSpacing: "0.5px", textTransform: "uppercase" }}>Item Code *</div>
+                <select
+                  required
+                  value={formData.itemCode}
+                  onChange={(e) => handleItemCodeChange(e.target.value)}
+                  style={{ ...inputStyle, width: "100%" }}
+                >
+                  <option value="">— Select Item —</option>
+                  {fgItems.map((i) => (
+                    <option key={i._id} value={i.code}>{i.code} — {i.name}</option>
+                  ))}
+                </select>
+              </div>
+              {/* Item Name — auto-filled, read-only */}
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "#888", marginBottom: 6, letterSpacing: "0.5px", textTransform: "uppercase" }}>Item Name</div>
+                <input
+                  readOnly
+                  value={formData.itemName}
+                  style={{ ...inputStyle, width: "100%", opacity: 0.7, cursor: "not-allowed" }}
+                  placeholder="Auto-filled from Item Master"
+                />
+              </div>
+              {/* Brand Name — dropdown from Brand Master */}
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "#888", marginBottom: 6, letterSpacing: "0.5px", textTransform: "uppercase" }}>Brand Name *</div>
+                <select
+                  required
+                  value={formData.brandId}
+                  onChange={(e) => handleBrandChange(e.target.value)}
+                  style={{ ...inputStyle, width: "100%" }}
+                >
+                  <option value="">— Select Brand —</option>
+                  {brands.map((b) => (
+                    <option key={b._id} value={b._id}>{b.name}</option>
+                  ))}
+                </select>
+              </div>
               <Select
                 label="Company / Client"
                 value={formData.companyId}

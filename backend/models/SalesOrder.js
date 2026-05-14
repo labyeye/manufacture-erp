@@ -51,6 +51,7 @@ const salesOrderSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    companyMasterName: String,
     status: {
       type: String,
       enum: [

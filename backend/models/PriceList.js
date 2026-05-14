@@ -26,6 +26,14 @@ const priceListSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    brandId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "BrandMaster",
+    },
+    brandName: {
+      type: String,
+      trim: true,
+    },
     
     vendorId: {
       type: mongoose.Schema.Types.ObjectId,

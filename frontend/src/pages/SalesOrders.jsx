@@ -93,6 +93,7 @@ export default function SalesOrders(props) {
     salesPerson: "",
     companyCategory: "",
     companyName: "",
+    companyMasterName: "",
     clientContact: "",
     remarks: "",
     status: "Open",
@@ -297,8 +298,8 @@ export default function SalesOrders(props) {
       if (k === "companyName") {
         const foundBrand = brands.find((b) => b.name === v);
         if (foundBrand) {
-          next.companyCategory = foundBrand.companyName || "";
-          
+          next.companyCategory = foundBrand.clientCategory || next.companyCategory;
+          next.companyMasterName = foundBrand.companyName || "";
           const foundCo = companyMaster.find(c => c.name === foundBrand.companyName);
           if (foundCo) {
             next.clientContact = foundCo.contact || foundCo.phone || "";
@@ -467,6 +468,7 @@ export default function SalesOrders(props) {
       salesPerson: so.salesPerson || "",
       companyCategory: so.companyCategory || "",
       companyName: so.companyName,
+      companyMasterName: so.companyMasterName || "",
       remarks: so.remarks || "",
       status: so.status || "Open",
     });
@@ -553,6 +555,7 @@ export default function SalesOrders(props) {
         salesPerson: header.salesPerson,
         companyCategory: header.companyCategory,
         companyName: header.companyName,
+        companyMasterName: header.companyMasterName,
         remarks: header.remarks,
         items: items.map((it) => {
           const amount = +(it.amount || 0);
@@ -923,8 +926,8 @@ export default function SalesOrders(props) {
               <Field label="Company Name">
                 <input
                   readOnly
-                  placeholder="— Auto-filled —"
-                  value={header.companyCategory || ""}
+                  placeholder="— Auto-filled from Brand —"
+                  value={header.companyMasterName || ""}
                   style={{ background: "#0a0a0a" }}
                 />
               </Field>

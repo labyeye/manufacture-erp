@@ -24,6 +24,9 @@ const ITEM_TABS = [
 
 const CATEGORY_CONFIG = {
   "Paper Bag": { layout: "3D", f1: "WIDTH", f2: "GUSSETT", f3: "HEIGHT" },
+  "Paper Bag without Handle": { layout: "3D", f1: "WIDTH", f2: "GUSSETT", f3: "HEIGHT" },
+  "Paper Bag with Handle": { layout: "3D", f1: "WIDTH", f2: "GUSSETT", f3: "HEIGHT" },
+  "Manual": { layout: "3D", f1: "WIDTH", f2: "GUSSETT", f3: "HEIGHT" },
   "Paper Pouch": { layout: "2D", f1: "WIDTH", f2: "LENGTH" },
   "Paper Box": { layout: "3D", f1: "WIDTH", f2: "LENGTH", f3: "HEIGHT" },
   "Corrugated Box": { layout: "3D", f1: "WIDTH", f2: "LENGTH", f3: "HEIGHT" },
@@ -134,7 +137,14 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
       setNewItemName(parts.filter(Boolean).join(" "));
     } else if (activeTab === "Finished Goods" && selectedCategory) {
       let sizeStr = "";
-      if (width && length && height)
+      const fgCfg = CATEGORY_CONFIG[selectedCategory];
+      const usesGussett = fgCfg?.f2 === "GUSSETT";
+      if (usesGussett) {
+        if (width && gussett && height)
+          sizeStr = `${width}x${gussett}x${height}${uom}`;
+        else if (width && gussett) sizeStr = `${width}x${gussett}${uom}`;
+        else if (width) sizeStr = `${width}${uom}`;
+      } else if (width && length && height)
         sizeStr = `${width}x${length}x${height}${uom}`;
       else if (width && length) sizeStr = `${width}x${length}${uom}`;
       else if (width) sizeStr = `${width}${uom}`;
