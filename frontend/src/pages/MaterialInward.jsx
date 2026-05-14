@@ -1712,7 +1712,7 @@ export default function MaterialInward({
                   }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: C.muted }}>
-                    <span>Base Amount:</span>
+                    <span>Basic Amount:</span>
                     <span>₹{fmt(items.reduce((sum, it) => sum + +(it.amount || 0), 0))}</span>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: C.muted }}>

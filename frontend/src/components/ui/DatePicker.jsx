@@ -1,23 +1,20 @@
-import { useState, useEffect, useRef } from 'react';
-import ReactDOM from 'react-dom';
-import { COLORS } from '../../constants';
+import { useState, useEffect, useRef } from "react";
+import ReactDOM from "react-dom";
+import { COLORS } from "../../constants";
 
 export function DatePicker({ value, onChange, style = {} }) {
   const [open, setOpen] = useState(false);
   const [openUp, setOpenUp] = useState(false);
+  const [calPos, setCalPos] = useState({ top: 0, left: 0 });
   const [viewDate, setViewDate] = useState(() => {
     const d = value ? new Date(value + "T00:00:00") : new Date();
     return { year: d.getFullYear(), month: d.getMonth() };
   });
   const ref = useRef(null);
-  const portalRef = useRef(null);
 
   useEffect(() => {
     const handler = (e) => {
-      const target = e.target;
-      const clickedOutsideTrigger = ref.current && !ref.current.contains(target);
-      const clickedOutsidePortal = portalRef.current && !portalRef.current.contains(target);
-      if (clickedOutsideTrigger && (portalRef.current ? clickedOutsidePortal : true)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -30,7 +27,10 @@ export function DatePicker({ value, onChange, style = {} }) {
     }
   }, [value]);
 
-  const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const MONTHS = [
+    "January","February","March","April","May","June",
+    "July","August","September","October","November","December",
+  ];
   const DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
   const getDays = (year, month) => {
@@ -48,11 +48,11 @@ export function DatePicker({ value, onChange, style = {} }) {
   today.setHours(0, 0, 0, 0);
 
   const prevMonth = () =>
-    setViewDate(v =>
+    setViewDate((v) =>
       v.month === 0 ? { year: v.year - 1, month: 11 } : { ...v, month: v.month - 1 }
     );
   const nextMonth = () =>
-    setViewDate(v =>
+    setViewDate((v) =>
       v.month === 11 ? { year: v.year + 1, month: 0 } : { ...v, month: v.month + 1 }
     );
 
@@ -67,209 +67,106 @@ export function DatePicker({ value, onChange, style = {} }) {
   const display = value
     ? (() => {
         const d = new Date(value + "T00:00:00");
-        return `${String(d.getDate()).padStart(2, "0")}/${String(
-          d.getMonth() + 1
-        ).padStart(2, "0")}/${d.getFullYear()}`;
+        return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
       })()
     : "";
+
+  const handleOpen = () => {
+    if (!open && ref.current) {
+      const rect = ref.current.getBoundingClientRect();
+      const up = rect.bottom + 300 > window.innerHeight;
+      setOpenUp(up);
+      setCalPos({
+        top: up ? undefined : rect.bottom + 6,
+        bottom: up ? window.innerHeight - rect.top + 6 : undefined,
+        left: rect.left,
+      });
+    }
+    setOpen((o) => !o);
+  };
+
+  const calendar = open ? (
+    <div
+      style={{
+        position: "fixed",
+        top: calPos.top,
+        bottom: calPos.bottom,
+        left: calPos.left,
+        zIndex: 99999,
+        background: COLORS.card,
+        border: `1px solid ${COLORS.border}`,
+        borderRadius: 10,
+        padding: 14,
+        width: 260,
+        boxShadow: "0 8px 32px #0004",
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+        <button onClick={prevMonth} style={{ background: "none", border: "none", color: COLORS.muted, fontSize: 18, cursor: "pointer", padding: "0 4px" }}>‹</button>
+        <span style={{ fontWeight: 500, fontSize: 13, color: COLORS.text }}>{MONTHS[viewDate.month]} {viewDate.year}</span>
+        <button onClick={nextMonth} style={{ background: "none", border: "none", color: COLORS.muted, fontSize: 18, cursor: "pointer", padding: "0 4px" }}>›</button>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2, marginBottom: 4 }}>
+        {DAYS.map((d) => (
+          <div key={d} style={{ textAlign: "center", fontSize: 10, color: COLORS.muted, fontWeight: 500, padding: "2px 0" }}>{d}</div>
+        ))}
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2 }}>
+        {cells.map((day, i) => {
+          if (!day) return <div key={i} />;
+          const thisDate = new Date(viewDate.year, viewDate.month, day);
+          const isSelected = selDate && thisDate.getTime() === selDate.getTime();
+          const isToday = thisDate.getTime() === today.getTime();
+          return (
+            <div
+              key={i}
+              onClick={() => select(day)}
+              style={{
+                textAlign: "center", padding: "5px 0", borderRadius: 5, fontSize: 12, cursor: "pointer",
+                fontWeight: isSelected || isToday ? 700 : 400,
+                background: isSelected ? COLORS.accent : isToday ? COLORS.accent + "22" : "transparent",
+                color: isSelected ? "#fff" : isToday ? COLORS.accent : COLORS.text,
+                transition: "background .1s",
+              }}
+              onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = COLORS.surface; }}
+              onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = isToday ? COLORS.accent + "22" : "transparent"; }}
+            >
+              {day}
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{ marginTop: 10, borderTop: `1px solid ${COLORS.border}`, paddingTop: 8, textAlign: "center" }}>
+        <button
+          onClick={() => { const now = new Date(); setViewDate({ year: now.getFullYear(), month: now.getMonth() }); select(now.getDate()); }}
+          style={{ background: "none", border: `1px solid ${COLORS.border}`, borderRadius: 5, color: COLORS.muted, fontSize: 11, padding: "3px 12px", cursor: "pointer", fontFamily: "'Syne',sans-serif" }}
+        >
+          Today
+        </button>
+      </div>
+    </div>
+  ) : null;
 
   return (
     <div ref={ref} style={{ position: "relative", ...style }}>
       <div
-        onClick={() => {
-          if (!open && ref.current) {
-            const rect = ref.current.getBoundingClientRect();
-            setOpenUp(rect.bottom + 300 > window.innerHeight);
-          }
-          setOpen(o => !o);
-        }}
+        onClick={handleOpen}
         style={{
           background: COLORS.inputBg,
           border: `1px solid ${open ? COLORS.accent : COLORS.border}`,
-          borderRadius: 6,
-          padding: "9px 12px",
-          fontSize: 13,
-          cursor: "pointer",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
+          borderRadius: 6, padding: "9px 12px", fontSize: 13, cursor: "pointer",
+          display: "flex", justifyContent: "space-between", alignItems: "center",
           color: display ? COLORS.text : COLORS.muted,
-          userSelect: "none",
-          transition: "border .2s"
+          userSelect: "none", transition: "border .2s",
         }}
       >
         <span>{display || "DD/MM/YYYY"}</span>
         <span style={{ fontSize: 14, color: COLORS.muted }}>📅</span>
       </div>
-
-      {open && (() => {
-        const rect = ref.current?.getBoundingClientRect();
-        const left = rect ? rect.left + window.scrollX : 0;
-        const top = rect ? rect.bottom + window.scrollY + 6 : 0;
-        const bottom = rect ? window.innerHeight - rect.top + 6 : 0;
-        const style = {
-          position: 'fixed',
-          left,
-          zIndex: 9999,
-          background: COLORS.card,
-          border: `1px solid ${COLORS.border}`,
-          borderRadius: 10,
-          padding: 14,
-          width: 260,
-          boxShadow: '0 8px 32px #0004'
-        };
-        if (openUp) {
-          style.bottom = bottom;
-        } else {
-          style.top = top;
-        }
-
-        return ReactDOM.createPortal(
-          <div ref={portalRef} style={style}>
-          {}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 10
-            }}
-          >
-            <button
-              onClick={prevMonth}
-              style={{
-                background: "none",
-                border: "none",
-                color: COLORS.muted,
-                fontSize: 18,
-                cursor: "pointer",
-                padding: "0 4px"
-              }}
-            >
-              ‹
-            </button>
-            <span style={{ fontWeight: 500, fontSize: 13, color: COLORS.text }}>
-              {MONTHS[viewDate.month]} {viewDate.year}
-            </span>
-            <button
-              onClick={nextMonth}
-              style={{
-                background: "none",
-                border: "none",
-                color: COLORS.muted,
-                fontSize: 18,
-                cursor: "pointer",
-                padding: "0 4px"
-              }}
-            >
-              ›
-            </button>
-          </div>
-
-          {}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(7, 1fr)",
-              gap: 2,
-              marginBottom: 4
-            }}
-          >
-            {DAYS.map(d => (
-              <div
-                key={d}
-                style={{
-                  textAlign: "center",
-                  fontSize: 10,
-                  color: COLORS.muted,
-                  fontWeight: 500,
-                  padding: "2px 0"
-                }}
-              >
-                {d}
-              </div>
-            ))}
-          </div>
-
-          {}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(7, 1fr)",
-              gap: 2
-            }}
-          >
-            {cells.map((day, i) => {
-              if (!day) return <div key={i} />;
-              const thisDate = new Date(viewDate.year, viewDate.month, day);
-              const isSelected = selDate && thisDate.getTime() === selDate.getTime();
-              const isToday = thisDate.getTime() === today.getTime();
-              return (
-                <div
-                  key={i}
-                  onClick={() => select(day)}
-                  style={{
-                    textAlign: "center",
-                    padding: "5px 0",
-                    borderRadius: 5,
-                    fontSize: 12,
-                    cursor: "pointer",
-                    fontWeight: isSelected || isToday ? 700 : 400,
-                    background: isSelected
-                      ? COLORS.accent
-                      : isToday
-                      ? COLORS.accent + "22"
-                      : "transparent",
-                    color: isSelected ? "#fff" : isToday ? COLORS.accent : COLORS.text,
-                    transition: "background .1s"
-                  }}
-                  onMouseEnter={e => {
-                    if (!isSelected) e.currentTarget.style.background = COLORS.surface;
-                  }}
-                  onMouseLeave={e => {
-                    if (!isSelected)
-                      e.currentTarget.style.background = isToday
-                        ? COLORS.accent + "22"
-                        : "transparent";
-                  }}
-                >
-                  {day}
-                </div>
-              );
-            })}
-          </div>
-
-          {}
-          <div
-            style={{
-              marginTop: 10,
-              borderTop: `1px solid ${COLORS.border}`,
-              paddingTop: 8,
-              textAlign: "center"
-            }}
-          >
-            <button
-              onClick={() => {
-                const now = new Date();
-                setViewDate({ year: now.getFullYear(), month: now.getMonth() });
-                select(now.getDate());
-              }}
-              style={{
-                background: "none",
-                border: `1px solid ${COLORS.border}`,
-                borderRadius: 5,
-                color: COLORS.muted,
-                fontSize: 11,
-                padding: "3px 12px",
-                cursor: "pointer",
-                fontFamily: "'Syne',sans-serif"
-              }}
-            >
-              Today
-            </button>
-          </div>
-        </div>, document.body)
-      })}
+      {ReactDOM.createPortal(calendar, document.body)}
     </div>
   );
 }

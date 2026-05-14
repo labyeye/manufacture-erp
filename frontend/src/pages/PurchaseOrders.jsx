@@ -1540,7 +1540,7 @@ export default function PurchaseOrders({
                     color: C.muted,
                   }}
                 >
-                  <span>Base Amount:</span>
+                  <span>Basic Amount:</span>
                   <span>
                     ₹
                     {fmt(items.reduce((sum, it) => sum + +(it.amount || 0), 0))}
