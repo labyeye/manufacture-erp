@@ -564,8 +564,21 @@ export default function MaterialInward({
         inwardNo: data.inwardNo || "",
       });
 
-      setItems(data.items || [{ ...blankItem, _id: uid() }]);
-      setItemErrors((data.items || []).map(() => ({})));
+      const loadedItems = (data.items || [{ ...blankItem, _id: uid() }]).map((it) => {
+        const qty = +(it.qty || 0);
+        const rate = +(it.rate || 0);
+        const gst = +(it.gstRate || 18);
+        const amount = qty * rate;
+        const tax = (amount * gst) / 100;
+        return {
+          ...it,
+          amount: it.amount || (amount > 0 ? amount.toFixed(2) : ""),
+          taxAmount: (it.taxAmount && +it.taxAmount !== 0) ? it.taxAmount : (tax > 0 ? tax.toFixed(2) : ""),
+          totalWithTax: (it.totalWithTax && +it.totalWithTax !== 0) ? it.totalWithTax : (amount > 0 ? (amount + tax).toFixed(2) : ""),
+        };
+      });
+      setItems(loadedItems);
+      setItemErrors(loadedItems.map(() => ({})));
       setEditId(data._id);
       setShowModal(true);
     } catch (error) {
@@ -1937,6 +1950,7 @@ export default function MaterialInward({
                       >
                         {[
                           "GRN No",
+                          "PO No",
                           "Date",
                           "Vendor",
                           "Invoice",
@@ -1994,6 +2008,17 @@ export default function MaterialInward({
                               }}
                             >
                               {r.inwardNo}
+                            </td>
+                            <td
+                              style={{
+                                padding: "12px 14px",
+                                fontFamily: "'JetBrains Mono', monospace",
+                                fontSize: 12,
+                                color: C.muted,
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {r.poRef || "—"}
                             </td>
                             <td
                               style={{

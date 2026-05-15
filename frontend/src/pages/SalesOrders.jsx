@@ -1123,13 +1123,6 @@ export default function SalesOrders(props) {
                     onChange={(e) => setItem(idx, "gsm", e.target.value)}
                   />
                 </Field>
-                <Field label="VARIANT / COLOUR">
-                  <input
-                    placeholder="e.g. Blue, Yellow, Plain (optional)"
-                    value={it.variant}
-                    onChange={(e) => setItem(idx, "variant", e.target.value)}
-                  />
-                </Field>
               </div>
 
               {}
