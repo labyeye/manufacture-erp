@@ -323,10 +323,29 @@ export default function SalesOrders(props) {
 
     if (k === "companyName") {
       setItems((prev) =>
-        prev.map((it) => ({
-          ...it,
-          itemName: generateItemName(it, nextH),
-        })),
+        prev.map((it) => {
+          const newIt = { ...it, itemName: generateItemName(it, nextH) };
+          if (it.productCode) {
+            const companyMatch = sellingPrices.find(
+              (p) => p.itemCode === it.productCode && p.companyName === v
+            );
+            const genericMatch = sellingPrices.find(
+              (p) => p.itemCode === it.productCode && !p.companyName
+            );
+            const priceEntry = companyMatch || genericMatch;
+            if (priceEntry) {
+              newIt.price = priceEntry.unitPrice;
+              const qty = +(it.orderQty || 0);
+              const gst = +(it.gstRate || 18);
+              const amount = qty * priceEntry.unitPrice;
+              const taxAmt = (amount * gst) / 100;
+              newIt.amount = amount > 0 ? amount.toFixed(2) : "";
+              newIt.taxAmount = taxAmt > 0 ? taxAmt.toFixed(2) : "";
+              newIt.totalWithTax = amount > 0 ? (amount + taxAmt).toFixed(2) : "";
+            }
+          }
+          return newIt;
+        }),
       );
     }
   };

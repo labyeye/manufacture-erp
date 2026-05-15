@@ -3,6 +3,7 @@ import {
   itemMasterAPI,
   categoryMasterAPI,
   companyMasterAPI,
+  brandMasterAPI,
 } from "../api/auth";
 import {
   ImportBtn,
@@ -70,6 +71,7 @@ function useIsMobile(breakpoint = 768) {
 export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
   const [itemMasterFG, setItemMasterFG] = useState([]);
   const [categoryMaster, setCategoryMaster] = useState({});
+  const [brandMaster, setBrandMaster] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("Raw Material");
   const [search, setSearch] = useState("");
@@ -112,7 +114,17 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
   useEffect(() => {
     fetchItems();
     fetchCategories();
+    fetchBrands();
   }, []);
+
+  const fetchBrands = async () => {
+    try {
+      const res = await brandMasterAPI.getAll();
+      setBrandMaster(Array.isArray(res) ? res : (res?.brands || []));
+    } catch {
+      // silently fail
+    }
+  };
 
   useEffect(() => {
     // Skip during edit form initialization — name is already set from saved data
@@ -1236,12 +1248,16 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
               >
                 BRAND NAME *
               </label>
-              <input
+              <select
                 style={inputStyle}
-                placeholder="e.g. Brand Name"
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
-              />
+              >
+                <option value="">-- Select Brand --</option>
+                {brandMaster.map((b) => (
+                  <option key={b._id} value={b.name}>{b.name}</option>
+                ))}
+              </select>
             </div>
           )}
           {activeTab === "Finished Goods" && (

@@ -11,7 +11,7 @@ import {
   DateRangeFilter,
   Modal,
 } from "../components/ui/BasicComponents";
-import { dispatchAPI, salesOrdersAPI, jobOrdersAPI } from "../api/auth";
+import { dispatchAPI, salesOrdersAPI, jobOrdersAPI, companyMasterAPI } from "../api/auth";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 const today = () => new Date().toISOString().slice(0, 10);
@@ -54,6 +54,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
 
   const [header, setHeader] = useState(blankHeader);
   const [items, setItems] = useState([blankItem()]);
+  const [companyMaster, setCompanyMaster] = useState([]);
   const [headerErrors, setHeaderErrors] = useState({});
   const [itemErrors, setItemErrors] = useState([{}]);
   const [showModal, setShowModal] = useState(false);
@@ -79,7 +80,17 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
     fetchDispatches();
     fetchSalesOrders();
     fetchJobOrders();
+    fetchCompanies();
   }, []);
+
+  const fetchCompanies = async () => {
+    try {
+      const res = await companyMasterAPI.getAll();
+      setCompanyMaster(Array.isArray(res) ? res : (res?.companies || []));
+    } catch {
+      // silently fail
+    }
+  };
 
   const fetchDispatches = async () => {
     try {
@@ -603,11 +614,15 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                 </select>
               </Field>
               <Field label="Company Name *">
-                <input
-                  placeholder="Company name"
+                <select
                   value={header.companyName}
                   onChange={(e) => setH("companyName", e.target.value)}
-                />
+                >
+                  <option value="">-- Select Company --</option>
+                  {companyMaster.map((c) => (
+                    <option key={c._id} value={c.name}>{c.name}</option>
+                  ))}
+                </select>
               </Field>
               <Field label="Delivery Address">
                 <input
@@ -906,11 +921,15 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                 />
               </Field>
               <Field label="Company Name *">
-                <input
-                  placeholder="Company returning goods"
+                <select
                   value={returnHeader.companyName}
                   onChange={(e) => setReturnHeader((h) => ({ ...h, companyName: e.target.value }))}
-                />
+                >
+                  <option value="">-- Select Company --</option>
+                  {companyMaster.map((c) => (
+                    <option key={c._id} value={c.name}>{c.name}</option>
+                  ))}
+                </select>
               </Field>
               <Field label="Original Dispatch Ref">
                 <select

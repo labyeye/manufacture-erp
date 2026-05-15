@@ -426,16 +426,25 @@ export default function PrintingDetailMaster({ toast }) {
               />
             </Field>
             <Field label="Company Name *">
-              <input
-                placeholder="Company name"
+              <select
                 value={entry.companyName}
-                onChange={(e) => setField("companyName", e.target.value)}
+                onChange={(e) => {
+                  const name = e.target.value;
+                  const co = companyMaster.find((c) => c.name === name);
+                  setField("companyName", name);
+                  if (co?.category) setField("companyCategory", co.category);
+                }}
                 style={{ border: errors.companyName ? "1px solid red" : "" }}
-              />
+              >
+                <option value="">-- Select Company --</option>
+                {companyMaster.map((c) => (
+                  <option key={c._id} value={c.name}>{c.name}</option>
+                ))}
+              </select>
             </Field>
             <Field label="Company Category">
               <input
-                placeholder="e.g. HP"
+                placeholder="Auto-filled from company"
                 value={entry.companyCategory}
                 onChange={(e) => setField("companyCategory", e.target.value)}
               />
