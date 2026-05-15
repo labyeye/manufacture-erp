@@ -326,13 +326,16 @@ export default function SalesOrders(props) {
         prev.map((it) => {
           const newIt = { ...it, itemName: generateItemName(it, nextH) };
           if (it.productCode) {
+            const brandMatch = sellingPrices.find(
+              (p) => p.itemCode === it.productCode && p.brandName === v
+            );
             const companyMatch = sellingPrices.find(
-              (p) => p.itemCode === it.productCode && p.companyName === v
+              (p) => p.itemCode === it.productCode && p.companyName === nextH?.companyMasterName
             );
             const genericMatch = sellingPrices.find(
-              (p) => p.itemCode === it.productCode && !p.companyName
+              (p) => p.itemCode === it.productCode && !p.brandName && !p.companyName
             );
-            const priceEntry = companyMatch || genericMatch;
+            const priceEntry = brandMatch || companyMatch || genericMatch;
             if (priceEntry) {
               newIt.price = priceEntry.unitPrice;
               const qty = +(it.orderQty || 0);
@@ -381,13 +384,16 @@ export default function SalesOrders(props) {
           };
         }
         
+        const brandMatch = sellingPrices.find(
+          (p) => p.itemCode === codeOnly && p.brandName === header.companyName
+        );
         const companyMatch = sellingPrices.find(
-          (p) => p.itemCode === codeOnly && p.companyName === header.companyName
+          (p) => p.itemCode === codeOnly && p.companyName === header.companyMasterName
         );
         const genericMatch = sellingPrices.find(
-          (p) => p.itemCode === codeOnly && !p.companyName
+          (p) => p.itemCode === codeOnly && !p.brandName && !p.companyName
         );
-        const priceEntry = companyMatch || genericMatch;
+        const priceEntry = brandMatch || companyMatch || genericMatch;
         if (priceEntry) {
           it.price = priceEntry.unitPrice;
         }
