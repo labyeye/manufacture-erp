@@ -526,8 +526,18 @@ export default function SalesOrders(props) {
         amount: it.amount || 0,
         gstRate: it.gstRate || 18,
         hsnCode: it.hsnCode || "",
-        taxAmount: it.taxAmount || 0,
-        totalWithTax: it.totalWithTax || 0,
+        taxAmount: (() => {
+          if (it.taxAmount && +it.taxAmount !== 0) return it.taxAmount;
+          const amt = +(it.amount || 0);
+          const gst = +(it.gstRate || 18);
+          return amt > 0 ? ((amt * gst) / 100).toFixed(2) : 0;
+        })(),
+        totalWithTax: (() => {
+          if (it.totalWithTax && +it.totalWithTax !== 0) return it.totalWithTax;
+          const amt = +(it.amount || 0);
+          const gst = +(it.gstRate || 18);
+          return amt > 0 ? (amt + (amt * gst) / 100).toFixed(2) : 0;
+        })(),
         gsm: it.gsm || "",
         remarks: it.remarks || "",
       })),

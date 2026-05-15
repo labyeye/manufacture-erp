@@ -780,7 +780,18 @@ export default function PurchaseOrders({
           gstRate:
             it.gstRate !== undefined ? it.gstRate : masterItem?.gstRate || 18,
           hsnCode: it.hsnCode || masterItem?.hsnCode || "",
-          taxAmount: it.taxAmount || 0,
+          taxAmount: (() => {
+            if (it.taxAmount && +it.taxAmount !== 0) return it.taxAmount;
+            const amt = +(it.amount || 0);
+            const gst = +(it.gstRate !== undefined ? it.gstRate : masterItem?.gstRate || 18);
+            return amt > 0 ? ((amt * gst) / 100).toFixed(2) : 0;
+          })(),
+          totalWithTax: (() => {
+            if (it.totalWithTax && +it.totalWithTax !== 0) return it.totalWithTax;
+            const amt = +(it.amount || 0);
+            const gst = +(it.gstRate !== undefined ? it.gstRate : masterItem?.gstRate || 18);
+            return amt > 0 ? (amt + (amt * gst) / 100).toFixed(2) : 0;
+          })(),
           noOfSheets: it.noOfSheets || "",
           noOfReels: it.noOfReels || "",
           unit: it.unit || masterItem?.unit || "nos",
