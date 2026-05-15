@@ -32,8 +32,10 @@ export default function ProductionUpdate({
   setPudCounter,
   machineMaster = [],
   operatorMaster = [],
+  session,
   toast,
 }) {
+  const isOperator = session?.role === "Operator";
   const readonlyStyle = {
     padding: "9px 12px",
     background: C.inputBg,
@@ -51,7 +53,7 @@ export default function ProductionUpdate({
   const blankEntry = {
     joNo: "",
     productionStage: "",
-    operator: "",
+    operator: isOperator ? (session?.username || "") : "",
     date: today(),
     qtyCompleted: "",
     qtyRejected: 0,
@@ -558,16 +560,22 @@ export default function ProductionUpdate({
               }}
             >
               <Field label="OPERATOR / WORKER *">
-                <select
-                  value={entry.operator}
-                  onChange={(e) => setField("operator", e.target.value)}
-                  style={E("operator")}
-                >
-                  <option value="">-- Select Operator --</option>
-                  {operatorMaster.filter((op) => op.isActive !== false).map((op) => (
-                    <option key={op._id} value={op.name}>{op.name}</option>
-                  ))}
-                </select>
+                {isOperator ? (
+                  <div style={{ padding: "9px 12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, fontSize: 13, color: "#e0e0e0", fontWeight: 600 }}>
+                    {entry.operator || session?.username || "—"}
+                  </div>
+                ) : (
+                  <select
+                    value={entry.operator}
+                    onChange={(e) => setField("operator", e.target.value)}
+                    style={E("operator")}
+                  >
+                    <option value="">-- Select Operator --</option>
+                    {operatorMaster.filter((op) => op.isActive !== false).map((op) => (
+                      <option key={op._id} value={op.name}>{op.name}</option>
+                    ))}
+                  </select>
+                )}
                 {EMsg("operator")}
               </Field>
 

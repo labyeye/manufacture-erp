@@ -597,6 +597,7 @@ function AppInner({
           <ProductionUpdate
             {...data}
             operatorMaster={data.operatorMaster}
+            session={session}
             toast={showToast}
           />
         );
