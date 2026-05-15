@@ -568,10 +568,13 @@ export default function MaterialInward({
         const qty = +(it.qty || 0);
         const rate = +(it.rate || 0);
         const gst = +(it.gstRate || 18);
-        const amount = qty * rate;
+        const amount = +(it.amount || 0) || qty * rate;
         const tax = (amount * gst) / 100;
         return {
           ...it,
+          subCategory: it.subCategory || it.paperType || "",
+          gstRate: it.gstRate || 18,
+          hsnCode: it.hsnCode || "",
           amount: it.amount || (amount > 0 ? amount.toFixed(2) : ""),
           taxAmount: (it.taxAmount && +it.taxAmount !== 0) ? it.taxAmount : (tax > 0 ? tax.toFixed(2) : ""),
           totalWithTax: (it.totalWithTax && +it.totalWithTax !== 0) ? it.totalWithTax : (amount > 0 ? (amount + tax).toFixed(2) : ""),

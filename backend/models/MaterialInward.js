@@ -11,8 +11,10 @@ const materialInwardItemSchema = new mongoose.Schema(
     productCode: String,
     rmItem: String,
     paperType: String,
+    subCategory: String,
     widthMm: Number,
     lengthMm: Number,
+    height: Number,
     gsm: Number,
     noOfSheets: Number,
     noOfReels: Number,
@@ -27,6 +29,10 @@ const materialInwardItemSchema = new mongoose.Schema(
 
     rate: Number,
     amount: Number,
+    gstRate: { type: Number, default: 18 },
+    hsnCode: String,
+    taxAmount: Number,
+    totalWithTax: Number,
     poRemarks: String
   },
   { _id: false },
