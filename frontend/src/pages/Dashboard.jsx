@@ -5,8 +5,8 @@ import {
   Card,
   SectionTitle,
   ExportBtn,
-  DatePicker,
 } from "../components/ui/BasicComponents";
+import { DatePicker } from "../components/ui/DatePicker";
 import { fmt, today, xlsxDownload, daysSince } from "../utils/helpers";
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("en-GB") : "—");
 import * as XLSX from "xlsx";

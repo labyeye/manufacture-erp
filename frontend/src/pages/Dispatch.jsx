@@ -7,10 +7,10 @@ import {
   Field,
   SubmitBtn,
   AutocompleteInput,
-  DatePicker,
   DateRangeFilter,
   Modal,
 } from "../components/ui/BasicComponents";
+import { DatePicker } from "../components/ui/DatePicker";
 import { dispatchAPI, salesOrdersAPI, jobOrdersAPI, companyMasterAPI } from "../api/auth";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
