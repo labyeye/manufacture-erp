@@ -35,19 +35,20 @@ export default function Trash({ toast, session }) {
   const [confirmState, setConfirmState] = useState({ open: false, id: null, mode: null });
   const [emptyConfirm, setEmptyConfirm] = useState(false);
 
-  const fetch = async () => {
+  const fetchTrash = async () => {
     setLoading(true);
     try {
       const data = await trashAPI.getAll();
-      setItems(data);
-    } catch {
+      setItems(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Trash fetch error:", err);
       toast("Failed to load trash", "error");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetch(); }, []);
+  useEffect(() => { fetchTrash(); }, []);
 
   const labels = ["All", ...Array.from(new Set(items.map((i) => i.label)))];
 
@@ -57,7 +58,7 @@ export default function Trash({ toast, session }) {
     try {
       await trashAPI.restore(id);
       toast("Item restored successfully", "success");
-      fetch();
+      fetchTrash();
     } catch (err) {
       toast(err.response?.data?.error || "Failed to restore", "error");
     }
@@ -67,7 +68,7 @@ export default function Trash({ toast, session }) {
     try {
       await trashAPI.permanentDelete(id);
       toast("Permanently deleted", "success");
-      fetch();
+      fetchTrash();
     } catch {
       toast("Failed to delete", "error");
     }

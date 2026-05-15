@@ -5,6 +5,7 @@ exports.getAll = async (req, res) => {
     const items = await TrashItem.find().sort({ deletedAt: -1 });
     res.json(items);
   } catch (err) {
+    console.error("Trash getAll error:", err);
     res.status(500).json({ error: "Failed to fetch trash" });
   }
 };
