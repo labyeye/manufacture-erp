@@ -11,10 +11,14 @@ export function DatePicker({ value, onChange, style = {} }) {
     return { year: d.getFullYear(), month: d.getMonth() };
   });
   const ref = useRef(null);
+  const calRef = useRef(null);
 
   useEffect(() => {
     const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+      if (
+        ref.current && !ref.current.contains(e.target) &&
+        calRef.current && !calRef.current.contains(e.target)
+      ) setOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -87,6 +91,7 @@ export function DatePicker({ value, onChange, style = {} }) {
 
   const calendar = open ? (
     <div
+      ref={calRef}
       style={{
         position: "fixed",
         top: calPos.top,
