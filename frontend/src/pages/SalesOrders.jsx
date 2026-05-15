@@ -295,6 +295,16 @@ export default function SalesOrders(props) {
     let nextH;
     setHeader((f) => {
       const next = { ...f, [k]: v };
+      if (k === "companyCategory") {
+        const stillValid = brands.some(
+          (b) => b.name === f.companyName && b.clientCategory === v
+        );
+        if (!stillValid) {
+          next.companyName = "";
+          next.companyMasterName = "";
+          next.clientContact = "";
+        }
+      }
       if (k === "companyName") {
         const foundBrand = brands.find((b) => b.name === v);
         if (foundBrand) {
@@ -917,7 +927,10 @@ export default function SalesOrders(props) {
                 <AutocompleteInput
                   value={header.companyName}
                   onChange={(v) => setH("companyName", v)}
-                  suggestions={brands.map((b) => b.name)}
+                  suggestions={(header.companyCategory
+                    ? brands.filter((b) => b.clientCategory === header.companyCategory)
+                    : brands
+                  ).map((b) => b.name)}
                   placeholder="Type to search..."
                   inputStyle={EH("companyName")}
                 />
