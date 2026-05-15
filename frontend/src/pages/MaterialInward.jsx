@@ -565,16 +565,38 @@ export default function MaterialInward({
       });
 
       const loadedItems = (data.items || [{ ...blankItem, _id: uid() }]).map((it) => {
+        // Try to enrich missing fields from item master
+        const master = it.productCode
+          ? itemMasterItems.find(
+              (x) => (x.code || "").trim().toLowerCase() === (it.productCode || "").trim().toLowerCase()
+            )
+          : null;
+
+        const subCategory = it.subCategory || it.paperType || master?.subCategory || "";
+        const category = it.category || master?.category || "";
+        const widthMm = it.widthMm || master?.width || "";
+        const lengthMm = it.lengthMm || master?.length || "";
+        const gsm = it.gsm || master?.gsm || "";
+        const gstRate = it.gstRate || master?.gstRate || 18;
+        const hsnCode = it.hsnCode || master?.hsnCode || "";
+        const itemName = it.itemName || master?.name || "";
+
         const qty = +(it.qty || 0);
         const rate = +(it.rate || 0);
-        const gst = +(it.gstRate || 18);
+        const gst = +gstRate;
         const amount = +(it.amount || 0) || qty * rate;
         const tax = (amount * gst) / 100;
+
         return {
           ...it,
-          subCategory: it.subCategory || it.paperType || "",
-          gstRate: it.gstRate || 18,
-          hsnCode: it.hsnCode || "",
+          itemName,
+          category,
+          subCategory,
+          widthMm,
+          lengthMm,
+          gsm,
+          gstRate,
+          hsnCode,
           amount: it.amount || (amount > 0 ? amount.toFixed(2) : ""),
           taxAmount: (it.taxAmount && +it.taxAmount !== 0) ? it.taxAmount : (tax > 0 ? tax.toFixed(2) : ""),
           totalWithTax: (it.totalWithTax && +it.totalWithTax !== 0) ? it.totalWithTax : (amount > 0 ? (amount + tax).toFixed(2) : ""),
