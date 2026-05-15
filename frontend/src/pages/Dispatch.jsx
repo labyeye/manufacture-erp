@@ -614,15 +614,12 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                 </select>
               </Field>
               <Field label="Company Name *">
-                <select
+                <AutocompleteInput
                   value={header.companyName}
-                  onChange={(e) => setH("companyName", e.target.value)}
-                >
-                  <option value="">-- Select Company --</option>
-                  {companyMaster.map((c) => (
-                    <option key={c._id} value={c.name}>{c.name}</option>
-                  ))}
-                </select>
+                  onChange={(v) => setH("companyName", v)}
+                  suggestions={companyMaster.map((c) => c.name)}
+                  placeholder="Type to search company..."
+                />
               </Field>
               <Field label="Delivery Address">
                 <input
@@ -921,15 +918,12 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                 />
               </Field>
               <Field label="Company Name *">
-                <select
+                <AutocompleteInput
                   value={returnHeader.companyName}
-                  onChange={(e) => setReturnHeader((h) => ({ ...h, companyName: e.target.value }))}
-                >
-                  <option value="">-- Select Company --</option>
-                  {companyMaster.map((c) => (
-                    <option key={c._id} value={c.name}>{c.name}</option>
-                  ))}
-                </select>
+                  onChange={(v) => setReturnHeader((h) => ({ ...h, companyName: v }))}
+                  suggestions={companyMaster.map((c) => c.name)}
+                  placeholder="Type to search company..."
+                />
               </Field>
               <Field label="Original Dispatch Ref">
                 <select

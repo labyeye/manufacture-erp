@@ -6,6 +6,7 @@ import {
   ExportBtn,
   TemplateBtn,
   ImportModal,
+  AutocompleteInput,
 } from "../components/ui/BasicComponents";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
@@ -27,6 +28,7 @@ export default function FGStock({
   setFgStock,
   itemMasterFG = [],
   categoryMaster,
+  companyMaster = [],
   session,
   toast,
   refreshData,
@@ -1023,6 +1025,7 @@ export default function FGStock({
       {editingItem && (
         <EditModal
           item={editingItem}
+          companyMaster={companyMaster}
           onClose={() => setEditingItem(null)}
           onSave={async (updatedData) => {
             try {
@@ -1048,7 +1051,7 @@ export default function FGStock({
   );
 }
 
-function EditModal({ item, onClose, onSave }) {
+function EditModal({ item, onClose, onSave, companyMaster = [] }) {
   const [formData, setFormData] = useState({
     itemName: item.itemName || "",
     joNo: item.joNo || "",
@@ -1134,11 +1137,11 @@ function EditModal({ item, onClose, onSave }) {
           </div>
           <div style={fieldStyle}>
             <label style={labelStyle}>Company Name</label>
-            <input
-              name="companyName"
+            <AutocompleteInput
               value={formData.companyName}
-              onChange={handleChange}
-              style={inputStyle}
+              onChange={(v) => setFormData((prev) => ({ ...prev, companyName: v }))}
+              suggestions={companyMaster.map((c) => c.name)}
+              placeholder="Type to search company..."
             />
           </div>
         </div>

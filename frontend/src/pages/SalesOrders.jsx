@@ -956,11 +956,22 @@ export default function SalesOrders(props) {
                 {EHMsg("companyName")}
               </Field>
               <Field label="Company Name">
-                <input
-                  readOnly
-                  placeholder="— Auto-filled from Brand —"
+                <AutocompleteInput
                   value={header.companyMasterName || ""}
-                  style={{ background: "#0a0a0a" }}
+                  onChange={(v) => {
+                    const foundCo = companyMaster.find((c) => c.name === v);
+                    const linkedBrand = brands.find((b) => b.companyName === v);
+                    setHeader((f) => ({
+                      ...f,
+                      companyMasterName: v,
+                      clientContact: foundCo?.contact || foundCo?.phone || f.clientContact,
+                      companyName: linkedBrand ? linkedBrand.name : f.companyName,
+                      companyCategory: linkedBrand?.clientCategory || f.companyCategory,
+                    }));
+                    setHeaderErrors((e) => ({ ...e, companyName: false }));
+                  }}
+                  suggestions={companyMaster.map((c) => c.name)}
+                  placeholder="Type to search company..."
                 />
               </Field>
               <Field label="Contact Details">

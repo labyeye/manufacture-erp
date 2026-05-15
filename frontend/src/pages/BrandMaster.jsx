@@ -246,7 +246,14 @@ export default function BrandMaster({ toast }) {
 
         if (payload.name) {
           try {
-            await brandMasterAPI.create(payload);
+            const existing = brands.find(
+              (b) => b.name.toLowerCase() === payload.name.toLowerCase()
+            );
+            if (existing) {
+              await brandMasterAPI.update(existing._id, payload);
+            } else {
+              await brandMasterAPI.create(payload);
+            }
             success++;
           } catch (err) {
             console.error(err);

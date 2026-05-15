@@ -10,6 +10,7 @@ import {
   ExportBtn,
   TemplateBtn,
   Modal,
+  AutocompleteInput,
 } from "../components/ui/BasicComponents";
 import { printingDetailMasterAPI, companyMasterAPI, toolingMasterAPI, itemMasterAPI } from "../api/auth";
 import * as XLSX from "xlsx";
@@ -426,21 +427,17 @@ export default function PrintingDetailMaster({ toast }) {
               />
             </Field>
             <Field label="Company Name *">
-              <select
+              <AutocompleteInput
                 value={entry.companyName}
-                onChange={(e) => {
-                  const name = e.target.value;
+                onChange={(name) => {
                   const co = companyMaster.find((c) => c.name === name);
                   setField("companyName", name);
                   if (co?.category) setField("companyCategory", co.category);
                 }}
-                style={{ border: errors.companyName ? "1px solid red" : "" }}
-              >
-                <option value="">-- Select Company --</option>
-                {companyMaster.map((c) => (
-                  <option key={c._id} value={c.name}>{c.name}</option>
-                ))}
-              </select>
+                suggestions={companyMaster.map((c) => c.name)}
+                placeholder="Type to search company..."
+                inputStyle={{ border: errors.companyName ? "1px solid red" : "" }}
+              />
             </Field>
             <Field label="Company Category">
               <input
