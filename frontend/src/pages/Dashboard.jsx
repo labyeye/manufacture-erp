@@ -3789,9 +3789,9 @@ export function Dashboard({ data, session, toast }) {
                           >
                             {r.grnCount}
                           </td>
-                          <td style={TD}>{fmt(r.ordQty)}</td>
+                          <td style={TD}>{Math.round(r.ordQty).toLocaleString("en-IN")}</td>
                           <td style={{ ...TD, color: C.green }}>
-                            {fmt(r.recQty)}
+                            {Math.round(r.recQty).toLocaleString("en-IN")}
                           </td>
                           <td
                             style={{
@@ -3799,7 +3799,7 @@ export function Dashboard({ data, session, toast }) {
                               color: r.pendQty > 0 ? C.red : C.green,
                             }}
                           >
-                            {fmt(r.pendQty)}
+                            {Math.round(r.pendQty).toLocaleString("en-IN")}
                           </td>
                           <td
                             style={{
