@@ -358,7 +358,7 @@ export default function RMStock({
           <div
             className="fade-in"
             style={{
-              background: "#141416",
+              background: "transparent",
               border: "1px solid #2a2a2e",
               borderRadius: 12,
               width: "100%",
@@ -678,7 +678,7 @@ export default function RMStock({
             borderRadius: 6,
             fontSize: 12,
             fontWeight: 500,
-            background: showZeroStock ? C.blue : "#141416",
+            background: showZeroStock ? C.blue : "transparent",
             color: "#fff",
             border: `1px solid ${showZeroStock ? C.blue : "#2a2a2e"}`,
             cursor: "pointer",
@@ -750,7 +750,7 @@ export default function RMStock({
             style={{
               width: "100%",
               padding: "10px 10px 10px 36px",
-              background: "#141416",
+              background: "transparent",
               border: "1px solid #2a2a2e",
               borderRadius: 6,
               color: "#fff",
@@ -809,7 +809,7 @@ export default function RMStock({
               fontSize: 12,
               fontWeight: 500,
               cursor: "pointer",
-              background: activeFilter === cat ? C.blue : "#141416",
+              background: activeFilter === cat ? C.blue : "transparent",
               color: activeFilter === cat ? "#fff" : "#888",
               border: `1px solid ${activeFilter === cat ? C.blue : "#2a2a2e"}`,
             }}
@@ -822,7 +822,7 @@ export default function RMStock({
       {}
       <div
         style={{
-          background: "#141416",
+          background: "transparent",
           border: "1px solid #2a2a2e",
           borderRadius: 10,
           overflow: "hidden",
@@ -1092,7 +1092,7 @@ function StatCard({ label, val, color, prefix = "", suffix = "" }) {
   return (
     <div
       style={{
-        background: "#141416",
+        background: "transparent",
         border: `1px solid ${color}44`,
         padding: "16px 20px",
         borderRadius: 8,

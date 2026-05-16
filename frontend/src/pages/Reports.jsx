@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import * as XLSX from "xlsx";
 import { C } from "../constants/colors";
 import { SectionTitle } from "../components/ui/BasicComponents";
 import {
@@ -10,6 +11,8 @@ import {
 
 const fmt = (n) =>
   Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+const fmtQty = (n) => Math.round(Number(n || 0)).toLocaleString("en-IN");
 
 const fd = (d) => (d ? d.toString().split("T")[0] : "—");
 
@@ -142,7 +145,7 @@ const buildJOReport = (records, dateFrom, dateTo) => {
       <td>${fd(jo.deliveryDate)}</td>
       <td>${jo.client || "—"}</td>
       <td>${jo.itemName || "—"}</td>
-      <td class="center">${fmt(jo.qty || jo.quantity || 0)}</td>
+      <td class="center">${fmtQty(jo.qty || jo.quantity || 0)}</td>
       <td>${jo.process || "—"}</td>
       <td class="center"><span class="badge ${jo.priority === "VIP" ? "red" : jo.priority === "Rush" ? "amber" : "gray"}">${jo.priority || "Normal"}</span></td>
       <td class="center"><span class="badge ${jo.status === "Completed" ? "green" : "blue"}">${jo.status || "Active"}</span></td>
@@ -224,7 +227,7 @@ const generateReportHTML = ({ module, dateFrom, dateTo, reportData, logoSrc }) =
         { label: "Total JOs", value: count, color: "#713f12" },
         { label: "Active", value: reportData.activeCount, color: "#92400e" },
         { label: "Completed", value: reportData.completedCount, color: "#166534" },
-        { label: "Total Qty", value: Number(grandTotal).toLocaleString("en-IN"), color: "#1e40af" },
+        { label: "Total Qty", value: fmtQty(grandTotal), color: "#1e40af" },
       ];
     } else {
       return [
@@ -398,7 +401,7 @@ const generateReportHTML = ({ module, dateFrom, dateTo, reportData, logoSrc }) =
       </div>
       <div class="totals-row">
         <span class="t-label">Total Quantity</span>
-        <span class="t-val">${Number(grandTotal).toLocaleString("en-IN")}</span>
+        <span class="t-val">${fmtQty(grandTotal)}</span>
       </div>
     </div>
   </div>`}
@@ -478,7 +481,7 @@ export default function Reports() {
       else reportData = buildMIReport(records, dateFrom, dateTo);
 
       const html = generateReportHTML({ module: selectedModule, dateFrom, dateTo, reportData, logoSrc });
-      setPreviewData({ html, reportData, module: selectedModule });
+      setPreviewData({ html, reportData, module: selectedModule, _records: records });
     } catch (err) {
       console.error(err);
     } finally {
@@ -501,6 +504,75 @@ export default function Reports() {
         setTimeout(() => document.body.removeChild(iframe), 1000);
       }, 600);
     };
+  };
+
+  const downloadExcel = () => {
+    if (!previewData) return;
+    const { reportData, module } = previewData;
+    const cols = HEADER_COLS[module];
+
+    const rawRecords = (() => {
+      if (module === "po") {
+        return filterByDate(previewData._records || [], "poDate", dateFrom, dateTo).map((po) => {
+          const items = (po.items || []).map((it) => {
+            const amt = Number(it.amount || 0);
+            const gst = Number(it.gstRate !== undefined ? it.gstRate : 18);
+            return { ...it, rowTax: (amt * gst) / 100 };
+          });
+          const subtotal = items.reduce((s, it) => s + Number(it.amount || 0), 0);
+          const totalTax = items.reduce((s, it) => s + it.rowTax, 0);
+          return { "PO No": po.poNo, "PO Date": fd(po.poDate), "Delivery": fd(po.deliveryDate), "Vendor": po.vendor || "—", "Items": (po.items || []).length, "Taxable": subtotal, "GST": totalTax, "Net Total": subtotal + totalTax, "Status": po.status || "Open" };
+        });
+      }
+      if (module === "so") {
+        return filterByDate(previewData._records || [], "soDate", dateFrom, dateTo).map((so) => {
+          const items = (so.items || []).map((it) => {
+            const amt = Number(it.amount || 0);
+            const gst = Number(it.gstRate !== undefined ? it.gstRate : 18);
+            return { ...it, rowTax: (amt * gst) / 100 };
+          });
+          const subtotal = items.reduce((s, it) => s + Number(it.amount || 0), 0);
+          const totalTax = items.reduce((s, it) => s + it.rowTax, 0);
+          return { "SO No": so.soNo || "—", "SO Date": fd(so.soDate), "Delivery": fd(so.deliveryDate), "Client": so.client || "—", "Sales Person": so.salesPerson || "—", "Items": (so.items || []).length, "Taxable": subtotal, "GST": totalTax, "Net Total": subtotal + totalTax, "Status": so.status || "Open" };
+        });
+      }
+      if (module === "jo") {
+        return filterByDate(previewData._records || [], "joDate", dateFrom, dateTo).map((jo) => ({
+          "JO No": jo.joNo || "—", "JO Date": fd(jo.joDate), "Delivery": fd(jo.deliveryDate), "Client": jo.client || "—", "Item": jo.itemName || "—", "Qty": Number(jo.qty || jo.quantity || 0), "Process": jo.process || "—", "Priority": jo.priority || "Normal", "Status": jo.status || "Active",
+        }));
+      }
+      return filterByDate(previewData._records || [], "inwardDate", dateFrom, dateTo).map((mi) => {
+        const items = (mi.items || []).map((it) => {
+          const amt = Number(it.amount || 0);
+          const gst = Number(it.gstRate !== undefined ? it.gstRate : 18);
+          return { ...it, rowTax: (amt * gst) / 100 };
+        });
+        const subtotal = items.reduce((s, it) => s + Number(it.amount || 0), 0);
+        const totalTax = items.reduce((s, it) => s + it.rowTax, 0);
+        return { "GRN No": mi.inwardNo || "—", "Date": fd(mi.inwardDate), "Vendor": mi.vendorName || "—", "Invoice": mi.invoiceNo || "—", "PO Ref": mi.poRef || "Direct", "Location": mi.location || "—", "Items": (mi._items || mi.items || []).length, "Taxable": subtotal, "GST": totalTax, "Net Total": subtotal + totalTax };
+      });
+    })();
+
+    const ws = XLSX.utils.json_to_sheet(rawRecords, { header: cols });
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, reportData.title.slice(0, 31));
+    const dateRangeLabel = `${dateFrom}_${dateTo}`;
+    XLSX.writeFile(wb, `${reportData.title.replace(/\s+/g, "_")}_${dateRangeLabel}.xlsx`);
+  };
+
+  const openPDF = () => {
+    if (!previewData) return;
+    const blob = new Blob([previewData.html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const win = window.open(url, "_blank");
+    if (win) {
+      win.onload = () => {
+        setTimeout(() => {
+          win.print();
+          URL.revokeObjectURL(url);
+        }, 800);
+      };
+    }
   };
 
   const mod = MODULES.find((m) => m.id === selectedModule);
@@ -683,24 +755,62 @@ export default function Reports() {
               &nbsp;·&nbsp; {previewData.reportData.count} records &nbsp;·&nbsp;
               {dateFrom} → {dateTo}
             </div>
-            <button
-              onClick={printReport}
-              style={{
-                padding: "9px 20px",
-                borderRadius: 9,
-                border: "none",
-                background: "rgba(16,185,129,0.85)",
-                color: "#fff",
-                fontWeight: 700,
-                fontSize: 13,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-              }}
-            >
-              <i className="fa-solid fa-print" /> Print / Save PDF
-            </button>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={downloadExcel}
+                style={{
+                  padding: "9px 18px",
+                  borderRadius: 9,
+                  border: "none",
+                  background: "rgba(34,197,94,0.85)",
+                  color: "#fff",
+                  fontWeight: 700,
+                  fontSize: 13,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <i className="fa-solid fa-file-excel" /> Excel
+              </button>
+              <button
+                onClick={openPDF}
+                style={{
+                  padding: "9px 18px",
+                  borderRadius: 9,
+                  border: "none",
+                  background: "rgba(239,68,68,0.85)",
+                  color: "#fff",
+                  fontWeight: 700,
+                  fontSize: 13,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <i className="fa-solid fa-file-pdf" /> PDF
+              </button>
+              <button
+                onClick={printReport}
+                style={{
+                  padding: "9px 18px",
+                  borderRadius: 9,
+                  border: "none",
+                  background: "rgba(16,185,129,0.85)",
+                  color: "#fff",
+                  fontWeight: 700,
+                  fontSize: 13,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <i className="fa-solid fa-print" /> Print
+              </button>
+            </div>
           </div>
 
           {/* Inline HTML preview */}

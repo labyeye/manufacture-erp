@@ -1,6 +1,6 @@
 export const COLORS = {
-  bg: "#0d1117",
-  surface: "#161b22",
+  bg: "transparent",
+  surface: "transparent",
   card: "#1c2128",
   border: "#30363d",
   accent: "#f97316",
@@ -11,7 +11,7 @@ export const COLORS = {
   purple: "#a855f7",
   text: "#e6edf3",
   muted: "#8b949e",
-  inputBg: "#0d1117",
+  inputBg: "transparent",
 };
 
 export const STAGES = [

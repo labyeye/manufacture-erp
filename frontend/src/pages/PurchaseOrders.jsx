@@ -113,6 +113,99 @@ export default function PurchaseOrders({
     fetchPurchasePrices();
   }, []);
 
+  useEffect(() => {
+    const raw = sessionStorage.getItem("po_prefill");
+    if (!raw) return;
+    try {
+      const p = JSON.parse(raw);
+
+      const buildLine = (src) => {
+        const isRM = src.type === "RM";
+        const isCG = src.type === "CG";
+        const qtyVal = isCG ? src.suggestedQty || "" : "";
+        const weightVal = isRM && src.unit === "kg" ? src.suggestedQty || "" : "";
+        const rateNum = +(src.lastRate || 0);
+        const baseAmt = rateNum
+          ? rateNum * +(isRM ? weightVal || 0 : qtyVal || 0)
+          : 0;
+        return {
+          ...blankItem(),
+          materialType: isCG ? "Consumable" : "Raw Material",
+          itemName: src.itemName || "",
+          productCode: src.productCode || "",
+          category: src.category || "",
+          subCategory: isRM ? src.subCategory || src.category || "" : "",
+          gsm: isRM ? src.gsm || "" : "",
+          widthMm: isRM ? src.widthMm || "" : "",
+          lengthMm: isRM ? src.lengthMm || "" : "",
+          size: "",
+          width: "",
+          length: "",
+          height: "",
+          hsnCode: src.hsnCode || "",
+          uom: src.unit || "nos",
+          unit: src.unit || "nos",
+          noOfSheets: "",
+          noOfReels: "",
+          qty: qtyVal,
+          weight: weightVal,
+          rate: src.lastRate || "",
+          gstRate:
+            src.lastGstRate !== "" && src.lastGstRate != null
+              ? src.lastGstRate
+              : 18,
+          amount: baseAmt ? baseAmt.toFixed(2) : "",
+        };
+      };
+
+      if (p.multi && Array.isArray(p.items)) {
+        const lines = p.items.map(buildLine);
+        setHeader({
+          ...blankHeader,
+          vendorName: p.sharedVendor || "",
+          vendorContact: p.sharedVendorContact || "",
+        });
+        setItems(lines);
+        setHeaderErrors({});
+        setItemErrors(lines.map(() => ({})));
+        setEditingId(null);
+        setShowModal(true);
+        const vendorMsg = p.sharedVendor
+          ? ` — vendor: ${p.sharedVendor}`
+          : p.vendorMismatch
+            ? " — multiple vendors in history, please pick one"
+            : "";
+        toast?.(
+          `Combined PO prefilled with ${lines.length} item(s)${vendorMsg}`,
+          "success",
+        );
+      } else {
+        const line = buildLine(p);
+        setHeader({
+          ...blankHeader,
+          vendorName: p.lastVendor || "",
+          vendorContact: p.lastVendorContact || "",
+        });
+        setItems([line]);
+        setHeaderErrors({});
+        setItemErrors([{}]);
+        setEditingId(null);
+        setShowModal(true);
+        const detail = p.lastPONo
+          ? ` — vendor + rate from ${p.lastPONo}`
+          : "";
+        toast?.(
+          `Prefilled from low-stock alert: ${p.itemName}${detail}`,
+          "success",
+        );
+      }
+    } catch (e) {
+      console.warn("Failed to parse po_prefill:", e);
+    } finally {
+      sessionStorage.removeItem("po_prefill");
+    }
+  }, []);
+
   const fetchPurchasePrices = async () => {
     try {
       const data = await priceListAPI.getAll({ listType: "purchase", status: "Active" });
@@ -1653,7 +1746,7 @@ export default function PurchaseOrders({
               <>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 16 }}>
                   {statCards.map(({ label, value, icon, color }) => (
-                    <div key={label} style={{ padding: "16px 20px", background: "#0d1117", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, borderLeft: `3px solid ${color}` }}>
+                    <div key={label} style={{ padding: "16px 20px", background: "transparent", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, borderLeft: `3px solid ${color}` }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                           <span style={{ fontSize: 19, color: C.muted, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
                           <i
@@ -1679,10 +1772,10 @@ export default function PurchaseOrders({
                 {filteredPOs.length === 0 ? (
                   <Card style={{ textAlign: "center", padding: 40, color: C.muted }}>No purchase orders found.</Card>
                 ) : (
-                  <div style={{ background: "#0d1117", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
+                  <div style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
                     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                       <thead>
-                        <tr style={{ background: "#161b22", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                        <tr style={{ background: "transparent", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
                           {["PO No", "Date", "Vendor", "Items", "Delivery", "Total", "Status", "Actions"].map(h => (
                             <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
                           ))}

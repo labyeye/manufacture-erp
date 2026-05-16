@@ -1797,7 +1797,7 @@ export default function MaterialInward({
                 style={{
                   width: "100%",
                   padding: "9px 12px 9px 36px",
-                  background: "#141416",
+                  background: "transparent",
                   border: "1px solid #2a2a2e",
                   borderRadius: 6,
                   color: "#fff",
@@ -1816,7 +1816,7 @@ export default function MaterialInward({
             <button
               onClick={handleExportExcel}
               style={{
-                background: "#141416",
+                background: "transparent",
                 color: C.green,
                 border: `1px solid ${C.green}44`,
                 borderRadius: 6,
@@ -1890,7 +1890,7 @@ export default function MaterialInward({
                     key={label}
                     style={{
                       padding: "16px 20px",
-                      background: "#0d1117",
+                      background: "transparent",
                       border: "1px solid rgba(255,255,255,0.07)",
                       borderRadius: 12,
                       borderLeft: `3px solid ${color}`,
@@ -1953,7 +1953,7 @@ export default function MaterialInward({
               ) : (
                 <div
                   style={{
-                    background: "#0d1117",
+                    background: "transparent",
                     border: "1px solid rgba(255,255,255,0.07)",
                     borderRadius: 12,
                     overflow: "hidden",
@@ -1969,7 +1969,7 @@ export default function MaterialInward({
                     <thead>
                       <tr
                         style={{
-                          background: "#161b22",
+                          background: "transparent",
                           borderBottom: "1px solid rgba(255,255,255,0.08)",
                         }}
                       >

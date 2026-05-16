@@ -1297,7 +1297,7 @@ export default function ProductionCalendar({
                 alignItems: "center",
                 padding: "10px 12px",
                 marginBottom: 8,
-                background: "#0d1117",
+                background: "transparent",
                 borderRadius: 8,
                 border: "1px solid #30363d",
               }}>
@@ -1389,7 +1389,7 @@ export default function ProductionCalendar({
     const inputStyle = {
       width: "100%",
       padding: "8px 10px",
-      background: "#0d1117",
+      background: "transparent",
       border: "1px solid #30363d",
       borderRadius: 6,
       color: "#e6edf3",
@@ -1539,7 +1539,7 @@ export default function ProductionCalendar({
 
   const PowerCutModal = () => {
     if (!powerCutModal) return null;
-    const inputStyle = { width: "100%", padding: "8px 10px", background: "#0d1117", border: "1px solid #30363d", borderRadius: 6, color: "#e6edf3", fontSize: 13, boxSizing: "border-box" };
+    const inputStyle = { width: "100%", padding: "8px 10px", background: "transparent", border: "1px solid #30363d", borderRadius: 6, color: "#e6edf3", fontSize: 13, boxSizing: "border-box" };
 
     const toggleMachine = (id) => {
       setPcForm((p) => ({
@@ -1651,7 +1651,7 @@ export default function ProductionCalendar({
         <span style={{ fontWeight: 800, fontSize: 13, color: "#ef4444" }}>Rush Orders Awaiting Approval</span>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginLeft: "auto" }}>
           {rushJobs.map((jo) => (
-            <div key={jo._id} style={{ background: "#0d1117", border: "1px solid #ef444444", borderRadius: 6, padding: "6px 10px", display: "flex", alignItems: "center", gap: 8 }}>
+            <div key={jo._id} style={{ background: "transparent", border: "1px solid #ef444444", borderRadius: 6, padding: "6px 10px", display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ fontSize: 12, fontWeight: 800, color: jo.orderPriorityOverride === "Critical" ? "#ef4444" : "#f97316" }}>
                 <span style={{color: jo.orderPriorityOverride === "Critical" ? "#ef4444" : "#f97316", marginRight:4}}>●</span>{jo.joNo}
               </span>

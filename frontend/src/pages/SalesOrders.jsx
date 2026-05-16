@@ -665,7 +665,12 @@ export default function SalesOrders(props) {
   };
 
   const generateSOPDF = (so) => {
-    const rfmt = (n) => Math.round(n ?? 0).toLocaleString("en-IN");
+    const afmt = (n) =>
+      Number(n ?? 0).toLocaleString("en-IN", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+    const qfmt = (n) => Math.round(Number(n ?? 0)).toLocaleString("en-IN");
     const subtotal = (so.items || []).reduce(
       (s, it) => s + +(it.amount || 0),
       0,
@@ -776,13 +781,13 @@ export default function SalesOrders(props) {
                   <td>${it.hsnCode || "—"}</td>
                   <td class="col-qty">
                     <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
-                      <span>${fmt(it.orderQty)}</span>
+                      <span>${qfmt(it.orderQty)}</span>
                       <span style="font-size: 9px; color: #64748b;">${it.qtyUnit || "pcs"}</span>
                     </div>
                   </td>
-                  <td style="text-align: right;">₹${rfmt(it.price)}</td>
+                  <td style="text-align: right;">₹${afmt(it.price)}</td>
                   <td style="text-align: center;">${it.gstRate || 18}%</td>
-                  <td class="col-amt">₹${rfmt(it.amount)}</td>
+                  <td class="col-amt">₹${afmt(it.amount)}</td>
                 </tr>
               `,
                 )
@@ -794,16 +799,16 @@ export default function SalesOrders(props) {
             <div style="width: 250px;">
               <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; padding: 0 5px;">
                 <label style="color: #64748b; font-weight: 600;">Subtotal:</label>
-                <span style="font-weight: 700;">₹${rfmt(subtotal)}</span>
+                <span style="font-weight: 700;">₹${afmt(subtotal)}</span>
               </div>
               <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; padding: 0 5px;">
                 <label style="color: #64748b; font-weight: 600;">GST Total:</label>
-                <span style="font-weight: 700;">₹${rfmt(totalTax)}</span>
+                <span style="font-weight: 700;">₹${afmt(totalTax)}</span>
               </div>
               <div class="hr"></div>
               <div class="total-box">
                 <label>NET TOTAL</label>
-                <span>₹${rfmt(total)}</span>
+                <span>₹${afmt(total)}</span>
               </div>
             </div>
           </div>
@@ -1672,7 +1677,7 @@ export default function SalesOrders(props) {
               <>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 16 }}>
                   {statCards.map(({ label, value, icon, color }) => (
-                    <div key={label} style={{ padding: "16px 20px", background: "#0d1117", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, borderLeft: `3px solid ${color}` }}>
+                    <div key={label} style={{ padding: "16px 20px", background: "transparent", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, borderLeft: `3px solid ${color}` }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                         <span style={{ fontSize: 11, color: C.muted, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
                         <i className={icon} style={{ color, fontSize: 13, opacity: 0.8 }} />
@@ -1698,10 +1703,10 @@ export default function SalesOrders(props) {
                 )}
 
                 {filteredSOs.length > 0 && (
-                  <div style={{ background: "#0d1117", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
+                  <div style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
                     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                       <thead>
-                        <tr style={{ background: "#161b22", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                        <tr style={{ background: "transparent", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
                           {["SO No", "Date", "Client", "Items", "Delivery", "Sales Person", "Total", "Status", "Actions"].map(h => (
                             <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
                           ))}

@@ -59,7 +59,6 @@ export default function BrandMaster({ toast }) {
     status: "",
   });
   const fileInputRef = useRef(null);
-
   useEffect(() => {
     fetchBrands();
     fetchCompanies();
