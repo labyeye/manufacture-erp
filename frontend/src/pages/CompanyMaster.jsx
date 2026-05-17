@@ -51,6 +51,8 @@ export default function CompanyMaster({ toast }) {
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, id: null });
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [importProgress, setImportProgress] = useState({
     show: false,
     current: 0,
@@ -135,6 +137,43 @@ export default function CompanyMaster({ toast }) {
     } catch (error) {
       toast("Failed to delete company", "error");
     }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    const ids = Array.from(selectedIds);
+    try {
+      const results = await Promise.allSettled(
+        ids.map((id) => companyMasterAPI.delete(id)),
+      );
+      const failed = results.filter((r) => r.status === "rejected").length;
+      setSelectedIds(new Set());
+      fetchCompanies();
+      if (failed === 0) toast(`${ids.length} company(s) deleted`, "success");
+      else toast(`${ids.length - failed} deleted, ${failed} failed`, failed === ids.length ? "error" : "warning");
+    } catch (error) {
+      toast("Failed to delete selected companies", "error");
+    } finally {
+      setBulkDeleteOpen(false);
+    }
+  };
+
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = (ids, allSelected) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allSelected) ids.forEach((id) => next.delete(id));
+      else ids.forEach((id) => next.add(id));
+      return next;
+    });
   };
 
   const handleToggleStatus = async (company) => {
@@ -481,7 +520,22 @@ export default function CompanyMaster({ toast }) {
           />
         </div>
 
-        {filtered.length === 0 ? (
+        {(() => {
+          const filteredIds = filtered.map((c) => c._id);
+          const allSelected = filteredIds.length > 0 && filteredIds.every((id) => selectedIds.has(id));
+          const someSelected = filteredIds.some((id) => selectedIds.has(id));
+          return (
+            <>
+            {selectedIds.size > 0 && (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", marginBottom: 10, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "#fecaca" }}>{selectedIds.size} selected</span>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => setSelectedIds(new Set())} style={{ padding: "5px 12px", borderRadius: 5, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.06)", color: "#fff", fontSize: 12, fontWeight: 500, cursor: "pointer" }}>Clear</button>
+                  <button onClick={() => setBulkDeleteOpen(true)} style={{ padding: "5px 12px", borderRadius: 5, border: "1px solid rgba(239,68,68,0.4)", background: "rgba(239,68,68,0.15)", color: "#ef4444", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Delete Selected</button>
+                </div>
+              </div>
+            )}
+            {filtered.length === 0 ? (
           <div
             style={{
               textAlign: "center",
@@ -503,6 +557,15 @@ export default function CompanyMaster({ toast }) {
             >
               <thead>
                 <tr style={{ background: "rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                  <th style={{ textAlign: "left", padding: "10px 12px", width: 36 }}>
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      ref={(el) => { if (el) el.indeterminate = !allSelected && someSelected; }}
+                      onChange={() => toggleSelectAll(filteredIds, allSelected)}
+                      style={{ cursor: "pointer" }}
+                    />
+                  </th>
                   {[
                     "Company Name",
                     "Type",
@@ -533,10 +596,18 @@ export default function CompanyMaster({ toast }) {
                 {filtered.map((company) => (
                   <tr
                     key={company._id}
-                    style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}
-                    onMouseEnter={e => e.currentTarget.style.background="rgba(255,255,255,0.04)"}
-                    onMouseLeave={e => e.currentTarget.style.background="transparent"}
+                    style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: selectedIds.has(company._id) ? "rgba(96,165,250,0.08)" : undefined }}
+                    onMouseEnter={e => { if (!selectedIds.has(company._id)) e.currentTarget.style.background="rgba(255,255,255,0.04)"; }}
+                    onMouseLeave={e => { if (!selectedIds.has(company._id)) e.currentTarget.style.background="transparent"; }}
                   >
+                    <td style={{ padding: "12px", width: 36 }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(company._id)}
+                        onChange={() => toggleSelect(company._id)}
+                        style={{ cursor: "pointer" }}
+                      />
+                    </td>
                     <td
                       style={{
                         padding: "12px",
@@ -658,6 +729,9 @@ export default function CompanyMaster({ toast }) {
             </table>
           </div>
         )}
+            </>
+          );
+        })()}
       </div>
 
       <ConfirmModal
@@ -666,6 +740,16 @@ export default function CompanyMaster({ toast }) {
         onConfirm={handleDelete}
         title="Delete Company"
         message="Are you sure you want to delete this company? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+      />
+      <ConfirmModal
+        isOpen={bulkDeleteOpen}
+        onClose={() => setBulkDeleteOpen(false)}
+        onConfirm={handleBulkDelete}
+        title="Delete Companies"
+        message={`Delete ${selectedIds.size} selected company(s)? This action cannot be undone.`}
         confirmText="Delete"
         cancelText="Cancel"
         type="danger"

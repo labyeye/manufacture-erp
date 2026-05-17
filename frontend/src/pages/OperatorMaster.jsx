@@ -1,7 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { operatorMasterAPI } from "../api/auth";
-import { Modal, SectionTitle } from "../components/ui/BasicComponents";
+import {
+  Modal,
+  SectionTitle,
+  ImportBtn,
+  ExportBtn,
+  TemplateBtn,
+  ImportModal,
+} from "../components/ui/BasicComponents";
 import { C } from "../constants/colors";
+import * as XLSX from "xlsx";
 
 const inputStyle = {
   width: "100%",
@@ -37,6 +45,13 @@ export default function OperatorMaster({ toast }) {
 
   const emptyForm = { name: "", phone: "", username: "", password: "" };
   const [form, setForm] = useState(emptyForm);
+  const fileInputRef = useRef(null);
+  const [importProgress, setImportProgress] = useState({
+    show: false,
+    current: 0,
+    total: 0,
+    status: "",
+  });
 
   useEffect(() => { fetchOperators(); }, []);
 
@@ -117,28 +132,133 @@ export default function OperatorMaster({ toast }) {
     )
   );
 
+  const handleTemplate = () => {
+    const headers = ["Name", "Phone", "Username", "Password"];
+    const example = ["Ramesh Kumar", "9876543210", "ramesh.op", "ChangeMe123"];
+    const ws = XLSX.utils.aoa_to_sheet([headers, example]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Operators");
+    XLSX.writeFile(wb, "operator_template.xlsx");
+  };
+
+  const handleExport = () => {
+    if (!operators.length) {
+      toast("No operators to export", "error");
+      return;
+    }
+    const headers = ["Name", "Phone", "Username", "Status", "Last Login"];
+    const rows = operators.map((op) => [
+      op.name || "",
+      op.phone || "",
+      op.username || "",
+      op.isActive ? "Active" : "Inactive",
+      op.lastLogin ? new Date(op.lastLogin).toLocaleString() : "Never",
+    ]);
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Operators");
+    XLSX.writeFile(wb, `operators_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    toast("Exported successfully", "success");
+  };
+
+  const handleImport = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: "array" });
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const data = XLSX.utils.sheet_to_json(worksheet);
+      if (!data.length) {
+        toast("No data found in file", "error");
+        return;
+      }
+      setImportProgress({
+        show: true,
+        current: 0,
+        total: data.length,
+        status: "Starting import...",
+      });
+      let success = 0;
+      for (let i = 0; i < data.length; i++) {
+        const row = data[i];
+        const name = row.Name || row.name;
+        const username = row.Username || row.username;
+        const password = row.Password || row.password;
+        const phone = row.Phone || row.phone || "";
+        setImportProgress((p) => ({
+          ...p,
+          current: i + 1,
+          status: `Importing: ${name || "Operator"}`,
+        }));
+        if (!name || !username || !password) continue;
+        try {
+          await operatorMasterAPI.create({ name, username, password, phone });
+          success++;
+        } catch (err) {
+          console.error(`Failed to import ${name}`, err);
+        }
+      }
+      setImportProgress((p) => ({
+        ...p,
+        current: data.length,
+        status: `Complete! Imported ${success} operators.`,
+      }));
+      fetchOperators();
+      setTimeout(() => {
+        setImportProgress((p) => ({ ...p, show: false }));
+        toast(`Imported ${success} operator(s)`, "success");
+      }, 1200);
+    } catch (err) {
+      console.error("Import error:", err);
+      toast("Failed to process file", "error");
+      setImportProgress((p) => ({ ...p, show: false }));
+    }
+    e.target.value = "";
+  };
+
   return (
     <div className="fade">
       <SectionTitle icon="👷" title="Operator Master" sub="Manage operators and their login credentials" />
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, gap: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, gap: 12, flexWrap: "wrap" }}>
         <input
           placeholder="Search by name, username, phone..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           style={{ ...inputStyle, maxWidth: 320 }}
         />
-        <button
-          onClick={openCreate}
-          style={{
-            padding: "9px 20px", borderRadius: 8, border: "none",
-            background: "#6366f1", color: "#fff", fontWeight: 600,
-            fontSize: 13, cursor: "pointer", whiteSpace: "nowrap",
-          }}
-        >
-          + Add Operator
-        </button>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          <TemplateBtn onClick={handleTemplate} />
+          <ImportBtn onClick={() => fileInputRef.current?.click()} />
+          <ExportBtn onClick={handleExport} />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv, .xlsx, .xls"
+            style={{ display: "none" }}
+            onChange={handleImport}
+          />
+          <button
+            onClick={openCreate}
+            style={{
+              padding: "9px 20px", borderRadius: 8, border: "none",
+              background: "#6366f1", color: "#fff", fontWeight: 600,
+              fontSize: 13, cursor: "pointer", whiteSpace: "nowrap",
+            }}
+          >
+            + Add Operator
+          </button>
+        </div>
       </div>
+
+      <ImportModal
+        show={importProgress.show}
+        current={importProgress.current}
+        total={importProgress.total}
+        status={importProgress.status}
+        title="Importing Operators"
+      />
 
       {loading ? (
         <div style={{ color: C.muted, fontSize: 13 }}>Loading...</div>

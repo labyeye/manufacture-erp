@@ -77,6 +77,7 @@ export default function MachineMaster({ toast }) {
   const [editingMachine, setEditingMachine] = useState(null);
   const [importing, setImporting] = useState(false);
   const importRef = useRef(null);
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
 
   useEffect(() => {
     fetchMachines();
@@ -322,6 +323,42 @@ export default function MachineMaster({ toast }) {
     } catch (error) {
       toast("Delete failed", "error");
     }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Delete ${selectedIds.size} selected machine(s)?`)) return;
+    const ids = Array.from(selectedIds);
+    try {
+      const results = await Promise.allSettled(
+        ids.map((id) => machineMasterAPI.delete(id)),
+      );
+      const failed = results.filter((r) => r.status === "rejected").length;
+      setSelectedIds(new Set());
+      fetchMachines();
+      if (failed === 0) toast(`${ids.length} machine(s) deleted`, "success");
+      else toast(`${ids.length - failed} deleted, ${failed} failed`, failed === ids.length ? "error" : "warning");
+    } catch (error) {
+      toast("Failed to delete selected machines", "error");
+    }
+  };
+
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = (ids, allSelected) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allSelected) ids.forEach((id) => next.delete(id));
+      else ids.forEach((id) => next.add(id));
+      return next;
+    });
   };
 
   const TRANSITION_TYPES = [
@@ -1001,11 +1038,34 @@ export default function MachineMaster({ toast }) {
         </span>
       </div>
 
-      {}
+      {(() => {
+        const filteredIds = filteredMachines.map((m) => m._id);
+        const allSelected = filteredIds.length > 0 && filteredIds.every((id) => selectedIds.has(id));
+        const someSelected = filteredIds.some((id) => selectedIds.has(id));
+        return (
+        <>
+        {selectedIds.size > 0 && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", marginBottom: 10, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "#fecaca" }}>{selectedIds.size} selected</span>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => setSelectedIds(new Set())} style={{ padding: "5px 12px", borderRadius: 5, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.06)", color: "#fff", fontSize: 12, fontWeight: 500, cursor: "pointer" }}>Clear</button>
+              <button onClick={handleBulkDelete} style={{ padding: "5px 12px", borderRadius: 5, border: "1px solid rgba(239,68,68,0.4)", background: "rgba(239,68,68,0.15)", color: "#ef4444", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Delete Selected</button>
+            </div>
+          </div>
+        )}
       <div style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, overflow: "hidden" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
           <thead>
             <tr style={{ background: "rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+              <th style={{ textAlign: "left", padding: "14px 16px", width: 36 }}>
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  ref={(el) => { if (el) el.indeterminate = !allSelected && someSelected; }}
+                  onChange={() => toggleSelectAll(filteredIds, allSelected)}
+                  style={{ cursor: "pointer" }}
+                />
+              </th>
               {["Machine", "Type", "Division", "Run Rate", "Shifts", "OT", "Product Compatibility", "Status", "Actions"].map((h) => (
                 <th
                   key={h}
@@ -1027,7 +1087,7 @@ export default function MachineMaster({ toast }) {
           <tbody>
             {filteredMachines.length === 0 && (
               <tr>
-                <td colSpan={9} style={{ padding: 40, textAlign: "center", color: "#444" }}>
+                <td colSpan={10} style={{ padding: 40, textAlign: "center", color: "#444" }}>
                   No machines found
                 </td>
               </tr>
@@ -1038,7 +1098,15 @@ export default function MachineMaster({ toast }) {
               const compat = Array.isArray(m.productCompatibility) ? m.productCompatibility : [];
 
               return (
-                <tr key={m._id} style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }} onMouseEnter={e => e.currentTarget.style.background="rgba(255,255,255,0.04)"} onMouseLeave={e => e.currentTarget.style.background="transparent"}>
+                <tr key={m._id} style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: selectedIds.has(m._id) ? "rgba(96,165,250,0.08)" : undefined }} onMouseEnter={e => { if (!selectedIds.has(m._id)) e.currentTarget.style.background="rgba(255,255,255,0.04)"; }} onMouseLeave={e => { if (!selectedIds.has(m._id)) e.currentTarget.style.background="transparent"; }}>
+                  <td style={{ padding: "12px 16px", width: 36 }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(m._id)}
+                      onChange={() => toggleSelect(m._id)}
+                      style={{ cursor: "pointer" }}
+                    />
+                  </td>
                   <td style={{ padding: "12px 16px", fontWeight: 500, color: "#fff" }}>
                     {m.name}
                     {m.parallelMachineGroup && (
@@ -1175,6 +1243,9 @@ export default function MachineMaster({ toast }) {
           </tbody>
         </table>
       </div>
+      </>
+        );
+      })()}
 
       {editingMachine && <EditModal machine={editingMachine} />}
     </div>

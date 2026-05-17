@@ -108,6 +108,8 @@ export default function JobOrders(props) {
   const [salesOrders, setSalesOrders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const blankHeader = {
     joDate: today(),
     soRef: "",
@@ -340,6 +342,50 @@ export default function JobOrders(props) {
     } finally {
       setDeleteTarget(null);
     }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    const ids = Array.from(selectedIds);
+    try {
+      setLoading(true);
+      const results = await Promise.allSettled(
+        ids.map((id) => jobOrdersAPI.delete(id)),
+      );
+      const failed = results.filter((r) => r.status === "rejected").length;
+      fetchJobOrders();
+      setSelectedIds(new Set());
+      if (failed === 0)
+        toast(`${ids.length} job order(s) moved to trash`, "success");
+      else
+        toast(
+          `${ids.length - failed} deleted, ${failed} failed`,
+          failed === ids.length ? "error" : "warning",
+        );
+    } catch (error) {
+      toast("Failed to delete selected job orders", "error");
+    } finally {
+      setLoading(false);
+      setBulkDeleteOpen(false);
+    }
+  };
+
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = (ids, allSelected) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allSelected) ids.forEach((id) => next.delete(id));
+      else ids.forEach((id) => next.add(id));
+      return next;
+    });
   };
 
   const fetchSalesOrders = async () => {
@@ -1749,6 +1795,9 @@ export default function JobOrders(props) {
               if (drDateTo && d > drDateTo) return false;
               return true;
             });
+            const filteredIds = filteredJOs.map((r) => r._id || r.id);
+            const allSelected = filteredIds.length > 0 && filteredIds.every((id) => selectedIds.has(id));
+            const someSelected = filteredIds.some((id) => selectedIds.has(id));
             const activeCount = filteredJOs.filter(r => r.status !== "Completed").length;
             const completedCount = filteredJOs.filter(r => r.status === "Completed").length;
             const totalQty = filteredJOs.reduce((s, r) => s + +(r.orderQty || 0), 0);
@@ -1772,6 +1821,16 @@ export default function JobOrders(props) {
                   ))}
                 </div>
 
+                {selectedIds.size > 0 && (
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", marginBottom: 8, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "#fecaca" }}>{selectedIds.size} selected</span>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button onClick={() => setSelectedIds(new Set())} style={{ padding: "5px 12px", borderRadius: 5, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.06)", color: "#fff", fontSize: 12, fontWeight: 500, cursor: "pointer" }}>Clear</button>
+                      <button onClick={() => setBulkDeleteOpen(true)} style={{ padding: "5px 12px", borderRadius: 5, border: "1px solid rgba(239,68,68,0.4)", background: "rgba(239,68,68,0.15)", color: "#ef4444", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Delete Selected</button>
+                    </div>
+                  </div>
+                )}
+
                 {filteredJOs.length === 0 ? (
                   <div style={{ textAlign: "center", color: C.muted, padding: 32, fontSize: 13 }}>No job orders yet.</div>
                 ) : (
@@ -1779,6 +1838,15 @@ export default function JobOrders(props) {
                     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                       <thead>
                         <tr style={{ background: "transparent", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                          <th style={{ padding: "10px 14px", textAlign: "left", width: 36 }}>
+                            <input
+                              type="checkbox"
+                              checked={allSelected}
+                              ref={(el) => { if (el) el.indeterminate = !allSelected && someSelected; }}
+                              onChange={() => toggleSelectAll(filteredIds, allSelected)}
+                              style={{ cursor: "pointer", accentColor: C.accent || "#60a5fa" }}
+                            />
+                          </th>
                           {["JO No", "Date", "Client", "Item", "Qty", "Process", "Priority", "Status", "Actions"].map(h => (
                             <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
                           ))}
@@ -1829,16 +1897,25 @@ export default function JobOrders(props) {
               const handleDelete = (id) => setDeleteTarget(id);
 
               const priorityColor = r.priority === "VIP" ? "#ef4444" : r.priority === "Rush" ? "#f97316" : r.priority === "Fill-in" ? "#6b7280" : null;
+              const rowId = r._id || r.id;
               return (
                 <tr
-                  key={r._id || r.id}
+                  key={rowId}
                   data-record-id={r.joNo}
                   style={{
                     borderBottom: "1px solid rgba(255,255,255,0.04)",
-                    background: r.joNo === highlightId ? `${C.accent}11` : i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)",
+                    background: selectedIds.has(rowId) ? "rgba(96,165,250,0.08)" : r.joNo === highlightId ? `${C.accent}11` : i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)",
                     transition: "all 0.4s ease",
                   }}
                 >
+                  <td style={{ padding: "11px 14px", width: 36 }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(rowId)}
+                      onChange={() => toggleSelect(rowId)}
+                      style={{ cursor: "pointer", accentColor: C.accent || "#60a5fa" }}
+                    />
+                  </td>
                   <td style={{ padding: "11px 14px", fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: "#facc15", whiteSpace: "nowrap" }}>{r.joNo}</td>
                   <td style={{ padding: "11px 14px", color: C.muted, whiteSpace: "nowrap", fontSize: 12 }}>{r.jobcardDate ? new Date(r.jobcardDate).toLocaleDateString("en-GB") : "—"}</td>
                   <td style={{ padding: "11px 14px", fontWeight: 500 }}>{r.companyName}</td>
@@ -1879,6 +1956,16 @@ export default function JobOrders(props) {
       onConfirm={handleDeleteConfirm}
       title="Move to Trash"
       message="This job order will be moved to trash. RM stock will be reversed. You can restore it within 7 days."
+      confirmText="Move to Trash"
+      cancelText="Cancel"
+      type="danger"
+    />
+    <ConfirmModal
+      isOpen={bulkDeleteOpen}
+      onClose={() => setBulkDeleteOpen(false)}
+      onConfirm={handleBulkDelete}
+      title="Move to Trash"
+      message={`${selectedIds.size} job order(s) will be moved to trash. RM stock will be reversed. You can restore them within 7 days.`}
       confirmText="Move to Trash"
       cancelText="Cancel"
       type="danger"

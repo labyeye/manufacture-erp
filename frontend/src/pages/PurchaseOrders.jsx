@@ -106,6 +106,8 @@ export default function PurchaseOrders({
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [highlightId, setHighlightId] = useState(null);
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
   useEffect(() => {
     fetchPOs();
@@ -912,6 +914,53 @@ export default function PurchaseOrders({
       setLoading(false);
       setDeleteTarget(null);
     }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    const ids = Array.from(selectedIds);
+    try {
+      setLoading(true);
+      const results = await Promise.allSettled(
+        ids.map((id) => purchaseOrdersAPI.delete(id)),
+      );
+      const failed = results.filter((r) => r.status === "rejected").length;
+      await fetchPOs();
+      setSelectedIds(new Set());
+      if (toast) {
+        if (failed === 0)
+          toast(`${ids.length} purchase order(s) moved to trash`, "success");
+        else
+          toast(
+            `${ids.length - failed} deleted, ${failed} failed`,
+            failed === ids.length ? "error" : "warning",
+          );
+      }
+    } catch (error) {
+      console.error("Failed bulk delete PO:", error);
+      if (toast) toast("Failed to delete selected POs", "error");
+    } finally {
+      setLoading(false);
+      setBulkDeleteOpen(false);
+    }
+  };
+
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = (ids, allSelected) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allSelected) ids.forEach((id) => next.delete(id));
+      else ids.forEach((id) => next.add(id));
+      return next;
+    });
   };
 
   return (
@@ -1733,6 +1782,9 @@ export default function PurchaseOrders({
               if (drDateTo && d > drDateTo) return false;
               return true;
             });
+            const filteredIds = filteredPOs.map((r) => r._id);
+            const allSelected = filteredIds.length > 0 && filteredIds.every((id) => selectedIds.has(id));
+            const someSelected = filteredIds.some((id) => selectedIds.has(id));
             const totalValue = filteredPOs.reduce((s, r) => s + (r.items || []).reduce((ss, it) => ss + +(it.amount || 0), 0), 0);
             const openCount = filteredPOs.filter(r => !r.status || r.status === "Open").length;
             const receivedCount = filteredPOs.filter(r => r.status === "Received").length;
@@ -1769,6 +1821,16 @@ export default function PurchaseOrders({
                   ))}
                 </div>
 
+                {canEdit && selectedIds.size > 0 && (
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", marginBottom: 8, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "#fecaca" }}>{selectedIds.size} selected</span>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button onClick={() => setSelectedIds(new Set())} style={{ padding: "5px 12px", borderRadius: 5, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.06)", color: "#fff", fontSize: 12, fontWeight: 500, cursor: "pointer" }}>Clear</button>
+                      <button onClick={() => setBulkDeleteOpen(true)} style={{ padding: "5px 12px", borderRadius: 5, border: "1px solid rgba(239,68,68,0.4)", background: "rgba(239,68,68,0.15)", color: "#ef4444", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Delete Selected</button>
+                    </div>
+                  </div>
+                )}
+
                 {filteredPOs.length === 0 ? (
                   <Card style={{ textAlign: "center", padding: 40, color: C.muted }}>No purchase orders found.</Card>
                 ) : (
@@ -1776,6 +1838,17 @@ export default function PurchaseOrders({
                     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                       <thead>
                         <tr style={{ background: "transparent", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                          {canEdit && (
+                            <th style={{ padding: "10px 14px", textAlign: "left", width: 36 }}>
+                              <input
+                                type="checkbox"
+                                checked={allSelected}
+                                ref={(el) => { if (el) el.indeterminate = !allSelected && someSelected; }}
+                                onChange={() => toggleSelectAll(filteredIds, allSelected)}
+                                style={{ cursor: "pointer", accentColor: C.accent || "#60a5fa" }}
+                              />
+                            </th>
+                          )}
                           {["PO No", "Date", "Vendor", "Items", "Delivery", "Total", "Status", "Actions"].map(h => (
                             <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
                           ))}
@@ -1787,7 +1860,17 @@ export default function PurchaseOrders({
                           const vendorDisplayName = typeof r.vendor === "object" ? r.vendor?.name : (r.vendor || r.vendorName || "—");
 
                           return (
-                            <tr key={r._id} data-record-id={r.poNo} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", background: r.poNo === highlightId ? `${C.accent}11` : i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)", transition: "background 0.2s" }}>
+                            <tr key={r._id} data-record-id={r.poNo} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", background: selectedIds.has(r._id) ? "rgba(96,165,250,0.08)" : r.poNo === highlightId ? `${C.accent}11` : i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)", transition: "background 0.2s" }}>
+                              {canEdit && (
+                                <td style={{ padding: "12px 14px", width: 36 }}>
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedIds.has(r._id)}
+                                    onChange={() => toggleSelect(r._id)}
+                                    style={{ cursor: "pointer", accentColor: C.accent || "#60a5fa" }}
+                                  />
+                                </td>
+                              )}
                               <td style={{ padding: "12px 14px", fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: "#60a5fa", whiteSpace: "nowrap" }}>{r.poNo}</td>
                               <td style={{ padding: "12px 14px", color: C.muted, whiteSpace: "nowrap" }}>{(r.poDate || "").slice(0, 10)}</td>
                               <td style={{ padding: "12px 14px", fontWeight: 500 }}>{vendorDisplayName}</td>
@@ -1823,6 +1906,16 @@ export default function PurchaseOrders({
       onConfirm={handleDelete}
       title="Move to Trash"
       message="This purchase order will be moved to trash. You can restore it within 7 days."
+      confirmText="Move to Trash"
+      cancelText="Cancel"
+      type="danger"
+    />
+    <ConfirmModal
+      isOpen={bulkDeleteOpen}
+      onClose={() => setBulkDeleteOpen(false)}
+      onConfirm={handleBulkDelete}
+      title="Move to Trash"
+      message={`${selectedIds.size} purchase order(s) will be moved to trash. You can restore them within 7 days.`}
       confirmText="Move to Trash"
       cancelText="Cancel"
       type="danger"

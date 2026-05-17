@@ -52,6 +52,8 @@ export default function BrandMaster({ toast }) {
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, id: null });
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [importProgress, setImportProgress] = useState({
     show: false,
     current: 0,
@@ -169,6 +171,43 @@ export default function BrandMaster({ toast }) {
     } catch (error) {
       toast("Failed to delete brand", "error");
     }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    const ids = Array.from(selectedIds);
+    try {
+      const results = await Promise.allSettled(
+        ids.map((id) => brandMasterAPI.delete(id)),
+      );
+      const failed = results.filter((r) => r.status === "rejected").length;
+      setSelectedIds(new Set());
+      fetchBrands();
+      if (failed === 0) toast(`${ids.length} brand(s) deleted`, "success");
+      else toast(`${ids.length - failed} deleted, ${failed} failed`, failed === ids.length ? "error" : "warning");
+    } catch (error) {
+      toast("Failed to delete selected brands", "error");
+    } finally {
+      setBulkDeleteOpen(false);
+    }
+  };
+
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = (ids, allSelected) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allSelected) ids.forEach((id) => next.delete(id));
+      else ids.forEach((id) => next.add(id));
+      return next;
+    });
   };
 
   const handleToggleStatus = async (brand) => {
@@ -500,7 +539,21 @@ export default function BrandMaster({ toast }) {
           >
             {searchTerm ? "No results found" : "No brands added yet."}
           </div>
-        ) : (
+        ) : (() => {
+          const filteredIds = filtered.map((b) => b._id);
+          const allSelected = filteredIds.length > 0 && filteredIds.every((id) => selectedIds.has(id));
+          const someSelected = filteredIds.some((id) => selectedIds.has(id));
+          return (
+          <div>
+            {selectedIds.size > 0 && (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", marginBottom: 10, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "#fecaca" }}>{selectedIds.size} selected</span>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => setSelectedIds(new Set())} style={{ padding: "5px 12px", borderRadius: 5, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.06)", color: "#fff", fontSize: 12, fontWeight: 500, cursor: "pointer" }}>Clear</button>
+                  <button onClick={() => setBulkDeleteOpen(true)} style={{ padding: "5px 12px", borderRadius: 5, border: "1px solid rgba(239,68,68,0.4)", background: "rgba(239,68,68,0.15)", color: "#ef4444", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Delete Selected</button>
+                </div>
+              </div>
+            )}
           <div style={{ overflowX: "auto" }}>
             <table
               style={{
@@ -511,6 +564,15 @@ export default function BrandMaster({ toast }) {
             >
               <thead>
                 <tr style={{ background: "rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                  <th style={{ textAlign: "left", padding: "10px 12px", width: 36 }}>
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      ref={(el) => { if (el) el.indeterminate = !allSelected && someSelected; }}
+                      onChange={() => toggleSelectAll(filteredIds, allSelected)}
+                      style={{ cursor: "pointer" }}
+                    />
+                  </th>
                   {["Brand Name", "Linked Company", "Client Category", "Description", "Status", "Actions"].map(
                     (h) => (
                       <th
@@ -532,7 +594,15 @@ export default function BrandMaster({ toast }) {
               </thead>
               <tbody>
                 {filtered.map((brand) => (
-                  <tr key={brand._id} style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }} onMouseEnter={e => e.currentTarget.style.background="rgba(255,255,255,0.04)"} onMouseLeave={e => e.currentTarget.style.background="transparent"}>
+                  <tr key={brand._id} style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: selectedIds.has(brand._id) ? "rgba(96,165,250,0.08)" : undefined }} onMouseEnter={e => { if (!selectedIds.has(brand._id)) e.currentTarget.style.background="rgba(255,255,255,0.04)"; }} onMouseLeave={e => { if (!selectedIds.has(brand._id)) e.currentTarget.style.background="transparent"; }}>
+                    <td style={{ padding: "12px", width: 36 }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(brand._id)}
+                        onChange={() => toggleSelect(brand._id)}
+                        style={{ cursor: "pointer" }}
+                      />
+                    </td>
                     <td
                       style={{
                         padding: "12px",
@@ -645,7 +715,9 @@ export default function BrandMaster({ toast }) {
               </tbody>
             </table>
           </div>
-        )}
+          </div>
+          );
+        })()}
       </div>
 
       <ConfirmModal
@@ -654,6 +726,16 @@ export default function BrandMaster({ toast }) {
         onConfirm={handleDelete}
         title="Delete Brand"
         message="Are you sure you want to delete this brand?"
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+      />
+      <ConfirmModal
+        isOpen={bulkDeleteOpen}
+        onClose={() => setBulkDeleteOpen(false)}
+        onConfirm={handleBulkDelete}
+        title="Delete Brands"
+        message={`Delete ${selectedIds.size} selected brand(s)?`}
         confirmText="Delete"
         cancelText="Cancel"
         type="danger"

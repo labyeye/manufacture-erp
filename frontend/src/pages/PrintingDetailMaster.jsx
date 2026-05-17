@@ -21,6 +21,7 @@ export default function PrintingDetailMaster({ toast }) {
   const [printingMaster, setPrintingMaster] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [companyMaster, setCompanyMaster] = useState([]);
   const [plateTools, setPlateTools] = useState([]);
   const [dieTools, setDieTools] = useState([]);
@@ -273,6 +274,42 @@ export default function PrintingDetailMaster({ toast }) {
     } catch (error) {
       toast("Delete failed", "error");
     }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!window.confirm(`Delete ${selectedIds.size} selected detail(s)?`)) return;
+    const ids = Array.from(selectedIds);
+    try {
+      const results = await Promise.allSettled(
+        ids.map((id) => printingDetailMasterAPI.delete(id)),
+      );
+      const failed = results.filter((r) => r.status === "rejected").length;
+      setSelectedIds(new Set());
+      fetchPrintingDetails();
+      if (failed === 0) toast(`${ids.length} detail(s) deleted`, "success");
+      else toast(`${ids.length - failed} deleted, ${failed} failed`, failed === ids.length ? "error" : "warning");
+    } catch (error) {
+      toast("Failed to delete selected details", "error");
+    }
+  };
+
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = (ids, allSelected) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allSelected) ids.forEach((id) => next.delete(id));
+      else ids.forEach((id) => next.add(id));
+      return next;
+    });
   };
 
   const TABLE_HEADER_STYLE = {
@@ -677,11 +714,35 @@ export default function PrintingDetailMaster({ toast }) {
         </Modal>
       )}
 
+      {(() => {
+        const filteredIds = filteredData.map((d) => d._id);
+        const allSelected = filteredIds.length > 0 && filteredIds.every((id) => selectedIds.has(id));
+        const someSelected = filteredIds.some((id) => selectedIds.has(id));
+        return (
+        <>
+        {selectedIds.size > 0 && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", marginBottom: 10, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "#fecaca" }}>{selectedIds.size} selected</span>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => setSelectedIds(new Set())} style={{ padding: "5px 12px", borderRadius: 5, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.06)", color: "#fff", fontSize: 12, fontWeight: 500, cursor: "pointer" }}>Clear</button>
+              <button onClick={handleBulkDelete} style={{ padding: "5px 12px", borderRadius: 5, border: "1px solid rgba(239,68,68,0.4)", background: "rgba(239,68,68,0.15)", color: "#ef4444", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Delete Selected</button>
+            </div>
+          </div>
+        )}
       <Card style={{ padding: 0, overflow: "hidden" }}>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: "#0f172a" }}>
+                <th style={{ ...TABLE_HEADER_STYLE, width: 36 }}>
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    ref={(el) => { if (el) el.indeterminate = !allSelected && someSelected; }}
+                    onChange={() => toggleSelectAll(filteredIds, allSelected)}
+                    style={{ cursor: "pointer" }}
+                  />
+                </th>
                 <th style={TABLE_HEADER_STYLE}>Item Name / Company</th>
                 <th style={TABLE_HEADER_STYLE}>Item Cat.</th>
                 <th style={TABLE_HEADER_STYLE}>Company Cat.</th>
@@ -697,7 +758,7 @@ export default function PrintingDetailMaster({ toast }) {
               {filteredData.length === 0 && (
                 <tr>
                   <td
-                    colSpan="9"
+                    colSpan="10"
                     style={{ padding: 48, textAlign: "center", color: C.muted }}
                   >
                     No records found.
@@ -705,7 +766,15 @@ export default function PrintingDetailMaster({ toast }) {
                 </tr>
               )}
               {filteredData.map((item) => (
-                <tr key={item._id} className="row-hover">
+                <tr key={item._id} className="row-hover" style={{ background: selectedIds.has(item._id) ? "rgba(96,165,250,0.08)" : undefined }}>
+                  <td style={{ ...CELL_STYLE, width: 36 }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(item._id)}
+                      onChange={() => toggleSelect(item._id)}
+                      style={{ cursor: "pointer" }}
+                    />
+                  </td>
                   <td style={CELL_STYLE}>
                     <div style={{ fontWeight: 800, fontSize: 14 }}>
                       {item.itemName}
@@ -843,6 +912,9 @@ export default function PrintingDetailMaster({ toast }) {
           </table>
         </div>
       </Card>
+      </>
+        );
+      })()}
 
       <style>{`
         .row-hover:hover { background: #1e293b44; }

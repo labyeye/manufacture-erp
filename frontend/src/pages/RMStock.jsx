@@ -188,6 +188,93 @@ export default function RMStock({
     );
   };
 
+  const handleExportPDF = () => {
+    if (!filtered.length) {
+      toast?.("No data to export", "error");
+      return;
+    }
+    const rfmt = (n) => Math.round(+n || 0).toLocaleString("en-IN");
+    const totalWt = filtered.reduce((s, r) => s + +(r.weight || 0), 0);
+    const totalVal = filtered.reduce((s, r) => s + (+r.weight || 0) * (+r.rate || 0), 0);
+    const rowsHtml = filtered
+      .map(
+        (s) => `
+        <tr>
+          <td>${s.code || ""}</td>
+          <td>${s.name || s.paperType || ""}</td>
+          <td>${s.category || ""}</td>
+          <td class="num">${fmt(s.qty || 0)}</td>
+          <td class="num">${fmt(s.weight || 0)}</td>
+          <td class="num">${fmt(s.reorderLevel || 0)}</td>
+          <td class="num">${fmt(s.rate || 0)}</td>
+          <td class="num">₹${rfmt((s.weight || 0) * (s.rate || 0))}</td>
+        </tr>`,
+      )
+      .join("");
+    const html = `
+      <html>
+        <head>
+          <title>RM Stock</title>
+          <style>
+            body { font-family: 'Inter', Arial, sans-serif; padding: 20px 30px; color: #1a1a1a; }
+            .header { text-align: center; border-bottom: 2px solid #1e40af; padding-bottom: 10px; margin-bottom: 16px; }
+            .header h1 { color: #1e3a8a; margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 1px; }
+            .header p { margin: 2px 0; font-size: 11px; color: #475569; }
+            .doc-title { display: flex; justify-content: space-between; margin-bottom: 8px; }
+            .doc-title h2 { margin: 0; font-size: 16px; font-weight: 700; }
+            .meta { font-size: 10px; color: #64748b; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; font-size: 10px; text-transform: uppercase; color: #334155; }
+            td { border: 1px solid #e2e8f0; padding: 5px 8px; font-size: 10px; }
+            .num { text-align: right; font-family: 'JetBrains Mono', monospace; }
+            tfoot td { font-weight: 800; background: #f8fafc; }
+            @media print { @page { margin: 1cm; size: A4 landscape; } }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>AARAY PACKAGING PRIVATE LIMITED</h1>
+            <p>Raw Material Stock Report</p>
+          </div>
+          <div class="doc-title">
+            <h2>RM Stock</h2>
+            <div class="meta">Generated: ${new Date().toLocaleString()}<br/>Records: ${filtered.length}</div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Code</th><th>Material</th><th>Category</th>
+                <th class="num">Qty</th><th class="num">Weight (kg)</th><th class="num">Reorder</th>
+                <th class="num">Rate</th><th class="num">Value</th>
+              </tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+            <tfoot>
+              <tr>
+                <td colspan="4">Totals</td>
+                <td class="num">${fmt(Math.round(totalWt))}</td>
+                <td></td><td></td>
+                <td class="num">₹${rfmt(totalVal)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </body>
+      </html>`;
+    const iframe = document.createElement("iframe");
+    iframe.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0";
+    document.body.appendChild(iframe);
+    iframe.contentWindow.document.open();
+    iframe.contentWindow.document.write(html);
+    iframe.contentWindow.document.close();
+    iframe.onload = () => {
+      setTimeout(() => {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        setTimeout(() => document.body.removeChild(iframe), 1000);
+      }, 400);
+    };
+  };
+
   const handleImport = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -788,6 +875,7 @@ export default function RMStock({
           <ImportBtn onClick={() => fileInputRef.current?.click()} />
         )}
         <ExportBtn onClick={handleExport} />
+        <ExportBtn onClick={handleExportPDF} label="Export PDF" />
         <input
           ref={fileInputRef}
           type="file"

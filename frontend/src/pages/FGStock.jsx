@@ -416,6 +416,94 @@ export default function FGStock({
     toast("Exported as Excel successfully", "success");
   };
 
+  const handleExportPDF = () => {
+    if (!filtered.length) {
+      toast("No data to export", "error");
+      return;
+    }
+    const fmtN = (n) => (+n || 0).toLocaleString("en-IN");
+    const rfmt = (n) => Math.round(+n || 0).toLocaleString("en-IN");
+    const totalQty = filtered.reduce((s, r) => s + (+r.qty || 0), 0);
+    const totalVal = filtered.reduce((s, r) => s + (+r.qty || 0) * (+r.price || 0), 0);
+    const rowsHtml = filtered
+      .map(
+        (s) => `
+        <tr>
+          <td>${s.itemCode || s.code || ""}</td>
+          <td>${s.itemName || ""}</td>
+          <td>${s.category || ""}</td>
+          <td>${s.companyCat || ""}</td>
+          <td class="num">${fmtN(s.qty || 0)}</td>
+          <td class="num">${fmtN(s.reorder || 0)}</td>
+          <td class="num">${fmtN(s.price || 0)}</td>
+          <td class="num">₹${rfmt((s.qty || 0) * (s.price || 0))}</td>
+        </tr>`,
+      )
+      .join("");
+    const html = `
+      <html>
+        <head>
+          <title>FG Stock</title>
+          <style>
+            body { font-family: 'Inter', Arial, sans-serif; padding: 20px 30px; color: #1a1a1a; }
+            .header { text-align: center; border-bottom: 2px solid #1e40af; padding-bottom: 10px; margin-bottom: 16px; }
+            .header h1 { color: #1e3a8a; margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 1px; }
+            .header p { margin: 2px 0; font-size: 11px; color: #475569; }
+            .doc-title { display: flex; justify-content: space-between; margin-bottom: 8px; }
+            .doc-title h2 { margin: 0; font-size: 16px; font-weight: 700; }
+            .meta { font-size: 10px; color: #64748b; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; font-size: 10px; text-transform: uppercase; color: #334155; }
+            td { border: 1px solid #e2e8f0; padding: 5px 8px; font-size: 10px; }
+            .num { text-align: right; font-family: 'JetBrains Mono', monospace; }
+            tfoot td { font-weight: 800; background: #f8fafc; }
+            @media print { @page { margin: 1cm; size: A4 landscape; } }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>AARAY PACKAGING PRIVATE LIMITED</h1>
+            <p>Finished Goods Stock Report</p>
+          </div>
+          <div class="doc-title">
+            <h2>FG Stock</h2>
+            <div class="meta">Generated: ${new Date().toLocaleString()}<br/>Records: ${filtered.length}</div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Code</th><th>Item Name</th><th>Category</th><th>Company Cat</th>
+                <th class="num">Qty</th><th class="num">Reorder</th>
+                <th class="num">Price</th><th class="num">Value</th>
+              </tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+            <tfoot>
+              <tr>
+                <td colspan="4">Totals</td>
+                <td class="num">${fmtN(totalQty)}</td>
+                <td></td><td></td>
+                <td class="num">₹${rfmt(totalVal)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </body>
+      </html>`;
+    const iframe = document.createElement("iframe");
+    iframe.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0";
+    document.body.appendChild(iframe);
+    iframe.contentWindow.document.open();
+    iframe.contentWindow.document.write(html);
+    iframe.contentWindow.document.close();
+    iframe.onload = () => {
+      setTimeout(() => {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        setTimeout(() => document.body.removeChild(iframe), 1000);
+      }, 400);
+    };
+  };
+
   const handleTemplate = () => {
     const header = [
       "Code",
@@ -689,6 +777,7 @@ export default function FGStock({
           <ImportBtn onClick={() => fileInputRef.current?.click()} />
         )}
         <ExportBtn onClick={handleExport} />
+        <ExportBtn onClick={handleExportPDF} label="Export PDF" />
         <input
           ref={fileInputRef}
           type="file"

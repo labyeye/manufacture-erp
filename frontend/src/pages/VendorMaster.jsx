@@ -46,6 +46,7 @@ export default function VendorMaster({
   const [searchTerm, setSearchTerm] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [importProgress, setImportProgress] = useState({
     show: false,
     current: 0,
@@ -135,6 +136,42 @@ export default function VendorMaster({
     } catch (error) {
       toast("Failed to delete vendor", "error");
     }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Delete ${selectedIds.size} vendor(s)?`)) return;
+    const ids = Array.from(selectedIds);
+    try {
+      const results = await Promise.allSettled(
+        ids.map((id) => vendorMasterAPI.delete(id)),
+      );
+      const failed = results.filter((r) => r.status === "rejected").length;
+      setSelectedIds(new Set());
+      fetchVendors();
+      if (failed === 0) toast(`${ids.length} vendor(s) deleted`, "success");
+      else toast(`${ids.length - failed} deleted, ${failed} failed`, failed === ids.length ? "error" : "warning");
+    } catch (error) {
+      toast("Failed to delete selected vendors", "error");
+    }
+  };
+
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = (ids, allSelected) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allSelected) ids.forEach((id) => next.delete(id));
+      else ids.forEach((id) => next.add(id));
+      return next;
+    });
   };
 
   const handleToggleStatus = async (vendor) => {
@@ -581,7 +618,22 @@ export default function VendorMaster({
           />
         </div>
 
-        {filtered.length === 0 ? (
+        {(() => {
+          const filteredIds = filtered.map((v) => v._id);
+          const allSelected = filteredIds.length > 0 && filteredIds.every((id) => selectedIds.has(id));
+          const someSelected = filteredIds.some((id) => selectedIds.has(id));
+          return (
+            <>
+            {selectedIds.size > 0 && (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", marginBottom: 10, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "#fecaca" }}>{selectedIds.size} selected</span>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => setSelectedIds(new Set())} style={{ padding: "5px 12px", borderRadius: 5, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.06)", color: "#fff", fontSize: 12, fontWeight: 500, cursor: "pointer" }}>Clear</button>
+                  <button onClick={handleBulkDelete} style={{ padding: "5px 12px", borderRadius: 5, border: "1px solid rgba(239,68,68,0.4)", background: "rgba(239,68,68,0.15)", color: "#ef4444", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Delete Selected</button>
+                </div>
+              </div>
+            )}
+            {filtered.length === 0 ? (
           <div
             style={{
               textAlign: "center",
@@ -605,6 +657,15 @@ export default function VendorMaster({
             >
               <thead>
                 <tr style={{ background: "rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                  <th style={{ textAlign: "left", padding: "10px 12px", width: 36 }}>
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      ref={(el) => { if (el) el.indeterminate = !allSelected && someSelected; }}
+                      onChange={() => toggleSelectAll(filteredIds, allSelected)}
+                      style={{ cursor: "pointer" }}
+                    />
+                  </th>
                   {[
                     "Vendor Name",
                     "Category",
@@ -634,10 +695,18 @@ export default function VendorMaster({
                 {filtered.map((vendor) => (
                   <tr
                     key={vendor._id}
-                    style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}
-                    onMouseEnter={e => e.currentTarget.style.background="rgba(255,255,255,0.04)"}
-                    onMouseLeave={e => e.currentTarget.style.background="transparent"}
+                    style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: selectedIds.has(vendor._id) ? "rgba(96,165,250,0.08)" : undefined }}
+                    onMouseEnter={e => { if (!selectedIds.has(vendor._id)) e.currentTarget.style.background="rgba(255,255,255,0.04)"; }}
+                    onMouseLeave={e => { if (!selectedIds.has(vendor._id)) e.currentTarget.style.background="transparent"; }}
                   >
+                    <td style={{ padding: "12px", width: 36 }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(vendor._id)}
+                        onChange={() => toggleSelect(vendor._id)}
+                        style={{ cursor: "pointer" }}
+                      />
+                    </td>
                     <td
                       style={{
                         padding: "12px",
@@ -742,6 +811,9 @@ export default function VendorMaster({
             </table>
           </div>
         )}
+            </>
+          );
+        })()}
       </div>
     </div>
   );
