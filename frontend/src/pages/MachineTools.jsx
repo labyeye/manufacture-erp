@@ -332,12 +332,14 @@ function ToolTypeSection({ tabId, toast }) {
           color="#555"
           onClick={handleDownloadTemplate}
         />
-        <Button
-          text={importing ? "Importing…" : "⬆ Import"}
-          color="#555"
-          onClick={() => importRef.current?.click()}
-          loading={importing}
-        />
+        {canExportImport && (
+          <Button
+            text={importing ? "Importing…" : "⬆ Import"}
+            color="#555"
+            onClick={() => importRef.current?.click()}
+            loading={importing}
+          />
+        )}
         <input
           ref={importRef}
           type="file"
@@ -345,7 +347,7 @@ function ToolTypeSection({ tabId, toast }) {
           style={{ display: "none" }}
           onChange={handleImport}
         />
-        <Button text="⬇ Export" color="#555" onClick={handleExport} />
+        {canExportImport && <Button text="⬇ Export" color="#555" onClick={handleExport} />}
         <Button
           onClick={() => {
             resetForm();
@@ -1078,7 +1080,7 @@ function BreakdownSection({ toast }) {
 }
 
 
-export default function MachineTools({ machineMaster = [], itemMasterFG = [], categoryMaster = [], toast }) {
+export default function MachineTools({ machineMaster = [], itemMasterFG = [], categoryMaster = [], toast, canExportImport = true }) {
   const [activeTab, setActiveTab] = useState("cylinders");
 
   return (

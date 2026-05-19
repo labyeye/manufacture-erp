@@ -45,6 +45,10 @@ const userSchema = new mongoose.Schema({
     trim: true,
     lowercase: true
   },
+  allowExportImport: {
+    type: Boolean,
+    default: true,
+  },
   isActive: {
     type: Boolean,
     default: true

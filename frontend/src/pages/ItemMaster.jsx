@@ -68,7 +68,7 @@ function useIsMobile(breakpoint = 768) {
   return isMobile;
 }
 
-export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
+export default function ItemMaster({ companyMaster = [], toast, refreshData, canExportImport = true }) {
   const [itemMasterFG, setItemMasterFG] = useState([]);
   const [categoryMaster, setCategoryMaster] = useState({});
   const [brandMaster, setBrandMaster] = useState([]);
@@ -1855,12 +1855,14 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData }) {
               Delete {selectedIds.length} Selected
             </button>
           )}
-          <ExportBtn onClick={handleExport} label="Export" />
+          {canExportImport && <ExportBtn onClick={handleExport} label="Export" />}
           <TemplateBtn onClick={handleTemplate} />
+          {canExportImport && (
           <ImportBtn
             onClick={() => fileInputRef.current?.click()}
             label="Bulk Import"
           />
+          )}
           {tabItems.length > 0 && activeTab === "Machine Spare" && (
             <button
               onClick={() => setDeleteAllModal(true)}

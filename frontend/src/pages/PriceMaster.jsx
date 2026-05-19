@@ -59,7 +59,7 @@ const PURCHASE_COLS = [
 ];
 
 /* ─── Selling Section ─── */
-function SellingSection({ toast }) {
+function SellingSection({ toast, canExportImport = true }) {
   const [records, setRecords]       = useState([]);
   const [companies, setCompanies]   = useState([]);
   const [fgItems, setFgItems]       = useState([]);
@@ -269,9 +269,9 @@ function SellingSection({ toast }) {
 
         <div style={{ marginLeft: "auto", display: "flex", gap: 8, flexWrap: "wrap" }}>
           <Button text="⬇ Template" color="#444" onClick={handleTemplate} />
-          <Button text={importing ? "Importing…" : "⬆ Import"} color="#444" onClick={() => importRef.current?.click()} />
+          {canExportImport && <Button text={importing ? "Importing…" : "⬆ Import"} color="#444" onClick={() => importRef.current?.click()} />}
           <input ref={importRef} type="file" accept=".xlsx,.xls" style={{ display: "none" }} onChange={handleImport} />
-          <Button text="⬇ Export" color="#444" onClick={handleExport} />
+          {canExportImport && <Button text="⬇ Export" color="#444" onClick={handleExport} />}
           <Button
             text="+ Add Price"
             color={ACCENT_SELL}
@@ -393,7 +393,7 @@ function SellingSection({ toast }) {
 }
 
 /* ─── Purchase Section ─── */
-function PurchaseSection({ toast }) {
+function PurchaseSection({ toast, canExportImport = true }) {
   const [records, setRecords]     = useState([]);
   const [vendors, setVendors]     = useState([]);
   const [loading, setLoading]     = useState(false);
@@ -578,9 +578,9 @@ function PurchaseSection({ toast }) {
 
         <div style={{ marginLeft: "auto", display: "flex", gap: 8, flexWrap: "wrap" }}>
           <Button text="⬇ Template" color="#444" onClick={handleTemplate} />
-          <Button text={importing ? "Importing…" : "⬆ Import"} color="#444" onClick={() => importRef.current?.click()} />
+          {canExportImport && <Button text={importing ? "Importing…" : "⬆ Import"} color="#444" onClick={() => importRef.current?.click()} />}
           <input ref={importRef} type="file" accept=".xlsx,.xls" style={{ display: "none" }} onChange={handleImport} />
-          <Button text="⬇ Export" color="#444" onClick={handleExport} />
+          {canExportImport && <Button text="⬇ Export" color="#444" onClick={handleExport} />}
           <Button
             text="+ Add Price"
             color={ACCENT_BUY}
@@ -666,7 +666,7 @@ const SUBTABS = [
   { id: "purchase", icon: "🛒", label: "Purchase Prices", accent: ACCENT_BUY  },
 ];
 
-export default function PriceMaster({ toast }) {
+export default function PriceMaster({ toast, canExportImport = true }) {
   const [activeTab, setActiveTab] = useState("selling");
 
   return (
@@ -697,8 +697,8 @@ export default function PriceMaster({ toast }) {
         ))}
       </div>
 
-      {activeTab === "selling"  && <SellingSection  toast={toast} />}
-      {activeTab === "purchase" && <PurchaseSection toast={toast} />}
+      {activeTab === "selling"  && <SellingSection  toast={toast} canExportImport={canExportImport} />}
+      {activeTab === "purchase" && <PurchaseSection toast={toast} canExportImport={canExportImport} />}
     </div>
   );
 }

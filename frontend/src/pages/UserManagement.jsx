@@ -45,6 +45,7 @@ export default function UserManagement({ currentUser, toast, onRefreshUser, cate
     name: "", username: "", password: "",
     role: "Viewer", clientTag: "",
     allowedTabs: [], editableTabs: [],
+    allowExportImport: true,
   };
   const [form, setForm] = useState(emptyForm);
 
@@ -115,6 +116,7 @@ export default function UserManagement({ currentUser, toast, onRefreshUser, cate
           allowedTabs: form.allowedTabs,
           editableTabs: form.editableTabs,
           clientTag: form.clientTag,
+          allowExportImport: form.allowExportImport,
         };
         if (form.password && form.password !== "••••••") updateData.password = form.password;
         await usersAPI.update(editingId, updateData);
@@ -124,6 +126,7 @@ export default function UserManagement({ currentUser, toast, onRefreshUser, cate
           name: form.name, username: form.username, password: form.password,
           role: form.role, allowedTabs: form.allowedTabs,
           editableTabs: form.editableTabs, clientTag: form.clientTag,
+          allowExportImport: form.allowExportImport,
         });
         toast("User created successfully", "success");
       }
@@ -149,6 +152,7 @@ export default function UserManagement({ currentUser, toast, onRefreshUser, cate
       allowedTabs: user.allowedTabs || [],
       editableTabs: user.editableTabs || [],
       clientTag: user.clientTag || "",
+      allowExportImport: user.allowExportImport !== false,
     });
     setEditingId(user._id);
     setShowModal(true);
@@ -260,6 +264,28 @@ export default function UserManagement({ currentUser, toast, onRefreshUser, cate
                 </select>
               </div>
             )}
+          </div>
+
+          {/* Import / Export permission */}
+          <div style={{ marginBottom: 16, padding: "12px 14px", background: "rgba(255,255,255,0.05)", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#e0e0e0" }}>Allow Import / Export</div>
+              <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>Excel & PDF import/export buttons across all pages</div>
+            </div>
+            <div
+              onClick={() => setForm(p => ({ ...p, allowExportImport: !p.allowExportImport }))}
+              style={{
+                width: 40, height: 22, borderRadius: 11, cursor: "pointer",
+                background: form.allowExportImport ? "#4CAF50" : "#444",
+                position: "relative", transition: "background 0.2s", flexShrink: 0,
+              }}
+            >
+              <div style={{
+                position: "absolute", top: 3, width: 16, height: 16, borderRadius: "50%",
+                background: "#fff", transition: "left 0.2s",
+                left: form.allowExportImport ? 21 : 3,
+              }} />
+            </div>
           </div>
 
           {/* Page permissions */}
@@ -386,6 +412,11 @@ export default function UserManagement({ currentUser, toast, onRefreshUser, cate
                     background: roleColor + "22", color: roleColor,
                   }}>{user.role}</span>
                   <span style={{ fontSize: 12, color: "#555" }}>{modCount} pages</span>
+                  <span style={{
+                    padding: "2px 8px", borderRadius: 20, fontSize: 11, fontWeight: 500,
+                    background: user.allowExportImport !== false ? "#4CAF5011" : "#f4433611",
+                    color: user.allowExportImport !== false ? "#4CAF50" : "#f44336",
+                  }}>{user.allowExportImport !== false ? "Import/Export ✓" : "Import/Export ✗"}</span>
                   {!user.isActive && (
                     <span style={{
                       padding: "2px 8px", borderRadius: 20, fontSize: 11, fontWeight: 500,

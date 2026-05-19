@@ -45,6 +45,7 @@ export default function MaterialInward({
   setItemCounters,
   toast,
   editableTabs = [],
+  canExportImport = true,
   props = {},
   deepLinkId,
   onDeepLinkConsumed,
@@ -1860,6 +1861,7 @@ export default function MaterialInward({
             />
           </div>
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            {canExportImport && (
             <button
               onClick={handleExportExcel}
               style={{
@@ -1878,6 +1880,7 @@ export default function MaterialInward({
             >
               Export Excel
             </button>
+            )}
             <span style={{ fontSize: 12, color: C.muted }}>
               {filteredInwards.length} records found
             </span>

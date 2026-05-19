@@ -21,6 +21,7 @@ export default function RMStock({
   session,
   toast,
   refreshData,
+  canExportImport = true,
 }) {
   const isClient = session?.role === "Client";
   const [search, setSearch] = useState("");
@@ -871,11 +872,11 @@ export default function RMStock({
             XLSX.writeFile(workbook, "rm_template.xlsx");
           }}
         />
-        {!isClient && (
+        {canExportImport && !isClient && (
           <ImportBtn onClick={() => fileInputRef.current?.click()} />
         )}
-        <ExportBtn onClick={handleExport} />
-        <ExportBtn onClick={handleExportPDF} label="Export PDF" />
+        {canExportImport && <ExportBtn onClick={handleExport} />}
+        {canExportImport && <ExportBtn onClick={handleExportPDF} label="Export PDF" />}
         <input
           ref={fileInputRef}
           type="file"

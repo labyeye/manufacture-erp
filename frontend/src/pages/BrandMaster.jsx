@@ -37,7 +37,7 @@ const cardStyle = {
   boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
 };
 
-export default function BrandMaster({ toast }) {
+export default function BrandMaster({ toast, canExportImport = true }) {
   const [brands, setBrands] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [clientCategories, setClientCategories] = useState([]);
@@ -494,9 +494,9 @@ export default function BrandMaster({ toast }) {
               Cancel
             </button>
           )}
-          <ExportBtn onClick={handleExport} label="Export" />
+          {canExportImport && <ExportBtn onClick={handleExport} label="Export" />}
           <TemplateBtn onClick={handleTemplate} />
-          <ImportBtn onClick={() => fileInputRef.current.click()} />
+          {canExportImport && <ImportBtn onClick={() => fileInputRef.current.click()} />}
           <input
             type="file"
             ref={fileInputRef}

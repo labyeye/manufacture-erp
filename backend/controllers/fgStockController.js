@@ -1,4 +1,5 @@
 const FGStock = require("../models/FGStock");
+const ItemMaster = require("../models/ItemMaster");
 
 exports.getAllStock = async (req, res) => {
   try {
@@ -9,9 +10,14 @@ exports.getAllStock = async (req, res) => {
     if (companyName)
       filter.companyName = { $regex: companyName, $options: "i" };
 
-    
     if (req.user && req.user.role === "Client" && req.user.clientTag) {
-      filter.companyCat = req.user.clientTag;
+      const tag = req.user.clientTag;
+      const matchingItems = await ItemMaster.find({ companyCategory: tag }).select("code").lean();
+      const matchingCodes = matchingItems.map((i) => i.code).filter(Boolean);
+      filter.$or = [
+        { companyCat: tag },
+        { itemCode: { $in: matchingCodes } },
+      ];
     }
 
     const stock = await FGStock.find(filter).sort({ lastUpdated: -1 });

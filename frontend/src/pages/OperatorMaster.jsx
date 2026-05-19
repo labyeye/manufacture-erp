@@ -36,7 +36,7 @@ const labelStyle = {
   letterSpacing: "0.05em",
 };
 
-export default function OperatorMaster({ toast }) {
+export default function OperatorMaster({ toast, canExportImport = true }) {
   const [operators, setOperators] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -230,8 +230,8 @@ export default function OperatorMaster({ toast }) {
         />
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
           <TemplateBtn onClick={handleTemplate} />
-          <ImportBtn onClick={() => fileInputRef.current?.click()} />
-          <ExportBtn onClick={handleExport} />
+          {canExportImport && <ImportBtn onClick={() => fileInputRef.current?.click()} />}
+          {canExportImport && <ExportBtn onClick={handleExport} />}
           <input
             ref={fileInputRef}
             type="file"

@@ -436,6 +436,7 @@ function AppInner({
         editableTabs,
         allowedTabs,
         currentTab,
+        canExportImport: session?.allowExportImport !== false,
         refreshData: fetchMasters,
       };
     }
@@ -494,6 +495,7 @@ function AppInner({
       editableTabs,
       allowedTabs,
       currentTab,
+      canExportImport: session?.allowExportImport !== false,
       refreshData: fetchMasters,
     };
   }, [
@@ -602,7 +604,7 @@ function AppInner({
           />
         );
       case "operatormaster":
-        return <OperatorMaster toast={showToast} />;
+        return <OperatorMaster toast={showToast} canExportImport={session?.allowExportImport !== false} />;
       case "printingmaster":
         return <PrintingDetailMaster {...data} toast={showToast} />;
       case "calendar":
@@ -662,7 +664,7 @@ function AppInner({
           />
         );
       case "pricemaster":
-        return <PriceMaster toast={showToast} />;
+        return <PriceMaster toast={showToast} canExportImport={session?.allowExportImport !== false} />;
       case "forecast":
         return (
           <Forecast

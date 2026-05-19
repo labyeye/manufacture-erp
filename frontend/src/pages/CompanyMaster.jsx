@@ -37,7 +37,7 @@ const cardStyle = {
   boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
 };
 
-export default function CompanyMaster({ toast }) {
+export default function CompanyMaster({ toast, canExportImport = true }) {
   const [companies, setCompanies] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
@@ -485,9 +485,9 @@ export default function CompanyMaster({ toast }) {
               Cancel
             </button>
           )}
-          <ExportBtn onClick={handleExportCSV} label="Export" />
+          {canExportImport && <ExportBtn onClick={handleExportCSV} label="Export" />}
           <TemplateBtn onClick={handleTemplate} />
-          <ImportBtn onClick={() => fileInputRef.current.click()} />
+          {canExportImport && <ImportBtn onClick={() => fileInputRef.current.click()} />}
           <input
             type="file"
             ref={fileInputRef}

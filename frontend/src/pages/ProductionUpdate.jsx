@@ -34,6 +34,7 @@ export default function ProductionUpdate({
   operatorMaster = [],
   session,
   toast,
+  canExportImport = true,
 }) {
   const isOperator = session?.role === "Operator";
   const readonlyStyle = {
@@ -822,11 +823,13 @@ export default function ProductionUpdate({
               </div>
             </div>
 
-            <ExportBtn
-              onClick={() => {
-                toast("Excel Export coming soon...", "info");
-              }}
-            />
+            {canExportImport && (
+              <ExportBtn
+                onClick={() => {
+                  toast("Excel Export coming soon...", "info");
+                }}
+              />
+            )}
           </div>
 
           {(() => {

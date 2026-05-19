@@ -32,6 +32,7 @@ export default function FGStock({
   session,
   toast,
   refreshData,
+  canExportImport = true,
 }) {
   const isClient = session?.role === "Client";
   const [search, setSearch] = useState("");
@@ -773,11 +774,11 @@ export default function FGStock({
           onChange={(e) => setSearch(e.target.value)}
         />
         <TemplateBtn onClick={handleTemplate} />
-        {!isClient && (
+        {canExportImport && !isClient && (
           <ImportBtn onClick={() => fileInputRef.current?.click()} />
         )}
-        <ExportBtn onClick={handleExport} />
-        <ExportBtn onClick={handleExportPDF} label="Export PDF" />
+        {canExportImport && <ExportBtn onClick={handleExport} />}
+        {canExportImport && <ExportBtn onClick={handleExportPDF} label="Export PDF" />}
         <input
           ref={fileInputRef}
           type="file"

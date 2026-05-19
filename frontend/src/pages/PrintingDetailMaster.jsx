@@ -17,7 +17,7 @@ import * as XLSX from "xlsx";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 
-export default function PrintingDetailMaster({ toast }) {
+export default function PrintingDetailMaster({ toast, canExportImport = true }) {
   const [printingMaster, setPrintingMaster] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -402,7 +402,7 @@ export default function PrintingDetailMaster({ toast }) {
         <div style={{ display: "flex", gap: 10 }}>
           <TemplateBtn onClick={downloadTemplate} />
 
-          <ImportBtn onClick={() => fileInputRef.current?.click()} />
+          {canExportImport && <ImportBtn onClick={() => fileInputRef.current?.click()} />}
           <input
             ref={fileInputRef}
             type="file"
@@ -411,7 +411,7 @@ export default function PrintingDetailMaster({ toast }) {
             onChange={handleImport}
           />
 
-          <ExportBtn onClick={exportToExcel} />
+          {canExportImport && <ExportBtn onClick={exportToExcel} />}
 
           <button
             onClick={() => { setEditingId(null); setEntry(blankEntry); setShowModal(true); }}

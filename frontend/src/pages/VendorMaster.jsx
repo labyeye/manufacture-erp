@@ -34,6 +34,7 @@ export default function VendorMaster({
   vendorMaster: globalVendors,
   refreshData,
   toast,
+  canExportImport = true,
 }) {
   const [vendorMaster, setVendorMaster] = useState(globalVendors || []);
   const [formData, setFormData] = useState({
@@ -584,7 +585,7 @@ export default function VendorMaster({
             </button>
           )}
           <TemplateBtn onClick={handleTemplate} />
-          <ImportBtn onClick={() => fileInputRef.current?.click()} />
+          {canExportImport && <ImportBtn onClick={() => fileInputRef.current?.click()} />}
           <input
             ref={fileInputRef}
             type="file"
@@ -592,7 +593,7 @@ export default function VendorMaster({
             style={{ display: "none" }}
             onChange={handleImportExcel}
           />
-          <ExportBtn onClick={handleExportExcel} />
+          {canExportImport && <ExportBtn onClick={handleExportExcel} />}
         </div>
       </div>
 

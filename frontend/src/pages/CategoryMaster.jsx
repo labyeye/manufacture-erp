@@ -27,7 +27,7 @@ const inputStyle = {
   boxSizing: "border-box",
 };
 
-export default function CategoryMaster({ toast }) {
+export default function CategoryMaster({ toast, canExportImport = true }) {
   const [activeTab, setActiveTab] = useState("Raw Material");
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [newCatName, setNewCatName] = useState("");
@@ -504,7 +504,7 @@ export default function CategoryMaster({ toast }) {
           {}
           <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
             <TemplateBtn onClick={handleTemplate} style={{ flex: 1, padding: "6px 0", fontSize: 11 }} />
-            <ImportBtn onClick={() => fileInputRef.current?.click()} style={{ flex: 1, padding: "6px 0", fontSize: 11 }} />
+            {canExportImport && <ImportBtn onClick={() => fileInputRef.current?.click()} style={{ flex: 1, padding: "6px 0", fontSize: 11 }} />}
             <input
               ref={fileInputRef}
               type="file"

@@ -60,6 +60,7 @@ exports.login = async (req, res) => {
         allowedTabs: user.allowedTabs,
         editableTabs: user.editableTabs,
         clientTag: user.clientTag,
+        allowExportImport: user.allowExportImport !== false,
         phone: user.phone || null,
       },
     });
@@ -83,6 +84,7 @@ exports.me = async (req, res) => {
         allowedTabs: req.user.allowedTabs,
         editableTabs: req.user.editableTabs,
         clientTag: req.user.clientTag,
+        allowExportImport: req.user.allowExportImport !== false,
       },
     });
   } catch (error) {
@@ -147,7 +149,7 @@ exports.getUserById = async (req, res) => {
 
 exports.createUser = async (req, res) => {
   try {
-    const { username, password, name, role, allowedTabs, editableTabs, clientTag, email, phone } =
+    const { username, password, name, role, allowedTabs, editableTabs, clientTag, email, phone, allowExportImport } =
       req.body;
 
     if (!username || !password || !name) {
@@ -174,6 +176,7 @@ exports.createUser = async (req, res) => {
       clientTag: clientTag || null,
       email: email ? email.toLowerCase() : null,
       phone: phone || null,
+      allowExportImport: allowExportImport !== false,
       isActive: true,
     });
 
@@ -195,7 +198,7 @@ exports.createUser = async (req, res) => {
 exports.updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, role, allowedTabs, editableTabs, isActive, password, clientTag, email } =
+    const { name, role, allowedTabs, editableTabs, isActive, password, clientTag, email, allowExportImport } =
       req.body;
 
     const user = await User.findById(id);
@@ -210,6 +213,7 @@ exports.updateUser = async (req, res) => {
     if (isActive !== undefined) user.isActive = isActive;
     if (clientTag !== undefined) user.clientTag = clientTag;
     if (email !== undefined) user.email = email ? email.toLowerCase() : null;
+    if (allowExportImport !== undefined) user.allowExportImport = allowExportImport;
     if (password) user.password = password;
 
     await user.save();
