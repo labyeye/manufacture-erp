@@ -21,6 +21,7 @@ import {
   salesOrdersAPI,
   rawMaterialStockAPI,
   printingDetailMasterAPI,
+  categoryMasterAPI,
 } from "../api/auth";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
@@ -35,19 +36,6 @@ const calcSheets = (q, u) => {
     return Math.ceil(Math.ceil(qty / ups) / 100) * 100;
   }
   return "";
-};
-const PAPER_TYPES_BY_ITEM = {
-  "Paper Reel": ["MG Kraft", "MF Kraft", "Bleached Kraft", "OGR"],
-  "Paper Sheets": [
-    "White PE Coated",
-    "Kraft PE Coated",
-    "Kraft Uncoated",
-    "SBS/FBB",
-    "Whiteback",
-    "Greyback",
-    "Art Paper",
-    "Gumming Sheet",
-  ],
 };
 
 const PRINTING_OPTIONS = ["No Printing", "1", "2", "3", "4", "5", "6"];
@@ -106,6 +94,7 @@ export default function JobOrders(props) {
   } = props;
   const [jobOrders, setJobOrders] = useState([]);
   const [salesOrders, setSalesOrders] = useState([]);
+  const [paperTypesByItem, setPaperTypesByItem] = useState({});
   const [loading, setLoading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [selectedIds, setSelectedIds] = useState(() => new Set());
@@ -265,7 +254,25 @@ export default function JobOrders(props) {
   useEffect(() => {
     fetchJobOrders();
     fetchSalesOrders();
+    fetchCategoryMaster();
   }, []);
+
+  const fetchCategoryMaster = async () => {
+    try {
+      const res = await categoryMasterAPI.getAll();
+      const rawMat = (res.categories || []).find((c) => c.type === "Raw Material");
+      if (rawMat?.subTypes) {
+        const normalized = {};
+        Object.entries(rawMat.subTypes).forEach(([key, vals]) => {
+          normalized[key] = vals;
+          normalized[key + "s"] = vals;
+        });
+        setPaperTypesByItem(normalized);
+      }
+    } catch (err) {
+      console.error("Failed to load category master:", err);
+    }
+  };
 
   const handleEditJO = (jo) => {
     setEditId(jo._id);
@@ -1412,7 +1419,7 @@ export default function JobOrders(props) {
                     ? "-- Select Paper Type --"
                     : "-- Select Category first --"}
                 </option>
-                {(PAPER_TYPES_BY_ITEM[header.paperCategory] || []).map((p) => (
+                {(paperTypesByItem[header.paperCategory] || []).map((p) => (
                   <option key={p}>{p}</option>
                 ))}
               </select>
@@ -1695,7 +1702,7 @@ export default function JobOrders(props) {
                       ? "-- Select Paper Type --"
                       : "-- Select Category first --"}
                   </option>
-                  {(PAPER_TYPES_BY_ITEM[header.paperCategory2] || []).map(
+                  {(paperTypesByItem[header.paperCategory2] || []).map(
                     (p) => (
                       <option key={p}>{p}</option>
                     ),
