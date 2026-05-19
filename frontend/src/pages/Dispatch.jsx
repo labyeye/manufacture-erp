@@ -28,6 +28,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
   const blankHeader = {
     dispatchDate: today(),
     soRef: "",
+    poNumber: "",
     companyName: "",
     deliveryAddress: "",
     vehicleNo: "",
@@ -157,12 +158,16 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
             const masterItem = (itemMasterFG || []).find(
               (m) => m.name === it.itemName,
             );
-            const priceEntry = (priceList || []).find(
+            const soSellingPrices = (priceList || []).filter(
               (p) =>
                 p.listType === "selling" &&
-                (p.itemName === it.itemName || p.itemCode === (masterItem?.code || "")) &&
-                (!p.companyName || p.companyName === so.companyName),
+                (p.status === "Active" || !p.status) &&
+                (p.itemName === it.itemName || p.itemCode === (masterItem?.code || "")),
             );
+            const priceEntry =
+              soSellingPrices.find((p) => p.companyName === so.companyName) ||
+              soSellingPrices.find((p) => !p.companyName) ||
+              soSellingPrices[0];
             return {
               _id: uid(),
               itemName: it.itemName || "",
@@ -242,24 +247,27 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
 
       if (k === "itemName") {
         const stock = (fgStock || []).find((s) => s.itemName === v);
-        it.productCode = stock?.code || stock?.joNo || "";
-
         const masterItem = (itemMasterFG || []).find((m) => m.name === v);
-        if (masterItem && header.clientName) {
-          it.clientCode = masterItem.clientCodes?.[header.clientName] || "";
-        } else {
-          it.clientCode = "";
-        }
 
-        const priceEntry = (priceList || []).find(
-          (p) =>
-            p.listType === "selling" &&
-            (p.itemName === v || p.itemCode === (masterItem?.code || "")) &&
-            (!p.companyName || p.companyName === header.companyName),
-        );
-        if (priceEntry) {
-          it.rate = priceEntry.unitPrice;
-          it.gstRate = it.gstRate || 18;
+        it.productCode = stock?.itemCode || stock?.code || masterItem?.code || "";
+        it.unit = stock?.unit || it.unit || "nos";
+
+        it.companyCode = masterItem && header.companyName
+          ? masterItem.companyCodes?.[header.companyName] || ""
+          : "";
+
+        if (header.companyName) {
+          const priceEntry = (priceList || []).find(
+            (p) =>
+              p.listType === "selling" &&
+              (p.status === "Active" || !p.status) &&
+              (p.itemName === v || p.itemCode === it.productCode) &&
+              p.companyName === header.companyName,
+          );
+          if (priceEntry) {
+            it.rate = priceEntry.unitPrice;
+            it.gstRate = priceEntry.gstRate || it.gstRate || 18;
+          }
         }
       }
 
@@ -346,6 +354,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
         date: new Date(header.dispatchDate),
         companyName: header.companyName,
         soRef: header.soRef,
+        poNumber: header.poNumber,
         joRef: header.joRef,
         vehicleNo: header.vehicleNo,
         driverName: header.driverName,
@@ -597,7 +606,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr 1.2fr 1.2fr 1.5fr 1.2fr",
+                gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr",
                 gap: 14,
                 marginBottom: 14,
               }}
@@ -623,6 +632,13 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                   ))}
                 </select>
               </Field>
+              <Field label="PO Number">
+                <input
+                  placeholder="Customer PO No."
+                  value={header.poNumber}
+                  onChange={(e) => setH("poNumber", e.target.value)}
+                />
+              </Field>
               <Field label="Company Name *">
                 <AutocompleteInput
                   value={header.companyName}
@@ -638,7 +654,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                   onChange={(e) => setH("deliveryAddress", e.target.value)}
                 />
               </Field>
-              <Field label="Vehicle No *">
+              <Field label="Vehicle No">
                 <input
                   placeholder="e.g. DL01AB1234"
                   value={header.vehicleNo}
@@ -757,19 +773,13 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                 }}
               >
                 <Field label="Item Name *">
-                  <select
+                  <AutocompleteInput
                     value={it.itemName}
-                    onChange={(e) => setItem(idx, "itemName", e.target.value)}
-                    style={EI(idx, "itemName")}
-                  >
-                    <option value="">-- Select FG Item --</option>
-                    {it.itemName && !fgStockOptions.includes(it.itemName) && (
-                      <option value={it.itemName}>{it.itemName}</option>
-                    )}
-                    {fgStockOptions.map((item) => (
-                      <option key={item}>{item}</option>
-                    ))}
-                  </select>
+                    onChange={(v) => setItem(idx, "itemName", v)}
+                    suggestions={fgStockOptions}
+                    placeholder="Type to search FG item..."
+                    inputStyle={EI(idx, "itemName")}
+                  />
                   {EIMsg(idx, "itemName")}
                   {(() => {
                     const st = (fgStock || []).find(
@@ -1189,232 +1199,115 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
               {dispatch.length} records
             </span>
           </div>
-          {dispatch.length === 0 && (
-            <div
-              style={{
-                textAlign: "center",
-                color: C.muted,
-                padding: 32,
-                fontSize: 13,
-              }}
-            >
+          {dispatch.length === 0 ? (
+            <div style={{ textAlign: "center", color: C.muted, padding: 32, fontSize: 13 }}>
               No dispatch records yet.
             </div>
-          )}
-          {(dispatch || [])
-            .slice()
-            .reverse()
-            .map((r) => {
-              const totalQty = (r.items || []).reduce(
-                (sum, it) => sum + +(it.qty || 0),
-                0,
-              );
-
-              const handleEdit = () => {
-                setEditId(r._id);
-                setHeader({
-                  dispatchDate: r.date
-                    ? new Date(r.date).toISOString().slice(0, 10)
-                    : today(),
-                  soRef: r.soRef || "",
-                  clientName: r.clientName || "",
-                  deliveryAddress: r.deliveryAddress || "",
-                  vehicleNo: r.vehicleNo || "",
-                  driverName: r.driverName || "",
-                  remarks: r.remarks || "",
-                  status: r.status || "Dispatched",
-                });
-                setItems(
-                  (r.items || []).map((it) => ({
-                    _id: uid(),
-                    itemName: it.itemName || "",
-                    productCode: it.productCode || "",
-                    clientCode: it.clientCode || "",
-                    qty: it.qty?.toString() || "",
-                    unit: it.unit || "nos",
-                    pcsPerBox: it.pcsPerBox?.toString() || "",
-                    noOfBox: it.noOfBox?.toString() || "",
-                    rate: it.rate || "",
-                    gstRate: it.gstRate || 18,
-                    amount: it.amount || "",
-                    taxAmount: it.taxAmount || "",
-                    totalWithTax: it.totalWithTax || "",
-                  })),
-                );
-                setShowModal(true);
-              };
-
-              const handleDelete = async () => {
-                if (!confirm(`Delete dispatch ${r.dispatchNo}?`)) return;
-                try {
-                  await dispatchAPI.delete(r._id);
-                  toast(
-                    `Dispatch ${r.dispatchNo} deleted successfully`,
-                    "success",
-                  );
-                  fetchDispatches();
-                } catch (error) {
-                  toast(
-                    error.response?.data?.error || "Failed to delete dispatch",
-                    "error",
-                  );
-                }
-              };
-
-              return (
-                <div
-                  key={r._id}
-                  style={{
-                    borderBottom: `1px solid ${C.border}22`,
-                    padding: "12px 4px",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                      gap: 8,
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: 14,
-                        alignItems: "center",
-                        flexWrap: "wrap",
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontFamily: "'JetBrains Mono',monospace",
-                          color: r.type === "Return" ? (C.orange || "#f97316") : C.purple,
-                          fontWeight: 500,
-                        }}
-                      >
-                        {r.dispatchNo}
-                      </span>
-                      {r.type === "Return" && (
-                        <span style={{ fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 4, background: (C.orange || "#f97316") + "22", color: C.orange || "#f97316" }}>
-                          RETURN
-                        </span>
-                      )}
-                      <span style={{ fontSize: 12, color: C.muted }}>
-                        {fmtDate(r.date)}
-                      </span>
-                      <span style={{ fontSize: 13, fontWeight: 600 }}>
-                        {r.companyName}
-                      </span>
-                      {r.returnReason && (
-                        <span style={{ fontSize: 11, color: C.muted }}>Reason: {r.returnReason}</span>
-                      )}
-                      {r.type !== "Return" && <Badge text={r.status || "Dispatched"} color={C.green} />}
-                      {(() => {
-                        const unitSummary = (r.items || []).reduce(
-                          (acc, it) => {
-                            const u = it.unit || "nos";
-                            acc[u] = (acc[u] || 0) + Number(it.qty || 0);
-                            return acc;
-                          },
-                          {},
-                        );
-                        const summaryParts = Object.entries(unitSummary).map(
-                          ([u, q]) => `${fmt(q)} ${u}`,
-                        );
-                        return (
-                          <span style={{ fontSize: 12, color: C.muted }}>
-                            Qty: {summaryParts.join(", ")}
-                          </span>
-                        );
-                      })()}
-                    </div>
-                    <div style={{ display: "flex", gap: 6 }}>
-                      <button
-                        onClick={() => generateDispatchPDF(r)}
-                        style={{
-                          background: (C.purple || "#a855f7") + "22",
-                          color: C.purple || "#a855f7",
-                          border: "none",
-                          borderRadius: 5,
-                          padding: "4px 12px",
-                          fontWeight: 500,
-                          fontSize: 12,
-                          cursor: "pointer",
-                        }}
-                      >
-                        Print
-                      </button>
-                      <button
-                        onClick={handleEdit}
-                        style={{
-                          background: (C.blue || "#3b82f6") + "22",
-                          color: C.blue || "#3b82f6",
-                          border: "none",
-                          borderRadius: 5,
-                          padding: "4px 12px",
-                          fontWeight: 500,
-                          fontSize: 12,
-                          cursor: "pointer",
-                        }}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={handleDelete}
-                        style={{
-                          background: "rgba(255,255,255,0.08)",
-                          backdropFilter: "blur(12px) saturate(180%)",
-                          WebkitBackdropFilter: "blur(12px) saturate(180%)",
-                          color: "#fff",
-                          border: "1px solid rgba(255,255,255,0.18)",
-                          borderRadius: 6,
-                          padding: "4px 14px",
-                          fontSize: 12,
-                          fontWeight: 500,
-                          cursor: "pointer",
-                          boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 6,
-                        }}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 8,
-                      flexWrap: "wrap",
-                      marginTop: 6,
-                    }}
-                  >
-                    {(r.items || []).map((it, i) => (
-                      <span
-                        key={i}
-                        style={{
-                          fontSize: 11,
-                          background: C.surface,
-                          border: `1px solid ${C.border}`,
-                          borderRadius: 4,
-                          padding: "2px 8px",
-                          color: C.muted,
-                        }}
-                      >
-                        {it.itemName} · {it.qty} {it.unit}
-                      </span>
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                <thead>
+                  <tr style={{ borderBottom: `2px solid ${C.border}` }}>
+                    {["DC No", "Date", "Company", "PO No", "SO Ref", "Items", "Qty", "Vehicle", "Status", "Actions"].map((h) => (
+                      <th key={h} style={{ padding: "8px 10px", textAlign: "left", fontWeight: 700, color: C.muted, fontSize: 11, whiteSpace: "nowrap" }}>{h}</th>
                     ))}
-                    {r.vehicleNo && (
-                      <span style={{ fontSize: 11, color: C.muted }}>
-                        {r.vehicleNo}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+                  </tr>
+                </thead>
+                <tbody>
+                  {(dispatch || []).slice().reverse().map((r) => {
+                    const unitSummary = (r.items || []).reduce((acc, it) => {
+                      const u = it.unit || "nos";
+                      acc[u] = (acc[u] || 0) + Number(it.qty || 0);
+                      return acc;
+                    }, {});
+                    const qtySummary = Object.entries(unitSummary).map(([u, q]) => `${fmt(q)} ${u}`).join(", ");
+
+                    const handleEdit = () => {
+                      setEditId(r._id);
+                      setHeader({
+                        dispatchDate: r.date ? new Date(r.date).toISOString().slice(0, 10) : today(),
+                        soRef: r.soRef || "",
+                        poNumber: r.poNumber || "",
+                        companyName: r.companyName || "",
+                        deliveryAddress: r.deliveryAddress || "",
+                        vehicleNo: r.vehicleNo || "",
+                        driverName: r.driverName || "",
+                        remarks: r.remarks || "",
+                        status: r.status || "Dispatched",
+                      });
+                      setItems((r.items || []).map((it) => ({
+                        _id: uid(),
+                        itemName: it.itemName || "",
+                        productCode: it.productCode || "",
+                        companyCode: it.companyCode || "",
+                        qty: it.qty?.toString() || "",
+                        unit: it.unit || "nos",
+                        pcsPerBox: it.pcsPerBox?.toString() || "",
+                        noOfBox: it.noOfBox?.toString() || "",
+                        rate: it.rate || "",
+                        gstRate: it.gstRate || 18,
+                        amount: it.amount || "",
+                        taxAmount: it.taxAmount || "",
+                        totalWithTax: it.totalWithTax || "",
+                      })));
+                      setShowModal(true);
+                    };
+
+                    const handleDelete = async () => {
+                      if (!confirm(`Delete dispatch ${r.dispatchNo}?`)) return;
+                      try {
+                        await dispatchAPI.delete(r._id);
+                        toast(`Dispatch ${r.dispatchNo} deleted successfully`, "success");
+                        fetchDispatches();
+                      } catch (error) {
+                        toast(error.response?.data?.error || "Failed to delete dispatch", "error");
+                      }
+                    };
+
+                    return (
+                      <tr key={r._id} style={{ borderBottom: `1px solid ${C.border}22` }}>
+                        <td style={{ padding: "10px 10px", whiteSpace: "nowrap" }}>
+                          <span style={{ fontFamily: "'JetBrains Mono',monospace", color: r.type === "Return" ? (C.orange || "#f97316") : C.purple, fontWeight: 600 }}>
+                            {r.dispatchNo}
+                          </span>
+                          {r.type === "Return" && (
+                            <span style={{ display: "block", fontSize: 9, fontWeight: 800, marginTop: 2, color: C.orange || "#f97316" }}>RETURN</span>
+                          )}
+                        </td>
+                        <td style={{ padding: "10px 10px", whiteSpace: "nowrap", color: C.muted }}>{fmtDate(r.date)}</td>
+                        <td style={{ padding: "10px 10px", fontWeight: 600 }}>{r.companyName}</td>
+                        <td style={{ padding: "10px 10px", color: C.muted }}>{r.poNumber || "—"}</td>
+                        <td style={{ padding: "10px 10px", color: C.muted }}>{r.soRef || "—"}</td>
+                        <td style={{ padding: "10px 10px" }}>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                            {(r.items || []).map((it, i) => (
+                              <span key={i} style={{ fontSize: 11, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 4, padding: "1px 6px", color: C.muted, whiteSpace: "nowrap" }}>
+                                {it.itemName}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                        <td style={{ padding: "10px 10px", whiteSpace: "nowrap", color: C.muted }}>{qtySummary}</td>
+                        <td style={{ padding: "10px 10px", color: C.muted }}>{r.vehicleNo || "—"}</td>
+                        <td style={{ padding: "10px 10px" }}>
+                          {r.type === "Return"
+                            ? <span style={{ fontSize: 10, color: C.orange || "#f97316" }}>{r.returnReason || "Return"}</span>
+                            : <Badge text={r.status || "Dispatched"} color={C.green} />}
+                        </td>
+                        <td style={{ padding: "10px 10px", whiteSpace: "nowrap" }}>
+                          <div style={{ display: "flex", gap: 4 }}>
+                            <button onClick={() => generateDispatchPDF(r)} style={{ background: (C.purple || "#a855f7") + "22", color: C.purple || "#a855f7", border: "none", borderRadius: 5, padding: "4px 10px", fontWeight: 500, fontSize: 11, cursor: "pointer" }}>Print</button>
+                            <button onClick={handleEdit} style={{ background: (C.blue || "#3b82f6") + "22", color: C.blue || "#3b82f6", border: "none", borderRadius: 5, padding: "4px 10px", fontWeight: 500, fontSize: 11, cursor: "pointer" }}>Edit</button>
+                            <button onClick={handleDelete} style={{ background: "rgba(239,68,68,0.12)", color: "#ef4444", border: "none", borderRadius: 5, padding: "4px 10px", fontWeight: 500, fontSize: 11, cursor: "pointer" }}>Delete</button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </Card>
     </div>
   );

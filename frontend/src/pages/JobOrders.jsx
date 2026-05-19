@@ -22,13 +22,13 @@ import {
   rawMaterialStockAPI,
   printingDetailMasterAPI,
   categoryMasterAPI,
+  itemMasterAPI,
 } from "../api/auth";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 const today = () => new Date().toISOString().slice(0, 10);
 const fmt = (n) => (n ?? 0).toLocaleString("en-IN");
 
-const RM_ITEMS = ["Paper Reel", "Paper Sheets"];
 const calcSheets = (q, u) => {
   const qty = Number(q);
   const ups = Number(u);
@@ -94,7 +94,9 @@ export default function JobOrders(props) {
   } = props;
   const [jobOrders, setJobOrders] = useState([]);
   const [salesOrders, setSalesOrders] = useState([]);
+  const [paperCategories, setPaperCategories] = useState([]);
   const [paperTypesByItem, setPaperTypesByItem] = useState({});
+  const [itemMasterItems, setItemMasterItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [selectedIds, setSelectedIds] = useState(() => new Set());
@@ -151,7 +153,9 @@ export default function JobOrders(props) {
         .toLowerCase()
         .replace(/s$/, "");
       const sType = (s.name || s.paperType || "").toLowerCase();
-      const sGsm = (s.gsm || s.paperGsm || 0).toString();
+      const gsmFromField = (s.gsm || s.paperGsm || 0).toString();
+      const gsmFromName = (sType.match(/(\d+)\s*gsm/) || [])[1] || "";
+      const sGsm = gsmFromField !== "0" ? gsmFromField : gsmFromName;
 
       const basicMatch =
         sCat === hCat && sType.includes(hType) && sGsm === hGsm;
@@ -159,12 +163,13 @@ export default function JobOrders(props) {
       if (!basicMatch) return false;
 
       if (isSheet) {
-        const sSize = (s.sheetSize || "").toLowerCase().replace(/\s+/g, "");
-        const hSize = `${header.sheetW}x${header.sheetL}`.replace(/\s+/g, "");
-        const hSizeWithUom =
-          `${header.sheetW}x${header.sheetL}${header.sheetUom || "mm"}`
-            .toLowerCase()
-            .replace(/\s+/g, "");
+        const normalise = (str) =>
+          (str || "").toLowerCase().replace(/\s+/g, "").replace(/×/g, "x");
+        const sSize = normalise(s.sheetSize || s.name || "");
+        const hSize = normalise(`${header.sheetW}x${header.sheetL}`);
+        const hSizeWithUom = normalise(
+          `${header.sheetW}x${header.sheetL}${header.sheetUom || "mm"}`,
+        );
         return sSize.includes(hSize) || sSize.includes(hSizeWithUom);
       }
 
@@ -208,7 +213,9 @@ export default function JobOrders(props) {
         .toLowerCase()
         .replace(/s$/, "");
       const sType = (s.name || s.paperType || "").toLowerCase();
-      const sGsm = (s.gsm || s.paperGsm || 0).toString();
+      const gsmFromField = (s.gsm || s.paperGsm || 0).toString();
+      const gsmFromName = (sType.match(/(\d+)\s*gsm/) || [])[1] || "";
+      const sGsm = gsmFromField !== "0" ? gsmFromField : gsmFromName;
 
       const basicMatch =
         sCat === hCat && sType.includes(hType) && sGsm === hGsm;
@@ -218,9 +225,14 @@ export default function JobOrders(props) {
       const isReel = hCat === "paper reel";
 
       if (isSheet && header.sheetW2 && header.sheetL2) {
-        const sSize = (s.sheetSize || "").toLowerCase().replace(/\s+/g, "");
-        const hSize = `${header.sheetW2}x${header.sheetL2}`.replace(/\s+/g, "");
-        return sSize.includes(hSize);
+        const normalise = (str) =>
+          (str || "").toLowerCase().replace(/\s+/g, "").replace(/×/g, "x");
+        const sSize = normalise(s.sheetSize || s.name || "");
+        const hSize = normalise(`${header.sheetW2}x${header.sheetL2}`);
+        const hSizeWithUom = normalise(
+          `${header.sheetW2}x${header.sheetL2}${header.sheetUom2 || "mm"}`,
+        );
+        return sSize.includes(hSize) || sSize.includes(hSizeWithUom);
       }
 
       if (isReel && header.reelWidthMm2) {
@@ -255,18 +267,33 @@ export default function JobOrders(props) {
     fetchJobOrders();
     fetchSalesOrders();
     fetchCategoryMaster();
+    fetchItemMaster();
   }, []);
+
+  const fetchItemMaster = async () => {
+    try {
+      const data = await itemMasterAPI.getAll();
+      setItemMasterItems(data.items || []);
+    } catch (err) {
+      console.error("Failed to load item master:", err);
+    }
+  };
 
   const fetchCategoryMaster = async () => {
     try {
       const res = await categoryMasterAPI.getAll();
-      const rawMat = (res.categories || []).find((c) => c.type === "Raw Material");
+      const rawMat = (res.categories || []).find(
+        (c) => c.type === "Raw Material",
+      );
       if (rawMat?.subTypes) {
         const normalized = {};
+        const cats = [];
         Object.entries(rawMat.subTypes).forEach(([key, vals]) => {
           normalized[key] = vals;
           normalized[key + "s"] = vals;
+          cats.push(key);
         });
+        setPaperCategories(cats);
         setPaperTypesByItem(normalized);
       }
     } catch (err) {
@@ -284,8 +311,12 @@ export default function JobOrders(props) {
       itemName: jo.itemName || "",
       priority: jo.priority || "Standard",
       size: "",
-      orderDate: jo.orderDate ? new Date(jo.orderDate).toISOString().slice(0, 10) : "",
-      deliveryDate: jo.deliveryDate ? new Date(jo.deliveryDate).toISOString().slice(0, 10) : "",
+      orderDate: jo.orderDate
+        ? new Date(jo.orderDate).toISOString().slice(0, 10)
+        : "",
+      deliveryDate: jo.deliveryDate
+        ? new Date(jo.deliveryDate).toISOString().slice(0, 10)
+        : "",
       orderQty: jo.orderQty || "",
       printing: jo.printing || "",
       plate: jo.plate || "",
@@ -326,7 +357,10 @@ export default function JobOrders(props) {
       if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 100);
     const clear = setTimeout(() => setHighlightId(null), 3500);
-    return () => { clearTimeout(timer); clearTimeout(clear); };
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(clear);
+    };
   }, [highlightId]);
 
   const fetchJobOrders = async () => {
@@ -345,7 +379,10 @@ export default function JobOrders(props) {
       toast("Job order moved to trash", "success");
       fetchJobOrders();
     } catch (error) {
-      toast(error.response?.data?.error || "Failed to delete job order", "error");
+      toast(
+        error.response?.data?.error || "Failed to delete job order",
+        "error",
+      );
     } finally {
       setDeleteTarget(null);
     }
@@ -546,6 +583,7 @@ export default function JobOrders(props) {
     ) : null;
 
   const validateRMStock = () => {
+    if (header.paperType === "Polycoated Blanks") return true;
     if (header.paperCategory && header.paperType && header.paperGsm) {
       if (
         !matchedStock ||
@@ -586,7 +624,10 @@ export default function JobOrders(props) {
     if (!header.paperType) he.paperType = true;
     if (!header.paperGsm) he.paperGsm = true;
     if (!header.noOfUps) he.noOfUps = true;
-    if (header.paperCategory !== "Paper Reel") {
+    if (
+      header.paperCategory !== "Paper Reel" &&
+      header.paperType !== "Polycoated Blanks"
+    ) {
       if (!header.noOfSheets) he.noOfSheets = true;
       if (!header.sheetW) he.sheetW = true;
       if (!header.sheetL) he.sheetL = true;
@@ -625,7 +666,8 @@ export default function JobOrders(props) {
         sheetUom: header.sheetUom,
         noOfUps: Number(header.noOfUps),
         noOfSheets:
-          header.paperCategory === "Paper Reel"
+          header.paperCategory === "Paper Reel" ||
+          header.paperType === "Polycoated Blanks"
             ? null
             : Number(header.noOfSheets),
         hasSecondPaper: header.hasSecondPaper,
@@ -962,808 +1004,860 @@ export default function JobOrders(props) {
 
   return (
     <>
-    <div className="fade">
-      <SectionTitle
-        icon="fa-solid fa-gears"
-        title="Job Orders"
-        sub="Create production job orders linked to sales orders"
-      />
+      <div className="fade">
+        <SectionTitle
+          icon="fa-solid fa-gears"
+          title="Job Orders"
+          sub="Create production job orders linked to sales orders"
+        />
 
-      <div style={{ marginBottom: 20 }}>
-        <button
-          onClick={() => {
-            setEditId(null);
-            setHeader(blankHeader);
-            setHeaderErrors({});
-            setShowModal(true);
-          }}
-          style={{
-            background: "rgba(255,255,255,0.08)",
-            backdropFilter: "blur(12px) saturate(180%)",
-            WebkitBackdropFilter: "blur(12px) saturate(180%)",
-            border: "1px solid rgba(255,255,255,0.18)",
-            color: "#fff",
-            padding: "9px 18px",
-            borderRadius: 10,
-            fontWeight: 600,
-            fontSize: 13,
-            cursor: "pointer",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
-          }}
-        >
-          + New Job Order
-        </button>
-      </div>
-
-      {}
-      {showModal && (
-        <Modal title={editId ? "Edit Job Order" : "New Job Order"} onClose={() => { setShowModal(false); setEditId(null); setHeader(blankHeader); setHeaderErrors({}); }}>
-        <Card>
-          <h3
+        <div style={{ marginBottom: 20 }}>
+          <button
+            onClick={() => {
+              setEditId(null);
+              setHeader(blankHeader);
+              setHeaderErrors({});
+              setShowModal(true);
+            }}
             style={{
-              fontSize: 15,
-              fontWeight: 500,
-              color: C.yellow || "#facc15",
-              marginBottom: 24,
+              background: "rgba(255,255,255,0.08)",
+              backdropFilter: "blur(12px) saturate(180%)",
+              WebkitBackdropFilter: "blur(12px) saturate(180%)",
+              border: "1px solid rgba(255,255,255,0.18)",
+              color: "#fff",
+              padding: "9px 18px",
+              borderRadius: 10,
+              fontWeight: 600,
+              fontSize: 13,
+              cursor: "pointer",
+              boxShadow:
+                "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
             }}
           >
-            New Job Card
-          </h3>
+            + New Job Order
+          </button>
+        </div>
 
-          {}
-          <SubLabel text="Basic Details" />
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(4, 1fr)",
-              gap: 14,
-              marginBottom: 24,
+        {}
+        {showModal && (
+          <Modal
+            title={editId ? "Edit Job Order" : "New Job Order"}
+            onClose={() => {
+              setShowModal(false);
+              setEditId(null);
+              setHeader(blankHeader);
+              setHeaderErrors({});
             }}
           >
-            <Field label="Jobcard Date *">
-              <DatePicker
-                value={header.joDate}
-                onChange={(v) => setH("joDate", v)}
-                style={EH("joDate")}
-              />
-              {EHMsg("joDate")}
-            </Field>
-            <Field label="Sales Order # *">
-              <select
-                value={header.soRef}
-                onChange={(e) => setH("soRef", e.target.value)}
-                style={EH("soRef")}
-              >
-                <option value="">-- Select Sales Order --</option>
-                {soOptions.map((s) => (
-                  <option key={s.soNo} value={s.soNo}>
-                    {s.soNo} — {s.companyName}
-                  </option>
-                ))}
-              </select>
-              {EHMsg("soRef")}
-            </Field>
-            <Field label="Order Date">
-              <AutoField
-                value={
-                  header.orderDate
-                    ? new Date(header.orderDate).toLocaleDateString("en-GB")
-                    : ""
-                }
-                placeholder="DD/MM/YYYY"
-              />
-            </Field>
-            <Field label="Delivery Date">
-              <AutoField
-                value={
-                  header.deliveryDate
-                    ? new Date(header.deliveryDate).toLocaleDateString("en-GB")
-                    : ""
-                }
-                placeholder="DD/MM/YYYY"
-              />
-            </Field>
-            <Field label="Priority">
-              <select
-                value={header.priority || "Standard"}
-                onChange={(e) => setH("priority", e.target.value)}
+            <Card>
+              <h3
                 style={{
-                  padding: "9px 12px",
-                  border: `1px solid ${
-                    header.priority === "VIP" ? "#ef4444"
-                    : header.priority === "Rush" ? "#f97316"
-                    : header.priority === "Fill-in" ? "#6b7280"
-                    : "#2a2a2a"
-                  }`,
-                  borderRadius: 6,
-                  fontSize: 13,
-                  fontFamily: "inherit",
-                  background: "#141414",
-                  color:
-                    header.priority === "VIP" ? "#ef4444"
-                    : header.priority === "Rush" ? "#f97316"
-                    : header.priority === "Fill-in" ? "#6b7280"
-                    : "#e0e0e0",
-                  outline: "none",
-                  width: "100%",
-                  boxSizing: "border-box",
-                  fontWeight: header.priority !== "Standard" ? 700 : 400,
+                  fontSize: 15,
+                  fontWeight: 500,
+                  color: C.yellow || "#facc15",
+                  marginBottom: 24,
                 }}
               >
-                <option value="VIP">VIP Client</option>
-                <option value="Rush">Rush Order</option>
-                <option value="Standard">Standard</option>
-                <option value="Fill-in">Fill-in</option>
-              </select>
-            </Field>
-          </div>
+                New Job Card
+              </h3>
 
-          {}
-          <SubLabel text="Client & Item Details" />
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(4, 1fr)",
-              gap: 14,
-              marginBottom: 24,
-            }}
-          >
-            <Field label="Client Name">
-              <AutoField
-                value={header.companyName}
-                placeholder="Enter client name"
-              />
-            </Field>
-            <Field label="Client Category *">
-              <select
-                value={header.companyCategory}
-                onChange={(e) => setH("companyCategory", e.target.value)}
-              >
-                <option value="">-- Select --</option>
-                {uniqueCompanyCategories.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Item Name *">
-              {header.soRef ? (
-                <select
-                  value={header.itemName}
-                  onChange={(e) => {
-                    const iName = e.target.value;
-                    const so = soOptions.find((s) => s.soNo === header.soRef);
-                    const it = (so?.items || []).find(
-                      (i) => i.itemName === iName,
-                    );
-                    if (it) {
-                      setHeader((f) => {
-                        const next = {
-                          ...f,
-                          itemName: it.itemName,
-                          size: it.size || "",
-                          orderQty: it.orderQty || "",
-                        };
-                        next.noOfSheets = calcSheets(
-                          next.orderQty,
-                          next.noOfUps,
-                        );
-                        return next;
-                      });
-                    } else {
-                      setH("itemName", iName);
-                    }
-                  }}
-                  style={EH("itemName")}
-                >
-                  <option value="">{`-- Select Item from SO (${(soOptions.find((s) => s.soNo === header.soRef)?.items || []).length} items found) --`}</option>
-                  {(() => {
-                    const so = soOptions.find((s) => s.soNo === header.soRef);
-                    return (so?.items || []).map((it, i) => {
-                      const alreadyHasJO = jobOrders.some(
-                        (jo) =>
-                          jo.soRef === header.soRef &&
-                          jo.itemName === it.itemName &&
-                          jo._id !== editId,
-                      );
-                      return (
-                        <option
-                          key={it._id || i}
-                          value={it.itemName}
-                          disabled={alreadyHasJO}
-                          style={
-                            alreadyHasJO
-                              ? { color: "#888", fontStyle: "italic" }
-                              : {}
-                          }
-                        >
-                          {it.itemName} (Qty: {fmt(it.orderQty)}){" "}
-                          {alreadyHasJO ? "JO DONE" : ""}
-                        </option>
-                      );
-                    });
-                  })()}
-                </select>
-              ) : (
-                <input
-                  placeholder="Enter item name"
-                  value={header.itemName}
-                  onChange={(e) => setH("itemName", e.target.value)}
-                />
-              )}
-              {EHMsg("itemName")}
-            </Field>
-            <Field label="Size *">
-              <input
-                placeholder="Size"
-                value={header.size}
-                onChange={(e) => setH("size", e.target.value)}
-              />
-            </Field>
-          </div>
-
-          {}
-          <SubLabel text="Production Details" />
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr 1fr 2fr",
-              gap: 14,
-              marginBottom: 24,
-            }}
-          >
-            <Field label="Order Quantity *">
-              <input
-                type="number"
-                placeholder="Order quantity"
-                value={header.orderQty}
-                onChange={(e) => setH("orderQty", e.target.value)}
-                style={EH("orderQty")}
-              />
-              {EHMsg("orderQty")}
-            </Field>
-            <Field label="Printing *">
-              <select
-                value={header.printing}
-                onChange={(e) => setH("printing", e.target.value)}
-              >
-                <option value="">-- Select Printing --</option>
-                {PRINTING_OPTIONS.map((p) => (
-                  <option key={p}>{p}</option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Plate *">
-              <select
-                value={header.plate}
-                onChange={(e) => setH("plate", e.target.value)}
-              >
-                <option value="">-- Select Plate --</option>
-                {PLATE_OPTIONS.map((p) => (
-                  <option key={p}>{p}</option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Process *">
-              <div
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: 6,
-                  paddingTop: 2,
-                }}
-              >
-                {PROCESS_TAGS.map((proc) => {
-                  const active = (header.processes || []).includes(proc);
-                  return (
-                    <button
-                      key={proc}
-                      onClick={() => toggleProcess(proc)}
-                      style={{
-                        padding: "4px 12px",
-                        borderRadius: 5,
-                        border: `1px solid ${active ? C.yellow || "#facc15" : C.border}`,
-                        background: active
-                          ? (C.yellow || "#facc15") + "22"
-                          : "transparent",
-                        color: active ? C.yellow || "#facc15" : C.muted,
-                        fontWeight: active ? 700 : 400,
-                        fontSize: 12,
-                        cursor: "pointer",
-                        transition: "all 0.15s",
-                      }}
-                    >
-                      {proc}
-                    </button>
-                  );
-                })}
-              </div>
-            </Field>
-          </div>
-
-          {}
-          {(header.processes || []).length > 0 && (
-            <div style={{ marginBottom: 24 }}>
-              <SubLabel text="Machine Assignment" />
+              {}
+              <SubLabel text="Basic Details" />
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+                  gridTemplateColumns: "repeat(4, 1fr)",
                   gap: 14,
+                  marginBottom: 24,
                 }}
               >
-                {header.processes.map((proc) => {
-                  const machineType = PROCESS_MACHINE_TYPE[proc] || "Printing";
-                  const filteredMachines = (
-                    Array.isArray(machineMaster) ? machineMaster : []
-                  ).filter((m) => {
-                    const mType = m.type || "";
-                    if (machineType === "Formation") {
-                      return FORMATION_MACHINE_TYPES.includes(mType);
+                <Field label="Jobcard Date *">
+                  <DatePicker
+                    value={header.joDate}
+                    onChange={(v) => setH("joDate", v)}
+                    style={EH("joDate")}
+                  />
+                  {EHMsg("joDate")}
+                </Field>
+                <Field label="Sales Order # *">
+                  <select
+                    value={header.soRef}
+                    onChange={(e) => setH("soRef", e.target.value)}
+                    style={EH("soRef")}
+                  >
+                    <option value="">-- Select Sales Order --</option>
+                    {soOptions.map((s) => (
+                      <option key={s.soNo} value={s.soNo}>
+                        {s.soNo} — {s.companyName}
+                      </option>
+                    ))}
+                  </select>
+                  {EHMsg("soRef")}
+                </Field>
+                <Field label="Order Date">
+                  <AutoField
+                    value={
+                      header.orderDate
+                        ? new Date(header.orderDate).toLocaleDateString("en-GB")
+                        : ""
                     }
-                    return mType.toLowerCase() === machineType.toLowerCase();
-                  });
-
-                  const accentColor = PROCESS_COLORS[proc] || C.accent;
-
-                  return (
-                    <div
-                      key={proc}
-                      style={{
-                        padding: 16,
-                        background: C.surface,
-                        border: `1px solid ${C.border}`,
-                        borderRadius: 8,
-                        position: "relative",
-                        overflow: "hidden",
-                      }}
-                    >
-                      <div
-                        style={{
-                          position: "absolute",
-                          top: 0,
-                          left: 0,
-                          width: 4,
-                          height: "100%",
-                          background: accentColor,
-                        }}
-                      />
-                      <div
-                        style={{
-                          fontSize: 12,
-                          fontWeight: 800,
-                          color: accentColor,
-                          marginBottom: 12,
-                          textTransform: "uppercase",
-                          letterSpacing: "0.05em",
-                        }}
-                      >
-                        {proc}
-                      </div>
-                      <select
-                        value={header.machineAssignments?.[proc] || ""}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setHeader((prev) => ({
-                            ...prev,
-                            machineAssignments: {
-                              ...(prev.machineAssignments || {}),
-                              [proc]: val,
-                            },
-                          }));
-                        }}
-                        style={{
-                          width: "100%",
-                          background: C.inputBg,
-                          border: `1px solid ${C.border}`,
-                          color: C.text,
-                          padding: "8px 12px",
-                          borderRadius: 6,
-                          fontSize: 13,
-                          outline: "none",
-                        }}
-                      >
-                        <option value="">-- Select Machine --</option>
-                        {filteredMachines.map((m) => (
-                          <option key={m._id || m.name} value={m._id || m.name}>
-                            {m.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {}
-          <SubLabel text="Sheet / Reel Details" />
-
-          {}
-          {}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns:
-                header.paperCategory === "Paper Reel"
-                  ? "1fr 1fr 1fr 1fr 1fr"
-                  : "1fr 1fr 1fr 1fr 1fr 1fr",
-              gap: 14,
-              marginBottom: 14,
-            }}
-          >
-            <Field label="PAPER CATEGORY *">
-              <select
-                value={header.paperCategory}
-                onChange={(e) => setH("paperCategory", e.target.value)}
-                style={EH("paperCategory")}
-              >
-                <option value="">-- Paper Reel or Sheet --</option>
-                {RM_ITEMS.map((i) => (
-                  <option key={i}>{i}</option>
-                ))}
-              </select>
-              {EHMsg("paperCategory")}
-            </Field>
-            <Field label="PAPER TYPE *">
-              <select
-                value={header.paperType}
-                onChange={(e) => setH("paperType", e.target.value)}
-                disabled={!header.paperCategory}
-                style={EH("paperType")}
-              >
-                <option value="">
-                  {header.paperCategory
-                    ? "-- Select Paper Type --"
-                    : "-- Select Category first --"}
-                </option>
-                {(paperTypesByItem[header.paperCategory] || []).map((p) => (
-                  <option key={p}>{p}</option>
-                ))}
-              </select>
-              {EHMsg("paperType")}
-            </Field>
-            <Field label="PAPER GSM *">
-              <input
-                type="number"
-                placeholder="e.g. 300"
-                value={header.paperGsm}
-                onChange={(e) => setH("paperGsm", e.target.value)}
-                style={EH("paperGsm")}
-              />
-              {EHMsg("paperGsm")}
-            </Field>
-
-            <Field label="# OF UPS *">
-              <input
-                type="number"
-                placeholder="No. of ups"
-                value={header.noOfUps}
-                onChange={(e) => setH("noOfUps", e.target.value)}
-                style={EH("noOfUps")}
-              />
-              {EHMsg("noOfUps")}
-            </Field>
-            {header.paperCategory !== "Paper Reel" && (
-              <Field label="# OF SHEETS *">
-                <input
-                  type="number"
-                  placeholder="No. of sheets"
-                  value={header.noOfSheets}
-                  onChange={(e) => setH("noOfSheets", e.target.value)}
-                  style={EH("noOfSheets")}
-                />
-                {EHMsg("noOfSheets")}
-                {header.paperCategory &&
-                  header.paperType &&
-                  header.paperGsm &&
-                  (header.paperCategory === "Paper Reel"
-                    ? !!header.reelWidthMm
-                    : !!(header.sheetW && header.sheetL)) && (
-                    <div
-                      style={{
-                        fontSize: 10,
-                        color: matchedStock?.qty > 0 ? C.green : C.red,
-                        marginTop: 4,
-                        fontWeight: 500,
-                      }}
-                    >
-                      {matchedStock?.qty > 0
-                        ? `${fmt(matchedStock.qty)} sheets available`
-                        : `0 sheets available`}
-                    </div>
-                  )}
-              </Field>
-            )}
-
-            {header.paperCategory === "Paper Reel" && (
-              <Field label="REEL WEIGHT (KG) *">
-                <input
-                  type="number"
-                  placeholder="Weight in kg"
-                  value={header.reelWeightKg}
-                  onChange={(e) => setH("reelWeightKg", e.target.value)}
-                />
-                {header.paperCategory &&
-                  header.paperType &&
-                  header.paperGsm &&
-                  (header.paperCategory === "Paper Reel"
-                    ? !!header.reelWidthMm
-                    : !!(header.sheetW && header.sheetL)) && (
-                    <div
-                      style={{
-                        fontSize: 10,
-                        color: matchedStock?.weight > 0 ? C.green : C.red,
-                        marginTop: 4,
-                        fontWeight: 500,
-                      }}
-                    >
-                      {matchedStock?.weight > 0
-                        ? `${fmt(Math.round(matchedStock.weight))} kg available`
-                        : `0 kg available`}
-                    </div>
-                  )}
-              </Field>
-            )}
-          </div>
-
-          {header.paperCategory === "Paper Reel" && (
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr 1.5fr",
-                gap: 14,
-                marginBottom: 20,
-              }}
-            >
-              <Field label="REEL WIDTH (MM)">
-                <input
-                  type="number"
-                  placeholder="Width"
-                  value={header.reelWidthMm}
-                  onChange={(e) => setH("reelWidthMm", e.target.value)}
-                />
-              </Field>
-              <Field label="CUTTING LENGTH (MM)">
-                <input
-                  type="number"
-                  placeholder="Length"
-                  value={header.cuttingLengthMm}
-                  onChange={(e) => setH("cuttingLengthMm", e.target.value)}
-                />
-              </Field>
-            </div>
-          )}
-
-          {header.paperCategory !== "Paper Reel" && (
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr 1fr 1.5fr",
-                gap: 14,
-                marginBottom: 20,
-              }}
-            >
-              <Field label="SHEET UOM">
-                <select
-                  value={header.sheetUom}
-                  onChange={(e) => setH("sheetUom", e.target.value)}
-                >
-                  <option value="mm">mm</option>
-                  <option value="cm">cm</option>
-                  <option value="inch">inch</option>
-                </select>
-              </Field>
-              <Field label="SHEET W *">
-                <input
-                  type="number"
-                  placeholder="Width"
-                  value={header.sheetW}
-                  onChange={(e) => setH("sheetW", e.target.value)}
-                  style={EH("sheetW")}
-                />
-                {EHMsg("sheetW")}
-              </Field>
-              <Field label="SHEET L *">
-                <input
-                  type="number"
-                  placeholder="Length"
-                  value={header.sheetL}
-                  onChange={(e) => setH("sheetL", e.target.value)}
-                  style={EH("sheetL")}
-                />
-                {EHMsg("sheetL")}
-              </Field>
-              <Field label="SHEET SIZE">
-                <div
-                  style={{
-                    padding: "9px 12px",
-                    background: C.inputBg,
-                    border: `1px solid ${C.border}`,
-                    borderRadius: 6,
-                    fontSize: 13,
-                    color: header.sheetSize ? C.text : C.muted,
-                  }}
-                >
-                  {header.sheetSize || "— Auto from W x L x UOM —"}
-                </div>
-              </Field>
-            </div>
-          )}
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1.5fr 1fr",
-              gap: 14,
-              marginBottom: 20,
-            }}
-          >
-            <Field label="ITEM NAME">
-              <input
-                readOnly
-                placeholder="Auto-matched item"
-                value={
-                  matchedStock?.name ||
-                  (header.paperCategory &&
-                  header.paperType &&
-                  header.paperGsm &&
-                  (header.paperCategory === "Paper Reel"
-                    ? !!header.reelWidthMm
-                    : !!(header.sheetW && header.sheetL))
-                    ? `${header.paperType} ${header.paperCategory} ${header.paperGsm}gsm ${
-                        header.paperCategory === "Paper Reel"
-                          ? (header.reelWidthMm || 0) + "mm"
-                          : header.sheetSize
-                      }`
-                    : "")
-                }
-                style={{
-                  background: "transparent",
-                  color: matchedStock ? C.green : C.text,
-                  fontWeight: 600,
-                }}
-              />
-            </Field>
-            <Field label="REMARKS">
-              <input
-                placeholder="Special instructions"
-                value={header.remarks}
-                onChange={(e) => setH("remarks", e.target.value)}
-              />
-            </Field>
-            <div style={{ alignSelf: "end", paddingBottom: 10 }}>
-              <div
-                style={{
-                  fontSize: 11,
-                  fontWeight: 500,
-                  letterSpacing: "normal",
-                  color: C.muted,
-                  textTransform: "uppercase",
-                  marginBottom: 6,
-                }}
-              >
-                Second Paper
-              </div>
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  cursor: "pointer",
-                  fontSize: 13,
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={header.hasSecondPaper}
-                  onChange={(e) => setH("hasSecondPaper", e.target.checked)}
-                />
-                <span style={{ color: C.muted }}>
-                  This job uses a second paper
-                </span>
-              </label>
-            </div>
-          </div>
-
-          {header.hasSecondPaper && (
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns:
-                  header.paperCategory2 === "Paper Reel"
-                    ? "1fr 1fr 1fr"
-                    : "1.5fr 1fr 1fr 1fr",
-                gap: 14,
-                marginTop: 14,
-              }}
-            >
-              <Field label="Paper 2 Category">
-                <select
-                  value={header.paperCategory2}
-                  onChange={(e) => setH("paperCategory2", e.target.value)}
-                >
-                  <option value="">-- Paper Reel or Sheet --</option>
-                  {RM_ITEMS.map((i) => (
-                    <option key={i}>{i}</option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Paper 2 Type">
-                <select
-                  value={header.paperType2}
-                  onChange={(e) => setH("paperType2", e.target.value)}
-                  disabled={!header.paperCategory2}
-                >
-                  <option value="">
-                    {header.paperCategory2
-                      ? "-- Select Paper Type --"
-                      : "-- Select Category first --"}
-                  </option>
-                  {(paperTypesByItem[header.paperCategory2] || []).map(
-                    (p) => (
-                      <option key={p}>{p}</option>
-                    ),
-                  )}
-                </select>
-              </Field>
-              <Field label="Paper 2 GSM">
-                <input
-                  type="number"
-                  placeholder="e.g. 130"
-                  value={header.paperGsm2}
-                  onChange={(e) => setH("paperGsm2", e.target.value)}
-                />
-              </Field>
-              {header.paperCategory2 !== "Paper Reel" && (
-                <Field label="Paper 2 Sheets">
-                  <input
-                    type="number"
-                    placeholder="e.g. 1000"
-                    value={header.noOfSheets2}
-                    onChange={(e) => setH("noOfSheets2", e.target.value)}
+                    placeholder="DD/MM/YYYY"
                   />
                 </Field>
-              )}
-            </div>
-          )}
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            <SubmitBtn
-              label={editId ? "Update Job Order" : "Create Job Order"}
-              color={C.yellow || "#facc15"}
-              onClick={submit}
-              disabled={loading}
-            />
-            {editId && (
-              <button
-                onClick={() => {
-                  setEditId(null);
-                  setHeader(blankHeader);
-                  setHeaderErrors({});
-                  setShowModal(false);
-                }}
+                <Field label="Delivery Date">
+                  <AutoField
+                    value={
+                      header.deliveryDate
+                        ? new Date(header.deliveryDate).toLocaleDateString(
+                            "en-GB",
+                          )
+                        : ""
+                    }
+                    placeholder="DD/MM/YYYY"
+                  />
+                </Field>
+                <Field label="Priority">
+                  <select
+                    value={header.priority || "Standard"}
+                    onChange={(e) => setH("priority", e.target.value)}
+                    style={{
+                      padding: "9px 12px",
+                      border: `1px solid ${
+                        header.priority === "VIP"
+                          ? "#ef4444"
+                          : header.priority === "Rush"
+                            ? "#f97316"
+                            : header.priority === "Fill-in"
+                              ? "#6b7280"
+                              : "#2a2a2a"
+                      }`,
+                      borderRadius: 6,
+                      fontSize: 13,
+                      fontFamily: "inherit",
+                      background: "#141414",
+                      color:
+                        header.priority === "VIP"
+                          ? "#ef4444"
+                          : header.priority === "Rush"
+                            ? "#f97316"
+                            : header.priority === "Fill-in"
+                              ? "#6b7280"
+                              : "#e0e0e0",
+                      outline: "none",
+                      width: "100%",
+                      boxSizing: "border-box",
+                      fontWeight: header.priority !== "Standard" ? 700 : 400,
+                    }}
+                  >
+                    <option value="VIP">VIP Client</option>
+                    <option value="Rush">Rush Order</option>
+                    <option value="Standard">Standard</option>
+                    <option value="Fill-in">Fill-in</option>
+                  </select>
+                </Field>
+              </div>
+
+              {}
+              <SubLabel text="Client & Item Details" />
+              <div
                 style={{
-                  padding: "10px 20px",
-                  borderRadius: 6,
-                  border: `1px solid ${C.border}`,
-                  background: "transparent",
-                  color: C.muted,
-                  fontWeight: 600,
-                  cursor: "pointer",
+                  display: "grid",
+                  gridTemplateColumns: "repeat(4, 1fr)",
+                  gap: 14,
+                  marginBottom: 24,
                 }}
               >
-                Cancel
-              </button>
-            )}
-          </div>
-        </Card>
-        </Modal>
-      )}
+                <Field label="Client Name">
+                  <AutoField
+                    value={header.companyName}
+                    placeholder="Enter client name"
+                  />
+                </Field>
+                <Field label="Client Category *">
+                  <select
+                    value={header.companyCategory}
+                    onChange={(e) => setH("companyCategory", e.target.value)}
+                  >
+                    <option value="">-- Select --</option>
+                    {uniqueCompanyCategories.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Item Name *">
+                  {header.soRef ? (
+                    <select
+                      value={header.itemName}
+                      onChange={(e) => {
+                        const iName = e.target.value;
+                        const so = soOptions.find(
+                          (s) => s.soNo === header.soRef,
+                        );
+                        const it = (so?.items || []).find(
+                          (i) => i.itemName === iName,
+                        );
+                        if (it) {
+                          setHeader((f) => {
+                            const next = {
+                              ...f,
+                              itemName: it.itemName,
+                              size: it.size || "",
+                              orderQty: it.orderQty || "",
+                            };
+                            next.noOfSheets = calcSheets(
+                              next.orderQty,
+                              next.noOfUps,
+                            );
+                            return next;
+                          });
+                        } else {
+                          setH("itemName", iName);
+                        }
+                      }}
+                      style={EH("itemName")}
+                    >
+                      <option value="">{`-- Select Item from SO (${(soOptions.find((s) => s.soNo === header.soRef)?.items || []).length} items found) --`}</option>
+                      {(() => {
+                        const so = soOptions.find(
+                          (s) => s.soNo === header.soRef,
+                        );
+                        return (so?.items || []).map((it, i) => {
+                          const alreadyHasJO = jobOrders.some(
+                            (jo) =>
+                              jo.soRef === header.soRef &&
+                              jo.itemName === it.itemName &&
+                              jo._id !== editId,
+                          );
+                          return (
+                            <option
+                              key={it._id || i}
+                              value={it.itemName}
+                              disabled={alreadyHasJO}
+                              style={
+                                alreadyHasJO
+                                  ? { color: "#888", fontStyle: "italic" }
+                                  : {}
+                              }
+                            >
+                              {it.itemName} (Qty: {fmt(it.orderQty)}){" "}
+                              {alreadyHasJO ? "JO DONE" : ""}
+                            </option>
+                          );
+                        });
+                      })()}
+                    </select>
+                  ) : (
+                    <input
+                      placeholder="Enter item name"
+                      value={header.itemName}
+                      onChange={(e) => setH("itemName", e.target.value)}
+                    />
+                  )}
+                  {EHMsg("itemName")}
+                </Field>
+                <Field label="Size *">
+                  <input
+                    placeholder="Size"
+                    value={header.size}
+                    onChange={(e) => setH("size", e.target.value)}
+                  />
+                </Field>
+              </div>
 
-      {}
-      <Card>
+              {}
+              <SubLabel text="Production Details" />
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr 1fr 2fr",
+                  gap: 14,
+                  marginBottom: 24,
+                }}
+              >
+                <Field label="Order Quantity *">
+                  <input
+                    type="number"
+                    placeholder="Order quantity"
+                    value={header.orderQty}
+                    onChange={(e) => setH("orderQty", e.target.value)}
+                    style={EH("orderQty")}
+                  />
+                  {EHMsg("orderQty")}
+                </Field>
+                <Field label="Printing *">
+                  <select
+                    value={header.printing}
+                    onChange={(e) => setH("printing", e.target.value)}
+                  >
+                    <option value="">-- Select Printing --</option>
+                    {PRINTING_OPTIONS.map((p) => (
+                      <option key={p}>{p}</option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Plate *">
+                  <select
+                    value={header.plate}
+                    onChange={(e) => setH("plate", e.target.value)}
+                  >
+                    <option value="">-- Select Plate --</option>
+                    {PLATE_OPTIONS.map((p) => (
+                      <option key={p}>{p}</option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Process *">
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: 6,
+                      paddingTop: 2,
+                    }}
+                  >
+                    {PROCESS_TAGS.map((proc) => {
+                      const active = (header.processes || []).includes(proc);
+                      return (
+                        <button
+                          key={proc}
+                          onClick={() => toggleProcess(proc)}
+                          style={{
+                            padding: "4px 12px",
+                            borderRadius: 5,
+                            border: `1px solid ${active ? C.yellow || "#facc15" : C.border}`,
+                            background: active
+                              ? (C.yellow || "#facc15") + "22"
+                              : "transparent",
+                            color: active ? C.yellow || "#facc15" : C.muted,
+                            fontWeight: active ? 700 : 400,
+                            fontSize: 12,
+                            cursor: "pointer",
+                            transition: "all 0.15s",
+                          }}
+                        >
+                          {proc}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </Field>
+              </div>
+
+              {}
+              {(header.processes || []).length > 0 && (
+                <div style={{ marginBottom: 24 }}>
+                  <SubLabel text="Machine Assignment" />
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns:
+                        "repeat(auto-fill, minmax(280px, 1fr))",
+                      gap: 14,
+                    }}
+                  >
+                    {header.processes.map((proc) => {
+                      const machineType =
+                        PROCESS_MACHINE_TYPE[proc] || "Printing";
+                      const filteredMachines = (
+                        Array.isArray(machineMaster) ? machineMaster : []
+                      ).filter((m) => {
+                        const mType = m.type || "";
+                        if (machineType === "Formation") {
+                          return FORMATION_MACHINE_TYPES.includes(mType);
+                        }
+                        return (
+                          mType.toLowerCase() === machineType.toLowerCase()
+                        );
+                      });
+
+                      const accentColor = PROCESS_COLORS[proc] || C.accent;
+
+                      return (
+                        <div
+                          key={proc}
+                          style={{
+                            padding: 16,
+                            background: C.surface,
+                            border: `1px solid ${C.border}`,
+                            borderRadius: 8,
+                            position: "relative",
+                            overflow: "hidden",
+                          }}
+                        >
+                          <div
+                            style={{
+                              position: "absolute",
+                              top: 0,
+                              left: 0,
+                              width: 4,
+                              height: "100%",
+                              background: accentColor,
+                            }}
+                          />
+                          <div
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 800,
+                              color: accentColor,
+                              marginBottom: 12,
+                              textTransform: "uppercase",
+                              letterSpacing: "0.05em",
+                            }}
+                          >
+                            {proc}
+                          </div>
+                          <select
+                            value={header.machineAssignments?.[proc] || ""}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setHeader((prev) => ({
+                                ...prev,
+                                machineAssignments: {
+                                  ...(prev.machineAssignments || {}),
+                                  [proc]: val,
+                                },
+                              }));
+                            }}
+                            style={{
+                              width: "100%",
+                              background: C.inputBg,
+                              border: `1px solid ${C.border}`,
+                              color: C.text,
+                              padding: "8px 12px",
+                              borderRadius: 6,
+                              fontSize: 13,
+                              outline: "none",
+                            }}
+                          >
+                            <option value="">-- Select Machine --</option>
+                            {filteredMachines.map((m) => (
+                              <option
+                                key={m._id || m.name}
+                                value={m._id || m.name}
+                              >
+                                {m.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {}
+              <SubLabel text="Sheet / Reel Details" />
+
+              {}
+              {}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns:
+                    header.paperCategory === "Paper Reel"
+                      ? "1fr 1fr 1fr 1fr 1fr"
+                      : "1fr 1fr 1fr 1fr 1fr 1fr",
+                  gap: 14,
+                  marginBottom: 14,
+                }}
+              >
+                <Field label="PAPER CATEGORY *">
+                  <select
+                    value={header.paperCategory}
+                    onChange={(e) => setH("paperCategory", e.target.value)}
+                    style={EH("paperCategory")}
+                  >
+                    <option value="">-- Select Category --</option>
+                    {paperCategories.map((i) => (
+                      <option key={i}>{i}</option>
+                    ))}
+                  </select>
+                  {EHMsg("paperCategory")}
+                </Field>
+                <Field label="PAPER TYPE *">
+                  <select
+                    value={header.paperType}
+                    onChange={(e) => setH("paperType", e.target.value)}
+                    disabled={!header.paperCategory}
+                    style={EH("paperType")}
+                  >
+                    <option value="">
+                      {header.paperCategory
+                        ? "-- Select Paper Type --"
+                        : "-- Select Category first --"}
+                    </option>
+                    {(paperTypesByItem[header.paperCategory] || []).map((p) => (
+                      <option key={p}>{p}</option>
+                    ))}
+                  </select>
+                  {EHMsg("paperType")}
+                </Field>
+                <Field label="PAPER GSM *">
+                  <input
+                    type="number"
+                    placeholder="e.g. 300"
+                    value={header.paperGsm}
+                    onChange={(e) => setH("paperGsm", e.target.value)}
+                    style={EH("paperGsm")}
+                  />
+                  {EHMsg("paperGsm")}
+                </Field>
+
+                <Field label="# OF UPS *">
+                  <input
+                    type="number"
+                    placeholder="No. of ups"
+                    value={header.noOfUps}
+                    onChange={(e) => setH("noOfUps", e.target.value)}
+                    style={EH("noOfUps")}
+                  />
+                  {EHMsg("noOfUps")}
+                </Field>
+                {header.paperCategory !== "Paper Reel" &&
+                  header.paperType !== "Polycoated Blanks" && (
+                    <Field label="# OF SHEETS *">
+                      <input
+                        type="number"
+                        placeholder="No. of sheets"
+                        value={header.noOfSheets}
+                        onChange={(e) => setH("noOfSheets", e.target.value)}
+                        style={EH("noOfSheets")}
+                      />
+                      {EHMsg("noOfSheets")}
+                      {header.paperCategory &&
+                        header.paperType &&
+                        header.paperGsm &&
+                        (header.paperCategory === "Paper Reel"
+                          ? !!header.reelWidthMm
+                          : !!(header.sheetW && header.sheetL)) && (
+                          <div
+                            style={{
+                              fontSize: 10,
+                              color: matchedStock?.qty > 0 ? C.green : C.red,
+                              marginTop: 4,
+                              fontWeight: 500,
+                            }}
+                          >
+                            {matchedStock?.qty > 0
+                              ? `${fmt(matchedStock.qty)} sheets available`
+                              : `0 sheets available`}
+                          </div>
+                        )}
+                    </Field>
+                  )}
+
+                {header.paperCategory === "Paper Reel" && (
+                  <Field label="REEL WEIGHT (KG) *">
+                    <input
+                      type="number"
+                      placeholder="Weight in kg"
+                      value={header.reelWeightKg}
+                      onChange={(e) => setH("reelWeightKg", e.target.value)}
+                    />
+                    {header.paperCategory &&
+                      header.paperType &&
+                      header.paperGsm &&
+                      (header.paperCategory === "Paper Reel"
+                        ? !!header.reelWidthMm
+                        : !!(header.sheetW && header.sheetL)) && (
+                        <div
+                          style={{
+                            fontSize: 10,
+                            color: matchedStock?.weight > 0 ? C.green : C.red,
+                            marginTop: 4,
+                            fontWeight: 500,
+                          }}
+                        >
+                          {matchedStock?.weight > 0
+                            ? `${fmt(Math.round(matchedStock.weight))} kg available`
+                            : `0 kg available`}
+                        </div>
+                      )}
+                  </Field>
+                )}
+              </div>
+
+              {header.paperCategory === "Paper Reel" && (
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr 1.5fr",
+                    gap: 14,
+                    marginBottom: 20,
+                  }}
+                >
+                  <Field label="REEL WIDTH (MM)">
+                    <input
+                      type="number"
+                      placeholder="Width"
+                      value={header.reelWidthMm}
+                      onChange={(e) => setH("reelWidthMm", e.target.value)}
+                    />
+                  </Field>
+                  <Field label="CUTTING LENGTH (MM)">
+                    <input
+                      type="number"
+                      placeholder="Length"
+                      value={header.cuttingLengthMm}
+                      onChange={(e) => setH("cuttingLengthMm", e.target.value)}
+                    />
+                  </Field>
+                </div>
+              )}
+
+              {header.paperCategory !== "Paper Reel" &&
+                header.paperType !== "Polycoated Blanks" && (
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr 1fr 1.5fr",
+                      gap: 14,
+                      marginBottom: 20,
+                    }}
+                  >
+                    <Field label="SHEET UOM">
+                      <select
+                        value={header.sheetUom}
+                        onChange={(e) => setH("sheetUom", e.target.value)}
+                      >
+                        <option value="mm">mm</option>
+                        <option value="cm">cm</option>
+                        <option value="inch">inch</option>
+                      </select>
+                    </Field>
+                    <Field label="SHEET W *">
+                      <input
+                        type="number"
+                        placeholder="Width"
+                        value={header.sheetW}
+                        onChange={(e) => setH("sheetW", e.target.value)}
+                        style={EH("sheetW")}
+                      />
+                      {EHMsg("sheetW")}
+                    </Field>
+                    <Field label="SHEET L *">
+                      <input
+                        type="number"
+                        placeholder="Length"
+                        value={header.sheetL}
+                        onChange={(e) => setH("sheetL", e.target.value)}
+                        style={EH("sheetL")}
+                      />
+                      {EHMsg("sheetL")}
+                    </Field>
+                    <Field label="SHEET SIZE">
+                      <div
+                        style={{
+                          padding: "9px 12px",
+                          background: C.inputBg,
+                          border: `1px solid ${C.border}`,
+                          borderRadius: 6,
+                          fontSize: 13,
+                          color: header.sheetSize ? C.text : C.muted,
+                        }}
+                      >
+                        {header.sheetSize || "— Auto from W x L x UOM —"}
+                      </div>
+                    </Field>
+                  </div>
+                )}
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1.5fr 1fr",
+                  gap: 14,
+                  marginBottom: 20,
+                }}
+              >
+                <Field label="ITEM NAME">
+                  {header.paperType === "Polycoated Blanks" ? (
+                    <select
+                      value={header.itemName}
+                      onChange={(e) => setH("itemName", e.target.value)}
+                      style={{ fontWeight: 600 }}
+                    >
+                      <option value="">-- Select Polycoated Blank --</option>
+                      {itemMasterItems
+                        .filter(
+                          (i) =>
+                            i.type === "Raw Material" &&
+                            (i.category === "Polycoated Blanks" ||
+                              i.subCategory === "Polycoated Blanks"),
+                        )
+                        .map((i) => (
+                          <option key={i._id || i.code} value={i.name}>
+                            {i.code ? `${i.code} — ${i.name}` : i.name}
+                          </option>
+                        ))}
+                    </select>
+                  ) : (
+                    <input
+                      readOnly
+                      placeholder="Auto-matched item"
+                      value={
+                        matchedStock?.name ||
+                        (header.paperCategory &&
+                        header.paperType &&
+                        header.paperGsm &&
+                        (header.paperCategory === "Paper Reel"
+                          ? !!header.reelWidthMm
+                          : !!(header.sheetW && header.sheetL))
+                          ? `${header.paperType} ${header.paperCategory} ${header.paperGsm}gsm ${
+                              header.paperCategory === "Paper Reel"
+                                ? (header.reelWidthMm || 0) + "mm"
+                                : header.sheetSize
+                            }`
+                          : "")
+                      }
+                      style={{
+                        background: "transparent",
+                        color: matchedStock ? C.green : C.text,
+                        fontWeight: 600,
+                      }}
+                    />
+                  )}
+                </Field>
+                <Field label="REMARKS">
+                  <input
+                    placeholder="Special instructions"
+                    value={header.remarks}
+                    onChange={(e) => setH("remarks", e.target.value)}
+                  />
+                </Field>
+                <div style={{ alignSelf: "end", paddingBottom: 10 }}>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 500,
+                      letterSpacing: "normal",
+                      color: C.muted,
+                      textTransform: "uppercase",
+                      marginBottom: 6,
+                    }}
+                  >
+                    Second Paper
+                  </div>
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      cursor: "pointer",
+                      fontSize: 13,
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={header.hasSecondPaper}
+                      onChange={(e) => setH("hasSecondPaper", e.target.checked)}
+                    />
+                    <span style={{ color: C.muted }}>
+                      This job uses a second paper
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              {header.hasSecondPaper && (
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      header.paperCategory2 === "Paper Reel"
+                        ? "1fr 1fr 1fr"
+                        : "1.5fr 1fr 1fr 1fr",
+                    gap: 14,
+                    marginTop: 14,
+                  }}
+                >
+                  <Field label="Paper 2 Category">
+                    <select
+                      value={header.paperCategory2}
+                      onChange={(e) => setH("paperCategory2", e.target.value)}
+                    >
+                      <option value="">-- Select Category --</option>
+                      {paperCategories.map((i) => (
+                        <option key={i}>{i}</option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label="Paper 2 Type">
+                    <select
+                      value={header.paperType2}
+                      onChange={(e) => setH("paperType2", e.target.value)}
+                      disabled={!header.paperCategory2}
+                    >
+                      <option value="">
+                        {header.paperCategory2
+                          ? "-- Select Paper Type --"
+                          : "-- Select Category first --"}
+                      </option>
+                      {(paperTypesByItem[header.paperCategory2] || []).map(
+                        (p) => (
+                          <option key={p}>{p}</option>
+                        ),
+                      )}
+                    </select>
+                  </Field>
+                  <Field label="Paper 2 GSM">
+                    <input
+                      type="number"
+                      placeholder="e.g. 130"
+                      value={header.paperGsm2}
+                      onChange={(e) => setH("paperGsm2", e.target.value)}
+                    />
+                  </Field>
+                  {header.paperCategory2 !== "Paper Reel" && (
+                    <Field label="Paper 2 Sheets">
+                      <input
+                        type="number"
+                        placeholder="e.g. 1000"
+                        value={header.noOfSheets2}
+                        onChange={(e) => setH("noOfSheets2", e.target.value)}
+                      />
+                    </Field>
+                  )}
+                </div>
+              )}
+              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                <SubmitBtn
+                  label={editId ? "Update Job Order" : "Create Job Order"}
+                  color={C.yellow || "#facc15"}
+                  onClick={submit}
+                  disabled={loading}
+                />
+                {editId && (
+                  <button
+                    onClick={() => {
+                      setEditId(null);
+                      setHeader(blankHeader);
+                      setHeaderErrors({});
+                      setShowModal(false);
+                    }}
+                    style={{
+                      padding: "10px 20px",
+                      borderRadius: 6,
+                      border: `1px solid ${C.border}`,
+                      background: "transparent",
+                      color: C.muted,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
+            </Card>
+          </Modal>
+        )}
+
+        {}
+        <Card>
           <div
             style={{
               display: "flex",
@@ -1795,158 +1889,509 @@ export default function JobOrders(props) {
           </div>
 
           {(() => {
-            const filteredJOs = (jobOrders || []).slice().reverse().filter(r => {
-              if (!drDateFrom && !drDateTo) return true;
-              const d = r.jobcardDate ? new Date(r.jobcardDate).toISOString().slice(0, 10) : "";
-              if (drDateFrom && d < drDateFrom) return false;
-              if (drDateTo && d > drDateTo) return false;
-              return true;
-            });
+            const filteredJOs = (jobOrders || [])
+              .slice()
+              .reverse()
+              .filter((r) => {
+                if (!drDateFrom && !drDateTo) return true;
+                const d = r.jobcardDate
+                  ? new Date(r.jobcardDate).toISOString().slice(0, 10)
+                  : "";
+                if (drDateFrom && d < drDateFrom) return false;
+                if (drDateTo && d > drDateTo) return false;
+                return true;
+              });
             const filteredIds = filteredJOs.map((r) => r._id || r.id);
-            const allSelected = filteredIds.length > 0 && filteredIds.every((id) => selectedIds.has(id));
+            const allSelected =
+              filteredIds.length > 0 &&
+              filteredIds.every((id) => selectedIds.has(id));
             const someSelected = filteredIds.some((id) => selectedIds.has(id));
-            const activeCount = filteredJOs.filter(r => r.status !== "Completed").length;
-            const completedCount = filteredJOs.filter(r => r.status === "Completed").length;
-            const totalQty = filteredJOs.reduce((s, r) => s + +(r.orderQty || 0), 0);
+            const activeCount = filteredJOs.filter(
+              (r) => r.status !== "Completed",
+            ).length;
+            const completedCount = filteredJOs.filter(
+              (r) => r.status === "Completed",
+            ).length;
+            const totalQty = filteredJOs.reduce(
+              (s, r) => s + +(r.orderQty || 0),
+              0,
+            );
             const statCards = [
-              { label: "Total JOs", value: filteredJOs.length, icon: "fa-solid fa-gears", color: "#facc15" },
-              { label: "Active", value: activeCount, icon: "fa-solid fa-spinner", color: "#f97316" },
-              { label: "Completed", value: completedCount, icon: "fa-solid fa-circle-check", color: "#10b981" },
-              { label: "Total Qty", value: fmt(totalQty) + " pcs", icon: "fa-solid fa-boxes-stacked", color: "#60a5fa" },
+              {
+                label: "Total JOs",
+                value: filteredJOs.length,
+                icon: "fa-solid fa-gears",
+                color: "#facc15",
+              },
+              {
+                label: "Active",
+                value: activeCount,
+                icon: "fa-solid fa-spinner",
+                color: "#f97316",
+              },
+              {
+                label: "Completed",
+                value: completedCount,
+                icon: "fa-solid fa-circle-check",
+                color: "#10b981",
+              },
+              {
+                label: "Total Qty",
+                value: fmt(totalQty) + " pcs",
+                icon: "fa-solid fa-boxes-stacked",
+                color: "#60a5fa",
+              },
             ];
             return (
               <>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 16 }}>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(4, 1fr)",
+                    gap: 12,
+                    marginBottom: 16,
+                  }}
+                >
                   {statCards.map(({ label, value, icon, color }) => (
-                    <div key={label} style={{ padding: "16px 20px", background: "transparent", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, borderLeft: `3px solid ${color}` }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                        <span style={{ fontSize: 11, color: C.muted, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
-                        <i className={icon} style={{ color, fontSize: 13, opacity: 0.8 }} />
+                    <div
+                      key={label}
+                      style={{
+                        padding: "16px 20px",
+                        background: "transparent",
+                        border: "1px solid rgba(255,255,255,0.07)",
+                        borderRadius: 12,
+                        borderLeft: `3px solid ${color}`,
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          marginBottom: 8,
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: 11,
+                            color: C.muted,
+                            fontWeight: 600,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.05em",
+                          }}
+                        >
+                          {label}
+                        </span>
+                        <i
+                          className={icon}
+                          style={{ color, fontSize: 13, opacity: 0.8 }}
+                        />
                       </div>
-                      <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", fontFamily: "'JetBrains Mono', monospace" }}>{value}</div>
+                      <div
+                        style={{
+                          fontSize: 22,
+                          fontWeight: 800,
+                          color: "#fff",
+                          fontFamily: "'JetBrains Mono', monospace",
+                        }}
+                      >
+                        {value}
+                      </div>
                     </div>
                   ))}
                 </div>
 
                 {selectedIds.size > 0 && (
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", marginBottom: 8, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: "#fecaca" }}>{selectedIds.size} selected</span>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "10px 14px",
+                      marginBottom: 8,
+                      background: "rgba(239,68,68,0.08)",
+                      border: "1px solid rgba(239,68,68,0.3)",
+                      borderRadius: 8,
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: "#fecaca",
+                      }}
+                    >
+                      {selectedIds.size} selected
+                    </span>
                     <div style={{ display: "flex", gap: 8 }}>
-                      <button onClick={() => setSelectedIds(new Set())} style={{ padding: "5px 12px", borderRadius: 5, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.06)", color: "#fff", fontSize: 12, fontWeight: 500, cursor: "pointer" }}>Clear</button>
-                      <button onClick={() => setBulkDeleteOpen(true)} style={{ padding: "5px 12px", borderRadius: 5, border: "1px solid rgba(239,68,68,0.4)", background: "rgba(239,68,68,0.15)", color: "#ef4444", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Delete Selected</button>
+                      <button
+                        onClick={() => setSelectedIds(new Set())}
+                        style={{
+                          padding: "5px 12px",
+                          borderRadius: 5,
+                          border: "1px solid rgba(255,255,255,0.15)",
+                          background: "rgba(255,255,255,0.06)",
+                          color: "#fff",
+                          fontSize: 12,
+                          fontWeight: 500,
+                          cursor: "pointer",
+                        }}
+                      >
+                        Clear
+                      </button>
+                      <button
+                        onClick={() => setBulkDeleteOpen(true)}
+                        style={{
+                          padding: "5px 12px",
+                          borderRadius: 5,
+                          border: "1px solid rgba(239,68,68,0.4)",
+                          background: "rgba(239,68,68,0.15)",
+                          color: "#ef4444",
+                          fontSize: 12,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                        }}
+                      >
+                        Delete Selected
+                      </button>
                     </div>
                   </div>
                 )}
 
                 {filteredJOs.length === 0 ? (
-                  <div style={{ textAlign: "center", color: C.muted, padding: 32, fontSize: 13 }}>No job orders yet.</div>
+                  <div
+                    style={{
+                      textAlign: "center",
+                      color: C.muted,
+                      padding: 32,
+                      fontSize: 13,
+                    }}
+                  >
+                    No job orders yet.
+                  </div>
                 ) : (
-                  <div style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <div
+                    style={{
+                      background: "transparent",
+                      border: "1px solid rgba(255,255,255,0.07)",
+                      borderRadius: 12,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <table
+                      style={{
+                        width: "100%",
+                        borderCollapse: "collapse",
+                        fontSize: 13,
+                      }}
+                    >
                       <thead>
-                        <tr style={{ background: "transparent", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-                          <th style={{ padding: "10px 14px", textAlign: "left", width: 36 }}>
+                        <tr
+                          style={{
+                            background: "transparent",
+                            borderBottom: "1px solid rgba(255,255,255,0.08)",
+                          }}
+                        >
+                          <th
+                            style={{
+                              padding: "10px 14px",
+                              textAlign: "left",
+                              width: 36,
+                            }}
+                          >
                             <input
                               type="checkbox"
                               checked={allSelected}
-                              ref={(el) => { if (el) el.indeterminate = !allSelected && someSelected; }}
-                              onChange={() => toggleSelectAll(filteredIds, allSelected)}
-                              style={{ cursor: "pointer", accentColor: C.accent || "#60a5fa" }}
+                              ref={(el) => {
+                                if (el)
+                                  el.indeterminate =
+                                    !allSelected && someSelected;
+                              }}
+                              onChange={() =>
+                                toggleSelectAll(filteredIds, allSelected)
+                              }
+                              style={{
+                                cursor: "pointer",
+                                accentColor: C.accent || "#60a5fa",
+                              }}
                             />
                           </th>
-                          {["JO No", "Date", "Client", "Item", "Qty", "Process", "Priority", "Status", "Actions"].map(h => (
-                            <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
+                          {[
+                            "JO No",
+                            "Date",
+                            "Client",
+                            "Item",
+                            "Qty",
+                            "Process",
+                            "Priority",
+                            "Status",
+                            "Actions",
+                          ].map((h) => (
+                            <th
+                              key={h}
+                              style={{
+                                padding: "10px 14px",
+                                textAlign: "left",
+                                fontSize: 11,
+                                fontWeight: 700,
+                                color: C.muted,
+                                textTransform: "uppercase",
+                                letterSpacing: "0.05em",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {h}
+                            </th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
                         {filteredJOs.map((r, i) => {
-              const handleEdit = (jo) => {
-                setEditId(jo._id);
-                setHeader({
-                  joDate: new Date(jo.jobcardDate).toISOString().slice(0, 10),
-                  soRef: jo.soRef || "",
-                  companyName: jo.companyName || "",
-                  companyCategory: jo.companyCategory || "",
-                  itemName: jo.itemName || "",
-                  priority: jo.priority || "Standard",
-                  size: "",
-                  orderDate: jo.orderDate
-                    ? new Date(jo.orderDate).toISOString().slice(0, 10)
-                    : "",
-                  deliveryDate: jo.deliveryDate
-                    ? new Date(jo.deliveryDate).toISOString().slice(0, 10)
-                    : "",
-                  orderQty: jo.orderQty || "",
-                  printing: jo.printing || "",
-                  plate: jo.plate || "",
-                  processes: jo.process || [],
-                  paperCategory: jo.paperCategory || "",
-                  paperType: jo.paperType || "",
-                  paperGsm: jo.paperGsm || "",
-                  noOfUps: jo.noOfUps || "",
-                  noOfSheets: jo.noOfSheets || "",
-                  sheetUom: jo.sheetUom || "mm",
-                  sheetW: jo.sheetW || "",
-                  sheetL: jo.sheetL || "",
-                  sheetSize: jo.sheetSize || "",
-                  hasSecondPaper: jo.hasSecondPaper || false,
-                  paperCategory2: jo.paperCategory2 || "",
-                  paperType2: jo.paperType2 || "",
-                  paperGsm2: jo.paperGsm2 || "",
-                  noOfSheets2: jo.noOfSheets2 || "",
-                  remarks: jo.remarks || "",
-                  machineAssignments: jo.machineAssignments || {},
-                });
-                setShowModal(true);
-              };
+                          const handleEdit = (jo) => {
+                            setEditId(jo._id);
+                            setHeader({
+                              joDate: new Date(jo.jobcardDate)
+                                .toISOString()
+                                .slice(0, 10),
+                              soRef: jo.soRef || "",
+                              companyName: jo.companyName || "",
+                              companyCategory: jo.companyCategory || "",
+                              itemName: jo.itemName || "",
+                              priority: jo.priority || "Standard",
+                              size: "",
+                              orderDate: jo.orderDate
+                                ? new Date(jo.orderDate)
+                                    .toISOString()
+                                    .slice(0, 10)
+                                : "",
+                              deliveryDate: jo.deliveryDate
+                                ? new Date(jo.deliveryDate)
+                                    .toISOString()
+                                    .slice(0, 10)
+                                : "",
+                              orderQty: jo.orderQty || "",
+                              printing: jo.printing || "",
+                              plate: jo.plate || "",
+                              processes: jo.process || [],
+                              paperCategory: jo.paperCategory || "",
+                              paperType: jo.paperType || "",
+                              paperGsm: jo.paperGsm || "",
+                              noOfUps: jo.noOfUps || "",
+                              noOfSheets: jo.noOfSheets || "",
+                              sheetUom: jo.sheetUom || "mm",
+                              sheetW: jo.sheetW || "",
+                              sheetL: jo.sheetL || "",
+                              sheetSize: jo.sheetSize || "",
+                              hasSecondPaper: jo.hasSecondPaper || false,
+                              paperCategory2: jo.paperCategory2 || "",
+                              paperType2: jo.paperType2 || "",
+                              paperGsm2: jo.paperGsm2 || "",
+                              noOfSheets2: jo.noOfSheets2 || "",
+                              remarks: jo.remarks || "",
+                              machineAssignments: jo.machineAssignments || {},
+                            });
+                            setShowModal(true);
+                          };
 
-              const handleDelete = (id) => setDeleteTarget(id);
+                          const handleDelete = (id) => setDeleteTarget(id);
 
-              const priorityColor = r.priority === "VIP" ? "#ef4444" : r.priority === "Rush" ? "#f97316" : r.priority === "Fill-in" ? "#6b7280" : null;
-              const rowId = r._id || r.id;
-              return (
-                <tr
-                  key={rowId}
-                  data-record-id={r.joNo}
-                  style={{
-                    borderBottom: "1px solid rgba(255,255,255,0.04)",
-                    background: selectedIds.has(rowId) ? "rgba(96,165,250,0.08)" : r.joNo === highlightId ? `${C.accent}11` : i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)",
-                    transition: "all 0.4s ease",
-                  }}
-                >
-                  <td style={{ padding: "11px 14px", width: 36 }}>
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.has(rowId)}
-                      onChange={() => toggleSelect(rowId)}
-                      style={{ cursor: "pointer", accentColor: C.accent || "#60a5fa" }}
-                    />
-                  </td>
-                  <td style={{ padding: "11px 14px", fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: "#facc15", whiteSpace: "nowrap" }}>{r.joNo}</td>
-                  <td style={{ padding: "11px 14px", color: C.muted, whiteSpace: "nowrap", fontSize: 12 }}>{r.jobcardDate ? new Date(r.jobcardDate).toLocaleDateString("en-GB") : "—"}</td>
-                  <td style={{ padding: "11px 14px", fontWeight: 500 }}>{r.companyName}</td>
-                  <td style={{ padding: "11px 14px", color: "#94a3b8", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.itemName}</td>
-                  <td style={{ padding: "11px 14px", fontFamily: "'JetBrains Mono', monospace", color: "#e2e8f0" }}>{fmt(r.orderQty)}</td>
-                  <td style={{ padding: "11px 14px", color: C.muted, fontSize: 12 }}>{(r.process || r.processes || []).join(", ") || "—"}</td>
-                  <td style={{ padding: "11px 14px" }}>
-                    {priorityColor ? (
-                      <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 10, fontWeight: 800, background: priorityColor + "22", color: priorityColor, border: `1px solid ${priorityColor}44` }}>{r.priority}</span>
-                    ) : <span style={{ color: C.muted, fontSize: 12 }}>—</span>}
-                  </td>
-                  <td style={{ padding: "11px 14px" }}>
-                    <span style={{ padding: "3px 10px", borderRadius: 5, fontSize: 11, fontWeight: 600, background: r.status === "Completed" ? "#06422233" : "#451a0333", color: r.status === "Completed" ? "#10b981" : "#f59e0b", border: `1px solid ${r.status === "Completed" ? "#065f4622" : "#78350f22"}` }}>{r.status || "Open"}</span>
-                  </td>
-                  <td style={{ padding: "11px 14px" }}>
-                    <div style={{ display: "flex", gap: 5 }}>
-                      <button onClick={() => handleEdit(r)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid rgba(250,204,21,0.4)", background: "rgba(250,204,21,0.08)", color: "#facc15", fontSize: 11, fontWeight: 500, cursor: "pointer" }}>Edit</button>
-                      <button onClick={() => generateJobCardPDF(r)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid rgba(96,165,250,0.3)", background: "rgba(96,165,250,0.08)", color: "#60a5fa", fontSize: 11, fontWeight: 500, cursor: "pointer" }}>PDF</button>
-                      <button onClick={() => handleDelete(r._id || r.id)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.08)", color: "#ef4444", fontSize: 11, fontWeight: 500, cursor: "pointer" }}>Del</button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
+                          const priorityColor =
+                            r.priority === "VIP"
+                              ? "#ef4444"
+                              : r.priority === "Rush"
+                                ? "#f97316"
+                                : r.priority === "Fill-in"
+                                  ? "#6b7280"
+                                  : null;
+                          const rowId = r._id || r.id;
+                          return (
+                            <tr
+                              key={rowId}
+                              data-record-id={r.joNo}
+                              style={{
+                                borderBottom:
+                                  "1px solid rgba(255,255,255,0.04)",
+                                background: selectedIds.has(rowId)
+                                  ? "rgba(96,165,250,0.08)"
+                                  : r.joNo === highlightId
+                                    ? `${C.accent}11`
+                                    : i % 2 === 0
+                                      ? "transparent"
+                                      : "rgba(255,255,255,0.01)",
+                                transition: "all 0.4s ease",
+                              }}
+                            >
+                              <td style={{ padding: "11px 14px", width: 36 }}>
+                                <input
+                                  type="checkbox"
+                                  checked={selectedIds.has(rowId)}
+                                  onChange={() => toggleSelect(rowId)}
+                                  style={{
+                                    cursor: "pointer",
+                                    accentColor: C.accent || "#60a5fa",
+                                  }}
+                                />
+                              </td>
+                              <td
+                                style={{
+                                  padding: "11px 14px",
+                                  fontFamily: "'JetBrains Mono', monospace",
+                                  fontWeight: 700,
+                                  color: "#facc15",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {r.joNo}
+                              </td>
+                              <td
+                                style={{
+                                  padding: "11px 14px",
+                                  color: C.muted,
+                                  whiteSpace: "nowrap",
+                                  fontSize: 12,
+                                }}
+                              >
+                                {r.jobcardDate
+                                  ? new Date(r.jobcardDate).toLocaleDateString(
+                                      "en-GB",
+                                    )
+                                  : "—"}
+                              </td>
+                              <td
+                                style={{
+                                  padding: "11px 14px",
+                                  fontWeight: 500,
+                                }}
+                              >
+                                {r.companyName}
+                              </td>
+                              <td
+                                style={{
+                                  padding: "11px 14px",
+                                  color: "#94a3b8",
+                                  maxWidth: 180,
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {r.itemName}
+                              </td>
+                              <td
+                                style={{
+                                  padding: "11px 14px",
+                                  fontFamily: "'JetBrains Mono', monospace",
+                                  color: "#e2e8f0",
+                                }}
+                              >
+                                {fmt(r.orderQty)}
+                              </td>
+                              <td
+                                style={{
+                                  padding: "11px 14px",
+                                  color: C.muted,
+                                  fontSize: 12,
+                                }}
+                              >
+                                {(r.process || r.processes || []).join(", ") ||
+                                  "—"}
+                              </td>
+                              <td style={{ padding: "11px 14px" }}>
+                                {priorityColor ? (
+                                  <span
+                                    style={{
+                                      padding: "2px 8px",
+                                      borderRadius: 4,
+                                      fontSize: 10,
+                                      fontWeight: 800,
+                                      background: priorityColor + "22",
+                                      color: priorityColor,
+                                      border: `1px solid ${priorityColor}44`,
+                                    }}
+                                  >
+                                    {r.priority}
+                                  </span>
+                                ) : (
+                                  <span
+                                    style={{ color: C.muted, fontSize: 12 }}
+                                  >
+                                    —
+                                  </span>
+                                )}
+                              </td>
+                              <td style={{ padding: "11px 14px" }}>
+                                <span
+                                  style={{
+                                    padding: "3px 10px",
+                                    borderRadius: 5,
+                                    fontSize: 11,
+                                    fontWeight: 600,
+                                    background:
+                                      r.status === "Completed"
+                                        ? "#06422233"
+                                        : "#451a0333",
+                                    color:
+                                      r.status === "Completed"
+                                        ? "#10b981"
+                                        : "#f59e0b",
+                                    border: `1px solid ${r.status === "Completed" ? "#065f4622" : "#78350f22"}`,
+                                  }}
+                                >
+                                  {r.status || "Open"}
+                                </span>
+                              </td>
+                              <td style={{ padding: "11px 14px" }}>
+                                <div style={{ display: "flex", gap: 5 }}>
+                                  <button
+                                    onClick={() => handleEdit(r)}
+                                    style={{
+                                      padding: "4px 10px",
+                                      borderRadius: 4,
+                                      border: "1px solid rgba(250,204,21,0.4)",
+                                      background: "rgba(250,204,21,0.08)",
+                                      color: "#facc15",
+                                      fontSize: 11,
+                                      fontWeight: 500,
+                                      cursor: "pointer",
+                                    }}
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() => generateJobCardPDF(r)}
+                                    style={{
+                                      padding: "4px 10px",
+                                      borderRadius: 4,
+                                      border: "1px solid rgba(96,165,250,0.3)",
+                                      background: "rgba(96,165,250,0.08)",
+                                      color: "#60a5fa",
+                                      fontSize: 11,
+                                      fontWeight: 500,
+                                      cursor: "pointer",
+                                    }}
+                                  >
+                                    PDF
+                                  </button>
+                                  <button
+                                    onClick={() => handleDelete(r._id || r.id)}
+                                    style={{
+                                      padding: "4px 10px",
+                                      borderRadius: 4,
+                                      border: "1px solid rgba(239,68,68,0.3)",
+                                      background: "rgba(239,68,68,0.08)",
+                                      color: "#ef4444",
+                                      fontSize: 11,
+                                      fontWeight: 500,
+                                      cursor: "pointer",
+                                    }}
+                                  >
+                                    Del
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -1955,28 +2400,28 @@ export default function JobOrders(props) {
             );
           })()}
         </Card>
-    </div>
+      </div>
 
-    <ConfirmModal
-      isOpen={!!deleteTarget}
-      onClose={() => setDeleteTarget(null)}
-      onConfirm={handleDeleteConfirm}
-      title="Move to Trash"
-      message="This job order will be moved to trash. RM stock will be reversed. You can restore it within 7 days."
-      confirmText="Move to Trash"
-      cancelText="Cancel"
-      type="danger"
-    />
-    <ConfirmModal
-      isOpen={bulkDeleteOpen}
-      onClose={() => setBulkDeleteOpen(false)}
-      onConfirm={handleBulkDelete}
-      title="Move to Trash"
-      message={`${selectedIds.size} job order(s) will be moved to trash. RM stock will be reversed. You can restore them within 7 days.`}
-      confirmText="Move to Trash"
-      cancelText="Cancel"
-      type="danger"
-    />
+      <ConfirmModal
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDeleteConfirm}
+        title="Move to Trash"
+        message="This job order will be moved to trash. RM stock will be reversed. You can restore it within 7 days."
+        confirmText="Move to Trash"
+        cancelText="Cancel"
+        type="danger"
+      />
+      <ConfirmModal
+        isOpen={bulkDeleteOpen}
+        onClose={() => setBulkDeleteOpen(false)}
+        onConfirm={handleBulkDelete}
+        title="Move to Trash"
+        message={`${selectedIds.size} job order(s) will be moved to trash. RM stock will be reversed. You can restore them within 7 days.`}
+        confirmText="Move to Trash"
+        cancelText="Cancel"
+        type="danger"
+      />
     </>
   );
 }

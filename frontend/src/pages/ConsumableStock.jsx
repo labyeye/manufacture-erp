@@ -45,6 +45,19 @@ export default function ConsumableStock({
   const [selectedIds, setSelectedIds] = useState([]);
   const fileInputRef = useRef(null);
 
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (!window.confirm(`Delete ${selectedIds.length} selected item(s)?`)) return;
+    try {
+      await Promise.allSettled(selectedIds.filter(Boolean).map((id) => consumableStockAPI.delete(id)));
+      if (refreshData) await refreshData();
+      setSelectedIds([]);
+      toast?.(`${selectedIds.length} item(s) deleted`, "success");
+    } catch {
+      toast?.("Failed to delete some items", "error");
+    }
+  };
+
   // Categories from CategoryMaster where type === 'Machine Spare'
   const machineSpareCategories = useMemo(() => {
     const entry = (Array.isArray(categoryMaster) ? categoryMaster : []).find(
@@ -481,6 +494,15 @@ export default function ConsumableStock({
             )}
             {canExportImport && <ExportBtn onClick={handleExport} />}
             {canExportImport && <ExportBtn onClick={handleExportPDF} label="Export PDF" />}
+            {!isClient && selectedIds.length > 0 && (
+              <button
+                onClick={handleBulkDelete}
+                style={{ padding: "7px 14px", borderRadius: 6, border: "1px solid rgba(239,68,68,0.4)", background: "rgba(239,68,68,0.15)", color: "#ef4444", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}
+              >
+                <i className="fa-solid fa-trash" style={{ marginRight: 6 }} />
+                Delete Selected ({selectedIds.length})
+              </button>
+            )}
             <input ref={fileInputRef} type="file" accept=".xlsx" style={{ display: "none" }} onChange={handleImport} />
 
             {}

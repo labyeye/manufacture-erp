@@ -1181,7 +1181,7 @@ export default function PurchaseOrders({
                   <AutocompleteInput
                     value={it.productCode}
                     onChange={(v) => setItem(idx, "productCode", v)}
-                    suggestions={sortedItemMasterItems.map(
+                    suggestions={sortedItemMasterItems.filter(i => i.type === "Raw Material").map(
                       (item) => `${item.code} — ${item.name}`,
                     )}
                     placeholder="Type or select code"

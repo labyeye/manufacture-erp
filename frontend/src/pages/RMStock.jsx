@@ -144,6 +144,19 @@ export default function RMStock({
     return sum + weight * rate;
   }, 0);
 
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (!window.confirm(`Delete ${selectedIds.length} selected item(s)?`)) return;
+    try {
+      await Promise.allSettled(selectedIds.map((id) => rawMaterialStockAPI.delete(id)));
+      setRawStock((prev) => prev.filter((s) => !selectedIds.includes(s._id) && !selectedIds.includes(s.id)));
+      setSelectedIds([]);
+      toast?.(`${selectedIds.length} item(s) deleted`, "success");
+    } catch {
+      toast?.("Failed to delete some items", "error");
+    }
+  };
+
   const toggleSelect = (id) => {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
@@ -877,6 +890,15 @@ export default function RMStock({
         )}
         {canExportImport && <ExportBtn onClick={handleExport} />}
         {canExportImport && <ExportBtn onClick={handleExportPDF} label="Export PDF" />}
+        {!isClient && selectedIds.length > 0 && (
+          <button
+            onClick={handleBulkDelete}
+            style={{ padding: "7px 14px", borderRadius: 6, border: "1px solid rgba(239,68,68,0.4)", background: "rgba(239,68,68,0.15)", color: "#ef4444", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}
+          >
+            <i className="fa-solid fa-trash" style={{ marginRight: 6 }} />
+            Delete Selected ({selectedIds.length})
+          </button>
+        )}
         <input
           ref={fileInputRef}
           type="file"

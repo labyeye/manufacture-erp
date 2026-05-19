@@ -9,6 +9,8 @@ import {
   materialInwardAPI,
 } from "../api/auth";
 
+const SUBCONTRACTING_KEY = "subcontracting_records";
+
 const fmt = (n) =>
   Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -21,6 +23,7 @@ const MODULES = [
   { id: "so", label: "Sales Orders", icon: "fa-solid fa-file-invoice-dollar", color: "#4ade80" },
   { id: "jo", label: "Job Orders", icon: "fa-solid fa-gears", color: "#facc15" },
   { id: "mi", label: "Material Inward (GRN)", icon: "fa-solid fa-truck-ramp-box", color: "#38bdf8" },
+  { id: "mr", label: "Material Return", icon: "fa-solid fa-right-left", color: "#f472b6" },
 ];
 
 const getLogoBase64 = () => {
@@ -90,7 +93,7 @@ const buildPOReport = (records, dateFrom, dateTo, logoSrc) => {
 };
 
 const buildSOReport = (records, dateFrom, dateTo) => {
-  const filtered = filterByDate(records, "soDate", dateFrom, dateTo);
+  const filtered = filterByDate(records, "orderDate", dateFrom, dateTo);
   const withTax = filtered.map((so) => {
     const items = (so.items || []).map((it) => {
       const amt = Number(it.amount || 0);
@@ -114,7 +117,7 @@ const buildSOReport = (records, dateFrom, dateTo) => {
       (so, i) => `
     <tr class="${i % 2 === 0 ? "even" : "odd"}">
       <td class="mono">${so.soNo || "—"}</td>
-      <td>${fd(so.soDate)}</td>
+      <td>${fd(so.orderDate)}</td>
       <td>${fd(so.deliveryDate)}</td>
       <td>${so.client || "—"}</td>
       <td>${so.salesPerson || "—"}</td>
@@ -131,7 +134,7 @@ const buildSOReport = (records, dateFrom, dateTo) => {
 };
 
 const buildJOReport = (records, dateFrom, dateTo) => {
-  const filtered = filterByDate(records, "joDate", dateFrom, dateTo);
+  const filtered = filterByDate(records, "jobcardDate", dateFrom, dateTo);
   const totalQty = filtered.reduce((s, r) => s + Number(r.qty || r.quantity || 0), 0);
   const activeCount = filtered.filter((r) => r.status !== "Completed").length;
   const completedCount = filtered.filter((r) => r.status === "Completed").length;
@@ -141,7 +144,7 @@ const buildJOReport = (records, dateFrom, dateTo) => {
       (jo, i) => `
     <tr class="${i % 2 === 0 ? "even" : "odd"}">
       <td class="mono">${jo.joNo || "—"}</td>
-      <td>${fd(jo.joDate)}</td>
+      <td>${fd(jo.jobcardDate)}</td>
       <td>${fd(jo.deliveryDate)}</td>
       <td>${jo.client || "—"}</td>
       <td>${jo.itemName || "—"}</td>
@@ -195,15 +198,51 @@ const buildMIReport = (records, dateFrom, dateTo) => {
   return { rows, grandSubtotal, grandTax, grandTotal, count: withTax.length, title: "Material Inward Report (GRN)", color: "#0e7490", accentLight: "#e0f2fe" };
 };
 
+const buildMRReport = (records, dateFrom, dateTo) => {
+  const filtered = filterByDate(records, "issueDate", dateFrom, dateTo);
+  const issuedCount = filtered.filter((r) => r.status === "Issued").length;
+  const receivedCount = filtered.filter((r) => ["Received", "Reconciled"].includes(r.status)).length;
+  const partialCount = filtered.filter((r) => r.status === "Partially Received").length;
+  const totalIssued = filtered.reduce((s, r) => s + Number(r.qtyIssued || 0), 0);
+  const totalReceived = filtered.reduce((s, r) => {
+    const recs = r.receipts || [];
+    return s + recs.reduce((a, rec) => a + Number(rec.qtyReceived || 0), 0);
+  }, 0);
+
+  const rows = filtered
+    .map((r, i) => {
+      const received = (r.receipts || []).reduce((a, rec) => a + Number(rec.qtyReceived || 0), 0);
+      const pending = Math.max(0, Number(r.qtyIssued || 0) - received);
+      const statusClass = ["Received", "Reconciled"].includes(r.status) ? "green" : r.status === "Partially Received" ? "amber" : r.status === "Cancelled" ? "red" : "blue";
+      return `
+    <tr class="${i % 2 === 0 ? "even" : "odd"}">
+      <td class="mono">${r.id || r._id || "—"}</td>
+      <td>${fd(r.issueDate)}</td>
+      <td>${r.stage || "—"}</td>
+      <td>${r.vendor || "—"}</td>
+      <td>${r.materialDesc || "—"}</td>
+      <td class="center">${fmtQty(r.qtyIssued || 0)}</td>
+      <td class="center">${fmtQty(received)}</td>
+      <td class="center">${fmtQty(pending)}</td>
+      <td>${fd(r.expectedReturn)}</td>
+      <td class="center"><span class="badge ${statusClass}">${r.status || "Issued"}</span></td>
+    </tr>`;
+    })
+    .join("");
+
+  return { rows, grandSubtotal: totalIssued, grandTax: totalReceived, grandTotal: totalIssued - totalReceived, count: filtered.length, issuedCount, receivedCount, partialCount, totalIssued, totalReceived, title: "Material Return Report", color: "#9d174d", accentLight: "#fce7f3", showMR: true };
+};
+
 const HEADER_COLS = {
   po: ["PO No", "PO Date", "Delivery", "Vendor", "Items", "Taxable", "GST", "Net Total", "Status"],
   so: ["SO No", "SO Date", "Delivery", "Client", "Sales Person", "Items", "Taxable", "GST", "Net Total", "Status"],
   jo: ["JO No", "JO Date", "Delivery", "Client", "Item", "Qty", "Process", "Priority", "Status"],
   mi: ["GRN No", "Date", "Vendor", "Invoice", "PO Ref", "Location", "Items", "Taxable", "GST", "Net Total"],
+  mr: ["Issue ID", "Issue Date", "Stage", "Vendor", "Material", "Qty Issued", "Qty Received", "Pending", "Expected Return", "Status"],
 };
 
 const generateReportHTML = ({ module, dateFrom, dateTo, reportData, logoSrc }) => {
-  const { rows, grandSubtotal, grandTax, grandTotal, count, title, color, accentLight, showQty } = reportData;
+  const { rows, grandSubtotal, grandTax, grandTotal, count, title, color, accentLight, showQty, showMR } = reportData;
   const cols = HEADER_COLS[module];
   const now = new Date().toLocaleString("en-IN");
 
@@ -228,6 +267,13 @@ const generateReportHTML = ({ module, dateFrom, dateTo, reportData, logoSrc }) =
         { label: "Active", value: reportData.activeCount, color: "#92400e" },
         { label: "Completed", value: reportData.completedCount, color: "#166534" },
         { label: "Total Qty", value: fmtQty(grandTotal), color: "#1e40af" },
+      ];
+    } else if (module === "mr") {
+      return [
+        { label: "Total Records", value: count, color: "#9d174d" },
+        { label: "Issued", value: reportData.issuedCount, color: "#92400e" },
+        { label: "Partially Received", value: reportData.partialCount, color: "#1d4ed8" },
+        { label: "Received/Reconciled", value: reportData.receivedCount, color: "#166534" },
       ];
     } else {
       return [
@@ -376,7 +422,23 @@ const generateReportHTML = ({ module, dateFrom, dateTo, reportData, logoSrc }) =
   </table>
 
   <!-- TOTALS -->
-  ${!showQty ? `
+  ${reportData.showMR ? `
+  <div class="totals-section">
+    <div class="totals-box">
+      <div class="totals-row">
+        <span class="t-label">Total Qty Issued</span>
+        <span class="t-val">${fmtQty(reportData.totalIssued)}</span>
+      </div>
+      <div class="totals-row">
+        <span class="t-label">Total Qty Received</span>
+        <span class="t-val">${fmtQty(reportData.totalReceived)}</span>
+      </div>
+      <div class="totals-row">
+        <span class="t-label">Pending Return</span>
+        <span class="t-val">${fmtQty(Math.max(0, reportData.totalIssued - reportData.totalReceived))}</span>
+      </div>
+    </div>
+  </div>` : !showQty ? `
   <div class="totals-section">
     <div class="totals-box">
       <div class="totals-row">
@@ -470,6 +532,13 @@ export default function Reports() {
       } else if (selectedModule === "mi") {
         const data = await materialInwardAPI.getAll();
         records = Array.isArray(data) ? data : data.inwards || [];
+      } else if (selectedModule === "mr") {
+        try {
+          const stored = localStorage.getItem(SUBCONTRACTING_KEY);
+          records = stored ? JSON.parse(stored) : [];
+        } catch {
+          records = [];
+        }
       }
 
       const logoSrc = await getLogoBase64();
@@ -478,6 +547,7 @@ export default function Reports() {
       if (selectedModule === "po") reportData = buildPOReport(records, dateFrom, dateTo, logoSrc);
       else if (selectedModule === "so") reportData = buildSOReport(records, dateFrom, dateTo);
       else if (selectedModule === "jo") reportData = buildJOReport(records, dateFrom, dateTo);
+      else if (selectedModule === "mr") reportData = buildMRReport(records, dateFrom, dateTo);
       else reportData = buildMIReport(records, dateFrom, dateTo);
 
       const html = generateReportHTML({ module: selectedModule, dateFrom, dateTo, reportData, logoSrc });
@@ -525,7 +595,7 @@ export default function Reports() {
         });
       }
       if (module === "so") {
-        return filterByDate(previewData._records || [], "soDate", dateFrom, dateTo).map((so) => {
+        return filterByDate(previewData._records || [], "orderDate", dateFrom, dateTo).map((so) => {
           const items = (so.items || []).map((it) => {
             const amt = Number(it.amount || 0);
             const gst = Number(it.gstRate !== undefined ? it.gstRate : 18);
@@ -533,13 +603,30 @@ export default function Reports() {
           });
           const subtotal = items.reduce((s, it) => s + Number(it.amount || 0), 0);
           const totalTax = items.reduce((s, it) => s + it.rowTax, 0);
-          return { "SO No": so.soNo || "—", "SO Date": fd(so.soDate), "Delivery": fd(so.deliveryDate), "Client": so.client || "—", "Sales Person": so.salesPerson || "—", "Items": (so.items || []).length, "Taxable": subtotal, "GST": totalTax, "Net Total": subtotal + totalTax, "Status": so.status || "Open" };
+          return { "SO No": so.soNo || "—", "SO Date": fd(so.orderDate), "Delivery": fd(so.deliveryDate), "Client": so.client || "—", "Sales Person": so.salesPerson || "—", "Items": (so.items || []).length, "Taxable": subtotal, "GST": totalTax, "Net Total": subtotal + totalTax, "Status": so.status || "Open" };
         });
       }
       if (module === "jo") {
-        return filterByDate(previewData._records || [], "joDate", dateFrom, dateTo).map((jo) => ({
-          "JO No": jo.joNo || "—", "JO Date": fd(jo.joDate), "Delivery": fd(jo.deliveryDate), "Client": jo.client || "—", "Item": jo.itemName || "—", "Qty": Number(jo.qty || jo.quantity || 0), "Process": jo.process || "—", "Priority": jo.priority || "Normal", "Status": jo.status || "Active",
+        return filterByDate(previewData._records || [], "jobcardDate", dateFrom, dateTo).map((jo) => ({
+          "JO No": jo.joNo || "—", "JO Date": fd(jo.jobcardDate), "Delivery": fd(jo.deliveryDate), "Client": jo.client || "—", "Item": jo.itemName || "—", "Qty": Number(jo.qty || jo.quantity || 0), "Process": jo.process || "—", "Priority": jo.priority || "Normal", "Status": jo.status || "Active",
         }));
+      }
+      if (module === "mr") {
+        return filterByDate(previewData._records || [], "issueDate", dateFrom, dateTo).map((r) => {
+          const received = (r.receipts || []).reduce((a, rec) => a + Number(rec.qtyReceived || 0), 0);
+          return {
+            "Issue ID": r.id || r._id || "—",
+            "Issue Date": fd(r.issueDate),
+            "Stage": r.stage || "—",
+            "Vendor": r.vendor || "—",
+            "Material": r.materialDesc || "—",
+            "Qty Issued": Number(r.qtyIssued || 0),
+            "Qty Received": received,
+            "Pending": Math.max(0, Number(r.qtyIssued || 0) - received),
+            "Expected Return": fd(r.expectedReturn),
+            "Status": r.status || "Issued",
+          };
+        });
       }
       return filterByDate(previewData._records || [], "inwardDate", dateFrom, dateTo).map((mi) => {
         const items = (mi.items || []).map((it) => {
@@ -599,7 +686,7 @@ export default function Reports() {
           {/* Module */}
           <div>
             <label style={labelStyle}>Module</label>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8 }}>
               {MODULES.map((m) => (
                 <button
                   key={m.id}
@@ -703,6 +790,12 @@ export default function Reports() {
                 { label: "Active", value: reportData.activeCount, color: "#f97316" },
                 { label: "Completed", value: reportData.completedCount, color: "#10b981" },
                 { label: "Total Qty", value: Number(reportData.grandTotal).toLocaleString("en-IN"), color: "#60a5fa" },
+              ];
+              if (module === "mr") return [
+                { label: "Total Records", value: reportData.count, color: "#f472b6" },
+                { label: "Issued", value: reportData.issuedCount, color: "#f97316" },
+                { label: "Partial", value: reportData.partialCount, color: "#60a5fa" },
+                { label: "Received", value: reportData.receivedCount, color: "#10b981" },
               ];
               return [
                 { label: "Total GRNs", value: reportData.count, color: "#38bdf8" },
