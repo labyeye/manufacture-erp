@@ -168,7 +168,6 @@ export default function SizeMaster({ toast }) {
                 border: `1px solid ${C.border}`,
                 borderRadius: 6,
                 fontSize: 13,
-                fontFamily: 'inherit',
               }}
             >
               <option value="">-- Select Category --</option>
@@ -282,7 +281,6 @@ export default function SizeMaster({ toast }) {
                   border: `1px solid ${C.border}`,
                   borderRadius: 6,
                   fontSize: 13,
-                  fontFamily: 'inherit',
                 }}
               >
                 <option value="">-- Select Category --</option>
@@ -306,7 +304,6 @@ export default function SizeMaster({ toast }) {
                   border: `1px solid ${C.border}`,
                   borderRadius: 6,
                   fontSize: 13,
-                  fontFamily: 'inherit',
                 }}
               />
             </Field>

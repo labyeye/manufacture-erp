@@ -820,7 +820,7 @@ export default function Reports() {
                     <div style={{ fontSize: 10, color: card.color, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: 6 }}>
                       {card.label}
                     </div>
-                    <div style={{ fontSize: 22, fontWeight: 800, color: card.color, fontFamily: "'JetBrains Mono', monospace" }}>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: card.color }}>
                       {card.value}
                     </div>
                   </div>
@@ -870,21 +870,19 @@ export default function Reports() {
               <button
                 onClick={openPDF}
                 style={{
-                  padding: "9px 18px",
-                  borderRadius: 9,
-                  border: "none",
-                  background: "rgba(239,68,68,0.85)",
-                  color: "#fff",
-                  fontWeight: 700,
-                  fontSize: 13,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                }}
-              >
-                <i className="fa-solid fa-file-pdf" /> PDF
-              </button>
+                      background: "transparent",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+              ><i className="fa-solid fa-file-pdf" /> PDF</button>
               <button
                 onClick={printReport}
                 style={{

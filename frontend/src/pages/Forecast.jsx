@@ -49,8 +49,6 @@ export default function Forecast({
                 background: active
                   ? "rgba(255,120,0,0.15)"
                   : "rgba(255,255,255,0.05)",
-                backdropFilter: "blur(10px)",
-                WebkitBackdropFilter: "blur(10px)",
                 color: active ? "#ff7800" : "#999",
                 fontWeight: active ? 700 : 500,
                 fontSize: 13,

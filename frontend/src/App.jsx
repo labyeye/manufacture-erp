@@ -69,6 +69,7 @@ import Trash from "./pages/Trash";
 import Reports from "./pages/Reports";
 import OperatorMaster from "./pages/OperatorMaster";
 import companylogo from "../src/assets/logo.png";
+import bgImage from "./assets/bg.png";
 function App() {
   return (
     <AuthProvider>
@@ -141,9 +142,9 @@ function AppContent() {
       ...(Array.isArray(user.allowedTabs) ? user.allowedTabs : []),
     ]),
   ).filter((tabId) => user.role !== "Operator" || tabId !== "dashboard");
-  const editableTabs = (Array.isArray(user.editableTabs)
-    ? user.editableTabs
-    : userRole.tabs).filter((tabId) => user.role !== "Operator" || tabId !== "dashboard");
+  const editableTabs = (
+    Array.isArray(user.editableTabs) ? user.editableTabs : userRole.tabs
+  ).filter((tabId) => user.role !== "Operator" || tabId !== "dashboard");
 
   return (
     <AppInner
@@ -604,7 +605,12 @@ function AppInner({
           />
         );
       case "operatormaster":
-        return <OperatorMaster toast={showToast} canExportImport={session?.allowExportImport !== false} />;
+        return (
+          <OperatorMaster
+            toast={showToast}
+            canExportImport={session?.allowExportImport !== false}
+          />
+        );
       case "printingmaster":
         return <PrintingDetailMaster {...data} toast={showToast} />;
       case "calendar":
@@ -664,7 +670,12 @@ function AppInner({
           />
         );
       case "pricemaster":
-        return <PriceMaster toast={showToast} canExportImport={session?.allowExportImport !== false} />;
+        return (
+          <PriceMaster
+            toast={showToast}
+            canExportImport={session?.allowExportImport !== false}
+          />
+        );
       case "forecast":
         return (
           <Forecast
@@ -782,61 +793,100 @@ function AppInner({
         )}
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: "8px 12px" }}>
-        {TABS.filter((tab) => allowedTabs.includes(tab.id)).map((tab) => {
-          const isActive = currentTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => {
-                setCurrentTab(tab.id);
-                if (isMobile) setSidebarOpen(false);
-              }}
-              style={{
-                width: "100%",
-                padding: "11px 14px",
-                textAlign: "left",
-                border: "none",
-                background: isActive ? "rgba(99,102,241,0.18)" : "transparent",
-                color: isActive ? "#ffffff" : "#ffffff",
-                borderRadius: 14,
-                cursor: "pointer",
-                transition: "all 0.18s ease",
-                fontSize: 13,
-                fontWeight: isActive ? 600 : 400,
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                marginBottom: 2,
-                boxShadow: isActive ? "0 0 0 1px rgba(99,102,241,0.3)" : "none",
-              }}
-              onMouseEnter={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.background = "rgba(255,255,255,0.06)";
-                  e.currentTarget.style.color = C.text;
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.background = "transparent";
-                  e.currentTarget.style.color = C.muted;
-                }
-              }}
-            >
-              <i
-                className={tab.icon}
-                style={{
-                  fontSize: 14,
-                  opacity: isActive ? 1 : 0.65,
-                  flexShrink: 0,
-                  width: 16,
-                  textAlign: "center",
-                }}
-              />
-              <span style={{ letterSpacing: "-0.01em" }}>{tab.label}</span>
-            </button>
+      <div style={{ flex: 1, overflowY: "auto", padding: "8px 8px" }}>
+        {(() => {
+          const TAB_GROUPS = [
+            {
+              label: "Overview",
+              ids: [
+                "dashboard",
+                "notificationhub",
+                "search",
+                "reports",
+                "forecast",
+              ],
+            },
+            {
+              label: "Operations",
+              ids: [
+                "purchase",
+                "inward",
+                "sales",
+                "jobs",
+                "production",
+                "calendar",
+                "dispatch",
+              ],
+            },
+            { label: "Inventory", ids: ["rawstock", "fg", "consumablestock"] },
+            {
+              label: "Masters",
+              ids: [
+                "vendormaster",
+                "companymaster",
+                "brandmaster",
+                "sizemaster",
+                "itemmaster",
+                "machinemaster",
+                "pricemaster",
+                "printingmaster",
+                "operatormaster",
+                "machinetools",
+              ],
+            },
+            {
+              label: "Process",
+              ids: ["subcontracting", "qualityhub", "designhub"],
+            },
+            { label: "System", ids: ["users", "erpconsole", "trash"] },
+          ];
+          const tabById = Object.fromEntries(TABS.map((t) => [t.id, t]));
+          const allowedSet = new Set(allowedTabs);
+          const groupedIds = new Set(TAB_GROUPS.flatMap((g) => g.ids));
+          const ungroupedTabs = TABS.filter(
+            (t) => allowedSet.has(t.id) && !groupedIds.has(t.id),
           );
-        })}
+
+          const renderTab = (tab) => {
+            const isActive = currentTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setCurrentTab(tab.id);
+                  if (isMobile) setSidebarOpen(false);
+                }}
+                className={`lg-sidebar-item${isActive ? " active" : ""}`}
+              >
+                <i className={tab.icon} />
+                <span>{tab.label}</span>
+              </button>
+            );
+          };
+
+          return (
+            <>
+              {TAB_GROUPS.map((group) => {
+                const tabs = group.ids
+                  .map((id) => tabById[id])
+                  .filter((t) => t && allowedSet.has(t.id));
+                if (!tabs.length) return null;
+                return (
+                  <div key={group.label}>
+                    <div className="lg-sidebar-group-label">{group.label}</div>
+                    {tabs.map(renderTab)}
+                  </div>
+                );
+              })}
+              {ungroupedTabs.length > 0 && (
+                <div>
+                  <div className="lg-sidebar-group-label">Other</div>
+                  {ungroupedTabs.map(renderTab)}
+                </div>
+              )}
+            </>
+          );
+        })()}
       </div>
 
       <div
@@ -888,14 +938,13 @@ function AppInner({
         height: "100vh",
         display: "flex",
         flexDirection: "column",
-        background:
-          "linear-gradient(135deg, #07070f 0%, #0c0c1a 50%, #09090e 100%)",
-        backgroundAttachment: "fixed",
+        background: `url(${bgImage})`,
+        backgroundSize: "cover",
         color: C.text,
         overflow: "hidden",
-        fontFamily: "'Poppins', sans-serif",
       }}
     >
+      <div className="lg-scene" aria-hidden="true" />
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
         {/* Mobile overlay backdrop */}
         {isMobile && sidebarOpen && (
@@ -905,7 +954,6 @@ function AppInner({
               position: "fixed",
               inset: 0,
               background: "rgba(0,0,0,0.5)",
-              backdropFilter: "blur(4px)",
               zIndex: 40,
             }}
           />
@@ -916,8 +964,7 @@ function AppInner({
           <div
             style={{
               background: "rgba(0, 0, 0, 0)",
-              backdropFilter: "blur(20px)",
-              //WebkitBackdropFilter: "blur(20px)",
+              //
               borderRight: "1px solid rgba(255,255,255,0.18)",
               width: 230,
               display: "flex",
@@ -938,8 +985,7 @@ function AppInner({
               height: "100%",
               width: 260,
               background: "rgba(0, 0, 0, 0)",
-              backdropFilter: "blur(20px)",
-              //WebkitBackdropFilter: "blur(20px)",
+              //
               borderRight: "1px solid rgba(255,255,255,0.18)",
               display: "flex",
               flexDirection: "column",
@@ -968,8 +1014,7 @@ function AppInner({
             style={{
               height: 54,
               background: "rgba(0, 0, 0, 0)",
-              backdropFilter: "blur(20px)",
-              //WebkitBackdropFilter: "blur(20px)",
+              //
               borderBottom: "1px solid rgba(255,255,255,0.18)",
               display: "flex",
               alignItems: "center",
@@ -998,8 +1043,7 @@ function AppInner({
             <div
               style={{
                 background: "rgba(0, 0, 0, 0)",
-                backdropFilter: "blur(20px)",
-                //WebkitBackdropFilter: "blur(20px)",
+                //
                 border: "1px solid rgba(255,255,255,0.18)",
                 borderRadius: 12,
                 padding: isMobile ? "7px 12px" : "8px 16px",
@@ -1042,7 +1086,6 @@ function AppInner({
                     padding: "2px 7px",
                     borderRadius: 10,
                     flexShrink: 0,
-                    fontFamily: "'Fira Code', monospace",
                     fontWeight: 500,
                   }}
                 >
@@ -1056,7 +1099,7 @@ function AppInner({
           <div
             style={{
               flex: 1,
-              padding: isMobile ? 12 : 28,
+              padding: isMobile ? 16 : 32,
               overflowY: "auto",
               overflowX: "hidden",
               position: "relative",

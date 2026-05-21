@@ -22,8 +22,6 @@ export const C = {
 
 export const GLASS = {
   background: "rgba(255,255,255,0.23)",
-  backdropFilter: "blur(8px) saturate(200%)",
-  WebkitBackdropFilter: "blur(8px) saturate(200%)",
   border: "1px solid rgba(255,255,255,0.18)",
 };
 

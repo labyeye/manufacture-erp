@@ -526,7 +526,6 @@ export default function ProductionCalendar({
             position: "fixed",
             inset: 0,
             background: "#00000088",
-            backdropFilter: "blur(4px)",
             zIndex: 1000,
           }}
         />
@@ -893,8 +892,6 @@ export default function ProductionCalendar({
                 padding: "14px",
                 borderRadius: 10,
                 background: "rgba(255,255,255,0.08)",
-                backdropFilter: "blur(12px) saturate(180%)",
-                WebkitBackdropFilter: "blur(12px) saturate(180%)",
                 border: "1px solid rgba(255,255,255,0.18)",
                 color: "#fff",
                 fontWeight: 800,
@@ -1259,7 +1256,7 @@ export default function ProductionCalendar({
       <>
         <div
           onClick={() => setMissedModal(null)}
-          style={{ position: "fixed", inset: 0, background: "#00000088", backdropFilter: "blur(4px)", zIndex: 2000 }}
+          style={{ position: "fixed", inset: 0, background: "#00000088", zIndex: 2000 }}
         />
         <div style={{
           position: "fixed",
@@ -1401,7 +1398,7 @@ export default function ProductionCalendar({
       <>
         <div
           onClick={() => setBreakdownModal(null)}
-          style={{ position: "fixed", inset: 0, background: "#00000088", backdropFilter: "blur(4px)", zIndex: 3000 }}
+          style={{ position: "fixed", inset: 0, background: "#00000088", zIndex: 3000 }}
         />
         <div style={{
           position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)",
@@ -1516,10 +1513,20 @@ export default function ProductionCalendar({
           <div style={{ padding: "14px 20px", borderTop: "1px solid #30363d", display: "flex", gap: 10 }}>
             <button
               onClick={() => setBreakdownModal(null)}
-              style={{ flex: 1, padding: "10px", borderRadius: 8, background: "transparent", border: "1px solid rgba(255,255,255,0.15)", color: "#aaa", fontWeight: 500, fontSize: 13, cursor: "pointer" }}
-            >
-              Cancel
-            </button>
+              style={{
+                      background: "transparent",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+            ><i className="fa-solid fa-xmark" /> Cancel</button>
             <button
               onClick={handleSubmit}
               disabled={isSavingBd}
@@ -1574,7 +1581,7 @@ export default function ProductionCalendar({
 
     return (
       <>
-        <div onClick={() => setPowerCutModal(false)} style={{ position: "fixed", inset: 0, background: "#00000088", backdropFilter: "blur(4px)", zIndex: 3000 }} />
+        <div onClick={() => setPowerCutModal(false)} style={{ position: "fixed", inset: 0, background: "#00000088", zIndex: 3000 }} />
         <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 460, maxWidth: "92vw", background: "#1c2128", border: "1px solid #30363d", borderRadius: 12, zIndex: 3001, boxShadow: "0 24px 60px #000000cc", overflow: "hidden" }}>
           <div style={{ background: "#eab30811", borderBottom: "1px solid #eab30833", padding: "16px 20px", display: "flex", alignItems: "center", gap: 12 }}>
             <i className="fa-solid fa-bolt" style={{ fontSize: 22 }} />
@@ -1613,7 +1620,19 @@ export default function ProductionCalendar({
             </div>
           </div>
           <div style={{ padding: "14px 20px", borderTop: "1px solid #30363d", display: "flex", gap: 10 }}>
-            <button onClick={() => setPowerCutModal(false)} style={{ flex: 1, padding: "10px", borderRadius: 8, background: "transparent", border: "1px solid rgba(255,255,255,0.15)", color: "#aaa", fontWeight: 500, fontSize: 13, cursor: "pointer" }}>Cancel</button>
+            <button onClick={() => setPowerCutModal(false)} style={{
+                      background: "transparent",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}><i className="fa-solid fa-xmark" /> Cancel</button>
             <button onClick={handleSubmit} disabled={isSavingPc} style={{ flex: 2, padding: "10px", borderRadius: 8, background: isSavingPc ? "#eab30888" : "#eab308", border: "none", color: "#000", fontWeight: 800, fontSize: 13, cursor: isSavingPc ? "not-allowed" : "pointer" }}>
               {isSavingPc ? "Logging..." : `Log Power Cut (${pcForm.machineIds.length} machines)`}
             </button>
@@ -1687,8 +1706,6 @@ export default function ProductionCalendar({
           style={{
             padding: "8px 16px",
             background: "rgba(255,255,255,0.08)",
-            backdropFilter: "blur(12px) saturate(180%)",
-            WebkitBackdropFilter: "blur(12px) saturate(180%)",
             color: "#fff",
             border: "1px solid rgba(255,255,255,0.18)",
             borderRadius: 6,
@@ -2752,7 +2769,6 @@ export default function ProductionCalendar({
                   >
                     <span
                       style={{
-                        fontFamily: "'JetBrains Mono', monospace",
                         color: C.yellow || "#facc15",
                         fontWeight: 500,
                       }}

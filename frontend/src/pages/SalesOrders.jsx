@@ -907,8 +907,6 @@ export default function SalesOrders(props) {
             onClick={() => { setHeader(blankHeader); setItems([blankItem()]); setHeaderErrors({}); setItemErrors([{}]); setEditId(null); setShowModal(true); }}
             style={{
               background: "rgba(255,255,255,0.08)",
-              backdropFilter: "blur(12px) saturate(180%)",
-              WebkitBackdropFilter: "blur(12px) saturate(180%)",
               border: "1px solid rgba(255,255,255,0.18)",
               color: "#fff",
               padding: "9px 18px",
@@ -1081,8 +1079,6 @@ export default function SalesOrders(props) {
               onClick={addItem}
               style={{
                 background: "rgba(255,255,255,0.08)",
-                backdropFilter: "blur(12px) saturate(180%)",
-                WebkitBackdropFilter: "blur(12px) saturate(180%)",
                 color: "#fff",
                 border: "1px solid rgba(255,255,255,0.18)",
                 borderRadius: 6,
@@ -1127,18 +1123,19 @@ export default function SalesOrders(props) {
                   <button
                     onClick={() => removeItem(idx)}
                     style={{
-                      background: (C.red || "#ef4444") + "22",
-                      color: C.red || "#ef4444",
-                      border: "none",
-                      borderRadius: 5,
-                      padding: "4px 12px",
+                      background: "transparent",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
                       fontWeight: 500,
-                      fontSize: 12,
                       cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
                     }}
-                  >
-                    Remove
-                  </button>
+                  ><i className="fa-solid fa-trash" /> Delete</button>
                 )}
               </div>
 
@@ -1454,7 +1451,6 @@ export default function SalesOrders(props) {
                       fontSize: 13,
                       color: it.amount ? C.green || "#4ade80" : C.muted,
                       fontWeight: it.amount ? 700 : 400,
-                      fontFamily: "'JetBrains Mono', monospace",
                       height: "100%",
                       boxSizing: "border-box",
                     }}
@@ -1486,7 +1482,6 @@ export default function SalesOrders(props) {
                       fontSize: 13,
                       color: it.totalWithTax ? C.green || "#4ade80" : C.muted,
                       fontWeight: it.totalWithTax ? 700 : 400,
-                      fontFamily: "'JetBrains Mono', monospace",
                     }}
                   >
                     {it.totalWithTax ? `₹${fmt(+it.totalWithTax)}` : "—"}
@@ -1578,17 +1573,19 @@ export default function SalesOrders(props) {
             <button
                 onClick={() => { setShowModal(false); setEditId(null); setHeader(blankHeader); setItems([blankItem()]); setHeaderErrors({}); setItemErrors([{}]); }}
                 style={{
-                  padding: "10px 20px",
-                  borderRadius: 6,
-                  border: `1px solid ${C.border}`,
-                  background: "transparent",
-                  color: C.muted,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
-              >
-                Cancel
-              </button>
+                      background: "transparent",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+              ><i className="fa-solid fa-xmark" /> Cancel</button>
             {items.some((it) => it.amount) && (
               <div
                 style={{
@@ -1731,7 +1728,7 @@ export default function SalesOrders(props) {
                         <span style={{ fontSize: 11, color: C.muted, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
                         <i className={icon} style={{ color, fontSize: 13, opacity: 0.8 }} />
                       </div>
-                      <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", fontFamily: "'JetBrains Mono', monospace" }}>{value}</div>
+                      <div style={{ fontSize: 22, fontWeight: 800, color: "#fff" }}>{value}</div>
                     </div>
                   ))}
                 </div>
@@ -1809,20 +1806,44 @@ export default function SalesOrders(props) {
                       />
                     </td>
                   )}
-                  <td style={{ padding: "12px 14px", fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: "#4ade80", whiteSpace: "nowrap" }}>{r.soNo}</td>
+                  <td style={{ padding: "12px 14px", fontWeight: 700, color: "#4ade80", whiteSpace: "nowrap" }}>{r.soNo}</td>
                   <td style={{ padding: "12px 14px", color: C.muted, whiteSpace: "nowrap", fontSize: 12 }}>{r.orderDate ? new Date(r.orderDate).toLocaleDateString("en-GB") : "—"}</td>
                   <td style={{ padding: "12px 14px", fontWeight: 500 }}>{r.companyName}</td>
                   <td style={{ padding: "12px 14px", color: C.muted }}>{(r.items || []).length} item{(r.items || []).length !== 1 ? "s" : ""}</td>
                   <td style={{ padding: "12px 14px", color: C.muted, whiteSpace: "nowrap", fontSize: 12 }}>{r.deliveryDate ? new Date(r.deliveryDate).toLocaleDateString("en-GB") : "—"}</td>
                   <td style={{ padding: "12px 14px", color: C.muted, fontSize: 12 }}>{r.salesPerson || "—"}</td>
-                  <td style={{ padding: "12px 14px", fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: "#4ade80", whiteSpace: "nowrap" }}>₹{fmt(total)}</td>
+                  <td style={{ padding: "12px 14px", fontWeight: 700, color: "#4ade80", whiteSpace: "nowrap" }}>₹{fmt(total)}</td>
                   <td style={{ padding: "12px 14px" }}>
                     <span style={{ padding: "3px 10px", borderRadius: 5, fontSize: 11, fontWeight: 600, background: (r.status === "Complated" || r.status === "Completed" || r.status === "Received") ? "#06422233" : "#453b0333", color: (r.status === "Complated" || r.status === "Completed" || r.status === "Received") ? "#10b981" : "#f59e0b", border: "1px solid rgba(255,255,255,0.06)" }}>{r.status || "Open"}</span>
                   </td>
                   <td style={{ padding: "12px 14px" }}>
                     <div style={{ display: "flex", gap: 5 }}>
-                      {!isClient && <button onClick={() => handleEdit(r)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid rgba(74,222,128,0.3)", background: "rgba(74,222,128,0.08)", color: "#4ade80", fontSize: 11, fontWeight: 500, cursor: "pointer" }}>Edit</button>}
-                      <button onClick={() => generateSOPDF(r)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.06)", color: "#fff", fontSize: 11, fontWeight: 500, cursor: "pointer" }}>PDF</button>
+                      {!isClient && <button onClick={() => handleEdit(r)} style={{
+                      background: "transparent",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}><i className="fa-solid fa-pen-to-square" /> Edit</button>}
+                      <button onClick={() => generateSOPDF(r)} style={{
+                      background: "transparent",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}><i className="fa-solid fa-file-pdf" /> PDF</button>
                       {!isClient && <button onClick={() => setDeleteTarget(r._id)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.08)", color: "#ef4444", fontSize: 11, fontWeight: 500, cursor: "pointer" }}>Del</button>}
                     </div>
                   </td>

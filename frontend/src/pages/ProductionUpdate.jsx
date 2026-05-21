@@ -48,7 +48,6 @@ export default function ProductionUpdate({
     display: "flex",
     alignItems: "center",
     fontWeight: 600,
-    fontFamily: "'JetBrains Mono', monospace",
   };
 
   const blankEntry = {
@@ -862,7 +861,7 @@ export default function ProductionUpdate({
                         <span style={{ fontSize: 11, color: C.muted, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
                         <i className={icon} style={{ color, fontSize: 13, opacity: 0.8 }} />
                       </div>
-                      <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", fontFamily: "'JetBrains Mono', monospace" }}>{value}</div>
+                      <div style={{ fontSize: 22, fontWeight: 800, color: "#fff" }}>{value}</div>
                     </div>
                   ))}
                 </div>
@@ -884,18 +883,30 @@ export default function ProductionUpdate({
                           const { jo, ...r } = rec;
                           return (
                             <tr key={r._id || i} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)" }}>
-                              <td style={{ padding: "11px 14px", fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: "#facc15", whiteSpace: "nowrap" }}>{jo.joNo}</td>
+                              <td style={{ padding: "11px 14px", fontWeight: 700, color: "#facc15", whiteSpace: "nowrap" }}>{jo.joNo}</td>
                               <td style={{ padding: "11px 14px", color: C.muted, fontSize: 12 }}>{jo.companyName}</td>
                               <td style={{ padding: "11px 14px", color: "#94a3b8", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{jo.itemName}</td>
                               <td style={{ padding: "11px 14px" }}><span style={{ padding: "3px 10px", borderRadius: 4, fontSize: 11, fontWeight: 600, background: "#FF7F1122", color: "#FF7F11", border: "1px solid #FF7F1144" }}>{r.stage}</span></td>
                               <td style={{ padding: "11px 14px", color: C.muted, whiteSpace: "nowrap", fontSize: 12 }}>{fmtDate(r.date)}</td>
-                              <td style={{ padding: "11px 14px", fontWeight: 700, color: "#10b981", fontFamily: "'JetBrains Mono', monospace" }}>{fmt(r.qtyCompleted)}</td>
-                              <td style={{ padding: "11px 14px", color: r.qtyRejected > 0 ? "#ef4444" : C.muted, fontFamily: "'JetBrains Mono', monospace" }}>{r.qtyRejected || 0}</td>
+                              <td style={{ padding: "11px 14px", fontWeight: 700, color: "#10b981" }}>{fmt(r.qtyCompleted)}</td>
+                              <td style={{ padding: "11px 14px", color: r.qtyRejected > 0 ? "#ef4444" : C.muted }}>{r.qtyRejected || 0}</td>
                               <td style={{ padding: "11px 14px", color: C.muted, fontSize: 12 }}>{r.operator || "—"}</td>
                               <td style={{ padding: "11px 14px", color: C.muted, fontSize: 12 }}>{r.shift || "—"}</td>
                               <td style={{ padding: "11px 14px" }}>
                                 <div style={{ display: "flex", gap: 5 }}>
-                                  <button onClick={() => handleEdit(jo, r)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid rgba(96,165,250,0.3)", background: "rgba(96,165,250,0.08)", color: "#60a5fa", fontSize: 11, fontWeight: 500, cursor: "pointer" }}>Edit</button>
+                                  <button onClick={() => handleEdit(jo, r)} style={{
+                      background: "transparent",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}><i className="fa-solid fa-pen-to-square" /> Edit</button>
                                   <button onClick={() => handleDelete(jo._id, r._id)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.08)", color: "#ef4444", fontSize: 11, fontWeight: 500, cursor: "pointer" }}>Del</button>
                                 </div>
                               </td>
@@ -1069,8 +1080,6 @@ export default function ProductionUpdate({
                             onClick={() => handleDelete(jo._id, r._id)}
                             style={{
                               background: "rgba(255,255,255,0.08)",
-                              backdropFilter: "blur(12px) saturate(180%)",
-                              WebkitBackdropFilter: "blur(12px) saturate(180%)",
                               color: "#fff",
                               border: "1px solid rgba(255,255,255,0.18)",
                               borderRadius: 6,
@@ -1216,7 +1225,6 @@ export default function ProductionUpdate({
                   >
                     <span
                       style={{
-                        fontFamily: "'JetBrains Mono',monospace",
                         color: C.blue,
                         fontWeight: 500,
                       }}

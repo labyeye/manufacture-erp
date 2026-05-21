@@ -12,7 +12,7 @@ const saveSettings = (v) => localStorage.setItem(LS_WA, JSON.stringify(v));
 
 const inp = {
   padding: "9px 12px", border: "1px solid #2a2a2a", borderRadius: 6,
-  fontSize: 13, fontFamily: "inherit", background: "#141414",
+  fontSize: 13, background: "#141414",
   color: "#e0e0e0", outline: "none", width: "100%", boxSizing: "border-box",
 };
 const lbl = { fontSize: 11, fontWeight: 600, color: "#666", display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.04em" };
@@ -207,7 +207,7 @@ To configure: go to Notification Hub in your ERP.
           </div>
         </div>
         <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={saveConfig} style={{ padding: "8px 18px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, fontSize: 12, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>Save Config</button>
+          <button onClick={saveConfig} style={{ padding: "8px 18px", background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, fontSize: 12, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>Save Config</button>
           {recipientEmail && (
             <a href={mailtoLink} style={{ padding: "8px 18px", background: "#22c55e22", border: "1px solid #22c55e44", borderRadius: 6, color: "#22c55e", fontWeight: 500, fontSize: 12, cursor: "pointer", textDecoration: "none" }}>
               Open in Mail App
@@ -227,7 +227,7 @@ To configure: go to Notification Hub in your ERP.
       {}
       <div style={{ background: "#0a0a0a", border: "1px solid #2a2a2a", borderRadius: 10, padding: 24 }}>
         <div style={{ fontWeight: 500, color: "#888", marginBottom: 14, fontSize: 12, textTransform: "uppercase" }}>Email Preview</div>
-        <pre style={{ fontFamily: "monospace", fontSize: 12, color: "#d1d5db", lineHeight: 1.7, margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+        <pre style={{  fontSize: 12, color: "#d1d5db", lineHeight: 1.7, margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
           {emailText}
         </pre>
       </div>
@@ -399,7 +399,7 @@ Have a productive day!
                 <label style={lbl}>Client Phone</label>
                 <input value={customPhone} onChange={(e) => setCustomPhone(e.target.value)} placeholder="10-digit" style={inp} />
               </div>
-              <button onClick={generateDispatchMsg} style={{ padding: "9px 18px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
+              <button onClick={generateDispatchMsg} style={{ padding: "9px 18px", background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
                 Generate
               </button>
             </div>
@@ -423,7 +423,7 @@ Have a productive day!
                 <label style={lbl}>Vendor Phone</label>
                 <input value={customPhone} onChange={(e) => setCustomPhone(e.target.value)} placeholder="10-digit" style={inp} />
               </div>
-              <button onClick={generatePOAckMsg} style={{ padding: "9px 18px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
+              <button onClick={generatePOAckMsg} style={{ padding: "9px 18px", background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
                 Generate
               </button>
             </div>
@@ -437,7 +437,7 @@ Have a productive day!
                 <label style={lbl}>Owner Phone</label>
                 <input value={customPhone || settings.ownerPhone || ""} onChange={(e) => setCustomPhone(e.target.value)} placeholder="10-digit" style={inp} />
               </div>
-              <button onClick={generateDailySummary} style={{ padding: "9px 18px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
+              <button onClick={generateDailySummary} style={{ padding: "9px 18px", background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
                 Generate
               </button>
             </div>
@@ -449,7 +449,7 @@ Have a productive day!
           <div style={{ marginTop: 10 }}>
             <div style={{ fontSize: 11, color: "#888", fontWeight: 500, textTransform: "uppercase", marginBottom: 8 }}>Message Preview</div>
             <div style={{ background: "#0a2d1a", border: "1px solid #25d36633", borderRadius: 10, padding: 16, marginBottom: 14 }}>
-              <pre style={{ fontFamily: "inherit", fontSize: 13, color: "#dcfce7", lineHeight: 1.6, margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+              <pre style={{  fontSize: 13, color: "#dcfce7", lineHeight: 1.6, margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
                 {previewMsg}
               </pre>
             </div>
@@ -459,7 +459,7 @@ Have a productive day!
                   href={waLink(customPhone, previewMsg)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ padding: "10px 20px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 800, cursor: "pointer", textDecoration: "none", display: "flex", alignItems: "center", gap: 6, boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
+                  style={{ padding: "10px 20px", background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 800, cursor: "pointer", textDecoration: "none", display: "flex", alignItems: "center", gap: 6, boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
                 >
                   Send via WhatsApp Web
                 </a>

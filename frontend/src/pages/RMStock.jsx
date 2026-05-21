@@ -411,8 +411,6 @@ export default function RMStock({
             disabled={saving}
             style={{
               background: "rgba(255,255,255,0.08)",
-              backdropFilter: "blur(12px) saturate(180%)",
-              WebkitBackdropFilter: "blur(12px) saturate(180%)",
               border: "1px solid rgba(255,255,255,0.18)",
               borderRadius: 4,
               color: "#fff",
@@ -736,8 +734,6 @@ export default function RMStock({
                   borderRadius: 6,
                   border: "1px solid rgba(255,255,255,0.18)",
                   background: "rgba(255,255,255,0.08)",
-                  backdropFilter: "blur(12px) saturate(180%)",
-                  WebkitBackdropFilter: "blur(12px) saturate(180%)",
                   color: "#fff",
                   fontWeight: 500,
                   cursor: "pointer",
@@ -1029,7 +1025,6 @@ export default function RMStock({
                       color: C.blue,
                       fontWeight: 500,
                       fontSize: 12,
-                      fontFamily: "monospace",
                     }}
                   >
                     {s.code || "—"}
@@ -1071,7 +1066,6 @@ export default function RMStock({
                       color: qty > 0 ? C.green : "#333",
                       fontWeight: 500,
                       fontSize: 13,
-                      fontFamily: "monospace",
                     }}
                   >
                     {qty > 0 ? fmt(qty) : "—"}
@@ -1082,7 +1076,6 @@ export default function RMStock({
                       color: weight > 0 ? C.green : "#333",
                       fontWeight: 500,
                       fontSize: 13,
-                      fontFamily: "monospace",
                     }}
                   >
                     {weight > 0 ? `${fmt(weight)} kg` : "—"}
@@ -1095,7 +1088,6 @@ export default function RMStock({
                       padding: "16px",
                       color: "#888",
                       fontSize: 12,
-                      fontFamily: "monospace",
                     }}
                   >
                     {rate ? `₹${fmt(rate)}` : "—"}
@@ -1106,7 +1098,6 @@ export default function RMStock({
                       color: C.green,
                       fontWeight: 500,
                       fontSize: 13,
-                      fontFamily: "monospace",
                     }}
                   >
                     {val > 0 ? `₹${fmt(Math.round(val))}` : "—"}
@@ -1134,8 +1125,6 @@ export default function RMStock({
                             onClick={() => handleDelete(s._id || s.id)}
                             style={{
                               background: "rgba(255,255,255,0.08)",
-                              backdropFilter: "blur(12px) saturate(180%)",
-                              WebkitBackdropFilter: "blur(12px) saturate(180%)",
                               color: "#fff",
                               border: "1px solid rgba(255,255,255,0.18)",
                               borderRadius: 6,
@@ -1214,7 +1203,6 @@ function StatCard({ label, val, color, prefix = "", suffix = "" }) {
           fontSize: 24,
           fontWeight: 900,
           color,
-          fontFamily: "monospace",
         }}
       >
         {prefix}

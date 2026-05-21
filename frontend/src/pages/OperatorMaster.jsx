@@ -17,10 +17,7 @@ const inputStyle = {
   border: "1px solid rgba(255,255,255,0.13)",
   borderRadius: 6,
   fontSize: 13,
-  fontFamily: "inherit",
   background: "rgba(255,255,255,0.07)",
-  backdropFilter: "blur(8px) saturate(180%)",
-  WebkitBackdropFilter: "blur(8px) saturate(180%)",
   color: "#e0e0e0",
   outline: "none",
   boxSizing: "border-box",
@@ -279,7 +276,7 @@ export default function OperatorMaster({ toast, canExportImport = true }) {
                 <tr key={op._id} style={{ borderBottom: `1px solid rgba(255,255,255,0.05)` }}>
                   <td style={{ padding: "10px 12px", color: C.text, fontWeight: 500 }}>{op.name}</td>
                   <td style={{ padding: "10px 12px", color: C.muted }}>{op.phone || "—"}</td>
-                  <td style={{ padding: "10px 12px", color: "#6366f1", fontFamily: "monospace", fontSize: 12 }}>{op.username}</td>
+                  <td style={{ padding: "10px 12px", color: "#6366f1", fontSize: 12 }}>{op.username}</td>
                   <td style={{ padding: "10px 12px" }}>
                     <span style={{
                       padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600,
@@ -292,11 +289,35 @@ export default function OperatorMaster({ toast, canExportImport = true }) {
                   </td>
                   <td style={{ padding: "10px 12px" }}>
                     <div style={{ display: "flex", gap: 8 }}>
-                      <button onClick={() => openEdit(op)} style={{ padding: "5px 12px", borderRadius: 6, border: "1px solid rgba(99,102,241,0.3)", background: "rgba(99,102,241,0.1)", color: "#818cf8", fontSize: 12, cursor: "pointer" }}>Edit</button>
+                      <button onClick={() => openEdit(op)} style={{
+                      background: "transparent",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}><i className="fa-solid fa-pen-to-square" /> Edit</button>
                       <button onClick={() => handleToggleActive(op)} style={{ padding: "5px 12px", borderRadius: 6, border: `1px solid ${op.isActive ? "rgba(239,68,68,0.3)" : "rgba(34,197,94,0.3)"}`, background: op.isActive ? "rgba(239,68,68,0.08)" : "rgba(34,197,94,0.08)", color: op.isActive ? "#ef4444" : "#22c55e", fontSize: 12, cursor: "pointer" }}>
                         {op.isActive ? "Deactivate" : "Activate"}
                       </button>
-                      <button onClick={() => handleDelete(op._id)} style={{ padding: "5px 12px", borderRadius: 6, border: "1px solid rgba(239,68,68,0.2)", background: "rgba(239,68,68,0.06)", color: "#ef4444", fontSize: 12, cursor: "pointer" }}>Delete</button>
+                      <button onClick={() => handleDelete(op._id)} style={{
+                      background: "transparent",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}><i className="fa-solid fa-trash" /> Delete</button>
                     </div>
                   </td>
                 </tr>
@@ -326,7 +347,19 @@ export default function OperatorMaster({ toast, canExportImport = true }) {
               <input style={inputStyle} type="password" placeholder="Min 6 characters" value={form.password} onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))} />
             </div>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 6 }}>
-              <button onClick={() => setShowModal(false)} style={{ padding: "9px 18px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: C.muted, cursor: "pointer", fontSize: 13 }}>Cancel</button>
+              <button onClick={() => setShowModal(false)} style={{
+                      background: "transparent",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}><i className="fa-solid fa-xmark" /> Cancel</button>
               <button onClick={handleSave} style={{ padding: "9px 22px", borderRadius: 6, border: "none", background: "#6366f1", color: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
                 {editingId ? "Update" : "Create"}
               </button>

@@ -166,8 +166,6 @@ function DraftPOModal({
       <div
         style={{
           background: "rgba(255,255,255,0.05)",
-          backdropFilter: "blur(12px) saturate(180%)",
-          WebkitBackdropFilter: "blur(12px) saturate(180%)",
           border: "1px solid rgba(255,255,255,0.1)",
           boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
           borderRadius: 8,
@@ -237,8 +235,6 @@ function DraftPOModal({
             marginTop: 10,
             padding: "8px 14px",
             background: "rgba(59,130,246,0.1)",
-            backdropFilter: "blur(12px) saturate(180%)",
-            WebkitBackdropFilter: "blur(12px) saturate(180%)",
             border: "1px solid rgba(59,130,246,0.25)",
             borderRadius: 6,
             fontSize: 13,
@@ -413,8 +409,6 @@ export default function RMForecast({
             key={label}
             style={{
               background: "rgba(255,255,255,0.05)",
-              backdropFilter: "blur(12px) saturate(180%)",
-              WebkitBackdropFilter: "blur(12px) saturate(180%)",
               border: "1px solid rgba(255,255,255,0.1)",
               boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
               borderRadius: 16,
@@ -429,7 +423,6 @@ export default function RMForecast({
                 fontSize: 28,
                 fontWeight: 800,
                 color,
-                fontFamily: "monospace",
               }}
             >
               {value}
@@ -444,8 +437,6 @@ export default function RMForecast({
           marginBottom: 16,
           padding: "12px 18px",
           background: "rgba(255,255,255,0.05)",
-          backdropFilter: "blur(12px) saturate(180%)",
-          WebkitBackdropFilter: "blur(12px) saturate(180%)",
           border: "1px solid rgba(255,255,255,0.1)",
           boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
         }}
@@ -484,8 +475,6 @@ export default function RMForecast({
                     background: active
                       ? cfg.bg || ACCENT + "22"
                       : "rgba(255,255,255,0.05)",
-                    backdropFilter: "blur(10px)",
-                    WebkitBackdropFilter: "blur(10px)",
                     color: active ? cfg.color || ACCENT : "#999",
                   }}
                 >
@@ -521,8 +510,6 @@ export default function RMForecast({
                 borderRadius: 6,
                 border: "1px solid rgba(255,255,255,0.13)",
                 background: "rgba(255,255,255,0.07)",
-                backdropFilter: "blur(8px) saturate(180%)",
-                WebkitBackdropFilter: "blur(8px) saturate(180%)",
                 color: C.text,
                 fontSize: 12,
                 textAlign: "center",
@@ -546,8 +533,6 @@ export default function RMForecast({
                 borderRadius: 6,
                 border: "1px solid rgba(255,255,255,0.13)",
                 background: "rgba(255,255,255,0.07)",
-                backdropFilter: "blur(8px) saturate(180%)",
-                WebkitBackdropFilter: "blur(8px) saturate(180%)",
                 color: C.text,
                 fontSize: 12,
                 textAlign: "center",
@@ -562,8 +547,6 @@ export default function RMForecast({
       <Card
         style={{
           background: "rgba(255,255,255,0.05)",
-          backdropFilter: "blur(12px) saturate(180%)",
-          WebkitBackdropFilter: "blur(12px) saturate(180%)",
           border: "1px solid rgba(255,255,255,0.1)",
           boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
         }}
@@ -590,8 +573,6 @@ export default function RMForecast({
             background: "rgba(255,255,255,0.03)",
             border: "1px solid rgba(255,255,255,0.1)",
             borderRadius: 12,
-            backdropFilter: "blur(12px) saturate(180%)",
-            WebkitBackdropFilter: "blur(12px) saturate(180%)",
           }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
@@ -716,7 +697,6 @@ export default function RMForecast({
                             style={{
                               fontSize: 10,
                               color: C.muted,
-                              fontFamily: "monospace",
                             }}
                           >
                             {r.code}
@@ -835,7 +815,6 @@ export default function RMForecast({
                               background: "rgba(59, 130, 246, 0.1)",
                               color: "#3b82f6",
                               border: "1px solid rgba(59, 130, 246, 0.3)",
-                              backdropFilter: "blur(8px)",
                             }}
                           >
                             Draft PO
@@ -867,8 +846,6 @@ export default function RMForecast({
               marginTop: 16,
               padding: "14px 18px",
               background: "rgba(129,140,248,0.1)",
-              backdropFilter: "blur(12px) saturate(180%)",
-              WebkitBackdropFilter: "blur(12px) saturate(180%)",
               border: "1px solid rgba(129,140,248,0.3)",
               borderRadius: 12,
               boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
@@ -905,8 +882,6 @@ export default function RMForecast({
           marginTop: 10,
           padding: "10px 16px",
           background: "rgba(255,255,255,0.03)",
-          backdropFilter: "blur(12px) saturate(180%)",
-          WebkitBackdropFilter: "blur(12px) saturate(180%)",
           borderRadius: 12,
           border: "1px solid rgba(255,255,255,0.1)",
           fontSize: 11,

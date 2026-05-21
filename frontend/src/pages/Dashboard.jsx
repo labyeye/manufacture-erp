@@ -138,7 +138,6 @@ const TABLE = {
   width: "100%",
   borderCollapse: "collapse",
   tableLayout: "fixed",
-  fontFamily: "'DM Mono', 'Fira Code', 'Consolas', monospace",
   fontStretch: "normal",
   minWidth: 900,
 };
@@ -1136,8 +1135,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
           fontSize: 12,
           padding: "6px 10px",
           background: "rgba(255,255,255,0.07)",
-          backdropFilter: "blur(8px) saturate(180%)",
-          WebkitBackdropFilter: "blur(8px) saturate(180%)",
           color: "#e0e0e0",
           border: "1px solid rgba(255,255,255,0.13)",
           borderRadius: 8,
@@ -1154,8 +1151,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
           fontSize: 12,
           padding: "6px 10px",
           background: "rgba(255,255,255,0.07)",
-          backdropFilter: "blur(8px) saturate(180%)",
-          WebkitBackdropFilter: "blur(8px) saturate(180%)",
           color: "#e0e0e0",
           border: "1px solid rgba(255,255,255,0.13)",
           borderRadius: 8,
@@ -1175,7 +1170,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
         minHeight: "100vh",
         color: "#e0e0e0",
         paddingBottom: 40,
-        fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
         fontStretch: "normal",
         fontStyle: "normal",
       }}
@@ -1359,8 +1353,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                 onClick={() => setReportTab(card.tab)}
                 style={{
                   background: "rgba(255,255,255,0.05)",
-                  backdropFilter: "blur(14px) saturate(180%)",
-                  WebkitBackdropFilter: "blur(14px) saturate(180%)",
                   borderRadius: 18,
                   padding: "20px",
                   cursor: "pointer",
@@ -1535,8 +1527,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                 style={{
                   flexShrink: 0,
                   background: "rgba(255,255,255,0.07)",
-                  backdropFilter: "blur(8px)",
-                  WebkitBackdropFilter: "blur(8px)",
                   border: "1px solid rgba(255,255,255,0.13)",
                   borderRadius: 8,
                   padding: "6px 12px",
@@ -1583,8 +1573,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       reportTab === t.id
                         ? "rgba(255,120,0,0.15)"
                         : "rgba(255,255,255,0.05)",
-                    backdropFilter: "blur(10px) saturate(160%)",
-                    WebkitBackdropFilter: "blur(10px) saturate(160%)",
                     border: `1px solid ${reportTab === t.id ? "#ff7800aa" : "rgba(255,255,255,0.12)"}`,
                     color: reportTab === t.id ? "#ff7800" : "#999",
                     cursor: "pointer",
@@ -1594,7 +1582,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     alignItems: "center",
                     justifyContent: "center",
                     gap: 10,
-                    fontFamily: "'Inter', sans-serif",
                     transition: "all 0.2s ease",
                     boxShadow:
                       reportTab === t.id
@@ -1666,8 +1653,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
               width: "100%",
               padding: "8px 32px 8px 34px",
               background: "rgba(255,255,255,0.05)",
-              backdropFilter: "blur(12px) saturate(180%)",
-              WebkitBackdropFilter: "blur(12px) saturate(180%)",
               border: "1px solid rgba(255,255,255,0.12)",
               borderRadius: 8,
               color: "#e0e0e0",
@@ -1723,21 +1708,19 @@ export function Dashboard({ data, session, toast, onNavigate }) {
         <button
           onClick={exportReportPDF}
           style={{
-            padding: "8px 16px",
-            borderRadius: 8,
-            border: "none",
-            background: "rgba(239,68,68,0.85)",
-            color: "#fff",
-            fontWeight: 700,
-            fontSize: 12,
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: 7,
-          }}
-        >
-          <i className="fa-solid fa-file-pdf" /> PDF
-        </button>
+                      background: "transparent",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+        ><i className="fa-solid fa-file-pdf" /> PDF</button>
         </div>
       </div>
       <div ref={reportSectionRef}>
@@ -1747,8 +1730,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
               style={{
                 padding: 20,
                 background: "rgba(255,255,255,0.05)",
-                backdropFilter: "blur(14px) saturate(180%)",
-                WebkitBackdropFilter: "blur(14px) saturate(180%)",
                 borderRadius: 16,
                 border: "1px solid rgba(255,255,255,0.12)",
                 boxShadow:
@@ -1814,8 +1795,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       background: isSelected
                         ? "rgba(255,255,255,0.1)"
                         : "rgba(255,255,255,0.05)",
-                      backdropFilter: "blur(12px) saturate(180%)",
-                      WebkitBackdropFilter: "blur(12px) saturate(180%)",
                       border: `1px solid ${isSelected ? C.blue + "99" : count > 0 ? C.blue + "44" : "rgba(255,255,255,0.1)"}`,
                       borderRadius: 12,
                       padding: 14,
@@ -1858,8 +1837,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     overflow: "hidden",
                     border: "1px solid rgba(255,255,255,0.12)",
                     background: "rgba(255,255,255,0.05)",
-                    backdropFilter: "blur(14px) saturate(180%)",
-                    WebkitBackdropFilter: "blur(14px) saturate(180%)",
                     boxShadow:
                       "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
                   }}
@@ -1967,8 +1944,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                 marginBottom: 20,
                 alignItems: "flex-end",
                 background: "rgba(255,255,255,0.05)",
-                backdropFilter: "blur(12px) saturate(180%)",
-                WebkitBackdropFilter: "blur(12px) saturate(180%)",
                 padding: 16,
                 borderRadius: 8,
                 border: "1px solid #2a2a2e",
@@ -2092,8 +2067,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                 style={{
                   padding: "10px 24px",
                   background: "rgba(255,255,255,0.08)",
-                  backdropFilter: "blur(14px) saturate(180%)",
-                  WebkitBackdropFilter: "blur(14px) saturate(180%)",
                   color: "#fff",
                   border: "1px solid rgba(255,255,255,0.18)",
                   borderRadius: 10,
@@ -2351,8 +2324,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     marginBottom: 20,
                     alignItems: "flex-end",
                     background: "rgba(255,255,255,0.05)",
-                    backdropFilter: "blur(12px) saturate(180%)",
-                    WebkitBackdropFilter: "blur(12px) saturate(180%)",
                     padding: 16,
                     borderRadius: 8,
                     border: "1px solid #2a2a2e",
@@ -2461,8 +2432,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       key={s.label}
                       style={{
                         background: "rgba(255,255,255,0.05)",
-                        backdropFilter: "blur(12px) saturate(180%)",
-                        WebkitBackdropFilter: "blur(12px) saturate(180%)",
                         border: `1px solid ${s.color}44`,
                         borderRadius: 8,
                         padding: 16,
@@ -2503,8 +2472,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                   <div
                     style={{
                       background: "rgba(255,255,255,0.05)",
-                      backdropFilter: "blur(12px) saturate(180%)",
-                      WebkitBackdropFilter: "blur(12px) saturate(180%)",
                       border: `1px solid ${C.red}44`,
                       borderRadius: 8,
                       padding: 16,
@@ -2530,8 +2497,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                   <div
                     style={{
                       background: "rgba(255,255,255,0.05)",
-                      backdropFilter: "blur(12px) saturate(180%)",
-                      WebkitBackdropFilter: "blur(12px) saturate(180%)",
                       border: `1px solid ${C.red}44`,
                       borderRadius: 8,
                       padding: 16,
@@ -2732,8 +2697,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     marginBottom: 20,
                     alignItems: "flex-end",
                     background: "rgba(255,255,255,0.05)",
-                    backdropFilter: "blur(12px) saturate(180%)",
-                    WebkitBackdropFilter: "blur(12px) saturate(180%)",
                     padding: 16,
                     borderRadius: 8,
                     border: "1px solid #2a2a2e",
@@ -2836,8 +2799,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       key={s.label}
                       style={{
                         background: "rgba(255,255,255,0.05)",
-                        backdropFilter: "blur(12px) saturate(180%)",
-                        WebkitBackdropFilter: "blur(12px) saturate(180%)",
                         border: `1px solid ${s.color}44`,
                         borderRadius: 8,
                         padding: 16,
@@ -3092,8 +3053,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     marginBottom: 20,
                     alignItems: "flex-end",
                     background: "rgba(255,255,255,0.05)",
-                    backdropFilter: "blur(12px) saturate(180%)",
-                    WebkitBackdropFilter: "blur(12px) saturate(180%)",
                     padding: 16,
                     borderRadius: 8,
                     border: "1px solid #2a2a2e",
@@ -3164,8 +3123,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       key={s.label}
                       style={{
                         background: "rgba(255,255,255,0.05)",
-                        backdropFilter: "blur(12px) saturate(180%)",
-                        WebkitBackdropFilter: "blur(12px) saturate(180%)",
                         border: `1px solid ${s.color}44`,
                         borderRadius: 8,
                         padding: 16,
@@ -3360,8 +3317,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       key={st.label}
                       style={{
                         background: "rgba(255,255,255,0.05)",
-                        backdropFilter: "blur(12px) saturate(180%)",
-                        WebkitBackdropFilter: "blur(12px) saturate(180%)",
                         border: `1px solid ${st.color}44`,
                         borderRadius: 8,
                         padding: 18,
@@ -3655,8 +3610,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     marginBottom: 20,
                     alignItems: "flex-end",
                     background: "rgba(255,255,255,0.05)",
-                    backdropFilter: "blur(12px) saturate(180%)",
-                    WebkitBackdropFilter: "blur(12px) saturate(180%)",
                     padding: 16,
                     borderRadius: 8,
                     border: "1px solid #2a2a2e",
@@ -3706,8 +3659,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       key={y.stage}
                       style={{
                         background: "rgba(255,255,255,0.05)",
-                        backdropFilter: "blur(12px) saturate(180%)",
-                        WebkitBackdropFilter: "blur(12px) saturate(180%)",
                         border: `1px solid ${y.pct > 95 ? C.green : C.yellow}44`,
                         borderTop: `4px solid ${y.pct > 95 ? C.green : C.yellow}`,
                         borderRadius: 8,
@@ -3905,8 +3856,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                           key={m.machine._id}
                           style={{
                             background: "rgba(255,255,255,0.05)",
-                            backdropFilter: "blur(12px) saturate(180%)",
-                            WebkitBackdropFilter: "blur(12px) saturate(180%)",
                             border: `1px solid ${m.pct > 95 ? C.green : C.yellow}44`,
                             borderTop: `4px solid ${m.pct > 95 ? C.green : C.yellow}`,
                             borderRadius: 8,
@@ -4060,8 +4009,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                   padding: 60,
                   color: C.green,
                   background: "rgba(255,255,255,0.05)",
-                  backdropFilter: "blur(12px) saturate(180%)",
-                  WebkitBackdropFilter: "blur(12px) saturate(180%)",
                   borderRadius: 8,
                   border: "1px solid #2a2a2e",
                 }}
@@ -4571,8 +4518,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     style={{
                       padding: "7px 12px",
                       background: "rgba(255,255,255,0.05)",
-                      backdropFilter: "blur(12px) saturate(180%)",
-                      WebkitBackdropFilter: "blur(12px) saturate(180%)",
                       border: "1px solid #2a2a2e",
                       color: "#e0e0e0",
                       borderRadius: 6,
@@ -4612,8 +4557,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       key={s.label}
                       style={{
                         background: "rgba(255,255,255,0.05)",
-                        backdropFilter: "blur(12px) saturate(180%)",
-                        WebkitBackdropFilter: "blur(12px) saturate(180%)",
                         border: `1px solid ${s.color}44`,
                         borderRadius: 8,
                         padding: 16,
@@ -4969,8 +4912,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     marginBottom: 20,
                     alignItems: "flex-end",
                     background: "rgba(255,255,255,0.05)",
-                    backdropFilter: "blur(12px) saturate(180%)",
-                    WebkitBackdropFilter: "blur(12px) saturate(180%)",
                     padding: 16,
                     borderRadius: 8,
                     border: "1px solid #2a2a2e",
@@ -5067,8 +5008,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       key={s.label}
                       style={{
                         background: "rgba(255,255,255,0.05)",
-                        backdropFilter: "blur(12px) saturate(180%)",
-                        WebkitBackdropFilter: "blur(12px) saturate(180%)",
                         border: `1px solid ${s.color}44`,
                         borderRadius: 8,
                         padding: 16,
@@ -5539,8 +5478,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     alignItems: "flex-end",
                     flexWrap: "wrap",
                     background: "rgba(255,255,255,0.05)",
-                    backdropFilter: "blur(12px) saturate(180%)",
-                    WebkitBackdropFilter: "blur(12px) saturate(180%)",
                     padding: 16,
                     borderRadius: 8,
                     border: "1px solid #2a2a2e",
@@ -5658,8 +5595,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                         key={label}
                         style={{
                           background: "rgba(255,255,255,0.05)",
-                          backdropFilter: "blur(12px) saturate(180%)",
-                          WebkitBackdropFilter: "blur(12px) saturate(180%)",
                           border: `1px solid ${col}44`,
                           borderRadius: 8,
                           padding: 16,
@@ -5681,7 +5616,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             fontSize: 30,
                             fontWeight: 900,
                             color: col,
-                            fontFamily: "monospace",
                           }}
                         >
                           {val == null
@@ -5757,8 +5691,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                 <div
                   style={{
                     background: "rgba(255,255,255,0.05)",
-                    backdropFilter: "blur(12px) saturate(180%)",
-                    WebkitBackdropFilter: "blur(12px) saturate(180%)",
                     border: "1px solid #2a2a2e",
                     borderRadius: 8,
                     padding: "16px 20px",
@@ -6376,8 +6308,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       textAlign: "center",
                       padding: 60,
                       background: "rgba(255,255,255,0.05)",
-                      backdropFilter: "blur(12px) saturate(180%)",
-                      WebkitBackdropFilter: "blur(12px) saturate(180%)",
                       borderRadius: 12,
                       border: "1px solid #2a2a2e",
                     }}
@@ -6424,8 +6354,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             key={s}
                             style={{
                               background: "rgba(255,255,255,0.05)",
-                              backdropFilter: "blur(12px) saturate(180%)",
-                              WebkitBackdropFilter: "blur(12px) saturate(180%)",
                               border: `1px solid ${cfg.color}44`,
                               borderRadius: 8,
                               padding: 16,
@@ -6447,7 +6375,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 fontSize: 32,
                                 fontWeight: 900,
                                 color: cfg.color,
-                                fontFamily: "monospace",
                               }}
                             >
                               {counts[s]}
@@ -6495,9 +6422,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 key={a.id}
                                 style={{
                                   background: "rgba(255,255,255,0.05)",
-                                  backdropFilter: "blur(12px) saturate(180%)",
-                                  WebkitBackdropFilter:
-                                    "blur(12px) saturate(180%)",
                                   border: `1px solid ${cfg.color}44`,
                                   borderRadius: 10,
                                   padding: "14px 18px",
@@ -6936,8 +6860,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       key={label}
                       style={{
                         background: "rgba(255,255,255,0.05)",
-                        backdropFilter: "blur(12px) saturate(180%)",
-                        WebkitBackdropFilter: "blur(12px) saturate(180%)",
                         border: `1px solid ${color}44`,
                         borderRadius: 8,
                         padding: 16,
@@ -6959,7 +6881,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                           fontSize: isText ? 18 : 30,
                           fontWeight: 900,
                           color,
-                          fontFamily: isText ? "inherit" : "monospace",
                         }}
                       >
                         {val}
@@ -7063,8 +6984,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                 <div
                   style={{
                     background: "rgba(255,255,255,0.05)",
-                    backdropFilter: "blur(12px) saturate(180%)",
-                    WebkitBackdropFilter: "blur(12px) saturate(180%)",
                     border: "1px solid #2a2a2e",
                     borderRadius: 8,
                     padding: "20px 20px 16px",

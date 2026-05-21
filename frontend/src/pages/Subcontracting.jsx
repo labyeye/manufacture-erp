@@ -48,10 +48,7 @@ const inp = {
   border: "1px solid rgba(255,255,255,0.13)",
   borderRadius: 6,
   fontSize: 13,
-  fontFamily: "inherit",
   background: "rgba(255,255,255,0.07)",
-  backdropFilter: "blur(8px) saturate(180%)",
-  WebkitBackdropFilter: "blur(8px) saturate(180%)",
   color: "#e0e0e0",
   outline: "none",
   width: "100%",
@@ -329,7 +326,7 @@ export default function Subcontracting({
             setEditId(null);
             setShowModal(true);
           }}
-          style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", color: "#fff", padding: "9px 18px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
+          style={{ background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", color: "#fff", padding: "9px 18px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
         >
           + Issue to Vendor
         </button>
@@ -362,8 +359,6 @@ export default function Subcontracting({
             key={s.label}
             style={{
               background: "rgba(255,255,255,0.05)",
-              backdropFilter: "blur(12px) saturate(180%)",
-              WebkitBackdropFilter: "blur(12px) saturate(180%)",
               border: `1px solid ${s.color}33`,
               borderRadius: 8,
               padding: 14,
@@ -394,8 +389,6 @@ export default function Subcontracting({
         <div
           style={{
             background: "rgba(255,255,255,0.05)",
-            backdropFilter: "blur(12px) saturate(180%)",
-            WebkitBackdropFilter: "blur(12px) saturate(180%)",
             border: "1px solid rgba(255,255,255,0.1)",
             borderRadius: 10,
             padding: 24,
@@ -588,8 +581,6 @@ export default function Subcontracting({
             <div
               style={{
                 background: "rgba(255,255,255,0.05)",
-                backdropFilter: "blur(12px) saturate(180%)",
-                WebkitBackdropFilter: "blur(12px) saturate(180%)",
                 border: "1px solid #3b82f633",
                 borderRadius: 10,
                 padding: 24,
@@ -734,8 +725,6 @@ export default function Subcontracting({
       <div
         style={{
           background: "rgba(255,255,255,0.05)",
-          backdropFilter: "blur(12px) saturate(180%)",
-          WebkitBackdropFilter: "blur(12px) saturate(180%)",
           border: "1px solid rgba(255,255,255,0.1)",
           borderRadius: 10,
           padding: 20,
@@ -840,7 +829,6 @@ export default function Subcontracting({
                   >
                     <span
                       style={{
-                        fontFamily: "monospace",
                         color: "#facc15",
                         fontWeight: 500,
                       }}

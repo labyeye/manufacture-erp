@@ -49,10 +49,7 @@ const inputStyle = {
   border: "1px solid rgba(255,255,255,0.13)",
   borderRadius: 6,
   fontSize: 13,
-  fontFamily: "inherit",
   background: "rgba(255,255,255,0.07)",
-  backdropFilter: "blur(8px) saturate(180%)",
-  WebkitBackdropFilter: "blur(8px) saturate(180%)",
   color: "#e0e0e0",
   outline: "none",
   boxSizing: "border-box",
@@ -933,8 +930,6 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
           display: "flex",
           gap: 10,
           background: "rgba(255,255,255,0.05)",
-          backdropFilter: "blur(12px) saturate(180%)",
-          WebkitBackdropFilter: "blur(12px) saturate(180%)",
           padding: 4,
           borderRadius: 12,
           marginBottom: 20,
@@ -962,8 +957,6 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
               borderRadius: 8,
               border: "none",
               background: activeTab === tab.key ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.05)",
-              backdropFilter: "blur(12px) saturate(180%)",
-              WebkitBackdropFilter: "blur(12px) saturate(180%)",
               color: "#fff",
               boxShadow: activeTab === tab.key ? "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" : "none",
               fontWeight: 500,
@@ -1012,8 +1005,6 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
                 transform: "translate(-50%, -50%)",
                 zIndex: 1000,
                 background: "rgba(255,255,255,0.05)",
-                backdropFilter: "blur(12px) saturate(180%)",
-                WebkitBackdropFilter: "blur(12px) saturate(180%)",
                 border: "1px solid rgba(255,255,255,0.1)",
                 borderRadius: 12,
                 padding: "20px 24px",
@@ -1024,8 +1015,6 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
               }
             : {
                 background: "rgba(255,255,255,0.05)",
-                backdropFilter: "blur(12px) saturate(180%)",
-                WebkitBackdropFilter: "blur(12px) saturate(180%)",
                 border: "1px solid rgba(255,255,255,0.1)",
                 borderRadius: 10,
                 padding: "16px 20px",
@@ -1611,7 +1600,6 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
                   fontSize: 15,
                   fontWeight: 500,
                   color: "#4CAF50",
-                  fontFamily: "monospace",
                 }}
               >
                 {newItemName || "—"}
@@ -1635,7 +1623,6 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
                   fontSize: 14,
                   fontWeight: 500,
                   color: "#4CAF50",
-                  fontFamily: "monospace",
                 }}
               >
                 {ITEM_TABS.find((t) => t.key === activeTab)?.prefix}
@@ -1651,8 +1638,6 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
             style={{
               padding: "9px 20px",
               background: "rgba(255,255,255,0.08)",
-              backdropFilter: "blur(12px) saturate(180%)",
-              WebkitBackdropFilter: "blur(12px) saturate(180%)",
               color: "#fff",
               border: "1px solid rgba(255,255,255,0.18)",
               borderRadius: 6,
@@ -1681,18 +1666,19 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
                 setProductCode("");
               }}
               style={{
-                padding: "9px 18px",
-                background: "rgba(255,255,255,0.05)",
-                color: "#aaa",
-                border: "1px solid rgba(255,255,255,0.1)",
-                borderRadius: 6,
-                fontWeight: 500,
-                fontSize: 13,
-                cursor: "pointer",
-              }}
-            >
-              Cancel
-            </button>
+                      background: "transparent",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+            ><i className="fa-solid fa-xmark" /> Cancel</button>
           )}
         </div>
       </div>
@@ -1701,8 +1687,6 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
         <div
           style={{
             background: "rgba(79,70,229,0.12)",
-            backdropFilter: "blur(12px) saturate(180%)",
-            WebkitBackdropFilter: "blur(12px) saturate(180%)",
             border: "1px solid #4f46e544",
             borderRadius: 10,
             padding: "16px 20px",
@@ -1754,8 +1738,6 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
               style={{
                 padding: "8px 16px",
                 background: "rgba(255,255,255,0.08)",
-                backdropFilter: "blur(12px) saturate(180%)",
-                WebkitBackdropFilter: "blur(12px) saturate(180%)",
                 border: "1px solid rgba(255,255,255,0.18)",
                 borderRadius: 6,
                 color: "#fff",
@@ -1778,7 +1760,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
               onChange={handleImportClientCodes}
             />
           </div>
-          <div style={{ fontSize: 10, color: "#444", fontFamily: "monospace" }}>
+          <div style={{ fontSize: 10, color: "#444" }}>
             Template columns: Our Product Code · Item Name · one column per
             client
           </div>
@@ -1836,8 +1818,6 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
               }
               style={{
                 background: "rgba(255,255,255,0.08)",
-                backdropFilter: "blur(12px) saturate(180%)",
-                WebkitBackdropFilter: "blur(12px) saturate(180%)",
                 color: "#fff",
                 border: "1px solid rgba(255,255,255,0.18)",
                 borderRadius: 6,
@@ -1868,8 +1848,6 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
               onClick={() => setDeleteAllModal(true)}
               style={{
                 background: "rgba(255,255,255,0.08)",
-                backdropFilter: "blur(12px) saturate(180%)",
-                WebkitBackdropFilter: "blur(12px) saturate(180%)",
                 color: "#fff",
                 border: "1px solid rgba(255,255,255,0.18)",
                 borderRadius: 6,
@@ -1943,8 +1921,6 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
               key={item._id}
               style={{
                 background: "rgba(255,255,255,0.05)",
-                backdropFilter: "blur(12px) saturate(180%)",
-                WebkitBackdropFilter: "blur(12px) saturate(180%)",
                 border: "1px solid rgba(255,255,255,0.1)",
                 borderRadius: 10,
                 padding: "14px 16px",
@@ -1968,7 +1944,6 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
                     fontSize: 11,
                     fontWeight: 500,
                     background: "#2196F30a",
-                    fontFamily: "monospace",
                     cursor: "pointer",
                     whiteSpace: "nowrap",
                     flexShrink: 0,
@@ -2034,7 +2009,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
                     Co. Codes {showClientCodes === item._id ? "▲" : "▼"}
                   </button>
                   {showClientCodes === item._id && (
-                    <div style={{ marginTop: 8, background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: 10 }}>
+                    <div style={{ marginTop: 8, background: "rgba(255,255,255,0.05)",  border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: 10 }}>
                       {item.companyCodes && Object.entries(item.companyCodes).filter(([_, v]) => v).length > 0 ? (
                         Object.entries(item.companyCodes).filter(([_, v]) => v).map(([client, code]) => (
                           <div key={client} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "5px 0", borderBottom: "1px solid rgba(255,255,255,0.06)", gap: 10 }}>
@@ -2050,13 +2025,25 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
                       )}
                       <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
                         <div style={{ fontSize: 10, color: "#818cf8", marginBottom: 4, fontWeight: 700 }}>+ ADD CLIENT CODE</div>
-                        <select value={manualClient} onChange={(e) => setManualClient(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.07)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.13)", borderRadius: 4, fontSize: 11, color: "#e0e0e0", padding: 5, marginBottom: 6, outline: "none" }}>
+                        <select value={manualClient} onChange={(e) => setManualClient(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.13)", borderRadius: 4, fontSize: 11, color: "#e0e0e0", padding: 5, marginBottom: 6, outline: "none" }}>
                           <option value="">-- Select Company --</option>
                           {(companyMaster || []).map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
                         </select>
                         <div style={{ display: "flex", gap: 6 }}>
                           <input placeholder="Code" value={manualCode} onChange={(e) => setManualCode(e.target.value)} style={{ flex: 1, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.13)", borderRadius: 4, fontSize: 11, color: "#e0e0e0", padding: 5, outline: "none" }} />
-                          <button onClick={() => handleManualClientCodeSave(item)} style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 4, color: "#fff", padding: "5px 12px", fontSize: 11, fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>SAVE</button>
+                          <button onClick={() => handleManualClientCodeSave(item)} style={{
+                      background: "transparent",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}><i className="fa-solid fa-floppy-disk" /> Save</button>
                         </div>
                       </div>
                     </div>
@@ -2068,16 +2055,36 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
               <div style={{ display: "flex", gap: 8 }}>
                 <button
                   onClick={() => handleEdit(item)}
-                  style={{ flex: 1, padding: "8px 0", background: "rgba(255,255,255,0.05)", color: "#64b5f6", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, fontSize: 13, fontWeight: 500, cursor: "pointer" }}
-                >
-                  Edit
-                </button>
+                  style={{
+                      background: "transparent",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                ><i className="fa-solid fa-pen-to-square" /> Edit</button>
                 <button
                   onClick={() => handleDelete(item)}
-                  style={{ flex: 1, padding: "8px 0", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", color: "#fff", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, fontSize: 13, fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
-                >
-                  Delete
-                </button>
+                  style={{
+                      background: "transparent",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                ><i className="fa-solid fa-trash" /> Delete</button>
               </div>
             </div>
           ))}
@@ -2145,7 +2152,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
                   style={{ cursor: "pointer", width: 16, height: 16, flexShrink: 0 }}
                 />
                 <div
-                  style={{ width: 72, flexShrink: 0, padding: "5px 0", border: "1px solid #2196F344", borderRadius: 6, textAlign: "center", color: "#2196F3", fontSize: 11, fontWeight: 500, background: "#2196F30a", fontFamily: "monospace", cursor: "pointer", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                  style={{ width: 72, flexShrink: 0, padding: "5px 0", border: "1px solid #2196F344", borderRadius: 6, textAlign: "center", color: "#2196F3", fontSize: 11, fontWeight: 500, background: "#2196F30a", cursor: "pointer", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
                   onClick={() => handleEdit(item)}
                 >
                   {item.code}
@@ -2179,12 +2186,12 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
                         setManualCode("");
                         setShowClientCodes(showClientCodes === item._id ? null : item._id);
                       }}
-                      style={{ padding: "4px 8px", borderRadius: 6, background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", color: "#fff", fontSize: 10, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, width: "100%", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
+                      style={{ padding: "4px 8px", borderRadius: 6, background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", color: "#fff", fontSize: 10, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, width: "100%", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
                     >
                       Co. Codes {showClientCodes === item._id ? "▲" : "▼"}
                     </button>
                     {showClientCodes === item._id && (
-                      <div style={{ position: "absolute", top: "100%", right: 0, zIndex: 100, background: "rgba(20,20,30,0.95)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: 8, minWidth: 150, boxShadow: "0 10px 25px rgba(0,0,0,0.5)", marginTop: 4 }}>
+                      <div style={{ position: "absolute", top: "100%", right: 0, zIndex: 100, background: "rgba(20,20,30,0.95)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: 8, minWidth: 150, boxShadow: "0 10px 25px rgba(0,0,0,0.5)", marginTop: 4 }}>
                         {item.companyCodes && Object.entries(item.companyCodes).filter(([_, v]) => v).length > 0 ? (
                           Object.entries(item.companyCodes).filter(([_, v]) => v).map(([client, code]) => (
                             <div key={client} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, padding: "4px 0", borderBottom: "1px solid rgba(255,255,255,0.06)", gap: 10 }}>
@@ -2200,13 +2207,25 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
                         )}
                         <div style={{ marginTop: 10, borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 8 }}>
                           <div style={{ fontSize: 9, color: "#818cf8", marginBottom: 4, fontWeight: 700 }}>+ ADD CLIENT CODE</div>
-                          <select value={manualClient} onChange={(e) => setManualClient(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.07)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.13)", borderRadius: 4, fontSize: 10, color: "#e0e0e0", padding: 4, marginBottom: 4, outline: "none" }}>
+                          <select value={manualClient} onChange={(e) => setManualClient(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.13)", borderRadius: 4, fontSize: 10, color: "#e0e0e0", padding: 4, marginBottom: 4, outline: "none" }}>
                             <option value="">-- Select Company --</option>
                             {(companyMaster || []).map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
                           </select>
                           <div style={{ display: "flex", gap: 4 }}>
                             <input placeholder="Code" value={manualCode} onChange={(e) => setManualCode(e.target.value)} style={{ flex: 1, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.13)", borderRadius: 4, fontSize: 10, color: "#e0e0e0", padding: 4, outline: "none" }} />
-                            <button onClick={() => handleManualClientCodeSave(item)} style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 4, color: "#fff", padding: "4px 8px", fontSize: 10, fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>SAVE</button>
+                            <button onClick={() => handleManualClientCodeSave(item)} style={{
+                      background: "transparent",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}><i className="fa-solid fa-floppy-disk" /> Save</button>
                           </div>
                         </div>
                       </div>
@@ -2220,16 +2239,36 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
                 <div style={{ width: 160, flexShrink: 0, display: "flex", gap: 6, justifyContent: "flex-end" }}>
                   <button
                     onClick={() => handleEdit(item)}
-                    style={{ background: "rgba(255,255,255,0.05)", color: "#64b5f6", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "4px 10px", fontSize: 12, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}
-                  >
-                    Edit
-                  </button>
+                    style={{
+                      background: "transparent",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  ><i className="fa-solid fa-pen-to-square" /> Edit</button>
                   <button
                     onClick={() => handleDelete(item)}
-                    style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", color: "#fff", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, padding: "4px 10px", fontSize: 12, fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)", display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}
-                  >
-                    Delete
-                  </button>
+                    style={{
+                      background: "transparent",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  ><i className="fa-solid fa-trash" /> Delete</button>
                 </div>
               </div>
             ))}

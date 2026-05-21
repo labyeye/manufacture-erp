@@ -1,60 +1,17 @@
 import React from "react";
 import { C } from "../../constants/colors";
 
-/* ── Canonical glass token (mirrors CSS :root variables) ── */
-const G = {
-  bg: "rgba(255,255,255,0.05)",
-  blur: "blur(4px)",
-  border: "1px solid rgba(255,255,255,0.13)",
-  radius: 20,
-  shadow: [
-    "0 8px 32px rgba(0,0,0,0.1)",
-    "inset 0 1px 0 rgba(255,255,255,0.5)",
-    "inset 0 -1px 0 rgba(255,255,255,0.1)",
-    "inset 0 0 0px 0px rgba(255,255,255,0)",
-  ].join(", "),
-};
-
-const GLASS_CARD = {
-  background: G.bg,
-  backdropFilter: G.blur,
-  WebkitBackdropFilter: G.blur,
-  border: G.border,
-  borderRadius: G.radius,
-  position: "relative",
-  overflow: "hidden",
-};
-
-const DARK_INPUT = {
-  width: "100%",
-  padding: "9px 12px",
-  background: G.bg,
-  border: G.border,
-  borderRadius: 10,
-  fontSize: 13,
-  color: C.text,
-  fontFamily: "'Poppins', sans-serif",
-  outline: "none",
-  boxSizing: "border-box",
-  backdropFilter: G.blur,
-  WebkitBackdropFilter: G.blur,
-  transition: "border 0.2s, box-shadow 0.2s",
-};
+/* ── All glass styling lives in styles/liquid-glass.css.
+      This file just composes .lg-* classes onto components. ── */
 
 export function Badge({ text, color = C.accent }) {
   return (
     <span
+      className="lg-badge"
       style={{
-        background: color + "18",
+        background: color + "22",
         color: color,
-        border: `1px solid ${color}30`,
-        borderRadius: 8,
-        padding: "3px 10px",
-        fontSize: 12,
-        fontWeight: 500,
-        whiteSpace: "nowrap",
-        fontFamily: "'Fira Code', monospace",
-        letterSpacing: "0.01em",
+        borderColor: color + "44",
       }}
     >
       {text}
@@ -62,31 +19,10 @@ export function Badge({ text, color = C.accent }) {
   );
 }
 
-export function Card({ children, style = {}, onClick }) {
-  const hoverStyle = onClick
-    ? { cursor: "pointer", transition: "all 0.2s ease" }
-    : {};
+export function Card({ children, style = {}, onClick, className = "" }) {
+  const cls = `lg-card${onClick ? " lg-card-clickable" : ""}${className ? " " + className : ""}`;
   return (
-    <div
-      onClick={onClick}
-      style={{ ...GLASS_CARD, padding: 22, ...hoverStyle, ...style }}
-      onMouseEnter={
-        onClick
-          ? (e) => {
-              e.currentTarget.style.boxShadow = "0 8px 32px rgba(0,0,0,0.5)";
-              e.currentTarget.style.transform = "translateY(-1px)";
-            }
-          : undefined
-      }
-      onMouseLeave={
-        onClick
-          ? (e) => {
-              e.currentTarget.style.boxShadow = GLASS_CARD.boxShadow;
-              e.currentTarget.style.transform = "translateY(0)";
-            }
-          : undefined
-      }
-    >
+    <div onClick={onClick} className={cls} style={style}>
       {children}
     </div>
   );
@@ -206,56 +142,38 @@ export function Field({ label, children, span }) {
 }
 
 export function SubmitBtn({ label, ...props }) {
-  return <Button text={label} type="submit" {...props} />;
+  return <Button text={label} type="submit" variant="primary" {...props} />;
 }
 
 export function Button({
   text,
   onClick,
-  color = C.accent,
+  color,
   type = "button",
   loading,
   small,
   icon,
+  variant = "default",
+  className = "",
+  style = {},
 }) {
+  const cls = [
+    "lg-btn",
+    small ? "lg-btn-sm" : "",
+    variant === "primary" ? "lg-btn-primary" : "",
+    variant === "danger" ? "lg-btn-danger" : "",
+    variant === "ghost" ? "lg-btn-ghost" : "",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
   return (
     <button
       type={type}
       onClick={onClick}
       disabled={loading}
-      style={{
-        background: "rgba(255,255,255,0.08)",
-        backdropFilter: "blur(14px) saturate(180%)",
-        WebkitBackdropFilter: "blur(14px) saturate(180%)",
-        color: "#fff",
-        border: "1px solid rgba(255,255,255,0.18)",
-        borderRadius: small ? 10 : 12,
-        padding: small ? "6px 14px" : "10px 22px",
-        fontSize: small ? 12 : 13,
-        fontWeight: 600,
-        cursor: loading ? "not-allowed" : "pointer",
-        opacity: loading ? 0.5 : 1,
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 8,
-        transition: "all 0.18s ease",
-        boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
-        letterSpacing: "-0.01em",
-      }}
-      onMouseEnter={(e) => {
-        if (!loading) {
-          e.currentTarget.style.background = "rgba(255,255,255,0.15)";
-          e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)";
-          e.currentTarget.style.transform = "translateY(-1px)";
-          e.currentTarget.style.boxShadow = "0 6px 22px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.22)";
-        }
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = "rgba(255,255,255,0.08)";
-        e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)";
-        e.currentTarget.style.transform = "translateY(0)";
-        e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)";
-      }}
+      className={cls}
+      style={style}
     >
       {icon && renderIcon(icon, small ? 12 : 14, "#fff")}
       {loading ? "..." : text}
@@ -283,7 +201,7 @@ export function Input({ label, ...props }) {
       )}
       <input
         {...props}
-        style={{ ...DARK_INPUT, padding: "10px 12px", ...props.style }}
+        className={`lg-input ${props.className || ""}`.trim()}
       />
     </div>
   );
@@ -307,7 +225,10 @@ export function Select({ label, options = [], ...props }) {
           {label}
         </label>
       )}
-      <select {...props} style={{ ...DARK_INPUT, padding: "10px 12px" }}>
+      <select
+        {...props}
+        className={`lg-select ${props.className || ""}`.trim()}
+      >
         {options.map((opt) => {
           const val = typeof opt === "object" ? opt.value : opt;
           const lbl = typeof opt === "object" ? opt.label : opt;
@@ -328,73 +249,79 @@ export function Modal({ title, children, onClose }) {
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.5)",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
-        zIndex: 1000,
+        background: "rgba(0,0,0,0.65)",
         display: "flex",
-        alignItems: "center",
+        alignItems: "flex-start",
         justifyContent: "center",
-        padding: 20,
+        zIndex: 1000,
+        overflowY: "auto",
+        padding: "40px 16px",
       }}
+      onClick={onClose}
     >
-      <div style={{ ...GLASS_CARD, width: "100%", maxWidth: 1200, padding: 0, display: "flex", flexDirection: "column", maxHeight: "90vh" }}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: "100%",
+          maxWidth: 1100,
+          background: "#000000",
+          border: "1px solid rgba(255,255,255,0.12)",
+          borderRadius: 12,
+          color: "#ffffff",
+          display: "flex",
+          flexDirection: "column",
+          maxHeight: "calc(100vh - 80px)",
+          overflow: "hidden",
+        }}
+      >
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            padding: "22px 28px 18px",
+            padding: "16px 24px",
+            borderBottom: "1px solid rgba(255,255,255,0.08)",
             flexShrink: 0,
-            borderBottom: "1px solid rgba(255,255,255,0.07)",
           }}
         >
           <h3
             style={{
               margin: 0,
-              fontSize: 18,
-              color: C.text,
-              fontWeight: 500,
-              letterSpacing: "-0.02em",
+              fontSize: 16,
+              fontWeight: 600,
+              color: "#ffffff",
+              letterSpacing: "-0.01em",
             }}
           >
             {title}
           </h3>
           <button
             onClick={onClose}
+            aria-label="Close"
             style={{
-              background: "rgba(255,255,255,0.07)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              color: C.muted,
-              width: 32,
-              height: 32,
-              borderRadius: 8,
-              fontSize: 16,
-              cursor: "pointer",
-              display: "flex",
+              background: "transparent",
+              border: "1px solid rgba(255,255,255,0.2)",
+              color: "#ffffff",
+              borderRadius: 6,
+              width: 28,
+              height: 28,
+              display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              transition: "all 0.18s ease",
+              cursor: "pointer",
+              fontSize: 13,
             }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.background = "rgba(255,255,255,0.12)")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.background = "rgba(255,255,255,0.07)")
-            }
           >
             <i className="fa-solid fa-xmark" />
           </button>
         </div>
-        <div style={{ overflowY: "auto", padding: "22px 28px 28px", flex: 1 }}>
-          {children}
-        </div>
+        <div style={{ padding: 20, overflowY: "auto", flex: 1 }}>{children}</div>
       </div>
     </div>
   );
 }
 
-/* ── Pure Glassmorphism Table ── */
+/* ── Pure liquid-glass Table ── */
 export function GlassTable({
   headers = [],
   rows = [],
@@ -405,7 +332,7 @@ export function GlassTable({
 }) {
   if (loading)
     return (
-      <div style={{ padding: 48, textAlign: "center", color: C.muted }}>
+      <div className="lg-card" style={{ padding: 48, textAlign: "center", color: C.muted }}>
         <i
           className="fa-solid fa-circle-notch fa-spin"
           style={{ fontSize: 24, marginBottom: 12, display: "block" }}
@@ -415,7 +342,7 @@ export function GlassTable({
     );
   if (!rows.length)
     return (
-      <div style={{ padding: 48, textAlign: "center", color: C.muted }}>
+      <div className="lg-card" style={{ padding: 48, textAlign: "center", color: C.muted }}>
         <i
           className="fa-solid fa-inbox"
           style={{
@@ -430,38 +357,13 @@ export function GlassTable({
     );
 
   return (
-    <div style={{ ...GLASS_CARD }}>
-      <div style={{ overflowX: "auto" }}>
-        <table
-          style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}
-        >
+    <div className="lg-table-wrap">
+      <div className="lg-table-scroll">
+        <table className="lg-table">
           <thead>
-            <tr
-              style={{
-                background: "rgba(255,255,255,0.04)",
-                borderBottom: "1px solid rgba(255,255,255,0.08)",
-                ...(stickyHeader
-                  ? { position: "sticky", top: 0, zIndex: 2 }
-                  : {}),
-              }}
-            >
+            <tr>
               {headers.map((h, i) => (
-                <th
-                  key={i}
-                  style={{
-                    padding: "12px 16px",
-                    textAlign: "left",
-                    color: C.muted,
-                    fontSize: 11,
-                    fontWeight: 500,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.07em",
-                    whiteSpace: "nowrap",
-                    backdropFilter: "blur(16px)",
-                  }}
-                >
-                  {h}
-                </th>
+                <th key={i}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -470,30 +372,11 @@ export function GlassTable({
               <tr
                 key={i}
                 onClick={onRowClick ? () => onRowClick(row, i) : undefined}
-                style={{
-                  borderBottom: "1px solid rgba(255,255,255,0.05)",
-                  cursor: onRowClick ? "pointer" : "default",
-                  transition: "background 0.15s ease",
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.background = "rgba(255,255,255,0.04)")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.background = "transparent")
-                }
+                className={onRowClick ? "is-clickable" : ""}
               >
                 {(Array.isArray(row) ? row : Object.values(row)).map(
                   (cell, j) => (
-                    <td
-                      key={j}
-                      style={{
-                        padding: "11px 16px",
-                        color: C.text,
-                        verticalAlign: "middle",
-                      }}
-                    >
-                      {cell}
-                    </td>
+                    <td key={j}>{cell}</td>
                   ),
                 )}
               </tr>
@@ -552,21 +435,23 @@ export function AutocompleteInput({
   return (
     <div style={{ position: "relative" }}>
       <input
+        className="lg-input"
         placeholder={placeholder}
         value={value}
         onChange={handleChange}
         onFocus={() => value && setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 200)}
-        style={{ ...DARK_INPUT, ...inputStyle }}
+        style={inputStyle}
       />
       {open && filtered.length > 0 && (
         <div
+          className="lg-card"
           style={{
             position: "absolute",
             top: "calc(100% + 4px)",
             left: 0,
             right: 0,
-            ...GLASS_CARD,
+            padding: 0,
             maxHeight: 200,
             overflowY: "auto",
             zIndex: 100,
@@ -609,12 +494,8 @@ export function DatePicker({ value, onChange, style = {} }) {
         type="date"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        style={{
-          ...DARK_INPUT,
-          colorScheme: "dark",
-          accentColor: C.accent,
-          ...style,
-        }}
+        className="lg-input"
+        style={{ colorScheme: "dark", accentColor: C.accent, ...style }}
       />
     </div>
   );
@@ -625,10 +506,10 @@ export function DateRangeFilter({ dateFrom, setDateFrom, dateTo, setDateTo }) {
     <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
       <input
         type="date"
+        className="lg-input"
         value={dateFrom}
         onChange={(e) => setDateFrom(e.target.value)}
         style={{
-          ...DARK_INPUT,
           width: "auto",
           colorScheme: "dark",
           fontSize: 12,
@@ -638,10 +519,10 @@ export function DateRangeFilter({ dateFrom, setDateFrom, dateTo, setDateTo }) {
       <span style={{ color: C.muted, fontSize: 12 }}>—</span>
       <input
         type="date"
+        className="lg-input"
         value={dateTo}
         onChange={(e) => setDateTo(e.target.value)}
         style={{
-          ...DARK_INPUT,
           width: "auto",
           colorScheme: "dark",
           fontSize: 12,
@@ -662,39 +543,8 @@ export function ImportBtn({
     <button
       onClick={onClick}
       disabled={disabled}
-      style={{
-        padding: "9px 16px",
-        background: "rgba(255,255,255,0.08)",
-        backdropFilter: "blur(14px) saturate(180%)",
-        WebkitBackdropFilter: "blur(14px) saturate(180%)",
-        color: disabled ? C.muted : "#fff",
-        border: `1px solid ${disabled ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.18)"}`,
-        borderRadius: 10,
-        fontWeight: 600,
-        fontSize: 13,
-        cursor: disabled ? "not-allowed" : "pointer",
-        opacity: disabled ? 0.45 : 1,
-        display: "flex",
-        alignItems: "center",
-        gap: 6,
-        transition: "all 0.18s ease",
-        boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
-        ...style,
-      }}
-      onMouseEnter={(e) => {
-        if (!disabled) {
-          e.currentTarget.style.background = "rgba(255,255,255,0.15)";
-          e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)";
-          e.currentTarget.style.transform = "translateY(-1px)";
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (!disabled) {
-          e.currentTarget.style.background = "rgba(255,255,255,0.08)";
-          e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)";
-          e.currentTarget.style.transform = "translateY(0)";
-        }
-      }}
+      className="lg-btn"
+      style={style}
     >
       <i className="fa-solid fa-file-import" style={{ fontSize: 12 }} />
       {label}
@@ -712,39 +562,8 @@ export function ExportBtn({
     <button
       onClick={onClick}
       disabled={disabled}
-      style={{
-        padding: "9px 16px",
-        background: "rgba(255,255,255,0.08)",
-        backdropFilter: "blur(14px) saturate(180%)",
-        WebkitBackdropFilter: "blur(14px) saturate(180%)",
-        color: disabled ? C.muted : "#fff",
-        border: `1px solid ${disabled ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.18)"}`,
-        borderRadius: 10,
-        fontWeight: 600,
-        fontSize: 13,
-        cursor: disabled ? "not-allowed" : "pointer",
-        opacity: disabled ? 0.45 : 1,
-        display: "flex",
-        alignItems: "center",
-        gap: 6,
-        transition: "all 0.18s ease",
-        boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
-        ...style,
-      }}
-      onMouseEnter={(e) => {
-        if (!disabled) {
-          e.currentTarget.style.background = "rgba(255,255,255,0.15)";
-          e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)";
-          e.currentTarget.style.transform = "translateY(-1px)";
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (!disabled) {
-          e.currentTarget.style.background = "rgba(255,255,255,0.08)";
-          e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)";
-          e.currentTarget.style.transform = "translateY(0)";
-        }
-      }}
+      className="lg-btn"
+      style={style}
     >
       <i className="fa-solid fa-file-export" style={{ fontSize: 12 }} />
       {label}
@@ -762,39 +581,8 @@ export function TemplateBtn({
     <button
       onClick={onClick}
       disabled={disabled}
-      style={{
-        padding: "9px 16px",
-        background: "rgba(255,255,255,0.08)",
-        backdropFilter: "blur(14px) saturate(180%)",
-        WebkitBackdropFilter: "blur(14px) saturate(180%)",
-        color: disabled ? C.muted : "#fff",
-        border: `1px solid ${disabled ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.18)"}`,
-        borderRadius: 10,
-        fontWeight: 600,
-        fontSize: 13,
-        cursor: disabled ? "not-allowed" : "pointer",
-        opacity: disabled ? 0.45 : 1,
-        display: "flex",
-        alignItems: "center",
-        gap: 6,
-        transition: "all 0.18s ease",
-        boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
-        ...style,
-      }}
-      onMouseEnter={(e) => {
-        if (!disabled) {
-          e.currentTarget.style.background = "rgba(255,255,255,0.15)";
-          e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)";
-          e.currentTarget.style.transform = "translateY(-1px)";
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (!disabled) {
-          e.currentTarget.style.background = "rgba(255,255,255,0.08)";
-          e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)";
-          e.currentTarget.style.transform = "translateY(0)";
-        }
-      }}
+      className="lg-btn"
+      style={style}
     >
       <i className="fa-solid fa-download" style={{ fontSize: 12 }} />
       {label}
@@ -815,13 +603,8 @@ export function ImportModal({
     <div
       style={{
         position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100%",
-        background: "rgba(0,0,0,0.6)",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
+        inset: 0,
+        background: "rgba(0,0,0,0.65)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -832,9 +615,12 @@ export function ImportModal({
         style={{
           width: "100%",
           maxWidth: 400,
-          ...GLASS_CARD,
           padding: 32,
           textAlign: "center",
+          background: "#000000",
+          border: "1px solid rgba(255,255,255,0.12)",
+          borderRadius: 12,
+          color: "#ffffff",
         }}
       >
         <i
@@ -893,7 +679,7 @@ export function ImportModal({
         >
           <span>Progress</span>
           <span
-            style={{ color: C.accent, fontFamily: "'Fira Code', monospace" }}
+            style={{ color: C.accent,  }}
           >
             {current} / {total}
           </span>

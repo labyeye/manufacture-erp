@@ -74,7 +74,7 @@ export function Toast({ msg, type = "info", onClose, duration = 3500 }) {
         onClick={handleClose}
         style={{
           position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-          background: "rgba(27,39,68,0.18)", backdropFilter: "blur(6px)",
+          background: "rgba(27,39,68,0.18)",
           zIndex: 9990,
           animation: exiting ? "alertScaleOut 0.28s ease forwards" : "fadeIn 0.2s ease",
         }}
@@ -85,8 +85,6 @@ export function Toast({ msg, type = "info", onClose, duration = 3500 }) {
           transform: "translate(-50%, -50%)",
           zIndex: 9999, width: "90vw", maxWidth: 400,
           background: "rgba(248,251,254,0.96)",
-          backdropFilter: "blur(20px) saturate(160%)",
-          WebkitBackdropFilter: "blur(20px) saturate(160%)",
           border: `1px solid ${color}55`,
           borderRadius: 20,
           boxShadow: `0 0 0 1px ${color}33, 0 24px 60px rgba(27,39,68,0.15), 0 0 40px ${color}22`,

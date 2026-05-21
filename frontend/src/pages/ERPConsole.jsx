@@ -2,8 +2,18 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { activityLogAPI } from "../api/auth";
 
 const ACTION_META = {
-  LOGIN: { label: "Login", color: "#4caf50", bg: "#4caf5018", icon: "fa-solid fa-key" },
-  LOGOUT: { label: "Logout", color: "#9e9e9e", bg: "#9e9e9e18", icon: "fa-solid fa-right-from-bracket" },
+  LOGIN: {
+    label: "Login",
+    color: "#4caf50",
+    bg: "#4caf5018",
+    icon: "fa-solid fa-key",
+  },
+  LOGOUT: {
+    label: "Logout",
+    color: "#9e9e9e",
+    bg: "#9e9e9e18",
+    icon: "fa-solid fa-right-from-bracket",
+  },
   CREATED: { label: "Created", color: "#2196f3", bg: "#2196f318", icon: "✚" },
   UPDATED: { label: "Updated", color: "#ff9800", bg: "#ff980018", icon: "✎" },
   DELETED: { label: "Deleted", color: "#f44336", bg: "#f4433618", icon: "✕" },
@@ -43,7 +53,6 @@ const inputStyle = {
   fontSize: 12,
   padding: "7px 10px",
   outline: "none",
-  fontFamily: "inherit",
 };
 
 function Badge({ action }) {
@@ -70,9 +79,12 @@ function Badge({ action }) {
         whiteSpace: "nowrap",
       }}
     >
-      {meta.icon && meta.icon.startsWith("fa-")
-        ? <i className={meta.icon} style={{ fontSize: 10 }} />
-        : meta.icon} {meta.label}
+      {meta.icon && meta.icon.startsWith("fa-") ? (
+        <i className={meta.icon} style={{ fontSize: 10 }} />
+      ) : (
+        meta.icon
+      )}{" "}
+      {meta.label}
     </span>
   );
 }
@@ -151,9 +163,7 @@ function DetailsPanel({ details }) {
           </span>
           <span style={{ color: "#aaa", wordBreak: "break-all" }}>
             {typeof v === "object" ? (
-              <span
-                style={{ fontFamily: "monospace", fontSize: 10, color: "#777" }}
-              >
+              <span style={{ fontSize: 10, color: "#777" }}>
                 {Object.entries(v)
                   .filter(
                     ([, val]) =>
@@ -216,7 +226,6 @@ function LogRow({ log, i, expanded, onToggle }) {
                 fontSize: 10,
                 color: "#444",
                 marginTop: 1,
-                fontFamily: "monospace",
               }}
             >
               {log.entityId}
@@ -258,7 +267,6 @@ function LogRow({ log, i, expanded, onToggle }) {
           style={{
             padding: "9px 12px",
             color: "#444",
-            fontFamily: "monospace",
             fontSize: 11,
           }}
         >
@@ -401,7 +409,6 @@ export default function ERPConsole({ toast, session }) {
         flexDirection: "column",
         background: "#0d0d0d",
         overflow: "hidden",
-        fontFamily: "'Inter', sans-serif",
       }}
     >
       {/* Header */}
@@ -418,7 +425,10 @@ export default function ERPConsole({ toast, session }) {
       >
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <i className="fa-solid fa-terminal" style={{ fontSize: 18, color: "#ff7800" }} />
+            <i
+              className="fa-solid fa-terminal"
+              style={{ fontSize: 18, color: "#ff7800" }}
+            />
             <span style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>
               ERP Console
             </span>
@@ -648,7 +658,15 @@ export default function ERPConsole({ toast, session }) {
           </div>
         ) : logs.length === 0 ? (
           <div style={{ padding: 40, textAlign: "center", color: "#444" }}>
-            <i className="fa-solid fa-inbox" style={{ fontSize: 32, marginBottom: 8, color: "#444", display: "block" }} />
+            <i
+              className="fa-solid fa-inbox"
+              style={{
+                fontSize: 32,
+                marginBottom: 8,
+                color: "#444",
+                display: "block",
+              }}
+            />
             No activity logs found. Actions will appear here as users interact
             with the ERP.
           </div>

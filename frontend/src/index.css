@@ -5,16 +5,20 @@
 }
 
 :root {
-  /* ── Canonical glassmorphism tokens ── */
-  --glass-bg:        rgba(255, 255, 255, 0.05);
-  --glass-blur:      blur(8px);
-  --glass-border:    rgba(255, 255, 255, 0.3);
+  /* ── Canonical liquid-glass tokens ── */
+  --glass-bg:        rgba(255, 255, 255, 0.06);
+  --glass-blur:      blur(14px) saturate(160%);
+  --glass-blur-lg:   blur(20px) saturate(180%);
+  --glass-distort:   url(#glass-distortion);
+  --glass-distort-soft: url(#glass-distortion-soft);
+  --glass-border:    rgba(255, 255, 255, 0.22);
   --glass-radius:    20px;
   --glass-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.1),
+    0 10px 40px rgba(0, 0, 0, 0.35),
+    0 2px 8px rgba(0, 0, 0, 0.25),
     inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.1),
-    inset 0 0 0px 0px rgba(255, 255, 255, 0);
+    inset 0 -1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 0 30px rgba(255, 255, 255, 0.04);
   --glass-sheen-top:  linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
   --glass-sheen-left: linear-gradient(180deg, rgba(255,255,255,0.8), transparent, rgba(255,255,255,0.3));
 
@@ -40,50 +44,31 @@
 }
 
 body {
-  background: linear-gradient(135deg, #07070f 0%, #0c0c1a 50%, #09090e 100%);
-  background-attachment: fixed;
+  background-color: #07070f;
   color: var(--text);
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: 'Inter', sans-serif;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   letter-spacing: -0.01em;
+}
+
+html, body, input, button, select, textarea, table, th, td {
+  font-family: 'Inter', sans-serif;
 }
 
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--scrollbar); border-radius: 4px; }
 
-/* ── Global Glassmorphism Inputs ── */
+/* ── Input typography & layout (glass treatment lives in liquid-glass.css) ── */
 input,
 select,
 textarea {
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  color: var(--text);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-sm);
   padding: 9px 12px;
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Josefin Sans', 'Poppins', sans-serif;
   font-size: 13px;
-  outline: none;
   width: 100%;
-  transition: border 0.2s, box-shadow 0.2s, background 0.2s;
-
-}
-
-input::placeholder,
-textarea::placeholder {
-  color: var(--placeholder);
-  font-style: italic;
-  font-weight: 300;
-}
-
-input:focus,
-select:focus,
-textarea:focus {
-  border-color: rgba(99, 102, 241, 0.6);
-  background: rgba(255, 255, 255, 0.08);
+  outline: none;
 }
 
 select option {
@@ -93,30 +78,29 @@ select option {
 
 button {
   cursor: pointer;
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Josefin Sans', 'Poppins', sans-serif;
 }
 
-/* ══════════════════════════════════════════
-   Canonical Glassmorphism — single source
-   All glass surfaces use these rules.
-   ══════════════════════════════════════════ */
+/* ──────────────────────────────────────────────────────────────
+   NOTE: The liquid-glass surface system lives in
+   ./styles/liquid-glass.css. The classes below remain only as
+   thin aliases so any legacy code referencing them keeps working.
+   ────────────────────────────────────────────────────────────── */
 
-/* shared mixin applied via the class below */
 .glass,
 .glass-card,
 .glass-panel,
 .glass-table-wrap {
   background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: blur(14px) saturate(160%) url(#glass-distortion);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
   border-radius: var(--glass-radius);
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
   position: relative;
   overflow: hidden;
+  isolation: isolate;
 }
-
-/* top-edge sheen */
 .glass::before,
 .glass-card::before,
 .glass-panel::before,
@@ -126,20 +110,6 @@ button {
   top: 0; left: 0; right: 0;
   height: 1px;
   background: var(--glass-sheen-top);
-  pointer-events: none;
-  z-index: 1;
-}
-
-/* left-edge sheen */
-.glass::after,
-.glass-card::after,
-.glass-panel::after,
-.glass-table-wrap::after {
-  content: '';
-  position: absolute;
-  top: 0; left: 0;
-  width: 1px; height: 100%;
-  background: var(--glass-sheen-left);
   pointer-events: none;
   z-index: 1;
 }

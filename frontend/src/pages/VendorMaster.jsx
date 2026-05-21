@@ -10,10 +10,7 @@ const inputStyle = {
   border: "1px solid rgba(255,255,255,0.13)",
   borderRadius: 6,
   fontSize: 13,
-  fontFamily: "inherit",
   background: "rgba(255,255,255,0.07)",
-  backdropFilter: "blur(8px) saturate(180%)",
-  WebkitBackdropFilter: "blur(8px) saturate(180%)",
   color: "#e0e0e0",
   outline: "none",
   boxSizing: "border-box",
@@ -21,8 +18,6 @@ const inputStyle = {
 
 const cardStyle = {
   background: "rgba(255,255,255,0.05)",
-  backdropFilter: "blur(12px) saturate(180%)",
-  WebkitBackdropFilter: "blur(12px) saturate(180%)",
   border: "1px solid rgba(255,255,255,0.1)",
   borderRadius: 10,
   padding: 20,
@@ -319,7 +314,6 @@ export default function VendorMaster({
             alignItems: "center",
             justifyContent: "center",
             zIndex: 10000,
-            backdropFilter: "blur(4px)",
           }}
         >
           <div
@@ -327,8 +321,6 @@ export default function VendorMaster({
               width: "100%",
               maxWidth: 400,
               background: "rgba(255,255,255,0.05)",
-              backdropFilter: "blur(12px) saturate(180%)",
-              WebkitBackdropFilter: "blur(12px) saturate(180%)",
               border: "1px solid rgba(255,255,255,0.1)",
               borderRadius: 16,
               padding: 30,
@@ -391,7 +383,6 @@ export default function VendorMaster({
               style={{
                 fontSize: 11,
                 color: "#555",
-                fontFamily: "monospace",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
@@ -730,7 +721,6 @@ export default function VendorMaster({
                       style={{
                         padding: "12px",
                         color: "#aaa",
-                        fontFamily: "monospace",
                         fontSize: 11,
                       }}
                     >

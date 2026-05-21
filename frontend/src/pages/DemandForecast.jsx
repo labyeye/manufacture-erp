@@ -328,8 +328,6 @@ export default function DemandForecast({
             key={label}
             style={{
               background: "rgba(255,255,255,0.05)",
-              backdropFilter: "blur(12px) saturate(180%)",
-              WebkitBackdropFilter: "blur(12px) saturate(180%)",
               border: "1px solid rgba(255,255,255,0.1)",
               boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
               borderRadius: 10,
@@ -344,7 +342,6 @@ export default function DemandForecast({
                 fontSize: 28,
                 fontWeight: 800,
                 color,
-                fontFamily: "monospace",
               }}
             >
               {value}
@@ -386,8 +383,6 @@ export default function DemandForecast({
                     background: active
                       ? cfg.bg || ACCENT + "22"
                       : "rgba(255,255,255,0.05)",
-                    backdropFilter: "blur(10px)",
-                    WebkitBackdropFilter: "blur(10px)",
                     color: active ? cfg.color || ACCENT : "#999",
                     fontWeight: 600,
                     fontSize: 11,
@@ -417,8 +412,6 @@ export default function DemandForecast({
                     borderRadius: 6,
                     border: `1px solid ${active ? color : "rgba(255,255,255,0.12)"}`,
                     background: active ? color + "22" : "rgba(255,255,255,0.05)",
-                    backdropFilter: "blur(10px)",
-                    WebkitBackdropFilter: "blur(10px)",
                     color: active ? color : "#999",
                     fontWeight: 600,
                     fontSize: 11,
@@ -457,8 +450,6 @@ export default function DemandForecast({
             background: "rgba(255,255,255,0.03)",
             border: "1px solid rgba(255,255,255,0.1)",
             borderRadius: 12,
-            backdropFilter: "blur(12px) saturate(180%)",
-            WebkitBackdropFilter: "blur(12px) saturate(180%)",
           }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
@@ -538,7 +529,6 @@ export default function DemandForecast({
                       <td
                         style={{
                           ...tdBase,
-                          fontFamily: "monospace",
                           fontWeight: 500,
                           color: ACCENT,
                           paddingLeft: 14,
@@ -584,7 +574,6 @@ export default function DemandForecast({
                           ...tdBase,
                           textAlign: "right",
                           fontWeight: 500,
-                          fontFamily: "monospace",
                           color:
                             r.mom == null
                               ? C.muted
@@ -621,7 +610,6 @@ export default function DemandForecast({
                             fontWeight: 800,
                             fontSize: 15,
                             color: r.forecast > 0 ? "#fff" : C.muted,
-                            fontFamily: "monospace",
                           }}
                         >
                           {fmt(r.forecast)}
@@ -646,7 +634,6 @@ export default function DemandForecast({
                           textAlign: "right",
                           color: C.muted,
                           fontSize: 11,
-                          fontFamily: "monospace",
                         }}
                       >
                         {r.forecast > 0
@@ -679,8 +666,6 @@ export default function DemandForecast({
             marginTop: 12,
             padding: "10px 16px",
             background: "rgba(255,255,255,0.05)",
-            backdropFilter: "blur(12px) saturate(180%)",
-            WebkitBackdropFilter: "blur(12px) saturate(180%)",
             borderRadius: 8,
             border: "1px solid rgba(255,255,255,0.1)",
             boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
@@ -704,8 +689,6 @@ export default function DemandForecast({
           marginTop: 8,
           padding: "10px 16px",
           background: "rgba(255,255,255,0.03)",
-          backdropFilter: "blur(12px) saturate(180%)",
-          WebkitBackdropFilter: "blur(12px) saturate(180%)",
           borderRadius: 8,
           border: "1px solid rgba(255,255,255,0.1)",
           fontSize: 11,

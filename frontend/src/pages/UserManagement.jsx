@@ -20,10 +20,7 @@ const inputStyle = {
   border: "1px solid rgba(255,255,255,0.13)",
   borderRadius: 6,
   fontSize: 13,
-  fontFamily: "inherit",
   background: "rgba(255,255,255,0.07)",
-  backdropFilter: "blur(8px) saturate(180%)",
-  WebkitBackdropFilter: "blur(8px) saturate(180%)",
   color: "#e0e0e0",
   outline: "none",
   boxSizing: "border-box",
@@ -200,7 +197,7 @@ export default function UserManagement({ currentUser, toast, onRefreshUser, cate
         </div>
         <button
           onClick={() => { setShowModal(true); setEditingId(null); setForm(emptyForm); }}
-          style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", color: "#fff", padding: "9px 18px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
+          style={{ background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", color: "#fff", padding: "9px 18px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
         >
           + Add User
         </button>
@@ -358,17 +355,24 @@ export default function UserManagement({ currentUser, toast, onRefreshUser, cate
           {/* Actions */}
           <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
             <button onClick={handleSubmit} style={{
-              padding: "10px 24px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", color: "#fff",
+              padding: "10px 24px", background: "rgba(255,255,255,0.08)",  color: "#fff",
               border: "1px solid rgba(255,255,255,0.18)", borderRadius: 7, fontWeight: 500, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
             }}>
               {editingId ? "✅ Update User" : "✓ Create User"}
             </button>
             <button onClick={() => { setShowModal(false); setEditingId(null); setForm(emptyForm); }} style={{
-              padding: "10px 20px", background: "rgba(255,255,255,0.05)", color: "#aaa",
-              border: "1px solid rgba(255,255,255,0.1)", borderRadius: 7, fontWeight: 500, fontSize: 13, cursor: "pointer",
-            }}>
-              Cancel
-            </button>
+                      background: "transparent",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}><i className="fa-solid fa-xmark" /> Cancel</button>
           </div>
         </Modal>
       )}
@@ -392,7 +396,7 @@ export default function UserManagement({ currentUser, toast, onRefreshUser, cate
 
           return (
             <div key={user._id} style={{
-              background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10,
+              background: "rgba(255,255,255,0.05)",  border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10,
               padding: "16px 20px", display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap",
             }}>
               <div style={{
@@ -429,9 +433,18 @@ export default function UserManagement({ currentUser, toast, onRefreshUser, cate
 
               <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
                 <button onClick={() => handleEdit(user)} style={{
-                  padding: "7px 18px", background: "#1976D222", color: "#64B5F6",
-                  border: "1px solid #1976D244", borderRadius: 6, fontWeight: 500, fontSize: 12, cursor: "pointer",
-                }}>Edit</button>
+                      background: "transparent",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}><i className="fa-solid fa-pen-to-square" /> Edit</button>
                 <button onClick={() => handleToggleStatus(user._id, user.isActive)} style={{
                   padding: "7px 18px",
                   background: user.isActive ? "#f4433611" : "#4CAF5011",
@@ -440,7 +453,7 @@ export default function UserManagement({ currentUser, toast, onRefreshUser, cate
                   borderRadius: 6, fontWeight: 500, fontSize: 12, cursor: "pointer",
                 }}>{user.isActive ? "Deactivate" : "Activate"}</button>
                 <button onClick={() => handleDelete(user._id)} style={{
-                  background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", color: "#fff", border: "1px solid rgba(255,255,255,0.18)",
+                  background: "rgba(255,255,255,0.08)",  color: "#fff", border: "1px solid rgba(255,255,255,0.18)",
                   borderRadius: 6, padding: "4px 14px", fontSize: 12, fontWeight: 500,
                   cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)", display: "flex", alignItems: "center", gap: 6,
                 }}>🗑️ Delete</button>

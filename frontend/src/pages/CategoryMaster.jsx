@@ -18,10 +18,7 @@ const inputStyle = {
   border: "1px solid rgba(255,255,255,0.13)",
   borderRadius: 6,
   fontSize: 13,
-  fontFamily: "inherit",
   background: "rgba(255,255,255,0.07)",
-  backdropFilter: "blur(8px) saturate(180%)",
-  WebkitBackdropFilter: "blur(8px) saturate(180%)",
   color: "#e0e0e0",
   outline: "none",
   boxSizing: "border-box",
@@ -436,8 +433,6 @@ export default function CategoryMaster({ toast, canExportImport = true }) {
         <div
           style={{
             background: "rgba(255,255,255,0.05)",
-            backdropFilter: "blur(12px) saturate(180%)",
-            WebkitBackdropFilter: "blur(12px) saturate(180%)",
             border: "1px solid rgba(255,255,255,0.1)",
             borderRadius: "10px 0 0 10px",
             padding: "16px",
@@ -641,8 +636,6 @@ export default function CategoryMaster({ toast, canExportImport = true }) {
         <div
           style={{
             background: "rgba(255,255,255,0.04)",
-            backdropFilter: "blur(12px) saturate(180%)",
-            WebkitBackdropFilter: "blur(12px) saturate(180%)",
             border: "1px solid rgba(255,255,255,0.1)",
             borderRadius: "0 10px 10px 0",
             padding: "20px 24px",

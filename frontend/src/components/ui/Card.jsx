@@ -1,13 +1,11 @@
 import { COLORS } from '../../constants';
 
-export function Card({ children, style = {}, onClick }) {
+export function Card({ children, style = {}, onClick, className = '' }) {
   return (
     <div
       onClick={onClick}
+      className={`lg-surface ${className}`.trim()}
       style={{
-        background: COLORS.card,
-        border: `1px solid ${COLORS.border}`,
-        borderRadius: 10,
         padding: 20,
         ...style
       }}

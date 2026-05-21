@@ -1021,8 +1021,6 @@ export default function JobOrders(props) {
             }}
             style={{
               background: "rgba(255,255,255,0.08)",
-              backdropFilter: "blur(12px) saturate(180%)",
-              WebkitBackdropFilter: "blur(12px) saturate(180%)",
               border: "1px solid rgba(255,255,255,0.18)",
               color: "#fff",
               padding: "9px 18px",
@@ -1133,7 +1131,6 @@ export default function JobOrders(props) {
                       }`,
                       borderRadius: 6,
                       fontSize: 13,
-                      fontFamily: "inherit",
                       background: "#141414",
                       color:
                         header.priority === "VIP"
@@ -1992,7 +1989,6 @@ export default function JobOrders(props) {
                           fontSize: 22,
                           fontWeight: 800,
                           color: "#fff",
-                          fontFamily: "'JetBrains Mono', monospace",
                         }}
                       >
                         {value}
@@ -2235,7 +2231,6 @@ export default function JobOrders(props) {
                               <td
                                 style={{
                                   padding: "11px 14px",
-                                  fontFamily: "'JetBrains Mono', monospace",
                                   fontWeight: 700,
                                   color: "#facc15",
                                   whiteSpace: "nowrap",
@@ -2280,7 +2275,6 @@ export default function JobOrders(props) {
                               <td
                                 style={{
                                   padding: "11px 14px",
-                                  fontFamily: "'JetBrains Mono', monospace",
                                   color: "#e2e8f0",
                                 }}
                               >

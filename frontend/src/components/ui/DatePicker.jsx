@@ -147,7 +147,7 @@ export function DatePicker({ value, onChange, style = {} }) {
       <div style={{ marginTop: 10, borderTop: `1px solid ${COLORS.border}`, paddingTop: 8, textAlign: "center" }}>
         <button
           onClick={() => { const now = new Date(); setViewDate({ year: now.getFullYear(), month: now.getMonth() }); select(now.getDate()); }}
-          style={{ background: "none", border: `1px solid ${COLORS.border}`, borderRadius: 5, color: COLORS.muted, fontSize: 11, padding: "3px 12px", cursor: "pointer", fontFamily: "'Syne',sans-serif" }}
+          style={{ background: "none", border: `1px solid ${COLORS.border}`, borderRadius: 5, color: COLORS.muted, fontSize: 11, padding: "3px 12px", cursor: "pointer" }}
         >
           Today
         </button>

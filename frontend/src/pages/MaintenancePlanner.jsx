@@ -23,7 +23,7 @@ const save = (k, v) => localStorage.setItem(k, JSON.stringify(v));
 
 const inp = {
   padding: "9px 12px", border: "1px solid #2a2a2a", borderRadius: 6,
-  fontSize: 13, fontFamily: "inherit", background: "#141414",
+  fontSize: 13, background: "#141414",
   color: "#e0e0e0", outline: "none", width: "100%", boxSizing: "border-box",
 };
 const lbl = {
@@ -203,8 +203,20 @@ function PMSchedulerTab({ machineMaster, toast }) {
               </div>
             </div>
             <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
-              <button onClick={saveInterval} style={{ padding: "9px 20px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>Save Schedule</button>
-              <button onClick={() => setEditMachineId(null)} style={{ padding: "9px 14px", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, color: "#aaa", cursor: "pointer" }}>Cancel</button>
+              <button onClick={saveInterval} style={{ padding: "9px 20px", background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>Save Schedule</button>
+              <button onClick={() => setEditMachineId(null)} style={{
+                      background: "transparent",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}><i className="fa-solid fa-xmark" /> Cancel</button>
             </div>
           </div>
         );
@@ -256,7 +268,7 @@ function PMSchedulerTab({ machineMaster, toast }) {
                         <button
                           onClick={() => createPMWorkOrder(s)}
                           disabled={creating[s.mid]}
-                          style={{ padding: "4px 10px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 4, color: "#fff", fontSize: 11, fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
+                          style={{ padding: "4px 10px", background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", borderRadius: 4, color: "#fff", fontSize: 11, fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
                         >
                           {creating[s.mid] ? "..." : "⚡ Create WO"}
                         </button>
@@ -411,7 +423,7 @@ function SparePartsTab({ machineMaster, itemMasterFG = [], categoryMaster = [], 
           )}
           <button
             onClick={() => { setForm(blankForm); setEditId(null); setShowModal(true); }}
-            style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", color: "#fff", padding: "9px 18px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
+            style={{ background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", color: "#fff", padding: "9px 18px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
           >
             + Add Part
           </button>
@@ -422,8 +434,6 @@ function SparePartsTab({ machineMaster, itemMasterFG = [], categoryMaster = [], 
               style={{
                 padding: "7px 16px",
                 background: view === v ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.05)",
-                backdropFilter: "blur(12px) saturate(180%)",
-                WebkitBackdropFilter: "blur(12px) saturate(180%)",
                 border: `1px solid ${view === v ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.18)"}`,
                 borderRadius: 6,
                 color: "#fff",
@@ -506,8 +516,20 @@ function SparePartsTab({ machineMaster, itemMasterFG = [], categoryMaster = [], 
             </div>
           </div>
           <div style={{ display: "flex", gap: 10 }}>
-            <button onClick={handleSubmit} style={{ padding: "9px 22px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>{editId ? "Update" : "Add Part"}</button>
-            <button onClick={() => { setForm(blankForm); setEditId(null); setShowModal(false); }} style={{ padding: "9px 14px", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, color: "#aaa", cursor: "pointer" }}>Cancel</button>
+            <button onClick={handleSubmit} style={{ padding: "9px 22px", background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>{editId ? "Update" : "Add Part"}</button>
+            <button onClick={() => { setForm(blankForm); setEditId(null); setShowModal(false); }} style={{
+                      background: "transparent",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}><i className="fa-solid fa-xmark" /> Cancel</button>
           </div>
           </div>
         </Modal>
@@ -612,7 +634,7 @@ function SparePartsTab({ machineMaster, itemMasterFG = [], categoryMaster = [], 
               />
               <button
                 onClick={fetchUsageLogs}
-                style={{ padding: "6px 14px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontSize: 12, fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
+                style={{ padding: "6px 14px", background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontSize: 12, fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
               >
                 {logsLoading ? "Loading…" : "Refresh"}
               </button>

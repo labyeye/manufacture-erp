@@ -15,7 +15,7 @@ const save = (k, v) => localStorage.setItem(k, JSON.stringify(v));
 
 const inp = {
   padding: "9px 12px", border: "1px solid #2a2a2a", borderRadius: 6,
-  fontSize: 13, fontFamily: "inherit", background: "#141414",
+  fontSize: 13, background: "#141414",
   color: "#e0e0e0", outline: "none", width: "100%", boxSizing: "border-box",
 };
 const lbl = { fontSize: 11, fontWeight: 600, color: "#666", display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.04em" };
@@ -173,7 +173,7 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
           </div>
         </div>
         <button onClick={() => { setForm(blankForm); setEditId(null); setShowModal(true); }}
-          style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", color: "#fff", padding: "9px 18px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
+          style={{ background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", color: "#fff", padding: "9px 18px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
           + New Artwork
         </button>
       </div>
@@ -226,8 +226,20 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
             </div>
           </div>
           <div style={{ display: "flex", gap: 10 }}>
-            <button onClick={handleSubmit} style={{ padding: "9px 22px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>{editId ? "Save Changes" : "Register Artwork"}</button>
-            <button onClick={() => { setForm(blankForm); setEditId(null); setShowModal(false); }} style={{ padding: "9px 14px", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, color: "#aaa", cursor: "pointer" }}>Cancel</button>
+            <button onClick={handleSubmit} style={{ padding: "9px 22px", background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>{editId ? "Save Changes" : "Register Artwork"}</button>
+            <button onClick={() => { setForm(blankForm); setEditId(null); setShowModal(false); }} style={{
+                      background: "transparent",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}><i className="fa-solid fa-xmark" /> Cancel</button>
           </div>
         </Modal>
       )}
@@ -266,13 +278,13 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
                     </button>
                     {rec.fileDataUrl && (
                       <button onClick={() => window.open(rec.fileDataUrl, "_blank")}
-                        style={{ padding: "4px 10px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 4, color: "#fff", fontSize: 11, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
+                        style={{ padding: "4px 10px", background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", borderRadius: 4, color: "#fff", fontSize: 11, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
                         📎 File
                       </button>
                     )}
                     {rec.currentStage === "client_approved" && (
                       <button onClick={() => versionUp(rec)}
-                        style={{ padding: "4px 10px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 4, color: "#fff", fontSize: 11, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
+                        style={{ padding: "4px 10px", background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", borderRadius: 4, color: "#fff", fontSize: 11, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
                         + New Version
                       </button>
                     )}
@@ -409,7 +421,7 @@ function DielineTab({ jobOrders, toast }) {
           <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>Cutting patterns as versioned assets · dimensions · compatible machines · client history</div>
         </div>
         <button onClick={() => { setForm(blankForm); setEditId(null); setShowModal(true); }}
-          style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", color: "#fff", padding: "9px 18px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
+          style={{ background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", color: "#fff", padding: "9px 18px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
           + Add Dieline
         </button>
       </div>
@@ -431,8 +443,20 @@ function DielineTab({ jobOrders, toast }) {
             </div>
           </div>
           <div style={{ display: "flex", gap: 10 }}>
-            <button onClick={handleSubmit} style={{ padding: "9px 22px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>{editId ? "Save" : "Add Dieline"}</button>
-            <button onClick={() => { setForm(blankForm); setEditId(null); setShowModal(false); }} style={{ padding: "9px 14px", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, color: "#aaa", cursor: "pointer" }}>Cancel</button>
+            <button onClick={handleSubmit} style={{ padding: "9px 22px", background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>{editId ? "Save" : "Add Dieline"}</button>
+            <button onClick={() => { setForm(blankForm); setEditId(null); setShowModal(false); }} style={{
+                      background: "transparent",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}><i className="fa-solid fa-xmark" /> Cancel</button>
           </div>
         </Modal>
       )}

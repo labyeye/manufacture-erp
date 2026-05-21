@@ -16,7 +16,7 @@ const save = (key, v) => localStorage.setItem(key, JSON.stringify(v));
 
 const inp = {
   padding: "9px 12px", border: "1px solid #2a2a2a", borderRadius: 6,
-  fontSize: 13, fontFamily: "inherit", background: "#141414",
+  fontSize: 13, background: "#141414",
   color: "#e0e0e0", outline: "none", width: "100%", boxSizing: "border-box",
 };
 const lbl = {
@@ -171,7 +171,7 @@ function FAITab({ jobOrders, toast }) {
         </div>
         <button
           onClick={() => { setForm(blankForm); setEditId(null); setShowModal(true); }}
-          style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", color: "#fff", padding: "9px 18px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
+          style={{ background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", color: "#fff", padding: "9px 18px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
         >
           + New Inspection
         </button>
@@ -267,7 +267,7 @@ function FAITab({ jobOrders, toast }) {
               ))}
               <button
                 onClick={() => setF("measurements", [...form.measurements, { key: "", value: "" }])}
-                style={{ padding: "6px 12px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 5, color: "#fff", fontSize: 11, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
+                style={{ padding: "6px 12px", background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", borderRadius: 5, color: "#fff", fontSize: 11, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
               >
                 + Add Parameter
               </button>
@@ -300,12 +300,22 @@ function FAITab({ jobOrders, toast }) {
           </div>
 
           <div style={{ display: "flex", gap: 10 }}>
-            <button onClick={handleSubmit} style={{ padding: "10px 24px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
+            <button onClick={handleSubmit} style={{ padding: "10px 24px", background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
               {editId ? "Save Changes" : "Submit Inspection"}
             </button>
-            <button onClick={() => { setForm(blankForm); setEditId(null); setShowModal(false); }} style={{ padding: "10px 18px", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, color: "#aaa", cursor: "pointer" }}>
-              Cancel
-            </button>
+            <button onClick={() => { setForm(blankForm); setEditId(null); setShowModal(false); }} style={{
+                      background: "transparent",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}><i className="fa-solid fa-xmark" /> Cancel</button>
           </div>
           </div>
         </Modal>
@@ -327,7 +337,7 @@ function FAITab({ jobOrders, toast }) {
               <div key={r.id} style={{ borderBottom: "1px solid #1a1a1a", padding: "14px 4px", display: "flex", flexDirection: "column", gap: 8 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
                   <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-                    <span style={{ fontFamily: "monospace", color: "#facc15", fontWeight: 700 }}>{r.joRef}</span>
+                    <span style={{  color: "#facc15", fontWeight: 700 }}>{r.joRef}</span>
                     <span style={{ fontSize: 12, color: "#888" }}>{jo?.companyName || ""}</span>
                     <span style={{ fontSize: 12, color: "#aaa" }}>Sample #{r.sampleNo}</span>
                     <span style={{ padding: "2px 8px", background: color + "22", border: `1px solid ${color}44`, borderRadius: 4, fontSize: 11, color, fontWeight: 700 }}>
@@ -519,8 +529,32 @@ function SupplierTab({ purchaseOrders, inward, vendorMaster, toast }) {
               <label style={lbl}>Notes</label>
               <input value={rForm.notes} onChange={(e) => setRForm((f) => ({ ...f, notes: e.target.value }))} style={inp} placeholder="e.g. replies same day, tracks PO proactively" />
             </div>
-            <button onClick={saveResponsiveness} style={{ padding: "9px 18px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>Save</button>
-            <button onClick={() => setEditVendor(null)} style={{ padding: "9px 14px", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, color: "#aaa", cursor: "pointer" }}>Cancel</button>
+            <button onClick={saveResponsiveness} style={{
+                      background: "transparent",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}><i className="fa-solid fa-floppy-disk" /> Save</button>
+            <button onClick={() => setEditVendor(null)} style={{
+                      background: "transparent",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}><i className="fa-solid fa-xmark" /> Cancel</button>
           </div>
         </div>
       )}

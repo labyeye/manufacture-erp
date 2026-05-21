@@ -44,13 +44,10 @@ function ErrorToast({ message, onClose }) {
       <div
         style={{
           background: "rgba(255,255,255,0.23)",
-          backdropFilter: "blur(8px) saturate(200%)",
-          WebkitBackdropFilter: "blur(8px) saturate(200%)",
           border: "1px solid rgba(239,68,68,0.3)",
           borderRadius: 10,
           boxShadow: "0 4px 24px rgba(0,0,0,0.5), 0 1px 4px rgba(0,0,0,0.3)",
           overflow: "hidden",
-          backdropFilter: "blur(16px)",
         }}
       >
         <div
@@ -305,9 +302,6 @@ export function LoginScreen() {
     color: C.text,
     background: "rgba(255,255,255,0.23)",
     outline: "none",
-    backdropFilter: "blur(8px) saturate(200%)",
-    WebkitBackdropFilter: "blur(8px) saturate(200%)",
-    fontFamily: "'Poppins', sans-serif",
     transition: "border 0.2s, box-shadow 0.2s",
   };
 
@@ -324,8 +318,6 @@ export function LoginScreen() {
   const btnStyle = (disabled) => ({
     width: "100%",
     background: "rgba(255,255,255,0.1)",
-    backdropFilter: "blur(14px) saturate(180%)",
-    WebkitBackdropFilter: "blur(14px) saturate(180%)",
     color: "#fff",
     border: `1px solid ${disabled ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.22)"}`,
     borderRadius: 12,
@@ -338,7 +330,6 @@ export function LoginScreen() {
     marginTop: 4,
     letterSpacing: "-0.01em",
     boxShadow: disabled ? "none" : "0 4px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.18)",
-    fontFamily: "'Poppins', sans-serif",
   });
 
   const linkBtn = {
@@ -350,7 +341,6 @@ export function LoginScreen() {
     padding: 0,
     fontWeight: 500,
     textDecoration: "underline",
-    fontFamily: "'Poppins', sans-serif",
   };
 
   const ErrorBox = ({ msg }) =>

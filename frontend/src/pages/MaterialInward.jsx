@@ -52,12 +52,74 @@ export default function MaterialInward({
 }) {
   const canEdit = editableTabs.includes("inward");
   const [loading, setLoading] = useState(false);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [actionMenuId, setActionMenuId] = useState(null);
+  const [hoveredRowId, setHoveredRowId] = useState(null);
+  const [hoveredGrnId, setHoveredGrnId] = useState(null);
   const today = () => new Date().toISOString().split("T")[0];
   const uid = () => Math.random().toString(36).substr(2, 9);
   const fmt = (n) => (+n || 0).toLocaleString("en-IN");
+  const fmtLakh = (n) => {
+    const v = +(n || 0);
+    if (Math.abs(v) >= 1e7) return `₹${(v / 1e7).toFixed(2)}Cr`;
+    if (Math.abs(v) >= 1e5) return `₹${(v / 1e5).toFixed(2)}L`;
+    if (Math.abs(v) >= 1e3) return `₹${(v / 1e3).toFixed(1)}K`;
+    return `₹${fmt(v)}`;
+  };
+  const fmtTime = () =>
+    new Date().toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  const getInitials = (name = "") => {
+    const clean = String(name).trim();
+    if (!clean) return "—";
+    const parts = clean.split(/\s+/).filter(Boolean);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  };
+  const AVATAR_PALETTE = [
+    "#60a5fa",
+    "#34d399",
+    "#f59e0b",
+    "#a78bfa",
+    "#f472b6",
+    "#22d3ee",
+  ];
+  const VENDOR_COLOR_MAP = {
+    MLJ: "#34d399",
+    PERMA: "#60a5fa",
+    BHARAT: "#f59e0b",
+  };
+  const vendorColor = (name = "") => {
+    if (!name) return AVATAR_PALETTE[0];
+    const upper = String(name).toUpperCase();
+    for (const key of Object.keys(VENDOR_COLOR_MAP)) {
+      if (upper.startsWith(key)) return VENDOR_COLOR_MAP[key];
+    }
+    let h = 0;
+    for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) | 0;
+    return AVATAR_PALETTE[Math.abs(h) % AVATAR_PALETTE.length];
+  };
+  const locationPillStyle = (loc) => {
+    const isTeal = (loc || "").toLowerCase().includes("vijay");
+    return {
+      display: "inline-block",
+      padding: "2px 10px",
+      borderRadius: 999,
+      fontSize: 11,
+      fontWeight: 600,
+      background: isTeal ? "rgba(20,184,166,0.15)" : "rgba(255,255,255,0.06)",
+      color: isTeal ? "#5eead4" : "#cbd5e1",
+      border: `1px solid ${isTeal ? "rgba(20,184,166,0.30)" : "rgba(255,255,255,0.12)"}`,
+    };
+  };
+  const truncate = (s, n = 14) =>
+    !s ? "" : s.length > n ? s.slice(0, n) + "…" : s;
 
   const blankHeader = {
     date: today(),
@@ -196,8 +258,16 @@ export default function MaterialInward({
       console.error(error);
     } finally {
       setLoading(false);
+      setInitialLoad(false);
     }
   };
+
+  useEffect(() => {
+    if (actionMenuId == null) return;
+    const handler = () => setActionMenuId(null);
+    document.addEventListener("click", handler);
+    return () => document.removeEventListener("click", handler);
+  }, [actionMenuId]);
 
   const setH = (k, v) => {
     setHeader((f) => {
@@ -567,44 +637,59 @@ export default function MaterialInward({
         inwardNo: data.inwardNo || "",
       });
 
-      const loadedItems = (data.items || [{ ...blankItem, _id: uid() }]).map((it) => {
-        // Try to enrich missing fields from item master
-        const master = it.productCode
-          ? itemMasterItems.find(
-              (x) => (x.code || "").trim().toLowerCase() === (it.productCode || "").trim().toLowerCase()
-            )
-          : null;
+      const loadedItems = (data.items || [{ ...blankItem, _id: uid() }]).map(
+        (it) => {
+          // Try to enrich missing fields from item master
+          const master = it.productCode
+            ? itemMasterItems.find(
+                (x) =>
+                  (x.code || "").trim().toLowerCase() ===
+                  (it.productCode || "").trim().toLowerCase(),
+              )
+            : null;
 
-        const subCategory = it.subCategory || it.paperType || master?.subCategory || "";
-        const category = it.category || master?.category || "";
-        const widthMm = it.widthMm || master?.width || "";
-        const lengthMm = it.lengthMm || master?.length || "";
-        const gsm = it.gsm || master?.gsm || "";
-        const gstRate = it.gstRate || master?.gstRate || 18;
-        const hsnCode = it.hsnCode || master?.hsnCode || "";
-        const itemName = it.itemName || master?.name || "";
+          const subCategory =
+            it.subCategory || it.paperType || master?.subCategory || "";
+          const category = it.category || master?.category || "";
+          const widthMm = it.widthMm || master?.width || "";
+          const lengthMm = it.lengthMm || master?.length || "";
+          const gsm = it.gsm || master?.gsm || "";
+          const gstRate = it.gstRate || master?.gstRate || 18;
+          const hsnCode = it.hsnCode || master?.hsnCode || "";
+          const itemName = it.itemName || master?.name || "";
 
-        const qty = +(it.qty || 0);
-        const rate = +(it.rate || 0);
-        const gst = +gstRate;
-        const amount = +(it.amount || 0) || qty * rate;
-        const tax = (amount * gst) / 100;
+          const qty = +(it.qty || 0);
+          const rate = +(it.rate || 0);
+          const gst = +gstRate;
+          const amount = +(it.amount || 0) || qty * rate;
+          const tax = (amount * gst) / 100;
 
-        return {
-          ...it,
-          itemName,
-          category,
-          subCategory,
-          widthMm,
-          lengthMm,
-          gsm,
-          gstRate,
-          hsnCode,
-          amount: it.amount || (amount > 0 ? amount.toFixed(2) : ""),
-          taxAmount: (it.taxAmount && +it.taxAmount !== 0) ? it.taxAmount : (tax > 0 ? tax.toFixed(2) : ""),
-          totalWithTax: (it.totalWithTax && +it.totalWithTax !== 0) ? it.totalWithTax : (amount > 0 ? (amount + tax).toFixed(2) : ""),
-        };
-      });
+          return {
+            ...it,
+            itemName,
+            category,
+            subCategory,
+            widthMm,
+            lengthMm,
+            gsm,
+            gstRate,
+            hsnCode,
+            amount: it.amount || (amount > 0 ? amount.toFixed(2) : ""),
+            taxAmount:
+              it.taxAmount && +it.taxAmount !== 0
+                ? it.taxAmount
+                : tax > 0
+                  ? tax.toFixed(2)
+                  : "",
+            totalWithTax:
+              it.totalWithTax && +it.totalWithTax !== 0
+                ? it.totalWithTax
+                : amount > 0
+                  ? (amount + tax).toFixed(2)
+                  : "",
+          };
+        },
+      );
       setItems(loadedItems);
       setItemErrors(loadedItems.map(() => ({})));
       setEditId(data._id);
@@ -700,8 +785,57 @@ export default function MaterialInward({
         return d >= drDateFrom && d <= drDateTo;
       });
     }
+    list.sort((a, b) => {
+      const da = (a.inwardDate || a.createdAt || "").slice(0, 10);
+      const db = (b.inwardDate || b.createdAt || "").slice(0, 10);
+      if (db !== da) return db.localeCompare(da);
+      return String(b._id || "").localeCompare(String(a._id || ""));
+    });
     return list;
   }, [inward, search, drDateFrom, drDateTo]);
+
+  const inwardSummary = useMemo(() => {
+    const list = filteredInwards;
+    const totalValue = list.reduce(
+      (s, r) =>
+        s + (r.items || []).reduce((ss, it) => ss + +(it.amount || 0), 0),
+      0,
+    );
+    const totalWeight = list.reduce(
+      (s, r) =>
+        s + (r.items || []).reduce((ss, it) => ss + +(it.weight || 0), 0),
+      0,
+    );
+    const thisMonth = new Date().toISOString().slice(0, 7);
+    const thisMonthCount = list.filter(
+      (r) => (r.inwardDate || "").slice(0, 7) === thisMonth,
+    ).length;
+    const todayStr = today();
+    const addedToday = list.filter(
+      (r) => (r.inwardDate || "").slice(0, 10) === todayStr,
+    ).length;
+    const lastMonthStr = (() => {
+      const d = new Date();
+      d.setMonth(d.getMonth() - 1);
+      return d.toISOString().slice(0, 7);
+    })();
+    const lastMonthCount = list.filter(
+      (r) => (r.inwardDate || "").slice(0, 7) === lastMonthStr,
+    ).length;
+    const count = list.length || 1;
+    const avgWeight = totalWeight / count;
+    const avgValue = totalValue / count;
+    return {
+      count: list.length,
+      totalValue,
+      totalWeight,
+      thisMonthCount,
+      addedToday,
+      lastMonthCount,
+      avgWeight,
+      avgValue,
+    };
+  }, [filteredInwards]);
 
   const handleExportExcel = () => {
     const headers = [
@@ -925,1103 +1059,1242 @@ export default function MaterialInward({
 
   return (
     <>
-    <div className="fade">
-      <SectionTitle
-        icon="fa-solid fa-truck-ramp-box"
-        title="Material Inward"
-        sub="Record incoming paper / board material receipts"
-      />
+      <div className="fade">
+        <SectionTitle
+          icon="fa-solid fa-truck-ramp-box"
+          title="Material Inward"
+          sub="Record incoming paper / board material receipts"
+        >
+          {canEdit && (
+            <button
+              onClick={() => {
+                setEditId(null);
+                setHeader(blankHeader);
+                setItems([{ ...blankItem, _id: uid() }]);
+                setHeaderErrors({});
+                setItemErrors([{}]);
+                setShowModal(true);
+              }}
+              style={{
+                background: C.accent + "22",
+                color: C.accent,
+                border: `1px solid ${C.accent}44`,
+                padding: "9px 18px",
+                borderRadius: 6,
+                fontWeight: 500,
+                fontSize: 13,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <i className="fa-solid fa-plus" /> New Material Inward
+            </button>
+          )}
+        </SectionTitle>
 
-      {canEdit && (
-        <div style={{ marginBottom: 20 }}>
-          <button
-            onClick={() => {
+        {showModal && (
+          <Modal
+            title={editId ? "Edit Material Inward" : "New Material Inward"}
+            onClose={() => {
+              setShowModal(false);
               setEditId(null);
               setHeader(blankHeader);
               setItems([{ ...blankItem, _id: uid() }]);
               setHeaderErrors({});
               setItemErrors([{}]);
-              setShowModal(true);
-            }}
-            style={{
-              background: "rgba(255,255,255,0.08)",
-              backdropFilter: "blur(12px) saturate(180%)",
-              WebkitBackdropFilter: "blur(12px) saturate(180%)",
-              border: "1px solid rgba(255,255,255,0.18)",
-              color: "#fff",
-              padding: "9px 18px",
-              borderRadius: 10,
-              fontWeight: 600,
-              fontSize: 13,
-              cursor: "pointer",
-              boxShadow:
-                "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
             }}
           >
-            + New Material Inward
-          </button>
-        </div>
-      )}
-
-      {showModal && (
-        <Modal
-          title={editId ? "Edit Material Inward" : "New Material Inward"}
-          onClose={() => {
-            setShowModal(false);
-            setEditId(null);
-            setHeader(blankHeader);
-            setItems([{ ...blankItem, _id: uid() }]);
-            setHeaderErrors({});
-            setItemErrors([{}]);
-          }}
-        >
-          <div>
-            {editId && (
-              <div
-                style={{
-                  marginBottom: 16,
-                  padding: "12px 14px",
-                  background: C.blue + "11",
-                  border: `1px solid ${C.blue}22`,
-                  borderRadius: 6,
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <span style={{ fontSize: 13, color: C.blue, fontWeight: 600 }}>
-                  Edit Mode
-                </span>
-                <button
-                  onClick={() => {
-                    setEditId(null);
-                    setHeader(blankHeader);
-                    setItems([{ ...blankItem, _id: uid() }]);
-                    setHeaderErrors({});
-                    setItemErrors([{}]);
-                    setShowModal(false);
-                  }}
-                  style={{
-                    background: "transparent",
-                    color: C.blue,
-                    border: `1px solid ${C.blue}`,
-                    borderRadius: 5,
-                    padding: "4px 12px",
-                    fontWeight: 500,
-                    fontSize: 12,
-                    cursor: "pointer",
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
-            )}
-            <Card style={{ marginBottom: 16 }}>
-              <h3
-                style={{
-                  fontSize: 14,
-                  fontWeight: 500,
-                  color: C.blue,
-                  marginBottom: 16,
-                }}
-              >
-                Invoice Details
-              </h3>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-                  gap: 14,
-                }}
-              >
-                <Field label="GRN No">
-                  <input
-                    readOnly
-                    placeholder="— Auto-generated —"
-                    value={header.inwardNo}
-                    style={{ color: C.muted, background: "transparent" }}
-                  />
-                </Field>
-                <Field label="Date *">
-                  <DatePicker
-                    value={header.date}
-                    onChange={(v) => setH("date", v)}
-                    style={EH("date")}
-                  />
-                  {EHMsg("date")}
-                </Field>
-                <Field label="PO Reference">
-                  <select
-                    value={header.poRef || ""}
-                    onChange={(e) => setH("poRef", e.target.value)}
-                  >
-                    <option value="">-- Link to PO (optional) --</option>
-                    {(poList && poList.length > 0
-                      ? poList
-                      : purchaseOrders || []
-                    )
-                      .filter((p) => {
-                        const s = (p.status || p.poStatus || "Open")
-                          .toString()
-                          .trim()
-                          .toLowerCase();
-                        return (
-                          s !== "received" &&
-                          s !== "fulfilled" &&
-                          s !== "closed" &&
-                          s !== "completed"
-                        );
-                      })
-                      .map((p) => (
-                        <option key={p.poNo} value={p.poNo}>
-                          {p.poNo} ({p.status || p.poStatus || "Open"}) —{" "}
-                          {p.vendor?.name ||
-                            p.vendor ||
-                            p.vendorName ||
-                            "Unknown Vendor"}
-                        </option>
-                      ))}
-                  </select>
-                </Field>
-                <Field label="Vendor Name *">
-                  <AutocompleteInput
-                    value={header.vendorName}
-                    onChange={(v) => setH("vendorName", v)}
-                    suggestions={(vendorMaster || []).map((v) => v.name)}
-                    placeholder="Supplier / Vendor name"
-                    inputStyle={EH("vendorName")}
-                  />
-                  {EHMsg("vendorName")}
-                </Field>
-                <Field label="Invoice Number *">
-                  <input
-                    placeholder="Invoice / DC number"
-                    value={header.invoiceNo}
-                    onChange={(e) => setH("invoiceNo", e.target.value)}
-                    style={EH("invoiceNo")}
-                  />
-                  {EHMsg("invoiceNo")}
-                </Field>
-                <Field label="Vehicle Number *">
-                  <input
-                    placeholder="e.g. DL01AB1234"
-                    value={header.vehicleNo}
-                    onChange={(e) => setH("vehicleNo", e.target.value)}
-                    style={EH("vehicleNo")}
-                  />
-                  {EHMsg("vehicleNo")}
-                </Field>
-                <Field label="Location / Store *">
-                  <select
-                    value={header.location}
-                    onChange={(e) => setH("location", e.target.value)}
-                    style={EH("location")}
-                  >
-                    <option value="">-- Select Location --</option>
-                    {LOCATIONS.map((l) => (
-                      <option key={l}>{l}</option>
-                    ))}
-                  </select>
-                  {EHMsg("location")}
-                </Field>
-                <Field label="Received By *">
-                  <input
-                    placeholder="Staff name"
-                    value={header.receivedBy}
-                    onChange={(e) => setH("receivedBy", e.target.value)}
-                    style={EH("receivedBy")}
-                  />
-                  {EHMsg("receivedBy")}
-                </Field>
-                <Field label="Remarks *" span={2}>
-                  <input
-                    placeholder="Condition of material, special notes..."
-                    value={header.remarks}
-                    onChange={(e) => setH("remarks", e.target.value)}
-                    style={EH("remarks")}
-                  />
-                  {EHMsg("remarks")}
-                </Field>
-              </div>
-            </Card>
-
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 10,
-              }}
-            >
-              <h3 style={{ fontSize: 14, fontWeight: 500, color: C.accent }}>
-                Material Items ({items.length})
-              </h3>
-              <button
-                onClick={addItem}
-                style={{
-                  background: "rgba(255,255,255,0.08)",
-                  backdropFilter: "blur(12px) saturate(180%)",
-                  WebkitBackdropFilter: "blur(12px) saturate(180%)",
-                  color: "#fff",
-                  border: "1px solid rgba(255,255,255,0.18)",
-                  borderRadius: 6,
-                  padding: "8px 18px",
-                  fontWeight: 500,
-                  fontSize: 13,
-                  boxShadow:
-                    "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
-                }}
-              >
-                + Add Item
-              </button>
-            </div>
-
-            {items.map((it, idx) => (
-              <Card key={it._id} style={{ marginBottom: 12 }}>
+            <div>
+              {editId && (
                 <div
                   style={{
+                    marginBottom: 16,
+                    padding: "12px 14px",
+                    background: C.blue + "11",
+                    border: `1px solid ${C.blue}22`,
+                    borderRadius: 6,
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    marginBottom: 14,
                   }}
                 >
                   <span
-                    style={{ fontWeight: 500, color: C.accent, fontSize: 13 }}
+                    style={{ fontSize: 13, color: C.blue, fontWeight: 600 }}
                   >
-                    Item {idx + 1}
+                    Edit Mode
                   </span>
-                  {items.length > 1 && (
-                    <button
-                      onClick={() => removeItem(idx)}
-                      style={{
-                        background: C.red + "22",
-                        color: C.red,
-                        border: "none",
-                        borderRadius: 5,
-                        padding: "4px 12px",
-                        fontWeight: 500,
-                        fontSize: 12,
-                      }}
-                    >
-                      Remove
-                    </button>
-                  )}
+                  <button
+                    onClick={() => {
+                      setEditId(null);
+                      setHeader(blankHeader);
+                      setItems([{ ...blankItem, _id: uid() }]);
+                      setHeaderErrors({});
+                      setItemErrors([{}]);
+                      setShowModal(false);
+                    }}
+                    style={{
+                      background: "transparent",
+                      color: C.blue,
+                      border: `1px solid ${C.blue}`,
+                      borderRadius: 5,
+                      padding: "4px 12px",
+                      fontWeight: 500,
+                      fontSize: 12,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Cancel
+                  </button>
                 </div>
+              )}
+              <Card style={{ marginBottom: 16 }}>
+                <h3
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 500,
+                    color: C.blue,
+                    marginBottom: 16,
+                  }}
+                >
+                  Invoice Details
+                </h3>
                 <div
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "repeat(5, 1fr)",
-                    gap: 12,
+                    gridTemplateColumns:
+                      "repeat(auto-fill, minmax(220px, 1fr))",
+                    gap: 14,
                   }}
                 >
-                  <Field label="Product Code">
-                    <AutocompleteInput
-                      value={it.productCode}
-                      onChange={(v) => setItem(idx, "productCode", v)}
-                      suggestions={sortedItemMasterItems.map(
-                        (i) => `${i.code} — ${i.name}`,
-                      )}
-                      placeholder="Type or select code (optional)"
+                  <Field label="GRN No">
+                    <input
+                      readOnly
+                      placeholder="— Auto-generated —"
+                      value={header.inwardNo}
+                      style={{ color: C.muted, background: "transparent" }}
                     />
                   </Field>
-                  <Field label="Material Type *">
+                  <Field label="Date *">
+                    <DatePicker
+                      value={header.date}
+                      onChange={(v) => setH("date", v)}
+                      style={EH("date")}
+                    />
+                    {EHMsg("date")}
+                  </Field>
+                  <Field label="PO Reference">
                     <select
-                      value={it.materialType || "Raw Material"}
-                      onChange={(e) =>
-                        setItem(idx, "materialType", e.target.value)
-                      }
+                      value={header.poRef || ""}
+                      onChange={(e) => setH("poRef", e.target.value)}
                     >
-                      <option value="Raw Material">Raw Material</option>
-                      <option value="Consumable">Consumable</option>
-                      <option value="Finished Goods">Finished Goods</option>
+                      <option value="">-- Link to PO (optional) --</option>
+                      {(poList && poList.length > 0
+                        ? poList
+                        : purchaseOrders || []
+                      )
+                        .filter((p) => {
+                          const s = (p.status || p.poStatus || "Open")
+                            .toString()
+                            .trim()
+                            .toLowerCase();
+                          return (
+                            s !== "received" &&
+                            s !== "fulfilled" &&
+                            s !== "closed" &&
+                            s !== "completed"
+                          );
+                        })
+                        .map((p) => (
+                          <option key={p.poNo} value={p.poNo}>
+                            {p.poNo} ({p.status || p.poStatus || "Open"}) —{" "}
+                            {p.vendor?.name ||
+                              p.vendor ||
+                              p.vendorName ||
+                              "Unknown Vendor"}
+                          </option>
+                        ))}
                     </select>
                   </Field>
-                  {(it.materialType === "Raw Material" || !it.materialType) && (
-                    <>
-                      <Field label="RM Item *">
-                        <select
-                          value={it.category}
-                          onChange={(e) =>
-                            setItem(idx, "category", e.target.value)
-                          }
-                          style={EI(idx, "category")}
-                        >
-                          <option value="">-- Select Item --</option>
-                          {rmItems.map((i) => (
-                            <option key={i} value={i}>
-                              {i}
-                            </option>
-                          ))}
-                        </select>
-                        {EIMsg(idx, "category")}
-                      </Field>
-                      <Field label="Paper Type *">
-                        <select
-                          value={it.subCategory}
-                          onChange={(e) =>
-                            setItem(idx, "subCategory", e.target.value)
-                          }
-                          disabled={!it.category}
-                          style={EI(idx, "subCategory")}
-                        >
-                          <option value="">
-                            {it.category
-                              ? "-- Select Paper Type --"
-                              : "-- Select RM Item first --"}
-                          </option>
-                          {(subCategoriesByItem[it.category] || []).map((p) => (
-                            <option key={p} value={p}>
-                              {p}
-                            </option>
-                          ))}
-                        </select>
-                        {EIMsg(idx, "subCategory")}
-                      </Field>
-                      {it.subCategory !== "Polycoated Blanks" && (
-                        <Field label="Width (mm) *">
-                          <input
-                            type="number"
-                            placeholder="e.g. 700"
-                            value={it.widthMm}
-                            onChange={(e) =>
-                              setItem(idx, "widthMm", e.target.value)
-                            }
-                            style={EI(idx, "widthMm")}
-                          />
-                          {EIMsg(idx, "widthMm")}
-                        </Field>
-                      )}
-
-                      {it.subCategory !== "Polycoated Blanks" &&
-                        (it.category === "Paper Sheets" ||
-                          it.category === "Paper Sheet") && (
-                          <Field label="Length (mm) *">
-                            <input
-                              type="number"
-                              placeholder="e.g. 1000"
-                              value={it.lengthMm}
-                              onChange={(e) =>
-                                setItem(idx, "lengthMm", e.target.value)
-                              }
-                              style={EI(idx, "lengthMm")}
-                            />
-                            {EIMsg(idx, "lengthMm")}
-                          </Field>
-                        )}
-                      <Field label="GSM *">
-                        <input
-                          type="number"
-                          placeholder="e.g. 90, 130, 250"
-                          value={it.gsm}
-                          onChange={(e) => setItem(idx, "gsm", e.target.value)}
-                          style={EI(idx, "gsm")}
-                        />
-                        {EIMsg(idx, "gsm")}
-                      </Field>
-                      {it.subCategory !== "Polycoated Blanks" &&
-                        (it.category === "Paper Sheets" ||
-                          it.category === "Paper Sheet") && (
-                          <Field label="# of Sheets *">
-                            <input
-                              type="number"
-                              placeholder="No. of sheets"
-                              value={it.noOfSheets}
-                              onChange={(e) =>
-                                setItem(idx, "noOfSheets", e.target.value)
-                              }
-                              style={EI(idx, "noOfSheets")}
-                            />
-                            {EIMsg(idx, "noOfSheets")}
-                          </Field>
-                        )}
-                      <Field label="Weight (kg) *">
-                        <input
-                          type="number"
-                          placeholder="Total weight"
-                          value={it.weight}
-                          onChange={(e) =>
-                            setItem(idx, "weight", e.target.value)
-                          }
-                          style={EI(idx, "weight")}
-                        />
-                        {EIMsg(idx, "weight")}
-                      </Field>
-                      <Field label="Rate (₹/kg) *">
-                        <input
-                          type="number"
-                          placeholder="Rate per kg"
-                          value={it.rate}
-                          onChange={(e) => setItem(idx, "rate", e.target.value)}
-                          style={EI(idx, "rate")}
-                        />
-                        {EIMsg(idx, "rate")}
-                      </Field>
-                      <Field label="Amount (₹)">
-                        <input
-                          readOnly
-                          value={
-                            it.amount
-                              ? `₹${fmt(+it.amount)}`
-                              : "-- Weight × Rate --"
-                          }
-                          style={{
-                            background: C.border + "22",
-                            fontWeight: 500,
-                            color: it.amount ? C.green : C.muted,
-                            fontFamily: "'JetBrains Mono', monospace",
-                          }}
-                        />
-                      </Field>
-                      <div style={{ gridColumn: "span 3" }} />
-                    </>
-                  )}
-                  {it.materialType === "Finished Goods" && (
-                    <>
-                      <Field label="Category">
-                        <input
-                          placeholder="e.g. Corrugated Box"
-                          value={it.category}
-                          onChange={(e) =>
-                            setItem(idx, "category", e.target.value)
-                          }
-                        />
-                      </Field>
-                      <Field label="Qty *">
-                        <input
-                          type="number"
-                          placeholder="0"
-                          value={it.qty}
-                          onChange={(e) => setItem(idx, "qty", e.target.value)}
-                          style={EI(idx, "qty")}
-                        />
-                      </Field>
-                      <div style={{ gridColumn: "span 3" }} />
-                    </>
-                  )}
-
-                  {it.materialType === "Consumable" && (
-                    <>
-                      <Field label="Category *">
-                        <select
-                          value={it.category}
-                          onChange={(e) =>
-                            setItem(idx, "category", e.target.value)
-                          }
-                          style={EI(idx, "category")}
-                        >
-                          <option value="">-- Select Category --</option>
-                          {consumableCategories.map((c) => (
-                            <option key={c} value={c}>
-                              {c}
-                            </option>
-                          ))}
-                        </select>
-                        {EIMsg(idx, "category")}
-                      </Field>
-
-                      <Field label="Size">
-                        <input
-                          placeholder="e.g. 200mm"
-                          value={it.size}
-                          onChange={(e) => setItem(idx, "size", e.target.value)}
-                        />
-                      </Field>
-
-                      {it.category === "Corrugated Box" ||
-                      it.category === "LDPE Polybag" ? (
-                        <>
-                          <div
-                            style={{
-                              gridColumn: "1 / -1",
-                              height: 1,
-                              margin: "4px 0",
-                            }}
-                          />
-                          <Field label="UOM">
-                            <select
-                              value={it.uom || "nos"}
-                              onChange={(e) =>
-                                setItem(idx, "uom", e.target.value)
-                              }
-                            >
-                              <option value="nos">nos</option>
-                              <option value="kg">kg</option>
-                              <option value="set">set</option>
-                              <option value="pcs">pcs</option>
-                              <option value="pkt">pkt</option>
-                              <option value="mm">mm</option>
-                              <option value="cm">cm</option>
-                              <option value="inch">inch</option>
-                            </select>
-                          </Field>
-                          {it.category === "Corrugated Box" && (
-                            <>
-                              <Field label="Width *">
-                                <input
-                                  type="number"
-                                  placeholder="Width"
-                                  value={it.widthMm || ""}
-                                  onChange={(e) =>
-                                    setItem(idx, "widthMm", e.target.value)
-                                  }
-                                  style={EI(idx, "widthMm")}
-                                />
-                              </Field>
-                              <Field label="Length *">
-                                <input
-                                  type="number"
-                                  placeholder="Length"
-                                  value={it.lengthMm || ""}
-                                  onChange={(e) =>
-                                    setItem(idx, "lengthMm", e.target.value)
-                                  }
-                                  style={EI(idx, "lengthMm")}
-                                />
-                              </Field>
-                              <Field label="Height *">
-                                <input
-                                  type="number"
-                                  placeholder="Height"
-                                  value={it.height || ""}
-                                  onChange={(e) =>
-                                    setItem(idx, "height", e.target.value)
-                                  }
-                                  style={EI(idx, "height")}
-                                />
-                              </Field>
-                              <div style={{ gridColumn: "span 1" }} />
-                            </>
-                          )}
-                          {it.category === "LDPE Polybag" && (
-                            <>
-                              <Field label="Width *">
-                                <input
-                                  type="number"
-                                  placeholder="Width"
-                                  value={it.widthMm || ""}
-                                  onChange={(e) =>
-                                    setItem(idx, "widthMm", e.target.value)
-                                  }
-                                  style={EI(idx, "widthMm")}
-                                />
-                              </Field>
-                              <Field label="Height *">
-                                <input
-                                  type="number"
-                                  placeholder="Height"
-                                  value={it.height || ""}
-                                  onChange={(e) =>
-                                    setItem(idx, "height", e.target.value)
-                                  }
-                                  style={EI(idx, "height")}
-                                />
-                              </Field>
-                              <div style={{ gridColumn: "span 2" }} />
-                            </>
-                          )}
-
-                          <div
-                            style={{
-                              gridColumn: "1 / -1",
-                              height: 1,
-                              margin: "4px 0",
-                            }}
-                          />
-                          <Field
-                            label="ITEM NAME"
-                            style={{ gridColumn: "span 2" }}
-                          >
-                            <div
-                              style={{
-                                padding: "10px 14px",
-                                background: "#0c0c0e",
-                                border: "1px solid #2a2a2e",
-                                borderRadius: 6,
-                                color: "#4ade80",
-                                fontWeight: 500,
-                                minHeight: 40,
-                                fontSize: 13,
-                              }}
-                            >
-                              {it.itemName}
-                              {it.poRemarks && (
-                                <div
-                                  style={{
-                                    fontSize: 10,
-                                    color: "#3b82f6",
-                                    marginTop: 4,
-                                    fontStyle: "italic",
-                                  }}
-                                >
-                                  PO Note: {it.poRemarks}
-                                </div>
-                              )}
-                            </div>
-                          </Field>
-                          <Field label="QUANTITY *">
-                            <input
-                              type="number"
-                              placeholder="Qty"
-                              value={it.qty}
-                              onChange={(e) =>
-                                setItem(idx, "qty", e.target.value)
-                              }
-                              style={EI(idx, "qty")}
-                            />
-                          </Field>
-                          <Field label="UNIT *">
-                            <select
-                              value={it.unit || "nos"}
-                              onChange={(e) =>
-                                setItem(idx, "unit", e.target.value)
-                              }
-                            >
-                              <option value="nos">nos</option>
-                              <option value="kg">kg</option>
-                              <option value="pcs">pcs</option>
-                              <option value="mm">mm</option>
-                              <option value="cm">cm</option>
-                              <option value="inch">inch</option>
-                            </select>
-                          </Field>
-                          <Field label="RATE (₹/NOS) *">
-                            <input
-                              type="number"
-                              placeholder="Rate per unit"
-                              value={it.rate}
-                              onChange={(e) =>
-                                setItem(idx, "rate", e.target.value)
-                              }
-                              style={EI(idx, "rate")}
-                            />
-                          </Field>
-
-                          <div
-                            style={{
-                              gridColumn: "1 / -1",
-                              height: 1,
-                              margin: "4px 0",
-                            }}
-                          />
-                          <Field label="AMOUNT (₹)">
-                            <input
-                              readOnly
-                              value={
-                                it.amount
-                                  ? `₹${fmt(+it.amount)}`
-                                  : "— Qty × Rate —"
-                              }
-                              style={{
-                                background: "#0c0c0e",
-                                color: it.amount ? C.green : C.muted,
-                                fontWeight: 500,
-                              }}
-                            />
-                          </Field>
-                          <div style={{ gridColumn: "span 4" }} />
-                        </>
-                      ) : (
-                        <>
-                          <div
-                            style={{
-                              gridColumn: "1 / -1",
-                              height: 1,
-                              margin: "4px 0",
-                            }}
-                          />
-                          <Field label="UOM">
-                            <select
-                              value={it.uom || "nos"}
-                              onChange={(e) =>
-                                setItem(idx, "uom", e.target.value)
-                              }
-                            >
-                              <option value="nos">nos</option>
-                              <option value="kg">kg</option>
-                              <option value="set">set</option>
-                              <option value="pcs">pcs</option>
-                              <option value="pkt">pkt</option>
-                              <option value="mtr">mtr</option>
-                            </select>
-                          </Field>
-                          <Field label="QUANTITY *">
-                            <input
-                              type="number"
-                              placeholder="e.g. 10"
-                              value={it.qty}
-                              onChange={(e) =>
-                                setItem(idx, "qty", e.target.value)
-                              }
-                              style={EI(idx, "qty")}
-                            />
-                          </Field>
-                          <Field label="UNIT">
-                            <select
-                              value={it.unit || "nos"}
-                              onChange={(e) =>
-                                setItem(idx, "unit", e.target.value)
-                              }
-                            >
-                              <option value="nos">nos</option>
-                              <option value="kg">kg</option>
-                              <option value="pcs">pcs</option>
-                              <option value="mm">mm</option>
-                              <option value="cm">cm</option>
-                              <option value="inch">inch</option>
-                            </select>
-                          </Field>
-                          <Field label="RATE (₹/NOS) *">
-                            <input
-                              type="number"
-                              placeholder="Rate per unit"
-                              value={it.rate}
-                              onChange={(e) =>
-                                setItem(idx, "rate", e.target.value)
-                              }
-                              style={EI(idx, "rate")}
-                            />
-                          </Field>
-                          <Field label="AMOUNT (₹)">
-                            <input
-                              readOnly
-                              value={
-                                it.amount
-                                  ? `₹${fmt(+it.amount)}`
-                                  : "— Qty × Rate —"
-                              }
-                              style={{
-                                background: "#0c0c0e",
-                                color: it.amount ? C.green : C.muted,
-                                fontWeight: 500,
-                              }}
-                            />
-                          </Field>
-                        </>
-                      )}
-                    </>
-                  )}
-
-                  <div
-                    style={{
-                      gridColumn: "1 / -1",
-                      height: 1,
-                      borderTop: `1px dashed ${C.border}`,
-                      margin: "4px 0",
-                    }}
-                  />
-
-                  <Field label="GST (%)">
-                    <input
-                      type="number"
-                      placeholder="18"
-                      value={it.gstRate || 18}
-                      onChange={(e) => setItem(idx, "gstRate", e.target.value)}
+                  <Field label="Vendor Name *">
+                    <AutocompleteInput
+                      value={header.vendorName}
+                      onChange={(v) => setH("vendorName", v)}
+                      suggestions={(vendorMaster || []).map((v) => v.name)}
+                      placeholder="Supplier / Vendor name"
+                      inputStyle={EH("vendorName")}
                     />
+                    {EHMsg("vendorName")}
                   </Field>
-                  <Field label="HSN">
+                  <Field label="Invoice Number *">
                     <input
-                      placeholder="HSN code"
-                      value={it.hsnCode || ""}
-                      onChange={(e) => setItem(idx, "hsnCode", e.target.value)}
+                      placeholder="Invoice / DC number"
+                      value={header.invoiceNo}
+                      onChange={(e) => setH("invoiceNo", e.target.value)}
+                      style={EH("invoiceNo")}
                     />
+                    {EHMsg("invoiceNo")}
                   </Field>
-                  <Field label="Total (incl Tax)">
-                    <div
-                      style={{
-                        padding: "9px 12px",
-                        background: "#0c0c0e",
-                        border: "1px solid #2a2a2e",
-                        borderRadius: 6,
-                        fontSize: 13,
-                        color: it.totalWithTax ? C.green : C.muted,
-                        fontWeight: it.totalWithTax ? 700 : 400,
-                        fontFamily: "'JetBrains Mono',monospace",
-                      }}
+                  <Field label="Vehicle Number *">
+                    <input
+                      placeholder="e.g. DL01AB1234"
+                      value={header.vehicleNo}
+                      onChange={(e) => setH("vehicleNo", e.target.value)}
+                      style={EH("vehicleNo")}
+                    />
+                    {EHMsg("vehicleNo")}
+                  </Field>
+                  <Field label="Location / Store *">
+                    <select
+                      value={header.location}
+                      onChange={(e) => setH("location", e.target.value)}
+                      style={EH("location")}
                     >
-                      {it.totalWithTax ? `₹${fmt(+it.totalWithTax)}` : "—"}
-                    </div>
+                      <option value="">-- Select Location --</option>
+                      {LOCATIONS.map((l) => (
+                        <option key={l}>{l}</option>
+                      ))}
+                    </select>
+                    {EHMsg("location")}
                   </Field>
-                  <div style={{ gridColumn: "span 2" }} />
+                  <Field label="Received By *">
+                    <input
+                      placeholder="Staff name"
+                      value={header.receivedBy}
+                      onChange={(e) => setH("receivedBy", e.target.value)}
+                      style={EH("receivedBy")}
+                    />
+                    {EHMsg("receivedBy")}
+                  </Field>
+                  <Field label="Remarks *" span={2}>
+                    <input
+                      placeholder="Condition of material, special notes..."
+                      value={header.remarks}
+                      onChange={(e) => setH("remarks", e.target.value)}
+                      style={EH("remarks")}
+                    />
+                    {EHMsg("remarks")}
+                  </Field>
                 </div>
-                <Field label="Item Name" span={2}>
-                  <input
-                    readOnly
-                    placeholder="Auto-filled from material details"
-                    value={it.itemName || ""}
-                    style={{ background: C.border + "22", fontSize: 13 }}
-                  />
-                </Field>
               </Card>
-            ))}
 
-            <div
-              style={{
-                display: "flex",
-                gap: 10,
-                marginTop: 4,
-                alignItems: "center",
-                flexWrap: "wrap",
-              }}
-            >
-              <button
-                onClick={addItem}
-                style={{
-                  background: C.accent + "22",
-                  color: C.accent,
-                  border: `1px solid ${C.accent}44`,
-                  borderRadius: 6,
-                  padding: "9px 20px",
-                  fontWeight: 500,
-                  fontSize: 13,
-                }}
-              >
-                + Add Another Item
-              </button>
-              <SubmitBtn
-                label={`Submit GRN (${items.length} item${items.length > 1 ? "s" : ""})`}
-                color={C.blue}
-                onClick={submit}
-              />
-              {items.some((it) => it.amount) && (
-                <div
-                  style={{
-                    marginLeft: "auto",
-                    padding: "12px 20px",
-                    background: C.green + "11",
-                    border: `1px solid ${C.green}33`,
-                    borderRadius: 10,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 4,
-                    minWidth: 200,
-                  }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: C.muted }}>
-                    <span>Basic Amount:</span>
-                    <span>₹{fmt(items.reduce((sum, it) => sum + +(it.amount || 0), 0))}</span>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: C.muted }}>
-                    <span>Tax Amount:</span>
-                    <span>₹{fmt(items.reduce((sum, it) => sum + +(it.taxAmount || 0), 0))}</span>
-                  </div>
-                  <div style={{ height: 1, background: C.green + "22", margin: "4px 0" }} />
-                  <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 800, color: C.green, fontSize: 15 }}>
-                    <span>Total:</span>
-                    <span>₹{fmt(items.reduce((sum, it) => sum + +(it.totalWithTax || 0), 0))}</span>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </Modal>
-      )}
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <div style={{ display: "flex", gap: 12, flex: 1 }}>
-            <div style={{ position: "relative", width: 300 }}>
-              <span
-                style={{
-                  position: "absolute",
-                  left: 12,
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  color: "#555",
-                }}
-              >
-                <i className="fa-solid fa-magnifying-glass" />
-              </span>
-              <input
-                placeholder="Search records..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "9px 12px 9px 36px",
-                  background: "transparent",
-                  border: "1px solid #2a2a2e",
-                  borderRadius: 6,
-                  color: "#fff",
-                  fontSize: 13,
-                }}
-              />
-            </div>
-            <DateRangeFilter
-              dateFrom={drDateFrom}
-              setDateFrom={setDrDateFrom}
-              dateTo={drDateTo}
-              setDateTo={setDrDateTo}
-            />
-          </div>
-          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-            {canExportImport && (
-            <button
-              onClick={handleExportExcel}
-              style={{
-                background: "transparent",
-                color: C.green,
-                border: `1px solid ${C.green}44`,
-                borderRadius: 6,
-                padding: "8px 16px",
-                fontSize: 12,
-                fontWeight: 500,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-              }}
-            >
-              Export Excel
-            </button>
-            )}
-            <span style={{ fontSize: 12, color: C.muted }}>
-              {filteredInwards.length} records found
-            </span>
-          </div>
-        </div>
-
-        {(() => {
-          const listData = filteredInwards.slice().reverse();
-          const filteredIds = listData.map((r) => r._id);
-          const allSelected = filteredIds.length > 0 && filteredIds.every((id) => selectedIds.has(id));
-          const someSelected = filteredIds.some((id) => selectedIds.has(id));
-          const totalValue = listData.reduce(
-            (s, r) =>
-              s + (r.items || []).reduce((ss, it) => ss + +(it.amount || 0), 0),
-            0,
-          );
-          const totalWeight = listData.reduce(
-            (s, r) =>
-              s + (r.items || []).reduce((ss, it) => ss + +(it.weight || 0), 0),
-            0,
-          );
-          const thisMonth = new Date().toISOString().slice(0, 7);
-          const thisMonthCount = listData.filter(
-            (r) => (r.inwardDate || "").slice(0, 7) === thisMonth,
-          ).length;
-          const statCards = [
-            {
-              label: "Total GRNs",
-              value: listData.length,
-              icon: "fa-solid fa-truck-ramp-box",
-            },
-            {
-              label: "This Month",
-              value: thisMonthCount,
-              icon: "fa-solid fa-calendar-days",
-            },
-            {
-              label: "Total Weight",
-              value: fmt(Math.round(totalWeight)) + " kg",
-              icon: "fa-solid fa-weight-hanging",
-            },
-            {
-              label: "Total Value",
-              value: `₹${fmt(totalValue)}`,
-              icon: "fa-solid fa-indian-rupee-sign",
-            },
-          ];
-          return (
-            <>
               <div
                 style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(4, 1fr)",
-                  gap: 12,
-                  marginBottom: 16,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 10,
                 }}
               >
-                {statCards.map(({ label, value, icon, color }) => (
+                <h3 style={{ fontSize: 14, fontWeight: 500, color: C.accent }}>
+                  Material Items ({items.length})
+                </h3>
+                <button
+                  onClick={addItem}
+                  style={{
+                    background: "rgba(255,255,255,0.08)",
+                    color: "#fff",
+                    border: "1px solid rgba(255,255,255,0.18)",
+                    borderRadius: 6,
+                    padding: "8px 18px",
+                    fontWeight: 500,
+                    fontSize: 13,
+                    boxShadow:
+                      "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                  }}
+                >
+                  + Add Item
+                </button>
+              </div>
+
+              {items.map((it, idx) => (
+                <Card key={it._id} style={{ marginBottom: 12 }}>
                   <div
-                    key={label}
                     style={{
-                      padding: "16px 20px",
-                      background: "transparent",
-                      border: "1px solid rgba(255,255,255,0.07)",
-                      borderRadius: 12,
-                      borderLeft: `3px solid ${color}`,
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 14,
+                    }}
+                  >
+                    <span
+                      style={{ fontWeight: 500, color: C.accent, fontSize: 13 }}
+                    >
+                      Item {idx + 1}
+                    </span>
+                    {items.length > 1 && (
+                      <button
+                        onClick={() => removeItem(idx)}
+                        style={{
+                          background: C.red + "22",
+                          color: C.red,
+                          border: "none",
+                          borderRadius: 5,
+                          padding: "4px 12px",
+                          fontWeight: 500,
+                          fontSize: 12,
+                        }}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(5, 1fr)",
+                      gap: 12,
+                    }}
+                  >
+                    <Field label="Product Code">
+                      <AutocompleteInput
+                        value={it.productCode}
+                        onChange={(v) => setItem(idx, "productCode", v)}
+                        suggestions={sortedItemMasterItems.map(
+                          (i) => `${i.code} — ${i.name}`,
+                        )}
+                        placeholder="Type or select code (optional)"
+                      />
+                    </Field>
+                    <Field label="Material Type *">
+                      <select
+                        value={it.materialType || "Raw Material"}
+                        onChange={(e) =>
+                          setItem(idx, "materialType", e.target.value)
+                        }
+                      >
+                        <option value="Raw Material">Raw Material</option>
+                        <option value="Consumable">Consumable</option>
+                        <option value="Finished Goods">Finished Goods</option>
+                      </select>
+                    </Field>
+                    {(it.materialType === "Raw Material" ||
+                      !it.materialType) && (
+                      <>
+                        <Field label="RM Item *">
+                          <select
+                            value={it.category}
+                            onChange={(e) =>
+                              setItem(idx, "category", e.target.value)
+                            }
+                            style={EI(idx, "category")}
+                          >
+                            <option value="">-- Select Item --</option>
+                            {rmItems.map((i) => (
+                              <option key={i} value={i}>
+                                {i}
+                              </option>
+                            ))}
+                          </select>
+                          {EIMsg(idx, "category")}
+                        </Field>
+                        <Field label="Paper Type *">
+                          <select
+                            value={it.subCategory}
+                            onChange={(e) =>
+                              setItem(idx, "subCategory", e.target.value)
+                            }
+                            disabled={!it.category}
+                            style={EI(idx, "subCategory")}
+                          >
+                            <option value="">
+                              {it.category
+                                ? "-- Select Paper Type --"
+                                : "-- Select RM Item first --"}
+                            </option>
+                            {(subCategoriesByItem[it.category] || []).map(
+                              (p) => (
+                                <option key={p} value={p}>
+                                  {p}
+                                </option>
+                              ),
+                            )}
+                          </select>
+                          {EIMsg(idx, "subCategory")}
+                        </Field>
+                        {it.subCategory !== "Polycoated Blanks" && (
+                          <Field label="Width (mm) *">
+                            <input
+                              type="number"
+                              placeholder="e.g. 700"
+                              value={it.widthMm}
+                              onChange={(e) =>
+                                setItem(idx, "widthMm", e.target.value)
+                              }
+                              style={EI(idx, "widthMm")}
+                            />
+                            {EIMsg(idx, "widthMm")}
+                          </Field>
+                        )}
+
+                        {it.subCategory !== "Polycoated Blanks" &&
+                          (it.category === "Paper Sheets" ||
+                            it.category === "Paper Sheet") && (
+                            <Field label="Length (mm) *">
+                              <input
+                                type="number"
+                                placeholder="e.g. 1000"
+                                value={it.lengthMm}
+                                onChange={(e) =>
+                                  setItem(idx, "lengthMm", e.target.value)
+                                }
+                                style={EI(idx, "lengthMm")}
+                              />
+                              {EIMsg(idx, "lengthMm")}
+                            </Field>
+                          )}
+                        <Field label="GSM *">
+                          <input
+                            type="number"
+                            placeholder="e.g. 90, 130, 250"
+                            value={it.gsm}
+                            onChange={(e) =>
+                              setItem(idx, "gsm", e.target.value)
+                            }
+                            style={EI(idx, "gsm")}
+                          />
+                          {EIMsg(idx, "gsm")}
+                        </Field>
+                        {it.subCategory !== "Polycoated Blanks" &&
+                          (it.category === "Paper Sheets" ||
+                            it.category === "Paper Sheet") && (
+                            <Field label="# of Sheets *">
+                              <input
+                                type="number"
+                                placeholder="No. of sheets"
+                                value={it.noOfSheets}
+                                onChange={(e) =>
+                                  setItem(idx, "noOfSheets", e.target.value)
+                                }
+                                style={EI(idx, "noOfSheets")}
+                              />
+                              {EIMsg(idx, "noOfSheets")}
+                            </Field>
+                          )}
+                        <Field label="Weight (kg) *">
+                          <input
+                            type="number"
+                            placeholder="Total weight"
+                            value={it.weight}
+                            onChange={(e) =>
+                              setItem(idx, "weight", e.target.value)
+                            }
+                            style={EI(idx, "weight")}
+                          />
+                          {EIMsg(idx, "weight")}
+                        </Field>
+                        <Field label="Rate (₹/kg) *">
+                          <input
+                            type="number"
+                            placeholder="Rate per kg"
+                            value={it.rate}
+                            onChange={(e) =>
+                              setItem(idx, "rate", e.target.value)
+                            }
+                            style={EI(idx, "rate")}
+                          />
+                          {EIMsg(idx, "rate")}
+                        </Field>
+                        <Field label="Amount (₹)">
+                          <input
+                            readOnly
+                            value={
+                              it.amount
+                                ? `₹${fmt(+it.amount)}`
+                                : "-- Weight × Rate --"
+                            }
+                            style={{
+                              background: C.border + "22",
+                              fontWeight: 500,
+                              color: it.amount ? C.green : C.muted,
+                            }}
+                          />
+                        </Field>
+                        <div style={{ gridColumn: "span 3" }} />
+                      </>
+                    )}
+                    {it.materialType === "Finished Goods" && (
+                      <>
+                        <Field label="Category">
+                          <input
+                            placeholder="e.g. Corrugated Box"
+                            value={it.category}
+                            onChange={(e) =>
+                              setItem(idx, "category", e.target.value)
+                            }
+                          />
+                        </Field>
+                        <Field label="Qty *">
+                          <input
+                            type="number"
+                            placeholder="0"
+                            value={it.qty}
+                            onChange={(e) =>
+                              setItem(idx, "qty", e.target.value)
+                            }
+                            style={EI(idx, "qty")}
+                          />
+                        </Field>
+                        <div style={{ gridColumn: "span 3" }} />
+                      </>
+                    )}
+
+                    {it.materialType === "Consumable" && (
+                      <>
+                        <Field label="Category *">
+                          <select
+                            value={it.category}
+                            onChange={(e) =>
+                              setItem(idx, "category", e.target.value)
+                            }
+                            style={EI(idx, "category")}
+                          >
+                            <option value="">-- Select Category --</option>
+                            {consumableCategories.map((c) => (
+                              <option key={c} value={c}>
+                                {c}
+                              </option>
+                            ))}
+                          </select>
+                          {EIMsg(idx, "category")}
+                        </Field>
+
+                        <Field label="Size">
+                          <input
+                            placeholder="e.g. 200mm"
+                            value={it.size}
+                            onChange={(e) =>
+                              setItem(idx, "size", e.target.value)
+                            }
+                          />
+                        </Field>
+
+                        {it.category === "Corrugated Box" ||
+                        it.category === "LDPE Polybag" ? (
+                          <>
+                            <div
+                              style={{
+                                gridColumn: "1 / -1",
+                                height: 1,
+                                margin: "4px 0",
+                              }}
+                            />
+                            <Field label="UOM">
+                              <select
+                                value={it.uom || "nos"}
+                                onChange={(e) =>
+                                  setItem(idx, "uom", e.target.value)
+                                }
+                              >
+                                <option value="nos">nos</option>
+                                <option value="kg">kg</option>
+                                <option value="set">set</option>
+                                <option value="pcs">pcs</option>
+                                <option value="pkt">pkt</option>
+                                <option value="mm">mm</option>
+                                <option value="cm">cm</option>
+                                <option value="inch">inch</option>
+                              </select>
+                            </Field>
+                            {it.category === "Corrugated Box" && (
+                              <>
+                                <Field label="Width *">
+                                  <input
+                                    type="number"
+                                    placeholder="Width"
+                                    value={it.widthMm || ""}
+                                    onChange={(e) =>
+                                      setItem(idx, "widthMm", e.target.value)
+                                    }
+                                    style={EI(idx, "widthMm")}
+                                  />
+                                </Field>
+                                <Field label="Length *">
+                                  <input
+                                    type="number"
+                                    placeholder="Length"
+                                    value={it.lengthMm || ""}
+                                    onChange={(e) =>
+                                      setItem(idx, "lengthMm", e.target.value)
+                                    }
+                                    style={EI(idx, "lengthMm")}
+                                  />
+                                </Field>
+                                <Field label="Height *">
+                                  <input
+                                    type="number"
+                                    placeholder="Height"
+                                    value={it.height || ""}
+                                    onChange={(e) =>
+                                      setItem(idx, "height", e.target.value)
+                                    }
+                                    style={EI(idx, "height")}
+                                  />
+                                </Field>
+                                <div style={{ gridColumn: "span 1" }} />
+                              </>
+                            )}
+                            {it.category === "LDPE Polybag" && (
+                              <>
+                                <Field label="Width *">
+                                  <input
+                                    type="number"
+                                    placeholder="Width"
+                                    value={it.widthMm || ""}
+                                    onChange={(e) =>
+                                      setItem(idx, "widthMm", e.target.value)
+                                    }
+                                    style={EI(idx, "widthMm")}
+                                  />
+                                </Field>
+                                <Field label="Height *">
+                                  <input
+                                    type="number"
+                                    placeholder="Height"
+                                    value={it.height || ""}
+                                    onChange={(e) =>
+                                      setItem(idx, "height", e.target.value)
+                                    }
+                                    style={EI(idx, "height")}
+                                  />
+                                </Field>
+                                <div style={{ gridColumn: "span 2" }} />
+                              </>
+                            )}
+
+                            <div
+                              style={{
+                                gridColumn: "1 / -1",
+                                height: 1,
+                                margin: "4px 0",
+                              }}
+                            />
+                            <Field
+                              label="ITEM NAME"
+                              style={{ gridColumn: "span 2" }}
+                            >
+                              <div
+                                style={{
+                                  padding: "10px 14px",
+                                  background: "#0c0c0e",
+                                  border: "1px solid #2a2a2e",
+                                  borderRadius: 6,
+                                  color: "#4ade80",
+                                  fontWeight: 500,
+                                  minHeight: 40,
+                                  fontSize: 13,
+                                }}
+                              >
+                                {it.itemName}
+                                {it.poRemarks && (
+                                  <div
+                                    style={{
+                                      fontSize: 10,
+                                      color: "#3b82f6",
+                                      marginTop: 4,
+                                      fontStyle: "italic",
+                                    }}
+                                  >
+                                    PO Note: {it.poRemarks}
+                                  </div>
+                                )}
+                              </div>
+                            </Field>
+                            <Field label="QUANTITY *">
+                              <input
+                                type="number"
+                                placeholder="Qty"
+                                value={it.qty}
+                                onChange={(e) =>
+                                  setItem(idx, "qty", e.target.value)
+                                }
+                                style={EI(idx, "qty")}
+                              />
+                            </Field>
+                            <Field label="UNIT *">
+                              <select
+                                value={it.unit || "nos"}
+                                onChange={(e) =>
+                                  setItem(idx, "unit", e.target.value)
+                                }
+                              >
+                                <option value="nos">nos</option>
+                                <option value="kg">kg</option>
+                                <option value="pcs">pcs</option>
+                                <option value="mm">mm</option>
+                                <option value="cm">cm</option>
+                                <option value="inch">inch</option>
+                              </select>
+                            </Field>
+                            <Field label="RATE (₹/NOS) *">
+                              <input
+                                type="number"
+                                placeholder="Rate per unit"
+                                value={it.rate}
+                                onChange={(e) =>
+                                  setItem(idx, "rate", e.target.value)
+                                }
+                                style={EI(idx, "rate")}
+                              />
+                            </Field>
+
+                            <div
+                              style={{
+                                gridColumn: "1 / -1",
+                                height: 1,
+                                margin: "4px 0",
+                              }}
+                            />
+                            <Field label="AMOUNT (₹)">
+                              <input
+                                readOnly
+                                value={
+                                  it.amount
+                                    ? `₹${fmt(+it.amount)}`
+                                    : "— Qty × Rate —"
+                                }
+                                style={{
+                                  background: "#0c0c0e",
+                                  color: it.amount ? C.green : C.muted,
+                                  fontWeight: 500,
+                                }}
+                              />
+                            </Field>
+                            <div style={{ gridColumn: "span 4" }} />
+                          </>
+                        ) : (
+                          <>
+                            <div
+                              style={{
+                                gridColumn: "1 / -1",
+                                height: 1,
+                                margin: "4px 0",
+                              }}
+                            />
+                            <Field label="UOM">
+                              <select
+                                value={it.uom || "nos"}
+                                onChange={(e) =>
+                                  setItem(idx, "uom", e.target.value)
+                                }
+                              >
+                                <option value="nos">nos</option>
+                                <option value="kg">kg</option>
+                                <option value="set">set</option>
+                                <option value="pcs">pcs</option>
+                                <option value="pkt">pkt</option>
+                                <option value="mtr">mtr</option>
+                              </select>
+                            </Field>
+                            <Field label="QUANTITY *">
+                              <input
+                                type="number"
+                                placeholder="e.g. 10"
+                                value={it.qty}
+                                onChange={(e) =>
+                                  setItem(idx, "qty", e.target.value)
+                                }
+                                style={EI(idx, "qty")}
+                              />
+                            </Field>
+                            <Field label="UNIT">
+                              <select
+                                value={it.unit || "nos"}
+                                onChange={(e) =>
+                                  setItem(idx, "unit", e.target.value)
+                                }
+                              >
+                                <option value="nos">nos</option>
+                                <option value="kg">kg</option>
+                                <option value="pcs">pcs</option>
+                                <option value="mm">mm</option>
+                                <option value="cm">cm</option>
+                                <option value="inch">inch</option>
+                              </select>
+                            </Field>
+                            <Field label="RATE (₹/NOS) *">
+                              <input
+                                type="number"
+                                placeholder="Rate per unit"
+                                value={it.rate}
+                                onChange={(e) =>
+                                  setItem(idx, "rate", e.target.value)
+                                }
+                                style={EI(idx, "rate")}
+                              />
+                            </Field>
+                            <Field label="AMOUNT (₹)">
+                              <input
+                                readOnly
+                                value={
+                                  it.amount
+                                    ? `₹${fmt(+it.amount)}`
+                                    : "— Qty × Rate —"
+                                }
+                                style={{
+                                  background: "#0c0c0e",
+                                  color: it.amount ? C.green : C.muted,
+                                  fontWeight: 500,
+                                }}
+                              />
+                            </Field>
+                          </>
+                        )}
+                      </>
+                    )}
+
+                    <div
+                      style={{
+                        gridColumn: "1 / -1",
+                        height: 1,
+                        borderTop: `1px dashed ${C.border}`,
+                        margin: "4px 0",
+                      }}
+                    />
+
+                    <Field label="GST (%)">
+                      <input
+                        type="number"
+                        placeholder="18"
+                        value={it.gstRate || 18}
+                        onChange={(e) =>
+                          setItem(idx, "gstRate", e.target.value)
+                        }
+                      />
+                    </Field>
+                    <Field label="HSN">
+                      <input
+                        placeholder="HSN code"
+                        value={it.hsnCode || ""}
+                        onChange={(e) =>
+                          setItem(idx, "hsnCode", e.target.value)
+                        }
+                      />
+                    </Field>
+                    <Field label="Total (incl Tax)">
+                      <div
+                        style={{
+                          padding: "9px 12px",
+                          background: "#0c0c0e",
+                          border: "1px solid #2a2a2e",
+                          borderRadius: 6,
+                          fontSize: 13,
+                          color: it.totalWithTax ? C.green : C.muted,
+                          fontWeight: it.totalWithTax ? 700 : 400,
+                        }}
+                      >
+                        {it.totalWithTax ? `₹${fmt(+it.totalWithTax)}` : "—"}
+                      </div>
+                    </Field>
+                    <div style={{ gridColumn: "span 2" }} />
+                  </div>
+                  <Field label="Item Name" span={2}>
+                    <input
+                      readOnly
+                      placeholder="Auto-filled from material details"
+                      value={it.itemName || ""}
+                      style={{ background: C.border + "22", fontSize: 13 }}
+                    />
+                  </Field>
+                </Card>
+              ))}
+
+              <div
+                style={{
+                  display: "flex",
+                  gap: 10,
+                  marginTop: 4,
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                }}
+              >
+                <button
+                  onClick={addItem}
+                  style={{
+                    background: C.accent + "22",
+                    color: C.accent,
+                    border: `1px solid ${C.accent}44`,
+                    borderRadius: 6,
+                    padding: "9px 20px",
+                    fontWeight: 500,
+                    fontSize: 13,
+                  }}
+                >
+                  + Add Another Item
+                </button>
+                <SubmitBtn
+                  label={`Submit GRN (${items.length} item${items.length > 1 ? "s" : ""})`}
+                  color={C.blue}
+                  onClick={submit}
+                />
+                {items.some((it) => it.amount) && (
+                  <div
+                    style={{
+                      marginLeft: "auto",
+                      padding: "12px 20px",
+                      background: C.green + "11",
+                      border: `1px solid ${C.green}33`,
+                      borderRadius: 10,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 4,
+                      minWidth: 200,
                     }}
                   >
                     <div
                       style={{
                         display: "flex",
                         justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: 8,
+                        fontSize: 11,
+                        color: C.muted,
                       }}
                     >
-                      <span
-                        style={{
-                          fontSize: 19,
-                          color: C.muted,
-                          fontWeight: 600,
-                          textTransform: "uppercase",
-                          letterSpacing: "0.05em",
-                        }}
-                      >
-                        {label}
+                      <span>Basic Amount:</span>
+                      <span>
+                        ₹
+                        {fmt(
+                          items.reduce((sum, it) => sum + +(it.amount || 0), 0),
+                        )}
                       </span>
-                      <i
-                        className={icon}
-                        style={{
-                          color,
-                          fontSize: 20,
-                          opacity: 0.9,
-                          display: "inline-flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          height: 28,
-                          width: 28,
-                          lineHeight: 1,
-                        }}
-                      />
                     </div>
                     <div
                       style={{
-                        fontSize: 20,
-                        fontWeight: 800,
-                        color: "#fff",
-                        fontFamily: "'JetBrains Mono', monospace",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        fontSize: 11,
+                        color: C.muted,
                       }}
                     >
-                      {value}
+                      <span>Tax Amount:</span>
+                      <span>
+                        ₹
+                        {fmt(
+                          items.reduce(
+                            (sum, it) => sum + +(it.taxAmount || 0),
+                            0,
+                          ),
+                        )}
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        height: 1,
+                        background: C.green + "22",
+                        margin: "4px 0",
+                      }}
+                    />
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        fontWeight: 800,
+                        color: C.green,
+                        fontSize: 15,
+                      }}
+                    >
+                      <span>Total:</span>
+                      <span>
+                        ₹
+                        {fmt(
+                          items.reduce(
+                            (sum, it) => sum + +(it.totalWithTax || 0),
+                            0,
+                          ),
+                        )}
+                      </span>
                     </div>
                   </div>
-                ))}
+                )}
+              </div>
+            </div>
+          </Modal>
+        )}
+
+        {(() => {
+          const listData = filteredInwards;
+          const filteredIds = listData.map((r) => r._id);
+          const allSelected =
+            filteredIds.length > 0 &&
+            filteredIds.every((id) => selectedIds.has(id));
+          const someSelected = filteredIds.some((id) => selectedIds.has(id));
+          const hasFilters = !!(search || drDateFrom || drDateTo);
+          const trendStyle = {
+            fontSize: 11,
+            color: C.muted,
+            marginTop: 2,
+            fontWeight: 500,
+          };
+          const statCards = [
+            {
+              label: "Total GRNs",
+              value: inwardSummary.count,
+              icon: "fa-solid fa-truck-ramp-box",
+              accent: "#14b8a6",
+              trend:
+                inwardSummary.addedToday > 0
+                  ? `↑ ${inwardSummary.addedToday} added today`
+                  : "No new today",
+              trendColor: inwardSummary.addedToday > 0 ? "#34d399" : C.muted,
+            },
+            {
+              label: "This Month",
+              value: inwardSummary.thisMonthCount,
+              icon: "fa-solid fa-calendar-days",
+              accent: "#60a5fa",
+              trend: `vs ${inwardSummary.lastMonthCount} last month`,
+              trendColor: C.muted,
+            },
+            {
+              label: "Total Weight",
+              value: fmt(Math.round(inwardSummary.totalWeight)) + " kg",
+              icon: "fa-solid fa-weight-hanging",
+              accent: "#f59e0b",
+              trend:
+                inwardSummary.count > 0
+                  ? `Avg ${fmt(Math.round(inwardSummary.avgWeight))} kg/GRN`
+                  : "—",
+              trendColor: C.muted,
+            },
+            {
+              label: "Total Value",
+              value: fmtLakh(inwardSummary.totalValue),
+              icon: "fa-solid fa-indian-rupee-sign",
+              accent: "#a78bfa",
+              trend:
+                inwardSummary.count > 0
+                  ? `Avg ${fmtLakh(inwardSummary.avgValue)}/GRN`
+                  : "—",
+              trendColor: C.muted,
+            },
+          ];
+
+          return (
+            <>
+              {/* Stat cards */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(4, 1fr)",
+                  gap: 12,
+                  marginBottom: 20,
+                }}
+              >
+                {statCards.map(
+                  ({ label, value, icon, accent, trend, trendColor }) => (
+                    <div
+                      key={label}
+                      style={{
+                        height: 64,
+                        padding: "10px 14px",
+                        background: "rgba(255,255,255,0.02)",
+                        borderRadius: 8,
+                        borderLeft: `3px solid ${accent}`,
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "center",
+                        position: "relative",
+                      }}
+                    >
+                      <i
+                        className={icon}
+                        style={{
+                          position: "absolute",
+                          top: 10,
+                          right: 14,
+                          fontSize: 18,
+                          color: "#fff",
+                          opacity: 0.4,
+                          lineHeight: 1,
+                        }}
+                      />
+                      <div
+                        style={{
+                          fontSize: 10,
+                          color: C.muted,
+                          fontWeight: 700,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.06em",
+                          lineHeight: 1.2,
+                        }}
+                      >
+                        {label}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 22,
+                          fontWeight: 800,
+                          color: "#fff",
+                          lineHeight: 1.1,
+                          marginTop: 2,
+                        }}
+                      >
+                        {value}
+                      </div>
+                      <div style={{ ...trendStyle, color: trendColor }}>
+                        {trend}
+                      </div>
+                    </div>
+                  ),
+                )}
               </div>
 
-              {canEdit && selectedIds.size > 0 && (
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", marginBottom: 8, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8 }}>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "#fecaca" }}>{selectedIds.size} selected</span>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <button onClick={() => setSelectedIds(new Set())} style={{ padding: "5px 12px", borderRadius: 5, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.06)", color: "#fff", fontSize: 12, fontWeight: 500, cursor: "pointer" }}>Clear</button>
-                    <button onClick={() => setBulkDeleteOpen(true)} style={{ padding: "5px 12px", borderRadius: 5, border: "1px solid rgba(239,68,68,0.4)", background: "rgba(239,68,68,0.15)", color: "#ef4444", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Delete Selected</button>
-                  </div>
-                </div>
-              )}
-
-              {listData.length === 0 ? (
-                <Card
-                  style={{ textAlign: "center", padding: 40, color: C.muted }}
-                >
-                  No material inward records found.
-                </Card>
-              ) : (
+              {/* Toolbar + Table — connected with one rounded border */}
+              <div
+                style={{
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: 8,
+                  overflow: "hidden",
+                  background: "transparent",
+                }}
+              >
+                {/* Toolbar — 48px, bottom border separator */}
                 <div
                   style={{
-                    background: "transparent",
-                    border: "1px solid rgba(255,255,255,0.07)",
-                    borderRadius: 12,
-                    overflow: "hidden",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    height: 48,
+                    padding: "0 14px",
+                    borderBottom: "1px solid rgba(255,255,255,0.08)",
                   }}
                 >
+                  <div
+                    style={{ position: "relative", width: 280, flexShrink: 0 }}
+                  >
+                    <span
+                      style={{
+                        position: "absolute",
+                        left: 12,
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        color: "#555",
+                      }}
+                    >
+                      <i className="fa-solid fa-magnifying-glass" />
+                    </span>
+                    <input
+                      placeholder="Search records..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      style={{
+                        width: "100%",
+                        padding: "7px 12px 7px 36px",
+                        background: "transparent",
+                        border: "1px solid #2a2a2e",
+                        borderRadius: 6,
+                        color: "#fff",
+                        fontSize: 13,
+                      }}
+                    />
+                  </div>
+                  <DateRangeFilter
+                    dateFrom={drDateFrom}
+                    setDateFrom={setDrDateFrom}
+                    dateTo={drDateTo}
+                    setDateTo={setDrDateTo}
+                  />
+                  <div style={{ flex: 1 }} />
+                  <span style={{ fontSize: 12, color: C.muted }}>
+                    {listData.length} records found
+                  </span>
+                  {canExportImport && (
+                    <button
+                      onClick={handleExportExcel}
+                      style={{
+                        background: "transparent",
+                        color: "#ffffff",
+                        border: "1px solid rgba(255,255,255,0.2)",
+                        borderRadius: 6,
+                        padding: "6px 14px",
+                        fontSize: 12,
+                        fontWeight: 500,
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                      }}
+                    >
+                      <i className="fa-solid fa-file-export" /> Export Excel
+                    </button>
+                  )}
+                </div>
+
+                {/* Skeleton loader on initial load */}
+                {initialLoad ? (
+                  <div style={{ padding: 0 }}>
+                    {[0, 1, 2].map((i) => (
+                      <div
+                        key={i}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 16,
+                          padding: "12px 14px",
+                          borderBottom:
+                            i < 2 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                          animation: "pulse 1.5s ease-in-out infinite",
+                        }}
+                      >
+                        {[120, 80, 90, 160, 110, 90, 70, 80].map((w, j) => (
+                          <div
+                            key={j}
+                            style={{
+                              height: 12,
+                              width: w,
+                              background: "rgba(255,255,255,0.06)",
+                              borderRadius: 4,
+                            }}
+                          />
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                ) : listData.length === 0 ? (
+                  <div
+                    style={{
+                      textAlign: "center",
+                      padding: "48px 24px",
+                      color: C.muted,
+                    }}
+                  >
+                    <i
+                      className="fa-solid fa-inbox"
+                      style={{
+                        fontSize: 32,
+                        opacity: 0.4,
+                        display: "block",
+                        marginBottom: 12,
+                      }}
+                    />
+                    <div style={{ fontSize: 14, marginBottom: 16 }}>
+                      {hasFilters
+                        ? "No GRNs found for this date range"
+                        : "No material inward records found."}
+                    </div>
+                    {hasFilters && (
+                      <button
+                        onClick={() => {
+                          setSearch("");
+                          setDrDateFrom("");
+                          setDrDateTo("");
+                        }}
+                        style={{
+                          background: C.accent + "22",
+                          color: C.accent,
+                          border: `1px solid ${C.accent}44`,
+                          borderRadius: 6,
+                          padding: "7px 16px",
+                          fontSize: 12,
+                          fontWeight: 500,
+                          cursor: "pointer",
+                        }}
+                      >
+                        Clear Filters
+                      </button>
+                    )}
+                  </div>
+                ) : (
                   <table
                     style={{
                       width: "100%",
@@ -2032,46 +2305,64 @@ export default function MaterialInward({
                     <thead>
                       <tr
                         style={{
-                          background: "transparent",
+                          background: "rgba(255,255,255,0.02)",
                           borderBottom: "1px solid rgba(255,255,255,0.08)",
                         }}
                       >
                         {canEdit && (
-                          <th style={{ padding: "10px 14px", textAlign: "left", width: 36 }}>
+                          <th
+                            style={{
+                              padding: "0 14px",
+                              height: 40,
+                              textAlign: "left",
+                              width: 36,
+                            }}
+                          >
                             <input
                               type="checkbox"
                               checked={allSelected}
-                              ref={(el) => { if (el) el.indeterminate = !allSelected && someSelected; }}
-                              onChange={() => toggleSelectAll(filteredIds, allSelected)}
-                              style={{ cursor: "pointer", accentColor: C.accent || "#60a5fa" }}
+                              ref={(el) => {
+                                if (el)
+                                  el.indeterminate =
+                                    !allSelected && someSelected;
+                              }}
+                              onChange={() =>
+                                toggleSelectAll(filteredIds, allSelected)
+                              }
+                              style={{
+                                cursor: "pointer",
+                                accentColor: C.accent || "#60a5fa",
+                              }}
                             />
                           </th>
                         )}
                         {[
-                          "GRN No",
-                          "PO No",
-                          "Date",
-                          "Vendor",
-                          "Invoice",
-                          "Location",
-                          "Items",
-                          "Total",
-                          "Actions",
-                        ].map((h) => (
+                          { k: "GRN No", w: null, ta: "left" },
+                          { k: "PO No", w: null, ta: "left" },
+                          { k: "Date", w: null, ta: "left" },
+                          { k: "Vendor", w: null, ta: "left" },
+                          { k: "Invoice", w: null, ta: "left" },
+                          { k: "Location", w: null, ta: "left" },
+                          { k: "Items", w: null, ta: "left" },
+                          { k: "Total", w: null, ta: "right" },
+                          { k: "", w: 56, ta: "right" },
+                        ].map(({ k, w, ta }) => (
                           <th
-                            key={h}
+                            key={k || "actions"}
                             style={{
-                              padding: "10px 14px",
-                              textAlign: "left",
+                              padding: "0 14px",
+                              height: 40,
+                              textAlign: ta,
                               fontSize: 11,
                               fontWeight: 700,
                               color: C.muted,
                               textTransform: "uppercase",
-                              letterSpacing: "0.05em",
+                              letterSpacing: "0.06em",
                               whiteSpace: "nowrap",
+                              width: w || undefined,
                             }}
                           >
-                            {h}
+                            {k}
                           </th>
                         ))}
                       </tr>
@@ -2082,50 +2373,67 @@ export default function MaterialInward({
                           (s, it) => s + +(it.amount || 0),
                           0,
                         );
+                        const rowId = r._id;
+                        const isHovered = hoveredRowId === rowId;
+                        const isSelected = selectedIds.has(rowId);
+                        const isHighlighted =
+                          (r.inwardNo || r.grnNo) === highlightId;
+                        const rowBg = isSelected
+                          ? "rgba(96,165,250,0.10)"
+                          : isHighlighted
+                            ? `${C.accent}1a`
+                            : isHovered
+                              ? "rgba(255,255,255,0.04)"
+                              : i % 2 === 0
+                                ? "transparent"
+                                : "rgba(255,255,255,0.015)";
                         return (
                           <tr
-                            key={r._id}
+                            key={rowId}
                             data-record-id={r.inwardNo || r.grnNo}
+                            onMouseEnter={() => setHoveredRowId(rowId)}
+                            onMouseLeave={() => setHoveredRowId(null)}
                             style={{
+                              height: 44,
                               borderBottom: "1px solid rgba(255,255,255,0.04)",
-                              background:
-                                selectedIds.has(r._id)
-                                  ? "rgba(96,165,250,0.08)"
-                                  : (r.inwardNo || r.grnNo) === highlightId
-                                    ? `${C.accent}11`
-                                    : i % 2 === 0
-                                      ? "transparent"
-                                      : "rgba(255,255,255,0.01)",
-                              transition: "all 0.4s ease",
+                              background: rowBg,
+                              transition: "background 0.15s ease",
                             }}
                           >
                             {canEdit && (
-                              <td style={{ padding: "12px 14px", width: 36 }}>
+                              <td style={{ padding: "0 14px", width: 36 }}>
                                 <input
                                   type="checkbox"
-                                  checked={selectedIds.has(r._id)}
-                                  onChange={() => toggleSelect(r._id)}
-                                  style={{ cursor: "pointer", accentColor: C.accent || "#60a5fa" }}
+                                  checked={isSelected}
+                                  onChange={() => toggleSelect(rowId)}
+                                  style={{
+                                    cursor: "pointer",
+                                    accentColor: C.accent || "#60a5fa",
+                                  }}
                                 />
                               </td>
                             )}
                             <td
                               style={{
-                                padding: "12px 14px",
-                                fontFamily: "'JetBrains Mono', monospace",
+                                padding: "0 14px",
                                 fontWeight: 700,
                                 color: "#60a5fa",
                                 whiteSpace: "nowrap",
+                                cursor: canEdit ? "pointer" : "default",
+                                textDecoration:
+                                  hoveredGrnId === rowId ? "underline" : "none",
                               }}
+                              onMouseEnter={() => setHoveredGrnId(rowId)}
+                              onMouseLeave={() => setHoveredGrnId(null)}
+                              onClick={() => canEdit && handleEdit(r)}
                             >
                               {r.inwardNo}
                             </td>
                             <td
                               style={{
-                                padding: "12px 14px",
-                                fontFamily: "'JetBrains Mono', monospace",
+                                padding: "0 14px",
                                 fontSize: 12,
-                                color: C.muted,
+                                color: "#94a3b8",
                                 whiteSpace: "nowrap",
                               }}
                             >
@@ -2133,7 +2441,7 @@ export default function MaterialInward({
                             </td>
                             <td
                               style={{
-                                padding: "12px 14px",
+                                padding: "0 14px",
                                 color: C.muted,
                                 whiteSpace: "nowrap",
                                 fontSize: 12,
@@ -2142,131 +2450,317 @@ export default function MaterialInward({
                               {formatDateForInput(r.inwardDate)}
                             </td>
                             <td
-                              style={{ padding: "12px 14px", fontWeight: 500 }}
+                              style={{
+                                padding: "0 14px",
+                                fontWeight: 500,
+                              }}
                             >
-                              {r.vendorName}
+                              <span
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 8,
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    width: 24,
+                                    height: 24,
+                                    borderRadius: "50%",
+                                    background: vendorColor(r.vendorName),
+                                    color: "#0b0b14",
+                                    fontSize: 10,
+                                    fontWeight: 700,
+                                    flexShrink: 0,
+                                  }}
+                                >
+                                  {getInitials(r.vendorName)}
+                                </span>
+                                <span>{r.vendorName}</span>
+                              </span>
                             </td>
                             <td
                               style={{
-                                padding: "12px 14px",
+                                padding: "0 14px",
                                 color: C.muted,
                                 fontSize: 12,
                               }}
+                              title={r.invoiceNo || ""}
                             >
-                              {r.invoiceNo || "—"}
+                              {r.invoiceNo ? truncate(r.invoiceNo, 14) : "—"}
                             </td>
-                            <td
-                              style={{
-                                padding: "12px 14px",
-                                color: C.muted,
-                                fontSize: 12,
-                              }}
-                            >
-                              {r.location || "—"}
+                            <td style={{ padding: "0 14px", fontSize: 12 }}>
+                              {r.location ? (
+                                <span style={locationPillStyle(r.location)}>
+                                  {r.location}
+                                </span>
+                              ) : (
+                                <span style={{ color: C.muted }}>—</span>
+                              )}
                             </td>
-                            <td
-                              style={{ padding: "12px 14px", color: C.muted }}
-                            >
+                            <td style={{ padding: "0 14px", color: C.muted }}>
                               {(r.items || []).length} item
                               {(r.items || []).length !== 1 ? "s" : ""}
                             </td>
                             <td
                               style={{
-                                padding: "12px 14px",
-                                fontFamily: "'JetBrains Mono', monospace",
+                                padding: "0 14px",
                                 fontWeight: 700,
                                 color: "#10b981",
                                 whiteSpace: "nowrap",
+                                textAlign: "right",
+                              }}
+                              title={`₹${fmt(total)}`}
+                            >
+                              {fmtLakh(total)}
+                            </td>
+                            <td
+                              style={{
+                                padding: "0 14px",
+                                width: 56,
+                                textAlign: "right",
+                                position: "relative",
                               }}
                             >
-                              ₹{fmt(total)}
-                            </td>
-                            <td style={{ padding: "12px 14px" }}>
-                              <div style={{ display: "flex", gap: 8 }}>
-                                {canEdit && (
-                                  <button
-                                    onClick={() => handleEdit(r)}
-                                    style={{
-                                      background: "#1e293b",
-                                      color: C.blue,
-                                      border: "1px solid #334155",
-                                      borderRadius: 6,
-                                      padding: "6px 14px",
-                                      fontSize: 11,
-                                      fontWeight: 500,
-                                      cursor: "pointer",
-                                    }}
-                                  >
-                                    Edit
-                                  </button>
-                                )}
-                                <button
-                                  onClick={() => generateGRNPDF(r)}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActionMenuId(
+                                    actionMenuId === rowId ? null : rowId,
+                                  );
+                                }}
+                                aria-label="Row actions"
+                                style={{
+                                  background: "transparent",
+                                  color: C.muted,
+                                  border: "1px solid transparent",
+                                  borderRadius: 6,
+                                  width: 28,
+                                  height: 28,
+                                  cursor: "pointer",
+                                  fontSize: 14,
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                }}
+                              >
+                                <i className="fa-solid fa-ellipsis-vertical" />
+                              </button>
+                              {actionMenuId === rowId && (
+                                <div
+                                  onClick={(e) => e.stopPropagation()}
                                   style={{
-                                    background: "#2a1a45",
-                                    color: "#a855f7",
-                                    border: "1px solid #4c1d95",
-                                    borderRadius: 6,
-                                    padding: "6px 14px",
-                                    fontSize: 11,
-                                    fontWeight: 500,
-                                    cursor: "pointer",
+                                    position: "absolute",
+                                    top: 36,
+                                    right: 14,
+                                    background: "#15151c",
+                                    border: "1px solid rgba(255,255,255,0.12)",
+                                    borderRadius: 8,
+                                    padding: 4,
+                                    minWidth: 160,
+                                    zIndex: 20,
+                                    boxShadow: "0 8px 24px rgba(0,0,0,0.45)",
+                                    textAlign: "left",
                                   }}
                                 >
-                                  PDF
-                                </button>
-                                {canEdit && (
+                                  {canEdit && (
+                                    <button
+                                      onClick={() => {
+                                        handleEdit(r);
+                                        setActionMenuId(null);
+                                      }}
+                                      style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 8,
+                                        width: "100%",
+                                        padding: "8px 12px",
+                                        background: "transparent",
+                                        border: "none",
+                                        color: "#ffffff",
+                                        fontSize: 12,
+                                        cursor: "pointer",
+                                        borderRadius: 5,
+                                        textAlign: "left",
+                                      }}
+                                    >
+                                      <i className="fa-solid fa-pen-to-square" />{" "}
+                                      Edit
+                                    </button>
+                                  )}
                                   <button
-                                    onClick={() => setDeleteTarget(r._id)}
+                                    onClick={() => {
+                                      generateGRNPDF(r);
+                                      setActionMenuId(null);
+                                    }}
                                     style={{
-                                      background: "#450a0a",
-                                      color: "#ef4444",
-                                      border: "1px solid #7f1d1d",
-                                      borderRadius: 6,
-                                      padding: "6px 14px",
-                                      fontSize: 11,
-                                      fontWeight: 500,
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: 8,
+                                      width: "100%",
+                                      padding: "8px 12px",
+                                      background: "transparent",
+                                      border: "none",
+                                      color: "#e5e7eb",
+                                      fontSize: 12,
                                       cursor: "pointer",
+                                      borderRadius: 5,
+                                      textAlign: "left",
                                     }}
                                   >
-                                    Delete
+                                    <i className="fa-solid fa-file-pdf" />{" "}
+                                    Download PDF
                                   </button>
-                                )}
-                              </div>
+                                  {canEdit && (
+                                    <button
+                                      onClick={() => {
+                                        setDeleteTarget(rowId);
+                                        setActionMenuId(null);
+                                      }}
+                                      style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 8,
+                                        width: "100%",
+                                        padding: "8px 12px",
+                                        background: "transparent",
+                                        border: "none",
+                                        color: "#ffffff",
+                                        fontSize: 12,
+                                        cursor: "pointer",
+                                        borderRadius: 5,
+                                        textAlign: "left",
+                                      }}
+                                    >
+                                      <i className="fa-solid fa-trash" /> Delete
+                                    </button>
+                                  )}
+                                </div>
+                              )}
                             </td>
                           </tr>
                         );
                       })}
                     </tbody>
                   </table>
+                )}
+              </div>
+
+              {/* Floating bulk action bar */}
+              {canEdit && selectedIds.size > 0 && (
+                <div
+                  style={{
+                    position: "fixed",
+                    bottom: 24,
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 14,
+                    padding: "10px 18px",
+                    background: "#15151c",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    borderRadius: 999,
+                    boxShadow:
+                      "0 12px 32px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3)",
+                    zIndex: 50,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: "#cbd5e1",
+                    }}
+                  >
+                    {selectedIds.size} row{selectedIds.size !== 1 ? "s" : ""}{" "}
+                    selected
+                  </span>
+                  <span
+                    style={{
+                      width: 1,
+                      height: 18,
+                      background: "rgba(255,255,255,0.12)",
+                    }}
+                  />
+                  <button
+                    onClick={() =>
+                      handleExportExcel(
+                        listData.filter((r) => selectedIds.has(r._id)),
+                      )
+                    }
+                    style={{
+                      background: "transparent",
+                      color: "#ffffff",
+                      border: "none",
+                      fontSize: 12,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      padding: "4px 8px",
+                      borderRadius: 4,
+                    }}
+                  >
+                    <i className="fa-solid fa-file-export" /> Export Selected
+                  </button>
+                  <button
+                    onClick={() => setBulkDeleteOpen(true)}
+                    style={{
+                      background: "transparent",
+                      color: "#ffffff",
+                      border: "none",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      padding: "4px 8px",
+                      borderRadius: 4,
+                    }}
+                  >
+                    <i className="fa-solid fa-trash" /> Delete Selected
+                  </button>
+                  <button
+                    onClick={() => setSelectedIds(new Set())}
+                    title="Clear selection"
+                    style={{
+                      background: "transparent",
+                      color: "#ffffff",
+                      border: "none",
+                      fontSize: 14,
+                      cursor: "pointer",
+                      padding: "4px 8px",
+                    }}
+                  >
+                    <i className="fa-solid fa-xmark" />
+                  </button>
                 </div>
               )}
             </>
           );
         })()}
       </div>
-    </div>
 
-    <ConfirmModal
-      isOpen={!!deleteTarget}
-      onClose={() => setDeleteTarget(null)}
-      onConfirm={handleDelete}
-      title="Move to Trash"
-      message="This material inward will be moved to trash. Stock will be reversed. You can restore it within 7 days."
-      confirmText="Move to Trash"
-      cancelText="Cancel"
-      type="danger"
-    />
-    <ConfirmModal
-      isOpen={bulkDeleteOpen}
-      onClose={() => setBulkDeleteOpen(false)}
-      onConfirm={handleBulkDelete}
-      title="Move to Trash"
-      message={`${selectedIds.size} material inward record(s) will be moved to trash. Stock will be reversed. You can restore them within 7 days.`}
-      confirmText="Move to Trash"
-      cancelText="Cancel"
-      type="danger"
-    />
+      <ConfirmModal
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        title="Move to Trash"
+        message="This material inward will be moved to trash. Stock will be reversed. You can restore it within 7 days."
+        confirmText="Move to Trash"
+        cancelText="Cancel"
+        type="danger"
+      />
+      <ConfirmModal
+        isOpen={bulkDeleteOpen}
+        onClose={() => setBulkDeleteOpen(false)}
+        onConfirm={handleBulkDelete}
+        title="Move to Trash"
+        message={`${selectedIds.size} material inward record(s) will be moved to trash. Stock will be reversed. You can restore them within 7 days.`}
+        confirmText="Move to Trash"
+        cancelText="Cancel"
+        type="danger"
+      />
     </>
   );
 }

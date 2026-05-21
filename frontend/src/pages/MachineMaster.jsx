@@ -38,10 +38,7 @@ const inputStyle = {
   border: "1px solid rgba(255,255,255,0.13)",
   borderRadius: 6,
   fontSize: 13,
-  fontFamily: "inherit",
   background: "rgba(255,255,255,0.07)",
-  backdropFilter: "blur(8px) saturate(180%)",
-  WebkitBackdropFilter: "blur(8px) saturate(180%)",
   color: "#e0e0e0",
   outline: "none",
   width: "100%",
@@ -415,7 +412,6 @@ export default function MachineMaster({ toast }) {
           position: "fixed",
           inset: 0,
           background: "rgba(0,0,0,0.85)",
-          backdropFilter: "blur(8px)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -426,8 +422,6 @@ export default function MachineMaster({ toast }) {
         <div
           style={{
             background: "rgba(255,255,255,0.05)",
-            backdropFilter: "blur(12px) saturate(180%)",
-            WebkitBackdropFilter: "blur(12px) saturate(180%)",
             border: "1px solid rgba(255,255,255,0.1)",
             borderRadius: 16,
             width: "100%",
@@ -754,8 +748,6 @@ export default function MachineMaster({ toast }) {
                       fontSize: 11,
                       fontWeight: 500,
                       background: (form.workingDays || []).includes(day) ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.05)",
-                      backdropFilter: "blur(12px) saturate(180%)",
-                      WebkitBackdropFilter: "blur(12px) saturate(180%)",
                       color: "#fff",
                       border: `1px solid ${(form.workingDays || []).includes(day) ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.1)"}`,
                       boxShadow: (form.workingDays || []).includes(day) ? "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" : "none",
@@ -849,7 +841,7 @@ export default function MachineMaster({ toast }) {
               </div>
               <button
                 onClick={addChangeoverRule}
-                style={{ padding: "9px 16px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, cursor: "pointer", fontSize: 12, whiteSpace: "nowrap", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
+                style={{ padding: "9px 16px", background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, cursor: "pointer", fontSize: 12, whiteSpace: "nowrap", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
               >
                 + Add
               </button>
@@ -869,8 +861,6 @@ export default function MachineMaster({ toast }) {
                 flex: 1,
                 padding: "12px",
                 background: "rgba(255,255,255,0.08)",
-                backdropFilter: "blur(12px) saturate(180%)",
-                WebkitBackdropFilter: "blur(12px) saturate(180%)",
                 color: "#fff",
                 border: "1px solid rgba(255,255,255,0.18)",
                 borderRadius: 8,
@@ -984,7 +974,7 @@ export default function MachineMaster({ toast }) {
       </div>
 
       {}
-      <div style={{ background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "16px 20px", marginBottom: 20, boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
+      <div style={{ background: "rgba(255,255,255,0.05)",  border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "16px 20px", marginBottom: 20, boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
         <div style={{ fontSize: 11, fontWeight: 800, color: "#FF9800", marginBottom: 12, letterSpacing: 1 }}>ADD NEW MACHINE</div>
         <div style={{ display: "flex", gap: 12 }}>
           <input
@@ -1002,7 +992,7 @@ export default function MachineMaster({ toast }) {
           <button
             onClick={handleAdd}
             disabled={loading}
-            style={{ padding: "0 25px", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 800, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
+            style={{ padding: "0 25px", background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 800, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
           >
             {loading ? "..." : "ADD MACHINE"}
           </button>
@@ -1053,7 +1043,7 @@ export default function MachineMaster({ toast }) {
             </div>
           </div>
         )}
-      <div style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, overflow: "hidden" }}>
+      <div style={{ background: "rgba(255,255,255,0.03)",  border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, overflow: "hidden" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
           <thead>
             <tr style={{ background: "rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>

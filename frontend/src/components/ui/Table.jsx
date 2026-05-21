@@ -49,8 +49,7 @@ export function Table({ cols, rows, emptyMsg = "No records yet." }) {
                   key={j}
                   style={{
                     padding: "9px 12px",
-                    fontFamily:
-                      typeof cell === "number" ? "'JetBrains Mono',monospace" : undefined
+                    
                   }}
                 >
                   {cell}

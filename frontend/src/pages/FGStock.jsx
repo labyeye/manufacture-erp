@@ -17,11 +17,9 @@ const inputStyle = {
   border: "1px solid rgba(255,255,255,0.1)",
   borderRadius: 8,
   fontSize: 13,
-  fontFamily: "inherit",
   background: "rgba(255,255,255,0.05)",
   color: "#e0e0e0",
   outline: "none",
-  backdropFilter: "blur(8px)",
 };
 
 export default function FGStock({
@@ -152,8 +150,6 @@ export default function FGStock({
             disabled={saving}
             style={{
               background: "rgba(255,255,255,0.08)",
-              backdropFilter: "blur(12px) saturate(180%)",
-              WebkitBackdropFilter: "blur(12px) saturate(180%)",
               border: "1px solid rgba(255,255,255,0.18)",
               borderRadius: 4,
               color: "#fff",
@@ -214,8 +210,6 @@ export default function FGStock({
             disabled={saving}
             style={{
               background: "rgba(255,255,255,0.08)",
-              backdropFilter: "blur(12px) saturate(180%)",
-              WebkitBackdropFilter: "blur(12px) saturate(180%)",
               border: "1px solid rgba(255,255,255,0.18)",
               borderRadius: 4,
               color: "#fff",
@@ -292,8 +286,6 @@ export default function FGStock({
             disabled={saving}
             style={{
               background: "rgba(255,255,255,0.08)",
-              backdropFilter: "blur(12px) saturate(180%)",
-              WebkitBackdropFilter: "blur(12px) saturate(180%)",
               border: "1px solid rgba(255,255,255,0.18)",
               borderRadius: 4,
               color: "#fff",
@@ -743,7 +735,6 @@ export default function FGStock({
               color: showZeroStock ? "#fff" : "rgba(255,255,255,0.45)",
               border: "1px solid rgba(255,255,255,0.1)",
               cursor: "pointer",
-              backdropFilter: "blur(8px)",
               transition: "all 0.2s",
             }}
           >
@@ -768,7 +759,6 @@ export default function FGStock({
               border: "1px solid rgba(255,255,255,0.08)",
               borderRadius: 12,
               padding: "16px 18px",
-              backdropFilter: "blur(12px)",
             }}
           >
             <div style={{ fontSize: 26, fontWeight: 600, color: "#e0e0e0", lineHeight: 1 }}>
@@ -829,7 +819,7 @@ export default function FGStock({
       </div>
 
       {showAgeing && (
-        <div style={{ marginBottom: 14, border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, overflow: "hidden", backdropFilter: "blur(16px)", background: "rgba(255,255,255,0.03)" }}>
+        <div style={{ marginBottom: 14, border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, overflow: "hidden", background: "rgba(255,255,255,0.03)" }}>
           <div style={{ background: "rgba(255,255,255,0.04)", padding: "12px 18px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: 10 }}>
             <i className="fa-solid fa-clock-rotate-left" style={{ color: "#f59e0b" }} />
             <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>FG Stock Ageing Analysis</span>
@@ -847,7 +837,7 @@ export default function FGStock({
               return (
                 <div key={bi} style={{ borderRight: bi < 3 ? "1px solid rgba(255,255,255,0.06)" : "none", padding: "16px 18px" }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: col, textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: 8 }}>{bucket.label}</div>
-                  <div style={{ fontSize: 26, fontWeight: 800, color: col, fontFamily: "monospace", marginBottom: 2 }}>{bucket.items.length}</div>
+                  <div style={{ fontSize: 26, fontWeight: 800, color: col, marginBottom: 2 }}>{bucket.items.length}</div>
                   <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginBottom: 6 }}>items</div>
                   <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 2 }}>Qty: {totalQtyBucket.toLocaleString("en-IN")}</div>
                   <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 8 }}>Value: ₹{totalValBucket.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</div>
@@ -909,7 +899,6 @@ export default function FGStock({
           border: "1px solid rgba(255,255,255,0.08)",
           borderRadius: 12,
           overflow: "hidden",
-          backdropFilter: "blur(16px)",
         }}
       >
         <div style={{ overflowX: "auto" }}>
@@ -1032,7 +1021,6 @@ export default function FGStock({
                         style={{
                           padding: "10px 14px",
                           color: "#666",
-                          fontFamily: "monospace",
                           fontSize: 11,
                         }}
                       >
@@ -1178,8 +1166,6 @@ export default function FGStock({
                               }}
                               style={{
                                 background: "rgba(255,255,255,0.08)",
-                                backdropFilter: "blur(12px) saturate(180%)",
-                                WebkitBackdropFilter: "blur(12px) saturate(180%)",
                                 color: "#fff",
                                 border: "1px solid rgba(255,255,255,0.18)",
                                 borderRadius: 6,
@@ -1279,7 +1265,6 @@ function EditModal({ item, onClose, onSave, companyMaster = [] }) {
     alignItems: "center",
     justifyContent: "center",
     zIndex: 1000,
-    backdropFilter: "blur(4px)",
   };
 
   const contentStyle = {
@@ -1420,17 +1405,19 @@ function EditModal({ item, onClose, onSave, companyMaster = [] }) {
           <button
             onClick={onClose}
             style={{
-              padding: "10px 20px",
-              background: "transparent",
-              border: "1px solid #333",
-              color: "#888",
-              borderRadius: 6,
-              cursor: "pointer",
-              fontWeight: 600,
-            }}
-          >
-            Cancel
-          </button>
+                      background: "transparent",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+          ><i className="fa-solid fa-xmark" /> Cancel</button>
           <button
             onClick={() => {
               const cleaned = { ...formData };
@@ -1442,8 +1429,6 @@ function EditModal({ item, onClose, onSave, companyMaster = [] }) {
             style={{
               padding: "10px 24px",
               background: "rgba(255,255,255,0.08)",
-              backdropFilter: "blur(12px) saturate(180%)",
-              WebkitBackdropFilter: "blur(12px) saturate(180%)",
               border: "1px solid rgba(255,255,255,0.18)",
               color: "#fff",
               borderRadius: 6,

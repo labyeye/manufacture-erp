@@ -574,13 +574,13 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
       <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
         <button
           onClick={() => { setHeader(blankHeader); setItems([blankItem()]); setHeaderErrors({}); setItemErrors([{}]); setEditId(null); setShowModal(true); }}
-          style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", color: "#fff", padding: "9px 18px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
+          style={{ background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", color: "#fff", padding: "9px 18px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
         >
           + New Dispatch
         </button>
         <button
           onClick={() => { setReturnHeader(blankReturnHeader); setReturnItems([blankItem()]); setShowReturnModal(true); }}
-          style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", border: "1px solid rgba(255,255,255,0.18)", color: "#fff", padding: "9px 18px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
+          style={{ background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", color: "#fff", padding: "9px 18px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
         >
           Material Return
         </button>
@@ -706,8 +706,6 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
               onClick={addItem}
               style={{
                 background: "rgba(255,255,255,0.08)",
-                backdropFilter: "blur(12px) saturate(180%)",
-                WebkitBackdropFilter: "blur(12px) saturate(180%)",
                 color: "#fff",
                 border: "1px solid rgba(255,255,255,0.18)",
                 borderRadius: 6,
@@ -745,21 +743,19 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                   <button
                     onClick={() => removeItem(idx)}
                     style={{
-                      background: "rgba(255,255,255,0.08)",
-                      backdropFilter: "blur(12px) saturate(180%)",
-                      WebkitBackdropFilter: "blur(12px) saturate(180%)",
-                      color: "#fff",
-                      border: "1px solid rgba(255,255,255,0.18)",
-                      borderRadius: 5,
-                      padding: "4px 12px",
+                      background: "transparent",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
                       fontWeight: 500,
-                      fontSize: 12,
                       cursor: "pointer",
-                      boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
                     }}
-                  >
-                    Remove
-                  </button>
+                  ><i className="fa-solid fa-trash" /> Delete</button>
                 )}
               </div>
 
@@ -1019,7 +1015,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
             </h3>
             <button
               onClick={() => setReturnItems((prev) => [...prev, blankItem()])}
-              style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", color: "#fff", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, padding: "8px 18px", fontWeight: 500, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
+              style={{ background: "rgba(255,255,255,0.08)",  color: "#fff", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, padding: "8px 18px", fontWeight: 500, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
             >
               + Add Item
             </button>
@@ -1032,10 +1028,20 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                 {returnItems.length > 1 && (
                   <button
                     onClick={() => setReturnItems((prev) => prev.filter((_, i) => i !== idx))}
-                    style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", color: "#fff", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 5, padding: "4px 12px", fontWeight: 500, fontSize: 12, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
-                  >
-                    Remove
-                  </button>
+                    style={{
+                      background: "transparent",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  ><i className="fa-solid fa-trash" /> Delete</button>
                 )}
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 0.5fr", gap: 10 }}>
@@ -1149,8 +1155,6 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
               }}
               style={{
                 background: "rgba(255,255,255,0.08)",
-                backdropFilter: "blur(12px) saturate(180%)",
-                WebkitBackdropFilter: "blur(12px) saturate(180%)",
                 color: "#fff",
                 border: "1px solid rgba(255,255,255,0.18)",
                 borderRadius: 6,
@@ -1267,7 +1271,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                     return (
                       <tr key={r._id} style={{ borderBottom: `1px solid ${C.border}22` }}>
                         <td style={{ padding: "10px 10px", whiteSpace: "nowrap" }}>
-                          <span style={{ fontFamily: "'JetBrains Mono',monospace", color: r.type === "Return" ? (C.orange || "#f97316") : C.purple, fontWeight: 600 }}>
+                          <span style={{  color: r.type === "Return" ? (C.orange || "#f97316") : C.purple, fontWeight: 600 }}>
                             {r.dispatchNo}
                           </span>
                           {r.type === "Return" && (
@@ -1297,8 +1301,32 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                         <td style={{ padding: "10px 10px", whiteSpace: "nowrap" }}>
                           <div style={{ display: "flex", gap: 4 }}>
                             <button onClick={() => generateDispatchPDF(r)} style={{ background: (C.purple || "#a855f7") + "22", color: C.purple || "#a855f7", border: "none", borderRadius: 5, padding: "4px 10px", fontWeight: 500, fontSize: 11, cursor: "pointer" }}>Print</button>
-                            <button onClick={handleEdit} style={{ background: (C.blue || "#3b82f6") + "22", color: C.blue || "#3b82f6", border: "none", borderRadius: 5, padding: "4px 10px", fontWeight: 500, fontSize: 11, cursor: "pointer" }}>Edit</button>
-                            <button onClick={handleDelete} style={{ background: "rgba(239,68,68,0.12)", color: "#ef4444", border: "none", borderRadius: 5, padding: "4px 10px", fontWeight: 500, fontSize: 11, cursor: "pointer" }}>Delete</button>
+                            <button onClick={handleEdit} style={{
+                      background: "transparent",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}><i className="fa-solid fa-pen-to-square" /> Edit</button>
+                            <button onClick={handleDelete} style={{
+                      background: "transparent",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}><i className="fa-solid fa-trash" /> Delete</button>
                           </div>
                         </td>
                       </tr>

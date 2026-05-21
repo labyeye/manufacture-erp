@@ -22,10 +22,7 @@ const inputStyle = {
   border: "1px solid rgba(255,255,255,0.13)",
   borderRadius: 6,
   fontSize: 13,
-  fontFamily: "inherit",
   background: "rgba(255,255,255,0.07)",
-  backdropFilter: "blur(8px) saturate(180%)",
-  WebkitBackdropFilter: "blur(8px) saturate(180%)",
   color: "#e0e0e0",
   outline: "none",
   boxSizing: "border-box",
@@ -306,7 +303,7 @@ function SellingSection({ toast, canExportImport = true }) {
           loading={loading}
           headers={["ITEM CODE", "ITEM NAME", "BRAND", "COMPANY", "UNIT PRICE", "UOM", "EFFECTIVE FROM", "STATUS", "ACTIONS"]}
           data={filtered.map((r) => [
-            <span style={{ fontWeight: 500, fontFamily: "monospace", color: ACCENT_SELL }}>{r.itemCode}</span>,
+            <span style={{ fontWeight: 500, color: ACCENT_SELL }}>{r.itemCode}</span>,
             r.itemName || "-",
             r.brandName || "-",
             r.companyName || "-",
@@ -609,7 +606,7 @@ function PurchaseSection({ toast, canExportImport = true }) {
           loading={loading}
           headers={["ITEM CODE", "ITEM NAME", "VENDOR", "UNIT PRICE", "UOM", "MOQ", "LEAD TIME", "EFFECTIVE FROM", "STATUS", "ACTIONS"]}
           data={filtered.map((r) => [
-            <span style={{ fontWeight: 500, fontFamily: "monospace", color: ACCENT_BUY }}>{r.itemCode}</span>,
+            <span style={{ fontWeight: 500, color: ACCENT_BUY }}>{r.itemCode}</span>,
             r.itemName || "-",
             r.vendorName || "-",
             <span style={{ fontWeight: 500, color: ACCENT_BUY }}>₹ {Number(r.unitPrice).toLocaleString()}</span>,

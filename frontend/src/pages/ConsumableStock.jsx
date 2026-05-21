@@ -419,8 +419,6 @@ export default function ConsumableStock({
             background: showZeroStock ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.05)",
             color: "#fff",
             border: `1px solid ${showZeroStock ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.18)"}`,
-            backdropFilter: "blur(12px) saturate(180%)",
-            WebkitBackdropFilter: "blur(12px) saturate(180%)",
             boxShadow: showZeroStock ? "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" : "none",
             cursor: "pointer",
           }}
@@ -444,8 +442,6 @@ export default function ConsumableStock({
               borderRadius: 6,
               border: `1px solid ${view === v ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.18)"}`,
               background: view === v ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.05)",
-              backdropFilter: "blur(12px) saturate(180%)",
-              WebkitBackdropFilter: "blur(12px) saturate(180%)",
               color: "#fff",
               boxShadow: view === v ? "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" : "none",
               fontWeight: 500,
@@ -514,8 +510,6 @@ export default function ConsumableStock({
                   style={{
                     padding: "7px 14px",
                     background: typeFilter === t ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.05)",
-                    backdropFilter: "blur(12px) saturate(180%)",
-                    WebkitBackdropFilter: "blur(12px) saturate(180%)",
                     color: "#fff",
                     fontWeight: typeFilter === t ? 700 : 400,
                     fontSize: 12,
@@ -635,7 +629,6 @@ export default function ConsumableStock({
                               padding: "10px 14px",
                               color: C.muted,
                               fontSize: 11,
-                              fontFamily: "'JetBrains Mono',monospace",
                             }}
                           >
                             {s.code || "—"}
@@ -647,7 +640,7 @@ export default function ConsumableStock({
                               {s.type || "Consumable"}
                             </span>
                           </td>
-                          <td style={{ padding: "10px 14px", fontFamily: "'JetBrains Mono',monospace", fontWeight: 600, color: out ? C.red : C.text || "#e5e7eb" }}>{fmt(s.qty || 0)}</td>
+                          <td style={{ padding: "10px 14px", fontWeight: 600, color: out ? C.red : C.text || "#e5e7eb" }}>{fmt(s.qty || 0)}</td>
                           <td style={{ padding: "10px 14px", color: C.muted, fontSize: 12 }}>{s.unit || "nos"}</td>
                           <td style={{ padding: "10px 14px", color: C.muted, fontSize: 12 }}>{s.reorderLevel ? fmt(s.reorderLevel) : "—"}</td>
                           <td style={{ padding: "10px 14px", color: C.muted }}>{s.rate ? `₹${fmt(s.rate)}` : "—"}</td>
@@ -673,8 +666,6 @@ export default function ConsumableStock({
                                   borderRadius: 4,
                                   border: "1px solid rgba(255,255,255,0.18)",
                                   background: "rgba(255,255,255,0.08)",
-                                  backdropFilter: "blur(12px) saturate(180%)",
-                                  WebkitBackdropFilter: "blur(12px) saturate(180%)",
                                   color: "#fff",
                                   boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
                                   fontSize: 11,
@@ -688,8 +679,6 @@ export default function ConsumableStock({
                                 onClick={() => handleDelete(s._id || s.id)}
                                 style={{
                                   background: "rgba(255,255,255,0.08)",
-                                  backdropFilter: "blur(12px) saturate(180%)",
-                                  WebkitBackdropFilter: "blur(12px) saturate(180%)",
                                   color: "#fff",
                                   border: "1px solid rgba(255,255,255,0.18)",
                                   borderRadius: 6,
@@ -861,10 +850,10 @@ export default function ConsumableStock({
                       <td style={{ padding: "9px 12px", color: C.muted, fontSize: 11, whiteSpace: "nowrap" }}>{fmtDate(log.issuedAt)}</td>
                       <td style={{ padding: "9px 12px", fontWeight: 600 }}>
                         {log.itemName}
-                        {log.itemCode && <span style={{ fontSize: 10, color: C.muted, marginLeft: 6, fontFamily: "monospace" }}>{log.itemCode}</span>}
+                        {log.itemCode && <span style={{ fontSize: 10, color: C.muted, marginLeft: 6 }}>{log.itemCode}</span>}
                       </td>
                       <td style={{ padding: "9px 12px", fontSize: 12, color: C.muted }}>{log.category || "—"}</td>
-                      <td style={{ padding: "9px 12px", fontFamily: "'JetBrains Mono',monospace", fontWeight: 500, color: C.orange || "#f97316", whiteSpace: "nowrap" }}>
+                      <td style={{ padding: "9px 12px", fontWeight: 500, color: C.orange || "#f97316", whiteSpace: "nowrap" }}>
                         -{fmt(log.qty)} {log.unit || "nos"}
                       </td>
                       <td style={{ padding: "9px 12px" }}>
@@ -893,7 +882,7 @@ export default function ConsumableStock({
 function StatCard({ value, label, color }) {
   return (
     <div style={{ padding: "16px 18px", border: `1px solid ${color}44`, borderRadius: 8, background: color + "08" }}>
-      <div style={{ fontSize: 22, fontWeight: 900, color, fontFamily: "'JetBrains Mono',monospace" }}>{value}</div>
+      <div style={{ fontSize: 22, fontWeight: 900, color }}>{value}</div>
       <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 4 }}>{label}</div>
     </div>
   );
@@ -901,7 +890,7 @@ function StatCard({ value, label, color }) {
 
 function ActionBtn({ label, color, onClick }) {
   return (
-    <button onClick={onClick} style={{ padding: "9px 14px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.18)", background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px) saturate(180%)", WebkitBackdropFilter: "blur(12px) saturate(180%)", color: "#fff", fontWeight: 500, fontSize: 12, cursor: "pointer", whiteSpace: "nowrap", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
+    <button onClick={onClick} style={{ padding: "9px 14px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.18)", background: "rgba(255,255,255,0.08)",  color: "#fff", fontWeight: 500, fontSize: 12, cursor: "pointer", whiteSpace: "nowrap", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
       {label}
     </button>
   );
