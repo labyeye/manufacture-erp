@@ -112,13 +112,15 @@ function SellingSection({ toast, canExportImport = true }) {
   /* filtered records */
   const filtered = useMemo(() => {
     if (!selectedClient) return [];
-    return records.filter((r) => {
-      const matchClient = r.companyName === selectedClient;
-      const matchSearch = !search ||
-        r.itemCode?.toLowerCase().includes(search.toLowerCase()) ||
-        r.itemName?.toLowerCase().includes(search.toLowerCase());
-      return matchClient && matchSearch;
-    });
+    return records
+      .filter((r) => {
+        const matchClient = r.companyName === selectedClient;
+        const matchSearch = !search ||
+          r.itemCode?.toLowerCase().includes(search.toLowerCase()) ||
+          r.itemName?.toLowerCase().includes(search.toLowerCase());
+        return matchClient && matchSearch;
+      })
+      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
   }, [records, selectedClient, search]);
 
   const handleItemCodeChange = (code) => {
@@ -312,8 +314,32 @@ function SellingSection({ toast, canExportImport = true }) {
             moment(r.effectiveFrom).format("DD/MM/YYYY"),
             <Badge text={r.status} color={r.status === "Active" ? C.green : C.muted} />,
             <div style={{ display: "flex", gap: 6 }}>
-              <Button small text="Edit" onClick={() => handleEdit(r)} />
-              <Button small text="Delete" color={C.red} onClick={() => handleDelete(r._id)} />
+              <button onClick={() => handleEdit(r)} style={{
+                background: "transparent",
+                color: "#8082ff",
+                border: "1px solid #8082ff98",
+                borderRadius: 6,
+                padding: "6px 12px",
+                fontSize: 11,
+                fontWeight: 500,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+              }}><i className="fa-solid fa-pen-to-square" /> Edit</button>
+              <button onClick={() => handleDelete(r._id)} style={{
+                background: "transparent",
+                color: "#8082ff",
+                border: "1px solid #8082ff98",
+                borderRadius: 6,
+                padding: "6px 12px",
+                fontSize: 11,
+                fontWeight: 500,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+              }}><i className="fa-solid fa-trash" /> Delete</button>
             </div>,
           ])}
         />
@@ -436,13 +462,15 @@ function PurchaseSection({ toast, canExportImport = true }) {
   /* filtered records — require a vendor to be selected */
   const filtered = useMemo(() => {
     if (!selectedVendor) return [];
-    return records.filter((r) => {
-      const matchVendor = r.vendorName === selectedVendor;
-      const matchSearch = !search ||
-        r.itemCode?.toLowerCase().includes(search.toLowerCase()) ||
-        r.itemName?.toLowerCase().includes(search.toLowerCase());
-      return matchVendor && matchSearch;
-    });
+    return records
+      .filter((r) => {
+        const matchVendor = r.vendorName === selectedVendor;
+        const matchSearch = !search ||
+          r.itemCode?.toLowerCase().includes(search.toLowerCase()) ||
+          r.itemName?.toLowerCase().includes(search.toLowerCase());
+        return matchVendor && matchSearch;
+      })
+      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
   }, [records, selectedVendor, search]);
 
   const handleVendorChange = (id) => {
@@ -616,8 +644,32 @@ function PurchaseSection({ toast, canExportImport = true }) {
             moment(r.effectiveFrom).format("DD/MM/YYYY"),
             <Badge text={r.status} color={r.status === "Active" ? C.green : C.muted} />,
             <div style={{ display: "flex", gap: 6 }}>
-              <Button small text="Edit" onClick={() => handleEdit(r)} />
-              <Button small text="Delete" color={C.red} onClick={() => handleDelete(r._id)} />
+              <button onClick={() => handleEdit(r)} style={{
+                background: "transparent",
+                color: "#8082ff",
+                border: "1px solid #8082ff98",
+                borderRadius: 6,
+                padding: "6px 12px",
+                fontSize: 11,
+                fontWeight: 500,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+              }}><i className="fa-solid fa-pen-to-square" /> Edit</button>
+              <button onClick={() => handleDelete(r._id)} style={{
+                background: "transparent",
+                color: "#8082ff",
+                border: "1px solid #8082ff98",
+                borderRadius: 6,
+                padding: "6px 12px",
+                fontSize: 11,
+                fontWeight: 500,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+              }}><i className="fa-solid fa-trash" /> Delete</button>
             </div>,
           ])}
         />

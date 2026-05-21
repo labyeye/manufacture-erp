@@ -272,13 +272,15 @@ export default function MachineMaster({ toast }) {
 
   const filteredMachines = useMemo(
     () =>
-      machines.filter((m) => {
-        const matchSearch = !searchTerm || m.name?.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchType = filterType === "All Types" || m.type === filterType;
-        const matchDiv = filterDivision === "All Divisions" || m.division === filterDivision;
-        const matchStatus = filterStatus === "All Status" || m.status === filterStatus;
-        return matchSearch && matchType && matchDiv && matchStatus;
-      }),
+      machines
+        .filter((m) => {
+          const matchSearch = !searchTerm || m.name?.toLowerCase().includes(searchTerm.toLowerCase());
+          const matchType = filterType === "All Types" || m.type === filterType;
+          const matchDiv = filterDivision === "All Divisions" || m.division === filterDivision;
+          const matchStatus = filterStatus === "All Status" || m.status === filterStatus;
+          return matchSearch && matchType && matchDiv && matchStatus;
+        })
+        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)),
     [machines, searchTerm, filterType, filterDivision, filterStatus]
   );
 

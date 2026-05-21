@@ -94,7 +94,9 @@ export default function RMStock({
     if (!showZeroStock) {
       list = list.filter((s) => (s.qty || 0) > 0 || (s.weight || 0) > 0);
     }
-    return list;
+    return [...list].sort(
+      (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
+    );
   }, [allItems, search, activeFilter, showZeroStock]);
 
   const handleUpdateReorder = async (item, newVal) => {
@@ -800,23 +802,23 @@ export default function RMStock({
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(4, 1fr)",
-          gap: 14,
+          gap: 12,
           marginBottom: 24,
         }}
       >
-        <StatCard label="Total Items" val={fmt(totalItems)} color={C.blue} />
-        <StatCard
-          label="Total Weight (kg)"
-          val={fmt(Math.round(totalWeightKg))}
-          suffix=" kg"
-          color={C.yellow}
-        />
-        <StatCard
-          label="Total Value"
-          val={fmt(Math.round(totalValue))}
-          prefix="₹"
-          color={C.green}
-        />
+        {[
+          { label: "Total Items", value: fmt(totalItems), icon: "fa-solid fa-boxes-stacked" },
+          { label: "Total Weight", value: `${fmt(Math.round(totalWeightKg))} kg`, icon: "fa-solid fa-weight-hanging" },
+          { label: "Total Value", value: `₹${fmt(Math.round(totalValue))}`, icon: "fa-solid fa-indian-rupee-sign" },
+        ].map(({ label, value, icon }) => (
+          <div key={label} style={{ padding: "16px 20px", background: "transparent", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <span style={{ fontSize: 19, color: "#ffffff", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
+              <i className={icon} style={{ color: C.muted, fontSize: 20, opacity: 0.9, display: "inline-flex", alignItems: "center", justifyContent: "center", height: 28, width: 28, lineHeight: 1 }} />
+            </div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>{value}</div>
+          </div>
+        ))}
       </div>
 
       {}
@@ -930,8 +932,8 @@ export default function RMStock({
       <div
         style={{
           background: "transparent",
-          border: "1px solid #2a2a2e",
-          borderRadius: 10,
+          border: "1px solid rgba(255,255,255,0.07)",
+          borderRadius: 12,
           overflow: "hidden",
         }}
       >
@@ -940,11 +942,12 @@ export default function RMStock({
             width: "100%",
             borderCollapse: "collapse",
             tableLayout: "fixed",
+            fontSize: 13,
           }}
         >
           <thead>
-            <tr style={{ borderBottom: "1px solid #2a2a2e" }}>
-              <th style={{ width: 40, padding: "14px 16px" }}>
+            <tr style={{ background: "transparent", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+              <th style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap", width: 40 }}>
                 <input
                   type="checkbox"
                   checked={
@@ -974,12 +977,14 @@ export default function RMStock({
                   key={h.label}
                   style={{
                     width: h.w,
-                    padding: "14px 16px",
+                    padding: "10px 14px",
                     textAlign: "left",
                     fontSize: 11,
-                    fontWeight: 500,
-                    color: "#666",
+                    fontWeight: 700,
+                    color: C.muted,
+                    textTransform: "uppercase",
                     letterSpacing: "0.05em",
+                    whiteSpace: "nowrap",
                   }}
                 >
                   {h.label}
@@ -998,10 +1003,10 @@ export default function RMStock({
                 <tr
                   key={s._id || s.id || idx}
                   style={{
-                    borderBottom: "1px solid #1e1e22",
+                    borderBottom: "1px solid rgba(255,255,255,0.04)",
                     background: selectedIds.includes(s._id || s.id)
                       ? "rgba(0, 122, 255, 0.05)"
-                      : "transparent",
+                      : (idx % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)"),
                   }}
                 >
                   <td style={{ padding: "16px" }}>
@@ -1109,33 +1114,38 @@ export default function RMStock({
                           <button
                             onClick={() => setEditingItem(s)}
                             style={{
-                              padding: "4px 9px",
-                              background: "#2196F322",
-                              color: "#2196F3",
-                              border: "none",
-                              borderRadius: 4,
+                              background: "transparent",
+                              color: "#8082ff",
+                              border: "1px solid #8082ff98",
+                              borderRadius: 6,
+                              padding: "6px 12px",
                               fontSize: 11,
-                              cursor: "pointer",
                               fontWeight: 500,
+                              cursor: "pointer",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 6,
                             }}
                           >
-                            ✏️
+                            <i className="fa-solid fa-pen-to-square" /> Edit
                           </button>
                           <button
                             onClick={() => handleDelete(s._id || s.id)}
                             style={{
-                              background: "rgba(255,255,255,0.08)",
-                              color: "#fff",
-                              border: "1px solid rgba(255,255,255,0.18)",
+                              background: "transparent",
+                              color: "#8082ff",
+                              border: "1px solid #8082ff98",
                               borderRadius: 6,
-                              padding: "4px 14px",
-                              fontSize: 12,
+                              padding: "6px 12px",
+                              fontSize: 11,
                               fontWeight: 500,
-                              boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
                               cursor: "pointer",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 6,
                             }}
                           >
-                            🗑️ Delete
+                            <i className="fa-solid fa-trash" /> Delete
                           </button>
                         </>
                       )}

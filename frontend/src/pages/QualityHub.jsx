@@ -155,7 +155,13 @@ function FAITab({ jobOrders, toast }) {
   };
 
   const filteredRecords = useMemo(() =>
-    records.filter((r) => filterStatus === "All" || r.status === filterStatus),
+    records
+      .filter((r) => filterStatus === "All" || r.status === filterStatus)
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt || 0) - new Date(a.createdAt || 0) ||
+          String(b.id || "").localeCompare(String(a.id || "")),
+      ),
     [records, filterStatus]
   );
 
@@ -350,9 +356,9 @@ function FAITab({ jobOrders, toast }) {
                   </div>
                   <div style={{ display: "flex", gap: 6 }}>
                     <button onClick={() => { setForm({ ...r }); setEditId(r.id); setShowModal(true); }}
-                      style={{ padding: "4px 10px", border: "1px solid #facc1533", background: "#facc1511", color: "#facc15", borderRadius: 4, fontSize: 11, cursor: "pointer" }}>✏️</button>
+                      style={{ background: "transparent", color: "#8082ff", border: "1px solid #8082ff98", borderRadius: 6, padding: "6px 12px", fontSize: 11, fontWeight: 500, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}><i className="fa-solid fa-pen-to-square" /> Edit</button>
                     <button onClick={() => { if (confirm("Delete?")) { const recs = records.filter((x) => x.id !== r.id); persist(recs); } }}
-                      style={{ padding: "4px 10px", border: "1px solid #ef444433", background: "transparent", color: "#ef4444", borderRadius: 4, fontSize: 11, cursor: "pointer" }}>🗑</button>
+                      style={{ background: "transparent", color: "#8082ff", border: "1px solid #8082ff98", borderRadius: 6, padding: "6px 12px", fontSize: 11, fontWeight: 500, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}><i className="fa-solid fa-trash" /> Delete</button>
                   </div>
                 </div>
                 {}
@@ -560,12 +566,12 @@ function SupplierTab({ purchaseOrders, inward, vendorMaster, toast }) {
       )}
 
       {}
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <div style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
           <thead>
-            <tr>
+            <tr style={{ background: "transparent", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
               {["Vendor", "Grade", "On-Time Delivery", "Responsiveness", "POs", "Score", "Recommended Action"].map((h) => (
-                <th key={h} style={{ textAlign: "left", padding: "10px 12px", color: "#666", fontWeight: 500, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.05em", borderBottom: "1px solid #2a2a2a", background: "#0a0a0a", whiteSpace: "nowrap" }}>{h}</th>
+                <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -575,8 +581,8 @@ function SupplierTab({ purchaseOrders, inward, vendorMaster, toast }) {
                 No purchase orders found. Supplier scores are computed automatically from PO + GRN data.
               </td></tr>
             )}
-            {scores.map((s) => (
-              <tr key={s.vendor} style={{ borderBottom: "1px solid #1a1a1a", cursor: "pointer" }}
+            {scores.map((s, i) => (
+              <tr key={s.vendor} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)", cursor: "pointer" }}
                 onClick={() => { setEditVendor(s.vendor); setRForm({ responsiveness: s.responsiveness ?? "", notes: manualScores.find((m) => m.vendor === s.vendor)?.notes || "" }); }}>
                 <td style={{ padding: "12px 12px", fontWeight: 600 }}>{s.vendor}</td>
                 <td style={{ padding: "12px 12px" }}>

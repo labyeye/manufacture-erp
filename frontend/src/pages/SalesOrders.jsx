@@ -1700,7 +1700,7 @@ export default function SalesOrders(props) {
           </Card>
 
           {(() => {
-            const filteredSOs = (salesOrders || []).slice().reverse().filter(r => {
+            const filteredSOs = (salesOrders || []).slice().sort((a, b) => new Date(b.createdAt || b.orderDate || 0) - new Date(a.createdAt || a.orderDate || 0)).filter(r => {
               if (!drDateFrom && !drDateTo) return true;
               const d = r.orderDate ? new Date(r.orderDate).toISOString().slice(0, 10) : "";
               if (drDateFrom && d < drDateFrom) return false;
@@ -1714,21 +1714,21 @@ export default function SalesOrders(props) {
             const openCount = filteredSOs.filter(r => !r.status || r.status === "Open").length;
             const completedCount = filteredSOs.filter(r => r.status === "Completed" || r.status === "Complated" || r.status === "Closed").length;
             const statCards = [
-              { label: "Total SOs", value: filteredSOs.length, icon: "fa-solid fa-file-lines", color: "#4ade80" },
-              { label: "Open", value: openCount, icon: "fa-solid fa-clock", color: "#f59e0b" },
-              { label: "Completed", value: completedCount, icon: "fa-solid fa-circle-check", color: "#10b981" },
-              { label: "Total Value", value: `₹${fmt(totalValue)}`, icon: "fa-solid fa-indian-rupee-sign", color: "#a78bfa" },
+              { label: "Total SOs", value: filteredSOs.length, icon: "fa-solid fa-file-lines" },
+              { label: "Open", value: openCount, icon: "fa-solid fa-clock" },
+              { label: "Completed", value: completedCount, icon: "fa-solid fa-circle-check" },
+              { label: "Total Value", value: `₹${fmt(totalValue)}`, icon: "fa-solid fa-indian-rupee-sign" },
             ];
             return (
               <>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 16 }}>
-                  {statCards.map(({ label, value, icon, color }) => (
-                    <div key={label} style={{ padding: "16px 20px", background: "transparent", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, borderLeft: `3px solid ${color}` }}>
+                  {statCards.map(({ label, value, icon }) => (
+                    <div key={label} style={{ padding: "16px 20px", background: "transparent", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                        <span style={{ fontSize: 11, color: C.muted, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
-                        <i className={icon} style={{ color, fontSize: 13, opacity: 0.8 }} />
+                        <span style={{ fontSize: 19, color: "#ffffff", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
+                        <i className={icon} style={{ color: C.muted, fontSize: 20, opacity: 0.9, display: "inline-flex", alignItems: "center", justifyContent: "center", height: 28, width: 28, lineHeight: 1 }} />
                       </div>
-                      <div style={{ fontSize: 22, fontWeight: 800, color: "#fff" }}>{value}</div>
+                      <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>{value}</div>
                     </div>
                   ))}
                 </div>
@@ -1817,11 +1817,11 @@ export default function SalesOrders(props) {
                     <span style={{ padding: "3px 10px", borderRadius: 5, fontSize: 11, fontWeight: 600, background: (r.status === "Complated" || r.status === "Completed" || r.status === "Received") ? "#06422233" : "#453b0333", color: (r.status === "Complated" || r.status === "Completed" || r.status === "Received") ? "#10b981" : "#f59e0b", border: "1px solid rgba(255,255,255,0.06)" }}>{r.status || "Open"}</span>
                   </td>
                   <td style={{ padding: "12px 14px" }}>
-                    <div style={{ display: "flex", gap: 5 }}>
+                    <div style={{ display: "flex", gap: 6 }}>
                       {!isClient && <button onClick={() => handleEdit(r)} style={{
                       background: "transparent",
-                      color: "#ffffff",
-                      border: "1px solid rgba(255,255,255,0.2)",
+                      color: "#8082ff",
+                      border: "1px solid #8082ff98",
                       borderRadius: 6,
                       padding: "6px 12px",
                       fontSize: 11,
@@ -1833,8 +1833,8 @@ export default function SalesOrders(props) {
                     }}><i className="fa-solid fa-pen-to-square" /> Edit</button>}
                       <button onClick={() => generateSOPDF(r)} style={{
                       background: "transparent",
-                      color: "#ffffff",
-                      border: "1px solid rgba(255,255,255,0.2)",
+                      color: "#8082ff",
+                      border: "1px solid #8082ff98",
                       borderRadius: 6,
                       padding: "6px 12px",
                       fontSize: 11,
@@ -1844,7 +1844,19 @@ export default function SalesOrders(props) {
                       alignItems: "center",
                       gap: 6,
                     }}><i className="fa-solid fa-file-pdf" /> PDF</button>
-                      {!isClient && <button onClick={() => setDeleteTarget(r._id)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.08)", color: "#ef4444", fontSize: 11, fontWeight: 500, cursor: "pointer" }}>Del</button>}
+                      {!isClient && <button onClick={() => setDeleteTarget(r._id)} style={{
+                      background: "transparent",
+                      color: "#8082ff",
+                      border: "1px solid #8082ff98",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}><i className="fa-solid fa-trash" /> Delete</button>}
                     </div>
                   </td>
                 </tr>

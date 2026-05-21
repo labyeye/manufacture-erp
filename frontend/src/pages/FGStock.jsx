@@ -1,6 +1,7 @@
 import React, { useState, useRef, useMemo } from "react";
 import * as XLSX from "xlsx";
 import { fgStockAPI } from "../api/auth";
+import { C } from "../constants/colors";
 import {
   ImportBtn,
   ExportBtn,
@@ -377,6 +378,9 @@ export default function FGStock({
       return matchSearch && matchCat && matchZero;
     });
     return result.sort((a, b) => {
+      const dateA = new Date(a.createdAt || a.lastUpdated || a.addedOn || 0).getTime();
+      const dateB = new Date(b.createdAt || b.lastUpdated || b.addedOn || 0).getTime();
+      if (dateA !== dateB) return dateB - dateA;
       const ca = a.itemCode || a.code || "";
       const cb = b.itemCode || b.code || "";
       return ca.localeCompare(cb, undefined, { numeric: true });
@@ -692,10 +696,10 @@ export default function FGStock({
   };
 
   const statCards = [
-    { label: "Total Items", value: totalItems },
-    { label: "In Stock", value: inStock },
-    { label: "Total Qty", value: totalQty.toLocaleString("en-IN", { maximumFractionDigits: 0 }) },
-    { label: "Total Value", value: `₹${totalValue.toLocaleString("en-IN", { maximumFractionDigits: 0 })}` },
+    { label: "Total Items", value: totalItems, icon: "fa-solid fa-boxes-stacked" },
+    { label: "In Stock", value: inStock, icon: "fa-solid fa-warehouse" },
+    { label: "Total Qty", value: totalQty.toLocaleString("en-IN", { maximumFractionDigits: 0 }), icon: "fa-solid fa-cubes" },
+    { label: "Total Value", value: `₹${totalValue.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`, icon: "fa-solid fa-indian-rupee-sign" },
   ];
 
   return (
@@ -746,27 +750,26 @@ export default function FGStock({
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+          gridTemplateColumns: "repeat(4, 1fr)",
           gap: 12,
           marginBottom: 16,
         }}
       >
-        {statCards.map((card) => (
+        {statCards.map(({ label, value, icon }) => (
           <div
-            key={card.label}
+            key={label}
             style={{
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.08)",
+              padding: "16px 20px",
+              background: "transparent",
+              border: "1px solid rgba(255,255,255,0.07)",
               borderRadius: 12,
-              padding: "16px 18px",
             }}
           >
-            <div style={{ fontSize: 26, fontWeight: 600, color: "#e0e0e0", lineHeight: 1 }}>
-              {card.value}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <span style={{ fontSize: 19, color: "#ffffff", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
+              <i className={icon} style={{ color: C.muted, fontSize: 20, opacity: 0.9, display: "inline-flex", alignItems: "center", justifyContent: "center", height: 28, width: 28, lineHeight: 1 }} />
             </div>
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 6, textTransform: "uppercase", letterSpacing: "0.5px", fontWeight: 600 }}>
-              {card.label}
-            </div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>{value}</div>
           </div>
         ))}
       </div>
@@ -812,7 +815,7 @@ export default function FGStock({
         <input
           ref={fileInputRef}
           type="file"
-          accept=".csv, .xlsx, .xls"
+          accept=".xlsx, .xls"
           style={{ display: "none" }}
           onChange={handleImport}
         />
@@ -895,24 +898,24 @@ export default function FGStock({
       {}
       <div
         style={{
-          background: "rgba(255,255,255,0.03)",
-          border: "1px solid rgba(255,255,255,0.08)",
+          background: "transparent",
+          border: "1px solid rgba(255,255,255,0.07)",
           borderRadius: 12,
           overflow: "hidden",
         }}
       >
         <div style={{ overflowX: "auto" }}>
           <table
-            style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}
+            style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}
           >
             <thead>
               <tr
                 style={{
-                  borderBottom: "1px solid rgba(255,255,255,0.06)",
-                  background: "rgba(255,255,255,0.04)",
+                  background: "transparent",
+                  borderBottom: "1px solid rgba(255,255,255,0.08)",
                 }}
               >
-                <th style={{ width: 40, padding: "10px 14px" }}>
+                <th style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap", width: 40 }}>
                   <input
                     type="checkbox"
                     checked={
@@ -944,6 +947,7 @@ export default function FGStock({
                   <th
                     key={h}
                     style={{
+                      padding: "10px 14px",
                       textAlign: [
                         "QTY",
                         "REORDER",
@@ -953,12 +957,12 @@ export default function FGStock({
                       ].includes(h)
                         ? "right"
                         : "left",
-                      padding: "10px 14px",
-                      fontWeight: 600,
-                      color: "#555",
                       fontSize: 11,
+                      fontWeight: 700,
+                      color: C.muted,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
                       whiteSpace: "nowrap",
-                      letterSpacing: "0.5px",
                     }}
                   >
                     {h}
@@ -999,7 +1003,7 @@ export default function FGStock({
                         borderBottom: "1px solid rgba(255,255,255,0.04)",
                         background: selectedIds.includes(s._id || s.id)
                           ? "rgba(255,255,255,0.07)"
-                          : "transparent",
+                          : (i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)"),
                       }}
                     >
                       <td style={{ padding: "10px 14px" }}>
@@ -1135,17 +1139,20 @@ export default function FGStock({
                             <button
                               onClick={() => setEditingItem(s)}
                               style={{
-                                padding: "4px 9px",
-                                background: "rgba(255,255,255,0.07)",
-                                color: "rgba(255,255,255,0.6)",
-                                border: "1px solid rgba(255,255,255,0.1)",
+                                background: "transparent",
+                                color: "#8082ff",
+                                border: "1px solid #8082ff98",
                                 borderRadius: 6,
+                                padding: "6px 12px",
                                 fontSize: 11,
-                                cursor: "pointer",
                                 fontWeight: 500,
+                                cursor: "pointer",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 6,
                               }}
                             >
-                              ✏️
+                              <i className="fa-solid fa-pen-to-square" /> Edit
                             </button>
                             <button
                               onClick={async () => {
@@ -1165,21 +1172,20 @@ export default function FGStock({
                                 }
                               }}
                               style={{
-                                background: "rgba(255,255,255,0.08)",
-                                color: "#fff",
-                                border: "1px solid rgba(255,255,255,0.18)",
+                                background: "transparent",
+                                color: "#8082ff",
+                                border: "1px solid #8082ff98",
                                 borderRadius: 6,
-                                padding: "4px 14px",
-                                fontSize: 12,
+                                padding: "6px 12px",
+                                fontSize: 11,
                                 fontWeight: 500,
                                 cursor: "pointer",
-                                boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
-                                display: "flex",
+                                display: "inline-flex",
                                 alignItems: "center",
                                 gap: 6,
                               }}
                             >
-                              🗑️ Delete
+                              <i className="fa-solid fa-trash" /> Delete
                             </button>
                           </div>
                         </td>

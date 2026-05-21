@@ -115,14 +115,16 @@ export default function PrintingDetailMaster({ toast, canExportImport = true }) 
   };
 
   const filteredData = useMemo(() => {
-    return printingMaster.filter((item) => {
-      const matchesSearch =
-        item.itemName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.itemCategory?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCat = catFilter === "All" || item.itemCategory === catFilter;
-      return matchesSearch && matchesCat;
-    });
+    return printingMaster
+      .filter((item) => {
+        const matchesSearch =
+          item.itemName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.itemCategory?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesCat = catFilter === "All" || item.itemCategory === catFilter;
+        return matchesSearch && matchesCat;
+      })
+      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
   }, [printingMaster, searchTerm, catFilter]);
 
   const uniqueCategories = useMemo(() => {
@@ -313,13 +315,14 @@ export default function PrintingDetailMaster({ toast, canExportImport = true }) 
   };
 
   const TABLE_HEADER_STYLE = {
-    fontSize: 11,
-
-    color: "#94a3b8",
-    textTransform: "uppercase",
-    padding: "12px 16px",
+    padding: "10px 14px",
     textAlign: "left",
-    borderBottom: `1px solid ${C.border}44`,
+    fontSize: 11,
+    fontWeight: 700,
+    color: C.muted,
+    textTransform: "uppercase",
+    letterSpacing: "0.05em",
+    whiteSpace: "nowrap",
   };
 
   const CELL_STYLE = {
@@ -730,10 +733,10 @@ export default function PrintingDetailMaster({ toast, canExportImport = true }) 
           </div>
         )}
       <Card style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <div style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead>
-              <tr style={{ background: "#0f172a" }}>
+              <tr style={{ background: "transparent", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
                 <th style={{ ...TABLE_HEADER_STYLE, width: 36 }}>
                   <input
                     type="checkbox"
@@ -765,8 +768,8 @@ export default function PrintingDetailMaster({ toast, canExportImport = true }) 
                   </td>
                 </tr>
               )}
-              {filteredData.map((item) => (
-                <tr key={item._id} className="row-hover" style={{ background: selectedIds.has(item._id) ? "rgba(96,165,250,0.08)" : undefined }}>
+              {filteredData.map((item, i) => (
+                <tr key={item._id} className="row-hover" style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", background: selectedIds.has(item._id) ? "rgba(96,165,250,0.08)" : (i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)") }}>
                   <td style={{ ...CELL_STYLE, width: 36 }}>
                     <input
                       type="checkbox"
@@ -791,34 +794,42 @@ export default function PrintingDetailMaster({ toast, canExportImport = true }) 
                         {item.companyName}
                       </span>
                     </div>
-                    <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+                    <div style={{ display: "flex", gap: 6, marginTop: 12 }}>
                       <button
                         onClick={() => handleEdit(item)}
                         style={{
-                          background: "none",
-                          border: "none",
-                          color: "#FF7F11",
+                          background: "transparent",
+                          color: "#8082ff",
+                          border: "1px solid #8082ff98",
+                          borderRadius: 6,
+                          padding: "6px 12px",
                           fontSize: 11,
                           fontWeight: 500,
                           cursor: "pointer",
-                          padding: 0,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
                         }}
                       >
-                        ✎ Edit
+                        <i className="fa-solid fa-pen-to-square" /> Edit
                       </button>
                       <button
                         onClick={() => handleDelete(item._id)}
                         style={{
-                          background: "none",
-                          border: "none",
-                          color: "#ef4444",
+                          background: "transparent",
+                          color: "#8082ff",
+                          border: "1px solid #8082ff98",
+                          borderRadius: 6,
+                          padding: "6px 12px",
                           fontSize: 11,
                           fontWeight: 500,
                           cursor: "pointer",
-                          padding: 0,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
                         }}
                       >
-                        🗑 Delete
+                        <i className="fa-solid fa-trash" /> Delete
                       </button>
                     </div>
                   </td>

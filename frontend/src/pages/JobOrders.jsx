@@ -1888,7 +1888,7 @@ export default function JobOrders(props) {
           {(() => {
             const filteredJOs = (jobOrders || [])
               .slice()
-              .reverse()
+              .sort((a, b) => new Date(b.createdAt || b.jobcardDate || 0) - new Date(a.createdAt || a.jobcardDate || 0))
               .filter((r) => {
                 if (!drDateFrom && !drDateTo) return true;
                 const d = r.jobcardDate
@@ -1918,25 +1918,21 @@ export default function JobOrders(props) {
                 label: "Total JOs",
                 value: filteredJOs.length,
                 icon: "fa-solid fa-gears",
-                color: "#facc15",
               },
               {
                 label: "Active",
                 value: activeCount,
                 icon: "fa-solid fa-spinner",
-                color: "#f97316",
               },
               {
                 label: "Completed",
                 value: completedCount,
                 icon: "fa-solid fa-circle-check",
-                color: "#10b981",
               },
               {
                 label: "Total Qty",
                 value: fmt(totalQty) + " pcs",
                 icon: "fa-solid fa-boxes-stacked",
-                color: "#60a5fa",
               },
             ];
             return (
@@ -1949,7 +1945,7 @@ export default function JobOrders(props) {
                     marginBottom: 16,
                   }}
                 >
-                  {statCards.map(({ label, value, icon, color }) => (
+                  {statCards.map(({ label, value, icon }) => (
                     <div
                       key={label}
                       style={{
@@ -1957,7 +1953,6 @@ export default function JobOrders(props) {
                         background: "transparent",
                         border: "1px solid rgba(255,255,255,0.07)",
                         borderRadius: 12,
-                        borderLeft: `3px solid ${color}`,
                       }}
                     >
                       <div
@@ -1970,8 +1965,8 @@ export default function JobOrders(props) {
                       >
                         <span
                           style={{
-                            fontSize: 11,
-                            color: C.muted,
+                            fontSize: 19,
+                            color: "#ffffff",
                             fontWeight: 600,
                             textTransform: "uppercase",
                             letterSpacing: "0.05em",
@@ -1981,12 +1976,12 @@ export default function JobOrders(props) {
                         </span>
                         <i
                           className={icon}
-                          style={{ color, fontSize: 13, opacity: 0.8 }}
+                          style={{ color: C.muted, fontSize: 20, opacity: 0.9, display: "inline-flex", alignItems: "center", justifyContent: "center", height: 28, width: 28, lineHeight: 1 }}
                         />
                       </div>
                       <div
                         style={{
-                          fontSize: 22,
+                          fontSize: 20,
                           fontWeight: 800,
                           color: "#fff",
                         }}
@@ -2335,51 +2330,60 @@ export default function JobOrders(props) {
                                 </span>
                               </td>
                               <td style={{ padding: "11px 14px" }}>
-                                <div style={{ display: "flex", gap: 5 }}>
+                                <div style={{ display: "flex", gap: 6 }}>
                                   <button
                                     onClick={() => handleEdit(r)}
                                     style={{
-                                      padding: "4px 10px",
-                                      borderRadius: 4,
-                                      border: "1px solid rgba(250,204,21,0.4)",
-                                      background: "rgba(250,204,21,0.08)",
-                                      color: "#facc15",
+                                      background: "transparent",
+                                      color: "#8082ff",
+                                      border: "1px solid #8082ff98",
+                                      borderRadius: 6,
+                                      padding: "6px 12px",
                                       fontSize: 11,
                                       fontWeight: 500,
                                       cursor: "pointer",
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: 6,
                                     }}
                                   >
-                                    Edit
+                                    <i className="fa-solid fa-pen-to-square" /> Edit
                                   </button>
                                   <button
                                     onClick={() => generateJobCardPDF(r)}
                                     style={{
-                                      padding: "4px 10px",
-                                      borderRadius: 4,
-                                      border: "1px solid rgba(96,165,250,0.3)",
-                                      background: "rgba(96,165,250,0.08)",
-                                      color: "#60a5fa",
+                                      background: "transparent",
+                                      color: "#8082ff",
+                                      border: "1px solid #8082ff98",
+                                      borderRadius: 6,
+                                      padding: "6px 12px",
                                       fontSize: 11,
                                       fontWeight: 500,
                                       cursor: "pointer",
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: 6,
                                     }}
                                   >
-                                    PDF
+                                    <i className="fa-solid fa-file-pdf" /> PDF
                                   </button>
                                   <button
                                     onClick={() => handleDelete(r._id || r.id)}
                                     style={{
-                                      padding: "4px 10px",
-                                      borderRadius: 4,
-                                      border: "1px solid rgba(239,68,68,0.3)",
-                                      background: "rgba(239,68,68,0.08)",
-                                      color: "#ef4444",
+                                      background: "transparent",
+                                      color: "#8082ff",
+                                      border: "1px solid #8082ff98",
+                                      borderRadius: 6,
+                                      padding: "6px 12px",
                                       fontSize: 11,
                                       fontWeight: 500,
                                       cursor: "pointer",
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: 6,
                                     }}
                                   >
-                                    Del
+                                    <i className="fa-solid fa-trash" /> Delete
                                   </button>
                                 </div>
                               </td>

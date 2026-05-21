@@ -69,12 +69,15 @@ export default function VendorMaster({
     }
   };
 
-  const filtered = vendorMaster.filter(
-    (v) =>
-      !searchTerm ||
-      v.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      v.contact?.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  const filtered = vendorMaster
+    .filter(
+      (v) =>
+        !searchTerm ||
+        v.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        v.contact?.toLowerCase().includes(searchTerm.toLowerCase()),
+    )
+    .slice()
+    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
   const handleChange = (field, value) =>
     setFormData((p) => ({ ...p, [field]: value }));
@@ -201,15 +204,10 @@ export default function VendorMaster({
       v.gstin || "",
       v.status || "Active",
     ]);
-    const csv = [header, ...rows]
-      .map((r) => r.map((v) => `"${v}"`).join(","))
-      .join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "vendors.csv";
-    a.click();
+    const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Vendors");
+    XLSX.writeFile(wb, "vendors.xlsx");
     toast("Exported successfully", "success");
   };
 
@@ -218,19 +216,12 @@ export default function VendorMaster({
     if (!file) return;
 
     try {
-      let lines = [];
-      if (file.name.endsWith(".xlsx") || file.name.endsWith(".xls")) {
-        const arrayBuffer = await file.arrayBuffer();
-        const workbook = XLSX.read(arrayBuffer, { type: "array" });
-        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-        const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-        lines = data.map((row) => row.map((v) => `"${v ?? ""}"`).join(","));
-      } else {
-        const text = await file.text();
-        lines = text.split("\n").filter(Boolean);
-      }
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: "array" });
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
 
-      const total = lines.length - 1;
+      const total = rows.length;
       if (total <= 0) return;
 
       setImportProgress({
@@ -241,62 +232,58 @@ export default function VendorMaster({
       });
 
       let successCount = 0;
-      for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i]
-          .split(",")
-          .map((v) => v.replace(/^"|"$/g, "").trim());
-        
-        if (cols[0]) {
-          setImportProgress(prev => ({
-            ...prev,
-            current: i,
-            status: `Pushing: ${cols[0]}`
-          }));
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const name = row["Name"] || row.name || "";
+        if (!name) continue;
 
-          try {
-            await vendorMasterAPI.create({
-              name: cols[0],
-              category: cols[1] || "",
-              contact: cols[2] || "",
-              email: cols[3] || "",
-              gstin: cols[4] || "",
-              status: cols[5] || "Active",
-            });
-            successCount++;
-          } catch (error) {
-            console.error(`Failed to import ${cols[0]}`, error);
-          }
+        setImportProgress((prev) => ({
+          ...prev,
+          current: i + 1,
+          status: `Pushing: ${name}`,
+        }));
+
+        try {
+          await vendorMasterAPI.create({
+            name,
+            category: row["Category"] || row.category || "",
+            contact: row["Phone/WhatsApp"] || row.contact || "",
+            email: row["Email"] || row.email || "",
+            gstin: row["GST Number"] || row.gstin || "",
+            status: row["Status"] || row.status || "Active",
+          });
+          successCount++;
+        } catch (error) {
+          console.error(`Failed to import ${name}`, error);
         }
       }
-      
-      setImportProgress(prev => ({
+
+      setImportProgress((prev) => ({
         ...prev,
         current: total,
-        status: `Complete! Imported ${successCount} vendors.`
+        status: `Complete! Imported ${successCount} vendors.`,
       }));
 
       fetchVendors();
       setTimeout(() => {
-        setImportProgress(p => ({ ...p, show: false }));
+        setImportProgress((p) => ({ ...p, show: false }));
         toast(`Imported ${successCount} vendors successfully`, "success");
       }, 1500);
     } catch (error) {
       console.error("Import error:", error);
       toast("Failed to process file", "error");
-      setImportProgress(p => ({ ...p, show: false }));
+      setImportProgress((p) => ({ ...p, show: false }));
     }
     e.target.value = "";
   };
 
   const handleTemplate = () => {
-    const csv =
-      '"Name","Category","Phone/WhatsApp","Email","GST Number","Status"\n"Example Vendor","Paper Supplier","9876543210","vendor@email.com","22AAAAA0000A1Z5","Active"';
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "vendor_template.csv";
-    a.click();
+    const header = ["Name", "Category", "Phone/WhatsApp", "Email", "GST Number", "Status"];
+    const sample = ["Example Vendor", "Paper Supplier", "9876543210", "vendor@email.com", "22AAAAA0000A1Z5", "Active"];
+    const ws = XLSX.utils.aoa_to_sheet([header, sample]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Vendors");
+    XLSX.writeFile(wb, "vendor_template.xlsx");
   };
 
   return (
@@ -580,7 +567,7 @@ export default function VendorMaster({
           <input
             ref={fileInputRef}
             type="file"
-            accept=".csv, .xlsx, .xls"
+            accept=".xlsx, .xls"
             style={{ display: "none" }}
             onChange={handleImportExcel}
           />
@@ -639,7 +626,14 @@ export default function VendorMaster({
               : "No vendors yet. They auto-populate when you create Purchase Orders."}
           </div>
         ) : (
-          <div style={{ overflowX: "auto" }}>
+          <div
+            style={{
+              background: "transparent",
+              border: "1px solid rgba(255,255,255,0.07)",
+              borderRadius: 12,
+              overflow: "hidden",
+            }}
+          >
             <table
               style={{
                 width: "100%",
@@ -648,8 +642,8 @@ export default function VendorMaster({
               }}
             >
               <thead>
-                <tr style={{ background: "rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-                  <th style={{ textAlign: "left", padding: "10px 12px", width: 36 }}>
+                <tr style={{ background: "transparent", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                  <th style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap", width: 36 }}>
                     <input
                       type="checkbox"
                       checked={allSelected}
@@ -670,11 +664,13 @@ export default function VendorMaster({
                     <th
                       key={h}
                       style={{
+                        padding: "10px 14px",
                         textAlign: "left",
-                        padding: "10px 12px",
-                        fontWeight: 600,
-                        color: "#888",
                         fontSize: 11,
+                        fontWeight: 700,
+                        color: C.muted,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
                         whiteSpace: "nowrap",
                       }}
                     >
@@ -684,12 +680,12 @@ export default function VendorMaster({
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((vendor) => (
+                {filtered.map((vendor, i) => (
                   <tr
                     key={vendor._id}
-                    style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: selectedIds.has(vendor._id) ? "rgba(96,165,250,0.08)" : undefined }}
+                    style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", background: selectedIds.has(vendor._id) ? "rgba(96,165,250,0.08)" : (i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)") }}
                     onMouseEnter={e => { if (!selectedIds.has(vendor._id)) e.currentTarget.style.background="rgba(255,255,255,0.04)"; }}
-                    onMouseLeave={e => { if (!selectedIds.has(vendor._id)) e.currentTarget.style.background="transparent"; }}
+                    onMouseLeave={e => { if (!selectedIds.has(vendor._id)) e.currentTarget.style.background = (i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)"); }}
                   >
                     <td style={{ padding: "12px", width: 36 }}>
                       <input
@@ -749,50 +745,59 @@ export default function VendorMaster({
                         <button
                           onClick={() => handleEdit(vendor)}
                           style={{
-                            padding: "5px 10px",
-                            background: "#1976D222",
-                            color: "#1976D2",
-                            border: "none",
-                            borderRadius: 4,
-                            fontWeight: 500,
-                            fontSize: 11,
-                            cursor: "pointer",
-                          }}
-                        >
-                          ✏️ Edit
-                        </button>
-                        <button
-                          onClick={() => handleToggleStatus(vendor)}
-                          style={{
-                            padding: "5px 10px",
-                            background: "#FF980022",
-                            color: "#FF9800",
-                            border: "none",
-                            borderRadius: 4,
-                            fontWeight: 500,
-                            fontSize: 11,
-                            cursor: "pointer",
-                          }}
-                        >
-                          {vendor.status === "Active" ? "⏸" : "▶"}
-                        </button>
-                        <button
-                          onClick={() => handleDelete(vendor._id)}
-                          style={{
-                            background: "#450a0a",
-                            color: "#ef4444",
-                            border: "1px solid #7f1d1d",
+                            background: "transparent",
+                            color: "#8082ff",
+                            border: "1px solid #8082ff98",
                             borderRadius: 6,
-                            padding: "4px 14px",
-                            fontSize: 12,
+                            padding: "6px 12px",
+                            fontSize: 11,
                             fontWeight: 500,
                             cursor: "pointer",
-                            display: "flex",
+                            display: "inline-flex",
                             alignItems: "center",
                             gap: 6,
                           }}
                         >
-                          🗑️ Delete
+                          <i className="fa-solid fa-pen-to-square" /> Edit
+                        </button>
+                        <button
+                          onClick={() => handleToggleStatus(vendor)}
+                          style={{
+                            background: "transparent",
+                            color: "#8082ff",
+                            border: "1px solid #8082ff98",
+                            borderRadius: 6,
+                            padding: "6px 12px",
+                            fontSize: 11,
+                            fontWeight: 500,
+                            cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                          }}
+                        >
+                          <i
+                            className={`fa-solid ${vendor.status === "Active" ? "fa-pause" : "fa-play"}`}
+                          />{" "}
+                          {vendor.status === "Active" ? "Pause" : "Activate"}
+                        </button>
+                        <button
+                          onClick={() => handleDelete(vendor._id)}
+                          style={{
+                            background: "transparent",
+                            color: "#8082ff",
+                            border: "1px solid #8082ff98",
+                            borderRadius: 6,
+                            padding: "6px 12px",
+                            fontSize: 11,
+                            fontWeight: 500,
+                            cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                          }}
+                        >
+                          <i className="fa-solid fa-trash" /> Delete
                         </button>
                       </div>
                     </td>

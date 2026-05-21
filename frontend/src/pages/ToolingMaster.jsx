@@ -112,16 +112,42 @@ export default function ToolingMaster({ toast }) {
         <Table
           loading={loading}
           headers={["TYPE", "DESIGN CODE", "LINKED SKU", "STATUS", "IMPRESSIONS", "LOCATION", "ACTIONS"]}
-          data={tools.map(tool => [
+          data={[...tools]
+            .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+            .map(tool => [
             <Badge text={tool.toolType} color={tool.toolType === 'Cylinder' ? C.blue : tool.toolType === 'Die' ? C.orange : C.purple} />,
             <span style={{ fontWeight: 700 }}>{tool.designCode}</span>,
             tool.linkedSKU,
             <Badge text={tool.status} color={tool.status === 'Available' ? C.green : tool.status === 'In Use' ? C.blue : C.red} />,
             `${(tool.impressionsDone || 0).toLocaleString()} / ${(tool.maxImpressionsBeforeRecondition || 0).toLocaleString()}`,
             tool.location || "-",
-            <div style={{ display: "flex", gap: 8 }}>
-              <Button small text="Edit" onClick={() => handleEdit(tool)} />
-              <Button small text="Delete" color={C.red} onClick={() => handleDelete(tool._id)} />
+            <div style={{ display: "flex", gap: 6 }}>
+              <button onClick={() => handleEdit(tool)} style={{
+                background: "transparent",
+                color: "#8082ff",
+                border: "1px solid #8082ff98",
+                borderRadius: 6,
+                padding: "6px 12px",
+                fontSize: 11,
+                fontWeight: 500,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+              }}><i className="fa-solid fa-pen-to-square" /> Edit</button>
+              <button onClick={() => handleDelete(tool._id)} style={{
+                background: "transparent",
+                color: "#8082ff",
+                border: "1px solid #8082ff98",
+                borderRadius: 6,
+                padding: "6px 12px",
+                fontSize: 11,
+                fontWeight: 500,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+              }}><i className="fa-solid fa-trash" /> Delete</button>
             </div>
           ])}
         />

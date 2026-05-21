@@ -131,7 +131,9 @@ export default function ConsumableStock({
     if (!showZeroStock) {
       list = list.filter((s) => (s.qty || 0) > 0);
     }
-    return list;
+    return [...list].sort(
+      (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
+    );
   }, [allItems, search, typeFilter, showZeroStock]);
 
   const totalItemsCount = filtered.length;
@@ -459,11 +461,21 @@ export default function ConsumableStock({
         <div>
           {}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12, marginBottom: 18 }}>
-            <StatCard value={fmt(totalItemsCount)} label="Total Items" color={C.blue || "#3b82f6"} />
-            <StatCard value={fmt(inStockCount)} label="In Stock" color={C.green || "#22c55e"} />
-            <StatCard value={fmt(outOfStockCount)} label="Out of Stock" color={C.red || "#ef4444"} />
-            <StatCard value={fmt(belowReorderCount)} label="Below Reorder" color={C.yellow || "#facc15"} />
-            <StatCard value={`₹${fmt(Math.round(totalValueSum))}`} label="Total Value (₹)" color={C.orange || "#f97316"} />
+            {[
+              { label: "Total Items", value: fmt(totalItemsCount), icon: "fa-solid fa-boxes-stacked" },
+              { label: "In Stock", value: fmt(inStockCount), icon: "fa-solid fa-warehouse" },
+              { label: "Out of Stock", value: fmt(outOfStockCount), icon: "fa-solid fa-circle-exclamation" },
+              { label: "Below Reorder", value: fmt(belowReorderCount), icon: "fa-solid fa-triangle-exclamation" },
+              { label: "Total Value", value: `₹${fmt(Math.round(totalValueSum))}`, icon: "fa-solid fa-indian-rupee-sign" },
+            ].map(({ label, value, icon }) => (
+              <div key={label} style={{ padding: "16px 20px", background: "transparent", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                  <span style={{ fontSize: 19, color: "#ffffff", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
+                  <i className={icon} style={{ color: C.muted, fontSize: 20, opacity: 0.9, display: "inline-flex", alignItems: "center", justifyContent: "center", height: 28, width: 28, lineHeight: 1 }} />
+                </div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>{value}</div>
+              </div>
+            ))}
           </div>
 
           {}
@@ -527,7 +539,7 @@ export default function ConsumableStock({
           </div>
 
           {}
-          <div style={{ border: `1px solid ${C.border}`, borderRadius: 8, background: C.surface, overflow: "hidden" }}>
+          <div style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
             {filtered.length === 0 ? (
               <div style={{ textAlign: "center", padding: "60px 20px", color: C.muted }}>
                 <div style={{ fontSize: 48, marginBottom: 12 }}>📦</div>
@@ -544,8 +556,8 @@ export default function ConsumableStock({
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
-                    <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-                      <th style={{ width: 40, padding: "11px 14px" }}>
+                    <tr style={{ background: "transparent", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                      <th style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap", width: 40 }}>
                         <input
                           type="checkbox"
                           checked={
@@ -577,13 +589,14 @@ export default function ConsumableStock({
                         <th
                           key={h}
                           style={{
-                            padding: "11px 14px",
+                            padding: "10px 14px",
                             textAlign: "left",
                             fontSize: 11,
-                            fontWeight: 500,
-                            letterSpacing: "0.06em",
+                            fontWeight: 700,
                             color: C.muted,
-                            background: C.surface,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.05em",
+                            whiteSpace: "nowrap",
                           }}
                         >
                           {h}
@@ -601,12 +614,12 @@ export default function ConsumableStock({
                         <tr
                           key={s.id || i}
                           style={{
-                            borderBottom: `1px solid ${C.border}22`,
+                            borderBottom: "1px solid rgba(255,255,255,0.04)",
                             background: selectedIds.includes(s._id || s.id)
                               ? (C.blue || "#3b82f6") + "11"
-                              : i % 2 === 1
-                                ? C.inputBg || "#ffffff08"
-                                : "transparent",
+                              : i % 2 === 0
+                                ? "transparent"
+                                : "rgba(255,255,255,0.01)",
                           }}
                         >
                           <td style={{ padding: "10px 14px" }}>
@@ -662,34 +675,38 @@ export default function ConsumableStock({
                                   setEditData(s);
                                 }}
                                 style={{
-                                  padding: "5px 10px",
-                                  borderRadius: 4,
-                                  border: "1px solid rgba(255,255,255,0.18)",
-                                  background: "rgba(255,255,255,0.08)",
-                                  color: "#fff",
-                                  boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                                  background: "transparent",
+                                  color: "#8082ff",
+                                  border: "1px solid #8082ff98",
+                                  borderRadius: 6,
+                                  padding: "6px 12px",
                                   fontSize: 11,
                                   fontWeight: 500,
                                   cursor: "pointer",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 6,
                                 }}
                               >
-                                ✏️
+                                <i className="fa-solid fa-pen-to-square" /> Edit
                               </button>
                               <button
                                 onClick={() => handleDelete(s._id || s.id)}
                                 style={{
-                                  background: "rgba(255,255,255,0.08)",
-                                  color: "#fff",
-                                  border: "1px solid rgba(255,255,255,0.18)",
+                                  background: "transparent",
+                                  color: "#8082ff",
+                                  border: "1px solid #8082ff98",
                                   borderRadius: 6,
-                                  padding: "5px 14px",
-                                  boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
-                                  fontSize: 12,
+                                  padding: "6px 12px",
+                                  fontSize: 11,
                                   fontWeight: 500,
                                   cursor: "pointer",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 6,
                                 }}
                               >
-                                🗑️ Delete
+                                <i className="fa-solid fa-trash" /> Delete
                               </button>
                             </>
                           )}
@@ -700,17 +717,20 @@ export default function ConsumableStock({
                                 setView("issue");
                               }}
                               style={{
-                                padding: "4px 10px",
-                                borderRadius: 4,
-                                border: `1px solid ${C.blue || "#3b82f6"}44`,
-                                background: (C.blue || "#3b82f6") + "11",
-                                color: C.blue || "#3b82f6",
+                                background: "transparent",
+                                color: "#8082ff",
+                                border: "1px solid #8082ff98",
+                                borderRadius: 6,
+                                padding: "6px 12px",
                                 fontSize: 11,
                                 fontWeight: 500,
                                 cursor: "pointer",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 6,
                               }}
                             >
-                              Issue
+                              <i className="fa-solid fa-arrow-right-from-bracket" /> Issue
                             </button>
                           )}
                         </div>
@@ -835,18 +855,18 @@ export default function ConsumableStock({
           ) : fetchedLogs.length === 0 ? (
             <div style={{ textAlign: "center", color: C.muted, padding: 32, fontSize: 13 }}>No issues recorded yet</div>
           ) : (
-            <div style={{ overflowX: "auto" }}>
+            <div style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                 <thead>
-                  <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                  <tr style={{ background: "transparent", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
                     {["DATE", "ITEM", "CATEGORY", "QTY", "ISSUED TO MACHINE", "REMARKS", "ISSUED BY"].map((h) => (
-                      <th key={h} style={{ padding: "9px 12px", textAlign: "left", fontSize: 11, fontWeight: 500, letterSpacing: "0.06em", color: C.muted, whiteSpace: "nowrap" }}>{h}</th>
+                      <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {fetchedLogs.map((log, i) => (
-                    <tr key={log._id || i} style={{ borderBottom: `1px solid ${C.border}22`, background: i % 2 === 1 ? C.inputBg || "#ffffff08" : "transparent" }}>
+                    <tr key={log._id || i} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)" }}>
                       <td style={{ padding: "9px 12px", color: C.muted, fontSize: 11, whiteSpace: "nowrap" }}>{fmtDate(log.issuedAt)}</td>
                       <td style={{ padding: "9px 12px", fontWeight: 600 }}>
                         {log.itemName}

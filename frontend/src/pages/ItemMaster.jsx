@@ -274,6 +274,9 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
 
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
+      const dateA = new Date(a.createdAt || a.addedOn || 0).getTime();
+      const dateB = new Date(b.createdAt || b.addedOn || 0).getTime();
+      if (dateA !== dateB) return dateB - dateA;
       const codeA = a.code || "";
       const codeB = b.code || "";
       return codeA.localeCompare(codeB, undefined, { numeric: true });
@@ -613,21 +616,10 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
     if (!file) return;
 
     try {
-      let rawData = [];
-      if (file.name.endsWith(".xlsx") || file.name.endsWith(".xls")) {
-        const arrayBuffer = await file.arrayBuffer();
-        const workbook = XLSX.read(arrayBuffer, { type: "array" });
-        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-        rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-      } else {
-        const text = await file.text();
-        rawData = text
-          .split("\n")
-          .filter(Boolean)
-          .map((line) =>
-            line.split(",").map((v) => v.replace(/^"|"$/g, "").trim()),
-          );
-      }
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: "array" });
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
       if (rawData.length < 2) {
         toast("No data found in file", "error");
@@ -1866,7 +1858,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
             type="file"
             ref={fileInputRef}
             hidden
-            accept=".csv,.xlsx,.xls"
+            accept=".xlsx,.xls"
             onChange={handleImport}
           />
         </div>
@@ -2052,13 +2044,13 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
               )}
 
               {/* actions */}
-              <div style={{ display: "flex", gap: 8 }}>
+              <div style={{ display: "flex", gap: 6 }}>
                 <button
                   onClick={() => handleEdit(item)}
                   style={{
                       background: "transparent",
-                      color: "#ffffff",
-                      border: "1px solid rgba(255,255,255,0.2)",
+                      color: "#8082ff",
+                      border: "1px solid #8082ff98",
                       borderRadius: 6,
                       padding: "6px 12px",
                       fontSize: 11,
@@ -2073,8 +2065,8 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
                   onClick={() => handleDelete(item)}
                   style={{
                       background: "transparent",
-                      color: "#ffffff",
-                      border: "1px solid rgba(255,255,255,0.2)",
+                      color: "#8082ff",
+                      border: "1px solid #8082ff98",
                       borderRadius: 6,
                       padding: "6px 12px",
                       fontSize: 11,
@@ -2241,8 +2233,8 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
                     onClick={() => handleEdit(item)}
                     style={{
                       background: "transparent",
-                      color: "#ffffff",
-                      border: "1px solid rgba(255,255,255,0.2)",
+                      color: "#8082ff",
+                      border: "1px solid #8082ff98",
                       borderRadius: 6,
                       padding: "6px 12px",
                       fontSize: 11,
@@ -2257,8 +2249,8 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
                     onClick={() => handleDelete(item)}
                     style={{
                       background: "transparent",
-                      color: "#ffffff",
-                      border: "1px solid rgba(255,255,255,0.2)",
+                      color: "#8082ff",
+                      border: "1px solid #8082ff98",
                       borderRadius: 6,
                       padding: "6px 12px",
                       fontSize: 11,

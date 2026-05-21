@@ -159,7 +159,13 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
   };
 
   const filtered = useMemo(() =>
-    records.filter((r) => filterStage === "All" || r.currentStage === filterStage),
+    records
+      .filter((r) => filterStage === "All" || r.currentStage === filterStage)
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt || 0) - new Date(a.createdAt || 0) ||
+          String(b.id || "").localeCompare(String(a.id || "")),
+      ),
     [records, filterStage]
   );
 
@@ -284,14 +290,14 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
                     )}
                     {rec.currentStage === "client_approved" && (
                       <button onClick={() => versionUp(rec)}
-                        style={{ padding: "4px 10px", background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", borderRadius: 4, color: "#fff", fontSize: 11, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
-                        + New Version
+                        style={{ background: "transparent", color: "#8082ff", border: "1px solid #8082ff98", borderRadius: 6, padding: "6px 12px", fontSize: 11, fontWeight: 500, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
+                        <i className="fa-solid fa-plus" /> New Version
                       </button>
                     )}
                     <button onClick={() => { setForm({ ...rec }); setEditId(rec.id); setShowModal(true); }}
-                      style={{ padding: "4px 10px", border: "1px solid #facc1533", background: "#facc1511", color: "#facc15", borderRadius: 4, fontSize: 11, cursor: "pointer" }}>✏️</button>
+                      style={{ background: "transparent", color: "#8082ff", border: "1px solid #8082ff98", borderRadius: 6, padding: "6px 12px", fontSize: 11, fontWeight: 500, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}><i className="fa-solid fa-pen-to-square" /> Edit</button>
                     <button onClick={() => { if (confirm("Delete?")) persist(records.filter((r) => r.id !== rec.id)); }}
-                      style={{ padding: "4px 10px", border: "1px solid #ef444433", background: "transparent", color: "#ef4444", borderRadius: 4, fontSize: 11, cursor: "pointer" }}>🗑</button>
+                      style={{ background: "transparent", color: "#8082ff", border: "1px solid #8082ff98", borderRadius: 6, padding: "6px 12px", fontSize: 11, fontWeight: 500, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}><i className="fa-solid fa-trash" /> Delete</button>
                   </div>
                 </div>
 
@@ -409,7 +415,13 @@ function DielineTab({ jobOrders, toast }) {
   }, [jobOrders]);
 
   const filtered = useMemo(() =>
-    dielines.filter((d) => !search || [d.dieCode, d.description, d.dimensions, d.clientTags, d.machineCompatible].join(" ").toLowerCase().includes(search.toLowerCase())),
+    dielines
+      .filter((d) => !search || [d.dieCode, d.description, d.dimensions, d.clientTags, d.machineCompatible].join(" ").toLowerCase().includes(search.toLowerCase()))
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt || 0) - new Date(a.createdAt || 0) ||
+          String(b.id || "").localeCompare(String(a.id || "")),
+      ),
     [dielines, search]
   );
 
@@ -502,11 +514,11 @@ function DielineTab({ jobOrders, toast }) {
                       <div style={{ fontSize: 10, color: "#555" }}>
                         Last used: {fmtDate(d.lastUsedDate)} · {usage} JO{usage !== 1 ? "s" : ""}
                       </div>
-                      <div style={{ display: "flex", gap: 4 }}>
+                      <div style={{ display: "flex", gap: 6 }}>
                         <button onClick={() => { setForm({ ...d }); setEditId(d.id); setShowModal(true); }}
-                          style={{ padding: "3px 8px", border: "1px solid #facc1533", background: "#facc1511", color: "#facc15", borderRadius: 4, fontSize: 10, cursor: "pointer" }}>✏️</button>
+                          style={{ background: "transparent", color: "#8082ff", border: "1px solid #8082ff98", borderRadius: 6, padding: "6px 12px", fontSize: 11, fontWeight: 500, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}><i className="fa-solid fa-pen-to-square" /> Edit</button>
                         <button onClick={() => { if (confirm("Delete?")) persist(dielines.filter((x) => x.id !== d.id)); }}
-                          style={{ padding: "3px 8px", border: "1px solid #ef444433", background: "transparent", color: "#ef4444", borderRadius: 4, fontSize: 10, cursor: "pointer" }}>🗑</button>
+                          style={{ background: "transparent", color: "#8082ff", border: "1px solid #8082ff98", borderRadius: 6, padding: "6px 12px", fontSize: 11, fontWeight: 500, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}><i className="fa-solid fa-trash" /> Delete</button>
                       </div>
                     </div>
                     {d.notes && <div style={{ fontSize: 10, color: "#555", marginTop: 6 }}>{d.notes}</div>}

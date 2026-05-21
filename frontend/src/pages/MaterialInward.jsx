@@ -56,7 +56,6 @@ export default function MaterialInward({
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
-  const [actionMenuId, setActionMenuId] = useState(null);
   const [hoveredRowId, setHoveredRowId] = useState(null);
   const [hoveredGrnId, setHoveredGrnId] = useState(null);
   const today = () => new Date().toISOString().split("T")[0];
@@ -261,13 +260,6 @@ export default function MaterialInward({
       setInitialLoad(false);
     }
   };
-
-  useEffect(() => {
-    if (actionMenuId == null) return;
-    const handler = () => setActionMenuId(null);
-    document.addEventListener("click", handler);
-    return () => document.removeEventListener("click", handler);
-  }, [actionMenuId]);
 
   const setH = (k, v) => {
     setHeader((f) => {
@@ -785,12 +777,7 @@ export default function MaterialInward({
         return d >= drDateFrom && d <= drDateTo;
       });
     }
-    list.sort((a, b) => {
-      const da = (a.inwardDate || a.createdAt || "").slice(0, 10);
-      const db = (b.inwardDate || b.createdAt || "").slice(0, 10);
-      if (db !== da) return db.localeCompare(da);
-      return String(b._id || "").localeCompare(String(a._id || ""));
-    });
+    list.sort((a, b) => new Date(b.createdAt || b.inwardDate || 0) - new Date(a.createdAt || a.inwardDate || 0));
     return list;
   }, [inward, search, drDateFrom, drDateTo]);
 
@@ -2030,42 +2017,21 @@ export default function MaterialInward({
               label: "Total GRNs",
               value: inwardSummary.count,
               icon: "fa-solid fa-truck-ramp-box",
-              accent: "#14b8a6",
-              trend:
-                inwardSummary.addedToday > 0
-                  ? `↑ ${inwardSummary.addedToday} added today`
-                  : "No new today",
-              trendColor: inwardSummary.addedToday > 0 ? "#34d399" : C.muted,
             },
             {
               label: "This Month",
               value: inwardSummary.thisMonthCount,
               icon: "fa-solid fa-calendar-days",
-              accent: "#60a5fa",
-              trend: `vs ${inwardSummary.lastMonthCount} last month`,
-              trendColor: C.muted,
             },
             {
               label: "Total Weight",
               value: fmt(Math.round(inwardSummary.totalWeight)) + " kg",
               icon: "fa-solid fa-weight-hanging",
-              accent: "#f59e0b",
-              trend:
-                inwardSummary.count > 0
-                  ? `Avg ${fmt(Math.round(inwardSummary.avgWeight))} kg/GRN`
-                  : "—",
-              trendColor: C.muted,
             },
             {
               label: "Total Value",
               value: fmtLakh(inwardSummary.totalValue),
               icon: "fa-solid fa-indian-rupee-sign",
-              accent: "#a78bfa",
-              trend:
-                inwardSummary.count > 0
-                  ? `Avg ${fmtLakh(inwardSummary.avgValue)}/GRN`
-                  : "—",
-              trendColor: C.muted,
             },
           ];
 
@@ -2080,63 +2046,23 @@ export default function MaterialInward({
                   marginBottom: 20,
                 }}
               >
-                {statCards.map(
-                  ({ label, value, icon, accent, trend, trendColor }) => (
-                    <div
-                      key={label}
-                      style={{
-                        height: 64,
-                        padding: "10px 14px",
-                        background: "rgba(255,255,255,0.02)",
-                        borderRadius: 8,
-                        borderLeft: `3px solid ${accent}`,
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "center",
-                        position: "relative",
-                      }}
-                    >
-                      <i
-                        className={icon}
-                        style={{
-                          position: "absolute",
-                          top: 10,
-                          right: 14,
-                          fontSize: 18,
-                          color: "#fff",
-                          opacity: 0.4,
-                          lineHeight: 1,
-                        }}
-                      />
-                      <div
-                        style={{
-                          fontSize: 10,
-                          color: C.muted,
-                          fontWeight: 700,
-                          textTransform: "uppercase",
-                          letterSpacing: "0.06em",
-                          lineHeight: 1.2,
-                        }}
-                      >
-                        {label}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: 22,
-                          fontWeight: 800,
-                          color: "#fff",
-                          lineHeight: 1.1,
-                          marginTop: 2,
-                        }}
-                      >
-                        {value}
-                      </div>
-                      <div style={{ ...trendStyle, color: trendColor }}>
-                        {trend}
-                      </div>
+                {statCards.map(({ label, value, icon }) => (
+                  <div
+                    key={label}
+                    style={{
+                      padding: "16px 20px",
+                      background: "transparent",
+                      border: "1px solid rgba(255,255,255,0.07)",
+                      borderRadius: 12,
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                      <span style={{ fontSize: 19, color: "#ffffff", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
+                      <i className={icon} style={{ color: C.muted, fontSize: 20, opacity: 0.9, display: "inline-flex", alignItems: "center", justifyContent: "center", height: 28, width: 28, lineHeight: 1 }} />
                     </div>
-                  ),
-                )}
+                    <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>{value}</div>
+                  </div>
+                ))}
               </div>
 
               {/* Toolbar + Table — connected with one rounded border */}
@@ -2517,129 +2443,68 @@ export default function MaterialInward({
                             >
                               {fmtLakh(total)}
                             </td>
-                            <td
-                              style={{
-                                padding: "0 14px",
-                                width: 56,
-                                textAlign: "right",
-                                position: "relative",
-                              }}
-                            >
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setActionMenuId(
-                                    actionMenuId === rowId ? null : rowId,
-                                  );
-                                }}
-                                aria-label="Row actions"
-                                style={{
-                                  background: "transparent",
-                                  color: C.muted,
-                                  border: "1px solid transparent",
-                                  borderRadius: 6,
-                                  width: 28,
-                                  height: 28,
-                                  cursor: "pointer",
-                                  fontSize: 14,
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                }}
-                              >
-                                <i className="fa-solid fa-ellipsis-vertical" />
-                              </button>
-                              {actionMenuId === rowId && (
-                                <div
-                                  onClick={(e) => e.stopPropagation()}
-                                  style={{
-                                    position: "absolute",
-                                    top: 36,
-                                    right: 14,
-                                    background: "#15151c",
-                                    border: "1px solid rgba(255,255,255,0.12)",
-                                    borderRadius: 8,
-                                    padding: 4,
-                                    minWidth: 160,
-                                    zIndex: 20,
-                                    boxShadow: "0 8px 24px rgba(0,0,0,0.45)",
-                                    textAlign: "left",
-                                  }}
-                                >
-                                  {canEdit && (
-                                    <button
-                                      onClick={() => {
-                                        handleEdit(r);
-                                        setActionMenuId(null);
-                                      }}
-                                      style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 8,
-                                        width: "100%",
-                                        padding: "8px 12px",
-                                        background: "transparent",
-                                        border: "none",
-                                        color: "#ffffff",
-                                        fontSize: 12,
-                                        cursor: "pointer",
-                                        borderRadius: 5,
-                                        textAlign: "left",
-                                      }}
-                                    >
-                                      <i className="fa-solid fa-pen-to-square" />{" "}
-                                      Edit
-                                    </button>
-                                  )}
+                            <td style={{ padding: "12px 14px" }}>
+                              <div style={{ display: "flex", gap: 6 }}>
+                                {canEdit && (
                                   <button
-                                    onClick={() => {
-                                      generateGRNPDF(r);
-                                      setActionMenuId(null);
-                                    }}
+                                    onClick={() => handleEdit(r)}
                                     style={{
-                                      display: "flex",
-                                      alignItems: "center",
-                                      gap: 8,
-                                      width: "100%",
-                                      padding: "8px 12px",
                                       background: "transparent",
-                                      border: "none",
-                                      color: "#e5e7eb",
-                                      fontSize: 12,
+                                      color: "#8082ff",
+                                      border: "1px solid #8082ff98",
+                                      borderRadius: 6,
+                                      padding: "6px 12px",
+                                      fontSize: 11,
+                                      fontWeight: 500,
                                       cursor: "pointer",
-                                      borderRadius: 5,
-                                      textAlign: "left",
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: 6,
                                     }}
                                   >
-                                    <i className="fa-solid fa-file-pdf" />{" "}
-                                    Download PDF
+                                    <i className="fa-solid fa-pen-to-square" />{" "}
+                                    Edit
                                   </button>
-                                  {canEdit && (
-                                    <button
-                                      onClick={() => {
-                                        setDeleteTarget(rowId);
-                                        setActionMenuId(null);
-                                      }}
-                                      style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 8,
-                                        width: "100%",
-                                        padding: "8px 12px",
-                                        background: "transparent",
-                                        border: "none",
-                                        color: "#ffffff",
-                                        fontSize: 12,
-                                        cursor: "pointer",
-                                        borderRadius: 5,
-                                        textAlign: "left",
-                                      }}
-                                    >
-                                      <i className="fa-solid fa-trash" /> Delete
-                                    </button>
-                                  )}
-                                </div>
-                              )}
+                                )}
+                                <button
+                                  onClick={() => generateGRNPDF(r)}
+                                  style={{
+                                    background: "transparent",
+                                    color: "#8082ff",
+                                    border: "1px solid #8082ff98",
+                                    borderRadius: 6,
+                                    padding: "6px 12px",
+                                    fontSize: 11,
+                                    fontWeight: 500,
+                                    cursor: "pointer",
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 6,
+                                  }}
+                                >
+                                  <i className="fa-solid fa-file-pdf" /> PDF
+                                </button>
+                                {canEdit && (
+                                  <button
+                                    onClick={() => setDeleteTarget(rowId)}
+                                    style={{
+                                      background: "transparent",
+                                      color: "#8082ff",
+                                      border: "1px solid #8082ff98",
+                                      borderRadius: 6,
+                                      padding: "6px 12px",
+                                      fontSize: 11,
+                                      fontWeight: 500,
+                                      cursor: "pointer",
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: 6,
+                                    }}
+                                  >
+                                    <i className="fa-solid fa-trash" /> Delete
+                                  </button>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         );

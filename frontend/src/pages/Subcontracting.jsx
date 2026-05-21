@@ -245,21 +245,23 @@ export default function Subcontracting({
   };
 
   const filteredRecords = useMemo(() => {
-    return records.filter((r) => {
-      if (filterStatus !== "All" && r.status !== filterStatus) return false;
-      if (filterStage !== "All" && r.stage !== filterStage) return false;
-      if (search) {
-        const q = search.toLowerCase();
-        if (
-          !r.joNo?.toLowerCase().includes(q) &&
-          !r.vendor?.toLowerCase().includes(q) &&
-          !r.clientName?.toLowerCase().includes(q) &&
-          !r.stage?.toLowerCase().includes(q)
-        )
-          return false;
-      }
-      return true;
-    });
+    return records
+      .filter((r) => {
+        if (filterStatus !== "All" && r.status !== filterStatus) return false;
+        if (filterStage !== "All" && r.stage !== filterStage) return false;
+        if (search) {
+          const q = search.toLowerCase();
+          if (
+            !r.joNo?.toLowerCase().includes(q) &&
+            !r.vendor?.toLowerCase().includes(q) &&
+            !r.clientName?.toLowerCase().includes(q) &&
+            !r.stage?.toLowerCase().includes(q)
+          )
+            return false;
+        }
+        return true;
+      })
+      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
   }, [records, filterStatus, filterStage, search]);
 
   const stats = useMemo(() => {
@@ -905,81 +907,99 @@ export default function Subcontracting({
                           setShowReceiveModal(true);
                         }}
                         style={{
-                          padding: "4px 12px",
-                          border: "1px solid #22c55e",
-                          background: "#22c55e22",
-                          color: "#22c55e",
-                          borderRadius: 4,
+                          background: "transparent",
+                          color: "#8082ff",
+                          border: "1px solid #8082ff98",
+                          borderRadius: 6,
+                          padding: "6px 12px",
                           fontSize: 11,
                           fontWeight: 500,
                           cursor: "pointer",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
                         }}
                       >
-                        Receive
+                        <i className="fa-solid fa-truck-ramp-box" /> Receive
                       </button>
                     )}
                     {r.status === "Received" && (
                       <button
                         onClick={() => handleReconcile(r.id)}
                         style={{
-                          padding: "4px 12px",
-                          border: "1px solid #3b82f6",
-                          background: "#3b82f622",
-                          color: "#3b82f6",
-                          borderRadius: 4,
+                          background: "transparent",
+                          color: "#8082ff",
+                          border: "1px solid #8082ff98",
+                          borderRadius: 6,
+                          padding: "6px 12px",
                           fontSize: 11,
                           fontWeight: 500,
                           cursor: "pointer",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
                         }}
                       >
-                        Reconcile
+                        <i className="fa-solid fa-check-double" /> Reconcile
                       </button>
                     )}
                     {!["Reconciled", "Cancelled"].includes(r.status) && (
                       <button
                         onClick={() => handleEdit(r)}
                         style={{
-                          padding: "4px 10px",
-                          border: "1px solid #facc1533",
-                          background: "#facc1511",
-                          color: "#facc15",
-                          borderRadius: 4,
+                          background: "transparent",
+                          color: "#8082ff",
+                          border: "1px solid #8082ff98",
+                          borderRadius: 6,
+                          padding: "6px 12px",
                           fontSize: 11,
+                          fontWeight: 500,
                           cursor: "pointer",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
                         }}
                       >
-                        ✏️
+                        <i className="fa-solid fa-pen-to-square" /> Edit
                       </button>
                     )}
                     {!["Reconciled"].includes(r.status) && (
                       <button
                         onClick={() => handleCancel(r.id)}
                         style={{
-                          padding: "4px 10px",
-                          border: "1px solid #6b728033",
                           background: "transparent",
-                          color: "#6b7280",
-                          borderRadius: 4,
+                          color: "#8082ff",
+                          border: "1px solid #8082ff98",
+                          borderRadius: 6,
+                          padding: "6px 12px",
                           fontSize: 11,
+                          fontWeight: 500,
                           cursor: "pointer",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
                         }}
                       >
-                        ×
+                        <i className="fa-solid fa-ban" /> Cancel
                       </button>
                     )}
                     <button
                       onClick={() => handleDelete(r.id)}
                       style={{
-                        padding: "4px 10px",
-                        border: "1px solid #ef444433",
                         background: "transparent",
-                        color: "#ef4444",
-                        borderRadius: 4,
+                        color: "#8082ff",
+                        border: "1px solid #8082ff98",
+                        borderRadius: 6,
+                        padding: "6px 12px",
                         fontSize: 11,
+                        fontWeight: 500,
                         cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
                       }}
                     >
-                      🗑
+                      <i className="fa-solid fa-trash" /> Delete
                     </button>
                   </div>
                 </div>

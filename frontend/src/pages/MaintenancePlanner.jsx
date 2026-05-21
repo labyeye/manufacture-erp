@@ -223,17 +223,17 @@ function PMSchedulerTab({ machineMaster, toast }) {
       })()}
 
       {}
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <div style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
           <thead>
-            <tr>
+            <tr style={{ background: "transparent", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
               {["Machine", "Type", "Interval", "Last PM", "Next PM", "Status", "PM Count", ""].map((h) => (
-                <th key={h} style={{ textAlign: "left", padding: "10px 12px", color: "#666", fontWeight: 500, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.05em", borderBottom: "1px solid #2a2a2a", background: "#0a0a0a", whiteSpace: "nowrap" }}>{h}</th>
+                <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {schedule.map((s) => {
+            {schedule.map((s, i) => {
               const statusColor = s.isOverdue ? "#ef4444" : s.isDueSoon ? "#f59e0b" : s.nextPMDate ? "#22c55e" : "#6b7280";
               const statusLabel = !s.intervalDays ? "Not configured"
                 : s.isOverdue ? `${Math.abs(s.daysUntil)}d overdue`
@@ -241,7 +241,7 @@ function PMSchedulerTab({ machineMaster, toast }) {
                 : s.nextPMDate ? `${s.daysUntil}d`
                 : "—";
               return (
-                <tr key={s.mid} style={{ borderBottom: "1px solid #1a1a1a" }}>
+                <tr key={s.mid} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)" }}>
                   <td style={{ padding: "12px 12px", fontWeight: 600 }}>
                     {s.machine.name}
                     <div style={{ fontSize: 10, color: "#555" }}>{s.machine.type}</div>
@@ -400,7 +400,13 @@ function SparePartsTab({ machineMaster, itemMasterFG = [], categoryMaster = [], 
   }, [usageLogs, usageMachineFilter]);
 
   const filtered = useMemo(() =>
-    parts.filter((p) => !search || [p.partName, p.partNumber, p.machineId, p.vendor, p.category].join(" ").toLowerCase().includes(search.toLowerCase())),
+    parts
+      .filter((p) => !search || [p.partName, p.partNumber, p.machineId, p.vendor, p.category].join(" ").toLowerCase().includes(search.toLowerCase()))
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt || 0) - new Date(a.createdAt || 0) ||
+          String(b.id || "").localeCompare(String(a.id || "")),
+      ),
     [parts, search]
   );
 
@@ -540,12 +546,12 @@ function SparePartsTab({ machineMaster, itemMasterFG = [], categoryMaster = [], 
           <div style={{ marginBottom: 14, display: "flex", gap: 10 }}>
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search parts..." style={{ ...inp, maxWidth: 300 }} />
           </div>
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <div style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
               <thead>
-                <tr>
+                <tr style={{ background: "transparent", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
                   {["Category", "Part", "Machine", "Stock", "Reorder At", "Status", "Location", "Cost", ""].map((h) => (
-                    <th key={h} style={{ textAlign: "left", padding: "10px 12px", color: "#666", fontWeight: 500, fontSize: 10, textTransform: "uppercase", borderBottom: "1px solid #2a2a2a", background: "#0a0a0a", whiteSpace: "nowrap" }}>{h}</th>
+                    <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -555,7 +561,7 @@ function SparePartsTab({ machineMaster, itemMasterFG = [], categoryMaster = [], 
                     {parts.length === 0 ? "No spare parts tracked yet. Add critical parts to prevent production stoppages." : "No parts match your search."}
                   </td></tr>
                 )}
-                {filtered.map((p) => {
+                {filtered.map((p, i) => {
                   const qty = Number(p.qty);
                   const rop = Number(p.reorderPoint);
                   const isOut = qty === 0;
@@ -563,7 +569,7 @@ function SparePartsTab({ machineMaster, itemMasterFG = [], categoryMaster = [], 
                   const statusCol = isOut ? "#ef4444" : isLow ? "#f59e0b" : "#22c55e";
                   const statusLabel = isOut ? "OUT OF STOCK" : isLow ? "LOW — reorder" : "OK";
                   return (
-                    <tr key={p.id} style={{ borderBottom: "1px solid #1a1a1a" }}>
+                    <tr key={p.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)" }}>
                       <td style={{ padding: "10px 12px", fontSize: 11, color: "#888" }}>{p.category || "—"}</td>
                       <td style={{ padding: "10px 12px" }}>
                         <div style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
@@ -585,16 +591,16 @@ function SparePartsTab({ machineMaster, itemMasterFG = [], categoryMaster = [], 
                         {p.unitCost ? `₹${Number(p.unitCost).toLocaleString("en-IN")}` : "—"}
                       </td>
                       <td style={{ padding: "10px 12px" }}>
-                        <div style={{ display: "flex", gap: 4 }}>
+                        <div style={{ display: "flex", gap: 6 }}>
                           <button
                             onClick={() => {
                               setForm({ ...p, qty: p.qty, reorderPoint: p.reorderPoint, unitCost: p.unitCost });
                               setEditId(p.id); setShowModal(true);
                             }}
-                            style={{ padding: "3px 8px", border: "1px solid #facc1533", background: "#facc1511", color: "#facc15", borderRadius: 4, fontSize: 10, cursor: "pointer" }}>✏️</button>
+                            style={{ background: "transparent", color: "#8082ff", border: "1px solid #8082ff98", borderRadius: 6, padding: "6px 12px", fontSize: 11, fontWeight: 500, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}><i className="fa-solid fa-pen-to-square" /> Edit</button>
                           <button
                             onClick={() => { if (confirm("Delete?")) persist(parts.filter((x) => x.id !== p.id)); }}
-                            style={{ padding: "3px 8px", border: "1px solid #ef444433", background: "transparent", color: "#ef4444", borderRadius: 4, fontSize: 10, cursor: "pointer" }}>🗑</button>
+                            style={{ background: "transparent", color: "#8082ff", border: "1px solid #8082ff98", borderRadius: 6, padding: "6px 12px", fontSize: 11, fontWeight: 500, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}><i className="fa-solid fa-trash" /> Delete</button>
                         </div>
                       </td>
                     </tr>
@@ -645,18 +651,18 @@ function SparePartsTab({ machineMaster, itemMasterFG = [], categoryMaster = [], 
           ) : filteredUsageLogs.length === 0 ? (
             <div style={{ textAlign: "center", color: "#555", padding: 40 }}>No usage records found for the selected period</div>
           ) : (
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <div style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                 <thead>
-                  <tr>
+                  <tr style={{ background: "transparent", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
                     {["Date", "Part Name", "Category", "Qty Used", "Machine", "Issued By", "Remarks"].map((h) => (
-                      <th key={h} style={{ textAlign: "left", padding: "10px 12px", color: "#666", fontWeight: 500, fontSize: 10, textTransform: "uppercase", borderBottom: "1px solid #2a2a2a", background: "#0a0a0a", whiteSpace: "nowrap" }}>{h}</th>
+                      <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {filteredUsageLogs.map((log, i) => (
-                    <tr key={log._id || i} style={{ borderBottom: "1px solid #1a1a1a" }}>
+                    <tr key={log._id || i} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)" }}>
                       <td style={{ padding: "10px 12px", fontSize: 11, color: "#888", whiteSpace: "nowrap" }}>{fmtDate(log.issuedAt)}</td>
                       <td style={{ padding: "10px 12px", fontWeight: 600 }}>
                         {log.itemName}

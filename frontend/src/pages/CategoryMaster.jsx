@@ -288,13 +288,15 @@ export default function CategoryMaster({ toast, canExportImport = true }) {
   };
 
   const handleTemplate = () => {
-    const csv =
-      '"Category Name","Sub-Type 1","Sub-Type 2","Sub-Type 3"\n"Paper Reel","MG Kraft","MF Kraft","Bleached Kraft"\n"Paper Sheet","Art Paper","Duplex Board",""';
-    const blob = new Blob([csv], { type: "text/csv" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `${activeTab.replace(" ", "_")}_categories_template.csv`;
-    a.click();
+    const rows = [
+      ["Category Name", "Sub-Type 1", "Sub-Type 2", "Sub-Type 3"],
+      ["Paper Reel", "MG Kraft", "MF Kraft", "Bleached Kraft"],
+      ["Paper Sheet", "Art Paper", "Duplex Board", ""],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Categories");
+    XLSX.writeFile(wb, `${activeTab.replace(" ", "_")}_categories_template.xlsx`);
   };
 
   const handleImport = async (e) => {
@@ -503,7 +505,7 @@ export default function CategoryMaster({ toast, canExportImport = true }) {
             <input
               ref={fileInputRef}
               type="file"
-              accept=".csv, .xlsx, .xls"
+              accept=".xlsx, .xls"
               style={{ display: "none" }}
               onChange={handleImport}
             />
@@ -597,15 +599,20 @@ export default function CategoryMaster({ toast, canExportImport = true }) {
                             setEditingCategory({ oldName: cat, newName: cat });
                           }}
                           style={{
-                            background: "none",
-                            border: "none",
-                            color: "#555",
-                            fontSize: 10,
+                            background: "transparent",
+                            color: "#8082ff",
+                            border: "1px solid #8082ff98",
+                            borderRadius: 6,
+                            padding: "6px 12px",
+                            fontSize: 11,
+                            fontWeight: 500,
                             cursor: "pointer",
-                            padding: "4px",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
                           }}
                         >
-                          ✏️
+                          <i className="fa-solid fa-pen-to-square" /> Edit
                         </button>
                         <button
                           onClick={(e) => {
@@ -613,15 +620,20 @@ export default function CategoryMaster({ toast, canExportImport = true }) {
                             handleDeleteCategory(cat);
                           }}
                           style={{
-                            background: "none",
-                            border: "none",
-                            color: "#555",
-                            fontSize: 12,
+                            background: "transparent",
+                            color: "#8082ff",
+                            border: "1px solid #8082ff98",
+                            borderRadius: 6,
+                            padding: "6px 12px",
+                            fontSize: 11,
+                            fontWeight: 500,
                             cursor: "pointer",
-                            padding: "4px",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
                           }}
                         >
-                          ×
+                          <i className="fa-solid fa-trash" /> Delete
                         </button>
                       </div>
                     )}

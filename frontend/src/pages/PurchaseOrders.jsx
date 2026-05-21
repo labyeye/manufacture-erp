@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
+import * as XLSX from "xlsx";
 import ConfirmModal from "../components/ConfirmModal";
 import { C } from "../constants/colors";
 import { purchaseOrdersAPI, itemMasterAPI, priceListAPI } from "../api/auth";
@@ -156,6 +157,7 @@ export default function PurchaseOrders({
   const [searchQuery, setSearchQuery] = useState("");
   const [vendorFilter, setVendorFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const importInputRef = useRef(null);
 
   useEffect(() => {
     fetchPOs();
@@ -1850,12 +1852,7 @@ export default function PurchaseOrders({
 
           const baseFiltered = (purchaseOrders || [])
             .slice()
-            .sort((a, b) => {
-              const da = (a.poDate || a.createdAt || "").slice(0, 10);
-              const db = (b.poDate || b.createdAt || "").slice(0, 10);
-              if (db !== da) return db.localeCompare(da);
-              return String(b._id || "").localeCompare(String(a._id || ""));
-            })
+            .sort((a, b) => new Date(b.createdAt || b.poDate || 0) - new Date(a.createdAt || a.poDate || 0))
             .filter((r) => {
               if (drDateFrom || drDateTo) {
                 const d = (r.poDate || "").slice(0, 10);
@@ -1968,7 +1965,7 @@ export default function PurchaseOrders({
             },
           ];
 
-          const exportCSV = (rows) => {
+          const exportExcel = (rows) => {
             const headers = [
               "PO No",
               "Date",
@@ -1997,20 +1994,10 @@ export default function PurchaseOrders({
                 r.status || "Open",
               ];
             });
-            const csv = [headers, ...data]
-              .map((row) =>
-                row
-                  .map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`)
-                  .join(","),
-              )
-              .join("\n");
-            const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `purchase-orders-${todayStr}.csv`;
-            a.click();
-            URL.revokeObjectURL(url);
+            const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Purchase Orders");
+            XLSX.writeFile(wb, `purchase-orders-${todayStr}.xlsx`);
           };
 
           const bulkMarkReceived = async () => {
@@ -2235,7 +2222,7 @@ export default function PurchaseOrders({
                     {filteredPOs.length} records found
                   </span>
                   <button
-                    onClick={() => exportCSV(filteredPOs)}
+                    onClick={() => exportExcel(filteredPOs)}
                     style={{
                       background: "transparent",
                       color: "#ffffff",
@@ -2250,8 +2237,74 @@ export default function PurchaseOrders({
                       gap: 8,
                     }}
                   >
-                    <i className="fa-solid fa-file-export" /> Export CSV
+                    <i className="fa-solid fa-file-excel" /> Export Excel
                   </button>
+                  {canEdit && (
+                    <button
+                      onClick={() => importInputRef.current?.click()}
+                      style={{
+                        background: "transparent",
+                        color: "#ffffff",
+                        border: "1px solid #8082ff",
+                        borderRadius: 6,
+                        padding: "8px 16px",
+                        fontSize: 12,
+                        fontWeight: 500,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                      }}
+                    >
+                      <i className="fa-solid fa-file-import" /> Import Excel
+                    </button>
+                  )}
+                  <input
+                    ref={importInputRef}
+                    type="file"
+                    accept=".xlsx,.xls"
+                    style={{ display: "none" }}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = async (ev) => {
+                        try {
+                          const wb = XLSX.read(ev.target.result, { type: "binary" });
+                          const ws = wb.Sheets[wb.SheetNames[0]];
+                          const rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
+                          if (!rows.length) {
+                            toast("No rows found in Excel file", "error");
+                            return;
+                          }
+                          let ok = 0;
+                          let failed = 0;
+                          for (const row of rows) {
+                            try {
+                              await purchaseOrdersAPI.create({
+                                poNo: row["PO No"] || row.poNo || "",
+                                poDate: row["Date"] || row.poDate || todayStr,
+                                vendor: row["Vendor"] || row.vendor || "",
+                                deliveryDate: row["Delivery"] || row.deliveryDate || "",
+                                remarks: row["Remarks"] || row.remarks || "",
+                                items: [],
+                              });
+                              ok++;
+                            } catch {
+                              failed++;
+                            }
+                          }
+                          toast(`Imported ${ok} PO(s)${failed ? `, ${failed} failed` : ""}`, failed ? "warning" : "success");
+                          fetchPOs();
+                        } catch (err) {
+                          toast("Failed to read Excel file", "error");
+                        } finally {
+                          if (e.target) e.target.value = "";
+                        }
+                      };
+                      reader.readAsBinaryString(file);
+                    }}
+                  />
                   {canEdit && (
                     <button
                       onClick={() => {
@@ -2318,7 +2371,7 @@ export default function PurchaseOrders({
                     </button>
                     <button
                       onClick={() =>
-                        exportCSV(
+                        exportExcel(
                           filteredPOs.filter((r) => selectedIds.has(r._id)),
                         )
                       }

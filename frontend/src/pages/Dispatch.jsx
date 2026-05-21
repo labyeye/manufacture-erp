@@ -76,6 +76,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
   const [returnHeader, setReturnHeader] = useState(blankReturnHeader);
   const [returnItems, setReturnItems] = useState([blankItem()]);
   const [returnLoading, setReturnLoading] = useState(false);
+  const [recordsTab, setRecordsTab] = useState("dispatch");
 
   useEffect(() => {
     fetchDispatches();
@@ -942,10 +943,10 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                 />
               </Field>
               <Field label="Original Dispatch Ref">
-                <select
+                <AutocompleteInput
                   value={returnHeader.originalDispatchRef}
-                  onChange={(e) => {
-                    const ref = e.target.value;
+                  onChange={(v) => {
+                    const ref = (v || "").split(" — ")[0].trim();
                     const orig = (dispatch || []).find((d) => d.dispatchNo === ref);
                     setReturnHeader((h) => ({
                       ...h,
@@ -970,14 +971,11 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                       })));
                     }
                   }}
-                >
-                  <option value="">-- Link to original dispatch (optional) --</option>
-                  {(dispatch || []).filter((d) => d.type !== "Return").map((d) => (
-                    <option key={d._id} value={d.dispatchNo}>
-                      {d.dispatchNo} — {d.companyName} ({d.date ? new Date(d.date).toLocaleDateString("en-GB") : ""})
-                    </option>
-                  ))}
-                </select>
+                  suggestions={(dispatch || [])
+                    .filter((d) => d.type !== "Return")
+                    .map((d) => `${d.dispatchNo} — ${d.companyName}${d.date ? " (" + new Date(d.date).toLocaleDateString("en-GB") + ")" : ""}`)}
+                  placeholder="Search dispatch number / company..."
+                />
               </Field>
               <Field label="Vehicle No">
                 <input
@@ -1174,6 +1172,41 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
       )}
 
       <Card>
+          {(() => {
+            const dispatchRecords = (dispatch || [])
+              .filter((d) => d.type !== "Return")
+              .slice()
+              .sort((a, b) => new Date(b.createdAt || b.date || 0) - new Date(a.createdAt || a.date || 0));
+            const returnRecords = (dispatch || [])
+              .filter((d) => d.type === "Return")
+              .slice()
+              .sort((a, b) => new Date(b.createdAt || b.date || 0) - new Date(a.createdAt || a.date || 0));
+            const activeRecords = recordsTab === "return" ? returnRecords : dispatchRecords;
+            const tabBtn = (id, label, count) => (
+              <button
+                key={id}
+                onClick={() => setRecordsTab(id)}
+                style={{
+                  background: recordsTab === id ? "rgba(128,130,255,0.12)" : "transparent",
+                  color: recordsTab === id ? "#8082ff" : C.muted,
+                  border: `1px solid ${recordsTab === id ? "#8082ff98" : "#2a2a2e"}`,
+                  borderRadius: 6,
+                  padding: "8px 16px",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <i className={id === "return" ? "fa-solid fa-rotate-left" : "fa-solid fa-truck-fast"} />
+                {label}
+                <span style={{ fontSize: 11, opacity: 0.85 }}>({count})</span>
+              </button>
+            );
+            return (
+              <>
           <div
             style={{
               display: "flex",
@@ -1183,16 +1216,10 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
               marginBottom: 14,
             }}
           >
-            <h3
-              style={{
-                fontSize: 14,
-                fontWeight: 500,
-                color: C.muted,
-                margin: 0,
-              }}
-            >
-              Dispatch Records
-            </h3>
+            <div style={{ display: "flex", gap: 6 }}>
+              {tabBtn("dispatch", "Dispatch", dispatchRecords.length)}
+              {tabBtn("return", "Return", returnRecords.length)}
+            </div>
             <DateRangeFilter
               dateFrom={drDateFrom}
               setDateFrom={setDrDateFrom}
@@ -1200,25 +1227,28 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
               setDateTo={setDrDateTo}
             />
             <span style={{ fontSize: 12, color: C.muted, marginLeft: "auto" }}>
-              {dispatch.length} records
+              {activeRecords.length} records
             </span>
           </div>
-          {dispatch.length === 0 ? (
+          {activeRecords.length === 0 ? (
             <div style={{ textAlign: "center", color: C.muted, padding: 32, fontSize: 13 }}>
-              No dispatch records yet.
+              {recordsTab === "return" ? "No material return records yet." : "No dispatch records yet."}
             </div>
           ) : (
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                 <thead>
                   <tr style={{ borderBottom: `2px solid ${C.border}` }}>
-                    {["DC No", "Date", "Company", "PO No", "SO Ref", "Items", "Qty", "Vehicle", "Status", "Actions"].map((h) => (
+                    {(recordsTab === "return"
+                      ? ["DC No", "Return Date", "Company", "Original Ref", "Reason", "Items", "Qty", "Vehicle", "Actions"]
+                      : ["DC No", "Date", "Company", "PO No", "SO Ref", "Items", "Qty", "Vehicle", "Status", "Actions"]
+                    ).map((h) => (
                       <th key={h} style={{ padding: "8px 10px", textAlign: "left", fontWeight: 700, color: C.muted, fontSize: 11, whiteSpace: "nowrap" }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {(dispatch || []).slice().reverse().map((r) => {
+                  {activeRecords.map((r) => {
                     const unitSummary = (r.items || []).reduce((acc, it) => {
                       const u = it.unit || "nos";
                       acc[u] = (acc[u] || 0) + Number(it.qty || 0);
@@ -1268,43 +1298,70 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                       }
                     };
 
+                    const isReturn = r.type === "Return";
+                    const itemsCell = (
+                      <td style={{ padding: "10px 10px" }}>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                          {(r.items || []).map((it, i) => (
+                            <span key={i} style={{ fontSize: 11, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 4, padding: "1px 6px", color: C.muted, whiteSpace: "nowrap" }}>
+                              {it.itemName}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                    );
+                    const dcNoCell = (
+                      <td style={{ padding: "10px 10px", whiteSpace: "nowrap" }}>
+                        <span style={{ color: isReturn ? (C.orange || "#f97316") : C.purple, fontWeight: 600 }}>
+                          {r.dispatchNo}
+                        </span>
+                      </td>
+                    );
+                    const dateCell = (
+                      <td style={{ padding: "10px 10px", whiteSpace: "nowrap", color: C.muted }}>{fmtDate(r.date)}</td>
+                    );
+                    const companyCell = (
+                      <td style={{ padding: "10px 10px", fontWeight: 600 }}>{r.companyName}</td>
+                    );
+                    const qtyCell = (
+                      <td style={{ padding: "10px 10px", whiteSpace: "nowrap", color: C.muted }}>{qtySummary}</td>
+                    );
+                    const vehicleCell = (
+                      <td style={{ padding: "10px 10px", color: C.muted }}>{r.vehicleNo || "—"}</td>
+                    );
                     return (
                       <tr key={r._id} style={{ borderBottom: `1px solid ${C.border}22` }}>
+                        {dcNoCell}
+                        {dateCell}
+                        {companyCell}
+                        {isReturn ? (
+                          <>
+                            <td style={{ padding: "10px 10px", color: C.muted }}>{r.originalDispatchRef || "—"}</td>
+                            <td style={{ padding: "10px 10px" }}>
+                              <span style={{ fontSize: 11, color: C.orange || "#f97316", fontWeight: 600 }}>{r.returnReason || "Return"}</span>
+                            </td>
+                            {itemsCell}
+                            {qtyCell}
+                            {vehicleCell}
+                          </>
+                        ) : (
+                          <>
+                            <td style={{ padding: "10px 10px", color: C.muted }}>{r.poNumber || "—"}</td>
+                            <td style={{ padding: "10px 10px", color: C.muted }}>{r.soRef || "—"}</td>
+                            {itemsCell}
+                            {qtyCell}
+                            {vehicleCell}
+                            <td style={{ padding: "10px 10px" }}>
+                              <Badge text={r.status || "Dispatched"} color={C.green} />
+                            </td>
+                          </>
+                        )}
                         <td style={{ padding: "10px 10px", whiteSpace: "nowrap" }}>
-                          <span style={{  color: r.type === "Return" ? (C.orange || "#f97316") : C.purple, fontWeight: 600 }}>
-                            {r.dispatchNo}
-                          </span>
-                          {r.type === "Return" && (
-                            <span style={{ display: "block", fontSize: 9, fontWeight: 800, marginTop: 2, color: C.orange || "#f97316" }}>RETURN</span>
-                          )}
-                        </td>
-                        <td style={{ padding: "10px 10px", whiteSpace: "nowrap", color: C.muted }}>{fmtDate(r.date)}</td>
-                        <td style={{ padding: "10px 10px", fontWeight: 600 }}>{r.companyName}</td>
-                        <td style={{ padding: "10px 10px", color: C.muted }}>{r.poNumber || "—"}</td>
-                        <td style={{ padding: "10px 10px", color: C.muted }}>{r.soRef || "—"}</td>
-                        <td style={{ padding: "10px 10px" }}>
-                          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                            {(r.items || []).map((it, i) => (
-                              <span key={i} style={{ fontSize: 11, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 4, padding: "1px 6px", color: C.muted, whiteSpace: "nowrap" }}>
-                                {it.itemName}
-                              </span>
-                            ))}
-                          </div>
-                        </td>
-                        <td style={{ padding: "10px 10px", whiteSpace: "nowrap", color: C.muted }}>{qtySummary}</td>
-                        <td style={{ padding: "10px 10px", color: C.muted }}>{r.vehicleNo || "—"}</td>
-                        <td style={{ padding: "10px 10px" }}>
-                          {r.type === "Return"
-                            ? <span style={{ fontSize: 10, color: C.orange || "#f97316" }}>{r.returnReason || "Return"}</span>
-                            : <Badge text={r.status || "Dispatched"} color={C.green} />}
-                        </td>
-                        <td style={{ padding: "10px 10px", whiteSpace: "nowrap" }}>
-                          <div style={{ display: "flex", gap: 4 }}>
-                            <button onClick={() => generateDispatchPDF(r)} style={{ background: (C.purple || "#a855f7") + "22", color: C.purple || "#a855f7", border: "none", borderRadius: 5, padding: "4px 10px", fontWeight: 500, fontSize: 11, cursor: "pointer" }}>Print</button>
+                          <div style={{ display: "flex", gap: 6 }}>
                             <button onClick={handleEdit} style={{
                       background: "transparent",
-                      color: "#ffffff",
-                      border: "1px solid rgba(255,255,255,0.2)",
+                      color: "#8082ff",
+                      border: "1px solid #8082ff98",
                       borderRadius: 6,
                       padding: "6px 12px",
                       fontSize: 11,
@@ -1314,10 +1371,23 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                       alignItems: "center",
                       gap: 6,
                     }}><i className="fa-solid fa-pen-to-square" /> Edit</button>
+                            <button onClick={() => generateDispatchPDF(r)} style={{
+                      background: "transparent",
+                      color: "#8082ff",
+                      border: "1px solid #8082ff98",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}><i className="fa-solid fa-file-pdf" /> PDF</button>
                             <button onClick={handleDelete} style={{
                       background: "transparent",
-                      color: "#ffffff",
-                      border: "1px solid rgba(255,255,255,0.2)",
+                      color: "#8082ff",
+                      border: "1px solid #8082ff98",
                       borderRadius: 6,
                       padding: "6px 12px",
                       fontSize: 11,
@@ -1336,6 +1406,9 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
               </table>
             </div>
           )}
+              </>
+            );
+          })()}
         </Card>
     </div>
   );

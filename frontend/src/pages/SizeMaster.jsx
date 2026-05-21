@@ -219,17 +219,20 @@ export default function SizeMaster({ toast }) {
                     <button
                       onClick={() => handleDeleteSize(size)}
                       style={{
-                        background: C.red + '22',
-                        color: C.red,
-                        border: 'none',
-                        borderRadius: 4,
-                        padding: '4px 8px',
-                        fontWeight: 500,
+                        background: 'transparent',
+                        color: '#8082ff',
+                        border: '1px solid #8082ff98',
+                        borderRadius: 6,
+                        padding: '6px 12px',
                         fontSize: 11,
+                        fontWeight: 500,
                         cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
                       }}
                     >
-                      ✕
+                      <i className="fa-solid fa-trash" /> Delete
                     </button>
                   </div>
                 ))}

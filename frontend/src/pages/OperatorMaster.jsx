@@ -123,11 +123,14 @@ export default function OperatorMaster({ toast, canExportImport = true }) {
     }
   };
 
-  const filtered = operators.filter((op) =>
-    [op.name, op.username, op.phone].some((v) =>
-      (v || "").toLowerCase().includes(searchTerm.toLowerCase())
+  const filtered = operators
+    .filter((op) =>
+      [op.name, op.username, op.phone].some((v) =>
+        (v || "").toLowerCase().includes(searchTerm.toLowerCase())
+      )
     )
-  );
+    .slice()
+    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
   const handleTemplate = () => {
     const headers = ["Name", "Phone", "Username", "Password"];
@@ -232,7 +235,7 @@ export default function OperatorMaster({ toast, canExportImport = true }) {
           <input
             ref={fileInputRef}
             type="file"
-            accept=".csv, .xlsx, .xls"
+            accept=".xlsx, .xls"
             style={{ display: "none" }}
             onChange={handleImport}
           />
@@ -260,20 +263,20 @@ export default function OperatorMaster({ toast, canExportImport = true }) {
       {loading ? (
         <div style={{ color: C.muted, fontSize: 13 }}>Loading...</div>
       ) : (
-        <div style={{ overflowX: "auto" }}>
+        <div style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead>
-              <tr style={{ borderBottom: `1px solid rgba(255,255,255,0.08)` }}>
+              <tr style={{ background: "transparent", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
                 {["Name", "Phone", "Username", "Status", "Last Login", "Actions"].map((h) => (
-                  <th key={h} style={{ textAlign: "left", padding: "10px 12px", color: C.muted, fontWeight: 600, fontSize: 11, textTransform: "uppercase" }}>{h}</th>
+                  <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <tr><td colSpan={6} style={{ padding: "24px 12px", color: C.muted, fontSize: 13 }}>No operators found</td></tr>
-              ) : filtered.map((op) => (
-                <tr key={op._id} style={{ borderBottom: `1px solid rgba(255,255,255,0.05)` }}>
+              ) : filtered.map((op, i) => (
+                <tr key={op._id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)" }}>
                   <td style={{ padding: "10px 12px", color: C.text, fontWeight: 500 }}>{op.name}</td>
                   <td style={{ padding: "10px 12px", color: C.muted }}>{op.phone || "—"}</td>
                   <td style={{ padding: "10px 12px", color: "#6366f1", fontSize: 12 }}>{op.username}</td>
@@ -288,11 +291,11 @@ export default function OperatorMaster({ toast, canExportImport = true }) {
                     {op.lastLogin ? new Date(op.lastLogin).toLocaleDateString("en-GB") : "Never"}
                   </td>
                   <td style={{ padding: "10px 12px" }}>
-                    <div style={{ display: "flex", gap: 8 }}>
+                    <div style={{ display: "flex", gap: 6 }}>
                       <button onClick={() => openEdit(op)} style={{
                       background: "transparent",
-                      color: "#ffffff",
-                      border: "1px solid rgba(255,255,255,0.2)",
+                      color: "#8082ff",
+                      border: "1px solid #8082ff98",
                       borderRadius: 6,
                       padding: "6px 12px",
                       fontSize: 11,
@@ -302,13 +305,25 @@ export default function OperatorMaster({ toast, canExportImport = true }) {
                       alignItems: "center",
                       gap: 6,
                     }}><i className="fa-solid fa-pen-to-square" /> Edit</button>
-                      <button onClick={() => handleToggleActive(op)} style={{ padding: "5px 12px", borderRadius: 6, border: `1px solid ${op.isActive ? "rgba(239,68,68,0.3)" : "rgba(34,197,94,0.3)"}`, background: op.isActive ? "rgba(239,68,68,0.08)" : "rgba(34,197,94,0.08)", color: op.isActive ? "#ef4444" : "#22c55e", fontSize: 12, cursor: "pointer" }}>
-                        {op.isActive ? "Deactivate" : "Activate"}
+                      <button onClick={() => handleToggleActive(op)} style={{
+                      background: "transparent",
+                      color: "#8082ff",
+                      border: "1px solid #8082ff98",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}>
+                        <i className={`fa-solid ${op.isActive ? "fa-pause" : "fa-play"}`} /> {op.isActive ? "Deactivate" : "Activate"}
                       </button>
                       <button onClick={() => handleDelete(op._id)} style={{
                       background: "transparent",
-                      color: "#ffffff",
-                      border: "1px solid rgba(255,255,255,0.2)",
+                      color: "#8082ff",
+                      border: "1px solid #8082ff98",
                       borderRadius: 6,
                       padding: "6px 12px",
                       fontSize: 11,

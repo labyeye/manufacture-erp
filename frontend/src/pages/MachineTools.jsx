@@ -369,7 +369,9 @@ function ToolTypeSection({ tabId, toast }) {
             "LOCATION",
             "ACTIONS",
           ]}
-          data={tools.map((tool) => {
+          data={[...tools]
+            .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+            .map((tool) => {
             const linkedItem = fgItems.find((i) => i.code === tool.linkedSKU);
             const linkedMachineIds = (tool.compatibleMachines || []).map((m) => m._id || m);
             const linkedMachineNames = allMachines
@@ -402,14 +404,33 @@ function ToolTypeSection({ tabId, toast }) {
               />,
               `${(tool.impressionsDone || 0).toLocaleString()} / ${(tool.maxImpressionsBeforeRecondition || 0).toLocaleString()}`,
               tool.location || "-",
-              <div style={{ display: "flex", gap: 8 }}>
-                <Button small text="Edit" onClick={() => handleEdit(tool)} />
-                <Button
-                  small
-                  text="Delete"
-                  color={C.red}
-                  onClick={() => handleDelete(tool._id)}
-                />
+              <div style={{ display: "flex", gap: 6 }}>
+                <button onClick={() => handleEdit(tool)} style={{
+                  background: "transparent",
+                  color: "#8082ff",
+                  border: "1px solid #8082ff98",
+                  borderRadius: 6,
+                  padding: "6px 12px",
+                  fontSize: 11,
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}><i className="fa-solid fa-pen-to-square" /> Edit</button>
+                <button onClick={() => handleDelete(tool._id)} style={{
+                  background: "transparent",
+                  color: "#8082ff",
+                  border: "1px solid #8082ff98",
+                  borderRadius: 6,
+                  padding: "6px 12px",
+                  fontSize: 11,
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}><i className="fa-solid fa-trash" /> Delete</button>
               </div>,
             ];
           })}
@@ -791,7 +812,9 @@ function MaintenanceSection({ toast }) {
         <Table
           loading={loading}
           headers={["MACHINE", "TYPE", "START", "END", "TECHNICIAN", "ACTIONS"]}
-          data={records.map((rec) => [
+          data={[...records]
+            .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+            .map((rec) => [
             rec.machineId?.name || "Unknown",
             <Badge
               text={rec.type}

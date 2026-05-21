@@ -177,11 +177,14 @@ export default function UserManagement({ currentUser, toast, onRefreshUser, cate
     } finally { setLoading(false); }
   };
 
-  const filteredUsers = users.filter(u =>
-    !searchTerm ||
-    u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    u.username?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredUsers = users
+    .filter(u =>
+      !searchTerm ||
+      u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      u.username?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .slice()
+    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
   return (
     <div className="fade">
@@ -431,11 +434,11 @@ export default function UserManagement({ currentUser, toast, onRefreshUser, cate
                 <div style={{ fontSize: 12, color: "#555", marginTop: 3 }}>@{user.username}</div>
               </div>
 
-              <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+              <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
                 <button onClick={() => handleEdit(user)} style={{
                       background: "transparent",
-                      color: "#ffffff",
-                      border: "1px solid rgba(255,255,255,0.2)",
+                      color: "#8082ff",
+                      border: "1px solid #8082ff98",
                       borderRadius: 6,
                       padding: "6px 12px",
                       fontSize: 11,
@@ -446,17 +449,31 @@ export default function UserManagement({ currentUser, toast, onRefreshUser, cate
                       gap: 6,
                     }}><i className="fa-solid fa-pen-to-square" /> Edit</button>
                 <button onClick={() => handleToggleStatus(user._id, user.isActive)} style={{
-                  padding: "7px 18px",
-                  background: user.isActive ? "#f4433611" : "#4CAF5011",
-                  color: user.isActive ? "#f44336" : "#4CAF50",
-                  border: `1px solid ${user.isActive ? "#f4433633" : "#4CAF5033"}`,
-                  borderRadius: 6, fontWeight: 500, fontSize: 12, cursor: "pointer",
-                }}>{user.isActive ? "Deactivate" : "Activate"}</button>
+                      background: "transparent",
+                      color: "#8082ff",
+                      border: "1px solid #8082ff98",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                }}><i className={`fa-solid ${user.isActive ? "fa-pause" : "fa-play"}`} /> {user.isActive ? "Deactivate" : "Activate"}</button>
                 <button onClick={() => handleDelete(user._id)} style={{
-                  background: "rgba(255,255,255,0.08)",  color: "#fff", border: "1px solid rgba(255,255,255,0.18)",
-                  borderRadius: 6, padding: "4px 14px", fontSize: 12, fontWeight: 500,
-                  cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)", display: "flex", alignItems: "center", gap: 6,
-                }}>🗑️ Delete</button>
+                      background: "transparent",
+                      color: "#8082ff",
+                      border: "1px solid #8082ff98",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                }}><i className="fa-solid fa-trash" /> Delete</button>
               </div>
             </div>
           );

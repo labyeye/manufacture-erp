@@ -841,27 +841,27 @@ export default function ProductionUpdate({
                 allRecs.push({ ...r, jo });
               });
             });
-            allRecs.sort((a, b) => new Date(b.enteredAt || b.date) - new Date(a.enteredAt || a.date));
+            allRecs.sort((a, b) => new Date(b.createdAt || b.enteredAt || b.date || 0) - new Date(a.createdAt || a.enteredAt || a.date || 0));
 
             const totalDone = allRecs.reduce((s, r) => s + +(r.qtyCompleted || 0), 0);
             const totalRejected = allRecs.reduce((s, r) => s + +(r.qtyRejected || 0), 0);
             const uniqueJOs = new Set(allRecs.map(r => r.jo.joNo)).size;
             const statCards = [
-              { label: "Total Records", value: allRecs.length, icon: "fa-solid fa-clipboard-list", color: "#FF7F11" },
-              { label: "Unique JOs", value: uniqueJOs, icon: "fa-solid fa-gears", color: "#facc15" },
-              { label: "Total Done", value: fmt(totalDone), icon: "fa-solid fa-circle-check", color: "#10b981" },
-              { label: "Total Rejected", value: fmt(totalRejected), icon: "fa-solid fa-circle-xmark", color: "#ef4444" },
+              { label: "Total Records", value: allRecs.length, icon: "fa-solid fa-clipboard-list" },
+              { label: "Unique JOs", value: uniqueJOs, icon: "fa-solid fa-gears" },
+              { label: "Total Done", value: fmt(totalDone), icon: "fa-solid fa-circle-check" },
+              { label: "Total Rejected", value: fmt(totalRejected), icon: "fa-solid fa-circle-xmark" },
             ];
             return (
               <>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 16 }}>
-                  {statCards.map(({ label, value, icon, color }) => (
-                    <div key={label} style={{ padding: "16px 20px", background: "transparent", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, borderLeft: `3px solid ${color}` }}>
+                  {statCards.map(({ label, value, icon }) => (
+                    <div key={label} style={{ padding: "16px 20px", background: "transparent", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                        <span style={{ fontSize: 11, color: C.muted, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
-                        <i className={icon} style={{ color, fontSize: 13, opacity: 0.8 }} />
+                        <span style={{ fontSize: 19, color: "#ffffff", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
+                        <i className={icon} style={{ color: C.muted, fontSize: 20, opacity: 0.9, display: "inline-flex", alignItems: "center", justifyContent: "center", height: 28, width: 28, lineHeight: 1 }} />
                       </div>
-                      <div style={{ fontSize: 22, fontWeight: 800, color: "#fff" }}>{value}</div>
+                      <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>{value}</div>
                     </div>
                   ))}
                 </div>
@@ -893,11 +893,11 @@ export default function ProductionUpdate({
                               <td style={{ padding: "11px 14px", color: C.muted, fontSize: 12 }}>{r.operator || "—"}</td>
                               <td style={{ padding: "11px 14px", color: C.muted, fontSize: 12 }}>{r.shift || "—"}</td>
                               <td style={{ padding: "11px 14px" }}>
-                                <div style={{ display: "flex", gap: 5 }}>
+                                <div style={{ display: "flex", gap: 6 }}>
                                   <button onClick={() => handleEdit(jo, r)} style={{
                       background: "transparent",
-                      color: "#ffffff",
-                      border: "1px solid rgba(255,255,255,0.2)",
+                      color: "#8082ff",
+                      border: "1px solid #8082ff98",
                       borderRadius: 6,
                       padding: "6px 12px",
                       fontSize: 11,
@@ -907,7 +907,19 @@ export default function ProductionUpdate({
                       alignItems: "center",
                       gap: 6,
                     }}><i className="fa-solid fa-pen-to-square" /> Edit</button>
-                                  <button onClick={() => handleDelete(jo._id, r._id)} style={{ padding: "4px 10px", borderRadius: 4, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.08)", color: "#ef4444", fontSize: 11, fontWeight: 500, cursor: "pointer" }}>Del</button>
+                                  <button onClick={() => handleDelete(jo._id, r._id)} style={{
+                      background: "transparent",
+                      color: "#8082ff",
+                      border: "1px solid #8082ff98",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}><i className="fa-solid fa-trash" /> Delete</button>
                                 </div>
                               </td>
                             </tr>
@@ -1057,43 +1069,42 @@ export default function ProductionUpdate({
                           </div>
                         </div>
 
-                        <div style={{ display: "flex", gap: 8 }}>
+                        <div style={{ display: "flex", gap: 6 }}>
                           <button
                             onClick={() => handleEdit(jo, r)}
                             style={{
-                              background: C.card,
-                              border: `1px solid ${C.blue}44`,
-                              color: C.blue,
-                              padding: "6px 12px",
+                              background: "transparent",
+                              color: "#8082ff",
+                              border: "1px solid #8082ff98",
                               borderRadius: 6,
+                              padding: "6px 12px",
                               fontSize: 11,
                               fontWeight: 500,
                               cursor: "pointer",
-                              display: "flex",
+                              display: "inline-flex",
                               alignItems: "center",
-                              gap: 4,
+                              gap: 6,
                             }}
                           >
-                            ✏️ Edit
+                            <i className="fa-solid fa-pen-to-square" /> Edit
                           </button>
                           <button
                             onClick={() => handleDelete(jo._id, r._id)}
                             style={{
-                              background: "rgba(255,255,255,0.08)",
-                              color: "#fff",
-                              border: "1px solid rgba(255,255,255,0.18)",
+                              background: "transparent",
+                              color: "#8082ff",
+                              border: "1px solid #8082ff98",
                               borderRadius: 6,
-                              padding: "4px 14px",
-                              fontSize: 12,
+                              padding: "6px 12px",
+                              fontSize: 11,
                               fontWeight: 500,
                               cursor: "pointer",
-                              display: "flex",
+                              display: "inline-flex",
                               alignItems: "center",
                               gap: 6,
-                              boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
                             }}
                           >
-                            🗑️ Delete
+                            <i className="fa-solid fa-trash" /> Delete
                           </button>
                         </div>
                       </div>

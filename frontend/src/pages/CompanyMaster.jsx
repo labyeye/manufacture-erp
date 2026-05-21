@@ -69,12 +69,15 @@ export default function CompanyMaster({ toast, canExportImport = true }) {
     }
   };
 
-  const filtered = companies.filter(
-    (c) =>
-      !searchTerm ||
-      c.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.contact?.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  const filtered = companies
+    .filter(
+      (c) =>
+        !searchTerm ||
+        c.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.contact?.toLowerCase().includes(searchTerm.toLowerCase()),
+    )
+    .slice()
+    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
   const handleChange = (field, value) =>
     setFormData((p) => ({ ...p, [field]: value }));
@@ -248,7 +251,7 @@ export default function CompanyMaster({ toast, canExportImport = true }) {
     }
   };
 
-  const handleExportCSV = () => {
+  const handleExportExcel = () => {
     if (companies.length === 0) {
       toast("No companies to export", "error");
       return;
@@ -480,7 +483,7 @@ export default function CompanyMaster({ toast, canExportImport = true }) {
               Cancel
             </button>
           )}
-          {canExportImport && <ExportBtn onClick={handleExportCSV} label="Export" />}
+          {canExportImport && <ExportBtn onClick={handleExportExcel} label="Export" />}
           <TemplateBtn onClick={handleTemplate} />
           {canExportImport && <ImportBtn onClick={() => fileInputRef.current.click()} />}
           <input
@@ -542,7 +545,14 @@ export default function CompanyMaster({ toast, canExportImport = true }) {
             {searchTerm ? "No results found" : "No companies added yet."}
           </div>
         ) : (
-          <div style={{ overflowX: "auto" }}>
+          <div
+            style={{
+              background: "transparent",
+              border: "1px solid rgba(255,255,255,0.07)",
+              borderRadius: 12,
+              overflow: "hidden",
+            }}
+          >
             <table
               style={{
                 width: "100%",
@@ -551,8 +561,8 @@ export default function CompanyMaster({ toast, canExportImport = true }) {
               }}
             >
               <thead>
-                <tr style={{ background: "rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-                  <th style={{ textAlign: "left", padding: "10px 12px", width: 36 }}>
+                <tr style={{ background: "transparent", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                  <th style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap", width: 36 }}>
                     <input
                       type="checkbox"
                       checked={allSelected}
@@ -574,11 +584,13 @@ export default function CompanyMaster({ toast, canExportImport = true }) {
                     <th
                       key={h}
                       style={{
+                        padding: "10px 14px",
                         textAlign: "left",
-                        padding: "10px 12px",
-                        fontWeight: 600,
-                        color: "#888",
                         fontSize: 11,
+                        fontWeight: 700,
+                        color: C.muted,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
                         whiteSpace: "nowrap",
                       }}
                     >
@@ -588,12 +600,12 @@ export default function CompanyMaster({ toast, canExportImport = true }) {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((company) => (
+                {filtered.map((company, i) => (
                   <tr
                     key={company._id}
-                    style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: selectedIds.has(company._id) ? "rgba(96,165,250,0.08)" : undefined }}
+                    style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", background: selectedIds.has(company._id) ? "rgba(96,165,250,0.08)" : (i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)") }}
                     onMouseEnter={e => { if (!selectedIds.has(company._id)) e.currentTarget.style.background="rgba(255,255,255,0.04)"; }}
-                    onMouseLeave={e => { if (!selectedIds.has(company._id)) e.currentTarget.style.background="transparent"; }}
+                    onMouseLeave={e => { if (!selectedIds.has(company._id)) e.currentTarget.style.background = (i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)"); }}
                   >
                     <td style={{ padding: "12px", width: 36 }}>
                       <input
@@ -668,52 +680,61 @@ export default function CompanyMaster({ toast, canExportImport = true }) {
                         <button
                           onClick={() => handleEdit(company)}
                           style={{
-                            padding: "5px 10px",
-                            background: "#1976D222",
-                            color: "#1976D2",
-                            border: "none",
-                            borderRadius: 4,
-                            fontWeight: 500,
+                            background: "transparent",
+                            color: "#8082ff",
+                            border: "1px solid #8082ff98",
+                            borderRadius: 6,
+                            padding: "6px 12px",
                             fontSize: 11,
+                            fontWeight: 500,
                             cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
                           }}
                         >
-                          ✏️ Edit
+                          <i className="fa-solid fa-pen-to-square" /> Edit
                         </button>
                         <button
                           onClick={() => handleToggleStatus(company)}
                           style={{
-                            padding: "5px 10px",
-                            background: "#FF980022",
-                            color: "#FF9800",
-                            border: "none",
-                            borderRadius: 4,
-                            fontWeight: 500,
+                            background: "transparent",
+                            color: "#8082ff",
+                            border: "1px solid #8082ff98",
+                            borderRadius: 6,
+                            padding: "6px 12px",
                             fontSize: 11,
+                            fontWeight: 500,
                             cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
                           }}
                         >
-                          {company.status === "Active" ? "⏸" : "▶"}
+                          <i
+                            className={`fa-solid ${company.status === "Active" ? "fa-pause" : "fa-play"}`}
+                          />{" "}
+                          {company.status === "Active" ? "Pause" : "Activate"}
                         </button>
                         <button
                           onClick={() =>
                             setConfirmModal({ isOpen: true, id: company._id })
                           }
                           style={{
-                            background: "#450a0a",
-                            color: "#ef4444",
-                            border: "1px solid #7f1d1d",
+                            background: "transparent",
+                            color: "#8082ff",
+                            border: "1px solid #8082ff98",
                             borderRadius: 6,
-                            padding: "4px 14px",
-                            fontSize: 12,
+                            padding: "6px 12px",
+                            fontSize: 11,
                             fontWeight: 500,
                             cursor: "pointer",
-                            display: "flex",
+                            display: "inline-flex",
                             alignItems: "center",
                             gap: 6,
                           }}
                         >
-                          🗑️ Delete
+                          <i className="fa-solid fa-trash" /> Delete
                         </button>
                       </div>
                     </td>

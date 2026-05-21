@@ -52,7 +52,13 @@ export default function Trash({ toast, session }) {
 
   const labels = ["All", ...Array.from(new Set(items.map((i) => i.label)))];
 
-  const filtered = filter === "All" ? items : items.filter((i) => i.label === filter);
+  const filtered = (filter === "All" ? items : items.filter((i) => i.label === filter))
+    .slice()
+    .sort(
+      (a, b) =>
+        new Date(b.deletedAt || b.createdAt || 0) -
+        new Date(a.deletedAt || a.createdAt || 0),
+    );
 
   const handleRestore = async (id) => {
     try {
@@ -215,25 +221,39 @@ export default function Trash({ toast, session }) {
                   <button
                     onClick={() => setConfirmState({ open: true, id: item._id, mode: "restore" })}
                     style={{
-                      padding: "6px 14px", borderRadius: 7, fontSize: 12, fontWeight: 500,
-                      background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.25)",
-                      color: "#22c55e", cursor: "pointer",
+                      background: "transparent",
+                      color: "#8082ff",
+                      border: "1px solid #8082ff98",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
                     }}
                   >
-                    <i className="fa-solid fa-rotate-left" style={{ marginRight: 5 }} />
-                    Restore
+                    <i className="fa-solid fa-rotate-left" /> Restore
                   </button>
                   {canAdmin && (
                     <button
                       onClick={() => setConfirmState({ open: true, id: item._id, mode: "delete" })}
                       style={{
-                        padding: "6px 14px", borderRadius: 7, fontSize: 12, fontWeight: 500,
-                        background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)",
-                        color: "#ef4444", cursor: "pointer",
+                        background: "transparent",
+                        color: "#8082ff",
+                        border: "1px solid #8082ff98",
+                        borderRadius: 6,
+                        padding: "6px 12px",
+                        fontSize: 11,
+                        fontWeight: 500,
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
                       }}
                     >
-                      <i className="fa-solid fa-xmark" style={{ marginRight: 5 }} />
-                      Delete
+                      <i className="fa-solid fa-trash" /> Delete
                     </button>
                   )}
                 </div>
