@@ -15,42 +15,50 @@
    ═══════════════════════════════════════════════════════════════ */
 
 :root {
-  --lg-radius:        20px;
-  --lg-radius-sm:     12px;
-  --lg-radius-lg:     28px;
+  --lg-radius: 20px;
+  --lg-radius-sm: 12px;
+  --lg-radius-lg: 28px;
 
-  --lg-bg:            rgba(255, 255, 255, 0.06);
-  --lg-bg-hover:      rgba(255, 255, 255, 0.10);
-  --lg-bg-active:     rgba(255, 255, 255, 0.14);
+  --lg-bg: rgba(255, 255, 255, 0.06);
+  --lg-bg-hover: rgba(255, 255, 255, 0.1);
+  --lg-bg-active: rgba(255, 255, 255, 0.14);
 
-  --lg-border:        rgba(255, 255, 255, 0.22);
+  --lg-border: rgba(255, 255, 255, 0.22);
   --lg-border-strong: rgba(255, 255, 255, 0.32);
 
-  --lg-blur:          blur(14px) saturate(160%);
-  --lg-blur-lg:       blur(22px) saturate(180%);
-  --lg-blur-sm:       blur(10px) saturate(150%);
+  --lg-blur: blur(14px) saturate(160%);
+  --lg-blur-lg: blur(22px) saturate(180%);
+  --lg-blur-sm: blur(10px) saturate(150%);
 
-  --lg-distort:       url(#glass-distortion);
-  --lg-distort-soft:  url(#glass-distortion-soft);
+  --lg-distort: url(#glass-distortion);
+  --lg-distort-soft: url(#glass-distortion-soft);
 
   --lg-shadow:
-    0 10px 40px rgba(0, 0, 0, 0.35),
-    0 2px 8px rgba(0, 0, 0, 0.20),
-    inset 0 1px 0 rgba(255, 255, 255, 0.50),
+    0 10px 40px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
     inset 0 -1px 0 rgba(255, 255, 255, 0.08),
     inset 0 0 30px rgba(255, 255, 255, 0.03);
 
   --lg-shadow-sm:
-    0 4px 16px rgba(0, 0, 0, 0.25),
-    inset 0 1px 0 rgba(255, 255, 255, 0.30);
+    0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3);
 
-  --lg-sheen-top:  linear-gradient(90deg, transparent, rgba(255,255,255,0.65), transparent);
-  --lg-sheen-left: linear-gradient(180deg, rgba(255,255,255,0.55), transparent, rgba(255,255,255,0.20));
+  --lg-sheen-top: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.65),
+    transparent
+  );
+  --lg-sheen-left: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.55),
+    transparent,
+    rgba(255, 255, 255, 0.2)
+  );
 
-  --lg-accent:        #6366f1;
-  --lg-accent-glow:   rgba(99, 102, 241, 0.35);
-  --lg-danger:        #ef4444;
-  --lg-danger-glow:   rgba(239, 68, 68, 0.35);
+  --lg-accent: #6366f1;
+  --lg-accent-glow: rgba(99, 102, 241, 0.35);
+  --lg-danger: #ef4444;
+  --lg-danger-glow: rgba(239, 68, 68, 0.35);
 }
 
 /* ── Scene: bg image behind everything (from the reference snippet) ─
@@ -59,7 +67,12 @@
    or by overriding the `background-image` on `.lg-scene` directly. */
 :root {
   --lg-bg-image: url("https://orecticdesign.com/wp-content/uploads/2025/09/mv-bg.jpeg");
-  --lg-bg-tint: linear-gradient(135deg, rgba(7, 7, 15, 0.55) 0%, rgba(12, 12, 26, 0.45) 50%, rgba(9, 9, 14, 0.65) 100%);
+  --lg-bg-tint: linear-gradient(
+    135deg,
+    rgba(7, 7, 15, 0.55) 0%,
+    rgba(12, 12, 26, 0.45) 50%,
+    rgba(9, 9, 14, 0.65) 100%
+  );
 }
 .lg-scene {
   position: fixed;
@@ -111,7 +124,7 @@
   border: 1px solid var(--lg-border);
   border-radius: var(--lg-radius);
   box-shadow: var(--lg-shadow);
-  backdrop-filter: var(--lg-blur) var(--lg-distort);
+  backdrop-filter: var(--lg-blur);
   -webkit-backdrop-filter: var(--lg-blur);
   color: #fff;
 }
@@ -124,7 +137,9 @@
 .lg-table-wrap::before {
   content: "";
   position: absolute;
-  top: 0; left: 0; right: 0;
+  top: 0;
+  left: 0;
+  right: 0;
   height: 1px;
   background: transparent;
   pointer-events: none;
@@ -139,21 +154,34 @@
 .lg-table-wrap::after {
   content: "";
   position: absolute;
-  top: 0; left: 0;
-  width: 1px; height: 100%;
-  background: var(--lg-sheen-left);
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 100%;
+  background: transparent;
   pointer-events: none;
   z-index: 2;
 }
 
 /* ── Card variants ───────────────────────────────────────────────── */
-.lg-card        { padding: 20px; }
-.lg-card-sm     { padding: 14px; border-radius: var(--lg-radius-sm); }
-.lg-card-lg     { padding: 28px; border-radius: var(--lg-radius-lg); }
+.lg-card {
+  padding: 20px;
+}
+.lg-card-sm {
+  padding: 14px;
+  border-radius: var(--lg-radius-sm);
+}
+.lg-card-lg {
+  padding: 28px;
+  border-radius: var(--lg-radius-lg);
+}
 
 .lg-card-clickable {
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
 }
 .lg-card-clickable:hover {
   transform: translateY(-2px);
@@ -172,24 +200,33 @@
   justify-content: center;
   gap: 8px;
   padding: 10px 22px;
-  font: 600 13px/1 'Josefin Sans', 'Poppins', sans-serif;
+  font:
+    600 13px/1 "Josefin Sans",
+    "Poppins",
+    sans-serif;
   letter-spacing: -0.01em;
   color: #fff;
   background: var(--lg-bg);
   border: 1px solid var(--lg-border);
   border-radius: var(--lg-radius-sm);
-  backdrop-filter: var(--lg-blur) var(--lg-distort-soft);
+  backdrop-filter: var(--lg-blur) ;
   -webkit-backdrop-filter: var(--lg-blur);
   box-shadow: var(--lg-shadow-sm);
   cursor: pointer;
-  transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  transition:
+    transform 0.18s ease,
+    background 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
   overflow: hidden;
   isolation: isolate;
 }
 .lg-btn::before {
   content: "";
   position: absolute;
-  top: 0; left: 0; right: 0;
+  top: 0;
+  left: 0;
+  right: 0;
   height: 1px;
   background: var(--lg-sheen-top);
   pointer-events: none;
@@ -200,8 +237,8 @@
   border-color: var(--lg-border-strong);
   transform: translateY(-1px);
   box-shadow:
-    0 6px 22px rgba(0, 0, 0, 0.30),
-    inset 0 1px 0 rgba(255, 255, 255, 0.40);
+    0 6px 22px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 .lg-btn:active:not(:disabled) {
   transform: translateY(0);
@@ -212,32 +249,56 @@
   cursor: not-allowed;
 }
 
-.lg-btn-sm { padding: 6px 14px; font-size: 12px; border-radius: 10px; }
-.lg-btn-lg { padding: 13px 28px; font-size: 14px; border-radius: 14px; }
+.lg-btn-sm {
+  padding: 6px 14px;
+  font-size: 12px;
+  border-radius: 10px;
+}
+.lg-btn-lg {
+  padding: 13px 28px;
+  font-size: 14px;
+  border-radius: 14px;
+}
 
 .lg-btn-primary {
-  background: linear-gradient(135deg, rgba(99,102,241,0.45), rgba(99,102,241,0.25));
-  border-color: rgba(99,102,241,0.55);
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.45),
+    rgba(99, 102, 241, 0.25)
+  );
+  border-color: rgba(99, 102, 241, 0.55);
   box-shadow:
     0 6px 20px var(--lg-accent-glow),
-    inset 0 1px 0 rgba(255, 255, 255, 0.30);
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 .lg-btn-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(99,102,241,0.60), rgba(99,102,241,0.35));
-  border-color: rgba(99,102,241,0.75);
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.6),
+    rgba(99, 102, 241, 0.35)
+  );
+  border-color: rgba(99, 102, 241, 0.75);
 }
 
 .lg-btn-danger {
-  background: linear-gradient(135deg, rgba(239,68,68,0.40), rgba(239,68,68,0.20));
-  border-color: rgba(239,68,68,0.55);
+  background: linear-gradient(
+    135deg,
+    rgba(239, 68, 68, 0.4),
+    rgba(239, 68, 68, 0.2)
+  );
+  border-color: rgba(239, 68, 68, 0.55);
   color: #fee2e2;
   box-shadow:
     0 6px 20px var(--lg-danger-glow),
     inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 .lg-btn-danger:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(239,68,68,0.55), rgba(239,68,68,0.30));
-  border-color: rgba(239,68,68,0.75);
+  background: linear-gradient(
+    135deg,
+    rgba(239, 68, 68, 0.55),
+    rgba(239, 68, 68, 0.3)
+  );
+  border-color: rgba(239, 68, 68, 0.75);
 }
 
 .lg-btn-ghost {
@@ -256,23 +317,29 @@
 .lg-textarea {
   width: 100%;
   padding: 10px 13px;
-  font: 400 13px 'Josefin Sans', 'Poppins', sans-serif;
+  font:
+    400 13px "Josefin Sans",
+    "Poppins",
+    sans-serif;
   color: #fff;
   background: var(--lg-bg);
   border: 1px solid var(--lg-border);
   border-radius: var(--lg-radius-sm);
-  backdrop-filter: var(--lg-blur-sm) var(--lg-distort-soft);
+  backdrop-filter: var(--lg-blur-sm) ;
   -webkit-backdrop-filter: var(--lg-blur-sm);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.10),
-    0 2px 8px rgba(0, 0, 0, 0.10);
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 2px 8px rgba(0, 0, 0, 0.1);
   outline: none;
   box-sizing: border-box;
-  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
 }
 .lg-input::placeholder,
 .lg-textarea::placeholder {
-  color: rgba(255, 255, 255, 0.40);
+  color: rgba(255, 255, 255, 0.4);
   font-style: italic;
   font-weight: 300;
 }
@@ -280,33 +347,41 @@
 .lg-select:focus,
 .lg-textarea:focus {
   border-color: rgba(99, 102, 241, 0.65);
-  background: rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.1);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.15),
     0 0 0 3px rgba(99, 102, 241, 0.18);
 }
-.lg-select option { background: #0d0d1a; color: #fff; }
+.lg-select option {
+  background: #0d0d1a;
+  color: #fff;
+}
 
 /* Make EVERY bare input/select/textarea in the app pick up the look
    automatically (covers pages that don't use the .lg-input class).
    These rules use the same tokens, so they stay consistent with .lg-input. */
-input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
+    [type="file"]
+  ),
 select,
 textarea {
   background: var(--lg-bg);
   border: 1px solid var(--lg-border);
   border-radius: var(--lg-radius-sm);
-  backdrop-filter: var(--lg-blur-sm) var(--lg-distort-soft);
+  backdrop-filter: var(--lg-blur-sm) ;
   -webkit-backdrop-filter: var(--lg-blur-sm);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
   color: #fff;
-  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease;
 }
 input:focus,
 select:focus,
 textarea:focus {
   border-color: rgba(99, 102, 241, 0.65) !important;
-  background: rgba(255, 255, 255, 0.10) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18) !important;
   outline: none;
 }
@@ -317,9 +392,21 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
 }
 
-/* ── Tables ──────────────────────────────────────────────────────── */
-.lg-table-wrap { padding: 0; }
-.lg-table-wrap > .lg-table-scroll { overflow-x: auto; border-radius: inherit; }
+/* ── Tables (PurchaseOrders reference design) ───────────────────── */
+.lg-table-wrap {
+  padding: 0;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  overflow: hidden;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+}
+.lg-table-wrap > .lg-table-scroll {
+  overflow-x: auto;
+  border-radius: inherit;
+}
 
 .lg-table {
   width: 100%;
@@ -328,36 +415,39 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   color: #fff;
 }
 .lg-table thead tr {
-  background: rgba(255, 255, 255, 0.06);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(12px) saturate(160%);
-  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  background: transparent;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 .lg-table th {
-  padding: 12px 16px;
+  padding: 10px 14px;
   text-align: left;
   font-size: 11px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.65);
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.5);
   text-transform: uppercase;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.05em;
   white-space: nowrap;
-  position: sticky;
-  top: 0;
-  z-index: 2;
 }
 .lg-table tbody tr {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  transition: background 0.15s ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  transition: all 0.4s ease;
 }
-.lg-table tbody tr:hover {
-  background: rgba(255, 255, 255, 0.06);
+.lg-table tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.01);
 }
 .lg-table td {
-  padding: 11px 16px;
+  padding: 12px 14px;
   vertical-align: middle;
 }
-.lg-table tbody tr.is-clickable { cursor: pointer; }
+.lg-table tbody tr.is-clickable {
+  cursor: pointer;
+}
+.lg-table-wrap::before,
+.lg-table-wrap::after {
+  content: none;
+}
 
 /* ── Modals ──────────────────────────────────────────────────────── */
 .lg-modal-backdrop {
@@ -403,7 +493,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .lg-modal-close {
   background: var(--lg-bg);
   border: 1px solid var(--lg-border);
-  color: rgba(255, 255, 255, 0.70);
+  color: rgba(255, 255, 255, 0.7);
   width: 32px;
   height: 32px;
   border-radius: 10px;
@@ -414,7 +504,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   font-size: 16px;
   backdrop-filter: var(--lg-blur-sm);
   -webkit-backdrop-filter: var(--lg-blur-sm);
-  transition: background 0.18s ease, color 0.18s ease;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease;
 }
 .lg-modal-close:hover {
   background: var(--lg-bg-hover);
@@ -428,13 +520,15 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   align-items: center;
   gap: 6px;
   padding: 4px 12px;
-  font: 500 12px 'Fira Code', monospace;
+  font:
+    500 12px "Fira Code",
+    monospace;
   letter-spacing: 0.01em;
   color: #fff;
   background: var(--lg-bg);
   border: 1px solid var(--lg-border);
   border-radius: 999px;
-  backdrop-filter: var(--lg-blur-sm) var(--lg-distort-soft);
+  backdrop-filter: var(--lg-blur-sm) ;
   -webkit-backdrop-filter: var(--lg-blur-sm);
   box-shadow: var(--lg-shadow-sm);
   white-space: nowrap;
@@ -444,10 +538,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .lg-stat-tile {
   padding: 16px 20px;
   background: var(--lg-bg);
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-left: 3px solid var(--lg-accent);
   border-radius: var(--lg-radius-sm);
-  backdrop-filter: var(--lg-blur-sm) var(--lg-distort-soft);
+  backdrop-filter: var(--lg-blur-sm) ;
   -webkit-backdrop-filter: var(--lg-blur-sm);
   position: relative;
   overflow: hidden;
@@ -455,7 +549,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .lg-stat-tile::before {
   content: "";
   position: absolute;
-  top: 0; left: 0; right: 0;
+  top: 0;
+  left: 0;
+  right: 0;
   height: 1px;
   background: var(--lg-sheen-top);
   pointer-events: none;
@@ -470,7 +566,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 /* Reduce paint cost — skip displacement on small input chips when many */
 @media (max-width: 640px) {
-  :root { --lg-distort: none; --lg-distort-soft: none; }
+  :root {
+    --lg-distort: none;
+    --lg-distort-soft: none;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -490,7 +589,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   background: var(--lg-bg);
   border: 1px solid var(--lg-border);
   border-radius: 12px;
-  backdrop-filter: var(--lg-blur) var(--lg-distort);
+  backdrop-filter: var(--lg-blur);
   -webkit-backdrop-filter: var(--lg-blur);
   box-shadow: var(--lg-shadow-sm);
   overflow: hidden;
@@ -499,7 +598,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .lg-stat-tile-compact::before {
   content: "";
   position: absolute;
-  top: 0; left: 0; right: 0;
+  top: 0;
+  left: 0;
+  right: 0;
   height: 1px;
   background: var(--lg-sheen-top);
   pointer-events: none;
@@ -508,8 +609,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .lg-stat-tile-compact::after {
   content: "";
   position: absolute;
-  top: 0; left: 0;
-  width: 1px; height: 100%;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 100%;
   background: var(--lg-sheen-left);
   pointer-events: none;
   z-index: 2;
@@ -539,7 +642,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   font-size: 28px;
   font-weight: 700;
   color: #fff;
-  font-family: 'Josefin Sans', 'Poppins', sans-serif;
+  font-family: "Josefin Sans", "Poppins", sans-serif;
   letter-spacing: -0.01em;
   line-height: 1.1;
   margin-top: 2px;
@@ -563,7 +666,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .lg-stat--blue,
 .lg-stat--amber,
 .lg-stat--green,
-.lg-stat--purple { /* uniform neutral */ }
+.lg-stat--purple {
+  /* uniform neutral */
+}
 
 /* ── Summary bar ── */
 .lg-summary-bar {
@@ -574,7 +679,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   padding: 10px 0;
   margin: 12px 0;
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.60);
+  color: rgba(255, 255, 255, 0.6);
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
@@ -583,8 +688,14 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   height: 14px;
   background: rgba(255, 255, 255, 0.12);
 }
-.lg-summary-bar strong { color: #fff; font-weight: 600; }
-.lg-summary-bar .lg-summary-warn { color: #fbbf24; font-weight: 600; }
+.lg-summary-bar strong {
+  color: #fff;
+  font-weight: 600;
+}
+.lg-summary-bar .lg-summary-warn {
+  color: #fbbf24;
+  font-weight: 600;
+}
 
 /* ── Toolbar (search + filters + actions) ── */
 .lg-toolbar {
@@ -598,7 +709,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   border: 1px solid var(--lg-border);
   border-radius: 10px 10px 0 0;
   border-bottom: none;
-  backdrop-filter: var(--lg-blur) var(--lg-distort);
+  backdrop-filter: var(--lg-blur);
   -webkit-backdrop-filter: var(--lg-blur);
   overflow: hidden;
   isolation: isolate;
@@ -606,13 +717,17 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .lg-toolbar::before {
   content: "";
   position: absolute;
-  top: 0; left: 0; right: 0;
+  top: 0;
+  left: 0;
+  right: 0;
   height: 1px;
   background: var(--lg-sheen-top);
   pointer-events: none;
   z-index: 2;
 }
-.lg-toolbar > .spacer { flex: 1; }
+.lg-toolbar > .spacer {
+  flex: 1;
+}
 .lg-toolbar .lg-input,
 .lg-toolbar .lg-select,
 .lg-toolbar input,
@@ -634,7 +749,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   left: 10px;
   top: 50%;
   transform: translateY(-50%);
-  color: rgba(255, 255, 255, 0.40);
+  color: rgba(255, 255, 255, 0.4);
   font-size: 12px;
   pointer-events: none;
 }
@@ -655,16 +770,22 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   box-shadow:
     0 16px 48px rgba(0, 0, 0, 0.55),
     0 4px 14px rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.30);
-  backdrop-filter: var(--lg-blur-lg) var(--lg-distort);
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  backdrop-filter: var(--lg-blur-lg);
   -webkit-backdrop-filter: var(--lg-blur-lg);
   z-index: 900;
   animation: lg-pop-in 0.18s ease;
   isolation: isolate;
 }
 @keyframes lg-pop-in {
-  from { opacity: 0; transform: translate(-50%, 8px); }
-  to   { opacity: 1; transform: translate(-50%, 0);    }
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
 }
 .lg-bulk-bar .lg-bulk-count {
   font-size: 13px;
@@ -674,7 +795,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   border-right: 1px solid rgba(255, 255, 255, 0.12);
   margin-right: 4px;
 }
-.lg-bulk-bar .lg-btn { box-shadow: none; }
+.lg-bulk-bar .lg-btn {
+  box-shadow: none;
+}
 
 /* ── Status pills (colored bg + matching text) ── */
 .lg-status-pill {
@@ -682,17 +805,40 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   align-items: center;
   gap: 5px;
   padding: 3px 10px;
-  font: 600 11px 'Josefin Sans', 'Poppins', sans-serif;
+  font:
+    600 11px "Josefin Sans",
+    "Poppins",
+    sans-serif;
   letter-spacing: 0.02em;
   border-radius: 6px;
   white-space: nowrap;
   border: 1px solid transparent;
 }
-.lg-status-pill--open      { background: rgba(96, 165, 250, 0.18); color: #93c5fd; border-color: rgba(96, 165, 250, 0.30); }
-.lg-status-pill--pending   { background: rgba(245, 158, 11, 0.18); color: #fcd34d; border-color: rgba(245, 158, 11, 0.30); }
-.lg-status-pill--partial   { background: rgba(245, 158, 11, 0.18); color: #fcd34d; border-color: rgba(245, 158, 11, 0.30); }
-.lg-status-pill--received  { background: rgba(16, 185, 129, 0.18); color: #6ee7b7; border-color: rgba(16, 185, 129, 0.30); }
-.lg-status-pill--cancelled { background: rgba(239, 68, 68, 0.18); color: #fca5a5; border-color: rgba(239, 68, 68, 0.30); }
+.lg-status-pill--open {
+  background: rgba(96, 165, 250, 0.18);
+  color: #93c5fd;
+  border-color: rgba(96, 165, 250, 0.3);
+}
+.lg-status-pill--pending {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fcd34d;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+.lg-status-pill--partial {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fcd34d;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+.lg-status-pill--received {
+  background: rgba(16, 185, 129, 0.18);
+  color: #6ee7b7;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+.lg-status-pill--cancelled {
+  background: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.3);
+}
 
 /* ── Vendor avatar (initials circle) ── */
 .lg-vendor-avatar {
@@ -706,7 +852,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   font-weight: 700;
   color: #fff;
   background: var(--lg-avatar-bg, #6366f1);
-  border: 1px solid rgba(255, 255, 255, 0.20);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   letter-spacing: 0.02em;
   flex-shrink: 0;
 }
@@ -718,7 +864,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 /* ── Clickable text link (PO No, etc.) ── */
 .lg-link {
-  font-family: 'Josefin Sans', 'Poppins', sans-serif;
+  font-family: "Josefin Sans", "Poppins", sans-serif;
   font-weight: 600;
   color: #fff;
   cursor: pointer;
@@ -744,7 +890,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   border-radius: 6px;
   cursor: pointer;
   font-size: 16px;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
 }
 .lg-row-menu-trigger:hover {
   background: rgba(255, 255, 255, 0.08);
@@ -775,15 +924,22 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   border: none;
   color: #fff;
   font-size: 13px;
-  font-family: 'Josefin Sans', 'Poppins', sans-serif;
+  font-family: "Josefin Sans", "Poppins", sans-serif;
   text-align: left;
   border-radius: 6px;
   cursor: pointer;
   transition: background 0.15s ease;
 }
-.lg-row-menu button:hover { background: rgba(255, 255, 255, 0.08); }
-.lg-row-menu button.danger { color: #fca5a5; }
-.lg-row-menu button.danger:hover { background: rgba(239, 68, 68, 0.14); color: #fecaca; }
+.lg-row-menu button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.lg-row-menu button.danger {
+  color: #fca5a5;
+}
+.lg-row-menu button.danger:hover {
+  background: rgba(239, 68, 68, 0.14);
+  color: #fecaca;
+}
 
 /* ── Table refinements (zebra, taller header, tighter rows) ── */
 .lg-table--zebra tbody tr:nth-child(even) {
@@ -792,15 +948,21 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .lg-table--zebra tbody tr:hover {
   background: transparent;
 }
-.lg-table--compact thead tr { height: 40px; }
+.lg-table--compact thead tr {
+  height: 40px;
+}
 .lg-table--compact thead th {
   font-size: 11px;
   letter-spacing: 0.05em;
   font-weight: 700;
   background: transparent;
 }
-.lg-table--compact tbody tr { height: 44px; }
-.lg-table--compact td { padding: 6px 14px; }
+.lg-table--compact tbody tr {
+  height: 44px;
+}
+.lg-table--compact td {
+  padding: 6px 14px;
+}
 
 /* ── Overdue date cell ── */
 .lg-date-overdue {
@@ -816,9 +978,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   padding: 14px 14px 6px;
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.10em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.30);
+  color: rgba(255, 255, 255, 0.3);
 }
 .lg-sidebar-item {
   position: relative;
@@ -836,14 +998,16 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   align-items: center;
   gap: 12px;
   margin: 1px 0;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 .lg-sidebar-item:hover {
   background: rgba(255, 255, 255, 0.06);
   color: #fff;
 }
 .lg-sidebar-item.active {
-  background: rgba(99, 102, 241, 0.10);
+  background: rgba(99, 102, 241, 0.1);
   color: #fff;
   font-weight: 600;
 }
@@ -864,5 +1028,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   opacity: 0.75;
   flex-shrink: 0;
 }
-.lg-sidebar-item.active i { opacity: 1; color: #818cf8; }
-
+.lg-sidebar-item.active i {
+  opacity: 1;
+  color: #818cf8;
+}

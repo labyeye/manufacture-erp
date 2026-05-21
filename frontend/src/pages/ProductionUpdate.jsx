@@ -561,7 +561,7 @@ export default function ProductionUpdate({
             >
               <Field label="OPERATOR / WORKER *">
                 {isOperator ? (
-                  <div style={{ padding: "9px 12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, fontSize: 13, color: "#e0e0e0", fontWeight: 600 }}>
+                  <div style={{ padding: "9px 12px", background: "transparent", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, fontSize: 13, color: "#e0e0e0", fontWeight: 600 }}>
                     {entry.operator || session?.username || "—"}
                   </div>
                 ) : (
@@ -770,16 +770,6 @@ export default function ProductionUpdate({
                     width: 240,
                   }}
                 />
-                <span
-                  style={{
-                    position: "absolute",
-                    left: 10,
-                    top: 10,
-                    fontSize: 13,
-                  }}
-                >
-                  🔍
-                </span>
               </div>
 
               <div

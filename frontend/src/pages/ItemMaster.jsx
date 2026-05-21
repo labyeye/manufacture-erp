@@ -921,7 +921,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
         style={{
           display: "flex",
           gap: 10,
-          background: "rgba(255,255,255,0.05)",
+          background: "transparent",
           padding: 4,
           borderRadius: 12,
           marginBottom: 20,
@@ -996,7 +996,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
                 left: "50%",
                 transform: "translate(-50%, -50%)",
                 zIndex: 1000,
-                background: "rgba(255,255,255,0.05)",
+                background: "transparent",
                 border: "1px solid rgba(255,255,255,0.1)",
                 borderRadius: 12,
                 padding: "20px 24px",
@@ -1006,7 +1006,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
                 overflowY: "auto",
               }
             : {
-                background: "rgba(255,255,255,0.05)",
+                background: "transparent",
                 border: "1px solid rgba(255,255,255,0.1)",
                 borderRadius: 10,
                 padding: "16px 20px",
@@ -1894,7 +1894,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
           style={{
             textAlign: "center",
             padding: "40px",
-            background: "rgba(255,255,255,0.05)",
+            background: "transparent",
             border: "1px solid rgba(255,255,255,0.1)",
             borderRadius: 10,
             color: "#444",
@@ -1912,7 +1912,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
             <div
               key={item._id}
               style={{
-                background: "rgba(255,255,255,0.05)",
+                background: "transparent",
                 border: "1px solid rgba(255,255,255,0.1)",
                 borderRadius: 10,
                 padding: "14px 16px",
@@ -2001,7 +2001,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
                     Co. Codes {showClientCodes === item._id ? "▲" : "▼"}
                   </button>
                   {showClientCodes === item._id && (
-                    <div style={{ marginTop: 8, background: "rgba(255,255,255,0.05)",  border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: 10 }}>
+                    <div style={{ marginTop: 8, background: "transparent",  border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: 10 }}>
                       {item.companyCodes && Object.entries(item.companyCodes).filter(([_, v]) => v).length > 0 ? (
                         Object.entries(item.companyCodes).filter(([_, v]) => v).map(([client, code]) => (
                           <div key={client} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "5px 0", borderBottom: "1px solid rgba(255,255,255,0.06)", gap: 10 }}>

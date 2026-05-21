@@ -1352,7 +1352,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                 key={card.label}
                 onClick={() => setReportTab(card.tab)}
                 style={{
-                  background: "rgba(255,255,255,0.05)",
+                  background: "transparent",
                   borderRadius: 18,
                   padding: "20px",
                   cursor: "pointer",
@@ -1652,7 +1652,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
             style={{
               width: "100%",
               padding: "8px 32px 8px 34px",
-              background: "rgba(255,255,255,0.05)",
+              background: "transparent",
               border: "1px solid rgba(255,255,255,0.12)",
               borderRadius: 8,
               color: "#e0e0e0",
@@ -1729,7 +1729,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
             <div
               style={{
                 padding: 20,
-                background: "rgba(255,255,255,0.05)",
+                background: "transparent",
                 borderRadius: 16,
                 border: "1px solid rgba(255,255,255,0.12)",
                 boxShadow:
@@ -1836,7 +1836,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     borderRadius: 16,
                     overflow: "hidden",
                     border: "1px solid rgba(255,255,255,0.12)",
-                    background: "rgba(255,255,255,0.05)",
+                    background: "transparent",
                     boxShadow:
                       "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
                   }}
@@ -1943,7 +1943,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                 gap: 16,
                 marginBottom: 20,
                 alignItems: "flex-end",
-                background: "rgba(255,255,255,0.05)",
+                background: "transparent",
                 padding: 16,
                 borderRadius: 8,
                 border: "1px solid #2a2a2e",
@@ -2323,7 +2323,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     gap: 16,
                     marginBottom: 20,
                     alignItems: "flex-end",
-                    background: "rgba(255,255,255,0.05)",
+                    background: "transparent",
                     padding: 16,
                     borderRadius: 8,
                     border: "1px solid #2a2a2e",
@@ -2431,7 +2431,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     <div
                       key={s.label}
                       style={{
-                        background: "rgba(255,255,255,0.05)",
+                        background: "transparent",
                         border: `1px solid ${s.color}44`,
                         borderRadius: 8,
                         padding: 16,
@@ -2471,7 +2471,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                 >
                   <div
                     style={{
-                      background: "rgba(255,255,255,0.05)",
+                      background: "transparent",
                       border: `1px solid ${C.red}44`,
                       borderRadius: 8,
                       padding: 16,
@@ -2496,7 +2496,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                   </div>
                   <div
                     style={{
-                      background: "rgba(255,255,255,0.05)",
+                      background: "transparent",
                       border: `1px solid ${C.red}44`,
                       borderRadius: 8,
                       padding: 16,
@@ -2696,7 +2696,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     gap: 16,
                     marginBottom: 20,
                     alignItems: "flex-end",
-                    background: "rgba(255,255,255,0.05)",
+                    background: "transparent",
                     padding: 16,
                     borderRadius: 8,
                     border: "1px solid #2a2a2e",
@@ -2798,7 +2798,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     <div
                       key={s.label}
                       style={{
-                        background: "rgba(255,255,255,0.05)",
+                        background: "transparent",
                         border: `1px solid ${s.color}44`,
                         borderRadius: 8,
                         padding: 16,
@@ -3052,7 +3052,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     gap: 16,
                     marginBottom: 20,
                     alignItems: "flex-end",
-                    background: "rgba(255,255,255,0.05)",
+                    background: "transparent",
                     padding: 16,
                     borderRadius: 8,
                     border: "1px solid #2a2a2e",
@@ -3122,7 +3122,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     <div
                       key={s.label}
                       style={{
-                        background: "rgba(255,255,255,0.05)",
+                        background: "transparent",
                         border: `1px solid ${s.color}44`,
                         borderRadius: 8,
                         padding: 16,
@@ -3316,7 +3316,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     <div
                       key={st.label}
                       style={{
-                        background: "rgba(255,255,255,0.05)",
+                        background: "transparent",
                         border: `1px solid ${st.color}44`,
                         borderRadius: 8,
                         padding: 18,
@@ -3609,7 +3609,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     gap: 16,
                     marginBottom: 20,
                     alignItems: "flex-end",
-                    background: "rgba(255,255,255,0.05)",
+                    background: "transparent",
                     padding: 16,
                     borderRadius: 8,
                     border: "1px solid #2a2a2e",
@@ -3658,7 +3658,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     <div
                       key={y.stage}
                       style={{
-                        background: "rgba(255,255,255,0.05)",
+                        background: "transparent",
                         border: `1px solid ${y.pct > 95 ? C.green : C.yellow}44`,
                         borderTop: `4px solid ${y.pct > 95 ? C.green : C.yellow}`,
                         borderRadius: 8,
@@ -3855,7 +3855,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                         <div
                           key={m.machine._id}
                           style={{
-                            background: "rgba(255,255,255,0.05)",
+                            background: "transparent",
                             border: `1px solid ${m.pct > 95 ? C.green : C.yellow}44`,
                             borderTop: `4px solid ${m.pct > 95 ? C.green : C.yellow}`,
                             borderRadius: 8,
@@ -4008,7 +4008,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                   textAlign: "center",
                   padding: 60,
                   color: C.green,
-                  background: "rgba(255,255,255,0.05)",
+                  background: "transparent",
                   borderRadius: 8,
                   border: "1px solid #2a2a2e",
                 }}
@@ -4517,7 +4517,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     onChange={(e) => setSelectedMonth(e.target.value)}
                     style={{
                       padding: "7px 12px",
-                      background: "rgba(255,255,255,0.05)",
+                      background: "transparent",
                       border: "1px solid #2a2a2e",
                       color: "#e0e0e0",
                       borderRadius: 6,
@@ -4556,7 +4556,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     <div
                       key={s.label}
                       style={{
-                        background: "rgba(255,255,255,0.05)",
+                        background: "transparent",
                         border: `1px solid ${s.color}44`,
                         borderRadius: 8,
                         padding: 16,
@@ -4592,7 +4592,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                   <div
                     style={{
                       padding: "10px 14px",
-                      background: "rgba(255,255,255,0.05)",
+                      background: "transparent",
                       fontSize: 11,
                       fontWeight: 500,
                       color: C.yellow,
@@ -4701,7 +4701,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     <div
                       style={{
                         padding: "10px 14px",
-                        background: "rgba(255,255,255,0.05)",
+                        background: "transparent",
                         fontSize: 11,
                         fontWeight: 500,
                         color: C.yellow,
@@ -4911,7 +4911,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     gap: 16,
                     marginBottom: 20,
                     alignItems: "flex-end",
-                    background: "rgba(255,255,255,0.05)",
+                    background: "transparent",
                     padding: 16,
                     borderRadius: 8,
                     border: "1px solid #2a2a2e",
@@ -5007,7 +5007,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     <div
                       key={s.label}
                       style={{
-                        background: "rgba(255,255,255,0.05)",
+                        background: "transparent",
                         border: `1px solid ${s.color}44`,
                         borderRadius: 8,
                         padding: 16,
@@ -5477,7 +5477,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     gap: 14,
                     alignItems: "flex-end",
                     flexWrap: "wrap",
-                    background: "rgba(255,255,255,0.05)",
+                    background: "transparent",
                     padding: 16,
                     borderRadius: 8,
                     border: "1px solid #2a2a2e",
@@ -5594,7 +5594,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       <div
                         key={label}
                         style={{
-                          background: "rgba(255,255,255,0.05)",
+                          background: "transparent",
                           border: `1px solid ${col}44`,
                           borderRadius: 8,
                           padding: 16,
@@ -5690,7 +5690,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                 {}
                 <div
                   style={{
-                    background: "rgba(255,255,255,0.05)",
+                    background: "transparent",
                     border: "1px solid #2a2a2e",
                     borderRadius: 8,
                     padding: "16px 20px",
@@ -5762,7 +5762,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                   <div
                     style={{
                       padding: "12px 16px",
-                      background: "rgba(255,255,255,0.05)",
+                      background: "transparent",
                       borderBottom: "1px solid #2a2a2e",
                       display: "flex",
                       alignItems: "center",
@@ -6052,7 +6052,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     <div
                       style={{
                         padding: "12px 16px",
-                        background: "rgba(255,255,255,0.05)",
+                        background: "transparent",
                         borderBottom: "1px solid #2a2a2e",
                         fontWeight: 500,
                         color: "#bbb",
@@ -6307,7 +6307,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     style={{
                       textAlign: "center",
                       padding: 60,
-                      background: "rgba(255,255,255,0.05)",
+                      background: "transparent",
                       borderRadius: 12,
                       border: "1px solid #2a2a2e",
                     }}
@@ -6353,7 +6353,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                           <div
                             key={s}
                             style={{
-                              background: "rgba(255,255,255,0.05)",
+                              background: "transparent",
                               border: `1px solid ${cfg.color}44`,
                               borderRadius: 8,
                               padding: 16,
@@ -6421,7 +6421,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               <div
                                 key={a.id}
                                 style={{
-                                  background: "rgba(255,255,255,0.05)",
+                                  background: "transparent",
                                   border: `1px solid ${cfg.color}44`,
                                   borderRadius: 10,
                                   padding: "14px 18px",
@@ -6859,7 +6859,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     <div
                       key={label}
                       style={{
-                        background: "rgba(255,255,255,0.05)",
+                        background: "transparent",
                         border: `1px solid ${color}44`,
                         borderRadius: 8,
                         padding: 16,
@@ -6983,7 +6983,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                 {/* ── Pipeline flow diagram ── */}
                 <div
                   style={{
-                    background: "rgba(255,255,255,0.05)",
+                    background: "transparent",
                     border: "1px solid #2a2a2e",
                     borderRadius: 8,
                     padding: "20px 20px 16px",
@@ -7090,7 +7090,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                   <div
                     style={{
                       padding: "12px 16px",
-                      background: "rgba(255,255,255,0.05)",
+                      background: "transparent",
                       borderBottom: "1px solid #2a2a2e",
                       fontWeight: 500,
                       color: "#bbb",
@@ -7291,7 +7291,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       <div
                         style={{
                           padding: "12px 16px",
-                          background: "rgba(255,255,255,0.05)",
+                          background: "transparent",
                           borderBottom: "1px solid #2a2a2e",
                           fontWeight: 500,
                           color: "#bbb",
@@ -7658,7 +7658,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                   <div
                     style={{
                       padding: "12px 16px",
-                      background: "rgba(255,255,255,0.05)",
+                      background: "transparent",
                       borderBottom: "1px solid #2a2a2e",
                     }}
                   >
@@ -7856,7 +7856,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                   <div
                     style={{
                       padding: "12px 16px",
-                      background: "rgba(255,255,255,0.05)",
+                      background: "transparent",
                       borderBottom: "1px solid #2a2a2e",
                     }}
                   >
@@ -8281,7 +8281,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                           <div
                             style={{
                               flex: 1,
-                              background: "rgba(255,255,255,0.05)",
+                              background: "transparent",
                               borderRadius: 4,
                               height: 32,
                               position: "relative",

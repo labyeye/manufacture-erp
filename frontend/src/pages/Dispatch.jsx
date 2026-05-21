@@ -1240,8 +1240,8 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                 <thead>
                   <tr style={{ borderBottom: `2px solid ${C.border}` }}>
                     {(recordsTab === "return"
-                      ? ["DC No", "Return Date", "Company", "Original Ref", "Reason", "Items", "Qty", "Vehicle", "Actions"]
-                      : ["DC No", "Date", "Company", "PO No", "SO Ref", "Items", "Qty", "Vehicle", "Status", "Actions"]
+                      ? ["DC No", "Return Date", "Company", "Original Ref", "Reason", "Qty", "Vehicle", "Actions"]
+                      : ["DC No", "Date", "Company", "PO No", "SO Ref", "Qty", "Vehicle", "Status", "Actions"]
                     ).map((h) => (
                       <th key={h} style={{ padding: "8px 10px", textAlign: "left", fontWeight: 700, color: C.muted, fontSize: 11, whiteSpace: "nowrap" }}>{h}</th>
                     ))}
@@ -1299,17 +1299,6 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                     };
 
                     const isReturn = r.type === "Return";
-                    const itemsCell = (
-                      <td style={{ padding: "10px 10px" }}>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                          {(r.items || []).map((it, i) => (
-                            <span key={i} style={{ fontSize: 11, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 4, padding: "1px 6px", color: C.muted, whiteSpace: "nowrap" }}>
-                              {it.itemName}
-                            </span>
-                          ))}
-                        </div>
-                      </td>
-                    );
                     const dcNoCell = (
                       <td style={{ padding: "10px 10px", whiteSpace: "nowrap" }}>
                         <span style={{ color: isReturn ? (C.orange || "#f97316") : C.purple, fontWeight: 600 }}>
@@ -1340,7 +1329,6 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                             <td style={{ padding: "10px 10px" }}>
                               <span style={{ fontSize: 11, color: C.orange || "#f97316", fontWeight: 600 }}>{r.returnReason || "Return"}</span>
                             </td>
-                            {itemsCell}
                             {qtyCell}
                             {vehicleCell}
                           </>
@@ -1348,7 +1336,6 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                           <>
                             <td style={{ padding: "10px 10px", color: C.muted }}>{r.poNumber || "—"}</td>
                             <td style={{ padding: "10px 10px", color: C.muted }}>{r.soRef || "—"}</td>
-                            {itemsCell}
                             {qtyCell}
                             {vehicleCell}
                             <td style={{ padding: "10px 10px" }}>

@@ -360,7 +360,7 @@ export default function Subcontracting({
           <div
             key={s.label}
             style={{
-              background: "rgba(255,255,255,0.05)",
+              background: "transparent",
               border: `1px solid ${s.color}33`,
               borderRadius: 8,
               padding: 14,
@@ -390,7 +390,7 @@ export default function Subcontracting({
         <Modal title={editId ? "Edit Subcontracting Record" : "Issue Material to Vendor"} onClose={() => { setShowModal(false); setForm(blankForm); setEditId(null); }}>
         <div
           style={{
-            background: "rgba(255,255,255,0.05)",
+            background: "transparent",
             border: "1px solid rgba(255,255,255,0.1)",
             borderRadius: 10,
             padding: 24,
@@ -582,7 +582,7 @@ export default function Subcontracting({
             <Modal title={`Record Receipt — ${rec.joNo} / ${rec.stage}`} onClose={() => { setReceiveId(null); setReceiveForm(blankReceive); setShowReceiveModal(false); }}>
             <div
               style={{
-                background: "rgba(255,255,255,0.05)",
+                background: "transparent",
                 border: "1px solid #3b82f633",
                 borderRadius: 10,
                 padding: 24,
@@ -726,7 +726,7 @@ export default function Subcontracting({
       {}
       <div
         style={{
-          background: "rgba(255,255,255,0.05)",
+          background: "transparent",
           border: "1px solid rgba(255,255,255,0.1)",
           borderRadius: 10,
           padding: 20,

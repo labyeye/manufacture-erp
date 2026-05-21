@@ -327,7 +327,7 @@ export default function DemandForecast({
           <div
             key={label}
             style={{
-              background: "rgba(255,255,255,0.05)",
+              background: "transparent",
               border: "1px solid rgba(255,255,255,0.1)",
               boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
               borderRadius: 10,
@@ -665,7 +665,7 @@ export default function DemandForecast({
           style={{
             marginTop: 12,
             padding: "10px 16px",
-            background: "rgba(255,255,255,0.05)",
+            background: "transparent",
             borderRadius: 8,
             border: "1px solid rgba(255,255,255,0.1)",
             boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",

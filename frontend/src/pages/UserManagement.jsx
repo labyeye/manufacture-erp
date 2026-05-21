@@ -267,7 +267,7 @@ export default function UserManagement({ currentUser, toast, onRefreshUser, cate
           </div>
 
           {/* Import / Export permission */}
-          <div style={{ marginBottom: 16, padding: "12px 14px", background: "rgba(255,255,255,0.05)", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ marginBottom: 16, padding: "12px 14px", background: "transparent", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
               <div style={{ fontSize: 12, fontWeight: 600, color: "#e0e0e0" }}>Allow Import / Export</div>
               <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>Excel & PDF import/export buttons across all pages</div>
@@ -311,7 +311,7 @@ export default function UserManagement({ currentUser, toast, onRefreshUser, cate
                 return (
                   <div key={tab.id} style={{
                     display: "flex", alignItems: "center", justifyContent: "space-between",
-                    padding: "10px 14px", background: "rgba(255,255,255,0.05)", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)",
+                    padding: "10px 14px", background: "transparent", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)",
                   }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                       <span style={{ fontSize: 16 }}>{tab.icon}</span>
@@ -383,7 +383,7 @@ export default function UserManagement({ currentUser, toast, onRefreshUser, cate
       {/* Search */}
       <div style={{ marginBottom: 14 }}>
         <input style={{ ...inputStyle, maxWidth: 300 }}
-          placeholder="🔍 Search users..."
+          placeholder="Search users..."
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)} />
       </div>
@@ -399,7 +399,7 @@ export default function UserManagement({ currentUser, toast, onRefreshUser, cate
 
           return (
             <div key={user._id} style={{
-              background: "rgba(255,255,255,0.05)",  border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10,
+              background: "transparent",  border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10,
               padding: "16px 20px", display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap",
             }}>
               <div style={{

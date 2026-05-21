@@ -24,7 +24,7 @@ const inputStyle = {
 };
 
 const cardStyle = {
-  background: "rgba(255,255,255,0.05)",
+  background: "transparent",
   border: "1px solid rgba(255,255,255,0.1)",
   borderRadius: 10,
   padding: 20,
@@ -480,7 +480,7 @@ export default function BrandMaster({ toast, canExportImport = true }) {
               }}
               style={{
                 padding: "9px 20px",
-                background: "rgba(255,255,255,0.05)",
+                background: "transparent",
                 color: "#aaa",
                 border: "1px solid rgba(255,255,255,0.1)",
                 borderRadius: 6,
@@ -519,7 +519,7 @@ export default function BrandMaster({ toast, canExportImport = true }) {
           </span>
           <input
             type="text"
-            placeholder="🔍 Search brands..."
+            placeholder="Search brands..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{ ...inputStyle, width: 220 }}

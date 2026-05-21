@@ -165,7 +165,7 @@ function DraftPOModal({
       {}
       <div
         style={{
-          background: "rgba(255,255,255,0.05)",
+          background: "transparent",
           border: "1px solid rgba(255,255,255,0.1)",
           boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
           borderRadius: 8,
@@ -408,7 +408,7 @@ export default function RMForecast({
           <div
             key={label}
             style={{
-              background: "rgba(255,255,255,0.05)",
+              background: "transparent",
               border: "1px solid rgba(255,255,255,0.1)",
               boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
               borderRadius: 16,
@@ -436,7 +436,7 @@ export default function RMForecast({
         style={{
           marginBottom: 16,
           padding: "12px 18px",
-          background: "rgba(255,255,255,0.05)",
+          background: "transparent",
           border: "1px solid rgba(255,255,255,0.1)",
           boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
         }}
@@ -546,7 +546,7 @@ export default function RMForecast({
       {}
       <Card
         style={{
-          background: "rgba(255,255,255,0.05)",
+          background: "transparent",
           border: "1px solid rgba(255,255,255,0.1)",
           boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
         }}

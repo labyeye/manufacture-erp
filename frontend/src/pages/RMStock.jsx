@@ -26,6 +26,7 @@ export default function RMStock({
   const isClient = session?.role === "Client";
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
+  const [stockStatusFilter, setStockStatusFilter] = useState("All");
   const [editingItem, setEditingItem] = useState(null);
   const [showZeroStock, setShowZeroStock] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
@@ -91,13 +92,22 @@ export default function RMStock({
     if (activeFilter !== "All") {
       list = list.filter((s) => s.category === activeFilter);
     }
-    if (!showZeroStock) {
+    if (stockStatusFilter !== "All") {
+      list = list.filter((s) => {
+        const wt = +(s.weight || s.weightKg || 0);
+        const reorder = +(s.reorderLevel || 0);
+        if (stockStatusFilter === "In Stock") return wt > 0 && (reorder === 0 || wt > reorder);
+        if (stockStatusFilter === "Low Stock") return wt > 0 && reorder > 0 && wt <= reorder;
+        if (stockStatusFilter === "Out of Stock") return wt <= 0;
+        return true;
+      });
+    } else if (!showZeroStock) {
       list = list.filter((s) => (s.qty || 0) > 0 || (s.weight || 0) > 0);
     }
     return [...list].sort(
       (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
     );
-  }, [allItems, search, activeFilter, showZeroStock]);
+  }, [allItems, search, activeFilter, stockStatusFilter, showZeroStock]);
 
   const handleUpdateReorder = async (item, newVal) => {
     try {
@@ -757,7 +767,6 @@ export default function RMStock({
           marginBottom: 8,
         }}
       >
-        <span style={{ fontSize: 24 }}>📦</span>
         <h1
           style={{
             fontSize: 22,
@@ -831,17 +840,7 @@ export default function RMStock({
         }}
       >
         <div style={{ position: "relative", flex: 1 }}>
-          <span
-            style={{
-              position: "absolute",
-              left: 12,
-              top: "50%",
-              transform: "translateY(-50%)",
-              color: "#666",
-            }}
-          >
-            🔍
-          </span>
+          
           <input
             placeholder="Search material..."
             value={search}
@@ -907,7 +906,7 @@ export default function RMStock({
       </div>
 
       {}
-      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
         {categories.map((cat) => (
           <button
             key={cat}
@@ -918,12 +917,43 @@ export default function RMStock({
               fontSize: 12,
               fontWeight: 500,
               cursor: "pointer",
-              background: activeFilter === cat ? C.blue : "transparent",
-              color: activeFilter === cat ? "#fff" : "#888",
-              border: `1px solid ${activeFilter === cat ? C.blue : "#2a2a2e"}`,
+              background: activeFilter === cat ? "rgba(128,130,255,0.12)" : "transparent",
+              color: activeFilter === cat ? "#8082ff" : "#888",
+              border: `1px solid ${activeFilter === cat ? "#8082ff98" : "#2a2a2e"}`,
             }}
           >
             {cat}
+          </button>
+        ))}
+      </div>
+
+      {}
+      <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+        {["All", "In Stock", "Low Stock", "Out of Stock"].map((s) => (
+          <button
+            key={s}
+            onClick={() => setStockStatusFilter(s)}
+            style={{
+              padding: "6px 16px",
+              borderRadius: 6,
+              fontSize: 12,
+              fontWeight: 500,
+              cursor: "pointer",
+              background: stockStatusFilter === s ? "rgba(128,130,255,0.12)" : "transparent",
+              color: stockStatusFilter === s ? "#8082ff" : "#888",
+              border: `1px solid ${stockStatusFilter === s ? "#8082ff98" : "#2a2a2e"}`,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            <i className={
+              s === "In Stock" ? "fa-solid fa-warehouse"
+              : s === "Low Stock" ? "fa-solid fa-triangle-exclamation"
+              : s === "Out of Stock" ? "fa-solid fa-circle-exclamation"
+              : "fa-solid fa-layer-group"
+            } />
+            {s}
           </button>
         ))}
       </div>
@@ -963,15 +993,15 @@ export default function RMStock({
                 />
               </th>
               {[
-                { label: "CODE", w: 100 },
-                { label: "MATERIAL NAME", w: "auto" },
+                { label: "CODE", w: 90 },
+                { label: "MATERIAL NAME", w: 200 },
                 { label: "CATEGORY", w: 110 },
                 { label: "QTY (SHEETS)", w: 110 },
                 { label: "QTY (KG)", w: 110 },
                 { label: "REORDER (KG)", w: 110 },
                 { label: "RATE (₹/KG)", w: 110 },
                 { label: "VALUE (₹)", w: 120 },
-                { label: "ACTION", w: 130 },
+                { label: "ACTION", w: 200 },
               ].map((h) => (
                 <th
                   key={h.label}
@@ -1034,9 +1064,17 @@ export default function RMStock({
                   >
                     {s.code || "—"}
                   </td>
-                  <td style={{ padding: "16px" }}>
+                  <td style={{ padding: "12px 14px" }}>
                     <div
-                      style={{ fontWeight: 600, fontSize: 13, color: "#eee" }}
+                      style={{
+                        fontWeight: 600,
+                        fontSize: 13,
+                        color: "#eee",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                      title={s.name || s.paperType}
                     >
                       {s.name || s.paperType}
                     </div>

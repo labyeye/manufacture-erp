@@ -18,7 +18,7 @@ const inputStyle = {
   border: "1px solid rgba(255,255,255,0.1)",
   borderRadius: 8,
   fontSize: 13,
-  background: "rgba(255,255,255,0.05)",
+  background: "transparent",
   color: "#e0e0e0",
   outline: "none",
 };
@@ -37,6 +37,7 @@ export default function FGStock({
   const isClient = session?.role === "Client";
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState("All");
+  const [stockStatusFilter, setStockStatusFilter] = useState("All");
   const [editingItem, setEditingItem] = useState(null);
   const [showZeroStock, setShowZeroStock] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
@@ -374,8 +375,16 @@ export default function FGStock({
         s.itemName?.toLowerCase().includes(search.toLowerCase()) ||
         s.itemCode?.toLowerCase().includes(search.toLowerCase());
       const matchCat = filterCat === "All" || s.category === filterCat;
-      const matchZero = showZeroStock || (s.qty || 0) > 0;
-      return matchSearch && matchCat && matchZero;
+      const qty = +(s.qty || 0);
+      const reorder = +(s.reorder || 0);
+      let matchStatus = true;
+      if (stockStatusFilter !== "All") {
+        if (stockStatusFilter === "In Stock") matchStatus = qty > 0 && (reorder === 0 || qty > reorder);
+        else if (stockStatusFilter === "Low Stock") matchStatus = qty > 0 && reorder > 0 && qty <= reorder;
+        else if (stockStatusFilter === "Out of Stock") matchStatus = qty <= 0;
+      }
+      const matchZero = stockStatusFilter !== "All" || showZeroStock || qty > 0;
+      return matchSearch && matchCat && matchStatus && matchZero;
     });
     return result.sort((a, b) => {
       const dateA = new Date(a.createdAt || a.lastUpdated || a.addedOn || 0).getTime();
@@ -385,7 +394,7 @@ export default function FGStock({
       const cb = b.itemCode || b.code || "";
       return ca.localeCompare(cb, undefined, { numeric: true });
     });
-  }, [allItems, search, filterCat, showZeroStock]);
+  }, [allItems, search, filterCat, stockStatusFilter, showZeroStock]);
 
   const totalItems = filtered.length;
   const inStock = filtered.filter((s) => (s.qty || 0) > 0).length;
@@ -786,7 +795,7 @@ export default function FGStock({
       >
         <input
           style={{ ...inputStyle, width: 200 }}
-          placeholder="🔍 Search item..."
+          placeholder="Search item..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -861,7 +870,7 @@ export default function FGStock({
                   {isExpanded && bucket.items.length > 5 && (
                     <button
                       onClick={() => setExpandedBucket(null)}
-                      style={{ marginTop: 6, fontSize: 10, color: "rgba(255,255,255,0.35)", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 4, padding: "2px 8px", cursor: "pointer", fontWeight: 600 }}
+                      style={{ marginTop: 6, fontSize: 10, color: "rgba(255,255,255,0.35)", background: "transparent", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 4, padding: "2px 8px", cursor: "pointer", fontWeight: 600 }}
                     >
                       Show less
                     </button>
@@ -873,26 +882,55 @@ export default function FGStock({
         </div>
       )}
 
-      <div style={{ marginBottom: 14 }}>
-        <select
-          value={filterCat}
-          onChange={(e) => setFilterCat(e.target.value)}
-          style={{
-            ...inputStyle,
-            width: 250,
-            cursor: "pointer",
-            fontWeight: 500,
-            background: filterCat !== "All" ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.04)",
-            borderColor: filterCat !== "All" ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.08)",
-          }}
-        >
-          <option value="All">All Categories ({fgStock.length})</option>
-          {categories.map((cat) => (
-            <option key={cat} value={cat}>
-              {cat}
-            </option>
-          ))}
-        </select>
+      <div style={{ marginBottom: 12, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+        {["All", ...categories].map((cat) => (
+          <button
+            key={cat}
+            onClick={() => setFilterCat(cat)}
+            style={{
+              padding: "6px 16px",
+              borderRadius: 6,
+              fontSize: 12,
+              fontWeight: 500,
+              cursor: "pointer",
+              background: filterCat === cat ? "rgba(128,130,255,0.12)" : "transparent",
+              color: filterCat === cat ? "#8082ff" : "#888",
+              border: `1px solid ${filterCat === cat ? "#8082ff98" : "#2a2a2e"}`,
+            }}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ marginBottom: 14, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+        {["All", "In Stock", "Low Stock", "Out of Stock"].map((s) => (
+          <button
+            key={s}
+            onClick={() => setStockStatusFilter(s)}
+            style={{
+              padding: "6px 16px",
+              borderRadius: 6,
+              fontSize: 12,
+              fontWeight: 500,
+              cursor: "pointer",
+              background: stockStatusFilter === s ? "rgba(128,130,255,0.12)" : "transparent",
+              color: stockStatusFilter === s ? "#8082ff" : "#888",
+              border: `1px solid ${stockStatusFilter === s ? "#8082ff98" : "#2a2a2e"}`,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            <i className={
+              s === "In Stock" ? "fa-solid fa-warehouse"
+              : s === "Low Stock" ? "fa-solid fa-triangle-exclamation"
+              : s === "Out of Stock" ? "fa-solid fa-circle-exclamation"
+              : "fa-solid fa-layer-group"
+            } />
+            {s}
+          </button>
+        ))}
       </div>
 
       {}

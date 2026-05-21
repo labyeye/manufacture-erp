@@ -423,7 +423,7 @@ export default function MachineMaster({ toast }) {
       >
         <div
           style={{
-            background: "rgba(255,255,255,0.05)",
+            background: "transparent",
             border: "1px solid rgba(255,255,255,0.1)",
             borderRadius: 16,
             width: "100%",
@@ -710,7 +710,7 @@ export default function MachineMaster({ toast }) {
                     padding: "3px 10px",
                     borderRadius: 4,
                     border: "1px solid rgba(255,255,255,0.1)",
-                    background: "rgba(255,255,255,0.05)",
+                    background: "transparent",
                     color: "#888",
                     cursor: "pointer",
                   }}
@@ -725,7 +725,7 @@ export default function MachineMaster({ toast }) {
                     padding: "3px 10px",
                     borderRadius: 4,
                     border: "1px solid rgba(255,255,255,0.1)",
-                    background: "rgba(255,255,255,0.05)",
+                    background: "transparent",
                     color: "#888",
                     cursor: "pointer",
                   }}
@@ -877,7 +877,7 @@ export default function MachineMaster({ toast }) {
               onClick={() => setEditingMachine(null)}
               style={{
                 padding: "12px 25px",
-                background: "rgba(255,255,255,0.05)",
+                background: "transparent",
                 color: "#fff",
                 border: "1px solid rgba(255,255,255,0.1)",
                 borderRadius: 8,
@@ -919,7 +919,7 @@ export default function MachineMaster({ toast }) {
             title="Download a blank XLSX template with all columns"
             style={{
               padding: "8px 14px",
-              background: "rgba(255,255,255,0.05)",
+              background: "transparent",
               color: "#9C27B0",
               border: "1px solid #9C27B044",
               borderRadius: 6,
@@ -938,7 +938,7 @@ export default function MachineMaster({ toast }) {
             title="Export all machines to XLSX"
             style={{
               padding: "8px 14px",
-              background: "rgba(255,255,255,0.05)",
+              background: "transparent",
               color: "#4CAF50",
               border: "1px solid #4CAF5044",
               borderRadius: 6,
@@ -976,7 +976,7 @@ export default function MachineMaster({ toast }) {
       </div>
 
       {}
-      <div style={{ background: "rgba(255,255,255,0.05)",  border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "16px 20px", marginBottom: 20, boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
+      <div style={{ background: "transparent",  border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "16px 20px", marginBottom: 20, boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
         <div style={{ fontSize: 11, fontWeight: 800, color: "#FF9800", marginBottom: 12, letterSpacing: 1 }}>ADD NEW MACHINE</div>
         <div style={{ display: "flex", gap: 12 }}>
           <input
@@ -1005,7 +1005,7 @@ export default function MachineMaster({ toast }) {
       <div style={{ display: "flex", gap: 10, marginBottom: 15, flexWrap: "wrap" }}>
         <input
           style={{ ...inputStyle, width: 220 }}
-          placeholder="🔍 Search machines..."
+          placeholder="Search machines..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />

@@ -496,7 +496,7 @@ export default function Reports() {
   const [previewData, setPreviewData] = useState(null);
 
   const fieldStyle = {
-    background: "rgba(255,255,255,0.05)",
+    background: "transparent",
     border: "1px solid rgba(255,255,255,0.12)",
     borderRadius: 8,
     color: "#fff",

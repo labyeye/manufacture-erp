@@ -366,17 +366,6 @@ export default function PrintingDetailMaster({ toast, canExportImport = true }) 
                 outline: "none",
               }}
             />
-            <span
-              style={{
-                position: "absolute",
-                left: 12,
-                top: "50%",
-                transform: "translateY(-50%)",
-                color: "#64748b",
-              }}
-            >
-              🔍
-            </span>
           </div>
 
           <select

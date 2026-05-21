@@ -481,7 +481,6 @@ export default function ConsumableStock({
           {}
           <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 12 }}>
             <div style={{ position: "relative", flex: 1, minWidth: 180 }}>
-              <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: C.muted, fontSize: 13 }}>🔍</span>
               <input
                 placeholder="Search item..."
                 value={search}
