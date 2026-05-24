@@ -1,4 +1,10 @@
-import React, { useState, useRef, useMemo, useEffect, useCallback } from "react";
+import React, {
+  useState,
+  useRef,
+  useMemo,
+  useEffect,
+  useCallback,
+} from "react";
 import {
   itemMasterAPI,
   categoryMasterAPI,
@@ -25,9 +31,19 @@ const ITEM_TABS = [
 
 const CATEGORY_CONFIG = {
   "Paper Bag": { layout: "3D", f1: "WIDTH", f2: "GUSSETT", f3: "HEIGHT" },
-  "Paper Bag without Handle": { layout: "3D", f1: "WIDTH", f2: "GUSSETT", f3: "HEIGHT" },
-  "Paper Bag with Handle": { layout: "3D", f1: "WIDTH", f2: "GUSSETT", f3: "HEIGHT" },
-  "Manual": { layout: "3D", f1: "WIDTH", f2: "GUSSETT", f3: "HEIGHT" },
+  "Paper Bag without Handle": {
+    layout: "3D",
+    f1: "WIDTH",
+    f2: "GUSSETT",
+    f3: "HEIGHT",
+  },
+  "Paper Bag with Handle": {
+    layout: "3D",
+    f1: "WIDTH",
+    f2: "GUSSETT",
+    f3: "HEIGHT",
+  },
+  Manual: { layout: "3D", f1: "WIDTH", f2: "GUSSETT", f3: "HEIGHT" },
   "Paper Pouch": { layout: "2D", f1: "WIDTH", f2: "LENGTH" },
   "Paper Box": { layout: "3D", f1: "WIDTH", f2: "LENGTH", f3: "HEIGHT" },
   "Corrugated Box": { layout: "3D", f1: "WIDTH", f2: "LENGTH", f3: "HEIGHT" },
@@ -56,7 +72,9 @@ const inputStyle = {
 };
 
 function useIsMobile(breakpoint = 768) {
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth < breakpoint);
+  const [isMobile, setIsMobile] = useState(
+    () => window.innerWidth < breakpoint,
+  );
   useEffect(() => {
     const handler = () => setIsMobile(window.innerWidth < breakpoint);
     window.addEventListener("resize", handler);
@@ -65,7 +83,12 @@ function useIsMobile(breakpoint = 768) {
   return isMobile;
 }
 
-export default function ItemMaster({ companyMaster = [], toast, refreshData, canExportImport = true }) {
+export default function ItemMaster({
+  companyMaster = [],
+  toast,
+  refreshData,
+  canExportImport = true,
+}) {
   const [itemMasterFG, setItemMasterFG] = useState([]);
   const [categoryMaster, setCategoryMaster] = useState({});
   const [brandMaster, setBrandMaster] = useState([]);
@@ -117,7 +140,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
   const fetchBrands = async () => {
     try {
       const res = await brandMasterAPI.getAll();
-      setBrandMaster(Array.isArray(res) ? res : (res?.brands || []));
+      setBrandMaster(Array.isArray(res) ? res : res?.brands || []);
     } catch {
       // silently fail
     }
@@ -144,6 +167,9 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
       else if (width) parts.push(width + "mm");
 
       setNewItemName(parts.filter(Boolean).join(" "));
+    } else if (activeTab === "Finished Goods" && selectedCategory === "Other") {
+      // "Other" category: user types name manually, no auto-generation
+      return;
     } else if (activeTab === "Finished Goods" && selectedCategory) {
       let sizeStr = "";
       const fgCfg = CATEGORY_CONFIG[selectedCategory];
@@ -165,7 +191,10 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
         companyName,
       ];
       setNewItemName(parts.filter(Boolean).join(" "));
-    } else if ((activeTab === "Consumable" || activeTab === "Machine Spare") && selectedCategory) {
+    } else if (
+      (activeTab === "Consumable" || activeTab === "Machine Spare") &&
+      selectedCategory
+    ) {
       const dimCfg = CONSUMABLE_DIM_CONFIG[selectedCategory];
       const parts = [selectedCategory];
       const uomSuffix = uom === "N/A" ? "" : uom;
@@ -398,8 +427,12 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
     const parsedDims = (() => {
       const n = item.name || "";
       const gsmMatch = n.match(/(\d+(?:\.\d+)?)\s*gsm/i);
-      const dim3 = n.match(/(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)\s*(mm|cm|inch)/i);
-      const dim2 = n.match(/(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)\s*(mm|cm|inch)/i);
+      const dim3 = n.match(
+        /(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)\s*(mm|cm|inch)/i,
+      );
+      const dim2 = n.match(
+        /(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)\s*(mm|cm|inch)/i,
+      );
       const dim1 = n.match(/(\d+(?:\.\d+)?)\s*(mm|cm|inch)/i);
       return {
         gsm: gsmMatch ? gsmMatch[1] : "",
@@ -418,14 +451,18 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
     setUom(item.uom || parsedDims.uom || "mm");
     setGstRate(item.gstRate != null ? String(item.gstRate) : "18");
     setHsnCode(item.hsnCode || "");
-    setReorderLevel(item.reorderLevel != null ? String(item.reorderLevel) : "0");
+    setReorderLevel(
+      item.reorderLevel != null ? String(item.reorderLevel) : "0",
+    );
     setCompanyName(item.companyName || "");
     setCompanyCategory(item.companyCategory || "");
     setProductCode(item.code || "");
 
     setShowEditModal(true);
     // Re-enable auto-name after all state setters have flushed
-    setTimeout(() => { editInitRef.current = false; }, 0);
+    setTimeout(() => {
+      editInitRef.current = false;
+    }, 0);
   };
 
   const handleBulkDelete = async () => {
@@ -572,7 +609,6 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
       return [...common, ...dims, ...tail];
     }
 
-    
     return [...common, ...tail];
   };
 
@@ -604,7 +640,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
     const row = cols.map((c) => c.key(exampleItem));
 
     const ws = XLSX.utils.aoa_to_sheet([header, row]);
-    
+
     ws["!cols"] = header.map(() => ({ wch: 18 }));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, `${activeTab} Template`);
@@ -716,7 +752,7 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
       const existingMap = new Map(
         (itemMasterFG || [])
           .filter((i) => i.type === activeTab)
-          .map((i) => [(i.name || "").toLowerCase().trim(), i])
+          .map((i) => [(i.name || "").toLowerCase().trim(), i]),
       );
 
       for (let i = 0; i < imported.length; i++) {
@@ -739,7 +775,11 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
             await itemMasterAPI.create(item);
             successCount++;
             // Add to map so duplicates within the file don't double-create
-            existingMap.set(key, { _id: key, name: item.name, type: activeTab });
+            existingMap.set(key, {
+              _id: key,
+              name: item.name,
+              type: activeTab,
+            });
           }
         } catch (err) {
           console.error(`Failed to import ${item.name}:`, err);
@@ -751,7 +791,10 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
       if (successCount) parts.push(`${successCount} added`);
       if (updatedCount) parts.push(`${updatedCount} updated`);
       if (failedCount) parts.push(`${failedCount} failed`);
-      toast(`Import complete! ${parts.join(", ")}.`, successCount > 0 || updatedCount > 0 ? "success" : "error");
+      toast(
+        `Import complete! ${parts.join(", ")}.`,
+        successCount > 0 || updatedCount > 0 ? "success" : "error",
+      );
       fetchItems();
     } catch (error) {
       console.error("Import error:", error);
@@ -948,9 +991,15 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
               padding: "10px 0",
               borderRadius: 8,
               border: "none",
-              background: activeTab === tab.key ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.05)",
+              background:
+                activeTab === tab.key
+                  ? "rgba(255,255,255,0.12)"
+                  : "rgba(255,255,255,0.05)",
               color: "#fff",
-              boxShadow: activeTab === tab.key ? "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" : "none",
+              boxShadow:
+                activeTab === tab.key
+                  ? "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)"
+                  : "none",
               fontWeight: 500,
               fontSize: 13,
               cursor: "pointer",
@@ -1117,7 +1166,8 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
                 setWidth("");
                 setLength("");
                 setHeight("");
-                if (activeTab === "Consumable" || activeTab === "Machine Spare") setUom("mm");
+                if (activeTab === "Consumable" || activeTab === "Machine Spare")
+                  setUom("mm");
               }}
               style={inputStyle}
             >
@@ -1158,15 +1208,29 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
                 ))}
               </select>
             </div>
-          ) : (activeTab === "Consumable" || activeTab === "Machine Spare") && selectedCategory ? (
+          ) : (activeTab === "Consumable" || activeTab === "Machine Spare") &&
+            selectedCategory ? (
             (() => {
               const dimCfg = CONSUMABLE_DIM_CONFIG[selectedCategory];
               const uomSelect = (
                 <div key="uom">
-                  <label style={{ fontSize: 11, fontWeight: 600, color: "#666", display: "block", marginBottom: 6, letterSpacing: "0.5px" }}>
+                  <label
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: "#666",
+                      display: "block",
+                      marginBottom: 6,
+                      letterSpacing: "0.5px",
+                    }}
+                  >
                     UNIT (UOM)
                   </label>
-                  <select value={uom} onChange={(e) => setUom(e.target.value)} style={inputStyle}>
+                  <select
+                    value={uom}
+                    onChange={(e) => setUom(e.target.value)}
+                    style={inputStyle}
+                  >
                     <option value="mm">mm</option>
                     <option value="cm">cm</option>
                     <option value="inch">inch</option>
@@ -1180,17 +1244,34 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
                   uomSelect,
                   ...dimCfg.fields.map((field) => (
                     <div key={field}>
-                      <label style={{ fontSize: 11, fontWeight: 600, color: "#666", display: "block", marginBottom: 6, letterSpacing: "0.5px" }}>
-                        {field}{uom !== "N/A" ? ` (${uom})` : ""}
+                      <label
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 600,
+                          color: "#666",
+                          display: "block",
+                          marginBottom: 6,
+                          letterSpacing: "0.5px",
+                        }}
+                      >
+                        {field}
+                        {uom !== "N/A" ? ` (${uom})` : ""}
                       </label>
                       <input
                         type="number"
                         placeholder="e.g. 200"
                         style={inputStyle}
-                        value={field === "WIDTH" ? width : field === "LENGTH" ? length : height}
+                        value={
+                          field === "WIDTH"
+                            ? width
+                            : field === "LENGTH"
+                              ? length
+                              : height
+                        }
                         onChange={(e) => {
                           if (field === "WIDTH") setWidth(e.target.value);
-                          else if (field === "LENGTH") setLength(e.target.value);
+                          else if (field === "LENGTH")
+                            setLength(e.target.value);
                           else setHeight(e.target.value);
                         }}
                       />
@@ -1201,7 +1282,16 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
               // Default: free-text SIZE / TYPE + UOM
               return [
                 <div key="size">
-                  <label style={{ fontSize: 11, fontWeight: 600, color: "#666", display: "block", marginBottom: 6, letterSpacing: "0.5px" }}>
+                  <label
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: "#666",
+                      display: "block",
+                      marginBottom: 6,
+                      letterSpacing: "0.5px",
+                    }}
+                  >
                     SIZE / TYPE
                   </label>
                   <input
@@ -1236,7 +1326,9 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
               >
                 <option value="">-- Select Brand --</option>
                 {brandMaster.map((b) => (
-                  <option key={b._id} value={b.name}>{b.name}</option>
+                  <option key={b._id} value={b.name}>
+                    {b.name}
+                  </option>
                 ))}
               </select>
             </div>
@@ -1262,12 +1354,14 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
               >
                 <option value="">-- Select Category --</option>
                 {clientCategories.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
                 ))}
               </select>
             </div>
           )}
-          {activeTab === "Finished Goods" && selectedCategory && (
+          {activeTab === "Finished Goods" && selectedCategory && selectedCategory !== "Other" && (
             <>
               {(() => {
                 const config = CATEGORY_CONFIG[selectedCategory] || {
@@ -1491,7 +1585,8 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
                   activeTab !== "Consumable" &&
                   activeTab !== "Machine Spare" &&
                   selectedSubCategory !== "Polycoated Blanks" &&
-                  selectedCategory !== "Polycoated Blanks"
+                  selectedCategory !== "Polycoated Blanks" &&
+                  !(activeTab === "Finished Goods" && selectedCategory === "Other")
                     ? "rgba(255,255,255,0.03)"
                     : inputStyle.background,
               }}
@@ -1499,7 +1594,8 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
                 activeTab !== "Consumable" &&
                 activeTab !== "Machine Spare" &&
                 selectedSubCategory !== "Polycoated Blanks" &&
-                selectedCategory !== "Polycoated Blanks"
+                selectedCategory !== "Polycoated Blanks" &&
+                !(activeTab === "Finished Goods" && selectedCategory === "Other")
               }
               placeholder={`Enter ${activeTab} name`}
               value={newItemName}
@@ -1636,7 +1732,8 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
               fontWeight: 500,
               fontSize: 13,
               cursor: "pointer",
-              boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+              boxShadow:
+                "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
             }}
           >
             {editingItem ? "Update Item" : `+ Add ${activeTab} Item`}
@@ -1658,19 +1755,21 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
                 setProductCode("");
               }}
               style={{
-                      background: "transparent",
-                      color: "#ffffff",
-                      border: "1px solid rgba(255,255,255,0.2)",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-            ><i className="fa-solid fa-xmark" /> Cancel</button>
+                background: "transparent",
+                color: "#ffffff",
+                border: "1px solid rgba(255,255,255,0.2)",
+                borderRadius: 6,
+                padding: "6px 12px",
+                fontSize: 11,
+                fontWeight: 500,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <i className="fa-solid fa-xmark" /> Cancel
+            </button>
           )}
         </div>
       </div>
@@ -1698,8 +1797,8 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
               fontSize: 13,
             }}
           >
-            <i className="fa-solid fa-industry" style={{ fontSize: 16 }} /> Bulk Import Company Product
-            Codes
+            <i className="fa-solid fa-industry" style={{ fontSize: 16 }} /> Bulk
+            Import Company Product Codes
           </div>
           <div style={{ fontSize: 12, color: "#6366f199", lineHeight: 1.5 }}>
             Download the template → fill in client codes → re-import. One column
@@ -1736,7 +1835,8 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
                 fontSize: 12,
                 fontWeight: 500,
                 cursor: "pointer",
-                boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                boxShadow:
+                  "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
                 display: "flex",
                 alignItems: "center",
                 gap: 8,
@@ -1769,7 +1869,15 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
           marginBottom: 14,
         }}
       >
-        <div style={{ display: "flex", gap: 10, flex: 1, flexWrap: "wrap", minWidth: 0 }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 10,
+            flex: 1,
+            flexWrap: "wrap",
+            minWidth: 0,
+          }}
+        >
           <input
             placeholder="Search code or name..."
             style={{
@@ -1802,7 +1910,14 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
           </select>
         </div>
 
-        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            alignItems: "center",
+            flexWrap: "wrap",
+          }}
+        >
           {selectedIds.length > 0 && (
             <button
               onClick={() =>
@@ -1817,7 +1932,8 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
                 fontSize: 12,
                 fontWeight: 500,
                 cursor: "pointer",
-                boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                boxShadow:
+                  "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
                 display: "flex",
                 alignItems: "center",
                 gap: 6,
@@ -1827,13 +1943,15 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
               Delete {selectedIds.length} Selected
             </button>
           )}
-          {canExportImport && <ExportBtn onClick={handleExport} label="Export" />}
+          {canExportImport && (
+            <ExportBtn onClick={handleExport} label="Export" />
+          )}
           <TemplateBtn onClick={handleTemplate} />
           {canExportImport && (
-          <ImportBtn
-            onClick={() => fileInputRef.current?.click()}
-            label="Bulk Import"
-          />
+            <ImportBtn
+              onClick={() => fileInputRef.current?.click()}
+              label="Bulk Import"
+            />
           )}
           {tabItems.length > 0 && activeTab === "Machine Spare" && (
             <button
@@ -1847,7 +1965,8 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
                 fontSize: 12,
                 fontWeight: 500,
                 cursor: "pointer",
-                boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                boxShadow:
+                  "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
                 whiteSpace: "nowrap",
               }}
             >
@@ -1904,9 +2023,26 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
         </div>
       ) : isMobile ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }}>
-            <input type="checkbox" checked={selectedIds.length === sorted.length} onChange={toggleSelectAll} style={{ cursor: "pointer", width: 16, height: 16 }} />
-            <span style={{ fontSize: 11, fontWeight: 500, color: "#666" }}>SELECT ALL ({sorted.length})</span>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "8px 12px",
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 8,
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={selectedIds.length === sorted.length}
+              onChange={toggleSelectAll}
+              style={{ cursor: "pointer", width: 16, height: 16 }}
+            />
+            <span style={{ fontSize: 11, fontWeight: 500, color: "#666" }}>
+              SELECT ALL ({sorted.length})
+            </span>
           </div>
           {sorted.map((item) => (
             <div
@@ -1919,12 +2055,25 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
               }}
             >
               {/* top row: checkbox + code + name */}
-              <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 10 }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: 10,
+                  marginBottom: 10,
+                }}
+              >
                 <input
                   type="checkbox"
                   checked={selectedIds.includes(item._id)}
                   onChange={() => toggleSelect(item._id)}
-                  style={{ cursor: "pointer", width: 16, height: 16, flexShrink: 0, marginTop: 2 }}
+                  style={{
+                    cursor: "pointer",
+                    width: 16,
+                    height: 16,
+                    flexShrink: 0,
+                    marginTop: 2,
+                  }}
                 />
                 <div
                   onClick={() => handleEdit(item)}
@@ -1943,36 +2092,108 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
                 >
                   {item.code}
                 </div>
-                <div style={{ flex: 1, color: "#e6edf3", fontSize: 13, fontWeight: 600, lineHeight: 1.4 }}>
+                <div
+                  style={{
+                    flex: 1,
+                    color: "#e6edf3",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    lineHeight: 1.4,
+                  }}
+                >
                   {item.name}
                 </div>
               </div>
 
               {/* badges */}
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 6,
+                  marginBottom: 10,
+                }}
+              >
                 {activeTab === "Finished Goods" && item.companyCategory && (
-                  <span style={{ padding: "3px 8px", borderRadius: 20, background: "#9c27b01a", color: "#ba68c8", fontSize: 11, fontWeight: 600 }}>
+                  <span
+                    style={{
+                      padding: "3px 8px",
+                      borderRadius: 20,
+                      background: "#9c27b01a",
+                      color: "#ba68c8",
+                      fontSize: 11,
+                      fontWeight: 600,
+                    }}
+                  >
                     {item.companyCategory}
                   </span>
                 )}
                 {item.category && (
-                  <span style={{ padding: "3px 8px", borderRadius: 20, background: "#1565C022", color: "#64B5F6", fontSize: 11, fontWeight: 600 }}>
+                  <span
+                    style={{
+                      padding: "3px 8px",
+                      borderRadius: 20,
+                      background: "#1565C022",
+                      color: "#64B5F6",
+                      fontSize: 11,
+                      fontWeight: 600,
+                    }}
+                  >
                     {item.category}
                   </span>
                 )}
                 {item.subCategory && (
-                  <span style={{ padding: "3px 8px", borderRadius: 20, background: "#4CAF501a", color: "#4CAF50", fontSize: 11, fontWeight: 600 }}>
+                  <span
+                    style={{
+                      padding: "3px 8px",
+                      borderRadius: 20,
+                      background: "#4CAF501a",
+                      color: "#4CAF50",
+                      fontSize: 11,
+                      fontWeight: 600,
+                    }}
+                  >
                     {item.subCategory}
                   </span>
                 )}
-                <span style={{ padding: "3px 8px", borderRadius: 20, background: "#64B5F614", color: "#64B5F6", fontSize: 11, fontWeight: 600 }}>
+                <span
+                  style={{
+                    padding: "3px 8px",
+                    borderRadius: 20,
+                    background: "#64B5F614",
+                    color: "#64B5F6",
+                    fontSize: 11,
+                    fontWeight: 600,
+                  }}
+                >
                   GST {item.gstRate || 0}%
                 </span>
-                <span style={{ padding: "3px 8px", borderRadius: 20, background: "#ff98001a", color: "#ff9800", fontSize: 11, fontWeight: 600 }}>
+                <span
+                  style={{
+                    padding: "3px 8px",
+                    borderRadius: 20,
+                    background: "#ff98001a",
+                    color: "#ff9800",
+                    fontSize: 11,
+                    fontWeight: 600,
+                  }}
+                >
                   RL: {item.reorderLevel || 0}
                 </span>
-                <span style={{ padding: "3px 8px", borderRadius: 20, background: "#ffffff08", color: "#484f58", fontSize: 11 }}>
-                  {new Date(item.addedOn || item.createdAt).toISOString().split("T")[0]}
+                <span
+                  style={{
+                    padding: "3px 8px",
+                    borderRadius: 20,
+                    background: "#ffffff08",
+                    color: "#484f58",
+                    fontSize: 11,
+                  }}
+                >
+                  {
+                    new Date(item.addedOn || item.createdAt)
+                      .toISOString()
+                      .split("T")[0]
+                  }
                 </span>
               </div>
 
@@ -1983,7 +2204,9 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
                     onClick={() => {
                       setManualClient("");
                       setManualCode("");
-                      setShowClientCodes(showClientCodes === item._id ? null : item._id);
+                      setShowClientCodes(
+                        showClientCodes === item._id ? null : item._id,
+                      );
                     }}
                     style={{
                       padding: "5px 12px",
@@ -2001,41 +2224,147 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
                     Co. Codes {showClientCodes === item._id ? "▲" : "▼"}
                   </button>
                   {showClientCodes === item._id && (
-                    <div style={{ marginTop: 8, background: "transparent",  border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: 10 }}>
-                      {item.companyCodes && Object.entries(item.companyCodes).filter(([_, v]) => v).length > 0 ? (
-                        Object.entries(item.companyCodes).filter(([_, v]) => v).map(([client, code]) => (
-                          <div key={client} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "5px 0", borderBottom: "1px solid rgba(255,255,255,0.06)", gap: 10 }}>
-                            <span style={{ color: "#666" }}>{client}:</span>
-                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                              <span style={{ color: "#e0e0e0", fontWeight: 700 }}>{code}</span>
-                              <button onClick={() => removeClientCode(item, client)} style={{ background: "transparent", border: "none", cursor: "pointer", fontSize: 12, color: "#ff4444", padding: 0 }}>✕</button>
+                    <div
+                      style={{
+                        marginTop: 8,
+                        background: "transparent",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        borderRadius: 8,
+                        padding: 10,
+                      }}
+                    >
+                      {item.companyCodes &&
+                      Object.entries(item.companyCodes).filter(([_, v]) => v)
+                        .length > 0 ? (
+                        Object.entries(item.companyCodes)
+                          .filter(([_, v]) => v)
+                          .map(([client, code]) => (
+                            <div
+                              key={client}
+                              style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                fontSize: 12,
+                                padding: "5px 0",
+                                borderBottom:
+                                  "1px solid rgba(255,255,255,0.06)",
+                                gap: 10,
+                              }}
+                            >
+                              <span style={{ color: "#666" }}>{client}:</span>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 6,
+                                }}
+                              >
+                                <span
+                                  style={{ color: "#e0e0e0", fontWeight: 700 }}
+                                >
+                                  {code}
+                                </span>
+                                <button
+                                  onClick={() => removeClientCode(item, client)}
+                                  style={{
+                                    background: "transparent",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    fontSize: 12,
+                                    color: "#ff4444",
+                                    padding: 0,
+                                  }}
+                                >
+                                  ✕
+                                </button>
+                              </div>
                             </div>
-                          </div>
-                        ))
+                          ))
                       ) : (
-                        <div style={{ fontSize: 11, color: "#444", textAlign: "center", marginBottom: 8 }}>No client codes</div>
+                        <div
+                          style={{
+                            fontSize: 11,
+                            color: "#444",
+                            textAlign: "center",
+                            marginBottom: 8,
+                          }}
+                        >
+                          No client codes
+                        </div>
                       )}
-                      <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-                        <div style={{ fontSize: 10, color: "#818cf8", marginBottom: 4, fontWeight: 700 }}>+ ADD CLIENT CODE</div>
-                        <select value={manualClient} onChange={(e) => setManualClient(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.13)", borderRadius: 4, fontSize: 11, color: "#e0e0e0", padding: 5, marginBottom: 6, outline: "none" }}>
+                      <div
+                        style={{
+                          marginTop: 8,
+                          paddingTop: 8,
+                          borderTop: "1px solid rgba(255,255,255,0.08)",
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: 10,
+                            color: "#818cf8",
+                            marginBottom: 4,
+                            fontWeight: 700,
+                          }}
+                        >
+                          + ADD CLIENT CODE
+                        </div>
+                        <select
+                          value={manualClient}
+                          onChange={(e) => setManualClient(e.target.value)}
+                          style={{
+                            width: "100%",
+                            background: "rgba(255,255,255,0.07)",
+                            border: "1px solid rgba(255,255,255,0.13)",
+                            borderRadius: 4,
+                            fontSize: 11,
+                            color: "#e0e0e0",
+                            padding: 5,
+                            marginBottom: 6,
+                            outline: "none",
+                          }}
+                        >
                           <option value="">-- Select Company --</option>
-                          {(companyMaster || []).map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
+                          {(companyMaster || []).map((c) => (
+                            <option key={c.name} value={c.name}>
+                              {c.name}
+                            </option>
+                          ))}
                         </select>
                         <div style={{ display: "flex", gap: 6 }}>
-                          <input placeholder="Code" value={manualCode} onChange={(e) => setManualCode(e.target.value)} style={{ flex: 1, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.13)", borderRadius: 4, fontSize: 11, color: "#e0e0e0", padding: 5, outline: "none" }} />
-                          <button onClick={() => handleManualClientCodeSave(item)} style={{
-                      background: "transparent",
-                      color: "#ffffff",
-                      border: "1px solid rgba(255,255,255,0.2)",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}><i className="fa-solid fa-floppy-disk" /> Save</button>
+                          <input
+                            placeholder="Code"
+                            value={manualCode}
+                            onChange={(e) => setManualCode(e.target.value)}
+                            style={{
+                              flex: 1,
+                              background: "rgba(255,255,255,0.07)",
+                              border: "1px solid rgba(255,255,255,0.13)",
+                              borderRadius: 4,
+                              fontSize: 11,
+                              color: "#e0e0e0",
+                              padding: 5,
+                              outline: "none",
+                            }}
+                          />
+                          <button
+                            onClick={() => handleManualClientCodeSave(item)}
+                            style={{
+                              background: "transparent",
+                              color: "#ffffff",
+                              border: "1px solid rgba(255,255,255,0.2)",
+                              borderRadius: 6,
+                              padding: "6px 12px",
+                              fontSize: 11,
+                              fontWeight: 500,
+                              cursor: "pointer",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 6,
+                            }}
+                          >
+                            <i className="fa-solid fa-floppy-disk" /> Save
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -2048,35 +2377,39 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
                 <button
                   onClick={() => handleEdit(item)}
                   style={{
-                      background: "transparent",
-                      color: "#8082ff",
-                      border: "1px solid #8082ff98",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                ><i className="fa-solid fa-pen-to-square" /> Edit</button>
+                    background: "transparent",
+                    color: "#8082ff",
+                    border: "1px solid #8082ff98",
+                    borderRadius: 6,
+                    padding: "6px 12px",
+                    fontSize: 11,
+                    fontWeight: 500,
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  <i className="fa-solid fa-pen-to-square" /> Edit
+                </button>
                 <button
                   onClick={() => handleDelete(item)}
                   style={{
-                      background: "transparent",
-                      color: "#8082ff",
-                      border: "1px solid #8082ff98",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                ><i className="fa-solid fa-trash" /> Delete</button>
+                    background: "transparent",
+                    color: "#8082ff",
+                    border: "1px solid #8082ff98",
+                    borderRadius: 6,
+                    padding: "6px 12px",
+                    fontSize: 11,
+                    fontWeight: 500,
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  <i className="fa-solid fa-trash" /> Delete
+                </button>
               </div>
             </div>
           ))}
@@ -2115,13 +2448,19 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
               )}
               <div style={{ width: 110, flexShrink: 0 }}>Category</div>
               <div style={{ width: 110, flexShrink: 0 }}>Sub-Category</div>
-              <div style={{ width: 50, flexShrink: 0, textAlign: "center" }}>GST</div>
-              <div style={{ width: 70, flexShrink: 0, textAlign: "center" }}>Reorder</div>
+              <div style={{ width: 50, flexShrink: 0, textAlign: "center" }}>
+                GST
+              </div>
+              <div style={{ width: 70, flexShrink: 0, textAlign: "center" }}>
+                Reorder
+              </div>
               {activeTab === "Finished Goods" && (
                 <div style={{ width: 110, flexShrink: 0 }}>Co. Codes</div>
               )}
               <div style={{ width: 88, flexShrink: 0 }}>Date</div>
-              <div style={{ width: 160, flexShrink: 0, textAlign: "right" }}>Actions</div>
+              <div style={{ width: 160, flexShrink: 0, textAlign: "right" }}>
+                Actions
+              </div>
             </div>
 
             {/* rows */}
@@ -2133,7 +2472,10 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
                   alignItems: "center",
                   padding: "10px 16px",
                   background: "transparent",
-                  borderBottom: idx === sorted.length - 1 ? "none" : "1px solid rgba(255,255,255,0.06)",
+                  borderBottom:
+                    idx === sorted.length - 1
+                      ? "none"
+                      : "1px solid rgba(255,255,255,0.06)",
                   gap: 10,
                 }}
               >
@@ -2141,83 +2483,316 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
                   type="checkbox"
                   checked={selectedIds.includes(item._id)}
                   onChange={() => toggleSelect(item._id)}
-                  style={{ cursor: "pointer", width: 16, height: 16, flexShrink: 0 }}
+                  style={{
+                    cursor: "pointer",
+                    width: 16,
+                    height: 16,
+                    flexShrink: 0,
+                  }}
                 />
                 <div
-                  style={{ width: 72, flexShrink: 0, padding: "5px 0", border: "1px solid #2196F344", borderRadius: 6, textAlign: "center", color: "#2196F3", fontSize: 11, fontWeight: 500, background: "#2196F30a", cursor: "pointer", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                  style={{
+                    width: 72,
+                    flexShrink: 0,
+                    padding: "5px 0",
+                    border: "1px solid #2196F344",
+                    borderRadius: 6,
+                    textAlign: "center",
+                    color: "#2196F3",
+                    fontSize: 11,
+                    fontWeight: 500,
+                    background: "#2196F30a",
+                    cursor: "pointer",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
                   onClick={() => handleEdit(item)}
                 >
                   {item.code}
                 </div>
-                <div style={{ flex: 1, minWidth: 200, color: "#e6edf3", fontSize: 13, fontWeight: 600, wordBreak: "break-word" }} title={item.name}>
+                <div
+                  style={{
+                    flex: 1,
+                    minWidth: 200,
+                    color: "#e6edf3",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    wordBreak: "break-word",
+                  }}
+                  title={item.name}
+                >
                   {item.name}
                 </div>
                 {activeTab === "Finished Goods" && (
-                  <div style={{ width: 100, flexShrink: 0, padding: "4px 8px", borderRadius: 6, background: "#9c27b01a", color: "#ba68c8", fontSize: 11, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  <div
+                    style={{
+                      width: 100,
+                      flexShrink: 0,
+                      padding: "4px 8px",
+                      borderRadius: 6,
+                      background: "#9c27b01a",
+                      color: "#ba68c8",
+                      fontSize: 11,
+                      fontWeight: 600,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
                     {item.companyCategory || "-"}
                   </div>
                 )}
-                <div style={{ width: 110, flexShrink: 0, padding: "4px 8px", borderRadius: 6, background: "#1565C022", color: "#64B5F6", fontSize: 11, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <div
+                  style={{
+                    width: 110,
+                    flexShrink: 0,
+                    padding: "4px 8px",
+                    borderRadius: 6,
+                    background: "#1565C022",
+                    color: "#64B5F6",
+                    fontSize: 11,
+                    fontWeight: 600,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
                   {item.category || "-"}
                 </div>
-                <div style={{ width: 110, flexShrink: 0, padding: "4px 8px", borderRadius: 6, background: "#4CAF501a", color: "#4CAF50", fontSize: 11, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <div
+                  style={{
+                    width: 110,
+                    flexShrink: 0,
+                    padding: "4px 8px",
+                    borderRadius: 6,
+                    background: "#4CAF501a",
+                    color: "#4CAF50",
+                    fontSize: 11,
+                    fontWeight: 600,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
                   {item.subCategory || "-"}
                 </div>
-                <div style={{ width: 50, flexShrink: 0, padding: "4px 6px", borderRadius: 6, background: "#64B5F614", color: "#64B5F6", fontSize: 10, fontWeight: 500, textAlign: "center" }}>
+                <div
+                  style={{
+                    width: 50,
+                    flexShrink: 0,
+                    padding: "4px 6px",
+                    borderRadius: 6,
+                    background: "#64B5F614",
+                    color: "#64B5F6",
+                    fontSize: 10,
+                    fontWeight: 500,
+                    textAlign: "center",
+                  }}
+                >
                   {item.gstRate || 0}%
                 </div>
-                <div style={{ width: 70, flexShrink: 0, padding: "4px 6px", borderRadius: 6, background: "#ff98001a", color: "#ff9800", fontSize: 10, fontWeight: 500, textAlign: "center" }}>
+                <div
+                  style={{
+                    width: 70,
+                    flexShrink: 0,
+                    padding: "4px 6px",
+                    borderRadius: 6,
+                    background: "#ff98001a",
+                    color: "#ff9800",
+                    fontSize: 10,
+                    fontWeight: 500,
+                    textAlign: "center",
+                  }}
+                >
                   RL: {item.reorderLevel || 0}
                 </div>
 
                 {activeTab === "Finished Goods" && (
-                  <div style={{ position: "relative", width: 110, flexShrink: 0 }}>
+                  <div
+                    style={{ position: "relative", width: 110, flexShrink: 0 }}
+                  >
                     <button
                       onClick={() => {
                         setManualClient("");
                         setManualCode("");
-                        setShowClientCodes(showClientCodes === item._id ? null : item._id);
+                        setShowClientCodes(
+                          showClientCodes === item._id ? null : item._id,
+                        );
                       }}
-                      style={{ padding: "4px 8px", borderRadius: 6, background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", color: "#fff", fontSize: 10, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, width: "100%", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
+                      style={{
+                        padding: "4px 8px",
+                        borderRadius: 6,
+                        background: "rgba(255,255,255,0.08)",
+                        border: "1px solid rgba(255,255,255,0.18)",
+                        color: "#fff",
+                        fontSize: 10,
+                        fontWeight: 500,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 4,
+                        width: "100%",
+                        boxShadow:
+                          "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                      }}
                     >
                       Co. Codes {showClientCodes === item._id ? "▲" : "▼"}
                     </button>
                     {showClientCodes === item._id && (
-                      <div style={{ position: "absolute", top: "100%", right: 0, zIndex: 100, background: "rgba(20,20,30,0.95)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: 8, minWidth: 150, boxShadow: "0 10px 25px rgba(0,0,0,0.5)", marginTop: 4 }}>
-                        {item.companyCodes && Object.entries(item.companyCodes).filter(([_, v]) => v).length > 0 ? (
-                          Object.entries(item.companyCodes).filter(([_, v]) => v).map(([client, code]) => (
-                            <div key={client} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, padding: "4px 0", borderBottom: "1px solid rgba(255,255,255,0.06)", gap: 10 }}>
-                              <span style={{ color: "#666" }}>{client}:</span>
-                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                <span style={{ color: "#e0e0e0", fontWeight: 700 }}>{code}</span>
-                                <button onClick={() => removeClientCode(item, client)} style={{ background: "transparent", border: "none", cursor: "pointer", fontSize: 10, color: "#ff4444", padding: 0 }} title="Remove">✕</button>
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: "100%",
+                          right: 0,
+                          zIndex: 100,
+                          background: "rgba(20,20,30,0.95)",
+                          border: "1px solid rgba(255,255,255,0.1)",
+                          borderRadius: 8,
+                          padding: 8,
+                          minWidth: 150,
+                          boxShadow: "0 10px 25px rgba(0,0,0,0.5)",
+                          marginTop: 4,
+                        }}
+                      >
+                        {item.companyCodes &&
+                        Object.entries(item.companyCodes).filter(([_, v]) => v)
+                          .length > 0 ? (
+                          Object.entries(item.companyCodes)
+                            .filter(([_, v]) => v)
+                            .map(([client, code]) => (
+                              <div
+                                key={client}
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  fontSize: 11,
+                                  padding: "4px 0",
+                                  borderBottom:
+                                    "1px solid rgba(255,255,255,0.06)",
+                                  gap: 10,
+                                }}
+                              >
+                                <span style={{ color: "#666" }}>{client}:</span>
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 6,
+                                  }}
+                                >
+                                  <span
+                                    style={{
+                                      color: "#e0e0e0",
+                                      fontWeight: 700,
+                                    }}
+                                  >
+                                    {code}
+                                  </span>
+                                  <button
+                                    onClick={() =>
+                                      removeClientCode(item, client)
+                                    }
+                                    style={{
+                                      background: "transparent",
+                                      border: "none",
+                                      cursor: "pointer",
+                                      fontSize: 10,
+                                      color: "#ff4444",
+                                      padding: 0,
+                                    }}
+                                    title="Remove"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
                               </div>
-                            </div>
-                          ))
+                            ))
                         ) : (
-                          <div style={{ fontSize: 10, color: "#444", textAlign: "center", marginBottom: 8 }}>No client codes</div>
+                          <div
+                            style={{
+                              fontSize: 10,
+                              color: "#444",
+                              textAlign: "center",
+                              marginBottom: 8,
+                            }}
+                          >
+                            No client codes
+                          </div>
                         )}
-                        <div style={{ marginTop: 10, borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 8 }}>
-                          <div style={{ fontSize: 9, color: "#818cf8", marginBottom: 4, fontWeight: 700 }}>+ ADD CLIENT CODE</div>
-                          <select value={manualClient} onChange={(e) => setManualClient(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.13)", borderRadius: 4, fontSize: 10, color: "#e0e0e0", padding: 4, marginBottom: 4, outline: "none" }}>
+                        <div
+                          style={{
+                            marginTop: 10,
+                            borderTop: "1px solid rgba(255,255,255,0.08)",
+                            paddingTop: 8,
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize: 9,
+                              color: "#818cf8",
+                              marginBottom: 4,
+                              fontWeight: 700,
+                            }}
+                          >
+                            + ADD CLIENT CODE
+                          </div>
+                          <select
+                            value={manualClient}
+                            onChange={(e) => setManualClient(e.target.value)}
+                            style={{
+                              width: "100%",
+                              background: "rgba(255,255,255,0.07)",
+                              border: "1px solid rgba(255,255,255,0.13)",
+                              borderRadius: 4,
+                              fontSize: 10,
+                              color: "#e0e0e0",
+                              padding: 4,
+                              marginBottom: 4,
+                              outline: "none",
+                            }}
+                          >
                             <option value="">-- Select Company --</option>
-                            {(companyMaster || []).map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
+                            {(companyMaster || []).map((c) => (
+                              <option key={c.name} value={c.name}>
+                                {c.name}
+                              </option>
+                            ))}
                           </select>
                           <div style={{ display: "flex", gap: 4 }}>
-                            <input placeholder="Code" value={manualCode} onChange={(e) => setManualCode(e.target.value)} style={{ flex: 1, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.13)", borderRadius: 4, fontSize: 10, color: "#e0e0e0", padding: 4, outline: "none" }} />
-                            <button onClick={() => handleManualClientCodeSave(item)} style={{
-                      background: "transparent",
-                      color: "#ffffff",
-                      border: "1px solid rgba(255,255,255,0.2)",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}><i className="fa-solid fa-floppy-disk" /> Save</button>
+                            <input
+                              placeholder="Code"
+                              value={manualCode}
+                              onChange={(e) => setManualCode(e.target.value)}
+                              style={{
+                                flex: 1,
+                                background: "rgba(255,255,255,0.07)",
+                                border: "1px solid rgba(255,255,255,0.13)",
+                                borderRadius: 4,
+                                fontSize: 10,
+                                color: "#e0e0e0",
+                                padding: 4,
+                                outline: "none",
+                              }}
+                            />
+                            <button
+                              onClick={() => handleManualClientCodeSave(item)}
+                              style={{
+                                background: "transparent",
+                                color: "#ffffff",
+                                border: "1px solid rgba(255,255,255,0.2)",
+                                borderRadius: 6,
+                                padding: "6px 12px",
+                                fontSize: 11,
+                                fontWeight: 500,
+                                cursor: "pointer",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 6,
+                              }}
+                            >
+                              <i className="fa-solid fa-floppy-disk" /> Save
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -2225,10 +2800,29 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
                   </div>
                 )}
 
-                <div style={{ color: "#484f58", fontSize: 11, width: 88, flexShrink: 0 }}>
-                  {new Date(item.addedOn || item.createdAt).toISOString().split("T")[0]}
+                <div
+                  style={{
+                    color: "#484f58",
+                    fontSize: 11,
+                    width: 88,
+                    flexShrink: 0,
+                  }}
+                >
+                  {
+                    new Date(item.addedOn || item.createdAt)
+                      .toISOString()
+                      .split("T")[0]
+                  }
                 </div>
-                <div style={{ width: 160, flexShrink: 0, display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                <div
+                  style={{
+                    width: 160,
+                    flexShrink: 0,
+                    display: "flex",
+                    gap: 6,
+                    justifyContent: "flex-end",
+                  }}
+                >
                   <button
                     onClick={() => handleEdit(item)}
                     style={{
@@ -2244,7 +2838,9 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
                       alignItems: "center",
                       gap: 6,
                     }}
-                  ><i className="fa-solid fa-pen-to-square" /> Edit</button>
+                  >
+                    <i className="fa-solid fa-pen-to-square" /> Edit
+                  </button>
                   <button
                     onClick={() => handleDelete(item)}
                     style={{
@@ -2260,7 +2856,9 @@ export default function ItemMaster({ companyMaster = [], toast, refreshData, can
                       alignItems: "center",
                       gap: 6,
                     }}
-                  ><i className="fa-solid fa-trash" /> Delete</button>
+                  >
+                    <i className="fa-solid fa-trash" /> Delete
+                  </button>
                 </div>
               </div>
             ))}
