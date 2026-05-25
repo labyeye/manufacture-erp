@@ -1166,6 +1166,7 @@ export default function ItemMaster({
                 setWidth("");
                 setLength("");
                 setHeight("");
+                setNewItemName("");
                 if (activeTab === "Consumable" || activeTab === "Machine Spare")
                   setUom("mm");
               }}

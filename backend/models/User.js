@@ -49,6 +49,10 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  allowEditStock: {
+    type: Boolean,
+    default: true,
+  },
   isActive: {
     type: Boolean,
     default: true
