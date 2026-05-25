@@ -584,7 +584,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
           style={{ background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", color: "#fff", padding: "9px 18px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
         >
           Material Return
-        </button>
+        </button>}
       </div>
 
       {showModal && (
@@ -1182,6 +1182,24 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
               .slice()
               .sort((a, b) => new Date(b.createdAt || b.date || 0) - new Date(a.createdAt || a.date || 0));
             const activeRecords = recordsTab === "return" ? returnRecords : dispatchRecords;
+            const now = new Date();
+            const thisMonthCount = dispatchRecords.filter((d) => {
+              const dt = new Date(d.date || d.createdAt || 0);
+              return dt.getMonth() === now.getMonth() && dt.getFullYear() === now.getFullYear();
+            }).length;
+            const totalQty = dispatchRecords.reduce((s, d) => s + (d.items || []).reduce((si, it) => si + (Number(it.qty) || 0), 0), 0);
+            const totalValue = dispatchRecords.reduce((s, d) => s + (Number(d.totalWithTax) || Number(d.total) || 0), 0);
+            const fmtLakh = (n) => {
+              if (n >= 10000000) return `₹${(n / 10000000).toFixed(2)}Cr`;
+              if (n >= 100000) return `₹${(n / 100000).toFixed(2)}L`;
+              return `₹${fmt(Math.round(n))}`;
+            };
+            const statCards = [
+              { label: "Total Dispatches", value: dispatchRecords.length, icon: "fa-solid fa-truck-fast" },
+              { label: "This Month", value: thisMonthCount, icon: "fa-solid fa-calendar-days" },
+              { label: "Total Qty", value: fmt(totalQty) + " pcs", icon: "fa-solid fa-boxes-stacked" },
+              { label: "Total Value", value: fmtLakh(totalValue), icon: "fa-solid fa-indian-rupee-sign" },
+            ];
             const tabBtn = (id, label, count) => (
               <button
                 key={id}
@@ -1207,6 +1225,18 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
             );
             return (
               <>
+              {/* Stat cards */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
+                {statCards.map(({ label, value, icon }) => (
+                  <div key={label} style={{ padding: "16px 20px", background: "transparent", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                      <span style={{ fontSize: 19, color: "#ffffff", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
+                      <i className={icon} style={{ color: C.muted, fontSize: 20, opacity: 0.9, display: "inline-flex", alignItems: "center", justifyContent: "center", height: 28, width: 28, lineHeight: 1 }} />
+                    </div>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>{value}</div>
+                  </div>
+                ))}
+              </div>
           <div
             style={{
               display: "flex",
