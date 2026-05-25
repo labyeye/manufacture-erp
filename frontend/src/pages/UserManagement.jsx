@@ -51,6 +51,8 @@ export default function UserManagement({
     clientTag: "",
     allowedTabs: [],
     editableTabs: [],
+    createTabs: [],
+    deleteTabs: [],
     allowExportImport: true,
     allowEditStock: true,
   };
@@ -74,31 +76,51 @@ export default function UserManagement({
 
   const handleModuleToggle = (tabId, type) => {
     setForm((prev) => {
-      const allowed = prev.allowedTabs || [];
-      const editable = prev.editableTabs || [];
+      const allowed = new Set(prev.allowedTabs || []);
+      const editable = new Set(prev.editableTabs || []);
+      const create = new Set(prev.createTabs || []);
+      const del = new Set(prev.deleteTabs || []);
 
       if (type === "view") {
-        if (allowed.includes(tabId)) {
-          return {
-            ...prev,
-            allowedTabs: allowed.filter((t) => t !== tabId),
-            editableTabs: editable.filter((t) => t !== tabId),
-          };
+        if (allowed.has(tabId)) {
+          // removing view cascades: remove all permissions
+          allowed.delete(tabId);
+          editable.delete(tabId);
+          create.delete(tabId);
+          del.delete(tabId);
+        } else {
+          allowed.add(tabId);
         }
-        return { ...prev, allowedTabs: [...allowed, tabId] };
+      } else if (type === "create") {
+        if (create.has(tabId)) {
+          create.delete(tabId);
+        } else {
+          create.add(tabId);
+          allowed.add(tabId); // auto-grant view
+        }
+      } else if (type === "edit") {
+        if (editable.has(tabId)) {
+          editable.delete(tabId);
+        } else {
+          editable.add(tabId);
+          allowed.add(tabId); // auto-grant view
+        }
+      } else if (type === "delete") {
+        if (del.has(tabId)) {
+          del.delete(tabId);
+        } else {
+          del.add(tabId);
+          allowed.add(tabId); // auto-grant view
+        }
       }
 
-      if (type === "edit") {
-        if (editable.includes(tabId)) {
-          return { ...prev, editableTabs: editable.filter((t) => t !== tabId) };
-        }
-        return {
-          ...prev,
-          allowedTabs: allowed.includes(tabId) ? allowed : [...allowed, tabId],
-          editableTabs: [...editable, tabId],
-        };
-      }
-      return prev;
+      return {
+        ...prev,
+        allowedTabs: [...allowed],
+        editableTabs: [...editable],
+        createTabs: [...create],
+        deleteTabs: [...del],
+      };
     });
   };
 
@@ -107,6 +129,8 @@ export default function UserManagement({
       ...prev,
       allowedTabs: TABS.map((t) => t.id),
       editableTabs: TABS.map((t) => t.id),
+      createTabs: TABS.map((t) => t.id),
+      deleteTabs: TABS.map((t) => t.id),
     }));
 
   const handleNoneAccess = () =>
@@ -114,6 +138,8 @@ export default function UserManagement({
       ...prev,
       allowedTabs: [],
       editableTabs: [],
+      createTabs: [],
+      deleteTabs: [],
     }));
 
   const handleSubmit = async () => {
@@ -138,6 +164,8 @@ export default function UserManagement({
           role: form.role,
           allowedTabs: form.allowedTabs,
           editableTabs: form.editableTabs,
+          createTabs: form.createTabs,
+          deleteTabs: form.deleteTabs,
           clientTag: form.clientTag,
           allowExportImport: form.allowExportImport,
           allowEditStock: form.allowEditStock,
@@ -154,6 +182,8 @@ export default function UserManagement({
           role: form.role,
           allowedTabs: form.allowedTabs,
           editableTabs: form.editableTabs,
+          createTabs: form.createTabs,
+          deleteTabs: form.deleteTabs,
           clientTag: form.clientTag,
           allowExportImport: form.allowExportImport,
           allowEditStock: form.allowEditStock,
@@ -183,6 +213,8 @@ export default function UserManagement({
       role: user.role,
       allowedTabs: user.allowedTabs || [],
       editableTabs: user.editableTabs || [],
+      createTabs: user.createTabs || [],
+      deleteTabs: user.deleteTabs || [],
       clientTag: user.clientTag || "",
       allowExportImport: user.allowExportImport !== false,
       allowEditStock: user.allowEditStock !== false,
@@ -544,7 +576,7 @@ export default function UserManagement({
                   letterSpacing: "0.5px",
                 }}
               >
-                PAGE ACCESS ({form.allowedTabs?.length || 0}/{TABS.length})
+                PAGE ACCESS — View:{form.allowedTabs?.length || 0} Create:{form.createTabs?.length || 0} Edit:{form.editableTabs?.length || 0} Delete:{form.deleteTabs?.length || 0}
               </span>
               <button
                 onClick={handleAllAccess}
@@ -581,13 +613,41 @@ export default function UserManagement({
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(280px,1fr))",
-                gap: 10,
+                gridTemplateColumns: "repeat(auto-fill, minmax(300px,1fr))",
+                gap: 8,
               }}
             >
               {TABS.map((tab) => {
                 const hasView = form.allowedTabs?.includes(tab.id) || false;
+                const hasCreate = form.createTabs?.includes(tab.id) || false;
                 const hasEdit = form.editableTabs?.includes(tab.id) || false;
+                const hasDelete = form.deleteTabs?.includes(tab.id) || false;
+
+                const CrudCheck = ({ active, color, label, type }) => (
+                  <div
+                    style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, cursor: "pointer" }}
+                    onClick={() => handleModuleToggle(tab.id, type)}
+                    title={`Toggle ${label}`}
+                  >
+                    <div
+                      style={{
+                        width: 18,
+                        height: 18,
+                        border: `2px solid ${active ? color : "#444"}`,
+                        borderRadius: 4,
+                        background: active ? color + "22" : "rgba(255,255,255,0.04)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        transition: "all 0.15s",
+                      }}
+                    >
+                      {active && <i className="fa-solid fa-check" style={{ fontSize: 9, color }} />}
+                    </div>
+                    <span style={{ fontSize: 8, color: active ? color : "#555", fontWeight: 600, letterSpacing: "0.03em" }}>{label}</span>
+                  </div>
+                );
+
                 return (
                   <div
                     key={tab.id}
@@ -595,93 +655,25 @@ export default function UserManagement({
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
-                      padding: "10px 14px",
-                      background: "transparent",
+                      padding: "9px 12px",
+                      background: hasView ? "rgba(255,255,255,0.03)" : "transparent",
                       borderRadius: 8,
-                      border: "1px solid rgba(255,255,255,0.1)",
+                      border: `1px solid ${hasView ? "rgba(255,255,255,0.13)" : "rgba(255,255,255,0.07)"}`,
+                      transition: "all 0.15s",
                     }}
                   >
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 10 }}
-                    >
-                      <span style={{ fontSize: 16 }}>{tab.icon}</span>
-                      <span
-                        style={{
-                          fontSize: 12,
-                          color: hasView ? "#fff" : "#555",
-                          fontWeight: 600,
-                        }}
-                      >
+                    <div style={{ display: "flex", alignItems: "center", gap: 9, minWidth: 0 }}>
+                      <i className={tab.icon} style={{ fontSize: 13, color: hasView ? "#818cf8" : "#444", width: 16, textAlign: "center", flexShrink: 0 }} />
+                      <span style={{ fontSize: 12, color: hasView ? "#e0e0e0" : "#555", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {tab.label}
                       </span>
                     </div>
 
-                    <div style={{ display: "flex", gap: 15 }}>
-                      <div
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          gap: 4,
-                          cursor: "pointer",
-                        }}
-                        onClick={() => handleModuleToggle(tab.id, "view")}
-                      >
-                        <div
-                          style={{
-                            width: 18,
-                            height: 18,
-                            border: `2px solid ${hasView ? "#4CAF50" : "#444"}`,
-                            borderRadius: 4,
-                            background: hasView
-                              ? "#4CAF5022"
-                              : "rgba(255,255,255,0.05)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          {hasView && (
-                            <span style={{ fontSize: 11, color: "#4CAF50" }}>
-                              ✓
-                            </span>
-                          )}
-                        </div>
-                        <span style={{ fontSize: 9, color: "#666" }}>VIEW</span>
-                      </div>
-
-                      <div
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          gap: 4,
-                          cursor: "pointer",
-                        }}
-                        onClick={() => handleModuleToggle(tab.id, "edit")}
-                      >
-                        <div
-                          style={{
-                            width: 18,
-                            height: 18,
-                            border: `2px solid ${hasEdit ? "#FF9800" : "#444"}`,
-                            borderRadius: 4,
-                            background: hasEdit
-                              ? "#FF980022"
-                              : "rgba(255,255,255,0.05)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          {hasEdit && (
-                            <span style={{ fontSize: 11, color: "#FF9800" }}>
-                              ✓
-                            </span>
-                          )}
-                        </div>
-                        <span style={{ fontSize: 9, color: "#666" }}>EDIT</span>
-                      </div>
+                    <div style={{ display: "flex", gap: 12, flexShrink: 0, marginLeft: 8 }}>
+                      <CrudCheck active={hasView}   color="#4CAF50" label="VIEW"   type="view"   />
+                      <CrudCheck active={hasCreate} color="#2196F3" label="CREATE" type="create" />
+                      <CrudCheck active={hasEdit}   color="#FF9800" label="EDIT"   type="edit"   />
+                      <CrudCheck active={hasDelete} color="#f44336" label="DELETE" type="delete" />
                     </div>
                   </div>
                 );
@@ -825,6 +817,15 @@ export default function UserManagement({
                   <span style={{ fontSize: 12, color: "#555" }}>
                     {modCount} pages
                   </span>
+                  {(user.createTabs?.length > 0 || user.deleteTabs?.length > 0) && (
+                    <span style={{ fontSize: 11, color: "#555", background: "rgba(255,255,255,0.05)", borderRadius: 20, padding: "2px 8px" }}>
+                      {[
+                        user.createTabs?.length > 0 && `C:${user.createTabs.length}`,
+                        user.editableTabs?.length > 0 && `E:${user.editableTabs.length}`,
+                        user.deleteTabs?.length > 0 && `D:${user.deleteTabs.length}`,
+                      ].filter(Boolean).join(" ")}
+                    </span>
+                  )}
                   <span
                     style={{
                       padding: "2px 8px",

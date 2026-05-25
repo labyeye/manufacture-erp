@@ -151,7 +151,7 @@ exports.getUserById = async (req, res) => {
 
 exports.createUser = async (req, res) => {
   try {
-    const { username, password, name, role, allowedTabs, editableTabs, clientTag, email, phone, allowExportImport, allowEditStock } =
+    const { username, password, name, role, allowedTabs, editableTabs, createTabs, deleteTabs, clientTag, email, phone, allowExportImport, allowEditStock } =
       req.body;
 
     if (!username || !password || !name) {
@@ -175,6 +175,8 @@ exports.createUser = async (req, res) => {
       role: role || "Viewer",
       allowedTabs: allowedTabs || [],
       editableTabs: editableTabs || null,
+      createTabs: createTabs || [],
+      deleteTabs: deleteTabs || [],
       clientTag: clientTag || null,
       email: email ? email.toLowerCase() : null,
       phone: phone || null,
@@ -201,7 +203,7 @@ exports.createUser = async (req, res) => {
 exports.updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, role, allowedTabs, editableTabs, isActive, password, clientTag, email, allowExportImport, allowEditStock } =
+    const { name, role, allowedTabs, editableTabs, createTabs, deleteTabs, isActive, password, clientTag, email, allowExportImport, allowEditStock } =
       req.body;
 
     const user = await User.findById(id);
@@ -213,6 +215,8 @@ exports.updateUser = async (req, res) => {
     if (role) user.role = role;
     if (allowedTabs !== undefined) user.allowedTabs = allowedTabs;
     if (editableTabs !== undefined) user.editableTabs = editableTabs;
+    if (createTabs !== undefined) user.createTabs = createTabs;
+    if (deleteTabs !== undefined) user.deleteTabs = deleteTabs;
     if (isActive !== undefined) user.isActive = isActive;
     if (clientTag !== undefined) user.clientTag = clientTag;
     if (email !== undefined) user.email = email ? email.toLowerCase() : null;

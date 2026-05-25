@@ -28,11 +28,19 @@ const userSchema = new mongoose.Schema({
   },
   editableTabs: {
     type: [String],
-    default: null 
+    default: null,
   },
   allowedTabs: {
     type: [String],
-    default: []
+    default: [],
+  },
+  createTabs: {
+    type: [String],
+    default: [],
+  },
+  deleteTabs: {
+    type: [String],
+    default: [],
   },
   phone: {
     type: String,
