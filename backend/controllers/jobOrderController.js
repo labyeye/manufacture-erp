@@ -69,10 +69,12 @@ async function buildSchedule(jobOrder, machineAssignments) {
 
 async function adjustRMStock(jobOrder, direction = -1) {
   try {
-    // Polycoated Blanks: match RM stock by item name, deduct weight
-    if (jobOrder.paperType === "Polycoated Blanks" && jobOrder.itemName && jobOrder.polycoatedWeightKg) {
+    // Polycoated Blanks: match RM stock by polycoatedRmName, deduct weight
+    if (jobOrder.paperType === "Polycoated Blanks" && jobOrder.polycoatedWeightKg) {
+      const rmName = (jobOrder.polycoatedRmName || "").trim();
+      if (!rmName) return;
       const polyStock = await RawMaterialStock.findOne({
-        name: { $regex: new RegExp(`^${jobOrder.itemName.trim()}$`, "i") },
+        name: { $regex: new RegExp(`^${rmName}$`, "i") },
       });
       if (polyStock) {
         const weightDelta = Number(jobOrder.polycoatedWeightKg) * direction;
@@ -180,17 +182,18 @@ async function adjustRMStock(jobOrder, direction = -1) {
 
 async function checkRMStockSufficiency(jobOrder, existingJOId = null) {
   try {
-    // Polycoated Blanks: check by item name + weight
+    // Polycoated Blanks: check by polycoatedRmName + weight
     if (jobOrder.paperType === "Polycoated Blanks") {
-      if (!jobOrder.itemName || !jobOrder.polycoatedWeightKg) return { sufficient: true };
+      if (!jobOrder.polycoatedRmName || !jobOrder.polycoatedWeightKg) return { sufficient: true };
+      const rmName = jobOrder.polycoatedRmName.trim();
       const polyStock = await RawMaterialStock.findOne({
-        name: { $regex: new RegExp(`^${jobOrder.itemName.trim()}$`, "i") },
+        name: { $regex: new RegExp(`^${rmName}$`, "i") },
       });
-      if (!polyStock) return { sufficient: false, message: `Polycoated Blank "${jobOrder.itemName}" not found in RM stock` };
+      if (!polyStock) return { sufficient: false, message: `Polycoated Blank "${rmName}" not found in RM stock` };
       let available = Number(polyStock.weight || polyStock.qty || 0);
       if (existingJOId) {
         const oldJO = await JobOrder.findById(existingJOId);
-        if (oldJO && oldJO.paperType === "Polycoated Blanks" && oldJO.itemName === jobOrder.itemName) {
+        if (oldJO && oldJO.paperType === "Polycoated Blanks" && oldJO.polycoatedRmName === rmName) {
           available += Number(oldJO.polycoatedWeightKg || 0);
         }
       }

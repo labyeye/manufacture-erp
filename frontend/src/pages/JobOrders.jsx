@@ -135,6 +135,7 @@ export default function JobOrders(props) {
     remarks: "",
     machineAssignments: {},
     polycoatedWeightKg: "",
+    polycoatedRmName: "",
   };
 
   const [header, setHeader] = useState(blankHeader);
@@ -257,11 +258,11 @@ export default function JobOrders(props) {
     header.paperGsm2,
   ]);
   const matchedPolycoatedStock = useMemo(() => {
-    if (header.paperType !== "Polycoated Blanks" || !header.itemName) return null;
+    if (header.paperType !== "Polycoated Blanks" || !header.polycoatedRmName) return null;
     return (rawStock || []).find(
-      (s) => (s.name || "").trim().toLowerCase() === header.itemName.trim().toLowerCase(),
+      (s) => (s.name || "").trim().toLowerCase() === header.polycoatedRmName.trim().toLowerCase(),
     );
-  }, [rawStock, header.paperType, header.itemName]);
+  }, [rawStock, header.paperType, header.polycoatedRmName]);
 
   const [headerErrors, setHeaderErrors] = useState({});
   const [showModal, setShowModal] = useState(false);
@@ -349,6 +350,7 @@ export default function JobOrders(props) {
       remarks: jo.remarks || "",
       machineAssignments: jo.machineAssignments || {},
       polycoatedWeightKg: jo.polycoatedWeightKg || "",
+      polycoatedRmName: jo.polycoatedRmName || "",
     });
     setShowModal(true);
   };
@@ -644,8 +646,9 @@ export default function JobOrders(props) {
       if (!header.sheetW) he.sheetW = true;
       if (!header.sheetL) he.sheetL = true;
     }
-    if (header.paperType === "Polycoated Blanks" && !header.polycoatedWeightKg) {
-      he.polycoatedWeightKg = true;
+    if (header.paperType === "Polycoated Blanks") {
+      if (!header.polycoatedRmName) he.polycoatedRmName = true;
+      if (!header.polycoatedWeightKg) he.polycoatedWeightKg = true;
     }
     setHeaderErrors(he);
 
@@ -703,6 +706,7 @@ export default function JobOrders(props) {
           : null,
         reelWeightKg: header.reelWeightKg ? Number(header.reelWeightKg) : null,
         polycoatedWeightKg: header.polycoatedWeightKg ? Number(header.polycoatedWeightKg) : null,
+        polycoatedRmName: header.polycoatedRmName || null,
         rmStockId: matchedStock?._id,
         rmStockId2: matchedStock2?._id,
       };
@@ -744,7 +748,7 @@ export default function JobOrders(props) {
         };
 
         if (header.paperType === "Polycoated Blanks") {
-          if (matchedPolycoatedStock?._id && header.polycoatedWeightKg) {
+          if (matchedPolycoatedStock?._id && header.polycoatedRmName && header.polycoatedWeightKg) {
             const kgToDeduct = Number(header.polycoatedWeightKg);
             const updateData = { ...matchedPolycoatedStock };
             updateData.weight = Math.max(0, (matchedPolycoatedStock.weight || 0) - kgToDeduct);
@@ -1696,72 +1700,33 @@ export default function JobOrders(props) {
                   marginBottom: 20,
                 }}
               >
-                <Field label="ITEM NAME">
-                  {header.paperType === "Polycoated Blanks" ? (
-                    <select
-                      value={header.itemName}
-                      onChange={(e) => setH("itemName", e.target.value)}
-                      style={{ fontWeight: 600 }}
-                    >
-                      <option value="">-- Select Polycoated Blank --</option>
-                      {itemMasterItems
-                        .filter(
-                          (i) =>
-                            i.type === "Raw Material" &&
-                            (i.category === "Polycoated Blanks" ||
-                              i.subCategory === "Polycoated Blanks"),
-                        )
-                        .map((i) => (
-                          <option key={i._id || i.code} value={i.name}>
-                            {i.code ? `${i.code} — ${i.name}` : i.name}
-                          </option>
-                        ))}
-                    </select>
-                  ) : (
-                    <input
-                      readOnly
-                      placeholder="Auto-matched item"
-                      value={
-                        matchedStock?.name ||
-                        (header.paperCategory &&
-                        header.paperType &&
-                        header.paperGsm &&
-                        (header.paperCategory === "Paper Reel"
-                          ? !!header.reelWidthMm
-                          : !!(header.sheetW && header.sheetL))
-                          ? `${header.paperType} ${header.paperCategory} ${header.paperGsm}gsm ${
-                              header.paperCategory === "Paper Reel"
-                                ? (header.reelWidthMm || 0) + "mm"
-                                : header.sheetSize
-                            }`
-                          : "")
-                      }
-                      style={{
-                        background: "transparent",
-                        color: matchedStock ? C.green : C.text,
-                        fontWeight: 600,
-                      }}
-                    />
-                  )}
+                <Field label="RM STOCK ITEM">
+                  <input
+                    readOnly
+                    placeholder="Auto-matched item"
+                    value={
+                      matchedStock?.name ||
+                      (header.paperCategory &&
+                      header.paperType &&
+                      header.paperGsm &&
+                      header.paperType !== "Polycoated Blanks" &&
+                      (header.paperCategory === "Paper Reel"
+                        ? !!header.reelWidthMm
+                        : !!(header.sheetW && header.sheetL))
+                        ? `${header.paperType} ${header.paperCategory} ${header.paperGsm}gsm ${
+                            header.paperCategory === "Paper Reel"
+                              ? (header.reelWidthMm || 0) + "mm"
+                              : header.sheetSize
+                          }`
+                        : "")
+                    }
+                    style={{
+                      background: "transparent",
+                      color: matchedStock ? C.green : C.text,
+                      fontWeight: 600,
+                    }}
+                  />
                 </Field>
-                {header.paperType === "Polycoated Blanks" && (
-                  <Field label="WEIGHT TO CONSUME (KG) *">
-                    <input
-                      type="number"
-                      placeholder="Weight in kg"
-                      value={header.polycoatedWeightKg}
-                      onChange={(e) => setH("polycoatedWeightKg", e.target.value)}
-                      style={headerErrors.polycoatedWeightKg ? { border: `1px solid ${C.red}` } : {}}
-                    />
-                    {matchedPolycoatedStock && (
-                      <div style={{ fontSize: 10, marginTop: 4, fontWeight: 500,
-                        color: (matchedPolycoatedStock.weight || matchedPolycoatedStock.qty || 0) > 0 ? C.green : C.red }}>
-                        {`${(matchedPolycoatedStock.weight || matchedPolycoatedStock.qty || 0).toLocaleString("en-IN")} kg available`}
-                      </div>
-                    )}
-                    {EHMsg("polycoatedWeightKg")}
-                  </Field>
-                )}
                 <Field label="REMARKS">
                   <input
                     placeholder="Special instructions"
@@ -1802,6 +1767,50 @@ export default function JobOrders(props) {
                   </label>
                 </div>
               </div>
+
+              {/* Polycoated Blanks RM selector + weight — separate from FG item name */}
+              {header.paperType === "Polycoated Blanks" && (
+                <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 14, marginBottom: 20 }}>
+                  <Field label="POLYCOATED BLANK (RM ITEM) *">
+                    <select
+                      value={header.polycoatedRmName}
+                      onChange={(e) => setH("polycoatedRmName", e.target.value)}
+                      style={{ fontWeight: 600, ...(headerErrors.polycoatedRmName ? { border: `1px solid ${C.red}` } : {}) }}
+                    >
+                      <option value="">-- Select Polycoated Blank --</option>
+                      {itemMasterItems
+                        .filter(
+                          (i) =>
+                            i.type === "Raw Material" &&
+                            (i.category === "Polycoated Blanks" ||
+                              i.subCategory === "Polycoated Blanks"),
+                        )
+                        .map((i) => (
+                          <option key={i._id || i.code} value={i.name}>
+                            {i.code ? `${i.code} — ${i.name}` : i.name}
+                          </option>
+                        ))}
+                    </select>
+                    {EHMsg("polycoatedRmName")}
+                  </Field>
+                  <Field label="WEIGHT TO CONSUME (KG) *">
+                    <input
+                      type="number"
+                      placeholder="Weight in kg"
+                      value={header.polycoatedWeightKg}
+                      onChange={(e) => setH("polycoatedWeightKg", e.target.value)}
+                      style={headerErrors.polycoatedWeightKg ? { border: `1px solid ${C.red}` } : {}}
+                    />
+                    {matchedPolycoatedStock && (
+                      <div style={{ fontSize: 10, marginTop: 4, fontWeight: 500,
+                        color: (matchedPolycoatedStock.weight || matchedPolycoatedStock.qty || 0) > 0 ? C.green : C.red }}>
+                        {`${(matchedPolycoatedStock.weight || matchedPolycoatedStock.qty || 0).toLocaleString("en-IN")} kg available`}
+                      </div>
+                    )}
+                    {EHMsg("polycoatedWeightKg")}
+                  </Field>
+                </div>
+              )}
 
               {header.hasSecondPaper && (
                 <div

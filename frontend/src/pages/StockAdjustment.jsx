@@ -29,7 +29,7 @@ const EMPTY_FORM = {
   reason: "",
 };
 
-export default function StockAdjustment({ itemMasterFG = [], session, toast, refreshData }) {
+export default function StockAdjustment({ itemMasterFG = [], session, toast, refreshData, canCreate = true, canDelete = true }) {
   const isClient = session?.role === "Client";
   const [view, setView] = useState("list");
   const [adjustments, setAdjustments] = useState([]);
@@ -253,7 +253,7 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           {tabBtn("list", "Adjustments")}
-          {tabBtn("new", "New Adjustment")}
+          {canCreate && tabBtn("new", "New Adjustment")}
           {tabBtn("report", "Report")}
         </div>
       </div>
@@ -462,12 +462,12 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
             >
               <i className="fa-solid fa-file-excel" style={{ marginRight: 6 }} />Export
             </button>
-            <button
+            {canCreate && <button
               onClick={() => { setForm(EMPTY_FORM); setCodeSearch(""); setView("new"); }}
               style={{ padding: "9px 16px", background: "#6366f1", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, cursor: "pointer", fontWeight: 600, marginLeft: "auto" }}
             >
               <i className="fa-solid fa-plus" style={{ marginRight: 6 }} />New Adjustment
-            </button>
+            </button>}
           </div>
 
           {/* Stats row */}
@@ -543,7 +543,7 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
                         <td style={{ padding: "10px 12px", color: C.muted, maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={a.reason}>{a.reason || "—"}</td>
                         <td style={{ padding: "10px 12px", color: C.muted, fontSize: 12 }}>{a.createdBy || "—"}</td>
                         <td style={{ padding: "10px 12px" }}>
-                          {!isClient && (
+                          {!isClient && canDelete && (
                             <button
                               onClick={() => handleDelete(a._id)}
                               title="Delete & reverse stock"

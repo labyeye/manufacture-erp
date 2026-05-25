@@ -137,11 +137,14 @@ function AppContent() {
   }
 
   const userRole = DEFAULT_ROLES[user.role] || DEFAULT_ROLES["Sales"];
-  const allowedTabs = Array.from(
-    new Set([
-      ...userRole.tabs,
-      ...(Array.isArray(user.allowedTabs) ? user.allowedTabs : []),
-    ]),
+  // For Admin, always use role defaults. For others, use stored allowedTabs if set by admin,
+  // otherwise fall back to role defaults. Never merge — stored tabs are the restriction.
+  const allowedTabs = (
+    user.role === "Admin"
+      ? userRole.tabs
+      : Array.isArray(user.allowedTabs) && user.allowedTabs.length > 0
+        ? user.allowedTabs
+        : userRole.tabs
   ).filter((tabId) => user.role !== "Operator" || tabId !== "dashboard");
   const editableTabs = (
     Array.isArray(user.editableTabs) ? user.editableTabs : userRole.tabs
@@ -178,7 +181,8 @@ function AppInner({
 }) {
   const [currentTab, setCurrentTab] = useState(() => {
     const lastTab = localStorage.getItem("erp_lastTab");
-    return lastTab || "dashboard";
+    const candidate = lastTab || "dashboard";
+    return allowedTabs.includes(candidate) ? candidate : (allowedTabs[0] || "dashboard");
   });
   const [deepLink, setDeepLink] = useState(null);
   const [toast, setToast] = useState(null);
@@ -540,7 +544,17 @@ function AppInner({
   const data = filteredData;
 
   const renderPage = () => {
-    console.log("Current Tab:", currentTab);
+    // Guard: if the current tab is not in allowedTabs, show access denied
+    const allowedSet = new Set(allowedTabs);
+    if (currentTab !== "dashboard" && !allowedSet.has(currentTab)) {
+      return (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "60vh", gap: 12 }}>
+          <i className="fa-solid fa-lock" style={{ fontSize: 40, color: "#555" }} />
+          <div style={{ fontSize: 16, fontWeight: 600, color: "#e0e0e0" }}>Access Denied</div>
+          <div style={{ fontSize: 13, color: "#888" }}>You don't have permission to view this module.</div>
+        </div>
+      );
+    }
     switch (currentTab) {
       case "dashboard":
         return (
@@ -711,12 +725,24 @@ function AppInner({
       case "dispatch":
         return <Dispatch {...data} {...tabPerms} toast={showToast} />;
       case "rawstock":
-        return <RMStock {...data} {...tabPerms} session={session} toast={showToast} />;
+        return <RMStock {...data} {...tabPerms} session={session} toast={showToast}
+          canEdit={tabPerms.canEdit && session.allowEditStock !== false}
+          canCreate={tabPerms.canCreate && session.allowEditStock !== false}
+          canDelete={tabPerms.canDelete && session.allowEditStock !== false}
+        />;
       case "fg":
-        return <FGStock {...data} {...tabPerms} session={session} toast={showToast} />;
+        return <FGStock {...data} {...tabPerms} session={session} toast={showToast}
+          canEdit={tabPerms.canEdit && session.allowEditStock !== false}
+          canCreate={tabPerms.canCreate && session.allowEditStock !== false}
+          canDelete={tabPerms.canDelete && session.allowEditStock !== false}
+        />;
       case "consumablestock":
         return (
-          <ConsumableStock {...data} {...tabPerms} session={session} toast={showToast} />
+          <ConsumableStock {...data} {...tabPerms} session={session} toast={showToast}
+            canEdit={tabPerms.canEdit && session.allowEditStock !== false}
+            canCreate={tabPerms.canCreate && session.allowEditStock !== false}
+            canDelete={tabPerms.canDelete && session.allowEditStock !== false}
+          />
         );
       case "stockadjustment":
         return (
@@ -725,6 +751,8 @@ function AppInner({
             session={session}
             toast={showToast}
             refreshData={fetchMasters}
+            canCreate={tabPerms.canCreate && session.allowEditStock !== false}
+            canDelete={tabPerms.canDelete && session.allowEditStock !== false}
           />
         );
       case "vendormaster":
