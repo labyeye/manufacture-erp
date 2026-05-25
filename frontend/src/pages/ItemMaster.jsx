@@ -167,7 +167,7 @@ export default function ItemMaster({
       else if (width) parts.push(width + "mm");
 
       setNewItemName(parts.filter(Boolean).join(" "));
-    } else if (activeTab === "Finished Goods" && selectedCategory === "Other") {
+    } else if (activeTab === "Finished Goods" && selectedCategory === "Other" || selectedCategory === "Others") {
       // "Other" category: user types name manually, no auto-generation
       return;
     } else if (activeTab === "Finished Goods" && selectedCategory) {
@@ -1587,7 +1587,7 @@ export default function ItemMaster({
                   activeTab !== "Machine Spare" &&
                   selectedSubCategory !== "Polycoated Blanks" &&
                   selectedCategory !== "Polycoated Blanks" &&
-                  !(activeTab === "Finished Goods" && selectedCategory === "Other")
+                  !(activeTab === "Finished Goods" && selectedCategory === "Other" || selectedCategory === "Others")
                     ? "rgba(255,255,255,0.03)"
                     : inputStyle.background,
               }}
@@ -1596,7 +1596,7 @@ export default function ItemMaster({
                 activeTab !== "Machine Spare" &&
                 selectedSubCategory !== "Polycoated Blanks" &&
                 selectedCategory !== "Polycoated Blanks" &&
-                !(activeTab === "Finished Goods" && selectedCategory === "Other")
+                !(activeTab === "Finished Goods" && selectedCategory === "Other" || selectedCategory === "Others")
               }
               placeholder={`Enter ${activeTab} name`}
               value={newItemName}
