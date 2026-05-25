@@ -378,10 +378,12 @@ function AppInner({
   const matchesClient = (stockItem, tag) => {
     if (!tag) return true;
 
-    if (stockItem.companyCat === tag) return true;
+    const normalTag = tag.trim().toLowerCase();
+
+    if ((stockItem.companyCat || "").trim().toLowerCase() === normalTag) return true;
 
     const item = itemMasterFG.find((i) => i.code === stockItem.itemCode);
-    return item?.clientCategory === tag;
+    return (item?.companyCategory || "").trim().toLowerCase() === normalTag;
   };
 
   const filteredData = useMemo(() => {
