@@ -134,6 +134,7 @@ export default function JobOrders(props) {
     noOfSheets2: "",
     remarks: "",
     machineAssignments: {},
+    polycoatedWeightKg: "",
   };
 
   const [header, setHeader] = useState(blankHeader);
@@ -255,6 +256,13 @@ export default function JobOrders(props) {
     header.paperType2,
     header.paperGsm2,
   ]);
+  const matchedPolycoatedStock = useMemo(() => {
+    if (header.paperType !== "Polycoated Blanks" || !header.itemName) return null;
+    return (rawStock || []).find(
+      (s) => (s.name || "").trim().toLowerCase() === header.itemName.trim().toLowerCase(),
+    );
+  }, [rawStock, header.paperType, header.itemName]);
+
   const [headerErrors, setHeaderErrors] = useState({});
   const [showModal, setShowModal] = useState(false);
   const [editId, setEditId] = useState(null);
@@ -340,6 +348,7 @@ export default function JobOrders(props) {
       noOfSheets2: jo.noOfSheets2 || "",
       remarks: jo.remarks || "",
       machineAssignments: jo.machineAssignments || {},
+      polycoatedWeightKg: jo.polycoatedWeightKg || "",
     });
     setShowModal(true);
   };
@@ -635,6 +644,9 @@ export default function JobOrders(props) {
       if (!header.sheetW) he.sheetW = true;
       if (!header.sheetL) he.sheetL = true;
     }
+    if (header.paperType === "Polycoated Blanks" && !header.polycoatedWeightKg) {
+      he.polycoatedWeightKg = true;
+    }
     setHeaderErrors(he);
 
     if (Object.keys(he).length > 0) {
@@ -690,6 +702,7 @@ export default function JobOrders(props) {
           ? Number(header.cuttingLengthMm)
           : null,
         reelWeightKg: header.reelWeightKg ? Number(header.reelWeightKg) : null,
+        polycoatedWeightKg: header.polycoatedWeightKg ? Number(header.polycoatedWeightKg) : null,
         rmStockId: matchedStock?._id,
         rmStockId2: matchedStock2?._id,
       };
@@ -730,20 +743,30 @@ export default function JobOrders(props) {
           await rawMaterialStockAPI.update(stock._id, updateData);
         };
 
-        await handleDeduction(
-          matchedStock,
-          header.paperCategory,
-          header.noOfSheets,
-          header.reelWeightKg,
-        );
-
-        if (header.hasSecondPaper) {
+        if (header.paperType === "Polycoated Blanks") {
+          if (matchedPolycoatedStock?._id && header.polycoatedWeightKg) {
+            const kgToDeduct = Number(header.polycoatedWeightKg);
+            const updateData = { ...matchedPolycoatedStock };
+            updateData.weight = Math.max(0, (matchedPolycoatedStock.weight || 0) - kgToDeduct);
+            updateData.qty = Math.max(0, (matchedPolycoatedStock.qty || 0) - kgToDeduct);
+            await rawMaterialStockAPI.update(matchedPolycoatedStock._id, updateData);
+          }
+        } else {
           await handleDeduction(
-            matchedStock2,
-            header.paperCategory2,
-            header.noOfSheets2,
-            header.reelWeightKg2,
+            matchedStock,
+            header.paperCategory,
+            header.noOfSheets,
+            header.reelWeightKg,
           );
+
+          if (header.hasSecondPaper) {
+            await handleDeduction(
+              matchedStock2,
+              header.paperCategory2,
+              header.noOfSheets2,
+              header.reelWeightKg2,
+            );
+          }
         }
       }
 
@@ -1721,6 +1744,24 @@ export default function JobOrders(props) {
                     />
                   )}
                 </Field>
+                {header.paperType === "Polycoated Blanks" && (
+                  <Field label="WEIGHT TO CONSUME (KG) *">
+                    <input
+                      type="number"
+                      placeholder="Weight in kg"
+                      value={header.polycoatedWeightKg}
+                      onChange={(e) => setH("polycoatedWeightKg", e.target.value)}
+                      style={headerErrors.polycoatedWeightKg ? { border: `1px solid ${C.red}` } : {}}
+                    />
+                    {matchedPolycoatedStock && (
+                      <div style={{ fontSize: 10, marginTop: 4, fontWeight: 500,
+                        color: (matchedPolycoatedStock.weight || matchedPolycoatedStock.qty || 0) > 0 ? C.green : C.red }}>
+                        {`${(matchedPolycoatedStock.weight || matchedPolycoatedStock.qty || 0).toLocaleString("en-IN")} kg available`}
+                      </div>
+                    )}
+                    {EHMsg("polycoatedWeightKg")}
+                  </Field>
+                )}
                 <Field label="REMARKS">
                   <input
                     placeholder="Special instructions"

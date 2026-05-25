@@ -69,6 +69,20 @@ async function buildSchedule(jobOrder, machineAssignments) {
 
 async function adjustRMStock(jobOrder, direction = -1) {
   try {
+    // Polycoated Blanks: match RM stock by item name, deduct weight
+    if (jobOrder.paperType === "Polycoated Blanks" && jobOrder.itemName && jobOrder.polycoatedWeightKg) {
+      const polyStock = await RawMaterialStock.findOne({
+        name: { $regex: new RegExp(`^${jobOrder.itemName.trim()}$`, "i") },
+      });
+      if (polyStock) {
+        const weightDelta = Number(jobOrder.polycoatedWeightKg) * direction;
+        polyStock.weight = Math.max(0, (polyStock.weight || 0) + weightDelta);
+        polyStock.qty = Math.max(0, (polyStock.qty || 0) + weightDelta);
+        await polyStock.save();
+      }
+      return;
+    }
+
     const findStock = async (id, cat, type, gsm, sheetSize, sheetW, sheetL, reelWidth) => {
       if (id) {
         const byId = await RawMaterialStock.findById(id);
@@ -166,6 +180,27 @@ async function adjustRMStock(jobOrder, direction = -1) {
 
 async function checkRMStockSufficiency(jobOrder, existingJOId = null) {
   try {
+    // Polycoated Blanks: check by item name + weight
+    if (jobOrder.paperType === "Polycoated Blanks") {
+      if (!jobOrder.itemName || !jobOrder.polycoatedWeightKg) return { sufficient: true };
+      const polyStock = await RawMaterialStock.findOne({
+        name: { $regex: new RegExp(`^${jobOrder.itemName.trim()}$`, "i") },
+      });
+      if (!polyStock) return { sufficient: false, message: `Polycoated Blank "${jobOrder.itemName}" not found in RM stock` };
+      let available = Number(polyStock.weight || polyStock.qty || 0);
+      if (existingJOId) {
+        const oldJO = await JobOrder.findById(existingJOId);
+        if (oldJO && oldJO.paperType === "Polycoated Blanks" && oldJO.itemName === jobOrder.itemName) {
+          available += Number(oldJO.polycoatedWeightKg || 0);
+        }
+      }
+      const required = Number(jobOrder.polycoatedWeightKg);
+      if (available < required) {
+        return { sufficient: false, message: `Insufficient stock for ${jobOrder.itemName}. Available: ${available} kg, Required: ${required} kg` };
+      }
+      return { sufficient: true };
+    }
+
     const findStock = async (id, cat, type, gsm, sheetSize, sheetW, sheetL, reelWidth) => {
       if (id) {
         const byId = await RawMaterialStock.findById(id);

@@ -97,6 +97,8 @@ const jobOrderSchema = new mongoose.Schema(
     cuttingLengthMm: Number,
     reelWeightKg: Number,
 
+    polycoatedWeightKg: Number,
+
     materialReady: {
       type: Boolean,
       default: false,
