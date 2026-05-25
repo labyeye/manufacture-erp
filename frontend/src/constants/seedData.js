@@ -474,6 +474,7 @@ export const DEFAULT_ROLES = {
       "rawstock",
       "fg",
       "consumablestock",
+      "stockadjustment",
       "vendormaster",
       "clientmaster",
       "sizemaster",
@@ -513,7 +514,7 @@ export const DEFAULT_ROLES = {
   Store: {
     label: "Store",
     color: "#3b82f6",
-    tabs: ["dashboard", "inward", "rawstock", "fg", "itemmaster", "purchase", "forecast"],
+    tabs: ["dashboard", "inward", "rawstock", "fg", "consumablestock", "stockadjustment", "itemmaster", "purchase", "forecast"],
   },
   Sales: {
     label: "Sales",
@@ -548,6 +549,7 @@ export const TABS = [
   { id: "rawstock", icon: "fa-solid fa-boxes-stacked", label: "RM Stock" },
   { id: "fg", icon: "fa-solid fa-warehouse", label: "FG Stock" },
   { id: "consumablestock", icon: "fa-solid fa-layer-group", label: "Consumable Stock" },
+  { id: "stockadjustment", icon: "fa-solid fa-sliders", label: "Stock Adjustment" },
   { id: "printingmaster", icon: "fa-solid fa-print", label: "Printing Detail Master" },
   { id: "operatormaster", icon: "fa-solid fa-hard-hat", label: "Operator Master" },
   { id: "vendormaster", icon: "fa-solid fa-store", label: "Vendor Master" },

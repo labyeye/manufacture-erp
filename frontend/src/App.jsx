@@ -66,6 +66,7 @@ import DesignHub from "./pages/DesignHub";
 import NotificationHub from "./pages/NotificationHub";
 import ERPConsole from "./pages/ERPConsole";
 import Trash from "./pages/Trash";
+import StockAdjustment from "./pages/StockAdjustment";
 import Reports from "./pages/Reports";
 import OperatorMaster from "./pages/OperatorMaster";
 import companylogo from "../src/assets/logo.png";
@@ -698,6 +699,15 @@ function AppInner({
         return (
           <ConsumableStock {...data} session={session} toast={showToast} />
         );
+      case "stockadjustment":
+        return (
+          <StockAdjustment
+            itemMasterFG={data.itemMasterFG}
+            session={session}
+            toast={showToast}
+            refreshData={fetchMasters}
+          />
+        );
       case "vendormaster":
         return <VendorMaster {...data} toast={showToast} />;
       case "sizemaster":
@@ -818,7 +828,7 @@ function AppInner({
                 "dispatch",
               ],
             },
-            { label: "Inventory", ids: ["rawstock", "fg", "consumablestock"] },
+            { label: "Inventory", ids: ["rawstock", "fg", "consumablestock", "stockadjustment"] },
             {
               label: "Masters",
               ids: [

@@ -594,6 +594,33 @@ export const spareIssueLogAPI = {
   },
 };
 
+export const stockAdjustmentAPI = {
+  getAll: async (params) => {
+    const response = await api.get("/stock-adjustment", { params });
+    return response.data;
+  },
+
+  getOne: async (id) => {
+    const response = await api.get(`/stock-adjustment/${id}`);
+    return response.data;
+  },
+
+  getReport: async (params) => {
+    const response = await api.get("/stock-adjustment/report", { params });
+    return response.data;
+  },
+
+  create: async (data) => {
+    const response = await api.post("/stock-adjustment", data);
+    return response.data;
+  },
+
+  delete: async (id) => {
+    const response = await api.delete(`/stock-adjustment/${id}`);
+    return response.data;
+  },
+};
+
 export default api;
 export const brandMasterAPI = {
   getAll: async () => {
