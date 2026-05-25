@@ -191,6 +191,19 @@ function AppInner({
     if (isMobile) setSidebarOpen(false);
   };
 
+  // Compute CRUD permissions for the currently active tab
+  const tabPerms = React.useMemo(() => {
+    if (session.role === "Admin") return { canCreate: true, canEdit: true, canDelete: true };
+    const editable = Array.isArray(session.editableTabs) ? session.editableTabs : [];
+    const create = Array.isArray(session.createTabs) ? session.createTabs : [];
+    const del = Array.isArray(session.deleteTabs) ? session.deleteTabs : [];
+    return {
+      canCreate: create.includes(currentTab),
+      canEdit: editable.includes(currentTab),
+      canDelete: del.includes(currentTab),
+    };
+  }, [currentTab, session]);
+
   useEffect(() => {
     localStorage.setItem("erp_lastTab", currentTab);
   }, [currentTab]);
@@ -566,6 +579,7 @@ function AppInner({
         return (
           <PurchaseOrders
             {...data}
+            {...tabPerms}
             deepLinkId={deepLink?.tab === "purchase" ? deepLink.recordId : null}
             onDeepLinkConsumed={() => setDeepLink(null)}
           />
@@ -574,6 +588,7 @@ function AppInner({
         return (
           <MaterialInward
             {...data}
+            {...tabPerms}
             toast={showToast}
             deepLinkId={deepLink?.tab === "inward" ? deepLink.recordId : null}
             onDeepLinkConsumed={() => setDeepLink(null)}
@@ -583,6 +598,7 @@ function AppInner({
         return (
           <SalesOrders
             {...data}
+            {...tabPerms}
             session={session}
             toast={showToast}
             deepLinkId={deepLink?.tab === "sales" ? deepLink.recordId : null}
@@ -593,6 +609,7 @@ function AppInner({
         return (
           <JobOrders
             {...data}
+            {...tabPerms}
             toast={showToast}
             deepLinkId={deepLink?.tab === "jobs" ? deepLink.recordId : null}
             onDeepLinkConsumed={() => setDeepLink(null)}
@@ -692,14 +709,14 @@ function AppInner({
           />
         );
       case "dispatch":
-        return <Dispatch {...data} toast={showToast} />;
+        return <Dispatch {...data} {...tabPerms} toast={showToast} />;
       case "rawstock":
-        return <RMStock {...data} session={session} toast={showToast} />;
+        return <RMStock {...data} {...tabPerms} session={session} toast={showToast} />;
       case "fg":
-        return <FGStock {...data} session={session} toast={showToast} />;
+        return <FGStock {...data} {...tabPerms} session={session} toast={showToast} />;
       case "consumablestock":
         return (
-          <ConsumableStock {...data} session={session} toast={showToast} />
+          <ConsumableStock {...data} {...tabPerms} session={session} toast={showToast} />
         );
       case "stockadjustment":
         return (
@@ -715,7 +732,7 @@ function AppInner({
       case "sizemaster":
         return <CategoryMaster {...data} toast={showToast} />;
       case "itemmaster":
-        return <ItemMasterFG {...data} toast={showToast} />;
+        return <ItemMasterFG {...data} {...tabPerms} toast={showToast} />;
       case "machinemaster":
         return <MachineMaster {...data} toast={showToast} />;
       case "companymaster":

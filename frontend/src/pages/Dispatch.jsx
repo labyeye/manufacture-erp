@@ -20,7 +20,7 @@ const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("en-GB") : "—");
 
 const UNIT_OPTIONS = ["pcs", "kg"];
 
-export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = [], toast }) {
+export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = [], toast, session, canCreate = true, canEdit = true, canDelete = true }) {
   const [dispatch, setDispatch] = useState([]);
   const [salesOrders, setSalesOrders] = useState([]);
   const [jobOrders, setJobOrders] = useState([]);
@@ -573,13 +573,13 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
       />
 
       <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
-        <button
+        {canCreate && <button
           onClick={() => { setHeader(blankHeader); setItems([blankItem()]); setHeaderErrors({}); setItemErrors([{}]); setEditId(null); setShowModal(true); }}
           style={{ background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", color: "#fff", padding: "9px 18px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
         >
           + New Dispatch
-        </button>
-        <button
+        </button>}
+        {canCreate && <button
           onClick={() => { setReturnHeader(blankReturnHeader); setReturnItems([blankItem()]); setShowReturnModal(true); }}
           style={{ background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", color: "#fff", padding: "9px 18px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
         >
@@ -1345,7 +1345,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                         )}
                         <td style={{ padding: "10px 10px", whiteSpace: "nowrap" }}>
                           <div style={{ display: "flex", gap: 6 }}>
-                            <button onClick={handleEdit} style={{
+                            {canEdit && <button onClick={handleEdit} style={{
                       background: "transparent",
                       color: "#8082ff",
                       border: "1px solid #8082ff98",
@@ -1357,7 +1357,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                       display: "inline-flex",
                       alignItems: "center",
                       gap: 6,
-                    }}><i className="fa-solid fa-pen-to-square" /> Edit</button>
+                    }}><i className="fa-solid fa-pen-to-square" /> Edit</button>}
                             <button onClick={() => generateDispatchPDF(r)} style={{
                       background: "transparent",
                       color: "#8082ff",
@@ -1371,7 +1371,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                       alignItems: "center",
                       gap: 6,
                     }}><i className="fa-solid fa-file-pdf" /> PDF</button>
-                            <button onClick={handleDelete} style={{
+                            {canDelete && <button onClick={handleDelete} style={{
                       background: "transparent",
                       color: "#8082ff",
                       border: "1px solid #8082ff98",
@@ -1383,7 +1383,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                       display: "inline-flex",
                       alignItems: "center",
                       gap: 6,
-                    }}><i className="fa-solid fa-trash" /> Delete</button>
+                    }}><i className="fa-solid fa-trash" /> Delete</button>}
                           </div>
                         </td>
                       </tr>

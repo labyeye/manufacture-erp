@@ -44,13 +44,14 @@ export default function MaterialInward({
   itemCounters = {},
   setItemCounters,
   toast,
-  editableTabs = [],
+  canCreate = true,
+  canEdit = true,
+  canDelete = true,
   canExportImport = true,
   props = {},
   deepLinkId,
   onDeepLinkConsumed,
 }) {
-  const canEdit = editableTabs.includes("inward");
   const [loading, setLoading] = useState(false);
   const [initialLoad, setInitialLoad] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -1052,7 +1053,7 @@ export default function MaterialInward({
           title="Material Inward"
           sub="Record incoming paper / board material receipts"
         >
-          {canEdit && (
+          {canCreate && (
             <button
               onClick={() => {
                 setEditId(null);
@@ -2484,7 +2485,7 @@ export default function MaterialInward({
                                 >
                                   <i className="fa-solid fa-file-pdf" /> PDF
                                 </button>
-                                {canEdit && (
+                                {canDelete && (
                                   <button
                                     onClick={() => setDeleteTarget(rowId)}
                                     style={{
@@ -2515,7 +2516,7 @@ export default function MaterialInward({
               </div>
 
               {/* Floating bulk action bar */}
-              {canEdit && selectedIds.size > 0 && (
+              {canDelete && selectedIds.size > 0 && (
                 <div
                   style={{
                     position: "fixed",

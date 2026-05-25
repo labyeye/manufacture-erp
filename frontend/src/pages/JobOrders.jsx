@@ -91,6 +91,9 @@ export default function JobOrders(props) {
     companyMaster = [],
     deepLinkId,
     onDeepLinkConsumed,
+    canCreate = true,
+    canEdit = true,
+    canDelete = true,
   } = props;
   const [jobOrders, setJobOrders] = useState([]);
   const [salesOrders, setSalesOrders] = useState([]);
@@ -1012,7 +1015,7 @@ export default function JobOrders(props) {
         />
 
         <div style={{ marginBottom: 20 }}>
-          <button
+          {canCreate && <button
             onClick={() => {
               setEditId(null);
               setHeader(blankHeader);
@@ -1033,7 +1036,7 @@ export default function JobOrders(props) {
             }}
           >
             + New Job Order
-          </button>
+          </button>}
         </div>
 
         {}
@@ -2331,7 +2334,7 @@ export default function JobOrders(props) {
                               </td>
                               <td style={{ padding: "11px 14px" }}>
                                 <div style={{ display: "flex", gap: 6 }}>
-                                  <button
+                                  {canEdit && <button
                                     onClick={() => handleEdit(r)}
                                     style={{
                                       background: "transparent",
@@ -2348,7 +2351,7 @@ export default function JobOrders(props) {
                                     }}
                                   >
                                     <i className="fa-solid fa-pen-to-square" /> Edit
-                                  </button>
+                                  </button>}
                                   <button
                                     onClick={() => generateJobCardPDF(r)}
                                     style={{
@@ -2367,7 +2370,7 @@ export default function JobOrders(props) {
                                   >
                                     <i className="fa-solid fa-file-pdf" /> PDF
                                   </button>
-                                  <button
+                                  {canDelete && <button
                                     onClick={() => handleDelete(r._id || r.id)}
                                     style={{
                                       background: "transparent",
@@ -2384,7 +2387,7 @@ export default function JobOrders(props) {
                                     }}
                                   >
                                     <i className="fa-solid fa-trash" /> Delete
-                                  </button>
+                                  </button>}
                                 </div>
                               </td>
                             </tr>

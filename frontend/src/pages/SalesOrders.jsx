@@ -45,6 +45,9 @@ export default function SalesOrders(props) {
     session,
     deepLinkId,
     onDeepLinkConsumed,
+    canCreate = true,
+    canEdit = true,
+    canDelete = true,
   } = props;
   const isClient = session?.role === "Client";
   const [salesOrders, setSalesOrders] = useState([]);
@@ -902,7 +905,7 @@ export default function SalesOrders(props) {
           title="Sales Orders"
           sub="Create and track customer sales orders"
         />
-        {!isClient && (
+        {!isClient && canCreate && (
           <button
             onClick={() => { setHeader(blankHeader); setItems([blankItem()]); setHeaderErrors({}); setItemErrors([{}]); setEditId(null); setShowModal(true); }}
             style={{
@@ -1748,7 +1751,7 @@ export default function SalesOrders(props) {
             </div>
                 )}
 
-                {!isClient && selectedIds.size > 0 && (
+                {!isClient && canDelete && selectedIds.size > 0 && (
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", marginBottom: 8, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8 }}>
                     <span style={{ fontSize: 13, fontWeight: 600, color: "#fecaca" }}>{selectedIds.size} selected</span>
                     <div style={{ display: "flex", gap: 8 }}>
@@ -1818,7 +1821,7 @@ export default function SalesOrders(props) {
                   </td>
                   <td style={{ padding: "12px 14px" }}>
                     <div style={{ display: "flex", gap: 6 }}>
-                      {!isClient && <button onClick={() => handleEdit(r)} style={{
+                      {!isClient && canEdit && <button onClick={() => handleEdit(r)} style={{
                       background: "transparent",
                       color: "#8082ff",
                       border: "1px solid #8082ff98",
@@ -1844,7 +1847,7 @@ export default function SalesOrders(props) {
                       alignItems: "center",
                       gap: 6,
                     }}><i className="fa-solid fa-file-pdf" /> PDF</button>
-                      {!isClient && <button onClick={() => setDeleteTarget(r._id)} style={{
+                      {!isClient && canDelete && <button onClick={() => setDeleteTarget(r._id)} style={{
                       background: "transparent",
                       color: "#8082ff",
                       border: "1px solid #8082ff98",

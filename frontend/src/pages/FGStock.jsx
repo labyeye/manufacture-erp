@@ -33,6 +33,9 @@ export default function FGStock({
   toast,
   refreshData,
   canExportImport = true,
+  canCreate = true,
+  canEdit = true,
+  canDelete = true,
 }) {
   const isClient = session?.role === "Client";
   const [search, setSearch] = useState("");
@@ -812,7 +815,7 @@ export default function FGStock({
           <i className="fa-solid fa-clock-rotate-left" style={{ marginRight: 6 }} />
           Stock Ageing
         </button>
-        {!isClient && selectedIds.length > 0 && (
+        {!isClient && canDelete && selectedIds.length > 0 && (
           <button
             onClick={handleBulkDelete}
             style={{ padding: "7px 14px", borderRadius: 6, border: "1px solid rgba(239,68,68,0.4)", background: "rgba(239,68,68,0.15)", color: "#ef4444", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}
@@ -1171,60 +1174,64 @@ export default function FGStock({
                           <span style={{ color: "#333", fontSize: 11 }}>—</span>
                         )}
                       </td>
-                      {!isClient && (
+                      {!isClient && (canEdit || canDelete) && (
                         <td style={{ padding: "10px 14px" }}>
                           <div style={{ display: "flex", gap: 6 }}>
-                            <button
-                              onClick={() => setEditingItem(s)}
-                              style={{
-                                background: "transparent",
-                                color: "#8082ff",
-                                border: "1px solid #8082ff98",
-                                borderRadius: 6,
-                                padding: "6px 12px",
-                                fontSize: 11,
-                                fontWeight: 500,
-                                cursor: "pointer",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 6,
-                              }}
-                            >
-                              <i className="fa-solid fa-pen-to-square" /> Edit
-                            </button>
-                            <button
-                              onClick={async () => {
-                                if (s.isFromMaster) {
-                                  toast("This item has no stock record to delete. Remove it from Item Master if needed.", "error");
-                                  return;
-                                }
-                                if (confirm("Delete this item from stock?")) {
-                                  try {
-                                    await fgStockAPI.delete(s._id);
-                                    if (refreshData) await refreshData();
-                                    else setFgStock((prev) => prev.filter((item) => item._id !== s._id));
-                                    toast("Deleted successfully", "success");
-                                  } catch (err) {
-                                    toast("Failed to delete", "error");
+                            {canEdit && (
+                              <button
+                                onClick={() => setEditingItem(s)}
+                                style={{
+                                  background: "transparent",
+                                  color: "#8082ff",
+                                  border: "1px solid #8082ff98",
+                                  borderRadius: 6,
+                                  padding: "6px 12px",
+                                  fontSize: 11,
+                                  fontWeight: 500,
+                                  cursor: "pointer",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 6,
+                                }}
+                              >
+                                <i className="fa-solid fa-pen-to-square" /> Edit
+                              </button>
+                            )}
+                            {canDelete && (
+                              <button
+                                onClick={async () => {
+                                  if (s.isFromMaster) {
+                                    toast("This item has no stock record to delete. Remove it from Item Master if needed.", "error");
+                                    return;
                                   }
-                                }
-                              }}
-                              style={{
-                                background: "transparent",
-                                color: "#8082ff",
-                                border: "1px solid #8082ff98",
-                                borderRadius: 6,
-                                padding: "6px 12px",
-                                fontSize: 11,
-                                fontWeight: 500,
-                                cursor: "pointer",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 6,
-                              }}
-                            >
-                              <i className="fa-solid fa-trash" /> Delete
-                            </button>
+                                  if (confirm("Delete this item from stock?")) {
+                                    try {
+                                      await fgStockAPI.delete(s._id);
+                                      if (refreshData) await refreshData();
+                                      else setFgStock((prev) => prev.filter((item) => item._id !== s._id));
+                                      toast("Deleted successfully", "success");
+                                    } catch (err) {
+                                      toast("Failed to delete", "error");
+                                    }
+                                  }
+                                }}
+                                style={{
+                                  background: "transparent",
+                                  color: "#8082ff",
+                                  border: "1px solid #8082ff98",
+                                  borderRadius: 6,
+                                  padding: "6px 12px",
+                                  fontSize: 11,
+                                  fontWeight: 500,
+                                  cursor: "pointer",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 6,
+                                }}
+                              >
+                                <i className="fa-solid fa-trash" /> Delete
+                              </button>
+                            )}
                           </div>
                         </td>
                       )}

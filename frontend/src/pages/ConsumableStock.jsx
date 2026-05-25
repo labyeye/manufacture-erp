@@ -21,6 +21,9 @@ export default function ConsumableStock({
   toast,
   refreshData,
   canExportImport = true,
+  canCreate = true,
+  canEdit = true,
+  canDelete = true,
 }) {
   const isClient = session?.role === "Client";
   const [view, setView] = useState("stock");
@@ -501,7 +504,7 @@ export default function ConsumableStock({
             )}
             {canExportImport && <ExportBtn onClick={handleExport} />}
             {canExportImport && <ExportBtn onClick={handleExportPDF} label="Export PDF" />}
-            {!isClient && selectedIds.length > 0 && (
+            {!isClient && canDelete && selectedIds.length > 0 && (
               <button
                 onClick={handleBulkDelete}
                 style={{ padding: "7px 14px", borderRadius: 6, border: "1px solid rgba(239,68,68,0.4)", background: "rgba(239,68,68,0.15)", color: "#ef4444", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}
@@ -664,50 +667,50 @@ export default function ConsumableStock({
                           </td>
                           <td style={{ padding: "12px 14px" }}>
                         <div style={{ display: "flex", gap: 6 }}>
-                          {!isClient && (
-                            <>
-                              <button
-                                onClick={() => {
-                                  setSelectedStock(s);
-                                  setView("form");
-                                  setEditId(s._id || s.id);
-                                  setEditData(s);
-                                }}
-                                style={{
-                                  background: "transparent",
-                                  color: "#8082ff",
-                                  border: "1px solid #8082ff98",
-                                  borderRadius: 6,
-                                  padding: "6px 12px",
-                                  fontSize: 11,
-                                  fontWeight: 500,
-                                  cursor: "pointer",
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: 6,
-                                }}
-                              >
-                                <i className="fa-solid fa-pen-to-square" /> Edit
-                              </button>
-                              <button
-                                onClick={() => handleDelete(s._id || s.id)}
-                                style={{
-                                  background: "transparent",
-                                  color: "#8082ff",
-                                  border: "1px solid #8082ff98",
-                                  borderRadius: 6,
-                                  padding: "6px 12px",
-                                  fontSize: 11,
-                                  fontWeight: 500,
-                                  cursor: "pointer",
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: 6,
-                                }}
-                              >
-                                <i className="fa-solid fa-trash" /> Delete
-                              </button>
-                            </>
+                          {!isClient && canEdit && (
+                            <button
+                              onClick={() => {
+                                setSelectedStock(s);
+                                setView("form");
+                                setEditId(s._id || s.id);
+                                setEditData(s);
+                              }}
+                              style={{
+                                background: "transparent",
+                                color: "#8082ff",
+                                border: "1px solid #8082ff98",
+                                borderRadius: 6,
+                                padding: "6px 12px",
+                                fontSize: 11,
+                                fontWeight: 500,
+                                cursor: "pointer",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 6,
+                              }}
+                            >
+                              <i className="fa-solid fa-pen-to-square" /> Edit
+                            </button>
+                          )}
+                          {!isClient && canDelete && (
+                            <button
+                              onClick={() => handleDelete(s._id || s.id)}
+                              style={{
+                                background: "transparent",
+                                color: "#8082ff",
+                                border: "1px solid #8082ff98",
+                                borderRadius: 6,
+                                padding: "6px 12px",
+                                fontSize: 11,
+                                fontWeight: 500,
+                                cursor: "pointer",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 6,
+                              }}
+                            >
+                              <i className="fa-solid fa-trash" /> Delete
+                            </button>
                           )}
                           {!isClient && (
                             <button

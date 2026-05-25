@@ -98,11 +98,12 @@ export default function PurchaseOrders({
   categoryMaster = {},
   sizeMaster = {},
   toast,
-  editableTabs = [],
+  canCreate = true,
+  canEdit = true,
+  canDelete = true,
   deepLinkId,
   onDeepLinkConsumed,
 }) {
-  const canEdit = editableTabs.includes("purchase");
   const blankHeader = {
     poDate: today(),
     deliveryDate: "",
@@ -2305,7 +2306,7 @@ export default function PurchaseOrders({
                       reader.readAsBinaryString(file);
                     }}
                   />
-                  {canEdit && (
+                  {canCreate && (
                     <button
                       onClick={() => {
                         setHeader(blankHeader);
@@ -2336,7 +2337,7 @@ export default function PurchaseOrders({
               </div>
 
               {/* Bulk action bar */}
-              {canEdit && selectedIds.size > 0 && (
+              {canDelete && selectedIds.size > 0 && (
                 <div
                   style={{
                     display: "flex",
@@ -2729,7 +2730,7 @@ export default function PurchaseOrders({
                                 >
                                   <i className="fa-solid fa-file-pdf" /> PDF
                                 </button>
-                                {canEdit && (
+                                {canDelete && (
                                   <button
                                     onClick={() => setDeleteTarget(r._id)}
                                     style={{

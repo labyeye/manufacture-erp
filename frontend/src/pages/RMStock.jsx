@@ -22,6 +22,9 @@ export default function RMStock({
   toast,
   refreshData,
   canExportImport = true,
+  canCreate = true,
+  canEdit = true,
+  canDelete = true,
 }) {
   const isClient = session?.role === "Client";
   const [search, setSearch] = useState("");
@@ -1147,45 +1150,45 @@ export default function RMStock({
                   </td>
                   <td style={{ padding: "10px 14px" }}>
                     <div style={{ display: "flex", gap: 6 }}>
-                      {!isClient && (
-                        <>
-                          <button
-                            onClick={() => setEditingItem(s)}
-                            style={{
-                              background: "transparent",
-                              color: "#8082ff",
-                              border: "1px solid #8082ff98",
-                              borderRadius: 6,
-                              padding: "6px 12px",
-                              fontSize: 11,
-                              fontWeight: 500,
-                              cursor: "pointer",
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: 6,
-                            }}
-                          >
-                            <i className="fa-solid fa-pen-to-square" /> Edit
-                          </button>
-                          <button
-                            onClick={() => handleDelete(s._id || s.id)}
-                            style={{
-                              background: "transparent",
-                              color: "#8082ff",
-                              border: "1px solid #8082ff98",
-                              borderRadius: 6,
-                              padding: "6px 12px",
-                              fontSize: 11,
-                              fontWeight: 500,
-                              cursor: "pointer",
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: 6,
-                            }}
-                          >
-                            <i className="fa-solid fa-trash" /> Delete
-                          </button>
-                        </>
+                      {!isClient && canEdit && (
+                        <button
+                          onClick={() => setEditingItem(s)}
+                          style={{
+                            background: "transparent",
+                            color: "#8082ff",
+                            border: "1px solid #8082ff98",
+                            borderRadius: 6,
+                            padding: "6px 12px",
+                            fontSize: 11,
+                            fontWeight: 500,
+                            cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                          }}
+                        >
+                          <i className="fa-solid fa-pen-to-square" /> Edit
+                        </button>
+                      )}
+                      {!isClient && canDelete && (
+                        <button
+                          onClick={() => handleDelete(s._id || s.id)}
+                          style={{
+                            background: "transparent",
+                            color: "#8082ff",
+                            border: "1px solid #8082ff98",
+                            borderRadius: 6,
+                            padding: "6px 12px",
+                            fontSize: 11,
+                            fontWeight: 500,
+                            cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                          }}
+                        >
+                          <i className="fa-solid fa-trash" /> Delete
+                        </button>
                       )}
                     </div>
                   </td>

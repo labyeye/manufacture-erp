@@ -88,6 +88,9 @@ export default function ItemMaster({
   toast,
   refreshData,
   canExportImport = true,
+  canCreate = true,
+  canEdit = true,
+  canDelete = true,
 }) {
   const [itemMasterFG, setItemMasterFG] = useState([]);
   const [categoryMaster, setCategoryMaster] = useState({});
@@ -1919,7 +1922,7 @@ export default function ItemMaster({
             flexWrap: "wrap",
           }}
         >
-          {selectedIds.length > 0 && (
+          {canDelete && selectedIds.length > 0 && (
             <button
               onClick={() =>
                 setConfirmModal({ isOpen: true, count: selectedIds.length })
@@ -2077,7 +2080,7 @@ export default function ItemMaster({
                   }}
                 />
                 <div
-                  onClick={() => handleEdit(item)}
+                  onClick={() => canEdit && handleEdit(item)}
                   style={{
                     padding: "3px 10px",
                     border: "1px solid #2196F344",
@@ -2086,7 +2089,7 @@ export default function ItemMaster({
                     fontSize: 11,
                     fontWeight: 500,
                     background: "#2196F30a",
-                    cursor: "pointer",
+                    cursor: canEdit ? "pointer" : "default",
                     whiteSpace: "nowrap",
                     flexShrink: 0,
                   }}
@@ -2375,7 +2378,7 @@ export default function ItemMaster({
 
               {/* actions */}
               <div style={{ display: "flex", gap: 6 }}>
-                <button
+                {canEdit && <button
                   onClick={() => handleEdit(item)}
                   style={{
                     background: "transparent",
@@ -2392,8 +2395,8 @@ export default function ItemMaster({
                   }}
                 >
                   <i className="fa-solid fa-pen-to-square" /> Edit
-                </button>
-                <button
+                </button>}
+                {canDelete && <button
                   onClick={() => handleDelete(item)}
                   style={{
                     background: "transparent",
@@ -2410,7 +2413,7 @@ export default function ItemMaster({
                   }}
                 >
                   <i className="fa-solid fa-trash" /> Delete
-                </button>
+                </button>}
               </div>
             </div>
           ))}
@@ -2503,12 +2506,12 @@ export default function ItemMaster({
                     fontSize: 11,
                     fontWeight: 500,
                     background: "#2196F30a",
-                    cursor: "pointer",
+                    cursor: canEdit ? "pointer" : "default",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     whiteSpace: "nowrap",
                   }}
-                  onClick={() => handleEdit(item)}
+                  onClick={() => canEdit && handleEdit(item)}
                 >
                   {item.code}
                 </div>
@@ -2824,7 +2827,7 @@ export default function ItemMaster({
                     justifyContent: "flex-end",
                   }}
                 >
-                  <button
+                  {canEdit && <button
                     onClick={() => handleEdit(item)}
                     style={{
                       background: "transparent",
@@ -2841,8 +2844,8 @@ export default function ItemMaster({
                     }}
                   >
                     <i className="fa-solid fa-pen-to-square" /> Edit
-                  </button>
-                  <button
+                  </button>}
+                  {canDelete && <button
                     onClick={() => handleDelete(item)}
                     style={{
                       background: "transparent",
@@ -2859,7 +2862,7 @@ export default function ItemMaster({
                     }}
                   >
                     <i className="fa-solid fa-trash" /> Delete
-                  </button>
+                  </button>}
                 </div>
               </div>
             ))}
