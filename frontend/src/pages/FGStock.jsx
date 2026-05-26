@@ -172,66 +172,22 @@ export default function FGStock({
   };
 
   const PriceEdit = ({ item }) => {
-    const [val, setVal] = useState(item.price || "");
-    const [saving, setSaving] = useState(false);
-    const hasChanged = val !== (item.price || "") && val !== "";
-
     return (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          justifyContent: "flex-end",
-        }}
-      >
-        <input
-          type="number"
-          step="0.01"
-          value={val}
-          onChange={(e) => setVal(e.target.value)}
-          readOnly={isClient}
-          style={{
-            width: 75,
-            padding: "5px 8px",
-            background: "#0c0c0e",
-            border: `1px solid ${hasChanged && !isClient ? "#2196F3" : "#2a2a2e"}`,
-            borderRadius: 4,
-            color: "#2196F3",
-            fontSize: 12,
-            fontWeight: 500,
-            outline: "none",
-            textAlign: "right",
-          }}
-          placeholder="0.00"
-        />
-        {!isClient && hasChanged && (
-          <button
-            onClick={async () => {
-              setSaving(true);
-              await handleUpdatePrice(item, +val);
-              setSaving(false);
-            }}
-            disabled={saving}
-            style={{
-              background: "rgba(255,255,255,0.08)",
-              border: "1px solid rgba(255,255,255,0.18)",
-              borderRadius: 4,
-              color: "#fff",
-              padding: "4px 8px",
-              fontSize: 10,
-              cursor: "pointer",
-              boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
-            }}
-          >
-            {saving ? "..." : "✓"}
-          </button>
-        )}
-      </div>
+      <span style={{ color: "#2196F3", fontSize: 12, fontWeight: 500 }}>
+        {item.price ? `₹${Number(item.price).toLocaleString("en-IN")}` : "—"}
+      </span>
     );
   };
 
   const QtyEdit = ({ item }) => {
+    return (
+      <span style={{ color: "#e0e0e0", fontSize: 12, fontWeight: 500 }}>
+        {(item.qty || 0).toLocaleString("en-IN")}
+      </span>
+    );
+  };
+
+  const _QtyEditUnused = ({ item }) => {
     const [val, setVal] = useState(item.qty || 0);
     const [saving, setSaving] = useState(false);
     const hasChanged = Number(val) !== (item.qty || 0);

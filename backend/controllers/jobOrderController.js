@@ -72,10 +72,15 @@ async function adjustRMStock(jobOrder, direction = -1) {
     // Polycoated Blanks: match RM stock by polycoatedRmName, deduct weight
     if (jobOrder.paperType === "Polycoated Blanks" && jobOrder.polycoatedWeightKg) {
       const rmName = (jobOrder.polycoatedRmName || "").trim();
-      if (!rmName) return;
-      const polyStock = await RawMaterialStock.findOne({
-        name: { $regex: new RegExp(`^${rmName}$`, "i") },
-      });
+      if (!rmName && !jobOrder.polycoatedRmStockId) return;
+      let polyStock = jobOrder.polycoatedRmStockId
+        ? await RawMaterialStock.findById(jobOrder.polycoatedRmStockId)
+        : null;
+      if (!polyStock && rmName) {
+        polyStock = await RawMaterialStock.findOne({
+          name: { $regex: new RegExp(`^${rmName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i") },
+        });
+      }
       if (polyStock) {
         const weightDelta = Number(jobOrder.polycoatedWeightKg) * direction;
         polyStock.weight = Math.max(0, (polyStock.weight || 0) + weightDelta);
@@ -184,12 +189,17 @@ async function checkRMStockSufficiency(jobOrder, existingJOId = null) {
   try {
     // Polycoated Blanks: check by polycoatedRmName + weight
     if (jobOrder.paperType === "Polycoated Blanks") {
-      if (!jobOrder.polycoatedRmName || !jobOrder.polycoatedWeightKg) return { sufficient: true };
-      const rmName = jobOrder.polycoatedRmName.trim();
-      const polyStock = await RawMaterialStock.findOne({
-        name: { $regex: new RegExp(`^${rmName}$`, "i") },
-      });
-      if (!polyStock) return { sufficient: false, message: `Polycoated Blank "${rmName}" not found in RM stock` };
+      if ((!jobOrder.polycoatedRmName && !jobOrder.polycoatedRmStockId) || !jobOrder.polycoatedWeightKg) return { sufficient: true };
+      const rmName = (jobOrder.polycoatedRmName || "").trim();
+      let polyStock = jobOrder.polycoatedRmStockId
+        ? await RawMaterialStock.findById(jobOrder.polycoatedRmStockId)
+        : null;
+      if (!polyStock && rmName) {
+        polyStock = await RawMaterialStock.findOne({
+          name: { $regex: new RegExp(`^${rmName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i") },
+        });
+      }
+      if (!polyStock) return { sufficient: false, message: `Polycoated Blank "${rmName || jobOrder.polycoatedRmStockId}" not found in RM stock` };
       let available = Number(polyStock.weight || polyStock.qty || 0);
       if (existingJOId) {
         const oldJO = await JobOrder.findById(existingJOId);

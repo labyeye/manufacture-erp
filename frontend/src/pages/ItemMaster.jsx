@@ -316,6 +316,14 @@ export default function ItemMaster({
   }, [filtered]);
 
   const handleAddItem = async () => {
+    if (!editingItem && !canCreate) {
+      toast("You don't have permission to create items", "error");
+      return;
+    }
+    if (editingItem && !canEdit) {
+      toast("You don't have permission to edit items", "error");
+      return;
+    }
     if (!selectedCategory) {
       toast("Please select a category", "error");
       return;
@@ -323,6 +331,11 @@ export default function ItemMaster({
     if (!newItemName.trim()) {
       toast("Please enter item name", "error");
       return;
+    }
+    if (activeTab === "Raw Material") {
+      if (!gsm) { toast("GSM is required for Raw Material items", "error"); return; }
+      if (!width) { toast("Width (mm) is required for Raw Material items", "error"); return; }
+      if (selectedCategory !== "Paper Reel" && !length) { toast("Length (mm) is required for Raw Material items", "error"); return; }
     }
 
     setLoading(true);
@@ -1039,7 +1052,7 @@ export default function ItemMaster({
         />
       )}
 
-      <div
+      {(canCreate || (editingItem && canEdit)) && <div
         style={
           showEditModal && editingItem
             ? {
@@ -1513,7 +1526,7 @@ export default function ItemMaster({
                     letterSpacing: "0.5px",
                   }}
                 >
-                  GSM
+                  GSM *
                 </label>
                 <input
                   type="number"
@@ -1534,7 +1547,7 @@ export default function ItemMaster({
                     letterSpacing: "0.5px",
                   }}
                 >
-                  WIDTH (mm)
+                  WIDTH (mm) *
                 </label>
                 <input
                   type="number"
@@ -1556,7 +1569,7 @@ export default function ItemMaster({
                       letterSpacing: "0.5px",
                     }}
                   >
-                    LENGTH (mm)
+                    LENGTH (mm) *
                   </label>
                   <input
                     type="number"
@@ -1776,7 +1789,7 @@ export default function ItemMaster({
             </button>
           )}
         </div>
-      </div>
+      </div>}
 
       {activeTab === "Finished Goods" && (
         <div

@@ -136,6 +136,7 @@ export default function JobOrders(props) {
     machineAssignments: {},
     polycoatedWeightKg: "",
     polycoatedRmName: "",
+    polycoatedRmStockId: null,
   };
 
   const [header, setHeader] = useState(blankHeader);
@@ -351,6 +352,7 @@ export default function JobOrders(props) {
       machineAssignments: jo.machineAssignments || {},
       polycoatedWeightKg: jo.polycoatedWeightKg || "",
       polycoatedRmName: jo.polycoatedRmName || "",
+      polycoatedRmStockId: jo.polycoatedRmStockId || null,
     });
     setShowModal(true);
   };
@@ -707,6 +709,7 @@ export default function JobOrders(props) {
         reelWeightKg: header.reelWeightKg ? Number(header.reelWeightKg) : null,
         polycoatedWeightKg: header.polycoatedWeightKg ? Number(header.polycoatedWeightKg) : null,
         polycoatedRmName: header.polycoatedRmName || null,
+        polycoatedRmStockId: matchedPolycoatedStock?._id || header.polycoatedRmStockId || null,
         rmStockId: matchedStock?._id,
         rmStockId2: matchedStock2?._id,
       };
@@ -1774,7 +1777,14 @@ export default function JobOrders(props) {
                   <Field label="POLYCOATED BLANK (RM ITEM) *">
                     <select
                       value={header.polycoatedRmName}
-                      onChange={(e) => setH("polycoatedRmName", e.target.value)}
+                      onChange={(e) => {
+                        const selectedName = e.target.value;
+                        setH("polycoatedRmName", selectedName);
+                        const matched = (rawStock || []).find(
+                          (s) => (s.name || "").trim().toLowerCase() === selectedName.trim().toLowerCase(),
+                        );
+                        setH("polycoatedRmStockId", matched?._id || null);
+                      }}
                       style={{ fontWeight: 600, ...(headerErrors.polycoatedRmName ? { border: `1px solid ${C.red}` } : {}) }}
                     >
                       <option value="">-- Select Polycoated Blank --</option>

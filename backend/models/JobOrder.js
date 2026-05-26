@@ -99,6 +99,10 @@ const jobOrderSchema = new mongoose.Schema(
 
     polycoatedWeightKg: Number,
     polycoatedRmName: String,
+    polycoatedRmStockId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "RawMaterialStock",
+    },
 
     materialReady: {
       type: Boolean,
