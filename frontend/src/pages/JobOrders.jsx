@@ -721,60 +721,6 @@ export default function JobOrders(props) {
       } else {
         const res = await jobOrdersAPI.create(payload);
         toast(`Job Order ${res.joNo} created successfully`, "success");
-
-        const handleDeduction = async (
-          stock,
-          category,
-          issuedQty,
-          issuedWeight,
-        ) => {
-          if (!stock?._id) return;
-          const updateData = { ...stock };
-          if (category === "Paper Reel") {
-            const kgToDeduct = Number(issuedWeight || 0);
-            updateData.weight = Math.max(0, (stock.weight || 0) - kgToDeduct);
-          } else {
-            const sheetsToDeduct = Number(issuedQty || 0);
-            const oldQty = Number(stock.qty || 0);
-            const oldWeight = Number(stock.weight || 0);
-
-            if (oldQty > 0) {
-              const weightPerSheet = oldWeight / oldQty;
-              updateData.qty = Math.max(0, oldQty - sheetsToDeduct);
-              updateData.weight = Math.max(
-                0,
-                oldWeight - sheetsToDeduct * weightPerSheet,
-              );
-            }
-          }
-          await rawMaterialStockAPI.update(stock._id, updateData);
-        };
-
-        if (header.paperType === "Polycoated Blanks") {
-          if (matchedPolycoatedStock?._id && header.polycoatedRmName && header.polycoatedWeightKg) {
-            const kgToDeduct = Number(header.polycoatedWeightKg);
-            const updateData = { ...matchedPolycoatedStock };
-            updateData.weight = Math.max(0, (matchedPolycoatedStock.weight || 0) - kgToDeduct);
-            updateData.qty = Math.max(0, (matchedPolycoatedStock.qty || 0) - kgToDeduct);
-            await rawMaterialStockAPI.update(matchedPolycoatedStock._id, updateData);
-          }
-        } else {
-          await handleDeduction(
-            matchedStock,
-            header.paperCategory,
-            header.noOfSheets,
-            header.reelWeightKg,
-          );
-
-          if (header.hasSecondPaper) {
-            await handleDeduction(
-              matchedStock2,
-              header.paperCategory2,
-              header.noOfSheets2,
-              header.reelWeightKg2,
-            );
-          }
-        }
       }
 
       setHeader(blankHeader);
