@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import * as XLSX from "xlsx";
 import { C } from "../constants/colors";
 import { SectionTitle } from "../components/ui/BasicComponents";
@@ -7,6 +7,7 @@ import {
   salesOrdersAPI,
   jobOrdersAPI,
   materialInwardAPI,
+  stockMovementAPI,
 } from "../api/auth";
 
 const SUBCONTRACTING_KEY = "subcontracting_records";
@@ -937,6 +938,330 @@ export default function Reports() {
           <i className="fa-solid fa-chart-bar" style={{ fontSize: 40, marginBottom: 14, opacity: 0.25 }} />
           <div style={{ fontSize: 15, fontWeight: 600, color: "#fff", marginBottom: 6 }}>Select a module and date range</div>
           <div style={{ fontSize: 12 }}>Click Generate to preview and print a tally-style report</div>
+        </div>
+      )}
+
+      {/* ── Stock Movement Report ── */}
+      <StockMovementReport />
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────── */
+/*  Stock Movement Report                                     */
+/* ────────────────────────────────────────────────────────── */
+function StockMovementReport() {
+  const STOCK_TYPES = [
+    { id: "rm", label: "Raw Material", icon: "fa-solid fa-boxes-stacked", color: "#60a5fa" },
+    { id: "fg", label: "Finished Goods", icon: "fa-solid fa-box", color: "#4ade80" },
+    { id: "cn", label: "Consumable", icon: "fa-solid fa-flask", color: "#fb923c" },
+  ];
+
+  const [stockType, setStockType] = useState("rm");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [dateFrom, setDateFrom] = useState(() => {
+    const d = new Date(); d.setMonth(d.getMonth() - 3);
+    return d.toISOString().split("T")[0];
+  });
+  const [dateTo, setDateTo] = useState(new Date().toISOString().split("T")[0]);
+  const [movements, setMovements] = useState([]);
+  const [currentStock, setCurrentStock] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [fetched, setFetched] = useState(false);
+  const searchRef = useRef(null);
+  const debounceRef = useRef(null);
+
+  const searchItems = useCallback((q) => {
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      if (!q.trim()) { setSuggestions([]); return; }
+      try {
+        const items = await stockMovementAPI.searchItems(stockType, q);
+        setSuggestions(items);
+        setShowSuggestions(true);
+      } catch { setSuggestions([]); }
+    }, 280);
+  }, [stockType]);
+
+  const handleTypeChange = (t) => {
+    setStockType(t);
+    setSearchQuery("");
+    setSelectedItem(null);
+    setSuggestions([]);
+    setMovements([]);
+    setCurrentStock(null);
+    setFetched(false);
+  };
+
+  const handleSelectItem = (item) => {
+    setSelectedItem(item);
+    setSearchQuery(item.name);
+    setSuggestions([]);
+    setShowSuggestions(false);
+  };
+
+  const fetchMovements = async () => {
+    if (!selectedItem) return;
+    setLoading(true);
+    try {
+      const data = await stockMovementAPI.getMovements({
+        type: stockType,
+        itemName: selectedItem.name,
+        from: dateFrom,
+        to: dateTo,
+      });
+      setMovements(data.movements || []);
+      setCurrentStock(data.currentStock || null);
+      setFetched(true);
+    } catch { setMovements([]); }
+    finally { setLoading(false); }
+  };
+
+  const inCount = movements.filter((m) => m.type === "IN").length;
+  const outCount = movements.filter((m) => m.type === "OUT").length;
+  const totalIn = movements.filter((m) => m.type === "IN").reduce((s, m) => s + (m.qty || 0), 0);
+  const totalOut = movements.filter((m) => m.type === "OUT").reduce((s, m) => s + (m.qty || 0), 0);
+
+  const typeColor = STOCK_TYPES.find((t) => t.id === stockType)?.color || "#60a5fa";
+
+  const fieldStyle = {
+    background: "transparent",
+    border: "1px solid rgba(255,255,255,0.12)",
+    borderRadius: 8,
+    color: "#fff",
+    padding: "8px 12px",
+    fontSize: 13,
+    outline: "none",
+    width: "100%",
+  };
+
+  const exportExcel = () => {
+    if (!movements.length) return;
+    const rows = movements.map((m) => ({
+      "Date": m.date ? m.date.toString().split("T")[0] : "—",
+      "Type": m.type,
+      "Source": m.source,
+      "Reference": m.ref,
+      "Description": m.description,
+      "Qty": m.qty,
+      "Weight (kg)": m.weight || "",
+      "Before Qty": m.beforeQty ?? "",
+      "After Qty": m.afterQty ?? "",
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Stock Movement");
+    XLSX.writeFile(wb, `StockMovement_${selectedItem?.name?.replace(/\s+/g, "_")}_${dateFrom}_${dateTo}.xlsx`);
+  };
+
+  return (
+    <div style={{ marginTop: 32 }}>
+      {/* Section header */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+        <i className="fa-solid fa-arrow-right-arrow-left" style={{ color: "#a78bfa", fontSize: 18 }} />
+        <div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: "#fff" }}>Stock Movement Report</div>
+          <div style={{ fontSize: 12, color: C.muted }}>Track every inward, outward and adjustment for any item</div>
+        </div>
+      </div>
+
+      <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: 20 }}>
+        {/* Stock type cards */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 20 }}>
+          {STOCK_TYPES.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => handleTypeChange(t.id)}
+              style={{
+                padding: "14px 16px",
+                borderRadius: 12,
+                border: stockType === t.id ? `1.5px solid ${t.color}` : "1px solid rgba(255,255,255,0.09)",
+                background: stockType === t.id ? `${t.color}18` : "rgba(255,255,255,0.03)",
+                color: stockType === t.id ? t.color : C.muted,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                fontWeight: stockType === t.id ? 700 : 500,
+                fontSize: 13,
+                transition: "all 0.15s",
+              }}
+            >
+              <i className={t.icon} style={{ fontSize: 18 }} />
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Search + date row */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 160px 160px auto", gap: 12, alignItems: "flex-end" }}>
+          {/* Item search */}
+          <div style={{ position: "relative" }}>
+            <label style={{ fontSize: 11, color: C.muted, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: 6, display: "block" }}>
+              Item Name *
+            </label>
+            <div style={{ position: "relative" }}>
+              <i className="fa-solid fa-magnifying-glass" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: C.muted, fontSize: 12 }} />
+              <input
+                ref={searchRef}
+                type="text"
+                placeholder="Type to search item..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setSelectedItem(null);
+                  searchItems(e.target.value);
+                }}
+                onFocus={() => { if (suggestions.length) setShowSuggestions(true); }}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 180)}
+                style={{ ...fieldStyle, paddingLeft: 30 }}
+              />
+            </div>
+            {showSuggestions && suggestions.length > 0 && (
+              <div style={{
+                position: "absolute", top: "100%", left: 0, right: 0, zIndex: 999,
+                background: "#1e1e2e", border: "1px solid rgba(255,255,255,0.12)",
+                borderRadius: 8, maxHeight: 220, overflowY: "auto", marginTop: 4,
+                boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+              }}>
+                {suggestions.map((s, i) => (
+                  <div
+                    key={s._id || i}
+                    onMouseDown={() => handleSelectItem(s)}
+                    style={{
+                      padding: "9px 14px", cursor: "pointer", fontSize: 13,
+                      borderBottom: "1px solid rgba(255,255,255,0.06)",
+                      color: "#e0e0e0",
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.06)"}
+                    onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                  >
+                    {s.code && <span style={{ fontSize: 11, color: typeColor, fontWeight: 600, marginRight: 6 }}>{s.code}</span>}
+                    {s.name}
+                    {s.category && <span style={{ fontSize: 10, color: C.muted, marginLeft: 6 }}>· {s.category}</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Date From */}
+          <div>
+            <label style={{ fontSize: 11, color: C.muted, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: 6, display: "block" }}>From</label>
+            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} style={fieldStyle} />
+          </div>
+
+          {/* Date To */}
+          <div>
+            <label style={{ fontSize: 11, color: C.muted, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: 6, display: "block" }}>To</label>
+            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} style={fieldStyle} />
+          </div>
+
+          {/* Fetch button */}
+          <button
+            onClick={fetchMovements}
+            disabled={loading || !selectedItem}
+            style={{
+              padding: "10px 20px", borderRadius: 10, border: "none",
+              background: !selectedItem ? "rgba(167,139,250,0.25)" : "rgba(167,139,250,0.85)",
+              color: "#fff", fontWeight: 700, fontSize: 13,
+              cursor: !selectedItem ? "not-allowed" : "pointer",
+              display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap",
+            }}
+          >
+            {loading ? <><i className="fa-solid fa-spinner fa-spin" /> Loading...</> : <><i className="fa-solid fa-chart-line" /> Fetch</>}
+          </button>
+        </div>
+      </div>
+
+      {/* Results */}
+      {fetched && (
+        <div style={{ marginTop: 16 }}>
+          {/* Summary cards */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 16 }}>
+            {[
+              { label: "Current Stock", value: currentStock ? `${Number(currentStock.qty || 0).toLocaleString("en-IN")} ${currentStock.unit || ""}` : "—", color: typeColor },
+              { label: "Total IN", value: `${totalIn.toLocaleString("en-IN")} (${inCount} txns)`, color: "#4ade80" },
+              { label: "Total OUT", value: `${totalOut.toLocaleString("en-IN")} (${outCount} txns)`, color: "#f87171" },
+              { label: "Net Movement", value: (totalIn - totalOut).toLocaleString("en-IN"), color: totalIn >= totalOut ? "#4ade80" : "#f87171" },
+            ].map((card, i) => (
+              <div key={i} style={{ background: `${card.color}10`, border: `1px solid ${card.color}30`, borderRadius: 12, padding: "14px 18px" }}>
+                <div style={{ fontSize: 10, color: card.color, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: 6 }}>{card.label}</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: card.color }}>{card.value}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Table header + export */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <div style={{ fontSize: 13, color: C.muted }}>
+              <strong style={{ color: "#fff" }}>{selectedItem?.name}</strong>
+              &nbsp;·&nbsp; {movements.length} movements &nbsp;·&nbsp; {dateFrom} → {dateTo}
+            </div>
+            {movements.length > 0 && (
+              <button
+                onClick={exportExcel}
+                style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: "rgba(34,197,94,0.85)", color: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
+              >
+                <i className="fa-solid fa-file-excel" /> Export Excel
+              </button>
+            )}
+          </div>
+
+          {movements.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "40px 20px", color: C.muted, background: "rgba(255,255,255,0.02)", borderRadius: 12, border: "1px dashed rgba(255,255,255,0.08)" }}>
+              <i className="fa-solid fa-inbox" style={{ fontSize: 32, marginBottom: 10, opacity: 0.3 }} />
+              <div style={{ fontSize: 14, fontWeight: 600, color: "#fff" }}>No movements found</div>
+              <div style={{ fontSize: 12 }}>No stock activity for this item in the selected date range</div>
+            </div>
+          ) : (
+            <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, overflow: "hidden" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <thead>
+                  <tr style={{ background: "rgba(255,255,255,0.05)" }}>
+                    {["Date", "Type", "Source", "Reference", "Description", "Qty", "Weight (kg)"].map((h) => (
+                      <th key={h} style={{ padding: "11px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.4px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {movements.map((m, i) => (
+                    <tr key={i} style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.015)" }}>
+                      <td style={{ padding: "10px 14px", color: "#e0e0e0", whiteSpace: "nowrap" }}>
+                        {m.date ? m.date.toString().split("T")[0] : "—"}
+                      </td>
+                      <td style={{ padding: "10px 14px" }}>
+                        <span style={{
+                          display: "inline-block", padding: "2px 10px", borderRadius: 20,
+                          fontSize: 11, fontWeight: 700,
+                          background: m.type === "IN" ? "rgba(74,222,128,0.15)" : "rgba(248,113,113,0.15)",
+                          color: m.type === "IN" ? "#4ade80" : "#f87171",
+                          border: `1px solid ${m.type === "IN" ? "rgba(74,222,128,0.3)" : "rgba(248,113,113,0.3)"}`,
+                        }}>
+                          {m.type === "IN" ? "▲ IN" : "▼ OUT"}
+                        </span>
+                      </td>
+                      <td style={{ padding: "10px 14px", color: C.muted, fontSize: 12 }}>{m.source}</td>
+                      <td style={{ padding: "10px 14px", color: typeColor, fontWeight: 600, fontSize: 12, fontFamily: "monospace" }}>{m.ref}</td>
+                      <td style={{ padding: "10px 14px", color: "#e0e0e0" }}>{m.description}</td>
+                      <td style={{ padding: "10px 14px", color: "#fff", fontWeight: 600 }}>
+                        {Number(m.qty || 0).toLocaleString("en-IN")}
+                        {m.unit ? <span style={{ fontSize: 11, color: C.muted, marginLeft: 4 }}>{m.unit}</span> : null}
+                      </td>
+                      <td style={{ padding: "10px 14px", color: C.muted }}>
+                        {m.weight ? Number(m.weight).toLocaleString("en-IN") : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
     </div>

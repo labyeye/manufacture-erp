@@ -621,6 +621,17 @@ export const stockAdjustmentAPI = {
   },
 };
 
+export const stockMovementAPI = {
+  searchItems: async (type, q) => {
+    const response = await api.get("/stock-movement/items", { params: { type, q } });
+    return response.data;
+  },
+  getMovements: async (params) => {
+    const response = await api.get("/stock-movement", { params });
+    return response.data;
+  },
+};
+
 export default api;
 export const brandMasterAPI = {
   getAll: async () => {
