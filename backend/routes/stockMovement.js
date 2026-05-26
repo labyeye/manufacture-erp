@@ -124,7 +124,7 @@ router.get("/", async (req, res) => {
       for (const adj of adjs) {
         const isIn = adj.adjustmentType === "Inward";
         const qty = isWeightBased ? (adj.weight || adj.qty || 0) : (adj.qty || 0);
-        txns.push({ date: adj.date, txnType: isIn ? "Inward" : "Outward", ref: adj.adjustmentNo || "—", description: `Adj: ${adj.reason || adj.adjustmentType}`, inward: isIn ? qty : 0, outward: isIn ? 0 : qty, weight: adj.weight || 0 });
+        txns.push({ date: adj.date, txnType: "Stock Adjustment", ref: adj.adjustmentNo || "—", description: `${adj.adjustmentType}${adj.reason ? ": " + adj.reason : ""}`, inward: isIn ? qty : 0, outward: isIn ? 0 : qty, weight: adj.weight || 0 });
       }
 
       txns.sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -154,15 +154,15 @@ router.get("/", async (req, res) => {
         }
       }
 
-      // Inward: JO production
+      // Inward: JO production — only Completed JOs (FG is produced when JO completes)
       const jos = await JobOrder.find({
         $or: [{ itemName: nameRegex }, { product: nameRegex }],
-        status: { $in: ["In Progress", "Completed"] },
-        ...(fromDate || toDate ? { jobcardDate: dRange(fromDate, toDate) } : {}),
-      }).select("joNo jobcardDate itemName orderQty status");
+        status: "Completed",
+        ...(fromDate || toDate ? { updatedAt: dRange(fromDate, toDate) } : {}),
+      }).select("joNo jobcardDate updatedAt itemName orderQty status");
 
       for (const jo of jos) {
-        txns.push({ date: jo.jobcardDate, txnType: "Production", ref: jo.joNo, description: `Produced via Job Order`, inward: jo.orderQty || 0, outward: 0, weight: 0 });
+        txns.push({ date: jo.updatedAt || jo.jobcardDate, txnType: "Production", ref: jo.joNo, description: `Produced via Job Order (${jo.status})`, inward: jo.orderQty || 0, outward: 0, weight: 0 });
       }
 
       // Outward: Dispatch
@@ -187,7 +187,7 @@ router.get("/", async (req, res) => {
 
       for (const adj of adjs) {
         const isIn = adj.adjustmentType === "Inward";
-        txns.push({ date: adj.date, txnType: isIn ? "Inward" : "Outward", ref: adj.adjustmentNo || "—", description: `Adj: ${adj.reason || adj.adjustmentType}`, inward: isIn ? (adj.qty || 0) : 0, outward: isIn ? 0 : (adj.qty || 0), weight: 0 });
+        txns.push({ date: adj.date, txnType: "Stock Adjustment", ref: adj.adjustmentNo || "—", description: `${adj.adjustmentType}${adj.reason ? ": " + adj.reason : ""}`, inward: isIn ? (adj.qty || 0) : 0, outward: isIn ? 0 : (adj.qty || 0), weight: 0 });
       }
 
       txns.sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -226,7 +226,7 @@ router.get("/", async (req, res) => {
 
       for (const adj of adjs) {
         const isIn = adj.adjustmentType === "Inward";
-        txns.push({ date: adj.date, txnType: isIn ? "Inward" : "Issue", ref: adj.adjustmentNo || "—", description: adj.reason || adj.adjustmentType, inward: isIn ? (adj.qty || 0) : 0, outward: isIn ? 0 : (adj.qty || 0), weight: 0 });
+        txns.push({ date: adj.date, txnType: "Stock Adjustment", ref: adj.adjustmentNo || "—", description: `${adj.adjustmentType}${adj.reason ? ": " + adj.reason : ""}`, inward: isIn ? (adj.qty || 0) : 0, outward: isIn ? 0 : (adj.qty || 0), weight: 0 });
       }
 
       txns.sort((a, b) => new Date(a.date) - new Date(b.date));

@@ -1463,6 +1463,7 @@ function StockMovementReport() {
     Dispatch: "#f87171",
     Outward: "#f87171",
     Issue: "#f97316",
+    "Stock Adjustment": "#38bdf8",
   };
 
   const [stockType, setStockType] = useState("rm");
