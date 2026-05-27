@@ -2902,18 +2902,13 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               style={{
                                 ...TD,
                                 color: "#888",
-                                maxWidth: 0,
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
+                                maxWidth: 220,
+                                whiteSpace: "normal",
                               }}
-                              title={r.itemsStr}
                             >
-                              {(() => {
-                                const parts = r.itemsStr === "—" ? ["—"] : r.itemsStr.split(", ");
-                                if (parts.length <= 1) return r.itemsStr;
-                                return `${parts[0]}, +${parts.length - 1} more`;
-                              })()}
+                              <div style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", wordBreak: "break-word", lineHeight: 1.4 }}>
+                                {r.itemsStr}
+                              </div>
                             </td>
                             <td style={{ ...TD, color: "#888" }}>
                               {(r.so.orderDate || "").slice(0, 10) || "—"}
@@ -3222,18 +3217,13 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               style={{
                                 ...TD,
                                 color: "#888",
-                                maxWidth: 0,
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
+                                maxWidth: 220,
+                                whiteSpace: "normal",
                               }}
-                              title={r.itemsStr}
                             >
-                              {(() => {
-                                const parts = r.itemsStr === "—" ? ["—"] : r.itemsStr.split(", ");
-                                if (parts.length <= 1) return r.itemsStr;
-                                return `${parts[0]}, +${parts.length - 1} more`;
-                              })()}
+                              <div style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", wordBreak: "break-word", lineHeight: 1.4 }}>
+                                {r.itemsStr}
+                              </div>
                             </td>
                             <td style={{ ...TD, color: "#888" }}>
                               {r.dispDate?.slice(0, 10) || "—"}

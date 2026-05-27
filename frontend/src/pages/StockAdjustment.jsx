@@ -499,21 +499,7 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
             </div>
           ) : (
             <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, tableLayout: "fixed" }}>
-                <colgroup>
-                  <col style={{ width: 90 }} />
-                  <col style={{ width: 85 }} />
-                  <col style={{ width: 100 }} />
-                  <col style={{ width: "18%" }} />
-                  <col style={{ width: 100 }} />
-                  <col style={{ width: 80 }} />
-                  <col style={{ width: 65 }} />
-                  <col style={{ width: 70 }} />
-                  <col style={{ width: 110 }} />
-                  <col style={{ width: "15%" }} />
-                  <col style={{ width: 80 }} />
-                  <col style={{ width: 60 }} />
-                </colgroup>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                 <thead>
                   <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
                     {["Adj No", "Date", "Product Code", "Item Name", "Stock Type", "Type", "Qty", "Weight", "Before→After", "Reason", "By", ""].map((h) => (
@@ -535,7 +521,9 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
                         <td style={{ padding: "10px 12px", color: "#818cf8", fontWeight: 600 }}>{a.adjustmentNo || "—"}</td>
                         <td style={{ padding: "10px 12px", color: C.muted, whiteSpace: "nowrap" }}>{fmtDate(a.date)}</td>
                         <td style={{ padding: "10px 12px", color: "#6366f1", fontWeight: 600 }}>{a.productCode}</td>
-                        <td style={{ padding: "10px 12px", color: C.text, maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={a.itemName}>{a.itemName}</td>
+                        <td style={{ padding: "10px 12px", color: C.text, maxWidth: 200 }}>
+                          <div style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", wordBreak: "break-word", lineHeight: 1.4 }}>{a.itemName}</div>
+                        </td>
                         <td style={{ padding: "10px 12px" }}>
                           <span style={{ background: sc.bg, color: sc.text, borderRadius: 5, padding: "3px 8px", fontSize: 11, fontWeight: 600 }}>{a.stockType}</span>
                         </td>
@@ -554,7 +542,9 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
                             <div style={{ fontSize: 11, color: "#6b7280" }}>{fmt(a.beforeWeight)} → {fmt(a.afterWeight)} kg</div>
                           ) : null}
                         </td>
-                        <td style={{ padding: "10px 12px", color: C.muted, maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={a.reason}>{a.reason || "—"}</td>
+                        <td style={{ padding: "10px 12px", color: C.muted, maxWidth: 160 }}>
+                          <div style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", wordBreak: "break-word", lineHeight: 1.4 }}>{a.reason || "—"}</div>
+                        </td>
                         <td style={{ padding: "10px 12px", color: C.muted, fontSize: 12 }}>{a.createdBy || "—"}</td>
                         <td style={{ padding: "10px 12px" }}>
                           {!isClient && canDelete && (
