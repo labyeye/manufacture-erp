@@ -1073,11 +1073,13 @@ export default function RMStock({
                         fontWeight: 600,
                         fontSize: 13,
                         color: "#eee",
+                        display: "-webkit-box",
+                        WebkitLineClamp: 3,
+                        WebkitBoxOrient: "vertical",
                         overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
+                        wordBreak: "break-word",
+                        lineHeight: 1.4,
                       }}
-                      title={s.name || s.paperType}
                     >
                       {s.name || s.paperType}
                     </div>
