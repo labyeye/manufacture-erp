@@ -514,7 +514,17 @@ export default function MaterialInward({
   const submit = async () => {
     const he = {};
     if (!header.date) he.date = true;
-    if (!header.vendorName) he.vendorName = true;
+    if (!header.vendorName) {
+      he.vendorName = true;
+    } else {
+      const vendorExists = (vendorMaster || []).some(
+        (v) => (v.name || "").toLowerCase() === header.vendorName.toLowerCase()
+      );
+      if (!vendorExists) {
+        he.vendorName = true;
+        toast(`Vendor "${header.vendorName}" not found in Vendor Master`, "error");
+      }
+    }
     if (!header.invoiceNo) he.invoiceNo = true;
     if (!header.vehicleNo) he.vehicleNo = true;
     if (!header.location) he.location = true;

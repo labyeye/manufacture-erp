@@ -773,7 +773,17 @@ export default function PurchaseOrders({
     const he = {};
     if (!header.poDate) he.poDate = true;
     if (!header.deliveryDate) he.deliveryDate = true;
-    if (!header.vendorName) he.vendorName = true;
+    if (!header.vendorName) {
+      he.vendorName = true;
+    } else {
+      const vendorExists = (vendorMaster || []).some(
+        (v) => (v.name || "").toLowerCase() === header.vendorName.toLowerCase()
+      );
+      if (!vendorExists) {
+        he.vendorName = true;
+        toast(`Vendor "${header.vendorName}" not found in Vendor Master`, "error");
+      }
+    }
     setHeaderErrors(he);
 
     const allItemErrors = items.map((it) => {

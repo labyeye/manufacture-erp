@@ -123,7 +123,17 @@ export default function Subcontracting({
     const e = {};
     if (!form.joRef) e.joRef = true;
     if (!form.stage) e.stage = true;
-    if (!form.vendor) e.vendor = true;
+    if (!form.vendor) {
+      e.vendor = true;
+    } else {
+      const vendorExists = (vendorMaster || []).some(
+        (v) => (v.name || v.vendorName || "").toLowerCase() === form.vendor.toLowerCase()
+      );
+      if (!vendorExists) {
+        e.vendor = true;
+        toast?.(`Vendor "${form.vendor}" not found in Vendor Master`, "error");
+      }
+    }
     if (!form.qtyIssued || Number(form.qtyIssued) <= 0) e.qtyIssued = true;
     if (!form.issueDate) e.issueDate = true;
     setFormErrors(e);

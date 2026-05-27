@@ -146,6 +146,10 @@ function SellingSection({ toast, canExportImport = true }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.itemCode) { toast?.("Item is required", "error"); return; }
+    if (!formData.unitPrice || isNaN(Number(formData.unitPrice)) || Number(formData.unitPrice) <= 0) {
+      toast?.("Valid unit price is required", "error"); return;
+    }
     try {
       setLoading(true);
       const payload = { ...formData, listType: "selling" };
@@ -482,6 +486,10 @@ function PurchaseSection({ toast, canExportImport = true }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.itemCode) { toast?.("Item is required", "error"); return; }
+    if (!formData.unitPrice || isNaN(Number(formData.unitPrice)) || Number(formData.unitPrice) <= 0) {
+      toast?.("Valid unit price is required", "error"); return;
+    }
     try {
       setLoading(true);
       const payload = { ...formData, listType: "purchase" };

@@ -232,12 +232,32 @@ export default function PrintingDetailMaster({ toast, canExportImport = true }) 
 
   const submit = async () => {
     const err = {};
-    if (!entry.itemName) err.itemName = true;
-    if (!entry.companyName) err.companyName = true;
+    if (!entry.itemName) {
+      err.itemName = true;
+    } else {
+      const itemExists = fgItems.some(
+        (i) => (i.name || i.itemName || "").toLowerCase() === entry.itemName.toLowerCase()
+      );
+      if (!itemExists) {
+        err.itemName = true;
+        toast(`Item "${entry.itemName}" not found in Item Master`, "error");
+      }
+    }
+    if (!entry.companyName) {
+      err.companyName = true;
+    } else {
+      const companyExists = companyMaster.some(
+        (c) => (c.name || "").toLowerCase() === entry.companyName.toLowerCase()
+      );
+      if (!companyExists) {
+        err.companyName = true;
+        toast(`Company "${entry.companyName}" not found in Company Master`, "error");
+      }
+    }
     setErrors(err);
 
     if (Object.keys(err).length > 0) {
-      toast("Item Name and Company Name are required", "error");
+      if (!err.itemName && !err.companyName) toast("Item Name and Company Name are required", "error");
       return;
     }
 

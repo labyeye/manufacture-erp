@@ -616,7 +616,17 @@ export default function SalesOrders(props) {
     const he = {};
     if (!header.orderDate) he.orderDate = true;
     if (!header.deliveryDate) he.deliveryDate = true;
-    if (!header.companyName) he.companyName = true;
+    if (!header.companyName) {
+      he.companyName = true;
+    } else {
+      const brandExists = brands.some(
+        (b) => (b.name || "").toLowerCase() === header.companyName.toLowerCase()
+      );
+      if (!brandExists) {
+        he.companyName = true;
+        toast(`Brand "${header.companyName}" not found in Brand Master`, "error");
+      }
+    }
     if (!header.companyCategory) he.companyCategory = true;
     setHeaderErrors(he);
 
