@@ -315,7 +315,17 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
   const submit = async () => {
     const he = {};
     if (!header.dispatchDate) he.dispatchDate = true;
-    if (!header.companyName) he.companyName = true;
+    if (!header.companyName) {
+      he.companyName = true;
+    } else {
+      const companyExists = companyMaster.some(
+        (c) => (c.name || "").toLowerCase() === header.companyName.toLowerCase()
+      );
+      if (!companyExists) {
+        he.companyName = true;
+        toast(`Company "${header.companyName}" not found in Company Master`, "error");
+      }
+    }
     setHeaderErrors(he);
 
     const allItemErrors = items.map((it) => {
@@ -323,17 +333,18 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
       if (!it.itemName) e.itemName = true;
       if (!it.qty) e.qty = true;
 
-      
-      const stockItem = (fgStock || []).find((s) => s.itemName === it.itemName);
-      if (!stockItem) {
-        e.itemName = true;
-        toast(`Item "${it.itemName}" not found in FG Stock`, "error");
-      } else if (Number(it.qty) > (stockItem.qty || 0)) {
-        e.qty = true;
-        toast(
-          `Insufficient stock for "${it.itemName}". Available: ${stockItem.qty || 0}`,
-          "error",
-        );
+      if (!editId) {
+        const stockItem = (fgStock || []).find((s) => s.itemName === it.itemName);
+        if (!stockItem) {
+          e.itemName = true;
+          toast(`Item "${it.itemName}" not found in FG Stock`, "error");
+        } else if (Number(it.qty) > (stockItem.qty || 0)) {
+          e.qty = true;
+          toast(
+            `Insufficient stock for "${it.itemName}". Available: ${stockItem.qty || 0}`,
+            "error",
+          );
+        }
       }
 
       return e;
