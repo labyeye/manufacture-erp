@@ -2902,12 +2902,18 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               style={{
                                 ...TD,
                                 color: "#888",
-                                whiteSpace: "normal",
-                                wordBreak: "break-word",
                                 maxWidth: 0,
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
                               }}
+                              title={r.itemsStr}
                             >
-                              {r.itemsStr}
+                              {(() => {
+                                const parts = r.itemsStr === "—" ? ["—"] : r.itemsStr.split(", ");
+                                if (parts.length <= 1) return r.itemsStr;
+                                return `${parts[0]}, +${parts.length - 1} more`;
+                              })()}
                             </td>
                             <td style={{ ...TD, color: "#888" }}>
                               {(r.so.orderDate || "").slice(0, 10) || "—"}
@@ -3216,12 +3222,18 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               style={{
                                 ...TD,
                                 color: "#888",
-                                whiteSpace: "normal",
-                                wordBreak: "break-word",
                                 maxWidth: 0,
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
                               }}
+                              title={r.itemsStr}
                             >
-                              {r.itemsStr}
+                              {(() => {
+                                const parts = r.itemsStr === "—" ? ["—"] : r.itemsStr.split(", ");
+                                if (parts.length <= 1) return r.itemsStr;
+                                return `${parts[0]}, +${parts.length - 1} more`;
+                              })()}
                             </td>
                             <td style={{ ...TD, color: "#888" }}>
                               {r.dispDate?.slice(0, 10) || "—"}

@@ -499,7 +499,21 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
             </div>
           ) : (
             <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, tableLayout: "fixed" }}>
+                <colgroup>
+                  <col style={{ width: 90 }} />
+                  <col style={{ width: 85 }} />
+                  <col style={{ width: 100 }} />
+                  <col style={{ width: "18%" }} />
+                  <col style={{ width: 100 }} />
+                  <col style={{ width: 80 }} />
+                  <col style={{ width: 65 }} />
+                  <col style={{ width: 70 }} />
+                  <col style={{ width: 110 }} />
+                  <col style={{ width: "15%" }} />
+                  <col style={{ width: 80 }} />
+                  <col style={{ width: 60 }} />
+                </colgroup>
                 <thead>
                   <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
                     {["Adj No", "Date", "Product Code", "Item Name", "Stock Type", "Type", "Qty", "Weight", "Before→After", "Reason", "By", ""].map((h) => (

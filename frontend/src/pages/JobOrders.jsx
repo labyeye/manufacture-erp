@@ -2083,8 +2083,21 @@ export default function JobOrders(props) {
                         width: "100%",
                         borderCollapse: "collapse",
                         fontSize: 13,
+                        tableLayout: "fixed",
                       }}
                     >
+                      <colgroup>
+                        <col style={{ width: 36 }} />
+                        <col style={{ width: 90 }} />
+                        <col style={{ width: 85 }} />
+                        <col style={{ width: 120 }} />
+                        <col style={{ width: "22%" }} />
+                        <col style={{ width: 70 }} />
+                        <col style={{ width: 100 }} />
+                        <col style={{ width: 80 }} />
+                        <col style={{ width: 100 }} />
+                        <col style={{ width: 110 }} />
+                      </colgroup>
                       <thead>
                         <tr
                           style={{
@@ -2268,11 +2281,11 @@ export default function JobOrders(props) {
                                 style={{
                                   padding: "11px 14px",
                                   color: "#94a3b8",
-                                  maxWidth: 180,
                                   overflow: "hidden",
                                   textOverflow: "ellipsis",
                                   whiteSpace: "nowrap",
                                 }}
+                                title={r.itemName}
                               >
                                 {r.itemName}
                               </td>
