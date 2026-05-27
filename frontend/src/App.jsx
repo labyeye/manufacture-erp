@@ -751,7 +751,7 @@ function AppInner({
             session={session}
             toast={showToast}
             refreshData={fetchMasters}
-            canCreate={tabPerms.canCreate && session.allowEditStock !== false}
+            canCreate={(tabPerms.canCreate || tabPerms.canEdit) && session.allowEditStock !== false}
             canDelete={tabPerms.canDelete && session.allowEditStock !== false}
           />
         );

@@ -84,6 +84,15 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  useEffect(() => {
+    const handleFocus = () => {
+      const storedToken = localStorage.getItem('token');
+      if (storedToken && storedToken !== 'undefined') refreshUser();
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, []);
+
   const logout = () => {
     setUser(null);
     setToken(null);
