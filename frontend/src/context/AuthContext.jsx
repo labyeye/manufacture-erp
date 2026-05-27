@@ -32,11 +32,15 @@ export const AuthProvider = ({ children }) => {
       if (storedToken && storedToken !== "undefined" && storedUser && storedUser !== "undefined") {
         try {
           const parsed = JSON.parse(storedUser);
-          setUser(parsed);
+          setUser(parsed);   // show UI immediately while we verify
           setToken(storedToken);
 
-          
-          await authAPI.me();
+          // Always fetch fresh permissions from server on app load
+          const data = await authAPI.me();
+          if (data?.user) {
+            setUser(data.user);
+            localStorage.setItem('user', JSON.stringify(data.user));
+          }
         } catch (error) {
           console.error('Token verification failed:', error);
           logout();
