@@ -761,7 +761,7 @@ export default function ProductionUpdate({
               <select
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                style={{ padding: "7px 10px", background: C.card, border: `1px solid ${C.border}`, borderRadius: 6, color: searchTerm ? C.text : "#666", fontSize: 12 }}
+                style={{ padding: "7px 10px", background: C.card, border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12 }}
               >
                 <option value="">All JO#</option>
                 {[...new Set((jobOrders || []).map(jo => jo.joNo).filter(Boolean))].sort().map(n => <option key={n} value={n}>{n}</option>)}
@@ -769,7 +769,7 @@ export default function ProductionUpdate({
               <select
                 value={filterClient}
                 onChange={(e) => setFilterClient(e.target.value)}
-                style={{ padding: "7px 10px", background: C.card, border: `1px solid ${C.border}`, borderRadius: 6, color: filterClient ? C.text : "#666", fontSize: 12 }}
+                style={{ padding: "7px 10px", background: C.card, border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12 }}
               >
                 <option value="">All Clients</option>
                 {[...new Set((jobOrders || []).map(jo => jo.companyName).filter(Boolean))].sort().map(n => <option key={n} value={n}>{n}</option>)}
@@ -777,7 +777,7 @@ export default function ProductionUpdate({
               <select
                 value={filterItem}
                 onChange={(e) => setFilterItem(e.target.value)}
-                style={{ padding: "7px 10px", background: C.card, border: `1px solid ${C.border}`, borderRadius: 6, color: filterItem ? C.text : "#666", fontSize: 12 }}
+                style={{ padding: "7px 10px", background: C.card, border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12 }}
               >
                 <option value="">All Items</option>
                 {[...new Set((jobOrders || []).map(jo => jo.itemName).filter(Boolean))].sort().map(n => <option key={n} value={n}>{n}</option>)}
@@ -785,7 +785,7 @@ export default function ProductionUpdate({
               <select
                 value={filterStage}
                 onChange={(e) => setFilterStage(e.target.value)}
-                style={{ padding: "7px 10px", background: C.card, border: `1px solid ${C.border}`, borderRadius: 6, color: filterStage ? C.text : "#666", fontSize: 12 }}
+                style={{ padding: "7px 10px", background: C.card, border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12 }}
               >
                 <option value="">All Stages</option>
                 {["Printing", "Varnish", "Lamination", "Die Cutting", "Formation", "Manual Formation"].map(s => <option key={s} value={s}>{s}</option>)}

@@ -1293,7 +1293,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
             <select
               value={filterCompany}
               onChange={(e) => setFilterCompany(e.target.value)}
-              style={{ padding: "6px 10px", background: "#0c0c0e", border: "1px solid #2a2a2e", borderRadius: 6, color: filterCompany ? "#fff" : "#666", fontSize: 12 }}
+              style={{ padding: "6px 10px", background: "#0c0c0e", border: "1px solid #2a2a2e", borderRadius: 6, color: "#fff", fontSize: 12 }}
             >
               <option value="">All Companies</option>
               {[...new Set((dispatch || []).map(r => r.companyName).filter(Boolean))].sort().map(n => <option key={n} value={n}>{n}</option>)}
@@ -1301,7 +1301,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
             <select
               value={filterVehicle}
               onChange={(e) => setFilterVehicle(e.target.value)}
-              style={{ padding: "6px 10px", background: "#0c0c0e", border: "1px solid #2a2a2e", borderRadius: 6, color: filterVehicle ? "#fff" : "#666", fontSize: 12 }}
+              style={{ padding: "6px 10px", background: "#0c0c0e", border: "1px solid #2a2a2e", borderRadius: 6, color: "#fff", fontSize: 12 }}
             >
               <option value="">All Vehicles</option>
               {[...new Set((dispatch || []).map(r => r.vehicleNo).filter(Boolean))].sort().map(n => <option key={n} value={n}>{n}</option>)}

@@ -1709,7 +1709,7 @@ export default function SalesOrders(props) {
               <select
                 value={filterClient}
                 onChange={(e) => setFilterClient(e.target.value)}
-                style={{ padding: "6px 10px", background: "#0c0c0e", border: `1px solid ${C.border}`, borderRadius: 6, color: filterClient ? "#fff" : "#666", fontSize: 12 }}
+                style={{ padding: "6px 10px", background: "#0c0c0e", border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12 }}
               >
                 <option value="">All Clients</option>
                 {[...new Set((salesOrders || []).map(r => r.companyName || r.clientName).filter(Boolean))].sort().map(n => <option key={n} value={n}>{n}</option>)}
@@ -1717,7 +1717,7 @@ export default function SalesOrders(props) {
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                style={{ padding: "6px 10px", background: "#0c0c0e", border: `1px solid ${C.border}`, borderRadius: 6, color: filterStatus ? "#fff" : "#666", fontSize: 12 }}
+                style={{ padding: "6px 10px", background: "#0c0c0e", border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12 }}
               >
                 <option value="">All Statuses</option>
                 {["Open", "In Production", "Completed", "Closed", "Cancelled", "Partial"].map(s => <option key={s} value={s}>{s}</option>)}

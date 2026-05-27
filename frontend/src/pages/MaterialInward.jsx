@@ -2142,7 +2142,7 @@ export default function MaterialInward({
                   <select
                     value={filterVendor}
                     onChange={(e) => setFilterVendor(e.target.value)}
-                    style={{ padding: "6px 10px", background: "#0c0c0e", border: "1px solid #2a2a2e", borderRadius: 6, color: filterVendor ? "#fff" : "#666", fontSize: 12 }}
+                    style={{ padding: "6px 10px", background: "#0c0c0e", border: "1px solid #2a2a2e", borderRadius: 6, color: "#fff", fontSize: 12 }}
                   >
                     <option value="">All Vendors</option>
                     {[...new Set((inward || []).map(r => r.vendorName).filter(Boolean))].sort().map(n => <option key={n} value={n}>{n}</option>)}
@@ -2150,7 +2150,7 @@ export default function MaterialInward({
                   <select
                     value={filterLocation}
                     onChange={(e) => setFilterLocation(e.target.value)}
-                    style={{ padding: "6px 10px", background: "#0c0c0e", border: "1px solid #2a2a2e", borderRadius: 6, color: filterLocation ? "#fff" : "#666", fontSize: 12 }}
+                    style={{ padding: "6px 10px", background: "#0c0c0e", border: "1px solid #2a2a2e", borderRadius: 6, color: "#fff", fontSize: 12 }}
                   >
                     <option value="">All Locations</option>
                     {LOCATIONS.map((l) => <option key={l} value={l}>{l}</option>)}
