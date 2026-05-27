@@ -522,7 +522,7 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
                         <td style={{ padding: "10px 12px", color: C.muted, whiteSpace: "nowrap" }}>{fmtDate(a.date)}</td>
                         <td style={{ padding: "10px 12px", color: "#6366f1", fontWeight: 600 }}>{a.productCode}</td>
                         <td style={{ padding: "10px 12px", color: C.text, maxWidth: 200 }}>
-                          <div style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", wordBreak: "break-word", lineHeight: 1.4 }}>{a.itemName}</div>
+                          <div style={{ display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden", wordBreak: "break-word", lineHeight: 1.4 }}>{a.itemName}</div>
                         </td>
                         <td style={{ padding: "10px 12px" }}>
                           <span style={{ background: sc.bg, color: sc.text, borderRadius: 5, padding: "3px 8px", fontSize: 11, fontWeight: 600 }}>{a.stockType}</span>
@@ -543,7 +543,7 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
                           ) : null}
                         </td>
                         <td style={{ padding: "10px 12px", color: C.muted, maxWidth: 160 }}>
-                          <div style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", wordBreak: "break-word", lineHeight: 1.4 }}>{a.reason || "—"}</div>
+                          <div style={{ display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden", wordBreak: "break-word", lineHeight: 1.4 }}>{a.reason || "—"}</div>
                         </td>
                         <td style={{ padding: "10px 12px", color: C.muted, fontSize: 12 }}>{a.createdBy || "—"}</td>
                         <td style={{ padding: "10px 12px" }}>

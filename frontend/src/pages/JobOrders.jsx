@@ -2273,7 +2273,7 @@ export default function JobOrders(props) {
                               >
                                 <div style={{
                                   display: "-webkit-box",
-                                  WebkitLineClamp: 2,
+                                  WebkitLineClamp: 3,
                                   WebkitBoxOrient: "vertical",
                                   overflow: "hidden",
                                   wordBreak: "break-word",

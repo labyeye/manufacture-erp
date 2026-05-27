@@ -2906,7 +2906,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 whiteSpace: "normal",
                               }}
                             >
-                              <div style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", wordBreak: "break-word", lineHeight: 1.4 }}>
+                              <div style={{ display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden", wordBreak: "break-word", lineHeight: 1.4 }}>
                                 {r.itemsStr}
                               </div>
                             </td>
@@ -3221,7 +3221,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 whiteSpace: "normal",
                               }}
                             >
-                              <div style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", wordBreak: "break-word", lineHeight: 1.4 }}>
+                              <div style={{ display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden", wordBreak: "break-word", lineHeight: 1.4 }}>
                                 {r.itemsStr}
                               </div>
                             </td>
