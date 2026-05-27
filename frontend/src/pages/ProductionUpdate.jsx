@@ -69,6 +69,9 @@ export default function ProductionUpdate({
   const [searchTerm, setSearchTerm] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [filterClient, setFilterClient] = useState("");
+  const [filterItem, setFilterItem] = useState("");
+  const [filterStage, setFilterStage] = useState("");
   const [editingEntry, setEditingEntry] = useState(null);
 
   const fetchJobOrders = async () => {
@@ -757,7 +760,7 @@ export default function ProductionUpdate({
             >
               <div style={{ position: "relative" }}>
                 <input
-                  placeholder="Filter by JO# or stage..."
+                  placeholder="Filter by JO# or company..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   style={{
@@ -767,10 +770,30 @@ export default function ProductionUpdate({
                     background: C.card,
                     color: C.text,
                     fontSize: 13,
-                    width: 240,
+                    width: 200,
                   }}
                 />
               </div>
+              <input
+                placeholder="Filter by client..."
+                value={filterClient}
+                onChange={(e) => setFilterClient(e.target.value)}
+                style={{ padding: "7px 10px", background: C.card, border: `1px solid ${C.border}`, borderRadius: 6, color: C.text, fontSize: 12, width: 150 }}
+              />
+              <input
+                placeholder="Filter by item..."
+                value={filterItem}
+                onChange={(e) => setFilterItem(e.target.value)}
+                style={{ padding: "7px 10px", background: C.card, border: `1px solid ${C.border}`, borderRadius: 6, color: C.text, fontSize: 12, width: 150 }}
+              />
+              <select
+                value={filterStage}
+                onChange={(e) => setFilterStage(e.target.value)}
+                style={{ padding: "7px 10px", background: C.card, border: `1px solid ${C.border}`, borderRadius: 6, color: filterStage ? C.text : "#666", fontSize: 12 }}
+              >
+                <option value="">All Stages</option>
+                {["Printing", "Varnish", "Lamination", "Die Cutting", "Formation", "Manual Formation"].map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
 
               <div
                 style={{
@@ -824,10 +847,13 @@ export default function ProductionUpdate({
           {(() => {
             const allRecs = [];
             jobOrders.forEach(jo => {
-              if (searchTerm && !jo.joNo.toLowerCase().includes(searchTerm.toLowerCase()) && !jo.companyName.toLowerCase().includes(searchTerm.toLowerCase())) return;
+              if (searchTerm && !jo.joNo.toLowerCase().includes(searchTerm.toLowerCase()) && !(jo.companyName || "").toLowerCase().includes(searchTerm.toLowerCase())) return;
+              if (filterClient && !(jo.companyName || "").toLowerCase().includes(filterClient.toLowerCase())) return;
+              if (filterItem && !(jo.itemName || "").toLowerCase().includes(filterItem.toLowerCase())) return;
               (jo.stageHistory || []).forEach(r => {
                 if (dateFrom && r.date < dateFrom) return;
                 if (dateTo && r.date > dateTo) return;
+                if (filterStage && r.stage !== filterStage) return;
                 allRecs.push({ ...r, jo });
               });
             });
@@ -875,7 +901,7 @@ export default function ProductionUpdate({
                             <tr key={r._id || i} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)" }}>
                               <td style={{ padding: "11px 14px", fontWeight: 700, color: "#facc15", whiteSpace: "nowrap" }}>{jo.joNo}</td>
                               <td style={{ padding: "11px 14px", color: C.muted, fontSize: 12 }}>{jo.companyName}</td>
-                              <td style={{ padding: "11px 14px", color: "#94a3b8", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{jo.itemName}</td>
+                              <td style={{ padding: "11px 14px", color: "#94a3b8" }}>{jo.itemName}</td>
                               <td style={{ padding: "11px 14px" }}><span style={{ padding: "3px 10px", borderRadius: 4, fontSize: 11, fontWeight: 600, background: "#FF7F1122", color: "#FF7F11", border: "1px solid #FF7F1144" }}>{r.stage}</span></td>
                               <td style={{ padding: "11px 14px", color: C.muted, whiteSpace: "nowrap", fontSize: 12 }}>{fmtDate(r.date)}</td>
                               <td style={{ padding: "11px 14px", fontWeight: 700, color: "#10b981" }}>{fmt(r.qtyCompleted)}</td>

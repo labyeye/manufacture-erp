@@ -496,6 +496,9 @@ export default function JobOrders(props) {
 
   const [drDateFrom, setDrDateFrom] = useState("");
   const [drDateTo, setDrDateTo] = useState("");
+  const [filterClient, setFilterClient] = useState("");
+  const [filterItem, setFilterItem] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
 
   const soOptions = useMemo(
     () =>
@@ -1889,6 +1892,26 @@ export default function JobOrders(props) {
               dateTo={drDateTo}
               setDateTo={setDrDateTo}
             />
+            <input
+              placeholder="Filter by client..."
+              value={filterClient}
+              onChange={(e) => setFilterClient(e.target.value)}
+              style={{ padding: "6px 10px", background: "transparent", border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12, width: 150 }}
+            />
+            <input
+              placeholder="Filter by item..."
+              value={filterItem}
+              onChange={(e) => setFilterItem(e.target.value)}
+              style={{ padding: "6px 10px", background: "transparent", border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12, width: 150 }}
+            />
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              style={{ padding: "6px 10px", background: "#0c0c0e", border: `1px solid ${C.border}`, borderRadius: 6, color: filterStatus ? "#fff" : "#666", fontSize: 12 }}
+            >
+              <option value="">All Statuses</option>
+              {["Open", "In Progress", "Completed", "Cancelled"].map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
             <span style={{ fontSize: 12, color: C.muted, marginLeft: "auto" }}>
               {jobOrders.length} jobs
             </span>
@@ -1899,12 +1922,14 @@ export default function JobOrders(props) {
               .slice()
               .sort((a, b) => new Date(b.createdAt || b.jobcardDate || 0) - new Date(a.createdAt || a.jobcardDate || 0))
               .filter((r) => {
-                if (!drDateFrom && !drDateTo) return true;
-                const d = r.jobcardDate
-                  ? new Date(r.jobcardDate).toISOString().slice(0, 10)
-                  : "";
-                if (drDateFrom && d < drDateFrom) return false;
-                if (drDateTo && d > drDateTo) return false;
+                if (drDateFrom || drDateTo) {
+                  const d = r.jobcardDate ? new Date(r.jobcardDate).toISOString().slice(0, 10) : "";
+                  if (drDateFrom && d < drDateFrom) return false;
+                  if (drDateTo && d > drDateTo) return false;
+                }
+                if (filterClient && !(r.companyName || "").toLowerCase().includes(filterClient.toLowerCase())) return false;
+                if (filterItem && !(r.itemName || "").toLowerCase().includes(filterItem.toLowerCase())) return false;
+                if (filterStatus && r.status !== filterStatus) return false;
                 return true;
               });
             const filteredIds = filteredJOs.map((r) => r._id || r.id);

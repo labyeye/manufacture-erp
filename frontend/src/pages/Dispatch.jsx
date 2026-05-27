@@ -62,6 +62,8 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
   const [showReturnModal, setShowReturnModal] = useState(false);
   const [drDateFrom, setDrDateFrom] = useState("");
   const [drDateTo, setDrDateTo] = useState("");
+  const [filterCompany, setFilterCompany] = useState("");
+  const [filterVehicle, setFilterVehicle] = useState("");
   const [editId, setEditId] = useState(null);
 
   // Material Return state
@@ -315,6 +317,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
   const submit = async () => {
     const he = {};
     if (!header.dispatchDate) he.dispatchDate = true;
+    if (!header.vehicleNo) he.vehicleNo = true;
     if (!header.companyName) {
       he.companyName = true;
     } else {
@@ -1192,7 +1195,27 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
               .filter((d) => d.type === "Return")
               .slice()
               .sort((a, b) => new Date(b.createdAt || b.date || 0) - new Date(a.createdAt || a.date || 0));
-            const activeRecords = recordsTab === "return" ? returnRecords : dispatchRecords;
+            const filteredDispatch = dispatchRecords.filter(r => {
+              if (filterCompany && !r.companyName?.toLowerCase().includes(filterCompany.toLowerCase())) return false;
+              if (filterVehicle && !(r.vehicleNo || "").toLowerCase().includes(filterVehicle.toLowerCase())) return false;
+              if (drDateFrom || drDateTo) {
+                const d = r.date ? new Date(r.date).toISOString().slice(0, 10) : "";
+                if (drDateFrom && d < drDateFrom) return false;
+                if (drDateTo && d > drDateTo) return false;
+              }
+              return true;
+            });
+            const filteredReturn = returnRecords.filter(r => {
+              if (filterCompany && !r.companyName?.toLowerCase().includes(filterCompany.toLowerCase())) return false;
+              if (filterVehicle && !(r.vehicleNo || "").toLowerCase().includes(filterVehicle.toLowerCase())) return false;
+              if (drDateFrom || drDateTo) {
+                const d = r.date ? new Date(r.date).toISOString().slice(0, 10) : "";
+                if (drDateFrom && d < drDateFrom) return false;
+                if (drDateTo && d > drDateTo) return false;
+              }
+              return true;
+            });
+            const activeRecords = recordsTab === "return" ? filteredReturn : filteredDispatch;
             const now = new Date();
             const thisMonthCount = dispatchRecords.filter((d) => {
               const dt = new Date(d.date || d.createdAt || 0);
@@ -1266,6 +1289,18 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
               setDateFrom={setDrDateFrom}
               dateTo={drDateTo}
               setDateTo={setDrDateTo}
+            />
+            <input
+              placeholder="Filter by company..."
+              value={filterCompany}
+              onChange={(e) => setFilterCompany(e.target.value)}
+              style={{ padding: "6px 10px", background: "transparent", border: "1px solid #2a2a2e", borderRadius: 6, color: "#fff", fontSize: 12, width: 160 }}
+            />
+            <input
+              placeholder="Filter by vehicle..."
+              value={filterVehicle}
+              onChange={(e) => setFilterVehicle(e.target.value)}
+              style={{ padding: "6px 10px", background: "transparent", border: "1px solid #2a2a2e", borderRadius: 6, color: "#fff", fontSize: 12, width: 140 }}
             />
             <span style={{ fontSize: 12, color: C.muted, marginLeft: "auto" }}>
               {activeRecords.length} records

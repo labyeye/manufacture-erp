@@ -177,6 +177,8 @@ export default function SalesOrders(props) {
   const [showModal, setShowModal] = useState(false);
   const [drDateFrom, setDrDateFrom] = useState("");
   const [drDateTo, setDrDateTo] = useState("");
+  const [filterClient, setFilterClient] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
   const [editId, setEditId] = useState(null);
   const [highlightId, setHighlightId] = useState(null);
 
@@ -1704,6 +1706,20 @@ export default function SalesOrders(props) {
                 dateTo={drDateTo}
                 setDateTo={setDrDateTo}
               />
+              <input
+                placeholder="Filter by client..."
+                value={filterClient}
+                onChange={(e) => setFilterClient(e.target.value)}
+                style={{ padding: "6px 10px", background: "transparent", border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12, width: 160 }}
+              />
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                style={{ padding: "6px 10px", background: "#0c0c0e", border: `1px solid ${C.border}`, borderRadius: 6, color: filterStatus ? "#fff" : "#666", fontSize: 12 }}
+              >
+                <option value="">All Statuses</option>
+                {["Open", "In Production", "Completed", "Closed", "Cancelled", "Partial"].map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
               <span
                 style={{ fontSize: 12, color: C.muted, marginLeft: "auto" }}
               >
@@ -1714,10 +1730,13 @@ export default function SalesOrders(props) {
 
           {(() => {
             const filteredSOs = (salesOrders || []).slice().sort((a, b) => new Date(b.createdAt || b.orderDate || 0) - new Date(a.createdAt || a.orderDate || 0)).filter(r => {
-              if (!drDateFrom && !drDateTo) return true;
-              const d = r.orderDate ? new Date(r.orderDate).toISOString().slice(0, 10) : "";
-              if (drDateFrom && d < drDateFrom) return false;
-              if (drDateTo && d > drDateTo) return false;
+              if (drDateFrom || drDateTo) {
+                const d = r.orderDate ? new Date(r.orderDate).toISOString().slice(0, 10) : "";
+                if (drDateFrom && d < drDateFrom) return false;
+                if (drDateTo && d > drDateTo) return false;
+              }
+              if (filterClient && !(r.companyName || r.clientName || "").toLowerCase().includes(filterClient.toLowerCase())) return false;
+              if (filterStatus && r.status !== filterStatus) return false;
               return true;
             });
             const filteredIds = filteredSOs.map((r) => r._id);

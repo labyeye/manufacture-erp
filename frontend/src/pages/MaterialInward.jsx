@@ -169,6 +169,8 @@ export default function MaterialInward({
   const [highlightId, setHighlightId] = useState(null);
   const [drDateFrom, setDrDateFrom] = useState("");
   const [drDateTo, setDrDateTo] = useState("");
+  const [filterVendor, setFilterVendor] = useState("");
+  const [filterLocation, setFilterLocation] = useState("");
 
   const rmItems = useMemo(() => {
     const rmCat = Object.values(categoryMaster || {}).find(
@@ -788,9 +790,15 @@ export default function MaterialInward({
         return d >= drDateFrom && d <= drDateTo;
       });
     }
+    if (filterVendor) {
+      list = list.filter((r) => (r.vendorName || "").toLowerCase().includes(filterVendor.toLowerCase()));
+    }
+    if (filterLocation) {
+      list = list.filter((r) => (r.location || "") === filterLocation);
+    }
     list.sort((a, b) => new Date(b.createdAt || b.inwardDate || 0) - new Date(a.createdAt || a.inwardDate || 0));
     return list;
-  }, [inward, search, drDateFrom, drDateTo]);
+  }, [inward, search, drDateFrom, drDateTo, filterVendor, filterLocation]);
 
   const inwardSummary = useMemo(() => {
     const list = filteredInwards;
@@ -2131,6 +2139,20 @@ export default function MaterialInward({
                     dateTo={drDateTo}
                     setDateTo={setDrDateTo}
                   />
+                  <input
+                    placeholder="Filter by vendor..."
+                    value={filterVendor}
+                    onChange={(e) => setFilterVendor(e.target.value)}
+                    style={{ padding: "6px 10px", background: "transparent", border: "1px solid #2a2a2e", borderRadius: 6, color: "#fff", fontSize: 12, width: 160 }}
+                  />
+                  <select
+                    value={filterLocation}
+                    onChange={(e) => setFilterLocation(e.target.value)}
+                    style={{ padding: "6px 10px", background: "#0c0c0e", border: "1px solid #2a2a2e", borderRadius: 6, color: filterLocation ? "#fff" : "#666", fontSize: 12 }}
+                  >
+                    <option value="">All Locations</option>
+                    {LOCATIONS.map((l) => <option key={l} value={l}>{l}</option>)}
+                  </select>
                   <div style={{ flex: 1 }} />
                   <span style={{ fontSize: 12, color: C.muted }}>
                     {listData.length} records found
@@ -2427,7 +2449,7 @@ export default function MaterialInward({
                               }}
                               title={r.invoiceNo || ""}
                             >
-                              {r.invoiceNo ? truncate(r.invoiceNo, 14) : "—"}
+                              {r.invoiceNo || "—"}
                             </td>
                             <td style={{ padding: "0 14px", fontSize: 12 }}>
                               {r.location ? (
