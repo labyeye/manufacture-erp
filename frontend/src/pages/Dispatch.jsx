@@ -530,8 +530,8 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                     <div>${it.productCode || "—"}</div>
                     ${it.companyCode ? `<div style="font-size: 9px; color: #666; margin-top: 2px;">Company: ${it.companyCode}</div>` : ""}
                   </td>
-                  <td style="text-align: center;">${it.noOfBox || "—"}</td>
-                  <td style="text-align: center;">${it.pcsPerBox || "—"}</td>
+                  <td style="text-align: center;">${it.noOfBox > 0 ? it.noOfBox : "—"}</td>
+                  <td style="text-align: center;">${it.pcsPerBox > 0 ? it.pcsPerBox : "—"}</td>
                   <td class="col-qty">${it.qty} ${it.unit || "pcs"}</td>
                 </tr>
               `,
@@ -1196,8 +1196,8 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
               .slice()
               .sort((a, b) => new Date(b.createdAt || b.date || 0) - new Date(a.createdAt || a.date || 0));
             const filteredDispatch = dispatchRecords.filter(r => {
-              if (filterCompany && !r.companyName?.toLowerCase().includes(filterCompany.toLowerCase())) return false;
-              if (filterVehicle && !(r.vehicleNo || "").toLowerCase().includes(filterVehicle.toLowerCase())) return false;
+              if (filterCompany && r.companyName !== filterCompany) return false;
+              if (filterVehicle && (r.vehicleNo || "") !== filterVehicle) return false;
               if (drDateFrom || drDateTo) {
                 const d = r.date ? new Date(r.date).toISOString().slice(0, 10) : "";
                 if (drDateFrom && d < drDateFrom) return false;
@@ -1206,8 +1206,8 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
               return true;
             });
             const filteredReturn = returnRecords.filter(r => {
-              if (filterCompany && !r.companyName?.toLowerCase().includes(filterCompany.toLowerCase())) return false;
-              if (filterVehicle && !(r.vehicleNo || "").toLowerCase().includes(filterVehicle.toLowerCase())) return false;
+              if (filterCompany && r.companyName !== filterCompany) return false;
+              if (filterVehicle && (r.vehicleNo || "") !== filterVehicle) return false;
               if (drDateFrom || drDateTo) {
                 const d = r.date ? new Date(r.date).toISOString().slice(0, 10) : "";
                 if (drDateFrom && d < drDateFrom) return false;
@@ -1290,18 +1290,22 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
               dateTo={drDateTo}
               setDateTo={setDrDateTo}
             />
-            <input
-              placeholder="Filter by company..."
+            <select
               value={filterCompany}
               onChange={(e) => setFilterCompany(e.target.value)}
-              style={{ padding: "6px 10px", background: "transparent", border: "1px solid #2a2a2e", borderRadius: 6, color: "#fff", fontSize: 12, width: 160 }}
-            />
-            <input
-              placeholder="Filter by vehicle..."
+              style={{ padding: "6px 10px", background: "#0c0c0e", border: "1px solid #2a2a2e", borderRadius: 6, color: filterCompany ? "#fff" : "#666", fontSize: 12 }}
+            >
+              <option value="">All Companies</option>
+              {[...new Set((dispatch || []).map(r => r.companyName).filter(Boolean))].sort().map(n => <option key={n} value={n}>{n}</option>)}
+            </select>
+            <select
               value={filterVehicle}
               onChange={(e) => setFilterVehicle(e.target.value)}
-              style={{ padding: "6px 10px", background: "transparent", border: "1px solid #2a2a2e", borderRadius: 6, color: "#fff", fontSize: 12, width: 140 }}
-            />
+              style={{ padding: "6px 10px", background: "#0c0c0e", border: "1px solid #2a2a2e", borderRadius: 6, color: filterVehicle ? "#fff" : "#666", fontSize: 12 }}
+            >
+              <option value="">All Vehicles</option>
+              {[...new Set((dispatch || []).map(r => r.vehicleNo).filter(Boolean))].sort().map(n => <option key={n} value={n}>{n}</option>)}
+            </select>
             <span style={{ fontSize: 12, color: C.muted, marginLeft: "auto" }}>
               {activeRecords.length} records
             </span>

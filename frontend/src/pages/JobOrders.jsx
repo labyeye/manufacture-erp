@@ -1892,18 +1892,14 @@ export default function JobOrders(props) {
               dateTo={drDateTo}
               setDateTo={setDrDateTo}
             />
-            <input
-              placeholder="Filter by client..."
+            <select
               value={filterClient}
               onChange={(e) => setFilterClient(e.target.value)}
-              style={{ padding: "6px 10px", background: "transparent", border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12, width: 150 }}
-            />
-            <input
-              placeholder="Filter by item..."
-              value={filterItem}
-              onChange={(e) => setFilterItem(e.target.value)}
-              style={{ padding: "6px 10px", background: "transparent", border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12, width: 150 }}
-            />
+              style={{ padding: "6px 10px", background: "#0c0c0e", border: `1px solid ${C.border}`, borderRadius: 6, color: filterClient ? "#fff" : "#666", fontSize: 12 }}
+            >
+              <option value="">All Clients</option>
+              {[...new Set((jobOrders || []).map(r => r.companyName).filter(Boolean))].sort().map(n => <option key={n} value={n}>{n}</option>)}
+            </select>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
@@ -1911,6 +1907,14 @@ export default function JobOrders(props) {
             >
               <option value="">All Statuses</option>
               {["Open", "In Progress", "Completed", "Cancelled"].map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+            <select
+              value={filterItem}
+              onChange={(e) => setFilterItem(e.target.value)}
+              style={{ padding: "6px 10px", background: "#0c0c0e", border: `1px solid ${C.border}`, borderRadius: 6, color: filterItem ? "#fff" : "#666", fontSize: 12 }}
+            >
+              <option value="">All Items</option>
+              {[...new Set((jobOrders || []).map(r => r.itemName).filter(Boolean))].sort().map(n => <option key={n} value={n}>{n}</option>)}
             </select>
             <span style={{ fontSize: 12, color: C.muted, marginLeft: "auto" }}>
               {jobOrders.length} jobs
@@ -1927,8 +1931,8 @@ export default function JobOrders(props) {
                   if (drDateFrom && d < drDateFrom) return false;
                   if (drDateTo && d > drDateTo) return false;
                 }
-                if (filterClient && !(r.companyName || "").toLowerCase().includes(filterClient.toLowerCase())) return false;
-                if (filterItem && !(r.itemName || "").toLowerCase().includes(filterItem.toLowerCase())) return false;
+                if (filterClient && (r.companyName || "") !== filterClient) return false;
+                if (filterItem && (r.itemName || "") !== filterItem) return false;
                 if (filterStatus && r.status !== filterStatus) return false;
                 return true;
               });

@@ -1706,12 +1706,14 @@ export default function SalesOrders(props) {
                 dateTo={drDateTo}
                 setDateTo={setDrDateTo}
               />
-              <input
-                placeholder="Filter by client..."
+              <select
                 value={filterClient}
                 onChange={(e) => setFilterClient(e.target.value)}
-                style={{ padding: "6px 10px", background: "transparent", border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12, width: 160 }}
-              />
+                style={{ padding: "6px 10px", background: "#0c0c0e", border: `1px solid ${C.border}`, borderRadius: 6, color: filterClient ? "#fff" : "#666", fontSize: 12 }}
+              >
+                <option value="">All Clients</option>
+                {[...new Set((salesOrders || []).map(r => r.companyName || r.clientName).filter(Boolean))].sort().map(n => <option key={n} value={n}>{n}</option>)}
+              </select>
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
@@ -1735,7 +1737,7 @@ export default function SalesOrders(props) {
                 if (drDateFrom && d < drDateFrom) return false;
                 if (drDateTo && d > drDateTo) return false;
               }
-              if (filterClient && !(r.companyName || r.clientName || "").toLowerCase().includes(filterClient.toLowerCase())) return false;
+              if (filterClient && (r.companyName || r.clientName || "") !== filterClient) return false;
               if (filterStatus && r.status !== filterStatus) return false;
               return true;
             });

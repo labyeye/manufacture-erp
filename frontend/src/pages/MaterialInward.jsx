@@ -791,7 +791,7 @@ export default function MaterialInward({
       });
     }
     if (filterVendor) {
-      list = list.filter((r) => (r.vendorName || "").toLowerCase().includes(filterVendor.toLowerCase()));
+      list = list.filter((r) => r.vendorName === filterVendor);
     }
     if (filterLocation) {
       list = list.filter((r) => (r.location || "") === filterLocation);
@@ -2139,12 +2139,14 @@ export default function MaterialInward({
                     dateTo={drDateTo}
                     setDateTo={setDrDateTo}
                   />
-                  <input
-                    placeholder="Filter by vendor..."
+                  <select
                     value={filterVendor}
                     onChange={(e) => setFilterVendor(e.target.value)}
-                    style={{ padding: "6px 10px", background: "transparent", border: "1px solid #2a2a2e", borderRadius: 6, color: "#fff", fontSize: 12, width: 160 }}
-                  />
+                    style={{ padding: "6px 10px", background: "#0c0c0e", border: "1px solid #2a2a2e", borderRadius: 6, color: filterVendor ? "#fff" : "#666", fontSize: 12 }}
+                  >
+                    <option value="">All Vendors</option>
+                    {[...new Set((inward || []).map(r => r.vendorName).filter(Boolean))].sort().map(n => <option key={n} value={n}>{n}</option>)}
+                  </select>
                   <select
                     value={filterLocation}
                     onChange={(e) => setFilterLocation(e.target.value)}

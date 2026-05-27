@@ -758,34 +758,30 @@ export default function ProductionUpdate({
                 alignItems: "center",
               }}
             >
-              <div style={{ position: "relative" }}>
-                <input
-                  placeholder="Filter by JO# or company..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  style={{
-                    padding: "8px 12px 8px 34px",
-                    borderRadius: 6,
-                    border: `1px solid ${C.border}`,
-                    background: C.card,
-                    color: C.text,
-                    fontSize: 13,
-                    width: 200,
-                  }}
-                />
-              </div>
-              <input
-                placeholder="Filter by client..."
+              <select
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{ padding: "7px 10px", background: C.card, border: `1px solid ${C.border}`, borderRadius: 6, color: searchTerm ? C.text : "#666", fontSize: 12 }}
+              >
+                <option value="">All JO#</option>
+                {[...new Set((jobOrders || []).map(jo => jo.joNo).filter(Boolean))].sort().map(n => <option key={n} value={n}>{n}</option>)}
+              </select>
+              <select
                 value={filterClient}
                 onChange={(e) => setFilterClient(e.target.value)}
-                style={{ padding: "7px 10px", background: C.card, border: `1px solid ${C.border}`, borderRadius: 6, color: C.text, fontSize: 12, width: 150 }}
-              />
-              <input
-                placeholder="Filter by item..."
+                style={{ padding: "7px 10px", background: C.card, border: `1px solid ${C.border}`, borderRadius: 6, color: filterClient ? C.text : "#666", fontSize: 12 }}
+              >
+                <option value="">All Clients</option>
+                {[...new Set((jobOrders || []).map(jo => jo.companyName).filter(Boolean))].sort().map(n => <option key={n} value={n}>{n}</option>)}
+              </select>
+              <select
                 value={filterItem}
                 onChange={(e) => setFilterItem(e.target.value)}
-                style={{ padding: "7px 10px", background: C.card, border: `1px solid ${C.border}`, borderRadius: 6, color: C.text, fontSize: 12, width: 150 }}
-              />
+                style={{ padding: "7px 10px", background: C.card, border: `1px solid ${C.border}`, borderRadius: 6, color: filterItem ? C.text : "#666", fontSize: 12 }}
+              >
+                <option value="">All Items</option>
+                {[...new Set((jobOrders || []).map(jo => jo.itemName).filter(Boolean))].sort().map(n => <option key={n} value={n}>{n}</option>)}
+              </select>
               <select
                 value={filterStage}
                 onChange={(e) => setFilterStage(e.target.value)}
@@ -847,9 +843,9 @@ export default function ProductionUpdate({
           {(() => {
             const allRecs = [];
             jobOrders.forEach(jo => {
-              if (searchTerm && !jo.joNo.toLowerCase().includes(searchTerm.toLowerCase()) && !(jo.companyName || "").toLowerCase().includes(searchTerm.toLowerCase())) return;
-              if (filterClient && !(jo.companyName || "").toLowerCase().includes(filterClient.toLowerCase())) return;
-              if (filterItem && !(jo.itemName || "").toLowerCase().includes(filterItem.toLowerCase())) return;
+              if (searchTerm && jo.joNo !== searchTerm) return;
+              if (filterClient && (jo.companyName || "") !== filterClient) return;
+              if (filterItem && (jo.itemName || "") !== filterItem) return;
               (jo.stageHistory || []).forEach(r => {
                 if (dateFrom && r.date < dateFrom) return;
                 if (dateTo && r.date > dateTo) return;
