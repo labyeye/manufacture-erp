@@ -76,9 +76,21 @@ exports.create = async (req, res) => {
       return res.status(400).json({ error: "Cannot determine stock type from product code. Code must start with RM, FG, or CG." });
     }
 
-    const stock = await findStockRecord(stockType, productCode, itemName);
+    let stock = await findStockRecord(stockType, productCode, itemName);
+
+    // If no stock record exists yet, create one with zero stock
     if (!stock) {
-      return res.status(404).json({ error: `Stock record not found for ${productCode} / ${itemName}` });
+      if (adjustmentType === "Outward") {
+        return res.status(400).json({ error: `No stock record found for "${itemName}". Cannot do Outward adjustment on an item with no stock.` });
+      }
+      if (stockType === "Raw Material") {
+        stock = new RawMaterialStock({ name: itemName, code: productCode.toUpperCase(), qty: 0, weight: 0 });
+      } else if (stockType === "Finished Goods") {
+        stock = new FGStock({ itemName, itemCode: productCode.toUpperCase(), qty: 0 });
+      } else if (stockType === "Consumable") {
+        stock = new ConsumableStock({ name: itemName, code: productCode.toUpperCase(), qty: 0 });
+      }
+      await stock.save();
     }
 
     const direction = adjustmentType === "Outward" ? -1 : 1;
