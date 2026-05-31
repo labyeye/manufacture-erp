@@ -279,7 +279,9 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
       const rate = k === "rate" ? +v : +(it.rate || 0);
       const gst = k === "gstRate" ? +v : +(it.gstRate || 0);
 
-      it.noOfBox = qty && ppb ? Math.ceil(qty / ppb).toString() : "";
+      if (k !== "noOfBox") {
+        it.noOfBox = qty && ppb ? Math.ceil(qty / ppb).toString() : (it.noOfBox || "");
+      }
       it.amount = qty && rate ? (qty * rate).toFixed(2) : "";
 
       const amt = Number(it.amount || 0);
@@ -1222,7 +1224,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
               return dt.getMonth() === now.getMonth() && dt.getFullYear() === now.getFullYear();
             }).length;
             const totalQty = dispatchRecords.reduce((s, d) => s + (d.items || []).reduce((si, it) => si + (Number(it.qty) || 0), 0), 0);
-            const totalValue = dispatchRecords.reduce((s, d) => s + (Number(d.totalWithTax) || Number(d.total) || 0), 0);
+            const totalValue = dispatchRecords.reduce((s, d) => s + (d.items || []).reduce((si, it) => si + (Number(it.totalWithTax) || 0), 0), 0);
             const fmtLakh = (n) => {
               if (n >= 10000000) return `₹${(n / 10000000).toFixed(2)}Cr`;
               if (n >= 100000) return `₹${(n / 100000).toFixed(2)}L`;
@@ -1290,22 +1292,22 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
               dateTo={drDateTo}
               setDateTo={setDrDateTo}
             />
-            <select
+            <AutocompleteInput
               value={filterCompany}
-              onChange={(e) => setFilterCompany(e.target.value)}
-              style={{ padding: "6px 10px", background: "#0c0c0e", border: "1px solid #2a2a2e", borderRadius: 6, color: "#fff", fontSize: 12 }}
-            >
-              <option value="">All Companies</option>
-              {[...new Set((dispatch || []).map(r => r.companyName).filter(Boolean))].sort().map(n => <option key={n} value={n}>{n}</option>)}
-            </select>
-            <select
+              onChange={(v) => setFilterCompany(v)}
+              suggestions={[...new Set((dispatch || []).map(r => r.companyName).filter(Boolean))].sort()}
+              placeholder="Filter by company..."
+              showAllOnFocus={true}
+              inputStyle={{ padding: "6px 10px", background: "#0c0c0e", border: "1px solid #2a2a2e", borderRadius: 6, color: "#fff", fontSize: 12, width: 180 }}
+            />
+            <AutocompleteInput
               value={filterVehicle}
-              onChange={(e) => setFilterVehicle(e.target.value)}
-              style={{ padding: "6px 10px", background: "#0c0c0e", border: "1px solid #2a2a2e", borderRadius: 6, color: "#fff", fontSize: 12 }}
-            >
-              <option value="">All Vehicles</option>
-              {[...new Set((dispatch || []).map(r => r.vehicleNo).filter(Boolean))].sort().map(n => <option key={n} value={n}>{n}</option>)}
-            </select>
+              onChange={(v) => setFilterVehicle(v)}
+              suggestions={[...new Set((dispatch || []).map(r => r.vehicleNo).filter(Boolean))].sort()}
+              placeholder="Filter by vehicle..."
+              showAllOnFocus={true}
+              inputStyle={{ padding: "6px 10px", background: "#0c0c0e", border: "1px solid #2a2a2e", borderRadius: 6, color: "#fff", fontSize: 12, width: 150 }}
+            />
             <span style={{ fontSize: 12, color: C.muted, marginLeft: "auto" }}>
               {activeRecords.length} records
             </span>

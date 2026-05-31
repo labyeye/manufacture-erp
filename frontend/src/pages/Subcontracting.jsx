@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Modal } from "../components/ui/BasicComponents";
+import { Modal, AutocompleteInput } from "../components/ui/BasicComponents";
 import { C } from "../constants/colors";
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -87,8 +87,8 @@ export default function Subcontracting({
   const [showReceiveModal, setShowReceiveModal] = useState(false);
   const [editId, setEditId] = useState(null);
   const [receiveId, setReceiveId] = useState(null);
-  const [filterStatus, setFilterStatus] = useState("All");
-  const [filterStage, setFilterStage] = useState("All");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [filterStage, setFilterStage] = useState("");
   const [search, setSearch] = useState("");
 
   const blankForm = {
@@ -257,8 +257,8 @@ export default function Subcontracting({
   const filteredRecords = useMemo(() => {
     return records
       .filter((r) => {
-        if (filterStatus !== "All" && r.status !== filterStatus) return false;
-        if (filterStage !== "All" && r.stage !== filterStage) return false;
+        if (filterStatus && r.status !== filterStatus) return false;
+        if (filterStage && r.stage !== filterStage) return false;
         if (search) {
           const q = search.toLowerCase();
           if (
@@ -758,26 +758,22 @@ export default function Subcontracting({
               placeholder="Search JO, vendor, stage..."
               style={{ ...inp, maxWidth: 220 }}
             />
-            <select
+            <AutocompleteInput
               value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              style={{ ...inp, width: "auto" }}
-            >
-              <option value="All">All Status</option>
-              {STATUS_OPTIONS.map((s) => (
-                <option key={s}>{s}</option>
-              ))}
-            </select>
-            <select
+              onChange={(v) => setFilterStatus(v)}
+              suggestions={STATUS_OPTIONS}
+              placeholder="Filter by status..."
+              showAllOnFocus={true}
+              inputStyle={{ ...inp, width: 160 }}
+            />
+            <AutocompleteInput
               value={filterStage}
-              onChange={(e) => setFilterStage(e.target.value)}
-              style={{ ...inp, width: "auto" }}
-            >
-              <option value="All">All Stages</option>
-              {STAGES.map((s) => (
-                <option key={s}>{s}</option>
-              ))}
-            </select>
+              onChange={(v) => setFilterStage(v)}
+              suggestions={STAGES}
+              placeholder="Filter by stage..."
+              showAllOnFocus={true}
+              inputStyle={{ ...inp, width: 160 }}
+            />
             <span style={{ fontSize: 12, color: "#555", marginLeft: "auto" }}>
               {filteredRecords.length} records
             </span>

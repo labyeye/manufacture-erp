@@ -6,6 +6,8 @@ const dispatchItemSchema = new mongoose.Schema({
   companyCode: String,
   qty: Number,
   unit: String,
+  pcsPerBox: Number,
+  noOfBox: Number,
   rate: Number,
   amount: Number,
   gstRate: Number,

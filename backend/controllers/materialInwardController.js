@@ -172,6 +172,7 @@ const adjustStock = async (items, direction, location) => {
         const weightChange = (Number(item.weight) || 0) * direction;
         const qtyChange = (Number(item.noOfSheets || item.qty) || 0) * direction;
 
+        const incomingRate = Number(item.rate) || 0;
         await RawMaterialStock.findOneAndUpdate(
           query,
           {
@@ -187,12 +188,15 @@ const adjustStock = async (items, direction, location) => {
                     ? `${item.widthMm}mm`
                     : "",
               location: location || "Main Warehouse",
-              rate: item.rate || 0,
+              ...(incomingRate > 0 ? { rate: incomingRate } : {}),
               lastUpdated: new Date(),
             },
             $inc: {
               weight: weightChange,
               qty: qtyChange,
+            },
+            $setOnInsert: {
+              reorderLevel: 50,
             },
           },
           { upsert: true, new: true, setDefaultsOnInsert: true },

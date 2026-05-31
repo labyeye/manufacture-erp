@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import * as XLSX from "xlsx";
 import { C } from "../constants/colors";
 import { stockAdjustmentAPI } from "../api/auth";
+import { AutocompleteInput } from "../components/ui/BasicComponents";
 
 const today = () => new Date().toISOString().slice(0, 10);
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("en-GB") : "—");
@@ -37,8 +38,8 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState("All");
-  const [stockTypeFilter, setStockTypeFilter] = useState("All");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [stockTypeFilter, setStockTypeFilter] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [reportData, setReportData] = useState(null);
@@ -73,8 +74,8 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
       const params = {};
       if (dateFrom) params.from = dateFrom;
       if (dateTo) params.to = dateTo;
-      if (typeFilter !== "All") params.adjustmentType = typeFilter;
-      if (stockTypeFilter !== "All") params.stockType = stockTypeFilter;
+      if (typeFilter) params.adjustmentType = typeFilter;
+      if (stockTypeFilter) params.stockType = stockTypeFilter;
       const res = await stockAdjustmentAPI.getReport(params);
       setReportData(res);
     } catch {
@@ -148,8 +149,8 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
 
   const filtered = useMemo(() => {
     let list = adjustments;
-    if (typeFilter !== "All") list = list.filter((a) => a.adjustmentType === typeFilter);
-    if (stockTypeFilter !== "All") list = list.filter((a) => a.stockType === stockTypeFilter);
+    if (typeFilter) list = list.filter((a) => a.adjustmentType === typeFilter);
+    if (stockTypeFilter) list = list.filter((a) => a.stockType === stockTypeFilter);
     if (dateFrom) list = list.filter((a) => new Date(a.date) >= new Date(dateFrom));
     if (dateTo) list = list.filter((a) => new Date(a.date) <= new Date(dateTo));
     if (search) {
@@ -239,7 +240,7 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
   );
 
   return (
-    <div style={{ padding: "24px 28px", maxWidth: 1200, margin: "0 auto" }}>
+    <div style={{ padding: "24px 28px",  margin: "0 auto" }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
         <div>
@@ -442,18 +443,22 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
               onChange={(e) => setSearch(e.target.value)}
               style={{ ...inputStyle, width: 220, flex: "none" }}
             />
-            <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} style={{ ...inputStyle, width: 160, flex: "none" }}>
-              <option value="All">All Types</option>
-              <option value="Production">Production</option>
-              <option value="Inward">Inward</option>
-              <option value="Outward">Outward</option>
-            </select>
-            <select value={stockTypeFilter} onChange={(e) => setStockTypeFilter(e.target.value)} style={{ ...inputStyle, width: 160, flex: "none" }}>
-              <option value="All">All Stock Types</option>
-              <option value="Raw Material">Raw Material</option>
-              <option value="Finished Goods">Finished Goods</option>
-              <option value="Consumable">Consumable</option>
-            </select>
+            <AutocompleteInput
+              value={typeFilter}
+              onChange={(v) => setTypeFilter(v)}
+              suggestions={["Production", "Inward", "Outward"]}
+              placeholder="Filter by type..."
+              showAllOnFocus={true}
+              inputStyle={{ ...inputStyle, width: 160, flex: "none" }}
+            />
+            <AutocompleteInput
+              value={stockTypeFilter}
+              onChange={(v) => setStockTypeFilter(v)}
+              suggestions={["Raw Material", "Finished Goods", "Consumable"]}
+              placeholder="Filter by stock type..."
+              showAllOnFocus={true}
+              inputStyle={{ ...inputStyle, width: 160, flex: "none" }}
+            />
             <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} style={{ ...inputStyle, width: 140, flex: "none" }} title="From date" />
             <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} style={{ ...inputStyle, width: 140, flex: "none" }} title="To date" />
             <button
@@ -581,21 +586,25 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
             </div>
             <div>
               <label style={labelStyle}>Adjustment Type</label>
-              <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} style={{ ...inputStyle, width: 160 }}>
-                <option value="All">All Types</option>
-                <option value="Production">Production</option>
-                <option value="Inward">Inward</option>
-                <option value="Outward">Outward</option>
-              </select>
+              <AutocompleteInput
+                value={typeFilter}
+                onChange={(v) => setTypeFilter(v)}
+                suggestions={["Production", "Inward", "Outward"]}
+                placeholder="Filter by type..."
+                showAllOnFocus={true}
+                inputStyle={{ ...inputStyle, width: 160 }}
+              />
             </div>
             <div>
               <label style={labelStyle}>Stock Type</label>
-              <select value={stockTypeFilter} onChange={(e) => setStockTypeFilter(e.target.value)} style={{ ...inputStyle, width: 160 }}>
-                <option value="All">All</option>
-                <option value="Raw Material">Raw Material</option>
-                <option value="Finished Goods">Finished Goods</option>
-                <option value="Consumable">Consumable</option>
-              </select>
+              <AutocompleteInput
+                value={stockTypeFilter}
+                onChange={(v) => setStockTypeFilter(v)}
+                suggestions={["Raw Material", "Finished Goods", "Consumable"]}
+                placeholder="Filter by stock type..."
+                showAllOnFocus={true}
+                inputStyle={{ ...inputStyle, width: 160 }}
+              />
             </div>
             <button
               onClick={fetchReport}

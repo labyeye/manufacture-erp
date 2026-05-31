@@ -1,4 +1,5 @@
 import React from "react";
+import ReactDOM from "react-dom";
 import { C } from "../../constants/colors";
 
 /* ── All glass styling lives in styles/liquid-glass.css.
@@ -411,18 +412,33 @@ export function AutocompleteInput({
   suggestions = [],
   placeholder = "",
   inputStyle = {},
+  showAllOnFocus = false,
 }) {
   const [open, setOpen] = React.useState(false);
   const [filtered, setFiltered] = React.useState([]);
+  const [dropdownPos, setDropdownPos] = React.useState({ top: 0, left: 0, width: 0 });
+  const inputRef = React.useRef(null);
+
+  const updatePos = () => {
+    if (inputRef.current) {
+      const rect = inputRef.current.getBoundingClientRect();
+      setDropdownPos({
+        top: rect.bottom + window.scrollY + 4,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+      });
+    }
+  };
 
   const handleChange = (e) => {
     const val = e.target.value;
     onChange(val);
+    updatePos();
     setOpen(true);
     setFiltered(
       val.length > 0
         ? suggestions.filter((s) => s.toLowerCase().includes(val.toLowerCase()))
-        : [],
+        : showAllOnFocus ? suggestions : [],
     );
   };
 
@@ -432,57 +448,72 @@ export function AutocompleteInput({
     setFiltered([]);
   };
 
+  const handleFocus = () => {
+    updatePos();
+    if (showAllOnFocus) {
+      const val = value || "";
+      setFiltered(
+        val.length > 0
+          ? suggestions.filter((s) => s.toLowerCase().includes(val.toLowerCase()))
+          : suggestions,
+      );
+      setOpen(true);
+    } else if (value) {
+      setOpen(true);
+    }
+  };
+
+  const dropdown = open && filtered.length > 0 && ReactDOM.createPortal(
+    <div
+      style={{
+        position: "absolute",
+        top: dropdownPos.top,
+        left: dropdownPos.left,
+        width: dropdownPos.width,
+        background: "#1a1a2e",
+        border: "1px solid rgba(255,255,255,0.15)",
+        borderRadius: 8,
+        boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+        padding: 0,
+        maxHeight: 220,
+        overflowY: "auto",
+        zIndex: 99999,
+      }}
+    >
+      {filtered.map((s, i) => (
+        <div
+          key={i}
+          onMouseDown={(e) => { e.preventDefault(); handleSelect(s); }}
+          style={{
+            padding: "9px 14px",
+            fontSize: 13,
+            color: "#e2e8f0",
+            borderBottom: i < filtered.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none",
+            cursor: "pointer",
+          }}
+          onMouseOver={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.09)")}
+          onMouseOut={(e) => (e.currentTarget.style.background = "transparent")}
+        >
+          {s}
+        </div>
+      ))}
+    </div>,
+    document.body
+  );
+
   return (
     <div style={{ position: "relative" }}>
       <input
+        ref={inputRef}
         className="lg-input"
         placeholder={placeholder}
         value={value}
         onChange={handleChange}
-        onFocus={() => value && setOpen(true)}
-        onBlur={() => setTimeout(() => setOpen(false), 200)}
+        onFocus={handleFocus}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
         style={inputStyle}
       />
-      {open && filtered.length > 0 && (
-        <div
-          className="lg-card"
-          style={{
-            position: "absolute",
-            top: "calc(100% + 4px)",
-            left: 0,
-            right: 0,
-            padding: 0,
-            maxHeight: 200,
-            overflowY: "auto",
-            zIndex: 100,
-          }}
-        >
-          {filtered.map((s, i) => (
-            <div
-              key={i}
-              onClick={() => handleSelect(s)}
-              style={{
-                padding: "9px 14px",
-                fontSize: 13,
-                color: C.text,
-                borderBottom:
-                  i < filtered.length - 1
-                    ? "1px solid rgba(255,255,255,0.06)"
-                    : "none",
-                cursor: "pointer",
-              }}
-              onMouseOver={(e) =>
-                (e.currentTarget.style.background = "rgba(255,255,255,0.07)")
-              }
-              onMouseOut={(e) =>
-                (e.currentTarget.style.background = "transparent")
-              }
-            >
-              {s}
-            </div>
-          ))}
-        </div>
-      )}
+      {dropdown}
     </div>
   );
 }

@@ -7,6 +7,7 @@ import {
   Field,
   SubmitBtn,
   ExportBtn,
+  AutocompleteInput,
 } from "../components/ui/BasicComponents";
 import { DatePicker } from "../components/ui/DatePicker";
 import { jobOrdersAPI } from "../api/auth";
@@ -758,38 +759,38 @@ export default function ProductionUpdate({
                 alignItems: "center",
               }}
             >
-              <select
+              <AutocompleteInput
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                style={{ padding: "7px 10px", background: C.card, border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12 }}
-              >
-                <option value="">All JO#</option>
-                {[...new Set((jobOrders || []).map(jo => jo.joNo).filter(Boolean))].sort().map(n => <option key={n} value={n}>{n}</option>)}
-              </select>
-              <select
+                onChange={(v) => setSearchTerm(v)}
+                suggestions={[...new Set((jobOrders || []).map(jo => jo.joNo).filter(Boolean))].sort()}
+                placeholder="Filter by JO#..."
+                showAllOnFocus={true}
+                inputStyle={{ padding: "7px 10px", background: C.card, border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12, width: 140 }}
+              />
+              <AutocompleteInput
                 value={filterClient}
-                onChange={(e) => setFilterClient(e.target.value)}
-                style={{ padding: "7px 10px", background: C.card, border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12 }}
-              >
-                <option value="">All Clients</option>
-                {[...new Set((jobOrders || []).map(jo => jo.companyName).filter(Boolean))].sort().map(n => <option key={n} value={n}>{n}</option>)}
-              </select>
-              <select
+                onChange={(v) => setFilterClient(v)}
+                suggestions={[...new Set((jobOrders || []).map(jo => jo.companyName).filter(Boolean))].sort()}
+                placeholder="Filter by client..."
+                showAllOnFocus={true}
+                inputStyle={{ padding: "7px 10px", background: C.card, border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12, width: 180 }}
+              />
+              <AutocompleteInput
                 value={filterItem}
-                onChange={(e) => setFilterItem(e.target.value)}
-                style={{ padding: "7px 10px", background: C.card, border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12 }}
-              >
-                <option value="">All Items</option>
-                {[...new Set((jobOrders || []).map(jo => jo.itemName).filter(Boolean))].sort().map(n => <option key={n} value={n}>{n}</option>)}
-              </select>
-              <select
+                onChange={(v) => setFilterItem(v)}
+                suggestions={[...new Set((jobOrders || []).map(jo => jo.itemName).filter(Boolean))].sort()}
+                placeholder="Filter by item..."
+                showAllOnFocus={true}
+                inputStyle={{ padding: "7px 10px", background: C.card, border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12, width: 180 }}
+              />
+              <AutocompleteInput
                 value={filterStage}
-                onChange={(e) => setFilterStage(e.target.value)}
-                style={{ padding: "7px 10px", background: C.card, border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12 }}
-              >
-                <option value="">All Stages</option>
-                {["Printing", "Varnish", "Lamination", "Die Cutting", "Formation", "Manual Formation"].map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
+                onChange={(v) => setFilterStage(v)}
+                suggestions={["Printing", "Varnish", "Lamination", "Die Cutting", "Formation", "Manual Formation"]}
+                placeholder="Filter by stage..."
+                showAllOnFocus={true}
+                inputStyle={{ padding: "7px 10px", background: C.card, border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12, width: 160 }}
+              />
 
               <div
                 style={{

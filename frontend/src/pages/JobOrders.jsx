@@ -1892,30 +1892,30 @@ export default function JobOrders(props) {
               dateTo={drDateTo}
               setDateTo={setDrDateTo}
             />
-            <select
+            <AutocompleteInput
               value={filterClient}
-              onChange={(e) => setFilterClient(e.target.value)}
-              style={{ padding: "6px 10px", background: "#0c0c0e", border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12 }}
-            >
-              <option value="">All Clients</option>
-              {[...new Set((jobOrders || []).map(r => r.companyName).filter(Boolean))].sort().map(n => <option key={n} value={n}>{n}</option>)}
-            </select>
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              style={{ padding: "6px 10px", background: "#0c0c0e", border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12 }}
-            >
-              <option value="">All Statuses</option>
-              {["Open", "In Progress", "Completed", "Cancelled"].map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-            <select
+              onChange={(v) => setFilterClient(v)}
+              suggestions={[...new Set((jobOrders || []).map(r => r.companyName).filter(Boolean))].sort()}
+              placeholder="Filter by client..."
+              showAllOnFocus={true}
+              inputStyle={{ padding: "6px 10px", background: "#0c0c0e", border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12, width: 180 }}
+            />
+            <AutocompleteInput
               value={filterItem}
-              onChange={(e) => setFilterItem(e.target.value)}
-              style={{ padding: "6px 10px", background: "#0c0c0e", border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12 }}
-            >
-              <option value="">All Items</option>
-              {[...new Set((jobOrders || []).map(r => r.itemName).filter(Boolean))].sort().map(n => <option key={n} value={n}>{n}</option>)}
-            </select>
+              onChange={(v) => setFilterItem(v)}
+              suggestions={[...new Set((jobOrders || []).map(r => r.itemName).filter(Boolean))].sort()}
+              placeholder="Filter by item..."
+              showAllOnFocus={true}
+              inputStyle={{ padding: "6px 10px", background: "#0c0c0e", border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12, width: 180 }}
+            />
+            <AutocompleteInput
+              value={filterStatus}
+              onChange={(v) => setFilterStatus(v)}
+              suggestions={["Open", "In Progress", "Completed", "Cancelled"]}
+              placeholder="Filter by status..."
+              showAllOnFocus={true}
+              inputStyle={{ padding: "6px 10px", background: "#0c0c0e", border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12, width: 150 }}
+            />
             <span style={{ fontSize: 12, color: C.muted, marginLeft: "auto" }}>
               {jobOrders.length} jobs
             </span>

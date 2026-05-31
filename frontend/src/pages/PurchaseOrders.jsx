@@ -2182,45 +2182,22 @@ export default function PurchaseOrders({
                       }}
                     />
                   </div>
-                  <select
+                  <AutocompleteInput
                     value={vendorFilter}
-                    onChange={(e) => setVendorFilter(e.target.value)}
-                    style={{
-                      minWidth: 140,
-                      padding: "9px 12px",
-                      background: "transparent",
-                      border: "1px solid #2a2a2e",
-                      borderRadius: 6,
-                      color: "#fff",
-                      fontSize: 13,
-                    }}
-                  >
-                    <option value="">All Vendors</option>
-                    {vendorOptions.map((v) => (
-                      <option key={v} value={v}>
-                        {v}
-                      </option>
-                    ))}
-                  </select>
-                  <select
+                    onChange={(v) => setVendorFilter(v)}
+                    suggestions={vendorOptions}
+                    placeholder="Filter by vendor..."
+                    showAllOnFocus={true}
+                    inputStyle={{ minWidth: 140, padding: "9px 12px", background: "transparent", border: "1px solid #2a2a2e", borderRadius: 6, color: "#fff", fontSize: 13 }}
+                  />
+                  <AutocompleteInput
                     value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    style={{
-                      minWidth: 120,
-                      padding: "9px 12px",
-                      background: "transparent",
-                      border: "1px solid #2a2a2e",
-                      borderRadius: 6,
-                      color: "#fff",
-                      fontSize: 13,
-                    }}
-                  >
-                    <option value="">All Statuses</option>
-                    <option value="Open">Open</option>
-                    <option value="Pending">Pending</option>
-                    <option value="Received">Received</option>
-                    <option value="Cancelled">Cancelled</option>
-                  </select>
+                    onChange={(v) => setStatusFilter(v)}
+                    suggestions={["Open", "Pending", "Received", "Cancelled"]}
+                    placeholder="Filter by status..."
+                    showAllOnFocus={true}
+                    inputStyle={{ minWidth: 120, padding: "9px 12px", background: "transparent", border: "1px solid #2a2a2e", borderRadius: 6, color: "#fff", fontSize: 13 }}
+                  />
                   <DateRangeFilter
                     dateFrom={drDateFrom}
                     setDateFrom={setDrDateFrom}

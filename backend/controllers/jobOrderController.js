@@ -98,10 +98,14 @@ async function adjustRMStock(jobOrder, direction = -1) {
 
       if (!cat || !type) return null;
       const normCat = cat.trim().replace(/s$/i, "");
+      const typeRegex = new RegExp(type.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
       const query = {
+        $or: [
+          { paperType: { $regex: typeRegex } },
+          { name: { $regex: typeRegex } },
+        ],
         category: { $regex: new RegExp(`^${normCat}`, "i") },
-        paperType: { $regex: new RegExp(`${type.trim()}`, "i") },
-        gsm: gsm,
+        gsm: Number(gsm),
       };
 
       if (sheetSize) {
@@ -222,10 +226,14 @@ async function checkRMStockSufficiency(jobOrder, existingJOId = null) {
 
       if (!cat || !type) return null;
       const normCat = cat.trim().replace(/s$/i, "");
+      const typeRegex = new RegExp(type.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
       const query = {
+        $or: [
+          { paperType: { $regex: typeRegex } },
+          { name: { $regex: typeRegex } },
+        ],
         category: { $regex: new RegExp(`^${normCat}`, "i") },
-        paperType: { $regex: new RegExp(`${type.trim()}`, "i") },
-        gsm: gsm,
+        gsm: Number(gsm),
       };
 
       if (sheetSize) {
@@ -250,11 +258,7 @@ async function checkRMStockSufficiency(jobOrder, existingJOId = null) {
       jobOrder.reelWidthMm
     );
 
-    if (!rmStock)
-      return {
-        sufficient: false,
-        message: `Raw material not found for ${jobOrder.paperType}`,
-      };
+    if (!rmStock) return { sufficient: true };
 
     let currentWeight = Number(rmStock.weight || 0);
     let currentQty = Number(rmStock.qty || 0);

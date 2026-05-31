@@ -1706,22 +1706,22 @@ export default function SalesOrders(props) {
                 dateTo={drDateTo}
                 setDateTo={setDrDateTo}
               />
-              <select
+              <AutocompleteInput
                 value={filterClient}
-                onChange={(e) => setFilterClient(e.target.value)}
-                style={{ padding: "6px 10px", background: "#0c0c0e", border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12 }}
-              >
-                <option value="">All Clients</option>
-                {[...new Set((salesOrders || []).map(r => r.companyName || r.clientName).filter(Boolean))].sort().map(n => <option key={n} value={n}>{n}</option>)}
-              </select>
-              <select
+                onChange={(v) => setFilterClient(v)}
+                suggestions={[...new Set((salesOrders || []).map(r => r.companyName || r.clientName).filter(Boolean))].sort()}
+                placeholder="Filter by client..."
+                showAllOnFocus={true}
+                inputStyle={{ padding: "6px 10px", background: "#0c0c0e", border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12, width: 180 }}
+              />
+              <AutocompleteInput
                 value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                style={{ padding: "6px 10px", background: "#0c0c0e", border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12 }}
-              >
-                <option value="">All Statuses</option>
-                {["Open", "In Production", "Completed", "Closed", "Cancelled", "Partial"].map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
+                onChange={(v) => setFilterStatus(v)}
+                suggestions={["Open", "In Production", "Completed", "Closed", "Cancelled", "Partial"]}
+                placeholder="Filter by status..."
+                showAllOnFocus={true}
+                inputStyle={{ padding: "6px 10px", background: "#0c0c0e", border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12, width: 150 }}
+              />
               <span
                 style={{ fontSize: 12, color: C.muted, marginLeft: "auto" }}
               >

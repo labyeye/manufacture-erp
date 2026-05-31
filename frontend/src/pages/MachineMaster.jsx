@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import * as XLSX from "xlsx";
 import { machineMasterAPI } from "../api/auth";
+import { AutocompleteInput } from "../components/ui/BasicComponents";
 import { ALL_SKU_FAMILIES, PARALLEL_MACHINE_GROUPS } from "../constants/seedData";
 
 const MACHINE_TYPES = [
@@ -68,9 +69,9 @@ export default function MachineMaster({ toast }) {
   const [machineName, setMachineName] = useState("");
   const [machineType, setMachineType] = useState("Printing");
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterType, setFilterType] = useState("All Types");
-  const [filterDivision, setFilterDivision] = useState("All Divisions");
-  const [filterStatus, setFilterStatus] = useState("All Status");
+  const [filterType, setFilterType] = useState("");
+  const [filterDivision, setFilterDivision] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
   const [editingMachine, setEditingMachine] = useState(null);
   const [importing, setImporting] = useState(false);
   const importRef = useRef(null);
@@ -275,9 +276,9 @@ export default function MachineMaster({ toast }) {
       machines
         .filter((m) => {
           const matchSearch = !searchTerm || m.name?.toLowerCase().includes(searchTerm.toLowerCase());
-          const matchType = filterType === "All Types" || m.type === filterType;
-          const matchDiv = filterDivision === "All Divisions" || m.division === filterDivision;
-          const matchStatus = filterStatus === "All Status" || m.status === filterStatus;
+          const matchType = !filterType || m.type === filterType;
+          const matchDiv = !filterDivision || m.division === filterDivision;
+          const matchStatus = !filterStatus || m.status === filterStatus;
           return matchSearch && matchType && matchDiv && matchStatus;
         })
         .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)),
@@ -1009,22 +1010,30 @@ export default function MachineMaster({ toast }) {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
-        <select style={{ ...inputStyle, width: 160 }} value={filterType} onChange={(e) => setFilterType(e.target.value)}>
-          <option>All Types</option>
-          {MACHINE_TYPES.map((t) => (
-            <option key={t}>{t}</option>
-          ))}
-        </select>
-        <select style={{ ...inputStyle, width: 140 }} value={filterDivision} onChange={(e) => setFilterDivision(e.target.value)}>
-          <option>All Divisions</option>
-          <option>Sheet</option>
-          <option>Reel</option>
-        </select>
-        <select style={{ ...inputStyle, width: 120 }} value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-          <option>All Status</option>
-          <option>Active</option>
-          <option>Inactive</option>
-        </select>
+        <AutocompleteInput
+          value={filterType}
+          onChange={(v) => setFilterType(v)}
+          suggestions={MACHINE_TYPES}
+          placeholder="Filter by type..."
+          showAllOnFocus={true}
+          inputStyle={{ ...inputStyle, width: 160 }}
+        />
+        <AutocompleteInput
+          value={filterDivision}
+          onChange={(v) => setFilterDivision(v)}
+          suggestions={["Sheet", "Reel"]}
+          placeholder="Filter by division..."
+          showAllOnFocus={true}
+          inputStyle={{ ...inputStyle, width: 140 }}
+        />
+        <AutocompleteInput
+          value={filterStatus}
+          onChange={(v) => setFilterStatus(v)}
+          suggestions={["Active", "Inactive"]}
+          placeholder="Filter by status..."
+          showAllOnFocus={true}
+          inputStyle={{ ...inputStyle, width: 120 }}
+        />
         <span style={{ marginLeft: "auto", fontSize: 12, color: "#555", alignSelf: "center" }}>
           {filteredMachines.length} / {machines.length} machines
         </span>

@@ -8,6 +8,7 @@ import {
   Select,
   Modal,
   Table,
+  AutocompleteInput,
 } from "../components/ui/BasicComponents";
 import { C } from "../constants/colors";
 import { priceListAPI, companyMasterAPI, vendorMasterAPI, itemMasterAPI, brandMasterAPI } from "../api/auth";
@@ -248,14 +249,14 @@ function SellingSection({ toast, canExportImport = true }) {
       <div style={{ display: "flex", gap: 12, alignItems: "flex-end", marginBottom: 20, flexWrap: "wrap" }}>
         <div style={{ flex: 1, minWidth: 200, maxWidth: 300 }}>
           <div style={{ fontSize: 11, fontWeight: 500, color: "#555", marginBottom: 5, letterSpacing: "0.5px" }}>SELECT CLIENT</div>
-          <select
+          <AutocompleteInput
             value={selectedClient}
-            onChange={(e) => { setSelectedClient(e.target.value); setSearch(""); }}
-            style={{ ...inputStyle, width: "100%" }}
-          >
-            <option value="">— Select Client —</option>
-            {clientNames.map((n) => <option key={n} value={n}>{n}</option>)}
-          </select>
+            onChange={(v) => { setSelectedClient(v); setSearch(""); }}
+            suggestions={clientNames}
+            placeholder="Type to search client..."
+            showAllOnFocus={true}
+            inputStyle={{ ...inputStyle, width: "100%" }}
+          />
         </div>
 
         {selectedClient && (
@@ -587,14 +588,14 @@ function PurchaseSection({ toast, canExportImport = true }) {
       <div style={{ display: "flex", gap: 12, alignItems: "flex-end", marginBottom: 20, flexWrap: "wrap" }}>
         <div style={{ flex: 1, minWidth: 200, maxWidth: 300 }}>
           <div style={{ fontSize: 11, fontWeight: 500, color: "#555", marginBottom: 5, letterSpacing: "0.5px" }}>SELECT VENDOR</div>
-          <select
+          <AutocompleteInput
             value={selectedVendor}
-            onChange={(e) => { setSelectedVendor(e.target.value); setSearch(""); }}
-            style={{ ...inputStyle, width: "100%" }}
-          >
-            <option value="">— Select Vendor —</option>
-            {vendorNames.map((n) => <option key={n} value={n}>{n}</option>)}
-          </select>
+            onChange={(v) => { setSelectedVendor(v); setSearch(""); }}
+            suggestions={vendorNames}
+            placeholder="Type to search vendor..."
+            showAllOnFocus={true}
+            inputStyle={{ ...inputStyle, width: "100%" }}
+          />
         </div>
 
         {selectedVendor && (

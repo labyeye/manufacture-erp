@@ -1,6 +1,7 @@
 const Dispatch = require("../models/Dispatch");
 const Counter = require("../models/Counter");
 const FGStock = require("../models/FGStock");
+const CompanyMaster = require("../models/CompanyMaster");
 
 const adjustFGStock = async (items, direction = -1) => {
   for (const item of items) {
@@ -53,7 +54,17 @@ const getNextDispatchNo = async () => {
 
 exports.getAll = async (req, res) => {
   try {
-    const dispatches = await Dispatch.find()
+    const filter = {};
+
+    if (req.user?.role === "Client" && req.user?.clientTag) {
+      const companies = await CompanyMaster.find({
+        category: { $regex: new RegExp(`^${req.user.clientTag.trim()}$`, "i") },
+      }).select("name");
+      const allowedNames = companies.map((c) => c.name);
+      filter.companyName = { $in: allowedNames };
+    }
+
+    const dispatches = await Dispatch.find(filter)
       .populate("createdBy", "name username")
       .sort({ createdAt: -1 });
     res.json({ dispatches });

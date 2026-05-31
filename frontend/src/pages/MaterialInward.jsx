@@ -2139,22 +2139,22 @@ export default function MaterialInward({
                     dateTo={drDateTo}
                     setDateTo={setDrDateTo}
                   />
-                  <select
+                  <AutocompleteInput
                     value={filterVendor}
-                    onChange={(e) => setFilterVendor(e.target.value)}
-                    style={{ padding: "6px 10px", background: "#0c0c0e", border: "1px solid #2a2a2e", borderRadius: 6, color: "#fff", fontSize: 12 }}
-                  >
-                    <option value="">All Vendors</option>
-                    {[...new Set((inward || []).map(r => r.vendorName).filter(Boolean))].sort().map(n => <option key={n} value={n}>{n}</option>)}
-                  </select>
-                  <select
+                    onChange={(v) => setFilterVendor(v)}
+                    suggestions={[...new Set((inward || []).map(r => r.vendorName).filter(Boolean))].sort()}
+                    placeholder="Filter by vendor..."
+                    showAllOnFocus={true}
+                    inputStyle={{ padding: "6px 10px", background: "#0c0c0e", border: "1px solid #2a2a2e", borderRadius: 6, color: "#fff", fontSize: 12, width: 160 }}
+                  />
+                  <AutocompleteInput
                     value={filterLocation}
-                    onChange={(e) => setFilterLocation(e.target.value)}
-                    style={{ padding: "6px 10px", background: "#0c0c0e", border: "1px solid #2a2a2e", borderRadius: 6, color: "#fff", fontSize: 12 }}
-                  >
-                    <option value="">All Locations</option>
-                    {LOCATIONS.map((l) => <option key={l} value={l}>{l}</option>)}
-                  </select>
+                    onChange={(v) => setFilterLocation(v)}
+                    suggestions={LOCATIONS}
+                    placeholder="Filter by location..."
+                    showAllOnFocus={true}
+                    inputStyle={{ padding: "6px 10px", background: "#0c0c0e", border: "1px solid #2a2a2e", borderRadius: 6, color: "#fff", fontSize: 12, width: 150 }}
+                  />
                   <div style={{ flex: 1 }} />
                   <span style={{ fontSize: 12, color: C.muted }}>
                     {listData.length} records found
