@@ -3,7 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import { C } from "../constants/colors";
 import { Card } from "../components/ui/BasicComponents";
 import companylogo from "../assets/logo.png" 
-const API = import.meta.env.VITE_API_URL || "http://localhost:2500/api";
+const API = import.meta.env.VITE_API_URL || "https://backend.packbetter.in/api";
 
 const TOAST_DURATION = 4000;
 
