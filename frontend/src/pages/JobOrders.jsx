@@ -38,17 +38,29 @@ const calcSheets = (q, u) => {
   return "";
 };
 
-const calcRmWeight = (sheets, w, l, uom, gsm) => {
-  const n = Number(sheets);
-  const W = Number(w);
-  const L = Number(l);
+const parseBagDims = (sizeStr) => {
+  // Accepts "21x12x33 cm", "210x120x330mm", "21×12×33", "21 x 12 x 33 cm", etc.
+  const s = (sizeStr || "").toLowerCase().replace(/[×]/g, "x").replace(/\s+/g, "");
+  const m = s.match(/(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)(cm|mm|inch)?/);
+  if (!m) return null;
+  let w = parseFloat(m[1]), g = parseFloat(m[2]), h = parseFloat(m[3]);
+  const unit = m[4];
+  if (unit === "cm") { w *= 10; g *= 10; h *= 10; }
+  else if (unit === "inch") { w = Math.round(w * 25.4); g = Math.round(g * 25.4); h = Math.round(h * 25.4); }
+  return { w, g, h };
+};
+
+const calcBagRmData = (sizeStr, gsm, qty) => {
+  const dims = parseBagDims(sizeStr);
   const g = Number(gsm);
-  if (!n || !W || !L || !g) return null;
-  let areaSqM;
-  if (uom === "cm") areaSqM = (W * L) / 10_000;
-  else if (uom === "inch") areaSqM = W * L * 0.00064516;
-  else areaSqM = (W * L) / 1_000_000;
-  return Math.round((n * areaSqM * g) / 1000);
+  const q = Number(qty);
+  if (!dims || !g) return { dims: null };
+  const { w, g: gusset, h } = dims;
+  const rw = 2 * w + 2 * gusset + 25;
+  const cl = h + 0.5 * gusset + 25;
+  const bagWeightG = (rw * cl * g) / 1_000_000;
+  const totalKg = q > 0 ? (bagWeightG * q) / 1000 : null;
+  return { w, gusset, h, rw, cl, bagWeightG, totalKg };
 };
 
 const PRINTING_OPTIONS = ["No Printing", "1", "2", "3", "4", "5", "6"];
@@ -286,6 +298,11 @@ export default function JobOrders(props) {
     const n = (header.itemName || "").toLowerCase();
     return n.includes("paper bag");
   }, [header.itemName]);
+
+  const bagRmData = useMemo(() => {
+    if (!isPaperBag || !header.paperGsm || !header.noOfUps) return null;
+    return calcBagRmData(header.size, header.paperGsm, header.orderQty);
+  }, [isPaperBag, header.size, header.paperGsm, header.orderQty, header.noOfUps]);
 
   const [headerErrors, setHeaderErrors] = useState({});
   const [showModal, setShowModal] = useState(false);
@@ -1589,45 +1606,58 @@ export default function JobOrders(props) {
                 )}
               </div>
 
-              {isPaperBag && header.noOfUps && header.paperGsm && header.noOfSheets && (
+              {isPaperBag && bagRmData && (
                 <div
                   style={{
                     margin: "0 0 16px",
-                    padding: "12px 18px",
+                    padding: "14px 18px",
                     background: "rgba(250,204,21,0.06)",
                     border: "1px solid rgba(250,204,21,0.2)",
                     borderRadius: 8,
-                    display: "flex",
-                    gap: 32,
-                    alignItems: "center",
                     flexWrap: "wrap",
                   }}
                 >
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#facc15", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                    RM Required
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#facc15", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>
+                    Paper Bag — RM Calculation
                   </div>
-                  <div style={{ display: "flex", gap: 24, flexWrap: "wrap", alignItems: "center" }}>
-                    <div>
-                      <div style={{ fontSize: 10, color: "#94a3b8", marginBottom: 2, textTransform: "uppercase" }}>Sheets</div>
-                      <div style={{ fontSize: 15, fontWeight: 700, color: "#e2e8f0" }}>{fmt(header.noOfSheets)}</div>
+                  {!bagRmData.w ? (
+                    <div style={{ fontSize: 12, color: "#94a3b8" }}>
+                      Enter bag size as W×G×H (e.g. 21×12×33 cm) to calculate RM required
                     </div>
-                    {calcRmWeight(header.noOfSheets, header.sheetW, header.sheetL, header.sheetUom, header.paperGsm) !== null && (
+                  ) : (
+                    <div style={{ display: "flex", gap: 20, flexWrap: "wrap", alignItems: "flex-start" }}>
                       <div>
-                        <div style={{ fontSize: 10, color: "#94a3b8", marginBottom: 2, textTransform: "uppercase" }}>Est. Weight</div>
-                        <div style={{ fontSize: 15, fontWeight: 700, color: "#e2e8f0" }}>
-                          ~{fmt(calcRmWeight(header.noOfSheets, header.sheetW, header.sheetL, header.sheetUom, header.paperGsm))} kg
-                        </div>
+                        <div style={{ fontSize: 10, color: "#94a3b8", marginBottom: 2, textTransform: "uppercase" }}>Reel Width (RW)</div>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: "#e2e8f0" }}>{bagRmData.rw} mm</div>
+                        <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>2×{bagRmData.w} + 2×{bagRmData.gusset} + 25</div>
                       </div>
-                    )}
-                    {matchedStock && (
                       <div>
-                        <div style={{ fontSize: 10, color: "#94a3b8", marginBottom: 2, textTransform: "uppercase" }}>Stock Available</div>
-                        <div style={{ fontSize: 15, fontWeight: 700, color: Number(matchedStock.qty) >= Number(header.noOfSheets) ? "#10b981" : "#ef4444" }}>
-                          {fmt(matchedStock.qty)} sheets
-                        </div>
+                        <div style={{ fontSize: 10, color: "#94a3b8", marginBottom: 2, textTransform: "uppercase" }}>Cut Length (CL)</div>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: "#e2e8f0" }}>{bagRmData.cl} mm</div>
+                        <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>{bagRmData.h} + 0.5×{bagRmData.gusset} + 25</div>
                       </div>
-                    )}
-                  </div>
+                      <div>
+                        <div style={{ fontSize: 10, color: "#94a3b8", marginBottom: 2, textTransform: "uppercase" }}>Bag Weight</div>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: "#e2e8f0" }}>{bagRmData.bagWeightG.toFixed(2)} g/bag</div>
+                        <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>{bagRmData.rw}×{bagRmData.cl}×{header.paperGsm} ÷ 10⁶</div>
+                      </div>
+                      {bagRmData.totalKg !== null && (
+                        <div>
+                          <div style={{ fontSize: 10, color: "#94a3b8", marginBottom: 2, textTransform: "uppercase" }}>Total RM Required</div>
+                          <div style={{ fontSize: 17, fontWeight: 800, color: "#facc15" }}>~{bagRmData.totalKg.toFixed(1)} kg</div>
+                          <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>{fmt(header.orderQty)} bags</div>
+                        </div>
+                      )}
+                      {matchedStock && (
+                        <div>
+                          <div style={{ fontSize: 10, color: "#94a3b8", marginBottom: 2, textTransform: "uppercase" }}>Stock Available</div>
+                          <div style={{ fontSize: 15, fontWeight: 700, color: bagRmData.totalKg !== null && (matchedStock.weight || 0) >= bagRmData.totalKg ? "#10b981" : "#ef4444" }}>
+                            {fmt(Math.round(matchedStock.weight || 0))} kg
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 

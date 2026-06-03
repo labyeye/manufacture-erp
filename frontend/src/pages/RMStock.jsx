@@ -46,7 +46,7 @@ export default function RMStock({
       return;
     try {
       await rawMaterialStockAPI.delete(id);
-      setRawStock((prev) => prev.filter((s) => s._id !== id && s.id !== id));
+      setRawStock((rawStock || []).filter((s) => s._id !== id && s.id !== id));
       toast?.("Successfully deleted", "success");
     } catch (err) {
       toast?.("Failed to delete", "error");
@@ -176,7 +176,7 @@ export default function RMStock({
     if (!window.confirm(`Delete ${selectedIds.length} selected item(s)?`)) return;
     try {
       await Promise.allSettled(selectedIds.map((id) => rawMaterialStockAPI.delete(id)));
-      setRawStock((prev) => prev.filter((s) => !selectedIds.includes(s._id) && !selectedIds.includes(s.id)));
+      setRawStock((rawStock || []).filter((s) => !selectedIds.includes(s._id) && !selectedIds.includes(s.id)));
       setSelectedIds([]);
       toast?.(`${selectedIds.length} item(s) deleted`, "success");
     } catch {
