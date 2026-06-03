@@ -134,7 +134,7 @@ exports.create = async (req, res) => {
     await inward.save();
 
     try {
-      await adjustStock(items, 1, location);
+      await adjustStock(inward.items, 1, inward.location);
     } catch (stockErr) {
       await MaterialInward.findByIdAndDelete(inward._id);
       return res.status(400).json({ message: stockErr.message });
@@ -168,12 +168,23 @@ const adjustStock = async (items, direction, location) => {
           item.itemName ||
           `${itemCategory} | ${itemSubCategory}${item.gsm ? ` | ${item.gsm}gsm` : ""}${item.widthMm ? ` | ${item.widthMm}mm` : ""}`;
 
-        // Query must match the unique index on RawMaterialStock (name is unique),
-        // so never query by {name, category} together — it would miss existing docs
-        // with a different category and then fail on insert with a duplicate-key error.
-        const query = itemCode
-          ? { code: itemCode }
-          : { name: itemName };
+        // Resolve the stock record to update:
+        // 1. Try by code (exact match)
+        // 2. Fall back to name (handles records created before a code was assigned)
+        // Using _id on found docs avoids duplicate-key errors on the name unique index
+        // when a code-based upsert would otherwise try to insert a second record.
+        let existingDoc = null;
+        if (itemCode) {
+          existingDoc = await RawMaterialStock.findOne({ code: itemCode });
+        }
+        if (!existingDoc && itemName) {
+          existingDoc = await RawMaterialStock.findOne({ name: itemName });
+        }
+        const query = existingDoc
+          ? { _id: existingDoc._id }
+          : itemCode
+            ? { code: itemCode }
+            : { name: itemName };
 
         const weightChange = (Number(item.weight) || 0) * direction;
         const qtyChange =
@@ -185,6 +196,7 @@ const adjustStock = async (items, direction, location) => {
           {
             $set: {
               name: itemName,
+              ...(itemCode ? { code: itemCode } : {}),
               category: itemCategory,
               paperType: itemSubCategory,
               gsm: item.gsm || 0,
