@@ -152,11 +152,20 @@ export default function JobOrders(props) {
     sheetL: "",
     sheetUom: "mm",
     sheetSize: "",
+    reelWidthMm: "",
+    reelWeightKg: "",
+    cuttingLengthMm: "",
     hasSecondPaper: false,
     paperCategory2: "",
     paperType2: "",
     paperGsm2: "",
     noOfSheets2: "",
+    sheetUom2: "mm",
+    sheetW2: "",
+    sheetL2: "",
+    sheetSize2: "",
+    reelWidthMm2: "",
+    reelWeightKg2: "",
     remarks: "",
     machineAssignments: {},
     polycoatedWeightKg: "",
@@ -286,6 +295,10 @@ export default function JobOrders(props) {
     header.paperCategory2,
     header.paperType2,
     header.paperGsm2,
+    header.sheetW2,
+    header.sheetL2,
+    header.sheetUom2,
+    header.reelWidthMm2,
   ]);
   const matchedPolycoatedStock = useMemo(() => {
     if (header.paperType !== "Polycoated Blanks" || !header.polycoatedRmName) return null;
@@ -395,6 +408,12 @@ export default function JobOrders(props) {
       paperType2: jo.paperType2 || "",
       paperGsm2: jo.paperGsm2 || "",
       noOfSheets2: jo.noOfSheets2 || "",
+      sheetUom2: jo.sheetUom2 || "mm",
+      sheetW2: jo.sheetW2 || "",
+      sheetL2: jo.sheetL2 || "",
+      sheetSize2: jo.sheetSize2 || "",
+      reelWidthMm2: jo.reelWidthMm2 || "",
+      reelWeightKg2: jo.reelWeightKg2 || "",
       remarks: jo.remarks || "",
       machineAssignments: jo.machineAssignments || {},
       polycoatedWeightKg: jo.polycoatedWeightKg || "",
@@ -609,11 +628,14 @@ export default function JobOrders(props) {
         const vW = k === "sheetW" ? v : updated.sheetW;
         const vL = k === "sheetL" ? v : updated.sheetL;
         const vUom = k === "sheetUom" ? v : updated.sheetUom;
-        if (vW && vL) {
-          updated.sheetSize = `${vW} x ${vL} ${vUom}`;
-        } else {
-          updated.sheetSize = "";
-        }
+        updated.sheetSize = vW && vL ? `${vW} x ${vL} ${vUom}` : "";
+      }
+
+      if (["sheetW2", "sheetL2", "sheetUom2"].includes(k)) {
+        const vW = k === "sheetW2" ? v : updated.sheetW2;
+        const vL = k === "sheetL2" ? v : updated.sheetL2;
+        const vUom = k === "sheetUom2" ? v : updated.sheetUom2;
+        updated.sheetSize2 = vW && vL ? `${vW} x ${vL} ${vUom}` : "";
       }
 
       return updated;
@@ -750,6 +772,12 @@ export default function JobOrders(props) {
             : header.noOfSheets2
               ? Number(header.noOfSheets2)
               : null,
+        sheetUom2: header.sheetUom2 || "mm",
+        sheetW2: header.sheetW2 ? Number(header.sheetW2) : null,
+        sheetL2: header.sheetL2 ? Number(header.sheetL2) : null,
+        sheetSize2: header.sheetSize2 || null,
+        reelWidthMm2: header.reelWidthMm2 ? Number(header.reelWidthMm2) : null,
+        reelWeightKg2: header.reelWeightKg2 ? Number(header.reelWeightKg2) : null,
         remarks: header.remarks,
         machineAssignments: header.machineAssignments,
         reelWidthMm: header.reelWidthMm ? Number(header.reelWidthMm) : null,
@@ -1874,61 +1902,130 @@ export default function JobOrders(props) {
               )}
 
               {header.hasSecondPaper && (
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns:
-                      header.paperCategory2 === "Paper Reel"
-                        ? "1fr 1fr 1fr"
-                        : "1.5fr 1fr 1fr 1fr",
-                    gap: 14,
-                    marginTop: 14,
-                  }}
-                >
-                  <Field label="Paper 2 Category">
-                    <select
-                      value={header.paperCategory2}
-                      onChange={(e) => setH("paperCategory2", e.target.value)}
-                    >
-                      <option value="">-- Select Category --</option>
-                      {paperCategories.map((i) => (
-                        <option key={i}>{i}</option>
-                      ))}
-                    </select>
-                  </Field>
-                  <Field label="Paper 2 Type">
-                    <select
-                      value={header.paperType2}
-                      onChange={(e) => setH("paperType2", e.target.value)}
-                      disabled={!header.paperCategory2}
-                    >
-                      <option value="">
-                        {header.paperCategory2
-                          ? "-- Select Paper Type --"
-                          : "-- Select Category first --"}
-                      </option>
-                      {(paperTypesByItem[header.paperCategory2] || []).map(
-                        (p) => (
+                <div style={{ marginTop: 14, padding: "14px 16px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: C.yellow || "#facc15", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 14 }}>
+                    Second Paper Details
+                  </div>
+
+                  {/* Row 1: Category / Type / GSM / Sheets or Reel Weight */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 14, marginBottom: 14 }}>
+                    <Field label="Paper 2 Category">
+                      <select
+                        value={header.paperCategory2}
+                        onChange={(e) => setH("paperCategory2", e.target.value)}
+                      >
+                        <option value="">-- Select Category --</option>
+                        {paperCategories.map((i) => (
+                          <option key={i}>{i}</option>
+                        ))}
+                      </select>
+                    </Field>
+                    <Field label="Paper 2 Type">
+                      <select
+                        value={header.paperType2}
+                        onChange={(e) => setH("paperType2", e.target.value)}
+                        disabled={!header.paperCategory2}
+                      >
+                        <option value="">
+                          {header.paperCategory2 ? "-- Select Paper Type --" : "-- Select Category first --"}
+                        </option>
+                        {(paperTypesByItem[header.paperCategory2] || []).map((p) => (
                           <option key={p}>{p}</option>
-                        ),
-                      )}
-                    </select>
-                  </Field>
-                  <Field label="Paper 2 GSM">
-                    <input
-                      type="number"
-                      placeholder="e.g. 130"
-                      value={header.paperGsm2}
-                      onChange={(e) => setH("paperGsm2", e.target.value)}
-                    />
-                  </Field>
-                  {header.paperCategory2 !== "Paper Reel" && (
-                    <Field label="Paper 2 Sheets">
+                        ))}
+                      </select>
+                    </Field>
+                    <Field label="Paper 2 GSM">
                       <input
                         type="number"
-                        placeholder="e.g. 1000"
-                        value={header.noOfSheets2}
-                        onChange={(e) => setH("noOfSheets2", e.target.value)}
+                        placeholder="e.g. 130"
+                        value={header.paperGsm2}
+                        onChange={(e) => setH("paperGsm2", e.target.value)}
+                      />
+                    </Field>
+                    {header.paperCategory2 === "Paper Reel" ? (
+                      <Field label="Reel 2 Weight (KG)">
+                        <input
+                          type="number"
+                          placeholder="Weight in kg"
+                          value={header.reelWeightKg2}
+                          onChange={(e) => setH("reelWeightKg2", e.target.value)}
+                        />
+                        {matchedStock2 && (
+                          <div style={{ fontSize: 10, color: (matchedStock2.weight || 0) > 0 ? C.green : C.red, marginTop: 4, fontWeight: 500 }}>
+                            {(matchedStock2.weight || 0) > 0 ? `${(matchedStock2.weight || 0).toLocaleString("en-IN")} kg available` : "0 kg available"}
+                          </div>
+                        )}
+                      </Field>
+                    ) : (
+                      <Field label="Paper 2 Sheets">
+                        <input
+                          type="number"
+                          placeholder="e.g. 1000"
+                          value={header.noOfSheets2}
+                          onChange={(e) => setH("noOfSheets2", e.target.value)}
+                        />
+                        {matchedStock2 && (
+                          <div style={{ fontSize: 10, color: (matchedStock2.qty || 0) > 0 ? C.green : C.red, marginTop: 4, fontWeight: 500 }}>
+                            {(matchedStock2.qty || 0) > 0 ? `${(matchedStock2.qty || 0).toLocaleString("en-IN")} sheets available` : "0 sheets available"}
+                          </div>
+                        )}
+                      </Field>
+                    )}
+                  </div>
+
+                  {/* Row 2: Sheet dimensions or Reel dimensions */}
+                  {header.paperCategory2 === "Paper Reel" ? (
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14, marginBottom: 14 }}>
+                      <Field label="Reel 2 Width (MM)">
+                        <input
+                          type="number"
+                          placeholder="Width"
+                          value={header.reelWidthMm2}
+                          onChange={(e) => setH("reelWidthMm2", e.target.value)}
+                        />
+                      </Field>
+                    </div>
+                  ) : header.paperCategory2 && header.paperCategory2 !== "" ? (
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1.5fr", gap: 14, marginBottom: 14 }}>
+                      <Field label="Sheet 2 UOM">
+                        <select value={header.sheetUom2} onChange={(e) => setH("sheetUom2", e.target.value)}>
+                          <option value="mm">mm</option>
+                          <option value="cm">cm</option>
+                          <option value="inch">inch</option>
+                        </select>
+                      </Field>
+                      <Field label="Sheet 2 W">
+                        <input
+                          type="number"
+                          placeholder="Width"
+                          value={header.sheetW2}
+                          onChange={(e) => setH("sheetW2", e.target.value)}
+                        />
+                      </Field>
+                      <Field label="Sheet 2 L">
+                        <input
+                          type="number"
+                          placeholder="Length"
+                          value={header.sheetL2}
+                          onChange={(e) => setH("sheetL2", e.target.value)}
+                        />
+                      </Field>
+                      <Field label="Sheet 2 Size">
+                        <div style={{ padding: "9px 12px", background: C.inputBg, border: `1px solid ${C.border}`, borderRadius: 6, fontSize: 13, color: header.sheetSize2 ? C.text : C.muted }}>
+                          {header.sheetSize2 || "— Auto from W x L x UOM —"}
+                        </div>
+                      </Field>
+                    </div>
+                  ) : null}
+
+                  {/* RM Stock 2 auto-match */}
+                  {(header.paperCategory2 || header.paperType2) && (
+                    <Field label="RM Stock 2 Item">
+                      <input
+                        readOnly
+                        placeholder="Auto-matched item"
+                        value={matchedStock2?.name || (header.paperCategory2 && header.paperType2 && header.paperGsm2 ? `${header.paperType2} ${header.paperCategory2} ${header.paperGsm2}gsm` : "")}
+                        style={{ background: "transparent", color: matchedStock2 ? C.green : C.text, fontWeight: 600 }}
                       />
                     </Field>
                   )}
