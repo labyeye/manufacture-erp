@@ -329,7 +329,8 @@ export default function DemandForecast({
             style={{
               background: "transparent",
               border: "1px solid rgba(255,255,255,0.1)",
-              boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
+              boxShadow:
+                "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
               borderRadius: 10,
               padding: "14px 18px",
             }}
@@ -411,7 +412,9 @@ export default function DemandForecast({
                     padding: "5px 13px",
                     borderRadius: 6,
                     border: `1px solid ${active ? color : "rgba(255,255,255,0.12)"}`,
-                    background: active ? color + "22" : "rgba(255,255,255,0.05)",
+                    background: active
+                      ? color + "22"
+                      : "rgba(255,255,255,0.05)",
                     color: active ? color : "#999",
                     fontWeight: 600,
                     fontSize: 11,
@@ -445,12 +448,14 @@ export default function DemandForecast({
             </span>
           </div>
         ) : (
-          <div style={{
-            overflowX: "auto",
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: 12,
-          }}>
+          <div
+            style={{
+              overflowX: "auto",
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 12,
+            }}
+          >
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr>
@@ -522,7 +527,10 @@ export default function DemandForecast({
                       key={r.code}
                       style={{
                         borderBottom: "1px solid rgba(255,255,255,0.06)",
-                        background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.04)",
+                        background:
+                          i % 2 === 0
+                            ? "transparent"
+                            : "rgba(255,255,255,0.04)",
                       }}
                     >
                       {}
@@ -668,7 +676,8 @@ export default function DemandForecast({
             background: "transparent",
             borderRadius: 8,
             border: "1px solid rgba(255,255,255,0.1)",
-            boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
+            boxShadow:
+              "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
             fontSize: 11,
             color: C.muted,
           }}

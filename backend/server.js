@@ -11,10 +11,11 @@ const authRoutes = require("./routes/auth");
 
 const app = express();
 
-const allowedOrigins = "https://www.packbetter.in,http://packbetter.in,http://localhost:3000"
-  .split(",")
-  .map((o) => o.trim())
-  .filter(Boolean);
+const allowedOrigins =
+  "https://www.packbetter.in,http://packbetter.in,http://localhost:3000"
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean);
 
 app.use(helmet({ crossOriginResourcePolicy: false }));
 
@@ -28,7 +29,7 @@ app.use(
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
-  })
+  }),
 );
 
 app.options("*", cors());
@@ -117,10 +118,11 @@ app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });
 });
 
-
 app.use((err, req, res, next) => {
   if (err.type === "entity.parse.failed") {
-    return res.status(400).json({ error: "Invalid JSON body", details: err.message });
+    return res
+      .status(400)
+      .json({ error: "Invalid JSON body", details: err.message });
   }
   next(err);
 });

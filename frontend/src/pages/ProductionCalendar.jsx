@@ -7,7 +7,12 @@ import {
   Badge,
   Modal,
 } from "../components/ui/BasicComponents";
-import { planningAPI, breakdownLogAPI, factoryCalendarAPI, machineMaintenanceAPI } from "../api/auth";
+import {
+  planningAPI,
+  breakdownLogAPI,
+  factoryCalendarAPI,
+  machineMaintenanceAPI,
+} from "../api/auth";
 
 const fmt = (n) => (n ?? 0).toLocaleString("en-IN");
 
@@ -137,12 +142,23 @@ export default function ProductionCalendar({
   const missedModalShown = React.useRef(false);
   const [breakdowns, setBreakdowns] = useState([]);
   const [breakdownModal, setBreakdownModal] = useState(null); // { machine } or null
-  const [bdForm, setBdForm] = useState({ reasonCode: "Other", issueDescription: "", startDateTime: "", endDateTime: "", operatorName: "", backupOperator: "" });
+  const [bdForm, setBdForm] = useState({
+    reasonCode: "Other",
+    issueDescription: "",
+    startDateTime: "",
+    endDateTime: "",
+    operatorName: "",
+    backupOperator: "",
+  });
   const [isSavingBd, setIsSavingBd] = useState(false);
   const [holidays, setHolidays] = useState([]);
   const [maintenanceBlocks, setMaintenanceBlocks] = useState([]);
   const [powerCutModal, setPowerCutModal] = useState(false);
-  const [pcForm, setPcForm] = useState({ date: "", reason: "", machineIds: [] });
+  const [pcForm, setPcForm] = useState({
+    date: "",
+    reason: "",
+    machineIds: [],
+  });
   const [isSavingPc, setIsSavingPc] = useState(false);
   const [isSettingUpPm, setIsSettingUpPm] = useState(false);
   const [rushJobs, setRushJobs] = useState([]);
@@ -292,7 +308,7 @@ export default function ProductionCalendar({
       (jo) =>
         ["Rush", "Critical"].includes(jo.orderPriorityOverride) &&
         !jo.rushApproved &&
-        !["Completed", "Cancelled"].includes(jo.status)
+        !["Completed", "Cancelled"].includes(jo.status),
     );
     setRushJobs(rush);
   };
@@ -328,7 +344,6 @@ export default function ProductionCalendar({
 
       const date = moment(entry.date).format("YYYY-MM-DD");
 
-      
       const mIdRaw = entry.machineId._id || entry.machineId;
       const mId = typeof mIdRaw === "string" ? mIdRaw : mIdRaw?.toString();
       const mName = entry.machineId.name;
@@ -339,7 +354,7 @@ export default function ProductionCalendar({
 
       keys.forEach((key) => {
         if (!idx[key]) idx[key] = [];
-        
+
         if (!idx[key].some((existing) => existing._id === entry._id)) {
           idx[key].push(entry);
         }
@@ -819,12 +834,18 @@ export default function ProductionCalendar({
                             id={`${mId}-${date}-operator`}
                             style={{ ...miniInp, padding: "2px 4px" }}
                             value={row.operator || ""}
-                            onChange={(e) => updateReport(date, "operator", e.target.value)}
+                            onChange={(e) =>
+                              updateReport(date, "operator", e.target.value)
+                            }
                           >
                             <option value="">—</option>
-                            {operatorMaster.filter((op) => op.isActive !== false).map((op) => (
-                              <option key={op._id} value={op.name}>{op.name}</option>
-                            ))}
+                            {operatorMaster
+                              .filter((op) => op.isActive !== false)
+                              .map((op) => (
+                                <option key={op._id} value={op.name}>
+                                  {op.name}
+                                </option>
+                              ))}
                           </select>
                         ) : (
                           <input
@@ -833,7 +854,9 @@ export default function ProductionCalendar({
                             style={miniInp}
                             placeholder="e.g. Operator"
                             value={row.operator || ""}
-                            onChange={(e) => updateReport(date, "operator", e.target.value)}
+                            onChange={(e) =>
+                              updateReport(date, "operator", e.target.value)
+                            }
                           />
                         )}
                       </td>
@@ -896,7 +919,8 @@ export default function ProductionCalendar({
                 color: "#fff",
                 fontWeight: 800,
                 cursor: "pointer",
-                boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                boxShadow:
+                  "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
                 opacity: isSaving ? 0.7 : 1,
               }}
             >
@@ -924,17 +948,23 @@ export default function ProductionCalendar({
       (sum, e) => sum + (e.scheduledHours || 0),
       0,
     );
-    
-    
+
     const getEntryTimes = (e) => {
-      const m = e.machineId; 
-      const setupT = e.shift === "Morning" ? (m?.setupTimeDefault ?? e.setupTime ?? 0.5) : 0;
+      const m = e.machineId;
+      const setupT =
+        e.shift === "Morning" ? (m?.setupTimeDefault ?? e.setupTime ?? 0.5) : 0;
       const cap = (m?.practicalRunRate || 0) * (m?.efficiencyFactor || 0.85);
-      const runT = cap > 0 ? e.scheduledQty / cap : (e.runTime || 0);
+      const runT = cap > 0 ? e.scheduledQty / cap : e.runTime || 0;
       return { setupT, runT };
     };
-    const totalSetupTime = allEntries.reduce((sum, e) => sum + getEntryTimes(e).setupT, 0);
-    const totalRunTime = allEntries.reduce((sum, e) => sum + getEntryTimes(e).runT, 0);
+    const totalSetupTime = allEntries.reduce(
+      (sum, e) => sum + getEntryTimes(e).setupT,
+      0,
+    );
+    const totalRunTime = allEntries.reduce(
+      (sum, e) => sum + getEntryTimes(e).runT,
+      0,
+    );
 
     return (
       <Modal
@@ -1010,9 +1040,7 @@ export default function ProductionCalendar({
               <span
                 style={{ fontWeight: 500, color: isOverdue ? C.red : C.green }}
               >
-                {isOverdue
-                  ? "Likely to be delayed"
-                  : "On track for delivery"}
+                {isOverdue ? "Likely to be delayed" : "On track for delivery"}
               </span>
             </div>
           </div>
@@ -1025,8 +1053,16 @@ export default function ProductionCalendar({
               border: `1px solid ${C.border}`,
             }}
           >
-            <h4 style={{ margin: "0 0 10px 0", color: C.text }}>Time Breakdown</h4>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <h4 style={{ margin: "0 0 10px 0", color: C.text }}>
+              Time Breakdown
+            </h4>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 10,
+              }}
+            >
               <div
                 style={{
                   padding: "10px 12px",
@@ -1036,10 +1072,21 @@ export default function ProductionCalendar({
                   textAlign: "center",
                 }}
               >
-                <div style={{ fontSize: 10, color: "#93c5fd", marginBottom: 4, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1 }}>
+                <div
+                  style={{
+                    fontSize: 10,
+                    color: "#93c5fd",
+                    marginBottom: 4,
+                    fontWeight: 600,
+                    textTransform: "uppercase",
+                    letterSpacing: 1,
+                  }}
+                >
                   Total Setup
                 </div>
-                <div style={{ fontSize: 20, fontWeight: 800, color: "#93c5fd" }}>
+                <div
+                  style={{ fontSize: 20, fontWeight: 800, color: "#93c5fd" }}
+                >
                   {fmtHrs(totalSetupTime)}
                 </div>
               </div>
@@ -1052,15 +1099,33 @@ export default function ProductionCalendar({
                   textAlign: "center",
                 }}
               >
-                <div style={{ fontSize: 10, color: "#86efac", marginBottom: 4, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1 }}>
+                <div
+                  style={{
+                    fontSize: 10,
+                    color: "#86efac",
+                    marginBottom: 4,
+                    fontWeight: 600,
+                    textTransform: "uppercase",
+                    letterSpacing: 1,
+                  }}
+                >
                   ▶ Total Run
                 </div>
-                <div style={{ fontSize: 20, fontWeight: 800, color: "#86efac" }}>
+                <div
+                  style={{ fontSize: 20, fontWeight: 800, color: "#86efac" }}
+                >
                   {fmtHrs(totalRunTime)}
                 </div>
               </div>
             </div>
-            <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 4 }}>
+            <div
+              style={{
+                marginTop: 10,
+                display: "flex",
+                flexDirection: "column",
+                gap: 4,
+              }}
+            >
               {allEntries.map((e, i) => {
                 const { setupT, runT } = getEntryTimes(e);
                 return (
@@ -1083,8 +1148,18 @@ export default function ProductionCalendar({
                       style={{
                         fontSize: 9,
                         fontWeight: 500,
-                        color: e.shift === "Morning" ? "#60a5fa" : e.shift === "OT" ? C.orange : "#c084fc",
-                        background: e.shift === "Morning" ? "#1e3a5f" : e.shift === "OT" ? C.orange + "22" : "#4c1d9522",
+                        color:
+                          e.shift === "Morning"
+                            ? "#60a5fa"
+                            : e.shift === "OT"
+                              ? C.orange
+                              : "#c084fc",
+                        background:
+                          e.shift === "Morning"
+                            ? "#1e3a5f"
+                            : e.shift === "OT"
+                              ? C.orange + "22"
+                              : "#4c1d9522",
                         padding: "1px 5px",
                         borderRadius: 3,
                         textAlign: "center",
@@ -1140,81 +1215,95 @@ export default function ProductionCalendar({
         </div>
 
         {/* Shift to next day — only for non-completed, non-locked entries */}
-        {!["Completed", "Cancelled", "Rescheduled"].includes(entry.status) && !entry.locked && (
-          <div
-            style={{
-              marginTop: 16,
-              padding: 14,
-              background: "#f9731611",
-              border: "1px solid #f9731633",
-              borderRadius: 8,
-            }}
-          >
-            <div style={{ fontSize: 13, fontWeight: 500, color: "#f97316", marginBottom: 10 }}>
-              ⏭ Shift This Entry to Next Working Day
-            </div>
-            <select
-              value={shiftReason}
-              onChange={(e) => setShiftReason(e.target.value)}
+        {!["Completed", "Cancelled", "Rescheduled"].includes(entry.status) &&
+          !entry.locked && (
+            <div
               style={{
-                width: "100%",
-                padding: "8px 10px",
-                borderRadius: 6,
-                background: "#1c2128",
-                border: "1px solid #30363d",
-                color: "#e6edf3",
-                fontSize: 13,
-                marginBottom: 10,
+                marginTop: 16,
+                padding: 14,
+                background: "#f9731611",
+                border: "1px solid #f9731633",
+                borderRadius: 8,
               }}
             >
-              <option value="">Select reason (optional)</option>
-              <option value="Breakdown">Machine Breakdown</option>
-              <option value="Material Delay">Material Delay</option>
-              <option value="Artwork Pending">Artwork Pending</option>
-              <option value="Urgent Insertion">Urgent Job Insertion</option>
-              <option value="Tool Unavailable">Tool Unavailable</option>
-              <option value="Manual">Manual Reschedule</option>
-            </select>
-            <button
-              disabled={shifting}
-              onClick={async () => {
-                try {
-                  setShifting(true);
-                  const res = await planningAPI.shiftEntry(entry._id, shiftReason || undefined);
-                  if (res.success) {
-                    toast?.(res.message, "success");
-                    setInsightModal(null);
-                    const newDate = res.newDate;
-                    if (newDate < displayStart || newDate > daysArray[daysArray.length - 1]) {
-                      setPivotDate(getWeekStart(newDate));
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: "#f97316",
+                  marginBottom: 10,
+                }}
+              >
+                ⏭ Shift This Entry to Next Working Day
+              </div>
+              <select
+                value={shiftReason}
+                onChange={(e) => setShiftReason(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "8px 10px",
+                  borderRadius: 6,
+                  background: "#1c2128",
+                  border: "1px solid #30363d",
+                  color: "#e6edf3",
+                  fontSize: 13,
+                  marginBottom: 10,
+                }}
+              >
+                <option value="">Select reason (optional)</option>
+                <option value="Breakdown">Machine Breakdown</option>
+                <option value="Material Delay">Material Delay</option>
+                <option value="Artwork Pending">Artwork Pending</option>
+                <option value="Urgent Insertion">Urgent Job Insertion</option>
+                <option value="Tool Unavailable">Tool Unavailable</option>
+                <option value="Manual">Manual Reschedule</option>
+              </select>
+              <button
+                disabled={shifting}
+                onClick={async () => {
+                  try {
+                    setShifting(true);
+                    const res = await planningAPI.shiftEntry(
+                      entry._id,
+                      shiftReason || undefined,
+                    );
+                    if (res.success) {
+                      toast?.(res.message, "success");
+                      setInsightModal(null);
+                      const newDate = res.newDate;
+                      if (
+                        newDate < displayStart ||
+                        newDate > daysArray[daysArray.length - 1]
+                      ) {
+                        setPivotDate(getWeekStart(newDate));
+                      } else {
+                        fetchCalendar();
+                      }
                     } else {
-                      fetchCalendar();
+                      toast?.(res.message || "Failed to shift", "error");
                     }
-                  } else {
-                    toast?.(res.message || "Failed to shift", "error");
+                  } catch {
+                    toast?.("Failed to shift entry", "error");
+                  } finally {
+                    setShifting(false);
                   }
-                } catch {
-                  toast?.("Failed to shift entry", "error");
-                } finally {
-                  setShifting(false);
-                }
-              }}
-              style={{
-                width: "100%",
-                padding: "10px",
-                borderRadius: 6,
-                background: shifting ? "#f9731688" : "#f97316",
-                border: "none",
-                color: "#fff",
-                fontWeight: 800,
-                fontSize: 13,
-                cursor: shifting ? "not-allowed" : "pointer",
-              }}
-            >
-              {shifting ? "Shifting..." : "Shift to Next Working Day →"}
-            </button>
-          </div>
-        )}
+                }}
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: 6,
+                  background: shifting ? "#f9731688" : "#f97316",
+                  border: "none",
+                  color: "#fff",
+                  fontWeight: 800,
+                  fontSize: 13,
+                  cursor: shifting ? "not-allowed" : "pointer",
+                }}
+              >
+                {shifting ? "Shifting..." : "Shift to Next Working Day →"}
+              </button>
+            </div>
+          )}
       </Modal>
     );
   };
@@ -1227,7 +1316,13 @@ export default function ProductionCalendar({
     // Group by job card number for a clean display
     const grouped = entries.reduce((acc, e) => {
       const key = e.jobCardNo;
-      if (!acc[key]) acc[key] = { jobCardNo: key, itemName: e.jobOrderId?.itemName || "—", dates: [], ids: [] };
+      if (!acc[key])
+        acc[key] = {
+          jobCardNo: key,
+          itemName: e.jobOrderId?.itemName || "—",
+          dates: [],
+          ids: [],
+        };
       acc[key].dates.push(moment(e.date).format("DD MMM"));
       acc[key].ids.push(e._id);
       return acc;
@@ -1256,59 +1351,100 @@ export default function ProductionCalendar({
       <>
         <div
           onClick={() => setMissedModal(null)}
-          style={{ position: "fixed", inset: 0, background: "#00000088", zIndex: 2000 }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "#00000088",
+            zIndex: 2000,
+          }}
         />
-        <div style={{
-          position: "fixed",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          width: 460,
-          maxWidth: "90vw",
-          background: "#1c2128",
-          border: "1px solid #30363d",
-          borderRadius: 12,
-          zIndex: 2001,
-          boxShadow: "0 24px 60px #000000cc",
-          overflow: "hidden",
-        }}>
+        <div
+          style={{
+            position: "fixed",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 460,
+            maxWidth: "90vw",
+            background: "#1c2128",
+            border: "1px solid #30363d",
+            borderRadius: 12,
+            zIndex: 2001,
+            boxShadow: "0 24px 60px #000000cc",
+            overflow: "hidden",
+          }}
+        >
           {/* Header */}
-          <div style={{ background: "#f9731611", borderBottom: "1px solid #f9731633", padding: "16px 20px", display: "flex", alignItems: "center", gap: 12 }}>
+          <div
+            style={{
+              background: "#f9731611",
+              borderBottom: "1px solid #f9731633",
+              padding: "16px 20px",
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+            }}
+          >
             <span style={{ fontSize: 24 }}>⏭️</span>
             <div>
               <div style={{ fontWeight: 800, fontSize: 15, color: "#f97316" }}>
                 Yesterday's Production Not Updated
               </div>
               <div style={{ fontSize: 12, color: "#8b949e", marginTop: 2 }}>
-                {jobs.length} job{jobs.length === 1 ? "" : "s"} planned for yesterday ({moment().subtract(1,"days").format("DD MMM")}) — no entry done. Shift to today?
+                {jobs.length} job{jobs.length === 1 ? "" : "s"} planned for
+                yesterday ({moment().subtract(1, "days").format("DD MMM")}) — no
+                entry done. Shift to today?
               </div>
             </div>
           </div>
 
           {/* Job list */}
-          <div style={{ padding: "14px 20px", maxHeight: 260, overflowY: "auto" }}>
+          <div
+            style={{ padding: "14px 20px", maxHeight: 260, overflowY: "auto" }}
+          >
             {jobs.map((job) => (
-              <div key={job.jobCardNo} style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "10px 12px",
-                marginBottom: 8,
-                background: "transparent",
-                borderRadius: 8,
-                border: "1px solid #30363d",
-              }}>
+              <div
+                key={job.jobCardNo}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "10px 12px",
+                  marginBottom: 8,
+                  background: "transparent",
+                  borderRadius: 8,
+                  border: "1px solid #30363d",
+                }}
+              >
                 <div>
-                  <div style={{ fontWeight: 500, fontSize: 13, color: "#e6edf3" }}>{job.jobCardNo}</div>
-                  <div style={{ fontSize: 11, color: "#8b949e", marginTop: 2 }}>{job.itemName}</div>
+                  <div
+                    style={{ fontWeight: 500, fontSize: 13, color: "#e6edf3" }}
+                  >
+                    {job.jobCardNo}
+                  </div>
+                  <div style={{ fontSize: 11, color: "#8b949e", marginTop: 2 }}>
+                    {job.itemName}
+                  </div>
                 </div>
                 <div style={{ textAlign: "right" }}>
                   {job.dates.map((d, i) => (
-                    <span key={i} style={{
-                      fontSize: 10, fontWeight: 500, color: "#f97316",
-                      background: "#f9731622", border: "1px solid #f9731633",
-                      borderRadius: 4, padding: "2px 7px", marginLeft: 4, display: "inline-block", marginBottom: 3
-                    }}>{d}</span>
+                    <span
+                      key={i}
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 500,
+                        color: "#f97316",
+                        background: "#f9731622",
+                        border: "1px solid #f9731633",
+                        borderRadius: 4,
+                        padding: "2px 7px",
+                        marginLeft: 4,
+                        display: "inline-block",
+                        marginBottom: 3,
+                      }}
+                    >
+                      {d}
+                    </span>
                   ))}
                 </div>
               </div>
@@ -1316,13 +1452,26 @@ export default function ProductionCalendar({
           </div>
 
           {/* Footer */}
-          <div style={{ padding: "14px 20px", borderTop: "1px solid #30363d", display: "flex", gap: 10 }}>
+          <div
+            style={{
+              padding: "14px 20px",
+              borderTop: "1px solid #30363d",
+              display: "flex",
+              gap: 10,
+            }}
+          >
             <button
               onClick={() => setMissedModal(null)}
               style={{
-                flex: 1, padding: "10px", borderRadius: 8,
-                background: "transparent", border: "1px solid #30363d",
-                color: "#8b949e", fontWeight: 500, fontSize: 13, cursor: "pointer",
+                flex: 1,
+                padding: "10px",
+                borderRadius: 8,
+                background: "transparent",
+                border: "1px solid #30363d",
+                color: "#8b949e",
+                fontWeight: 500,
+                fontSize: 13,
+                cursor: "pointer",
               }}
             >
               Skip for Now
@@ -1331,13 +1480,20 @@ export default function ProductionCalendar({
               onClick={handleShiftAll}
               disabled={shifting}
               style={{
-                flex: 2, padding: "10px", borderRadius: 8,
+                flex: 2,
+                padding: "10px",
+                borderRadius: 8,
                 background: shifting ? "#f9731688" : "#f97316",
-                border: "none", color: "#fff",
-                fontWeight: 800, fontSize: 13, cursor: shifting ? "not-allowed" : "pointer",
+                border: "none",
+                color: "#fff",
+                fontWeight: 800,
+                fontSize: 13,
+                cursor: shifting ? "not-allowed" : "pointer",
               }}
             >
-              {shifting ? "Shifting..." : `Yes, Shift to Today (${moment().format("DD MMM")}) →`}
+              {shifting
+                ? "Shifting..."
+                : `Yes, Shift to Today (${moment().format("DD MMM")}) →`}
             </button>
           </div>
         </div>
@@ -1362,7 +1518,9 @@ export default function ProductionCalendar({
         await breakdownLogAPI.create({
           machineId: mIdStr,
           startDateTime: new Date(bdForm.startDateTime).toISOString(),
-          endDateTime: bdForm.endDateTime ? new Date(bdForm.endDateTime).toISOString() : undefined,
+          endDateTime: bdForm.endDateTime
+            ? new Date(bdForm.endDateTime).toISOString()
+            : undefined,
           reasonCode: bdForm.reasonCode,
           issueDescription: bdForm.issueDescription,
           operatorName: bdForm.operatorName || undefined,
@@ -1377,7 +1535,11 @@ export default function ProductionCalendar({
         fetchCalendar();
         fetchBreakdowns();
       } catch (err) {
-        toast?.("Failed to log breakdown: " + (err?.response?.data?.error || err.message), "error");
+        toast?.(
+          "Failed to log breakdown: " +
+            (err?.response?.data?.error || err.message),
+          "error",
+        );
       } finally {
         setIsSavingBd(false);
       }
@@ -1398,38 +1560,115 @@ export default function ProductionCalendar({
       <>
         <div
           onClick={() => setBreakdownModal(null)}
-          style={{ position: "fixed", inset: 0, background: "#00000088", zIndex: 3000 }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "#00000088",
+            zIndex: 3000,
+          }}
         />
-        <div style={{
-          position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)",
-          width: 420, maxWidth: "92vw", background: "#1c2128", border: "1px solid #30363d",
-          borderRadius: 12, zIndex: 3001, boxShadow: "0 24px 60px #000000cc", overflow: "hidden",
-        }}>
+        <div
+          style={{
+            position: "fixed",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%,-50%)",
+            width: 420,
+            maxWidth: "92vw",
+            background: "#1c2128",
+            border: "1px solid #30363d",
+            borderRadius: 12,
+            zIndex: 3001,
+            boxShadow: "0 24px 60px #000000cc",
+            overflow: "hidden",
+          }}
+        >
           {/* Header */}
-          <div style={{ background: "#ef444411", borderBottom: "1px solid #ef444433", padding: "16px 20px", display: "flex", alignItems: "center", gap: 12 }}>
-            <i className={bdForm.reasonCode === "Operator Absent" ? "fa-solid fa-user" : "fa-solid fa-triangle-exclamation"} style={{ fontSize: 22 }} />
+          <div
+            style={{
+              background: "#ef444411",
+              borderBottom: "1px solid #ef444433",
+              padding: "16px 20px",
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+            }}
+          >
+            <i
+              className={
+                bdForm.reasonCode === "Operator Absent"
+                  ? "fa-solid fa-user"
+                  : "fa-solid fa-triangle-exclamation"
+              }
+              style={{ fontSize: 22 }}
+            />
             <div>
               <div style={{ fontWeight: 800, fontSize: 15, color: "#ef4444" }}>
-                {bdForm.reasonCode === "Operator Absent" ? "Log Operator Absence" : "Log Machine Breakdown"}
+                {bdForm.reasonCode === "Operator Absent"
+                  ? "Log Operator Absence"
+                  : "Log Machine Breakdown"}
               </div>
-              <div style={{ fontSize: 12, color: "#8b949e", marginTop: 2 }}>{machineName} — affected jobs will be auto-shifted</div>
+              <div style={{ fontSize: 12, color: "#8b949e", marginTop: 2 }}>
+                {machineName} — affected jobs will be auto-shifted
+              </div>
             </div>
-            <button onClick={() => setBreakdownModal(null)} style={{ marginLeft: "auto", background: "none", border: "none", color: "#8b949e", fontSize: 18, cursor: "pointer" }}>✕</button>
+            <button
+              onClick={() => setBreakdownModal(null)}
+              style={{
+                marginLeft: "auto",
+                background: "none",
+                border: "none",
+                color: "#8b949e",
+                fontSize: 18,
+                cursor: "pointer",
+              }}
+            >
+              ✕
+            </button>
           </div>
 
           {/* Form */}
-          <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
+          <div
+            style={{
+              padding: "16px 20px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 12,
+            }}
+          >
             <div>
-              <label style={{ fontSize: 11, color: "#8b949e", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 5 }}>
+              <label
+                style={{
+                  fontSize: 11,
+                  color: "#8b949e",
+                  fontWeight: 500,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  display: "block",
+                  marginBottom: 5,
+                }}
+              >
                 Reason Code
               </label>
               <select
                 value={bdForm.reasonCode}
-                onChange={(e) => setBdForm((p) => ({ ...p, reasonCode: e.target.value }))}
+                onChange={(e) =>
+                  setBdForm((p) => ({ ...p, reasonCode: e.target.value }))
+                }
                 style={inputStyle}
               >
-                {["Mechanical", "Electrical", "Tooling", "Material Jam", "Power", "Operator Absent", "Other"].map((r) => (
-                  <option key={r} value={r}>{r}</option>
+                {[
+                  "Mechanical",
+                  "Electrical",
+                  "Tooling",
+                  "Material Jam",
+                  "Power",
+                  "Operator Absent",
+                  "Other",
+                ].map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
                 ))}
               </select>
             </div>
@@ -1437,100 +1676,235 @@ export default function ProductionCalendar({
             {bdForm.reasonCode === "Operator Absent" ? (
               <>
                 <div>
-                  <label style={{ fontSize: 11, color: "#8b949e", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 5 }}>
+                  <label
+                    style={{
+                      fontSize: 11,
+                      color: "#8b949e",
+                      fontWeight: 500,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                      display: "block",
+                      marginBottom: 5,
+                    }}
+                  >
                     Absent Operator Name
                   </label>
                   {operatorMaster.length > 0 ? (
-                    <select value={bdForm.operatorName} onChange={(e) => setBdForm((p) => ({ ...p, operatorName: e.target.value }))} style={inputStyle}>
+                    <select
+                      value={bdForm.operatorName}
+                      onChange={(e) =>
+                        setBdForm((p) => ({
+                          ...p,
+                          operatorName: e.target.value,
+                        }))
+                      }
+                      style={inputStyle}
+                    >
                       <option value="">-- Select Operator --</option>
-                      {operatorMaster.filter((op) => op.isActive !== false).map((op) => (
-                        <option key={op._id} value={op.name}>{op.name}</option>
-                      ))}
+                      {operatorMaster
+                        .filter((op) => op.isActive !== false)
+                        .map((op) => (
+                          <option key={op._id} value={op.name}>
+                            {op.name}
+                          </option>
+                        ))}
                     </select>
                   ) : (
-                    <input type="text" value={bdForm.operatorName} onChange={(e) => setBdForm((p) => ({ ...p, operatorName: e.target.value }))} placeholder="Name of absent operator" style={inputStyle} />
+                    <input
+                      type="text"
+                      value={bdForm.operatorName}
+                      onChange={(e) =>
+                        setBdForm((p) => ({
+                          ...p,
+                          operatorName: e.target.value,
+                        }))
+                      }
+                      placeholder="Name of absent operator"
+                      style={inputStyle}
+                    />
                   )}
                 </div>
                 <div>
-                  <label style={{ fontSize: 11, color: "#8b949e", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 5 }}>
+                  <label
+                    style={{
+                      fontSize: 11,
+                      color: "#8b949e",
+                      fontWeight: 500,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                      display: "block",
+                      marginBottom: 5,
+                    }}
+                  >
                     Backup Operator (if any)
                   </label>
                   {operatorMaster.length > 0 ? (
-                    <select value={bdForm.backupOperator} onChange={(e) => setBdForm((p) => ({ ...p, backupOperator: e.target.value }))} style={inputStyle}>
+                    <select
+                      value={bdForm.backupOperator}
+                      onChange={(e) =>
+                        setBdForm((p) => ({
+                          ...p,
+                          backupOperator: e.target.value,
+                        }))
+                      }
+                      style={inputStyle}
+                    >
                       <option value="">-- Select Backup --</option>
-                      {operatorMaster.filter((op) => op.isActive !== false).map((op) => (
-                        <option key={op._id} value={op.name}>{op.name}</option>
-                      ))}
+                      {operatorMaster
+                        .filter((op) => op.isActive !== false)
+                        .map((op) => (
+                          <option key={op._id} value={op.name}>
+                            {op.name}
+                          </option>
+                        ))}
                     </select>
                   ) : (
-                    <input type="text" value={bdForm.backupOperator} onChange={(e) => setBdForm((p) => ({ ...p, backupOperator: e.target.value }))} placeholder="Name of backup operator" style={inputStyle} />
+                    <input
+                      type="text"
+                      value={bdForm.backupOperator}
+                      onChange={(e) =>
+                        setBdForm((p) => ({
+                          ...p,
+                          backupOperator: e.target.value,
+                        }))
+                      }
+                      placeholder="Name of backup operator"
+                      style={inputStyle}
+                    />
                   )}
                 </div>
               </>
             ) : null}
 
             <div>
-              <label style={{ fontSize: 11, color: "#8b949e", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 5 }}>
-                {bdForm.reasonCode === "Operator Absent" ? "Date *" : "Start Date & Time *"}
+              <label
+                style={{
+                  fontSize: 11,
+                  color: "#8b949e",
+                  fontWeight: 500,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  display: "block",
+                  marginBottom: 5,
+                }}
+              >
+                {bdForm.reasonCode === "Operator Absent"
+                  ? "Date *"
+                  : "Start Date & Time *"}
               </label>
               <input
-                type={bdForm.reasonCode === "Operator Absent" ? "date" : "datetime-local"}
+                type={
+                  bdForm.reasonCode === "Operator Absent"
+                    ? "date"
+                    : "datetime-local"
+                }
                 value={bdForm.startDateTime}
-                onChange={(e) => setBdForm((p) => ({ ...p, startDateTime: e.target.value }))}
+                onChange={(e) =>
+                  setBdForm((p) => ({ ...p, startDateTime: e.target.value }))
+                }
                 style={inputStyle}
               />
             </div>
 
             {bdForm.reasonCode !== "Operator Absent" && (
               <div>
-                <label style={{ fontSize: 11, color: "#8b949e", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 5 }}>
+                <label
+                  style={{
+                    fontSize: 11,
+                    color: "#8b949e",
+                    fontWeight: 500,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.06em",
+                    display: "block",
+                    marginBottom: 5,
+                  }}
+                >
                   Expected Resolution (optional)
                 </label>
                 <input
                   type="datetime-local"
                   value={bdForm.endDateTime}
-                  onChange={(e) => setBdForm((p) => ({ ...p, endDateTime: e.target.value }))}
+                  onChange={(e) =>
+                    setBdForm((p) => ({ ...p, endDateTime: e.target.value }))
+                  }
                   style={inputStyle}
                 />
               </div>
             )}
 
             <div>
-              <label style={{ fontSize: 11, color: "#8b949e", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 5 }}>
-                {bdForm.reasonCode === "Operator Absent" ? "Notes" : "Issue Description"}
+              <label
+                style={{
+                  fontSize: 11,
+                  color: "#8b949e",
+                  fontWeight: 500,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  display: "block",
+                  marginBottom: 5,
+                }}
+              >
+                {bdForm.reasonCode === "Operator Absent"
+                  ? "Notes"
+                  : "Issue Description"}
               </label>
               <textarea
                 value={bdForm.issueDescription}
-                onChange={(e) => setBdForm((p) => ({ ...p, issueDescription: e.target.value }))}
+                onChange={(e) =>
+                  setBdForm((p) => ({ ...p, issueDescription: e.target.value }))
+                }
                 rows={2}
-                placeholder={bdForm.reasonCode === "Operator Absent" ? "Any notes..." : "Brief description of the issue..."}
+                placeholder={
+                  bdForm.reasonCode === "Operator Absent"
+                    ? "Any notes..."
+                    : "Brief description of the issue..."
+                }
                 style={{ ...inputStyle, resize: "vertical" }}
               />
             </div>
           </div>
 
           {/* Footer */}
-          <div style={{ padding: "14px 20px", borderTop: "1px solid #30363d", display: "flex", gap: 10 }}>
+          <div
+            style={{
+              padding: "14px 20px",
+              borderTop: "1px solid #30363d",
+              display: "flex",
+              gap: 10,
+            }}
+          >
             <button
               onClick={() => setBreakdownModal(null)}
               style={{
-                      background: "transparent",
-                      color: "#ffffff",
-                      border: "1px solid rgba(255,255,255,0.2)",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-            ><i className="fa-solid fa-xmark" /> Cancel</button>
+                background: "transparent",
+                color: "#ffffff",
+                border: "1px solid rgba(255,255,255,0.2)",
+                borderRadius: 6,
+                padding: "6px 12px",
+                fontSize: 11,
+                fontWeight: 500,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <i className="fa-solid fa-xmark" /> Cancel
+            </button>
             <button
               onClick={handleSubmit}
               disabled={isSavingBd}
-              style={{ flex: 2, padding: "10px", borderRadius: 8, background: isSavingBd ? "#ef444488" : "#ef4444", border: "none", color: "#fff", fontWeight: 800, fontSize: 13, cursor: isSavingBd ? "not-allowed" : "pointer" }}
+              style={{
+                flex: 2,
+                padding: "10px",
+                borderRadius: 8,
+                background: isSavingBd ? "#ef444488" : "#ef4444",
+                border: "none",
+                color: "#fff",
+                fontWeight: 800,
+                fontSize: 13,
+                cursor: isSavingBd ? "not-allowed" : "pointer",
+              }}
             >
               {isSavingBd
                 ? "Logging & Shifting..."
@@ -1546,18 +1920,35 @@ export default function ProductionCalendar({
 
   const PowerCutModal = () => {
     if (!powerCutModal) return null;
-    const inputStyle = { width: "100%", padding: "8px 10px", background: "transparent", border: "1px solid #30363d", borderRadius: 6, color: "#e6edf3", fontSize: 13, boxSizing: "border-box" };
+    const inputStyle = {
+      width: "100%",
+      padding: "8px 10px",
+      background: "transparent",
+      border: "1px solid #30363d",
+      borderRadius: 6,
+      color: "#e6edf3",
+      fontSize: 13,
+      boxSizing: "border-box",
+    };
 
     const toggleMachine = (id) => {
       setPcForm((p) => ({
         ...p,
-        machineIds: p.machineIds.includes(id) ? p.machineIds.filter((x) => x !== id) : [...p.machineIds, id],
+        machineIds: p.machineIds.includes(id)
+          ? p.machineIds.filter((x) => x !== id)
+          : [...p.machineIds, id],
       }));
     };
 
     const handleSubmit = async () => {
-      if (!pcForm.date) { toast?.("Date is required", "error"); return; }
-      if (pcForm.machineIds.length === 0) { toast?.("Select at least one affected machine", "error"); return; }
+      if (!pcForm.date) {
+        toast?.("Date is required", "error");
+        return;
+      }
+      if (pcForm.machineIds.length === 0) {
+        toast?.("Select at least one affected machine", "error");
+        return;
+      }
       try {
         setIsSavingPc(true);
         await factoryCalendarAPI.create({
@@ -1567,13 +1958,20 @@ export default function ProductionCalendar({
           affectsAllMachines: false,
           affectedMachineIds: pcForm.machineIds,
         });
-        toast?.(`Power cut logged — ${pcForm.machineIds.length} machines shifted`, "success");
+        toast?.(
+          `Power cut logged — ${pcForm.machineIds.length} machines shifted`,
+          "success",
+        );
         setPowerCutModal(false);
         setPcForm({ date: "", reason: "", machineIds: [] });
         fetchCalendar();
         fetchHolidays();
       } catch (err) {
-        toast?.("Failed to log power cut: " + (err?.response?.data?.error || err.message), "error");
+        toast?.(
+          "Failed to log power cut: " +
+            (err?.response?.data?.error || err.message),
+          "error",
+        );
       } finally {
         setIsSavingPc(false);
       }
@@ -1581,28 +1979,142 @@ export default function ProductionCalendar({
 
     return (
       <>
-        <div onClick={() => setPowerCutModal(false)} style={{ position: "fixed", inset: 0, background: "#00000088", zIndex: 3000 }} />
-        <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 460, maxWidth: "92vw", background: "#1c2128", border: "1px solid #30363d", borderRadius: 12, zIndex: 3001, boxShadow: "0 24px 60px #000000cc", overflow: "hidden" }}>
-          <div style={{ background: "#eab30811", borderBottom: "1px solid #eab30833", padding: "16px 20px", display: "flex", alignItems: "center", gap: 12 }}>
+        <div
+          onClick={() => setPowerCutModal(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "#00000088",
+            zIndex: 3000,
+          }}
+        />
+        <div
+          style={{
+            position: "fixed",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%,-50%)",
+            width: 460,
+            maxWidth: "92vw",
+            background: "#1c2128",
+            border: "1px solid #30363d",
+            borderRadius: 12,
+            zIndex: 3001,
+            boxShadow: "0 24px 60px #000000cc",
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              background: "#eab30811",
+              borderBottom: "1px solid #eab30833",
+              padding: "16px 20px",
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+            }}
+          >
             <i className="fa-solid fa-bolt" style={{ fontSize: 22 }} />
             <div>
-              <div style={{ fontWeight: 800, fontSize: 15, color: "#eab308" }}>Log Power Cut</div>
-              <div style={{ fontSize: 12, color: "#8b949e", marginTop: 2 }}>Select affected machines — their jobs will be auto-shifted</div>
+              <div style={{ fontWeight: 800, fontSize: 15, color: "#eab308" }}>
+                Log Power Cut
+              </div>
+              <div style={{ fontSize: 12, color: "#8b949e", marginTop: 2 }}>
+                Select affected machines — their jobs will be auto-shifted
+              </div>
             </div>
-            <button onClick={() => setPowerCutModal(false)} style={{ marginLeft: "auto", background: "none", border: "none", color: "#8b949e", fontSize: 18, cursor: "pointer" }}>✕</button>
+            <button
+              onClick={() => setPowerCutModal(false)}
+              style={{
+                marginLeft: "auto",
+                background: "none",
+                border: "none",
+                color: "#8b949e",
+                fontSize: 18,
+                cursor: "pointer",
+              }}
+            >
+              ✕
+            </button>
           </div>
-          <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
+          <div
+            style={{
+              padding: "16px 20px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 12,
+            }}
+          >
             <div>
-              <label style={{ fontSize: 11, color: "#8b949e", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 5 }}>Date *</label>
-              <input type="date" value={pcForm.date} onChange={(e) => setPcForm((p) => ({ ...p, date: e.target.value }))} style={inputStyle} />
+              <label
+                style={{
+                  fontSize: 11,
+                  color: "#8b949e",
+                  fontWeight: 500,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  display: "block",
+                  marginBottom: 5,
+                }}
+              >
+                Date *
+              </label>
+              <input
+                type="date"
+                value={pcForm.date}
+                onChange={(e) =>
+                  setPcForm((p) => ({ ...p, date: e.target.value }))
+                }
+                style={inputStyle}
+              />
             </div>
             <div>
-              <label style={{ fontSize: 11, color: "#8b949e", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 5 }}>Reason / Note</label>
-              <input type="text" value={pcForm.reason} onChange={(e) => setPcForm((p) => ({ ...p, reason: e.target.value }))} placeholder="e.g. MSEB scheduled cut" style={inputStyle} />
+              <label
+                style={{
+                  fontSize: 11,
+                  color: "#8b949e",
+                  fontWeight: 500,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  display: "block",
+                  marginBottom: 5,
+                }}
+              >
+                Reason / Note
+              </label>
+              <input
+                type="text"
+                value={pcForm.reason}
+                onChange={(e) =>
+                  setPcForm((p) => ({ ...p, reason: e.target.value }))
+                }
+                placeholder="e.g. MSEB scheduled cut"
+                style={inputStyle}
+              />
             </div>
             <div>
-              <label style={{ fontSize: 11, color: "#8b949e", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 8 }}>Affected Machines *</label>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, maxHeight: 180, overflowY: "auto" }}>
+              <label
+                style={{
+                  fontSize: 11,
+                  color: "#8b949e",
+                  fontWeight: 500,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  display: "block",
+                  marginBottom: 8,
+                }}
+              >
+                Affected Machines *
+              </label>
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 6,
+                  maxHeight: 180,
+                  overflowY: "auto",
+                }}
+              >
                 {machines.map((m) => {
                   const mId = (m._id || m.id || "").toString();
                   const selected = pcForm.machineIds.includes(mId);
@@ -1610,7 +2122,16 @@ export default function ProductionCalendar({
                     <button
                       key={mId}
                       onClick={() => toggleMachine(mId)}
-                      style={{ padding: "5px 10px", borderRadius: 6, fontSize: 11, fontWeight: 500, cursor: "pointer", background: selected ? "#eab30833" : "#ffffff08", border: `1px solid ${selected ? "#eab308" : "#30363d"}`, color: selected ? "#eab308" : "#8b949e" }}
+                      style={{
+                        padding: "5px 10px",
+                        borderRadius: 6,
+                        fontSize: 11,
+                        fontWeight: 500,
+                        cursor: "pointer",
+                        background: selected ? "#eab30833" : "#ffffff08",
+                        border: `1px solid ${selected ? "#eab308" : "#30363d"}`,
+                        color: selected ? "#eab308" : "#8b949e",
+                      }}
                     >
                       {m.name}
                     </button>
@@ -1619,22 +2140,50 @@ export default function ProductionCalendar({
               </div>
             </div>
           </div>
-          <div style={{ padding: "14px 20px", borderTop: "1px solid #30363d", display: "flex", gap: 10 }}>
-            <button onClick={() => setPowerCutModal(false)} style={{
-                      background: "transparent",
-                      color: "#ffffff",
-                      border: "1px solid rgba(255,255,255,0.2)",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}><i className="fa-solid fa-xmark" /> Cancel</button>
-            <button onClick={handleSubmit} disabled={isSavingPc} style={{ flex: 2, padding: "10px", borderRadius: 8, background: isSavingPc ? "#eab30888" : "#eab308", border: "none", color: "#000", fontWeight: 800, fontSize: 13, cursor: isSavingPc ? "not-allowed" : "pointer" }}>
-              {isSavingPc ? "Logging..." : `Log Power Cut (${pcForm.machineIds.length} machines)`}
+          <div
+            style={{
+              padding: "14px 20px",
+              borderTop: "1px solid #30363d",
+              display: "flex",
+              gap: 10,
+            }}
+          >
+            <button
+              onClick={() => setPowerCutModal(false)}
+              style={{
+                background: "transparent",
+                color: "#ffffff",
+                border: "1px solid rgba(255,255,255,0.2)",
+                borderRadius: 6,
+                padding: "6px 12px",
+                fontSize: 11,
+                fontWeight: 500,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <i className="fa-solid fa-xmark" /> Cancel
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={isSavingPc}
+              style={{
+                flex: 2,
+                padding: "10px",
+                borderRadius: 8,
+                background: isSavingPc ? "#eab30888" : "#eab308",
+                border: "none",
+                color: "#000",
+                fontWeight: 800,
+                fontSize: 13,
+                cursor: isSavingPc ? "not-allowed" : "pointer",
+              }}
+            >
+              {isSavingPc
+                ? "Logging..."
+                : `Log Power Cut (${pcForm.machineIds.length} machines)`}
             </button>
           </div>
         </div>
@@ -1642,7 +2191,9 @@ export default function ProductionCalendar({
     );
   };
 
-  const canApproveRush = currentUser && ["Admin", "Manager", "Production"].includes(currentUser.role);
+  const canApproveRush =
+    currentUser &&
+    ["Admin", "Manager", "Production"].includes(currentUser.role);
 
   const RushApprovalPanel = () => {
     const [approvingId, setApprovingId] = useState(null);
@@ -1658,33 +2209,112 @@ export default function ProductionCalendar({
           fetchRushJobs();
         }
       } catch (err) {
-        toast?.("Failed to approve rush: " + (err?.response?.data?.message || err.message), "error");
+        toast?.(
+          "Failed to approve rush: " +
+            (err?.response?.data?.message || err.message),
+          "error",
+        );
       } finally {
         setApprovingId(null);
       }
     };
 
     return (
-      <div style={{ background: "#ef444411", border: "1px solid #ef444433", borderRadius: 8, padding: "12px 16px", marginBottom: 12, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        <i className="fa-solid fa-circle-exclamation" style={{ fontSize: 16, color: '#ef4444' }} />
-        <span style={{ fontWeight: 800, fontSize: 13, color: "#ef4444" }}>Rush Orders Awaiting Approval</span>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginLeft: "auto" }}>
+      <div
+        style={{
+          background: "#ef444411",
+          border: "1px solid #ef444433",
+          borderRadius: 8,
+          padding: "12px 16px",
+          marginBottom: 12,
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          flexWrap: "wrap",
+        }}
+      >
+        <i
+          className="fa-solid fa-circle-exclamation"
+          style={{ fontSize: 16, color: "#ef4444" }}
+        />
+        <span style={{ fontWeight: 800, fontSize: 13, color: "#ef4444" }}>
+          Rush Orders Awaiting Approval
+        </span>
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            flexWrap: "wrap",
+            marginLeft: "auto",
+          }}
+        >
           {rushJobs.map((jo) => (
-            <div key={jo._id} style={{ background: "transparent", border: "1px solid #ef444444", borderRadius: 6, padding: "6px 10px", display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 12, fontWeight: 800, color: jo.orderPriorityOverride === "Critical" ? "#ef4444" : "#f97316" }}>
-                <span style={{color: jo.orderPriorityOverride === "Critical" ? "#ef4444" : "#f97316", marginRight:4}}>●</span>{jo.joNo}
+            <div
+              key={jo._id}
+              style={{
+                background: "transparent",
+                border: "1px solid #ef444444",
+                borderRadius: 6,
+                padding: "6px 10px",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 12,
+                  fontWeight: 800,
+                  color:
+                    jo.orderPriorityOverride === "Critical"
+                      ? "#ef4444"
+                      : "#f97316",
+                }}
+              >
+                <span
+                  style={{
+                    color:
+                      jo.orderPriorityOverride === "Critical"
+                        ? "#ef4444"
+                        : "#f97316",
+                    marginRight: 4,
+                  }}
+                >
+                  ●
+                </span>
+                {jo.joNo}
               </span>
-              <span style={{ fontSize: 11, color: "#8b949e" }}>{jo.itemName}</span>
+              <span style={{ fontSize: 11, color: "#8b949e" }}>
+                {jo.itemName}
+              </span>
               {canApproveRush ? (
                 <button
                   onClick={() => handleApprove(jo)}
                   disabled={approvingId === jo._id}
-                  style={{ padding: "3px 8px", borderRadius: 4, background: approvingId === jo._id ? "#ef444488" : "#ef4444", border: "none", color: "#fff", fontSize: 10, fontWeight: 800, cursor: approvingId === jo._id ? "not-allowed" : "pointer" }}
+                  style={{
+                    padding: "3px 8px",
+                    borderRadius: 4,
+                    background:
+                      approvingId === jo._id ? "#ef444488" : "#ef4444",
+                    border: "none",
+                    color: "#fff",
+                    fontSize: 10,
+                    fontWeight: 800,
+                    cursor: approvingId === jo._id ? "not-allowed" : "pointer",
+                  }}
                 >
                   {approvingId === jo._id ? "..." : "Approve →"}
                 </button>
               ) : (
-                <span style={{ fontSize: 10, color: "#8b949e", fontStyle: "italic" }}>Awaiting approval</span>
+                <span
+                  style={{
+                    fontSize: 10,
+                    color: "#8b949e",
+                    fontStyle: "italic",
+                  }}
+                >
+                  Awaiting approval
+                </span>
               )}
             </div>
           ))}
@@ -1712,7 +2342,8 @@ export default function ProductionCalendar({
             fontWeight: 500,
             fontSize: 12,
             cursor: "pointer",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+            boxShadow:
+              "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
             marginLeft: "auto",
           }}
         >
@@ -1829,7 +2460,16 @@ export default function ProductionCalendar({
             setPowerCutModal(true);
             setPcForm({ date: today, reason: "", machineIds: [] });
           }}
-          style={{ padding: "7px 12px", borderRadius: 6, border: "1px solid #eab30888", background: "transparent", color: "#eab308", fontWeight: 500, fontSize: 12, cursor: "pointer" }}
+          style={{
+            padding: "7px 12px",
+            borderRadius: 6,
+            border: "1px solid #eab30888",
+            background: "transparent",
+            color: "#eab308",
+            fontWeight: 500,
+            fontSize: 12,
+            cursor: "pointer",
+          }}
         >
           Power Cut
         </button>
@@ -1843,19 +2483,39 @@ export default function ProductionCalendar({
                 toast?.(res.message, "success");
                 fetchMaintenance();
               } catch (err) {
-                toast?.("PM setup failed: " + (err?.response?.data?.message || err.message), "error");
+                toast?.(
+                  "PM setup failed: " +
+                    (err?.response?.data?.message || err.message),
+                  "error",
+                );
               } finally {
                 setIsSettingUpPm(false);
               }
             }}
             disabled={isSettingUpPm}
-            style={{ padding: "7px 12px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.15)", background: "transparent", color: "#aaa", fontWeight: 500, fontSize: 12, cursor: "pointer" }}
+            style={{
+              padding: "7px 12px",
+              borderRadius: 6,
+              border: "1px solid rgba(255,255,255,0.15)",
+              background: "transparent",
+              color: "#aaa",
+              fontWeight: 500,
+              fontSize: 12,
+              cursor: "pointer",
+            }}
           >
             {isSettingUpPm ? "..." : "Setup PM"}
           </button>
         )}
 
-        <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
+        <div
+          style={{
+            marginLeft: "auto",
+            display: "flex",
+            gap: 8,
+            alignItems: "center",
+          }}
+        >
           <select
             value={machineTypeFilter}
             onChange={(e) => {
@@ -1883,8 +2543,14 @@ export default function ProductionCalendar({
               padding: "7px 12px",
               borderRadius: 6,
               border: `1px solid ${machineFilter !== "All Machines" ? C.blue || "#3b82f6" : C.border}`,
-              background: machineFilter !== "All Machines" ? (C.blue || "#3b82f6") + "22" : C.inputBg || C.surface,
-              color: machineFilter !== "All Machines" ? C.blue || "#3b82f6" : C.text || "#e5e7eb",
+              background:
+                machineFilter !== "All Machines"
+                  ? (C.blue || "#3b82f6") + "22"
+                  : C.inputBg || C.surface,
+              color:
+                machineFilter !== "All Machines"
+                  ? C.blue || "#3b82f6"
+                  : C.text || "#e5e7eb",
               fontSize: 12,
               cursor: "pointer",
               fontWeight: machineFilter !== "All Machines" ? 700 : 400,
@@ -1895,7 +2561,9 @@ export default function ProductionCalendar({
               ? machines
               : machines.filter((m) => m.type === machineTypeFilter)
             ).map((m) => (
-              <option key={m.id} value={m.name}>{m.name}</option>
+              <option key={m.id} value={m.name}>
+                {m.name}
+              </option>
             ))}
           </select>
         </div>
@@ -1941,7 +2609,11 @@ export default function ProductionCalendar({
                   textTransform: "uppercase",
                 }}
               >
-                <i className={MACHINE_ICON[stat.category] || "fa-solid fa-gears"} style={{marginRight:4}} /> {stat.category}
+                <i
+                  className={MACHINE_ICON[stat.category] || "fa-solid fa-gears"}
+                  style={{ marginRight: 4 }}
+                />{" "}
+                {stat.category}
               </span>
               <Badge text={`${stat.machineCount} Machines`} color="#ffffff11" />
             </div>
@@ -2152,7 +2824,11 @@ export default function ProductionCalendar({
                 return (
                   <th
                     key={d}
-                    title={isHoliday ? `${hDay.type}: ${hDay.reason || ""}` : undefined}
+                    title={
+                      isHoliday
+                        ? `${hDay.type}: ${hDay.reason || ""}`
+                        : undefined
+                    }
                     style={{
                       padding: "8px 4px",
                       textAlign: "center",
@@ -2160,25 +2836,50 @@ export default function ProductionCalendar({
                       fontWeight: 500,
                       color: isHoliday
                         ? "#8b5cf6"
-                        : isToday ? C.orange || "#f97316" : C.muted,
+                        : isToday
+                          ? C.orange || "#f97316"
+                          : C.muted,
                       background: isHoliday
                         ? "#8b5cf611"
-                        : isToday ? (C.orange || "#f97316") + "11" : C.surface,
+                        : isToday
+                          ? (C.orange || "#f97316") + "11"
+                          : C.surface,
                       borderBottom: `1px solid ${C.border}`,
                       borderRight: `1px solid ${C.border}22`,
                       minWidth: colW,
                       borderTop: isHoliday
                         ? "2px solid #8b5cf6"
-                        : isToday ? `2px solid ${C.orange || "#f97316"}` : "none",
+                        : isToday
+                          ? `2px solid ${C.orange || "#f97316"}`
+                          : "none",
                     }}
                   >
                     <div>{dayName}</div>
-                    <div style={{ fontSize: rangeView === "week" ? 15 : 12, fontWeight: 900, marginTop: 2 }}>
+                    <div
+                      style={{
+                        fontSize: rangeView === "week" ? 15 : 12,
+                        fontWeight: 900,
+                        marginTop: 2,
+                      }}
+                    >
                       {dayNum}
                     </div>
                     {isHoliday && (
-                      <div style={{ fontSize: 8, color: "#8b5cf6", marginTop: 1, fontWeight: 700 }}>
-                        {hDay.type === "Holiday" ? "HOL" : hDay.type === "Shutdown" ? "OFF" : hDay.type === "Half-day" ? "½ DAY" : hDay.type}
+                      <div
+                        style={{
+                          fontSize: 8,
+                          color: "#8b5cf6",
+                          marginTop: 1,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {hDay.type === "Holiday"
+                          ? "HOL"
+                          : hDay.type === "Shutdown"
+                            ? "OFF"
+                            : hDay.type === "Half-day"
+                              ? "½ DAY"
+                              : hDay.type}
                       </div>
                     )}
                   </th>
@@ -2253,12 +2954,26 @@ export default function ProductionCalendar({
                           {machine.type}
                         </div>
                       </div>
-                      <div style={{ marginLeft: "auto", display: "flex", gap: 4, alignItems: "center" }}>
+                      <div
+                        style={{
+                          marginLeft: "auto",
+                          display: "flex",
+                          gap: 4,
+                          alignItems: "center",
+                        }}
+                      >
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             setBreakdownModal({ machine });
-                            setBdForm({ reasonCode: "Other", issueDescription: "", startDateTime: new Date().toISOString().slice(0, 16), endDateTime: "" });
+                            setBdForm({
+                              reasonCode: "Other",
+                              issueDescription: "",
+                              startDateTime: new Date()
+                                .toISOString()
+                                .slice(0, 16),
+                              endDateTime: "",
+                            });
                           }}
                           title="Log Breakdown"
                           style={{
@@ -2275,7 +2990,14 @@ export default function ProductionCalendar({
                         >
                           BD
                         </button>
-                        <i className="fa-solid fa-gears" style={{ color: C.border, fontSize: 12, cursor: "pointer" }} />
+                        <i
+                          className="fa-solid fa-gears"
+                          style={{
+                            color: C.border,
+                            fontSize: 12,
+                            cursor: "pointer",
+                          }}
+                        />
                       </div>
                     </div>
                   </td>
@@ -2287,15 +3009,21 @@ export default function ProductionCalendar({
                     const isToday = d === today;
                     const isWeekend =
                       new Date(d).getDay() === 0 || new Date(d).getDay() === 6;
-                    const mIdStr = (fullMachine?._id || machine.id || "").toString();
+                    const mIdStr = (
+                      fullMachine?._id ||
+                      machine.id ||
+                      ""
+                    ).toString();
                     const bdOnDay = breakdownIndex[mIdStr]?.[d];
                     const oaOnDay = operatorAbsentIndex[mIdStr]?.[d];
                     const pmOnDay = maintenanceIndex[mIdStr]?.[d];
                     const holidayOnDay = holidayIndex[d];
-                    const powerCutOnDay = holidayOnDay?.type === "Power-cut" &&
+                    const powerCutOnDay =
+                      holidayOnDay?.type === "Power-cut" &&
                       (holidayOnDay.affectsAllMachines !== false ||
-                       holidayOnDay.affectedMachineIds?.includes(mIdStr))
-                      ? holidayOnDay : null;
+                        holidayOnDay.affectedMachineIds?.includes(mIdStr))
+                        ? holidayOnDay
+                        : null;
 
                     return (
                       <td
@@ -2321,50 +3049,157 @@ export default function ProductionCalendar({
                         {bdOnDay && (
                           <div
                             title={`Breakdown: ${bdOnDay.reasonCode}${bdOnDay.issueDescription ? " — " + bdOnDay.issueDescription : ""}`}
-                            style={{ background: "#ef444422", border: "1px solid #ef444488", borderRadius: "4px 8px 8px 4px", color: "#ef4444", fontSize: 9, fontWeight: 800, padding: "6px 6px", marginBottom: 6, textAlign: "left" }}
+                            style={{
+                              background: "#ef444422",
+                              border: "1px solid #ef444488",
+                              borderRadius: "4px 8px 8px 4px",
+                              color: "#ef4444",
+                              fontSize: 9,
+                              fontWeight: 800,
+                              padding: "6px 6px",
+                              marginBottom: 6,
+                              textAlign: "left",
+                            }}
                           >
-                            <div><i className="fa-solid fa-triangle-exclamation" style={{marginRight:4}} />BREAKDOWN</div>
-                            <div style={{ opacity: 0.8, fontWeight: 600, marginTop: 2 }}>{bdOnDay.reasonCode}</div>
-                            {bdOnDay.status === "Open" && <div style={{ opacity: 0.7, fontSize: 8, marginTop: 2 }}>● Open</div>}
+                            <div>
+                              <i
+                                className="fa-solid fa-triangle-exclamation"
+                                style={{ marginRight: 4 }}
+                              />
+                              BREAKDOWN
+                            </div>
+                            <div
+                              style={{
+                                opacity: 0.8,
+                                fontWeight: 600,
+                                marginTop: 2,
+                              }}
+                            >
+                              {bdOnDay.reasonCode}
+                            </div>
+                            {bdOnDay.status === "Open" && (
+                              <div
+                                style={{
+                                  opacity: 0.7,
+                                  fontSize: 8,
+                                  marginTop: 2,
+                                }}
+                              >
+                                ● Open
+                              </div>
+                            )}
                           </div>
                         )}
                         {oaOnDay && (
                           <div
                             title={`Operator Absent${oaOnDay.operatorName ? ": " + oaOnDay.operatorName : ""}${oaOnDay.backupOperator ? " → Backup: " + oaOnDay.backupOperator : ""}`}
-                            style={{ background: "#f9731622", border: "1px solid #f9731688", borderRadius: "4px 8px 8px 4px", color: "#f97316", fontSize: 9, fontWeight: 800, padding: "6px 6px", marginBottom: 6, textAlign: "left" }}
+                            style={{
+                              background: "#f9731622",
+                              border: "1px solid #f9731688",
+                              borderRadius: "4px 8px 8px 4px",
+                              color: "#f97316",
+                              fontSize: 9,
+                              fontWeight: 800,
+                              padding: "6px 6px",
+                              marginBottom: 6,
+                              textAlign: "left",
+                            }}
                           >
-                            <div><i className="fa-solid fa-user" style={{marginRight:4}} />OPERATOR ABSENT</div>
-                            {oaOnDay.operatorName && <div style={{ opacity: 0.8, fontWeight: 600, marginTop: 2 }}>{oaOnDay.operatorName}</div>}
-                            {oaOnDay.backupOperator && <div style={{ opacity: 0.7, fontSize: 8, marginTop: 2 }}>Backup: {oaOnDay.backupOperator}</div>}
+                            <div>
+                              <i
+                                className="fa-solid fa-user"
+                                style={{ marginRight: 4 }}
+                              />
+                              OPERATOR ABSENT
+                            </div>
+                            {oaOnDay.operatorName && (
+                              <div
+                                style={{
+                                  opacity: 0.8,
+                                  fontWeight: 600,
+                                  marginTop: 2,
+                                }}
+                              >
+                                {oaOnDay.operatorName}
+                              </div>
+                            )}
+                            {oaOnDay.backupOperator && (
+                              <div
+                                style={{
+                                  opacity: 0.7,
+                                  fontSize: 8,
+                                  marginTop: 2,
+                                }}
+                              >
+                                Backup: {oaOnDay.backupOperator}
+                              </div>
+                            )}
                           </div>
                         )}
                         {pmOnDay && (
                           <div
                             title={`PM: ${pmOnDay.type} — ${pmOnDay.hoursBlocked}h blocked`}
-                            style={{ background: "#6b728022", border: "1px solid #6b728055", borderRadius: "4px 8px 8px 4px", color: "#9ca3af", fontSize: 9, fontWeight: 800, padding: "6px 6px", marginBottom: 6, textAlign: "left" }}
+                            style={{
+                              background: "#6b728022",
+                              border: "1px solid #6b728055",
+                              borderRadius: "4px 8px 8px 4px",
+                              color: "#9ca3af",
+                              fontSize: 9,
+                              fontWeight: 800,
+                              padding: "6px 6px",
+                              marginBottom: 6,
+                              textAlign: "left",
+                            }}
                           >
                             <div>PM</div>
-                            <div style={{ opacity: 0.8, fontWeight: 600, marginTop: 2 }}>{pmOnDay.hoursBlocked}h</div>
+                            <div
+                              style={{
+                                opacity: 0.8,
+                                fontWeight: 600,
+                                marginTop: 2,
+                              }}
+                            >
+                              {pmOnDay.hoursBlocked}h
+                            </div>
                           </div>
                         )}
                         {powerCutOnDay && (
                           <div
                             title={`Power Cut${powerCutOnDay.reason ? ": " + powerCutOnDay.reason : ""}`}
-                            style={{ background: "#eab30822", border: "1px solid #eab30855", borderRadius: "4px 8px 8px 4px", color: "#eab308", fontSize: 9, fontWeight: 800, padding: "6px 6px", marginBottom: 6, textAlign: "left" }}
+                            style={{
+                              background: "#eab30822",
+                              border: "1px solid #eab30855",
+                              borderRadius: "4px 8px 8px 4px",
+                              color: "#eab308",
+                              fontSize: 9,
+                              fontWeight: 800,
+                              padding: "6px 6px",
+                              marginBottom: 6,
+                              textAlign: "left",
+                            }}
                           >
                             <div>POWER CUT</div>
                           </div>
                         )}
                         {jobs.length === 0 && !bdOnDay ? (
-                          (isWeekend || (holidayOnDay && holidayOnDay.type !== "Power-cut")) ? (
-                            <span style={{ fontSize: 10, color: C.muted, opacity: 0.5 }}>OFF</span>
+                          isWeekend ||
+                          (holidayOnDay &&
+                            holidayOnDay.type !== "Power-cut") ? (
+                            <span
+                              style={{
+                                fontSize: 10,
+                                color: C.muted,
+                                opacity: 0.5,
+                              }}
+                            >
+                              OFF
+                            </span>
                           ) : null
                         ) : jobs.length === 0 ? null : (
                           jobs.map((entry) => {
                             const jo = entry.jobOrderId;
                             const itemName = jo?.itemName || "Unknown Item";
 
-                            
                             const statusColor =
                               entry.deliveryFeasible === "GREEN"
                                 ? C.green
@@ -2374,7 +3209,6 @@ export default function ProductionCalendar({
                                     ? C.red
                                     : C.blue;
 
-                            
                             const scheduledSoFar = (calendarData || [])
                               .filter(
                                 (e) =>
@@ -2391,21 +3225,27 @@ export default function ProductionCalendar({
                             );
 
                             const schedHrs = entry.scheduledHours || 0;
-                            const shiftHrs = fullMachine?.standardShiftHours || 8;
-                            const shiftsCount = Math.max(1, Math.ceil(schedHrs / shiftHrs));
-                            const hasOT = entry.overtimeNeeded || entry.overtimeHours > 0;
+                            const shiftHrs =
+                              fullMachine?.standardShiftHours || 8;
+                            const shiftsCount = Math.max(
+                              1,
+                              Math.ceil(schedHrs / shiftHrs),
+                            );
+                            const hasOT =
+                              entry.overtimeNeeded || entry.overtimeHours > 0;
 
-                            
-                            const cardSetupTime = entry.shift === "Morning"
-                              ? (fullMachine?.setupTimeDefault ?? 0.5)
-                              : 0;
-                            
+                            const cardSetupTime =
+                              entry.shift === "Morning"
+                                ? (fullMachine?.setupTimeDefault ?? 0.5)
+                                : 0;
+
                             const capacityPerHour =
                               (fullMachine?.practicalRunRate || 0) *
                               (fullMachine?.efficiencyFactor || 0.85);
-                            const cardRunTime = capacityPerHour > 0
-                              ? entry.scheduledQty / capacityPerHour
-                              : (entry.runTime || 0);
+                            const cardRunTime =
+                              capacityPerHour > 0
+                                ? entry.scheduledQty / capacityPerHour
+                                : entry.runTime || 0;
 
                             return (
                               <div
@@ -2489,7 +3329,8 @@ export default function ProductionCalendar({
                                       OT REQ
                                     </span>
                                   )}
-                                  {(entry.jobOrderId?.shiftHistory?.length > 0) && (
+                                  {entry.jobOrderId?.shiftHistory?.length >
+                                    0 && (
                                     <span
                                       title={`Shifted ${entry.jobOrderId.shiftHistory.length} time(s)`}
                                       style={{
@@ -2557,19 +3398,58 @@ export default function ProductionCalendar({
                                     </span>
                                   </div>
 
-                                  <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3 }}>
+                                  <div
+                                    style={{
+                                      textAlign: "right",
+                                      display: "flex",
+                                      flexDirection: "column",
+                                      alignItems: "flex-end",
+                                      gap: 3,
+                                    }}
+                                  >
                                     {shiftsCount > 1 ? (
-                                      <span style={{ fontSize: 8, color: C.yellow, fontWeight: 500, background: `${C.yellow}22`, padding: '2px 4px', borderRadius: 3, border: `1px solid ${C.yellow}44` }}>
+                                      <span
+                                        style={{
+                                          fontSize: 8,
+                                          color: C.yellow,
+                                          fontWeight: 500,
+                                          background: `${C.yellow}22`,
+                                          padding: "2px 4px",
+                                          borderRadius: 3,
+                                          border: `1px solid ${C.yellow}44`,
+                                        }}
+                                      >
                                         {shiftsCount} SHIFTS
                                       </span>
                                     ) : (
-                                      <span style={{ fontSize: 8, color: C.muted, fontWeight: 600, padding: '2px 4px' }}>
+                                      <span
+                                        style={{
+                                          fontSize: 8,
+                                          color: C.muted,
+                                          fontWeight: 600,
+                                          padding: "2px 4px",
+                                        }}
+                                      >
                                         1 SHIFT
                                       </span>
                                     )}
                                     {hasOT && (
-                                      <span style={{ fontSize: 8, color: C.red, fontWeight: 500, background: `${C.red}22`, padding: '2px 4px', borderRadius: 3, border: `1px solid ${C.red}44` }}>
-                                        + {entry.overtimeHours > 0 ? `${entry.overtimeHours}h ` : ''}OT
+                                      <span
+                                        style={{
+                                          fontSize: 8,
+                                          color: C.red,
+                                          fontWeight: 500,
+                                          background: `${C.red}22`,
+                                          padding: "2px 4px",
+                                          borderRadius: 3,
+                                          border: `1px solid ${C.red}44`,
+                                        }}
+                                      >
+                                        +{" "}
+                                        {entry.overtimeHours > 0
+                                          ? `${entry.overtimeHours}h `
+                                          : ""}
+                                        OT
                                       </span>
                                     )}
                                   </div>
@@ -2588,13 +3468,25 @@ export default function ProductionCalendar({
                                   <span style={{ fontSize: 8, color: C.muted }}>
                                     Setup
                                   </span>
-                                  <span style={{ fontSize: 9, fontWeight: 500, color: "#93c5fd" }}>
+                                  <span
+                                    style={{
+                                      fontSize: 9,
+                                      fontWeight: 500,
+                                      color: "#93c5fd",
+                                    }}
+                                  >
                                     {fmtHrs(cardSetupTime)}
                                   </span>
                                   <span style={{ fontSize: 8, color: C.muted }}>
                                     ▶ Run
                                   </span>
-                                  <span style={{ fontSize: 9, fontWeight: 500, color: "#86efac" }}>
+                                  <span
+                                    style={{
+                                      fontSize: 9,
+                                      fontWeight: 500,
+                                      color: "#86efac",
+                                    }}
+                                  >
                                     {fmtHrs(cardRunTime)}
                                   </span>
                                 </div>
@@ -2609,22 +3501,49 @@ export default function ProductionCalendar({
                                       marginTop: 6,
                                       padding: "4px 6px",
                                       borderRadius: 4,
-                                      background: entry.actualQty >= (entry.scheduledQty || 0)
-                                        ? "#22c55e22"
-                                        : "#ef444422",
+                                      background:
+                                        entry.actualQty >=
+                                        (entry.scheduledQty || 0)
+                                          ? "#22c55e22"
+                                          : "#ef444422",
                                       border: `1px solid ${entry.actualQty >= (entry.scheduledQty || 0) ? "#22c55e44" : "#ef444444"}`,
                                     }}
                                   >
-                                    <span style={{ fontSize: 8, color: C.muted, textTransform: "uppercase" }}>Actual</span>
-                                    <span style={{
-                                      fontSize: 11,
-                                      fontWeight: 800,
-                                      color: entry.actualQty >= (entry.scheduledQty || 0) ? "#22c55e" : "#ef4444",
-                                    }}>
+                                    <span
+                                      style={{
+                                        fontSize: 8,
+                                        color: C.muted,
+                                        textTransform: "uppercase",
+                                      }}
+                                    >
+                                      Actual
+                                    </span>
+                                    <span
+                                      style={{
+                                        fontSize: 11,
+                                        fontWeight: 800,
+                                        color:
+                                          entry.actualQty >=
+                                          (entry.scheduledQty || 0)
+                                            ? "#22c55e"
+                                            : "#ef4444",
+                                      }}
+                                    >
                                       {entry.actualQty.toLocaleString()}
-                                      {entry.actualQty < (entry.scheduledQty || 0) && (
-                                        <span style={{ fontSize: 8, marginLeft: 3, opacity: 0.8 }}>
-                                          ▼{((entry.scheduledQty || 0) - entry.actualQty).toLocaleString()}
+                                      {entry.actualQty <
+                                        (entry.scheduledQty || 0) && (
+                                        <span
+                                          style={{
+                                            fontSize: 8,
+                                            marginLeft: 3,
+                                            opacity: 0.8,
+                                          }}
+                                        >
+                                          ▼
+                                          {(
+                                            (entry.scheduledQty || 0) -
+                                            entry.actualQty
+                                          ).toLocaleString()}
                                         </span>
                                       )}
                                     </span>
@@ -2665,23 +3584,39 @@ export default function ProductionCalendar({
 
                                 {/* Shift button — only for past, non-completed entries */}
                                 {d < today &&
-                                  !["Completed", "Cancelled", "Rescheduled"].includes(entry.status) &&
+                                  ![
+                                    "Completed",
+                                    "Cancelled",
+                                    "Rescheduled",
+                                  ].includes(entry.status) &&
                                   !entry.locked && (
                                     <button
                                       onClick={async (e) => {
                                         e.stopPropagation();
                                         try {
-                                          const res = await planningAPI.shiftEntry(entry._id);
+                                          const res =
+                                            await planningAPI.shiftEntry(
+                                              entry._id,
+                                            );
                                           if (res.success) {
                                             toast?.(res.message, "success");
                                             const newDate = res.newDate;
-                                            if (newDate < displayStart || newDate > daysArray[daysArray.length - 1]) {
-                                              setPivotDate(getWeekStart(newDate));
+                                            if (
+                                              newDate < displayStart ||
+                                              newDate >
+                                                daysArray[daysArray.length - 1]
+                                            ) {
+                                              setPivotDate(
+                                                getWeekStart(newDate),
+                                              );
                                             } else {
                                               fetchCalendar();
                                             }
                                           } else {
-                                            toast?.(res.message || "Failed to shift", "error");
+                                            toast?.(
+                                              res.message || "Failed to shift",
+                                              "error",
+                                            );
                                           }
                                         } catch {
                                           toast?.("Failed to shift", "error");
@@ -2798,318 +3733,595 @@ export default function ProductionCalendar({
       )}
 
       {}
-      {mainView === "gantt" && (() => {
-        
-        const machineCapMap = {};
-        (Array.isArray(machineMaster) ? machineMaster : []).forEach((m) => {
-          const cap = (m.practicalRunRate || 0) * (m.standardShiftHours || 8) * (m.maxShiftsAllowed || 1) * (m.efficiencyFactor || 0.85);
-          machineCapMap[m._id] = cap;
-          machineCapMap[m.name] = cap;
-        });
-
-        
-        const ganttRows = visibleMachines.map((machine) => {
-          const mId = machine.id;
-          const mName = machine.name;
-          const dailySlots = daysArray.map((date) => {
-            const key1 = `${mId}|${date}`;
-            const key2 = `${mName}|${date}`;
-            const entries = [...(jobIndex[key1] || []), ...(jobIndex[key2] || [])];
-            const uniqueEntries = entries.filter((e, i, arr) => arr.findIndex((x) => x._id === e._id) === i);
-            const totalScheduled = uniqueEntries.reduce((s, e) => s + (e.scheduledQty || 0), 0);
-            const cap = machineCapMap[mId] || machineCapMap[mName] || 0;
-            const utilPct = cap > 0 ? Math.min(200, (totalScheduled / cap) * 100) : (totalScheduled > 0 ? 100 : 0);
-            const isOverloaded = utilPct > 100;
-            
-            const hasRisk = uniqueEntries.some((e) => {
-              const jo = e.jobOrderId;
-              if (!jo?.deliveryDate) return false;
-              const plannedEnd = e.plannedEnd || date;
-              return moment(plannedEnd).isAfter(moment(jo.deliveryDate));
-            });
-            return { date, entries: uniqueEntries, totalScheduled, utilPct, isOverloaded, hasRisk, cap };
+      {mainView === "gantt" &&
+        (() => {
+          const machineCapMap = {};
+          (Array.isArray(machineMaster) ? machineMaster : []).forEach((m) => {
+            const cap =
+              (m.practicalRunRate || 0) *
+              (m.standardShiftHours || 8) *
+              (m.maxShiftsAllowed || 1) *
+              (m.efficiencyFactor || 0.85);
+            machineCapMap[m._id] = cap;
+            machineCapMap[m.name] = cap;
           });
-          return { machine, dailySlots };
-        });
 
-        
-        const riskJobs = (calendarData || []).filter((e) => {
-          const jo = e.jobOrderId;
-          if (!jo?.deliveryDate) return false;
-          const plannedEnd = e.plannedEnd || e.date;
-          return moment(plannedEnd).isAfter(moment(jo.deliveryDate));
-        });
-        const riskSet = new Set(riskJobs.map((e) => e.jobCardNo));
+          const ganttRows = visibleMachines.map((machine) => {
+            const mId = machine.id;
+            const mName = machine.name;
+            const dailySlots = daysArray.map((date) => {
+              const key1 = `${mId}|${date}`;
+              const key2 = `${mName}|${date}`;
+              const entries = [
+                ...(jobIndex[key1] || []),
+                ...(jobIndex[key2] || []),
+              ];
+              const uniqueEntries = entries.filter(
+                (e, i, arr) => arr.findIndex((x) => x._id === e._id) === i,
+              );
+              const totalScheduled = uniqueEntries.reduce(
+                (s, e) => s + (e.scheduledQty || 0),
+                0,
+              );
+              const cap = machineCapMap[mId] || machineCapMap[mName] || 0;
+              const utilPct =
+                cap > 0
+                  ? Math.min(200, (totalScheduled / cap) * 100)
+                  : totalScheduled > 0
+                    ? 100
+                    : 0;
+              const isOverloaded = utilPct > 100;
 
-        const handleDragStart = (e, entry, machineId, date) => {
-          setDragJob({ entry, sourceMachineId: machineId, sourceDate: date });
-          e.dataTransfer.effectAllowed = "move";
-        };
-
-        const handleDrop = async (e, targetMachineId, targetDate) => {
-          e.preventDefault();
-          if (!dragJob) return;
-          if (dragJob.sourceDate === targetDate && dragJob.sourceMachineId === targetMachineId) {
-            setDragJob(null);
-            return;
-          }
-          try {
-            await planningAPI.planJob({
-              entryId: dragJob.entry._id,
-              machineId: targetMachineId,
-              date: targetDate,
+              const hasRisk = uniqueEntries.some((e) => {
+                const jo = e.jobOrderId;
+                if (!jo?.deliveryDate) return false;
+                const plannedEnd = e.plannedEnd || date;
+                return moment(plannedEnd).isAfter(moment(jo.deliveryDate));
+              });
+              return {
+                date,
+                entries: uniqueEntries,
+                totalScheduled,
+                utilPct,
+                isOverloaded,
+                hasRisk,
+                cap,
+              };
             });
-            toast?.("Job rescheduled", "success");
-            fetchCalendar();
-          } catch {
-            toast?.("Failed to reschedule — check capacity", "error");
-          }
-          setDragJob(null);
-        };
+            return { machine, dailySlots };
+          });
 
-        const colW = rangeView === "week" ? 110 : 36;
+          const riskJobs = (calendarData || []).filter((e) => {
+            const jo = e.jobOrderId;
+            if (!jo?.deliveryDate) return false;
+            const plannedEnd = e.plannedEnd || e.date;
+            return moment(plannedEnd).isAfter(moment(jo.deliveryDate));
+          });
+          const riskSet = new Set(riskJobs.map((e) => e.jobCardNo));
 
-        return (
-          <div style={{ marginTop: 16 }}>
-            {}
-            {riskSet.size > 0 && (
-              <div style={{ background: "#ef444411", border: "1px solid #ef444433", borderRadius: 8, padding: "10px 16px", marginBottom: 12, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-                <span style={{ color: "#ef4444", fontWeight: 800, fontSize: 12 }}>DELIVERY RISK</span>
-                {[...riskSet].slice(0, 6).map((jc) => (
-                  <span key={jc} style={{ padding: "2px 8px", background: "#ef444422", borderRadius: 4, fontSize: 11, color: "#fca5a5", fontWeight: 700 }}>{jc}</span>
-                ))}
-                {riskSet.size > 6 && <span style={{ fontSize: 11, color: "#ef4444" }}>+{riskSet.size - 6} more</span>}
-                <span style={{ fontSize: 11, color: "#999", marginLeft: "auto" }}>Planned end date exceeds delivery date — negotiate or expedite</span>
+          const handleDragStart = (e, entry, machineId, date) => {
+            setDragJob({ entry, sourceMachineId: machineId, sourceDate: date });
+            e.dataTransfer.effectAllowed = "move";
+          };
+
+          const handleDrop = async (e, targetMachineId, targetDate) => {
+            e.preventDefault();
+            if (!dragJob) return;
+            if (
+              dragJob.sourceDate === targetDate &&
+              dragJob.sourceMachineId === targetMachineId
+            ) {
+              setDragJob(null);
+              return;
+            }
+            try {
+              await planningAPI.planJob({
+                entryId: dragJob.entry._id,
+                machineId: targetMachineId,
+                date: targetDate,
+              });
+              toast?.("Job rescheduled", "success");
+              fetchCalendar();
+            } catch {
+              toast?.("Failed to reschedule — check capacity", "error");
+            }
+            setDragJob(null);
+          };
+
+          const colW = rangeView === "week" ? 110 : 36;
+
+          return (
+            <div style={{ marginTop: 16 }}>
+              {}
+              {riskSet.size > 0 && (
+                <div
+                  style={{
+                    background: "#ef444411",
+                    border: "1px solid #ef444433",
+                    borderRadius: 8,
+                    padding: "10px 16px",
+                    marginBottom: 12,
+                    display: "flex",
+                    gap: 12,
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <span
+                    style={{ color: "#ef4444", fontWeight: 800, fontSize: 12 }}
+                  >
+                    DELIVERY RISK
+                  </span>
+                  {[...riskSet].slice(0, 6).map((jc) => (
+                    <span
+                      key={jc}
+                      style={{
+                        padding: "2px 8px",
+                        background: "#ef444422",
+                        borderRadius: 4,
+                        fontSize: 11,
+                        color: "#fca5a5",
+                        fontWeight: 700,
+                      }}
+                    >
+                      {jc}
+                    </span>
+                  ))}
+                  {riskSet.size > 6 && (
+                    <span style={{ fontSize: 11, color: "#ef4444" }}>
+                      +{riskSet.size - 6} more
+                    </span>
+                  )}
+                  <span
+                    style={{ fontSize: 11, color: "#999", marginLeft: "auto" }}
+                  >
+                    Planned end date exceeds delivery date — negotiate or
+                    expedite
+                  </span>
+                </div>
+              )}
+
+              {}
+              <div
+                style={{
+                  display: "flex",
+                  gap: 16,
+                  alignItems: "center",
+                  marginBottom: 12,
+                  fontSize: 11,
+                  color: "#888",
+                }}
+              >
+                <span>Utilization:</span>
+                <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <span
+                    style={{
+                      width: 12,
+                      height: 12,
+                      borderRadius: 2,
+                      background: "#22c55e66",
+                      display: "inline-block",
+                    }}
+                  />
+                  ≤80%
+                </span>
+                <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <span
+                    style={{
+                      width: 12,
+                      height: 12,
+                      borderRadius: 2,
+                      background: "#f59e0b66",
+                      display: "inline-block",
+                    }}
+                  />
+                  81–100%
+                </span>
+                <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <span
+                    style={{
+                      width: 12,
+                      height: 12,
+                      borderRadius: 2,
+                      background: "#ef444466",
+                      display: "inline-block",
+                    }}
+                  />
+                  &gt;100% OVERLOAD
+                </span>
+                <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <span
+                    style={{
+                      width: 12,
+                      height: 12,
+                      borderRadius: 2,
+                      background: "#ef4444",
+                      display: "inline-block",
+                    }}
+                  />
+                  Delivery risk
+                </span>
+                <span style={{ marginLeft: "auto", color: "#555" }}>
+                  Drag jobs to reschedule
+                </span>
               </div>
-            )}
 
-            {}
-            <div style={{ display: "flex", gap: 16, alignItems: "center", marginBottom: 12, fontSize: 11, color: "#888" }}>
-              <span>Utilization:</span>
-              <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 12, height: 12, borderRadius: 2, background: "#22c55e66", display: "inline-block" }} />≤80%</span>
-              <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 12, height: 12, borderRadius: 2, background: "#f59e0b66", display: "inline-block" }} />81–100%</span>
-              <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 12, height: 12, borderRadius: 2, background: "#ef444466", display: "inline-block" }} />&gt;100% OVERLOAD</span>
-              <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 12, height: 12, borderRadius: 2, background: "#ef4444", display: "inline-block" }} />Delivery risk</span>
-              <span style={{ marginLeft: "auto", color: "#555" }}>Drag jobs to reschedule</span>
-            </div>
-
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ borderCollapse: "collapse", minWidth: "100%" }}>
-                <thead>
-                  <tr>
-                    <th style={{ ...thS, width: 160, position: "sticky", left: 0, background: C.surface || "#111", zIndex: 2, borderRight: `1px solid ${C.border}22` }}>
-                      Machine
-                    </th>
-                    {daysArray.map((date) => {
-                      const d = new Date(date);
-                      const isToday = date === today;
-                      const dow = DAYS[d.getDay()];
-                      return (
-                        <th
-                          key={date}
-                          style={{
-                            ...thS,
-                            width: colW,
-                            minWidth: colW,
-                            textAlign: "center",
-                            background: isToday ? "#3b82f611" : C.surface || "#111",
-                            borderBottom: isToday ? "2px solid #3b82f6" : `1px solid ${C.border}22`,
-                            color: isToday ? "#3b82f6" : "#666",
-                            padding: "6px 4px",
-                          }}
-                        >
-                          <div>{dow}</div>
-                          <div style={{ fontSize: 9, color: "#555" }}>{date.slice(5)}</div>
-                        </th>
-                      );
-                    })}
-                  </tr>
-                </thead>
-                <tbody>
-                  {ganttRows.map(({ machine, dailySlots }) => (
-                    <tr key={machine.id} style={{ borderBottom: `1px solid ${C.border}11` }}>
-                      <td
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ borderCollapse: "collapse", minWidth: "100%" }}>
+                  <thead>
+                    <tr>
+                      <th
                         style={{
-                          ...tdS,
+                          ...thS,
+                          width: 160,
                           position: "sticky",
                           left: 0,
                           background: C.surface || "#111",
-                          zIndex: 1,
+                          zIndex: 2,
                           borderRight: `1px solid ${C.border}22`,
-                          minWidth: 160,
                         }}
                       >
-                        <div style={{ fontSize: 11, fontWeight: 500, color: TYPE_COLOR[machine.type] || "#888" }}>
-                          <i className={MACHINE_ICON[machine.type] || "fa-solid fa-gears"} style={{marginRight:4}} />{machine.name}
-                        </div>
-                        <div style={{ fontSize: 9, color: "#555" }}>{machine.type}</div>
-                      </td>
-                      {dailySlots.map(({ date, entries, utilPct, isOverloaded, hasRisk, cap }) => {
-                        const bgColor = hasRisk
-                          ? "#ef444422"
-                          : isOverloaded
-                          ? "#ef444411"
-                          : utilPct > 80
-                          ? "#f59e0b11"
-                          : utilPct > 0
-                          ? "#22c55e0a"
-                          : "transparent";
-                        const borderColor = hasRisk
-                          ? "#ef444444"
-                          : isOverloaded
-                          ? "#ef444433"
-                          : utilPct > 80
-                          ? "#f59e0b33"
-                          : "transparent";
-                        const barColor = hasRisk
-                          ? "#ef4444"
-                          : isOverloaded
-                          ? "#ef4444"
-                          : utilPct > 80
-                          ? "#f59e0b"
-                          : "#22c55e";
+                        Machine
+                      </th>
+                      {daysArray.map((date) => {
+                        const d = new Date(date);
+                        const isToday = date === today;
+                        const dow = DAYS[d.getDay()];
                         return (
-                          <td
+                          <th
                             key={date}
                             style={{
-                              padding: 3,
-                              verticalAlign: "top",
-                              background: bgColor,
-                              border: `1px solid ${borderColor}`,
-                              minWidth: colW,
+                              ...thS,
                               width: colW,
-                              cursor: dragJob ? "copy" : "default",
+                              minWidth: colW,
+                              textAlign: "center",
+                              background: isToday
+                                ? "#3b82f611"
+                                : C.surface || "#111",
+                              borderBottom: isToday
+                                ? "2px solid #3b82f6"
+                                : `1px solid ${C.border}22`,
+                              color: isToday ? "#3b82f6" : "#666",
+                              padding: "6px 4px",
                             }}
-                            onDragOver={(e) => e.preventDefault()}
-                            onDrop={(e) => handleDrop(e, machine.id, date)}
                           >
-                            {}
-                            {utilPct > 0 && (
-                              <div style={{ height: 4, borderRadius: 2, background: "#1a1a1a", marginBottom: 3, overflow: "hidden" }}>
-                                <div style={{ height: "100%", width: `${Math.min(100, utilPct)}%`, background: barColor, borderRadius: 2 }} />
-                              </div>
-                            )}
-                            {}
-                            {entries.slice(0, rangeView === "week" ? 4 : 2).map((entry, i) => {
-                              const jo = entry.jobOrderId;
-                              const isRisk = riskSet.has(entry.jobCardNo);
-                              const priority = jo?.priority;
-                              const chipColor = isRisk ? "#ef4444"
-                                : priority === "VIP" ? "#ef4444"
-                                : priority === "Rush" ? "#f97316"
-                                : TYPE_COLOR[entry.process] || "#3b82f6";
-                              return (
-                                <div
-                                  key={entry._id || i}
-                                  draggable
-                                  onDragStart={(e) => handleDragStart(e, entry, machine.id, date)}
-                                  title={`${entry.jobCardNo} · ${entry.process} · ${(entry.scheduledQty || 0).toLocaleString()} units${isRisk ? " DELIVERY RISK" : ""}${priority && priority !== "Standard" ? ` · ${priority}` : ""}`}
-                                  style={{
-                                    background: chipColor + "22",
-                                    border: `1px solid ${chipColor}55`,
-                                    borderRadius: 3,
-                                    padding: rangeView === "week" ? "3px 5px" : "1px 3px",
-                                    fontSize: rangeView === "week" ? 10 : 8,
-                                    color: chipColor,
-                                    fontWeight: 500,
-                                    cursor: "grab",
-                                    marginBottom: 2,
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
-                                    whiteSpace: "nowrap",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 3,
-                                  }}
-                                >
-                                  {isRisk && <i className="fa-solid fa-triangle-exclamation" style={{ fontSize: 8 }} />}
-                                  {priority === "VIP" && <i className="fa-solid fa-star" style={{ fontSize: 8, color: '#f59e0b' }} />}
-                                  {priority === "Rush" && <i className="fa-solid fa-bolt" style={{ fontSize: 8 }} />}
-                                  <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
-                                    {rangeView === "week" ? entry.jobCardNo : entry.jobCardNo?.slice(-4)}
-                                  </span>
-                                </div>
-                              );
-                            })}
-                            {entries.length > (rangeView === "week" ? 4 : 2) && (
-                              <div style={{ fontSize: 9, color: "#666", textAlign: "center" }}>
-                                +{entries.length - (rangeView === "week" ? 4 : 2)}
-                              </div>
-                            )}
-                            {}
-                            {utilPct > 0 && rangeView === "week" && (
-                              <div style={{ fontSize: 9, color: barColor, textAlign: "right", marginTop: 2 }}>
-                                {utilPct.toFixed(0)}%
-                              </div>
-                            )}
-                            {isOverloaded && (
-                              <div style={{ fontSize: 9, color: "#ef4444", fontWeight: 800, textAlign: "center" }}>
-                                OVERLOAD
-                              </div>
-                            )}
-                          </td>
+                            <div>{dow}</div>
+                            <div style={{ fontSize: 9, color: "#555" }}>
+                              {date.slice(5)}
+                            </div>
+                          </th>
                         );
                       })}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {ganttRows.map(({ machine, dailySlots }) => (
+                      <tr
+                        key={machine.id}
+                        style={{ borderBottom: `1px solid ${C.border}11` }}
+                      >
+                        <td
+                          style={{
+                            ...tdS,
+                            position: "sticky",
+                            left: 0,
+                            background: C.surface || "#111",
+                            zIndex: 1,
+                            borderRight: `1px solid ${C.border}22`,
+                            minWidth: 160,
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize: 11,
+                              fontWeight: 500,
+                              color: TYPE_COLOR[machine.type] || "#888",
+                            }}
+                          >
+                            <i
+                              className={
+                                MACHINE_ICON[machine.type] ||
+                                "fa-solid fa-gears"
+                              }
+                              style={{ marginRight: 4 }}
+                            />
+                            {machine.name}
+                          </div>
+                          <div style={{ fontSize: 9, color: "#555" }}>
+                            {machine.type}
+                          </div>
+                        </td>
+                        {dailySlots.map(
+                          ({
+                            date,
+                            entries,
+                            utilPct,
+                            isOverloaded,
+                            hasRisk,
+                            cap,
+                          }) => {
+                            const bgColor = hasRisk
+                              ? "#ef444422"
+                              : isOverloaded
+                                ? "#ef444411"
+                                : utilPct > 80
+                                  ? "#f59e0b11"
+                                  : utilPct > 0
+                                    ? "#22c55e0a"
+                                    : "transparent";
+                            const borderColor = hasRisk
+                              ? "#ef444444"
+                              : isOverloaded
+                                ? "#ef444433"
+                                : utilPct > 80
+                                  ? "#f59e0b33"
+                                  : "transparent";
+                            const barColor = hasRisk
+                              ? "#ef4444"
+                              : isOverloaded
+                                ? "#ef4444"
+                                : utilPct > 80
+                                  ? "#f59e0b"
+                                  : "#22c55e";
+                            return (
+                              <td
+                                key={date}
+                                style={{
+                                  padding: 3,
+                                  verticalAlign: "top",
+                                  background: bgColor,
+                                  border: `1px solid ${borderColor}`,
+                                  minWidth: colW,
+                                  width: colW,
+                                  cursor: dragJob ? "copy" : "default",
+                                }}
+                                onDragOver={(e) => e.preventDefault()}
+                                onDrop={(e) => handleDrop(e, machine.id, date)}
+                              >
+                                {}
+                                {utilPct > 0 && (
+                                  <div
+                                    style={{
+                                      height: 4,
+                                      borderRadius: 2,
+                                      background: "#1a1a1a",
+                                      marginBottom: 3,
+                                      overflow: "hidden",
+                                    }}
+                                  >
+                                    <div
+                                      style={{
+                                        height: "100%",
+                                        width: `${Math.min(100, utilPct)}%`,
+                                        background: barColor,
+                                        borderRadius: 2,
+                                      }}
+                                    />
+                                  </div>
+                                )}
+                                {}
+                                {entries
+                                  .slice(0, rangeView === "week" ? 4 : 2)
+                                  .map((entry, i) => {
+                                    const jo = entry.jobOrderId;
+                                    const isRisk = riskSet.has(entry.jobCardNo);
+                                    const priority = jo?.priority;
+                                    const chipColor = isRisk
+                                      ? "#ef4444"
+                                      : priority === "VIP"
+                                        ? "#ef4444"
+                                        : priority === "Rush"
+                                          ? "#f97316"
+                                          : TYPE_COLOR[entry.process] ||
+                                            "#3b82f6";
+                                    return (
+                                      <div
+                                        key={entry._id || i}
+                                        draggable
+                                        onDragStart={(e) =>
+                                          handleDragStart(
+                                            e,
+                                            entry,
+                                            machine.id,
+                                            date,
+                                          )
+                                        }
+                                        title={`${entry.jobCardNo} · ${entry.process} · ${(entry.scheduledQty || 0).toLocaleString()} units${isRisk ? " DELIVERY RISK" : ""}${priority && priority !== "Standard" ? ` · ${priority}` : ""}`}
+                                        style={{
+                                          background: chipColor + "22",
+                                          border: `1px solid ${chipColor}55`,
+                                          borderRadius: 3,
+                                          padding:
+                                            rangeView === "week"
+                                              ? "3px 5px"
+                                              : "1px 3px",
+                                          fontSize:
+                                            rangeView === "week" ? 10 : 8,
+                                          color: chipColor,
+                                          fontWeight: 500,
+                                          cursor: "grab",
+                                          marginBottom: 2,
+                                          overflow: "hidden",
+                                          textOverflow: "ellipsis",
+                                          whiteSpace: "nowrap",
+                                          display: "flex",
+                                          alignItems: "center",
+                                          gap: 3,
+                                        }}
+                                      >
+                                        {isRisk && (
+                                          <i
+                                            className="fa-solid fa-triangle-exclamation"
+                                            style={{ fontSize: 8 }}
+                                          />
+                                        )}
+                                        {priority === "VIP" && (
+                                          <i
+                                            className="fa-solid fa-star"
+                                            style={{
+                                              fontSize: 8,
+                                              color: "#f59e0b",
+                                            }}
+                                          />
+                                        )}
+                                        {priority === "Rush" && (
+                                          <i
+                                            className="fa-solid fa-bolt"
+                                            style={{ fontSize: 8 }}
+                                          />
+                                        )}
+                                        <span
+                                          style={{
+                                            overflow: "hidden",
+                                            textOverflow: "ellipsis",
+                                          }}
+                                        >
+                                          {rangeView === "week"
+                                            ? entry.jobCardNo
+                                            : entry.jobCardNo?.slice(-4)}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                {entries.length >
+                                  (rangeView === "week" ? 4 : 2) && (
+                                  <div
+                                    style={{
+                                      fontSize: 9,
+                                      color: "#666",
+                                      textAlign: "center",
+                                    }}
+                                  >
+                                    +
+                                    {entries.length -
+                                      (rangeView === "week" ? 4 : 2)}
+                                  </div>
+                                )}
+                                {}
+                                {utilPct > 0 && rangeView === "week" && (
+                                  <div
+                                    style={{
+                                      fontSize: 9,
+                                      color: barColor,
+                                      textAlign: "right",
+                                      marginTop: 2,
+                                    }}
+                                  >
+                                    {utilPct.toFixed(0)}%
+                                  </div>
+                                )}
+                                {isOverloaded && (
+                                  <div
+                                    style={{
+                                      fontSize: 9,
+                                      color: "#ef4444",
+                                      fontWeight: 800,
+                                      textAlign: "center",
+                                    }}
+                                  >
+                                    OVERLOAD
+                                  </div>
+                                )}
+                              </td>
+                            );
+                          },
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
-            {}
-            {(() => {
-              const suggestions = [];
-              visibleMachines.forEach((machine) => {
-                const machineEntries = (calendarData || []).filter((e) => {
-                  const mId = e.machineId?._id || e.machineId;
-                  return mId === machine.id || e.machineId?.name === machine.name;
-                });
-                
-                if (machine.type === "Printing") {
-                  const colorGroups = {};
-                  machineEntries.forEach((e) => {
-                    const jo = e.jobOrderId;
-                    const color = jo?.printing || "Unknown";
-                    if (!colorGroups[color]) colorGroups[color] = [];
-                    colorGroups[color].push(e);
+              {}
+              {(() => {
+                const suggestions = [];
+                visibleMachines.forEach((machine) => {
+                  const machineEntries = (calendarData || []).filter((e) => {
+                    const mId = e.machineId?._id || e.machineId;
+                    return (
+                      mId === machine.id || e.machineId?.name === machine.name
+                    );
                   });
-                  Object.entries(colorGroups).forEach(([color, ents]) => {
-                    const dates = [...new Set(ents.map((e) => moment(e.date).format("YYYY-MM-DD")))].sort();
-                    if (dates.length > 1) {
-                      const span = moment(dates[dates.length - 1]).diff(moment(dates[0]), "days");
-                      if (span > 2) {
-                        suggestions.push({
-                          machine: machine.name,
-                          color,
-                          count: ents.length,
-                          span,
-                          saving: Math.round(ents.length * 0.35 * 30),
-                        });
+
+                  if (machine.type === "Printing") {
+                    const colorGroups = {};
+                    machineEntries.forEach((e) => {
+                      const jo = e.jobOrderId;
+                      const color = jo?.printing || "Unknown";
+                      if (!colorGroups[color]) colorGroups[color] = [];
+                      colorGroups[color].push(e);
+                    });
+                    Object.entries(colorGroups).forEach(([color, ents]) => {
+                      const dates = [
+                        ...new Set(
+                          ents.map((e) => moment(e.date).format("YYYY-MM-DD")),
+                        ),
+                      ].sort();
+                      if (dates.length > 1) {
+                        const span = moment(dates[dates.length - 1]).diff(
+                          moment(dates[0]),
+                          "days",
+                        );
+                        if (span > 2) {
+                          suggestions.push({
+                            machine: machine.name,
+                            color,
+                            count: ents.length,
+                            span,
+                            saving: Math.round(ents.length * 0.35 * 30),
+                          });
+                        }
                       }
-                    }
-                  });
-                }
-              });
-              if (!suggestions.length) return null;
-              return (
-                <div style={{ marginTop: 16, background: "#8b5cf611", border: "1px solid #8b5cf633", borderRadius: 8, padding: 16 }}>
-                  <div style={{ fontWeight: 500, color: "#a78bfa", marginBottom: 10, fontSize: 13 }}>
-                    Batching Opportunities — batch similar jobs to cut setup time 30–40%
-                  </div>
-                  {suggestions.slice(0, 5).map((s, i) => (
-                    <div key={i} style={{ fontSize: 12, color: "#ccc", padding: "6px 0", borderBottom: "1px solid #8b5cf622" }}>
-                      <strong style={{ color: "#a78bfa" }}>{s.machine}</strong>
-                      {" — "}
-                      {s.count} jobs with <strong>{s.color}</strong>-color print spread over {s.span} days.
-                      Consolidate to save ~{s.saving} min changeover.
+                    });
+                  }
+                });
+                if (!suggestions.length) return null;
+                return (
+                  <div
+                    style={{
+                      marginTop: 16,
+                      background: "#8b5cf611",
+                      border: "1px solid #8b5cf633",
+                      borderRadius: 8,
+                      padding: 16,
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontWeight: 500,
+                        color: "#a78bfa",
+                        marginBottom: 10,
+                        fontSize: 13,
+                      }}
+                    >
+                      Batching Opportunities — batch similar jobs to cut setup
+                      time 30–40%
                     </div>
-                  ))}
-                </div>
-              );
-            })()}
-          </div>
-        );
-      })()}
+                    {suggestions.slice(0, 5).map((s, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          fontSize: 12,
+                          color: "#ccc",
+                          padding: "6px 0",
+                          borderBottom: "1px solid #8b5cf622",
+                        }}
+                      >
+                        <strong style={{ color: "#a78bfa" }}>
+                          {s.machine}
+                        </strong>
+                        {" — "}
+                        {s.count} jobs with <strong>{s.color}</strong>-color
+                        print spread over {s.span} days. Consolidate to save ~
+                        {s.saving} min changeover.
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+          );
+        })()}
     </div>
   );
 }

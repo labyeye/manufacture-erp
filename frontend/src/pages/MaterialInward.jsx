@@ -520,11 +520,14 @@ export default function MaterialInward({
       he.vendorName = true;
     } else {
       const vendorExists = (vendorMaster || []).some(
-        (v) => (v.name || "").toLowerCase() === header.vendorName.toLowerCase()
+        (v) => (v.name || "").toLowerCase() === header.vendorName.toLowerCase(),
       );
       if (!vendorExists) {
         he.vendorName = true;
-        toast(`Vendor "${header.vendorName}" not found in Vendor Master`, "error");
+        toast(
+          `Vendor "${header.vendorName}" not found in Vendor Master`,
+          "error",
+        );
       }
     }
     if (!header.invoiceNo) he.invoiceNo = true;
@@ -796,7 +799,11 @@ export default function MaterialInward({
     if (filterLocation) {
       list = list.filter((r) => (r.location || "") === filterLocation);
     }
-    list.sort((a, b) => new Date(b.createdAt || b.inwardDate || 0) - new Date(a.createdAt || a.inwardDate || 0));
+    list.sort(
+      (a, b) =>
+        new Date(b.createdAt || b.inwardDate || 0) -
+        new Date(a.createdAt || a.inwardDate || 0),
+    );
     return list;
   }, [inward, search, drDateFrom, drDateTo, filterVendor, filterLocation]);
 
@@ -2075,11 +2082,45 @@ export default function MaterialInward({
                       borderRadius: 12,
                     }}
                   >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                      <span style={{ fontSize: 19, color: "#ffffff", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
-                      <i className={icon} style={{ color: C.muted, fontSize: 20, opacity: 0.9, display: "inline-flex", alignItems: "center", justifyContent: "center", height: 28, width: 28, lineHeight: 1 }} />
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: 8,
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: 19,
+                          color: "#ffffff",
+                          fontWeight: 600,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.05em",
+                        }}
+                      >
+                        {label}
+                      </span>
+                      <i
+                        className={icon}
+                        style={{
+                          color: C.muted,
+                          fontSize: 20,
+                          opacity: 0.9,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          height: 28,
+                          width: 28,
+                          lineHeight: 1,
+                        }}
+                      />
                     </div>
-                    <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>{value}</div>
+                    <div
+                      style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}
+                    >
+                      {value}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -2142,10 +2183,22 @@ export default function MaterialInward({
                   <AutocompleteInput
                     value={filterVendor}
                     onChange={(v) => setFilterVendor(v)}
-                    suggestions={[...new Set((inward || []).map(r => r.vendorName).filter(Boolean))].sort()}
+                    suggestions={[
+                      ...new Set(
+                        (inward || []).map((r) => r.vendorName).filter(Boolean),
+                      ),
+                    ].sort()}
                     placeholder="Filter by vendor..."
                     showAllOnFocus={true}
-                    inputStyle={{ padding: "6px 10px", background: "#0c0c0e", border: "1px solid #2a2a2e", borderRadius: 6, color: "#fff", fontSize: 12, width: 160 }}
+                    inputStyle={{
+                      padding: "6px 10px",
+                      background: "#0c0c0e",
+                      border: "1px solid #2a2a2e",
+                      borderRadius: 6,
+                      color: "#fff",
+                      fontSize: 12,
+                      width: 160,
+                    }}
                   />
                   <AutocompleteInput
                     value={filterLocation}
@@ -2153,7 +2206,15 @@ export default function MaterialInward({
                     suggestions={LOCATIONS}
                     placeholder="Filter by location..."
                     showAllOnFocus={true}
-                    inputStyle={{ padding: "6px 10px", background: "#0c0c0e", border: "1px solid #2a2a2e", borderRadius: 6, color: "#fff", fontSize: 12, width: 150 }}
+                    inputStyle={{
+                      padding: "6px 10px",
+                      background: "#0c0c0e",
+                      border: "1px solid #2a2a2e",
+                      borderRadius: 6,
+                      color: "#fff",
+                      fontSize: 12,
+                      width: 150,
+                    }}
                   />
                   <div style={{ flex: 1 }} />
                   <span style={{ fontSize: 12, color: C.muted }}>

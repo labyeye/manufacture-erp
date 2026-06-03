@@ -656,6 +656,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
   }, [reportTab]);
 
   const [lowStockFilter, setLowStockFilter] = useState("All");
+  const [lowStockCategoryFilter, setLowStockCategoryFilter] = useState("All");
   const [lowStockSelected, setLowStockSelected] = useState(new Set());
   const [dashboardSearch, setDashboardSearch] = useState("");
 
@@ -812,8 +813,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
             s.widthMm ||
             s.width ||
             (dimMatch ? dimMatch[1] : singleDimMatch ? singleDimMatch[1] : ""),
-          lengthMm:
-            s.lengthMm || s.length || (dimMatch ? dimMatch[2] : ""),
+          lengthMm: s.lengthMm || s.length || (dimMatch ? dimMatch[2] : ""),
           hsnCode: s.hsnCode || "",
         };
       });
@@ -1687,40 +1687,42 @@ export function Dashboard({ data, session, toast, onNavigate }) {
           )}
         </div>
         <div style={{ marginLeft: "auto", display: "flex", gap: 10 }}>
-        <button
-          onClick={exportReportExcel}
-          style={{
-            padding: "8px 16px",
-            borderRadius: 8,
-            border: "none",
-            background: "rgba(34,197,94,0.85)",
-            color: "#fff",
-            fontWeight: 700,
-            fontSize: 12,
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: 7,
-          }}
-        >
-          <i className="fa-solid fa-file-excel" /> Excel
-        </button>
-        <button
-          onClick={exportReportPDF}
-          style={{
-                      background: "transparent",
-                      color: "#ffffff",
-                      border: "1px solid rgba(255,255,255,0.2)",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-        ><i className="fa-solid fa-file-pdf" /> PDF</button>
+          <button
+            onClick={exportReportExcel}
+            style={{
+              padding: "8px 16px",
+              borderRadius: 8,
+              border: "none",
+              background: "rgba(34,197,94,0.85)",
+              color: "#fff",
+              fontWeight: 700,
+              fontSize: 12,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 7,
+            }}
+          >
+            <i className="fa-solid fa-file-excel" /> Excel
+          </button>
+          <button
+            onClick={exportReportPDF}
+            style={{
+              background: "transparent",
+              color: "#ffffff",
+              border: "1px solid rgba(255,255,255,0.2)",
+              borderRadius: 6,
+              padding: "6px 12px",
+              fontSize: 11,
+              fontWeight: 500,
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            <i className="fa-solid fa-file-pdf" /> PDF
+          </button>
         </div>
       </div>
       <div ref={reportSectionRef}>
@@ -1851,82 +1853,87 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                   >
                     Jobs Pending for {selectedProcessPending}
                   </div>
-                  <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-                  <table style={TABLE}>
-                    <colgroup>
-                      <col style={{ width: 120 }} />
-                      <col style={{ width: 140 }} />
-                      <col style={{ width: "auto" }} />
-                      <col style={{ width: 100 }} />
-                      <col style={{ width: 120 }} />
-                    </colgroup>
-                    <thead>
-                      <tr>
-                        {[
-                          "Job Order #",
-                          "Sales Order / Client",
-                          "Item Name",
-                          "Order Qty",
-                          "Prod Qty",
-                        ].map((h) => (
-                          <th key={h} style={TH}>
-                            {h}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {processPendingMap[selectedProcessPending].map(
-                        (jo, i) => (
-                          <tr
-                            key={jo._id || i}
-                            style={{
-                              background: i % 2 === 0 ? "#0e0e12" : "#121216",
-                            }}
-                          >
-                            <td
+                  <div
+                    style={{
+                      overflowX: "auto",
+                      WebkitOverflowScrolling: "touch",
+                    }}
+                  >
+                    <table style={TABLE}>
+                      <colgroup>
+                        <col style={{ width: 120 }} />
+                        <col style={{ width: 140 }} />
+                        <col style={{ width: "auto" }} />
+                        <col style={{ width: 100 }} />
+                        <col style={{ width: 120 }} />
+                      </colgroup>
+                      <thead>
+                        <tr>
+                          {[
+                            "Job Order #",
+                            "Sales Order / Client",
+                            "Item Name",
+                            "Order Qty",
+                            "Prod Qty",
+                          ].map((h) => (
+                            <th key={h} style={TH}>
+                              {h}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {processPendingMap[selectedProcessPending].map(
+                          (jo, i) => (
+                            <tr
+                              key={jo._id || i}
                               style={{
-                                ...TD,
-                                color: C.yellow,
-                                fontWeight: 700,
+                                background: i % 2 === 0 ? "#0e0e12" : "#121216",
                               }}
                             >
-                              {jo.joNo}
-                            </td>
-                            <td style={TD}>
-                              <div style={{ color: C.green, fontSize: 12 }}>
-                                {jo.soRef}
-                              </div>
-                              <div
+                              <td
                                 style={{
-                                  color: "#aaa",
-                                  fontSize: 12,
-                                  marginTop: 4,
+                                  ...TD,
+                                  color: C.yellow,
+                                  fontWeight: 700,
                                 }}
                               >
-                                {jo.companyName}
-                              </div>
-                            </td>
-                            <td
-                              style={{
-                                ...TD,
-                                color: "#ccc",
-                                whiteSpace: "normal",
-                              }}
-                            >
-                              {jo.itemName}
-                            </td>
-                            <td style={{ ...TD, fontWeight: 700 }}>
-                              {fmt(jo.orderQty)}
-                            </td>
-                            <td style={{ ...TD, color: C.green }}>
-                              {fmt(jo.producedQty)}
-                            </td>
-                          </tr>
-                        ),
-                      )}
-                    </tbody>
-                  </table>
+                                {jo.joNo}
+                              </td>
+                              <td style={TD}>
+                                <div style={{ color: C.green, fontSize: 12 }}>
+                                  {jo.soRef}
+                                </div>
+                                <div
+                                  style={{
+                                    color: "#aaa",
+                                    fontSize: 12,
+                                    marginTop: 4,
+                                  }}
+                                >
+                                  {jo.companyName}
+                                </div>
+                              </td>
+                              <td
+                                style={{
+                                  ...TD,
+                                  color: "#ccc",
+                                  whiteSpace: "normal",
+                                }}
+                              >
+                                {jo.itemName}
+                              </td>
+                              <td style={{ ...TD, fontWeight: 700 }}>
+                                {fmt(jo.orderQty)}
+                              </td>
+                              <td style={{ ...TD, color: C.green }}>
+                                {fmt(jo.producedQty)}
+                              </td>
+                            </tr>
+                          ),
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               )}
@@ -2906,7 +2913,16 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 whiteSpace: "normal",
                               }}
                             >
-                              <div style={{ display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden", wordBreak: "break-word", lineHeight: 1.4 }}>
+                              <div
+                                style={{
+                                  display: "-webkit-box",
+                                  WebkitLineClamp: 3,
+                                  WebkitBoxOrient: "vertical",
+                                  overflow: "hidden",
+                                  wordBreak: "break-word",
+                                  lineHeight: 1.4,
+                                }}
+                              >
                                 {r.itemsStr}
                               </div>
                             </td>
@@ -3221,7 +3237,16 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 whiteSpace: "normal",
                               }}
                             >
-                              <div style={{ display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden", wordBreak: "break-word", lineHeight: 1.4 }}>
+                              <div
+                                style={{
+                                  display: "-webkit-box",
+                                  WebkitLineClamp: 3,
+                                  WebkitBoxOrient: "vertical",
+                                  overflow: "hidden",
+                                  wordBreak: "break-word",
+                                  lineHeight: 1.4,
+                                }}
+                              >
                                 {r.itemsStr}
                               </div>
                             </td>
@@ -3277,7 +3302,9 @@ export function Dashboard({ data, session, toast, onNavigate }) {
             const rows = salesOrders
               .filter((o) => o.status !== "Closed" && o.status !== "Cancelled")
               .map((s) => {
-                const baseDate = (s.orderDate || s.createdAt || "").toString().slice(0, 10);
+                const baseDate = (s.orderDate || s.createdAt || "")
+                  .toString()
+                  .slice(0, 10);
                 const age = baseDate ? daysSince(baseDate) : 0;
                 const ord = (s.items || []).reduce(
                   (a, i) => a + +(i.orderQty || i.qty || 0),
@@ -3581,14 +3608,8 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     e.machine === mid ||
                     e.machine === m.name,
                 );
-                const ok = logs.reduce(
-                  (s, l) => s + +(l.qtyCompleted || 0),
-                  0,
-                );
-                const rj = logs.reduce(
-                  (s, l) => s + +(l.qtyRejected || 0),
-                  0,
-                );
+                const ok = logs.reduce((s, l) => s + +(l.qtyCompleted || 0), 0);
+                const rj = logs.reduce((s, l) => s + +(l.qtyRejected || 0), 0);
                 const tot = ok + rj;
                 const pct = tot > 0 ? Math.round((ok / tot) * 100) : 100;
                 return { machine: m, ok, rj, tot, pct };
@@ -3819,7 +3840,9 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       minWidth: 220,
                     }}
                   >
-                    <option value="all">All Machines ({mSummaryAll.length})</option>
+                    <option value="all">
+                      All Machines ({mSummaryAll.length})
+                    </option>
                     {mSummaryAll.map((m) => (
                       <option key={m.machine._id} value={String(m.machine._id)}>
                         {m.machine.name}
@@ -3896,7 +3919,9 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               {fmt(m.ok)} ok
                             </span>{" "}
                             <span style={{ color: "#555" }}>/</span>{" "}
-                            <span style={{ color: C.red }}>{fmt(m.rj)} rej</span>
+                            <span style={{ color: C.red }}>
+                              {fmt(m.rj)} rej
+                            </span>
                           </div>
                           <div
                             style={{
@@ -3958,8 +3983,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             <tr
                               key={m.machine._id}
                               style={{
-                                background:
-                                  i % 2 === 0 ? "#0e0e12" : "#121216",
+                                background: i % 2 === 0 ? "#0e0e12" : "#121216",
                               }}
                             >
                               <td style={{ ...TD, fontWeight: 700 }}>
@@ -4043,7 +4067,10 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                   {["All", "RM", "CG", "FG"].map((f) => (
                     <button
                       key={f}
-                      onClick={() => setLowStockFilter(f)}
+                      onClick={() => {
+                        setLowStockFilter(f);
+                        setLowStockCategoryFilter("All");
+                      }}
                       style={{
                         padding: "6px 16px",
                         borderRadius: 6,
@@ -4065,6 +4092,48 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             : "Finished Goods"}
                     </button>
                   ))}
+                  {/* Category sub-filters — shown when a type is selected */}
+                  {lowStockFilter !== "All" &&
+                    (() => {
+                      const cats = [
+                        "All",
+                        ...new Set(
+                          low
+                            .filter(
+                              (i) =>
+                                lowStockFilter === "All" ||
+                                i.type === lowStockFilter,
+                            )
+                            .map((i) => i.category)
+                            .filter(Boolean),
+                        ),
+                      ];
+                      if (cats.length <= 2) return null;
+                      return cats.map((cat) => (
+                        <button
+                          key={cat}
+                          onClick={() => setLowStockCategoryFilter(cat)}
+                          style={{
+                            padding: "5px 12px",
+                            borderRadius: 6,
+                            border: `1px solid ${lowStockCategoryFilter === cat ? "#60a5fa" : "#1e1e2e"}`,
+                            background:
+                              lowStockCategoryFilter === cat
+                                ? "#60a5fa22"
+                                : "rgba(255,255,255,0.03)",
+                            color:
+                              lowStockCategoryFilter === cat
+                                ? "#60a5fa"
+                                : "#666",
+                            fontSize: 11,
+                            fontWeight: 500,
+                            cursor: "pointer",
+                          }}
+                        >
+                          {cat === "All" ? "All Categories" : cat}
+                        </button>
+                      ));
+                    })()}
                   {lowStockSelected.size > 0 && (
                     <div
                       style={{
@@ -4097,8 +4166,10 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                           const selectedItems = low
                             .filter(
                               (item) =>
-                                lowStockFilter === "All" ||
-                                item.type === lowStockFilter,
+                                (lowStockFilter === "All" ||
+                                  item.type === lowStockFilter) &&
+                                (lowStockCategoryFilter === "All" ||
+                                  item.category === lowStockCategoryFilter),
                             )
                             .filter((it) =>
                               lowStockSelected.has(`${it.type}::${it.name}`),
@@ -4111,9 +4182,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 it.code === target.productCode)
                             )
                               return true;
-                            const nm = (it.itemName || "")
-                              .trim()
-                              .toLowerCase();
+                            const nm = (it.itemName || "").trim().toLowerCase();
                             return (
                               nm && nm === target.name.trim().toLowerCase()
                             );
@@ -4126,9 +4195,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             );
                             const matchingPOs = (purchaseOrders || [])
                               .filter((po) =>
-                                (po.items || []).some((it) =>
-                                  matchItem(it, f),
-                                ),
+                                (po.items || []).some((it) => matchItem(it, f)),
                               )
                               .sort((a, b) =>
                                 (b.poDate || b.createdAt || "").localeCompare(
@@ -4152,12 +4219,9 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               subCategory:
                                 f.subCategory || lastItem?.subCategory || "",
                               gsm: f.gsm || lastItem?.gsm || "",
-                              widthMm:
-                                f.widthMm || lastItem?.widthMm || "",
-                              lengthMm:
-                                f.lengthMm || lastItem?.lengthMm || "",
-                              hsnCode:
-                                f.hsnCode || lastItem?.hsnCode || "",
+                              widthMm: f.widthMm || lastItem?.widthMm || "",
+                              lengthMm: f.lengthMm || lastItem?.lengthMm || "",
+                              hsnCode: f.hsnCode || lastItem?.hsnCode || "",
                               lastVendor:
                                 lastPO?.vendor || lastPO?.vendorName || "",
                               lastVendorContact: lastPO?.vendorContact || "",
@@ -4206,7 +4270,8 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                           gap: 6,
                         }}
                       >
-                        <i className="fa-solid fa-cart-plus" /> Make Combined PO ({lowStockSelected.size})
+                        <i className="fa-solid fa-cart-plus" /> Make Combined PO
+                        ({lowStockSelected.size})
                       </button>
                     </div>
                   )}
@@ -4267,7 +4332,9 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               if (e.target.checked) {
                                 setLowStockSelected(
                                   new Set(
-                                    visible.map((it) => `${it.type}::${it.name}`),
+                                    visible.map(
+                                      (it) => `${it.type}::${it.name}`,
+                                    ),
                                   ),
                                 );
                               } else {
@@ -4296,8 +4363,10 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       {low
                         .filter(
                           (item) =>
-                            lowStockFilter === "All" ||
-                            item.type === lowStockFilter,
+                            (lowStockFilter === "All" ||
+                              item.type === lowStockFilter) &&
+                            (lowStockCategoryFilter === "All" ||
+                              item.category === lowStockCategoryFilter),
                         )
                         .map((f, i) => {
                           const suggestedQty = Math.max(
@@ -4308,156 +4377,170 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                           const rowKey = `${f.type}::${f.name}`;
                           const isSelected = lowStockSelected.has(rowKey);
                           return (
-                          <tr
-                            key={i}
-                            style={{
-                              background: isSelected
-                                ? C.blue + "18"
-                                : i % 2 === 0
-                                  ? "#0e0e12"
-                                  : "#121216",
-                            }}
-                          >
-                            <td style={TD}>
-                              {canMakePO ? (
-                                <input
-                                  type="checkbox"
-                                  checked={isSelected}
-                                  onChange={(e) => {
-                                    setLowStockSelected((prev) => {
-                                      const next = new Set(prev);
-                                      if (e.target.checked) next.add(rowKey);
-                                      else next.delete(rowKey);
-                                      return next;
-                                    });
-                                  }}
-                                  style={{ cursor: "pointer" }}
-                                />
-                              ) : null}
-                            </td>
-                            <td style={{ ...TD, fontWeight: 700 }}>{f.name}</td>
-                            <td style={{ ...TD, color: "#888" }}>
-                              {f.category}
-                            </td>
-                            <td
-                              style={{ ...TD, color: C.red, fontWeight: 800 }}
+                            <tr
+                              key={i}
+                              style={{
+                                background: isSelected
+                                  ? C.blue + "18"
+                                  : i % 2 === 0
+                                    ? "#0e0e12"
+                                    : "#121216",
+                              }}
                             >
-                              {fmt(f.stock)} {f.unit}
-                            </td>
-                            <td style={{ ...TD, color: "#888" }}>
-                              {fmt(f.reorder)} {f.unit}
-                            </td>
-                            <td style={TD}>
-                              <span
-                                style={{
-                                  padding: "2px 8px",
-                                  borderRadius: 4,
-                                  background: C.red + "22",
-                                  color: C.red,
-                                  fontSize: 10,
-                                  fontWeight: 800,
-                                  textTransform: "uppercase",
-                                }}
+                              <td style={TD}>
+                                {canMakePO ? (
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={(e) => {
+                                      setLowStockSelected((prev) => {
+                                        const next = new Set(prev);
+                                        if (e.target.checked) next.add(rowKey);
+                                        else next.delete(rowKey);
+                                        return next;
+                                      });
+                                    }}
+                                    style={{ cursor: "pointer" }}
+                                  />
+                                ) : null}
+                              </td>
+                              <td style={{ ...TD, fontWeight: 700 }}>
+                                {f.name}
+                              </td>
+                              <td style={{ ...TD, color: "#888" }}>
+                                {f.category}
+                              </td>
+                              <td
+                                style={{ ...TD, color: C.red, fontWeight: 800 }}
                               >
-                                Critical
-                              </span>
-                            </td>
-                            <td style={TD}>
-                              {canMakePO ? (
-                                <button
-                                  onClick={() => {
-                                    const matchItem = (it) => {
-                                      if (
-                                        f.productCode &&
-                                        (it.productCode === f.productCode ||
-                                          it.code === f.productCode)
-                                      )
-                                        return true;
-                                      const nm = (it.itemName || "")
-                                        .trim()
-                                        .toLowerCase();
-                                      return nm && nm === f.name.trim().toLowerCase();
-                                    };
-                                    const matchingPOs = (purchaseOrders || [])
-                                      .filter((po) =>
-                                        (po.items || []).some(matchItem),
-                                      )
-                                      .sort((a, b) =>
-                                        (b.poDate || b.createdAt || "").localeCompare(
-                                          a.poDate || a.createdAt || "",
-                                        ),
-                                      );
-                                    const lastPO = matchingPOs[0];
-                                    const lastItem = lastPO
-                                      ? (lastPO.items || []).find(matchItem)
-                                      : null;
-
-                                    sessionStorage.setItem(
-                                      "po_prefill",
-                                      JSON.stringify({
-                                        itemName: f.name,
-                                        category: f.category,
-                                        unit: f.unit,
-                                        type: f.type,
-                                        suggestedQty,
-                                        productCode:
-                                          f.productCode ||
-                                          lastItem?.productCode ||
-                                          "",
-                                        subCategory:
-                                          f.subCategory ||
-                                          lastItem?.subCategory ||
-                                          "",
-                                        gsm: f.gsm || lastItem?.gsm || "",
-                                        widthMm:
-                                          f.widthMm || lastItem?.widthMm || "",
-                                        lengthMm:
-                                          f.lengthMm || lastItem?.lengthMm || "",
-                                        hsnCode:
-                                          f.hsnCode || lastItem?.hsnCode || "",
-                                        size: f.size || "",
-                                        width: f.width || "",
-                                        length: f.length || "",
-                                        height: f.height || "",
-                                        lastVendor:
-                                          lastPO?.vendor ||
-                                          lastPO?.vendorName ||
-                                          "",
-                                        lastVendorContact:
-                                          lastPO?.vendorContact || "",
-                                        lastRate: lastItem?.rate || "",
-                                        lastGstRate:
-                                          lastItem?.gstRate ?? "",
-                                        lastPONo: lastPO?.poNo || "",
-                                      }),
-                                    );
-                                    onNavigate?.("purchase");
-                                  }}
+                                {fmt(f.stock)} {f.unit}
+                              </td>
+                              <td style={{ ...TD, color: "#888" }}>
+                                {fmt(f.reorder)} {f.unit}
+                              </td>
+                              <td style={TD}>
+                                <span
                                   style={{
-                                    padding: "5px 12px",
-                                    borderRadius: 5,
-                                    border: `1px solid ${C.blue}66`,
-                                    background: C.blue + "22",
-                                    color: C.blue,
-                                    fontSize: 11,
-                                    fontWeight: 700,
-                                    cursor: "pointer",
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    gap: 5,
+                                    padding: "2px 8px",
+                                    borderRadius: 4,
+                                    background: C.red + "22",
+                                    color: C.red,
+                                    fontSize: 10,
+                                    fontWeight: 800,
+                                    textTransform: "uppercase",
                                   }}
-                                  title={`Suggested qty: ${suggestedQty} ${f.unit}`}
                                 >
-                                  <i className="fa-solid fa-cart-plus" /> Make
-                                  PO
-                                </button>
-                              ) : (
-                                <span style={{ color: "#444", fontSize: 11 }}>
-                                  —
+                                  Critical
                                 </span>
-                              )}
-                            </td>
-                          </tr>
+                              </td>
+                              <td style={TD}>
+                                {canMakePO ? (
+                                  <button
+                                    onClick={() => {
+                                      const matchItem = (it) => {
+                                        if (
+                                          f.productCode &&
+                                          (it.productCode === f.productCode ||
+                                            it.code === f.productCode)
+                                        )
+                                          return true;
+                                        const nm = (it.itemName || "")
+                                          .trim()
+                                          .toLowerCase();
+                                        return (
+                                          nm &&
+                                          nm === f.name.trim().toLowerCase()
+                                        );
+                                      };
+                                      const matchingPOs = (purchaseOrders || [])
+                                        .filter((po) =>
+                                          (po.items || []).some(matchItem),
+                                        )
+                                        .sort((a, b) =>
+                                          (
+                                            b.poDate ||
+                                            b.createdAt ||
+                                            ""
+                                          ).localeCompare(
+                                            a.poDate || a.createdAt || "",
+                                          ),
+                                        );
+                                      const lastPO = matchingPOs[0];
+                                      const lastItem = lastPO
+                                        ? (lastPO.items || []).find(matchItem)
+                                        : null;
+
+                                      sessionStorage.setItem(
+                                        "po_prefill",
+                                        JSON.stringify({
+                                          itemName: f.name,
+                                          category: f.category,
+                                          unit: f.unit,
+                                          type: f.type,
+                                          suggestedQty,
+                                          productCode:
+                                            f.productCode ||
+                                            lastItem?.productCode ||
+                                            "",
+                                          subCategory:
+                                            f.subCategory ||
+                                            lastItem?.subCategory ||
+                                            "",
+                                          gsm: f.gsm || lastItem?.gsm || "",
+                                          widthMm:
+                                            f.widthMm ||
+                                            lastItem?.widthMm ||
+                                            "",
+                                          lengthMm:
+                                            f.lengthMm ||
+                                            lastItem?.lengthMm ||
+                                            "",
+                                          hsnCode:
+                                            f.hsnCode ||
+                                            lastItem?.hsnCode ||
+                                            "",
+                                          size: f.size || "",
+                                          width: f.width || "",
+                                          length: f.length || "",
+                                          height: f.height || "",
+                                          lastVendor:
+                                            lastPO?.vendor ||
+                                            lastPO?.vendorName ||
+                                            "",
+                                          lastVendorContact:
+                                            lastPO?.vendorContact || "",
+                                          lastRate: lastItem?.rate || "",
+                                          lastGstRate: lastItem?.gstRate ?? "",
+                                          lastPONo: lastPO?.poNo || "",
+                                        }),
+                                      );
+                                      onNavigate?.("purchase");
+                                    }}
+                                    style={{
+                                      padding: "5px 12px",
+                                      borderRadius: 5,
+                                      border: `1px solid ${C.blue}66`,
+                                      background: C.blue + "22",
+                                      color: C.blue,
+                                      fontSize: 11,
+                                      fontWeight: 700,
+                                      cursor: "pointer",
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: 5,
+                                    }}
+                                    title={`Suggested qty: ${suggestedQty} ${f.unit}`}
+                                  >
+                                    <i className="fa-solid fa-cart-plus" /> Make
+                                    PO
+                                  </button>
+                                ) : (
+                                  <span style={{ color: "#444", fontSize: 11 }}>
+                                    —
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
                           );
                         })}
                     </tbody>
@@ -4827,10 +4910,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                 return sa + +(it.noOfSheets || it.qty || it.quantity || 0);
               }, 0);
             const sumItemWt = (items) =>
-              (items || []).reduce(
-                (sa, it) => sa + +(it.weight || 0),
-                0,
-              );
+              (items || []).reduce((sa, it) => sa + +(it.weight || 0), 0);
 
             const vRows = Object.values(vendorMap)
               .map((v) => {
@@ -4838,10 +4918,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                   (s, p) => s + sumItemQty(p.items),
                   0,
                 );
-                const ordWt = v.pos.reduce(
-                  (s, p) => s + sumItemWt(p.items),
-                  0,
-                );
+                const ordWt = v.pos.reduce((s, p) => s + sumItemWt(p.items), 0);
                 const ordAmt = v.pos.reduce(
                   (s, p) => s + +(p.totalAmount || p.total || p.amount || 0),
                   0,
@@ -5085,7 +5162,15 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               background: i % 2 === 0 ? "#0e0e12" : "#121216",
                             }}
                           >
-                            <td style={{ ...TD, fontWeight: 700, whiteSpace: "normal" }}>{r.name}</td>
+                            <td
+                              style={{
+                                ...TD,
+                                fontWeight: 700,
+                                whiteSpace: "normal",
+                              }}
+                            >
+                              {r.name}
+                            </td>
                             <td
                               style={{ ...TD, color: C.blue, fontWeight: 700 }}
                             >
@@ -5102,7 +5187,8 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               </div>
                               {r.ordQty > 0 && (
                                 <div style={{ fontSize: 9, color: "#666" }}>
-                                  {Math.round(r.ordQty).toLocaleString("en-IN")} sheets
+                                  {Math.round(r.ordQty).toLocaleString("en-IN")}{" "}
+                                  sheets
                                 </div>
                               )}
                             </td>
@@ -5118,7 +5204,8 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               </div>
                               {r.recQty > 0 && (
                                 <div style={{ fontSize: 9, color: "#888" }}>
-                                  {Math.round(r.recQty).toLocaleString("en-IN")} sheets
+                                  {Math.round(r.recQty).toLocaleString("en-IN")}{" "}
+                                  sheets
                                 </div>
                               )}
                             </td>
@@ -5130,11 +5217,15 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               }}
                             >
                               <div style={{ fontWeight: 600 }}>
-                                {Math.round(r.pendWt).toLocaleString("en-IN")} kg
+                                {Math.round(r.pendWt).toLocaleString("en-IN")}{" "}
+                                kg
                               </div>
                               {r.pendQty > 0 && (
                                 <div style={{ fontSize: 9, color: "#666" }}>
-                                  {Math.round(r.pendQty).toLocaleString("en-IN")} sheets
+                                  {Math.round(r.pendQty).toLocaleString(
+                                    "en-IN",
+                                  )}{" "}
+                                  sheets
                                 </div>
                               )}
                             </td>

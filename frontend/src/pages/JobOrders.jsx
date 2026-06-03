@@ -8,7 +8,6 @@ import {
 import {
   Card,
   SectionTitle,
-  Badge,
   Field,
   SubmitBtn,
   AutocompleteInput,
@@ -25,7 +24,6 @@ import {
   itemMasterAPI,
 } from "../api/auth";
 
-const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 const today = () => new Date().toISOString().slice(0, 10);
 const fmt = (n) => (n ?? 0).toLocaleString("en-IN");
 
@@ -40,13 +38,27 @@ const calcSheets = (q, u) => {
 
 const parseBagDims = (sizeStr) => {
   // Accepts "21x12x33 cm", "210x120x330mm", "21×12×33", "21 x 12 x 33 cm", etc.
-  const s = (sizeStr || "").toLowerCase().replace(/[×]/g, "x").replace(/\s+/g, "");
-  const m = s.match(/(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)(cm|mm|inch)?/);
+  const s = (sizeStr || "")
+    .toLowerCase()
+    .replace(/[×]/g, "x")
+    .replace(/\s+/g, "");
+  const m = s.match(
+    /(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)(cm|mm|inch)?/,
+  );
   if (!m) return null;
-  let w = parseFloat(m[1]), g = parseFloat(m[2]), h = parseFloat(m[3]);
+  let w = parseFloat(m[1]),
+    g = parseFloat(m[2]),
+    h = parseFloat(m[3]);
   const unit = m[4];
-  if (unit === "cm") { w *= 10; g *= 10; h *= 10; }
-  else if (unit === "inch") { w = Math.round(w * 25.4); g = Math.round(g * 25.4); h = Math.round(h * 25.4); }
+  if (unit === "cm") {
+    w *= 10;
+    g *= 10;
+    h *= 10;
+  } else if (unit === "inch") {
+    w = Math.round(w * 25.4);
+    g = Math.round(g * 25.4);
+    h = Math.round(h * 25.4);
+  }
   return { w, g, h };
 };
 
@@ -73,8 +85,6 @@ const PROCESS_TAGS = [
   "Formation",
   "Manual Formation",
 ];
-const SHEET_UOM_OPTIONS = ["mm", "inch", "cm"];
-
 const SubLabel = ({ text }) => (
   <div
     style={{
@@ -159,6 +169,7 @@ export default function JobOrders(props) {
     paperCategory2: "",
     paperType2: "",
     paperGsm2: "",
+    noOfUps2: "",
     noOfSheets2: "",
     sheetUom2: "mm",
     sheetW2: "",
@@ -166,6 +177,7 @@ export default function JobOrders(props) {
     sheetSize2: "",
     reelWidthMm2: "",
     reelWeightKg2: "",
+    cuttingLengthMm2: "",
     remarks: "",
     machineAssignments: {},
     polycoatedWeightKg: "",
@@ -301,9 +313,12 @@ export default function JobOrders(props) {
     header.reelWidthMm2,
   ]);
   const matchedPolycoatedStock = useMemo(() => {
-    if (header.paperType !== "Polycoated Blanks" || !header.polycoatedRmName) return null;
+    if (header.paperType !== "Polycoated Blanks" || !header.polycoatedRmName)
+      return null;
     return (rawStock || []).find(
-      (s) => (s.name || "").trim().toLowerCase() === header.polycoatedRmName.trim().toLowerCase(),
+      (s) =>
+        (s.name || "").trim().toLowerCase() ===
+        header.polycoatedRmName.trim().toLowerCase(),
     );
   }, [rawStock, header.paperType, header.polycoatedRmName]);
 
@@ -315,7 +330,13 @@ export default function JobOrders(props) {
   const bagRmData = useMemo(() => {
     if (!isPaperBag || !header.paperGsm || !header.noOfUps) return null;
     return calcBagRmData(header.size, header.paperGsm, header.orderQty);
-  }, [isPaperBag, header.size, header.paperGsm, header.orderQty, header.noOfUps]);
+  }, [
+    isPaperBag,
+    header.size,
+    header.paperGsm,
+    header.orderQty,
+    header.noOfUps,
+  ]);
 
   const [headerErrors, setHeaderErrors] = useState({});
   const [showModal, setShowModal] = useState(false);
@@ -337,10 +358,13 @@ export default function JobOrders(props) {
 
   useEffect(() => {
     if (!showModal) return;
-    rawMaterialStockAPI.getAll().then((res) => {
-      const fresh = res?.stock || res;
-      if (Array.isArray(fresh) && setRawStock) setRawStock(fresh);
-    }).catch(() => {});
+    rawMaterialStockAPI
+      .getAll()
+      .then((res) => {
+        const fresh = res?.stock || res;
+        if (Array.isArray(fresh) && setRawStock) setRawStock(fresh);
+      })
+      .catch(() => {});
   }, [showModal]);
 
   const fetchItemMaster = async () => {
@@ -407,6 +431,7 @@ export default function JobOrders(props) {
       paperCategory2: jo.paperCategory2 || "",
       paperType2: jo.paperType2 || "",
       paperGsm2: jo.paperGsm2 || "",
+      noOfUps2: jo.noOfUps2 || "",
       noOfSheets2: jo.noOfSheets2 || "",
       sheetUom2: jo.sheetUom2 || "mm",
       sheetW2: jo.sheetW2 || "",
@@ -414,6 +439,7 @@ export default function JobOrders(props) {
       sheetSize2: jo.sheetSize2 || "",
       reelWidthMm2: jo.reelWidthMm2 || "",
       reelWeightKg2: jo.reelWeightKg2 || "",
+      cuttingLengthMm2: jo.cuttingLengthMm2 || "",
       remarks: jo.remarks || "",
       machineAssignments: jo.machineAssignments || {},
       polycoatedWeightKg: jo.polycoatedWeightKg || "",
@@ -575,12 +601,6 @@ export default function JobOrders(props) {
     [salesOrders],
   );
 
-  const sheetSize = useMemo(() => {
-    if (header.sheetW && header.sheetL && header.sheetUom)
-      return `${header.sheetW} × ${header.sheetL} ${header.sheetUom}`;
-    return "";
-  }, [header.sheetW, header.sheetL, header.sheetUom]);
-
   const setH = (k, v) => {
     setHeader((f) => {
       const updated = { ...f, [k]: v };
@@ -616,6 +636,13 @@ export default function JobOrders(props) {
         updated.noOfSheets = calcSheets(
           k === "orderQty" ? v : updated.orderQty,
           k === "noOfUps" ? v : updated.noOfUps,
+        );
+      }
+
+      if (k === "noOfUps2" || (k === "orderQty" && updated.noOfUps2)) {
+        updated.noOfSheets2 = calcSheets(
+          k === "orderQty" ? v : updated.orderQty,
+          k === "noOfUps2" ? v : updated.noOfUps2,
         );
       }
 
@@ -766,6 +793,7 @@ export default function JobOrders(props) {
         paperCategory2: header.paperCategory2,
         paperType2: header.paperType2,
         paperGsm2: header.paperGsm2 ? Number(header.paperGsm2) : null,
+        noOfUps2: header.noOfUps2 ? Number(header.noOfUps2) : null,
         noOfSheets2:
           header.paperCategory2 === "Paper Reel"
             ? null
@@ -777,7 +805,12 @@ export default function JobOrders(props) {
         sheetL2: header.sheetL2 ? Number(header.sheetL2) : null,
         sheetSize2: header.sheetSize2 || null,
         reelWidthMm2: header.reelWidthMm2 ? Number(header.reelWidthMm2) : null,
-        reelWeightKg2: header.reelWeightKg2 ? Number(header.reelWeightKg2) : null,
+        reelWeightKg2: header.reelWeightKg2
+          ? Number(header.reelWeightKg2)
+          : null,
+        cuttingLengthMm2: header.cuttingLengthMm2
+          ? Number(header.cuttingLengthMm2)
+          : null,
         remarks: header.remarks,
         machineAssignments: header.machineAssignments,
         reelWidthMm: header.reelWidthMm ? Number(header.reelWidthMm) : null,
@@ -785,9 +818,12 @@ export default function JobOrders(props) {
           ? Number(header.cuttingLengthMm)
           : null,
         reelWeightKg: header.reelWeightKg ? Number(header.reelWeightKg) : null,
-        polycoatedWeightKg: header.polycoatedWeightKg ? Number(header.polycoatedWeightKg) : null,
+        polycoatedWeightKg: header.polycoatedWeightKg
+          ? Number(header.polycoatedWeightKg)
+          : null,
         polycoatedRmName: header.polycoatedRmName || null,
-        polycoatedRmStockId: matchedPolycoatedStock?._id || header.polycoatedRmStockId || null,
+        polycoatedRmStockId:
+          matchedPolycoatedStock?._id || header.polycoatedRmStockId || null,
         rmStockId: matchedStock?._id,
         rmStockId2: matchedStock2?._id,
       };
@@ -1069,28 +1105,30 @@ export default function JobOrders(props) {
         />
 
         <div style={{ marginBottom: 20 }}>
-          {canCreate && <button
-            onClick={() => {
-              setEditId(null);
-              setHeader(blankHeader);
-              setHeaderErrors({});
-              setShowModal(true);
-            }}
-            style={{
-              background: "rgba(255,255,255,0.08)",
-              border: "1px solid rgba(255,255,255,0.18)",
-              color: "#fff",
-              padding: "9px 18px",
-              borderRadius: 10,
-              fontWeight: 600,
-              fontSize: 13,
-              cursor: "pointer",
-              boxShadow:
-                "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
-            }}
-          >
-            + New Job Order
-          </button>}
+          {canCreate && (
+            <button
+              onClick={() => {
+                setEditId(null);
+                setHeader(blankHeader);
+                setHeaderErrors({});
+                setShowModal(true);
+              }}
+              style={{
+                background: "rgba(255,255,255,0.08)",
+                border: "1px solid rgba(255,255,255,0.18)",
+                color: "#fff",
+                padding: "9px 18px",
+                borderRadius: 10,
+                fontWeight: 600,
+                fontSize: 13,
+                cursor: "pointer",
+                boxShadow:
+                  "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+              }}
+            >
+              + New Job Order
+            </button>
+          )}
         </div>
 
         {}
@@ -1645,41 +1683,177 @@ export default function JobOrders(props) {
                     flexWrap: "wrap",
                   }}
                 >
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#facc15", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: "#facc15",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                      marginBottom: 12,
+                    }}
+                  >
                     Paper Bag — RM Calculation
                   </div>
                   {!bagRmData.w ? (
                     <div style={{ fontSize: 12, color: "#94a3b8" }}>
-                      Enter bag size as W×G×H (e.g. 21×12×33 cm) to calculate RM required
+                      Enter bag size as W×G×H (e.g. 21×12×33 cm) to calculate RM
+                      required
                     </div>
                   ) : (
-                    <div style={{ display: "flex", gap: 20, flexWrap: "wrap", alignItems: "flex-start" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 20,
+                        flexWrap: "wrap",
+                        alignItems: "flex-start",
+                      }}
+                    >
                       <div>
-                        <div style={{ fontSize: 10, color: "#94a3b8", marginBottom: 2, textTransform: "uppercase" }}>Reel Width (RW)</div>
-                        <div style={{ fontSize: 15, fontWeight: 700, color: "#e2e8f0" }}>{bagRmData.rw} mm</div>
-                        <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>2×{bagRmData.w} + 2×{bagRmData.gusset} + 25</div>
+                        <div
+                          style={{
+                            fontSize: 10,
+                            color: "#94a3b8",
+                            marginBottom: 2,
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          Reel Width (RW)
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 15,
+                            fontWeight: 700,
+                            color: "#e2e8f0",
+                          }}
+                        >
+                          {bagRmData.rw} mm
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 10,
+                            color: "#64748b",
+                            marginTop: 2,
+                          }}
+                        >
+                          2×{bagRmData.w} + 2×{bagRmData.gusset} + 25
+                        </div>
                       </div>
                       <div>
-                        <div style={{ fontSize: 10, color: "#94a3b8", marginBottom: 2, textTransform: "uppercase" }}>Cut Length (CL)</div>
-                        <div style={{ fontSize: 15, fontWeight: 700, color: "#e2e8f0" }}>{bagRmData.cl} mm</div>
-                        <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>{bagRmData.h} + 0.5×{bagRmData.gusset} + 25</div>
+                        <div
+                          style={{
+                            fontSize: 10,
+                            color: "#94a3b8",
+                            marginBottom: 2,
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          Cut Length (CL)
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 15,
+                            fontWeight: 700,
+                            color: "#e2e8f0",
+                          }}
+                        >
+                          {bagRmData.cl} mm
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 10,
+                            color: "#64748b",
+                            marginTop: 2,
+                          }}
+                        >
+                          {bagRmData.h} + 0.5×{bagRmData.gusset} + 25
+                        </div>
                       </div>
                       <div>
-                        <div style={{ fontSize: 10, color: "#94a3b8", marginBottom: 2, textTransform: "uppercase" }}>Bag Weight</div>
-                        <div style={{ fontSize: 15, fontWeight: 700, color: "#e2e8f0" }}>{bagRmData.bagWeightG.toFixed(2)} g/bag</div>
-                        <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>{bagRmData.rw}×{bagRmData.cl}×{header.paperGsm} ÷ 10⁶</div>
+                        <div
+                          style={{
+                            fontSize: 10,
+                            color: "#94a3b8",
+                            marginBottom: 2,
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          Bag Weight
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 15,
+                            fontWeight: 700,
+                            color: "#e2e8f0",
+                          }}
+                        >
+                          {bagRmData.bagWeightG.toFixed(2)} g/bag
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 10,
+                            color: "#64748b",
+                            marginTop: 2,
+                          }}
+                        >
+                          {bagRmData.rw}×{bagRmData.cl}×{header.paperGsm} ÷ 10⁶
+                        </div>
                       </div>
                       {bagRmData.totalKg !== null && (
                         <div>
-                          <div style={{ fontSize: 10, color: "#94a3b8", marginBottom: 2, textTransform: "uppercase" }}>Total RM Required</div>
-                          <div style={{ fontSize: 17, fontWeight: 800, color: "#facc15" }}>~{bagRmData.totalKg.toFixed(1)} kg</div>
-                          <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>{fmt(header.orderQty)} bags</div>
+                          <div
+                            style={{
+                              fontSize: 10,
+                              color: "#94a3b8",
+                              marginBottom: 2,
+                              textTransform: "uppercase",
+                            }}
+                          >
+                            Total RM Required
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 17,
+                              fontWeight: 800,
+                              color: "#facc15",
+                            }}
+                          >
+                            ~{bagRmData.totalKg.toFixed(1)} kg
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 10,
+                              color: "#64748b",
+                              marginTop: 2,
+                            }}
+                          >
+                            {fmt(header.orderQty)} bags
+                          </div>
                         </div>
                       )}
                       {matchedStock && (
                         <div>
-                          <div style={{ fontSize: 10, color: "#94a3b8", marginBottom: 2, textTransform: "uppercase" }}>Stock Available</div>
-                          <div style={{ fontSize: 15, fontWeight: 700, color: bagRmData.totalKg !== null && (matchedStock.weight || 0) >= bagRmData.totalKg ? "#10b981" : "#ef4444" }}>
+                          <div
+                            style={{
+                              fontSize: 10,
+                              color: "#94a3b8",
+                              marginBottom: 2,
+                              textTransform: "uppercase",
+                            }}
+                          >
+                            Stock Available
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 15,
+                              fontWeight: 700,
+                              color:
+                                bagRmData.totalKg !== null &&
+                                (matchedStock.weight || 0) >= bagRmData.totalKg
+                                  ? "#10b981"
+                                  : "#ef4444",
+                            }}
+                          >
                             {fmt(Math.round(matchedStock.weight || 0))} kg
                           </div>
                         </div>
@@ -1852,7 +2026,14 @@ export default function JobOrders(props) {
 
               {/* Polycoated Blanks RM selector + weight — separate from FG item name */}
               {header.paperType === "Polycoated Blanks" && (
-                <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 14, marginBottom: 20 }}>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "2fr 1fr",
+                    gap: 14,
+                    marginBottom: 20,
+                  }}
+                >
                   <Field label="POLYCOATED BLANK (RM ITEM) *">
                     <select
                       value={header.polycoatedRmName}
@@ -1860,11 +2041,18 @@ export default function JobOrders(props) {
                         const selectedName = e.target.value;
                         setH("polycoatedRmName", selectedName);
                         const matched = (rawStock || []).find(
-                          (s) => (s.name || "").trim().toLowerCase() === selectedName.trim().toLowerCase(),
+                          (s) =>
+                            (s.name || "").trim().toLowerCase() ===
+                            selectedName.trim().toLowerCase(),
                         );
                         setH("polycoatedRmStockId", matched?._id || null);
                       }}
-                      style={{ fontWeight: 600, ...(headerErrors.polycoatedRmName ? { border: `1px solid ${C.red}` } : {}) }}
+                      style={{
+                        fontWeight: 600,
+                        ...(headerErrors.polycoatedRmName
+                          ? { border: `1px solid ${C.red}` }
+                          : {}),
+                      }}
                     >
                       <option value="">-- Select Polycoated Blank --</option>
                       {itemMasterItems
@@ -1887,12 +2075,29 @@ export default function JobOrders(props) {
                       type="number"
                       placeholder="Weight in kg"
                       value={header.polycoatedWeightKg}
-                      onChange={(e) => setH("polycoatedWeightKg", e.target.value)}
-                      style={headerErrors.polycoatedWeightKg ? { border: `1px solid ${C.red}` } : {}}
+                      onChange={(e) =>
+                        setH("polycoatedWeightKg", e.target.value)
+                      }
+                      style={
+                        headerErrors.polycoatedWeightKg
+                          ? { border: `1px solid ${C.red}` }
+                          : {}
+                      }
                     />
                     {matchedPolycoatedStock && (
-                      <div style={{ fontSize: 10, marginTop: 4, fontWeight: 500,
-                        color: (matchedPolycoatedStock.weight || matchedPolycoatedStock.qty || 0) > 0 ? C.green : C.red }}>
+                      <div
+                        style={{
+                          fontSize: 10,
+                          marginTop: 4,
+                          fontWeight: 500,
+                          color:
+                            (matchedPolycoatedStock.weight ||
+                              matchedPolycoatedStock.qty ||
+                              0) > 0
+                              ? C.green
+                              : C.red,
+                        }}
+                      >
                         {`${(matchedPolycoatedStock.weight || matchedPolycoatedStock.qty || 0).toLocaleString("en-IN")} kg available`}
                       </div>
                     )}
@@ -1902,13 +2107,37 @@ export default function JobOrders(props) {
               )}
 
               {header.hasSecondPaper && (
-                <div style={{ marginTop: 14, padding: "14px 16px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: C.yellow || "#facc15", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 14 }}>
+                <div
+                  style={{
+                    marginTop: 14,
+                    padding: "14px 16px",
+                    background: "rgba(255,255,255,0.02)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    borderRadius: 8,
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: C.yellow || "#facc15",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                      marginBottom: 14,
+                    }}
+                  >
                     Second Paper Details
                   </div>
 
-                  {/* Row 1: Category / Type / GSM / Sheets or Reel Weight */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 14, marginBottom: 14 }}>
+                  {/* Row 1: Category / Type / GSM / # Ups / # Sheets or Reel Weight */}
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr",
+                      gap: 14,
+                      marginBottom: 14,
+                    }}
+                  >
                     <Field label="Paper 2 Category">
                       <select
                         value={header.paperCategory2}
@@ -1927,11 +2156,15 @@ export default function JobOrders(props) {
                         disabled={!header.paperCategory2}
                       >
                         <option value="">
-                          {header.paperCategory2 ? "-- Select Paper Type --" : "-- Select Category first --"}
+                          {header.paperCategory2
+                            ? "-- Select Paper Type --"
+                            : "-- Select Category first --"}
                         </option>
-                        {(paperTypesByItem[header.paperCategory2] || []).map((p) => (
-                          <option key={p}>{p}</option>
-                        ))}
+                        {(paperTypesByItem[header.paperCategory2] || []).map(
+                          (p) => (
+                            <option key={p}>{p}</option>
+                          ),
+                        )}
                       </select>
                     </Field>
                     <Field label="Paper 2 GSM">
@@ -1942,40 +2175,79 @@ export default function JobOrders(props) {
                         onChange={(e) => setH("paperGsm2", e.target.value)}
                       />
                     </Field>
+                    <Field label="# Of Ups 2">
+                      <input
+                        type="number"
+                        placeholder="No. of ups"
+                        value={header.noOfUps2}
+                        onChange={(e) => setH("noOfUps2", e.target.value)}
+                      />
+                    </Field>
                     {header.paperCategory2 === "Paper Reel" ? (
                       <Field label="Reel 2 Weight (KG)">
                         <input
                           type="number"
                           placeholder="Weight in kg"
                           value={header.reelWeightKg2}
-                          onChange={(e) => setH("reelWeightKg2", e.target.value)}
+                          onChange={(e) =>
+                            setH("reelWeightKg2", e.target.value)
+                          }
                         />
                         {matchedStock2 && (
-                          <div style={{ fontSize: 10, color: (matchedStock2.weight || 0) > 0 ? C.green : C.red, marginTop: 4, fontWeight: 500 }}>
-                            {(matchedStock2.weight || 0) > 0 ? `${(matchedStock2.weight || 0).toLocaleString("en-IN")} kg available` : "0 kg available"}
+                          <div
+                            style={{
+                              fontSize: 10,
+                              color:
+                                (matchedStock2.weight || 0) > 0
+                                  ? C.green
+                                  : C.red,
+                              marginTop: 4,
+                              fontWeight: 500,
+                            }}
+                          >
+                            {(matchedStock2.weight || 0) > 0
+                              ? `${fmt(Math.round(matchedStock2.weight))} kg available`
+                              : "0 kg available"}
                           </div>
                         )}
                       </Field>
                     ) : (
-                      <Field label="Paper 2 Sheets">
+                      <Field label="# Of Sheets 2">
                         <input
                           type="number"
-                          placeholder="e.g. 1000"
+                          placeholder="No. of sheets"
                           value={header.noOfSheets2}
                           onChange={(e) => setH("noOfSheets2", e.target.value)}
                         />
                         {matchedStock2 && (
-                          <div style={{ fontSize: 10, color: (matchedStock2.qty || 0) > 0 ? C.green : C.red, marginTop: 4, fontWeight: 500 }}>
-                            {(matchedStock2.qty || 0) > 0 ? `${(matchedStock2.qty || 0).toLocaleString("en-IN")} sheets available` : "0 sheets available"}
+                          <div
+                            style={{
+                              fontSize: 10,
+                              color:
+                                (matchedStock2.qty || 0) > 0 ? C.green : C.red,
+                              marginTop: 4,
+                              fontWeight: 500,
+                            }}
+                          >
+                            {(matchedStock2.qty || 0) > 0
+                              ? `${fmt(matchedStock2.qty)} sheets available`
+                              : "0 sheets available"}
                           </div>
                         )}
                       </Field>
                     )}
                   </div>
 
-                  {/* Row 2: Sheet dimensions or Reel dimensions */}
+                  {/* Row 2: Reel dimensions (Paper Reel) or Sheet dimensions */}
                   {header.paperCategory2 === "Paper Reel" ? (
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14, marginBottom: 14 }}>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr 1fr",
+                        gap: 14,
+                        marginBottom: 14,
+                      }}
+                    >
                       <Field label="Reel 2 Width (MM)">
                         <input
                           type="number"
@@ -1984,11 +2256,31 @@ export default function JobOrders(props) {
                           onChange={(e) => setH("reelWidthMm2", e.target.value)}
                         />
                       </Field>
+                      <Field label="Cutting Length 2 (MM)">
+                        <input
+                          type="number"
+                          placeholder="Length"
+                          value={header.cuttingLengthMm2 || ""}
+                          onChange={(e) =>
+                            setH("cuttingLengthMm2", e.target.value)
+                          }
+                        />
+                      </Field>
                     </div>
-                  ) : header.paperCategory2 && header.paperCategory2 !== "" ? (
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1.5fr", gap: 14, marginBottom: 14 }}>
+                  ) : header.paperCategory2 ? (
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr 1fr 1.5fr",
+                        gap: 14,
+                        marginBottom: 14,
+                      }}
+                    >
                       <Field label="Sheet 2 UOM">
-                        <select value={header.sheetUom2} onChange={(e) => setH("sheetUom2", e.target.value)}>
+                        <select
+                          value={header.sheetUom2}
+                          onChange={(e) => setH("sheetUom2", e.target.value)}
+                        >
                           <option value="mm">mm</option>
                           <option value="cm">cm</option>
                           <option value="inch">inch</option>
@@ -2011,7 +2303,16 @@ export default function JobOrders(props) {
                         />
                       </Field>
                       <Field label="Sheet 2 Size">
-                        <div style={{ padding: "9px 12px", background: C.inputBg, border: `1px solid ${C.border}`, borderRadius: 6, fontSize: 13, color: header.sheetSize2 ? C.text : C.muted }}>
+                        <div
+                          style={{
+                            padding: "9px 12px",
+                            background: C.inputBg,
+                            border: `1px solid ${C.border}`,
+                            borderRadius: 6,
+                            fontSize: 13,
+                            color: header.sheetSize2 ? C.text : C.muted,
+                          }}
+                        >
                           {header.sheetSize2 || "— Auto from W x L x UOM —"}
                         </div>
                       </Field>
@@ -2024,8 +2325,23 @@ export default function JobOrders(props) {
                       <input
                         readOnly
                         placeholder="Auto-matched item"
-                        value={matchedStock2?.name || (header.paperCategory2 && header.paperType2 && header.paperGsm2 ? `${header.paperType2} ${header.paperCategory2} ${header.paperGsm2}gsm` : "")}
-                        style={{ background: "transparent", color: matchedStock2 ? C.green : C.text, fontWeight: 600 }}
+                        value={
+                          matchedStock2?.name ||
+                          (header.paperCategory2 &&
+                          header.paperType2 &&
+                          header.paperGsm2
+                            ? `${header.paperType2} ${header.paperCategory2} ${header.paperGsm2}gsm ${
+                                header.paperCategory2 === "Paper Reel"
+                                  ? (header.reelWidthMm2 || "") + "mm"
+                                  : header.sheetSize2 || ""
+                              }`.trim()
+                            : "")
+                        }
+                        style={{
+                          background: "transparent",
+                          color: matchedStock2 ? C.green : C.text,
+                          fontWeight: 600,
+                        }}
                       />
                     </Field>
                   )}
@@ -2094,18 +2410,42 @@ export default function JobOrders(props) {
             <AutocompleteInput
               value={filterClient}
               onChange={(v) => setFilterClient(v)}
-              suggestions={[...new Set((jobOrders || []).map(r => r.companyName).filter(Boolean))].sort()}
+              suggestions={[
+                ...new Set(
+                  (jobOrders || []).map((r) => r.companyName).filter(Boolean),
+                ),
+              ].sort()}
               placeholder="Filter by client..."
               showAllOnFocus={true}
-              inputStyle={{ padding: "6px 10px", background: "#0c0c0e", border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12, width: 180 }}
+              inputStyle={{
+                padding: "6px 10px",
+                background: "#0c0c0e",
+                border: `1px solid ${C.border}`,
+                borderRadius: 6,
+                color: "#fff",
+                fontSize: 12,
+                width: 180,
+              }}
             />
             <AutocompleteInput
               value={filterItem}
               onChange={(v) => setFilterItem(v)}
-              suggestions={[...new Set((jobOrders || []).map(r => r.itemName).filter(Boolean))].sort()}
+              suggestions={[
+                ...new Set(
+                  (jobOrders || []).map((r) => r.itemName).filter(Boolean),
+                ),
+              ].sort()}
               placeholder="Filter by item..."
               showAllOnFocus={true}
-              inputStyle={{ padding: "6px 10px", background: "#0c0c0e", border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12, width: 180 }}
+              inputStyle={{
+                padding: "6px 10px",
+                background: "#0c0c0e",
+                border: `1px solid ${C.border}`,
+                borderRadius: 6,
+                color: "#fff",
+                fontSize: 12,
+                width: 180,
+              }}
             />
             <AutocompleteInput
               value={filterStatus}
@@ -2113,7 +2453,15 @@ export default function JobOrders(props) {
               suggestions={["Open", "In Progress", "Completed", "Cancelled"]}
               placeholder="Filter by status..."
               showAllOnFocus={true}
-              inputStyle={{ padding: "6px 10px", background: "#0c0c0e", border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12, width: 150 }}
+              inputStyle={{
+                padding: "6px 10px",
+                background: "#0c0c0e",
+                border: `1px solid ${C.border}`,
+                borderRadius: 6,
+                color: "#fff",
+                fontSize: 12,
+                width: 150,
+              }}
             />
             <span style={{ fontSize: 12, color: C.muted, marginLeft: "auto" }}>
               {jobOrders.length} jobs
@@ -2123,15 +2471,23 @@ export default function JobOrders(props) {
           {(() => {
             const filteredJOs = (jobOrders || [])
               .slice()
-              .sort((a, b) => new Date(b.createdAt || b.jobcardDate || 0) - new Date(a.createdAt || a.jobcardDate || 0))
+              .sort(
+                (a, b) =>
+                  new Date(b.createdAt || b.jobcardDate || 0) -
+                  new Date(a.createdAt || a.jobcardDate || 0),
+              )
               .filter((r) => {
                 if (drDateFrom || drDateTo) {
-                  const d = r.jobcardDate ? new Date(r.jobcardDate).toISOString().slice(0, 10) : "";
+                  const d = r.jobcardDate
+                    ? new Date(r.jobcardDate).toISOString().slice(0, 10)
+                    : "";
                   if (drDateFrom && d < drDateFrom) return false;
                   if (drDateTo && d > drDateTo) return false;
                 }
-                if (filterClient && (r.companyName || "") !== filterClient) return false;
-                if (filterItem && (r.itemName || "") !== filterItem) return false;
+                if (filterClient && (r.companyName || "") !== filterClient)
+                  return false;
+                if (filterItem && (r.itemName || "") !== filterItem)
+                  return false;
                 if (filterStatus && r.status !== filterStatus) return false;
                 return true;
               });
@@ -2213,7 +2569,17 @@ export default function JobOrders(props) {
                         </span>
                         <i
                           className={icon}
-                          style={{ color: C.muted, fontSize: 20, opacity: 0.9, display: "inline-flex", alignItems: "center", justifyContent: "center", height: 28, width: 28, lineHeight: 1 }}
+                          style={{
+                            color: C.muted,
+                            fontSize: 20,
+                            opacity: 0.9,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            height: 28,
+                            width: 28,
+                            lineHeight: 1,
+                          }}
                         />
                       </div>
                       <div
@@ -2375,54 +2741,6 @@ export default function JobOrders(props) {
                       </thead>
                       <tbody>
                         {filteredJOs.map((r, i) => {
-                          const handleEdit = (jo) => {
-                            setEditId(jo._id);
-                            setHeader({
-                              joDate: new Date(jo.jobcardDate)
-                                .toISOString()
-                                .slice(0, 10),
-                              soRef: jo.soRef || "",
-                              companyName: jo.companyName || "",
-                              companyCategory: jo.companyCategory || "",
-                              itemName: jo.itemName || "",
-                              priority: jo.priority || "Standard",
-                              size: "",
-                              orderDate: jo.orderDate
-                                ? new Date(jo.orderDate)
-                                    .toISOString()
-                                    .slice(0, 10)
-                                : "",
-                              deliveryDate: jo.deliveryDate
-                                ? new Date(jo.deliveryDate)
-                                    .toISOString()
-                                    .slice(0, 10)
-                                : "",
-                              orderQty: jo.orderQty || "",
-                              printing: jo.printing || "",
-                              plate: jo.plate || "",
-                              processes: jo.process || [],
-                              paperCategory: jo.paperCategory || "",
-                              paperType: jo.paperType || "",
-                              paperGsm: jo.paperGsm || "",
-                              noOfUps: jo.noOfUps || "",
-                              noOfSheets: jo.noOfSheets || "",
-                              sheetUom: jo.sheetUom || "mm",
-                              sheetW: jo.sheetW || "",
-                              sheetL: jo.sheetL || "",
-                              sheetSize: jo.sheetSize || "",
-                              hasSecondPaper: jo.hasSecondPaper || false,
-                              paperCategory2: jo.paperCategory2 || "",
-                              paperType2: jo.paperType2 || "",
-                              paperGsm2: jo.paperGsm2 || "",
-                              noOfSheets2: jo.noOfSheets2 || "",
-                              remarks: jo.remarks || "",
-                              machineAssignments: jo.machineAssignments || {},
-                            });
-                            setShowModal(true);
-                          };
-
-                          const handleDelete = (id) => setDeleteTarget(id);
-
                           const priorityColor =
                             r.priority === "VIP"
                               ? "#ef4444"
@@ -2499,14 +2817,16 @@ export default function JobOrders(props) {
                                   maxWidth: 220,
                                 }}
                               >
-                                <div style={{
-                                  display: "-webkit-box",
-                                  WebkitLineClamp: 3,
-                                  WebkitBoxOrient: "vertical",
-                                  overflow: "hidden",
-                                  wordBreak: "break-word",
-                                  lineHeight: 1.4,
-                                }}>
+                                <div
+                                  style={{
+                                    display: "-webkit-box",
+                                    WebkitLineClamp: 3,
+                                    WebkitBoxOrient: "vertical",
+                                    overflow: "hidden",
+                                    wordBreak: "break-word",
+                                    lineHeight: 1.4,
+                                  }}
+                                >
                                   {r.itemName}
                                 </div>
                               </td>
@@ -2574,24 +2894,27 @@ export default function JobOrders(props) {
                               </td>
                               <td style={{ padding: "11px 14px" }}>
                                 <div style={{ display: "flex", gap: 6 }}>
-                                  {canEdit && <button
-                                    onClick={() => handleEdit(r)}
-                                    style={{
-                                      background: "transparent",
-                                      color: "#8082ff",
-                                      border: "1px solid #8082ff98",
-                                      borderRadius: 6,
-                                      padding: "6px 12px",
-                                      fontSize: 11,
-                                      fontWeight: 500,
-                                      cursor: "pointer",
-                                      display: "inline-flex",
-                                      alignItems: "center",
-                                      gap: 6,
-                                    }}
-                                  >
-                                    <i className="fa-solid fa-pen-to-square" /> Edit
-                                  </button>}
+                                  {canEdit && (
+                                    <button
+                                      onClick={() => handleEditJO(r)}
+                                      style={{
+                                        background: "transparent",
+                                        color: "#8082ff",
+                                        border: "1px solid #8082ff98",
+                                        borderRadius: 6,
+                                        padding: "6px 12px",
+                                        fontSize: 11,
+                                        fontWeight: 500,
+                                        cursor: "pointer",
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: 6,
+                                      }}
+                                    >
+                                      <i className="fa-solid fa-pen-to-square" />{" "}
+                                      Edit
+                                    </button>
+                                  )}
                                   <button
                                     onClick={() => generateJobCardPDF(r)}
                                     style={{
@@ -2610,24 +2933,28 @@ export default function JobOrders(props) {
                                   >
                                     <i className="fa-solid fa-file-pdf" /> PDF
                                   </button>
-                                  {canDelete && <button
-                                    onClick={() => handleDelete(r._id || r.id)}
-                                    style={{
-                                      background: "transparent",
-                                      color: "#8082ff",
-                                      border: "1px solid #8082ff98",
-                                      borderRadius: 6,
-                                      padding: "6px 12px",
-                                      fontSize: 11,
-                                      fontWeight: 500,
-                                      cursor: "pointer",
-                                      display: "inline-flex",
-                                      alignItems: "center",
-                                      gap: 6,
-                                    }}
-                                  >
-                                    <i className="fa-solid fa-trash" /> Delete
-                                  </button>}
+                                  {canDelete && (
+                                    <button
+                                      onClick={() =>
+                                        setDeleteTarget(r._id || r.id)
+                                      }
+                                      style={{
+                                        background: "transparent",
+                                        color: "#8082ff",
+                                        border: "1px solid #8082ff98",
+                                        borderRadius: 6,
+                                        padding: "6px 12px",
+                                        fontSize: 11,
+                                        fontWeight: 500,
+                                        cursor: "pointer",
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: 6,
+                                      }}
+                                    >
+                                      <i className="fa-solid fa-trash" /> Delete
+                                    </button>
+                                  )}
                                 </div>
                               </td>
                             </tr>

@@ -1,31 +1,23 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { auth } = require('../middleware/auth');
-const itemMasterController = require('../controllers/itemMasterController');
-
+const { auth } = require("../middleware/auth");
+const itemMasterController = require("../controllers/itemMasterController");
 
 router.use(auth);
 
+router.get("/", itemMasterController.getAllItems);
 
-router.get('/', itemMasterController.getAllItems);
+router.get("/:id", itemMasterController.getItemById);
 
+router.post("/", itemMasterController.createItem);
 
-router.get('/:id', itemMasterController.getItemById);
+router.post("/bulk-import", itemMasterController.bulkImport);
+router.post("/bulk-delete", itemMasterController.bulkDelete);
 
+router.put("/:id", itemMasterController.updateItem);
 
-router.post('/', itemMasterController.createItem);
+router.patch("/:id/status", itemMasterController.updateItemStatus);
 
-
-router.post('/bulk-import', itemMasterController.bulkImport);
-router.post('/bulk-delete', itemMasterController.bulkDelete);
-
-
-router.put('/:id', itemMasterController.updateItem);
-
-
-router.patch('/:id/status', itemMasterController.updateItemStatus);
-
-
-router.delete('/:id', itemMasterController.deleteItem);
+router.delete("/:id", itemMasterController.deleteItem);
 
 module.exports = router;

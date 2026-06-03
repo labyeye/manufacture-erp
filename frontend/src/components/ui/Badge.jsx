@@ -1,4 +1,4 @@
-import { COLORS } from '../../constants';
+import { COLORS } from "../../constants";
 
 export function Badge({ label, color = COLORS.accent }) {
   return (
@@ -11,7 +11,7 @@ export function Badge({ label, color = COLORS.accent }) {
         padding: "2px 8px",
         fontSize: 11,
         fontWeight: 600,
-        whiteSpace: "nowrap"
+        whiteSpace: "nowrap",
       }}
     >
       {label}

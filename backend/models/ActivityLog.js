@@ -5,9 +5,15 @@ const activityLogSchema = new mongoose.Schema(
     action: {
       type: String,
       enum: [
-        "LOGIN", "LOGOUT",
-        "CREATED", "UPDATED", "DELETED", "BULK_DELETED", "BULK_IMPORTED",
-        "STATUS_CHANGED", "STOCK_ADJUSTED",
+        "LOGIN",
+        "LOGOUT",
+        "CREATED",
+        "UPDATED",
+        "DELETED",
+        "BULK_DELETED",
+        "BULK_IMPORTED",
+        "STATUS_CHANGED",
+        "STOCK_ADJUSTED",
       ],
       required: true,
     },
@@ -21,7 +27,7 @@ const activityLogSchema = new mongoose.Schema(
     ipAddress: { type: String },
     timestamp: { type: Date, default: Date.now, index: true },
   },
-  { timestamps: false }
+  { timestamps: false },
 );
 
 activityLogSchema.index({ module: 1 });

@@ -29,7 +29,8 @@ const cardStyle = {
   borderRadius: 10,
   padding: 20,
   marginBottom: 16,
-  boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
+  boxShadow:
+    "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
 };
 
 export default function CompanyMaster({ toast, canExportImport = true }) {
@@ -148,7 +149,11 @@ export default function CompanyMaster({ toast, canExportImport = true }) {
       setSelectedIds(new Set());
       fetchCompanies();
       if (failed === 0) toast(`${ids.length} company(s) deleted`, "success");
-      else toast(`${ids.length - failed} deleted, ${failed} failed`, failed === ids.length ? "error" : "warning");
+      else
+        toast(
+          `${ids.length - failed} deleted, ${failed} failed`,
+          failed === ids.length ? "error" : "warning",
+        );
     } catch (error) {
       toast("Failed to delete selected companies", "error");
     } finally {
@@ -483,9 +488,13 @@ export default function CompanyMaster({ toast, canExportImport = true }) {
               Cancel
             </button>
           )}
-          {canExportImport && <ExportBtn onClick={handleExportExcel} label="Export" />}
+          {canExportImport && (
+            <ExportBtn onClick={handleExportExcel} label="Export" />
+          )}
           <TemplateBtn onClick={handleTemplate} />
-          {canExportImport && <ImportBtn onClick={() => fileInputRef.current.click()} />}
+          {canExportImport && (
+            <ImportBtn onClick={() => fileInputRef.current.click()} />
+          )}
           <input
             type="file"
             ref={fileInputRef}
@@ -520,230 +529,321 @@ export default function CompanyMaster({ toast, canExportImport = true }) {
 
         {(() => {
           const filteredIds = filtered.map((c) => c._id);
-          const allSelected = filteredIds.length > 0 && filteredIds.every((id) => selectedIds.has(id));
+          const allSelected =
+            filteredIds.length > 0 &&
+            filteredIds.every((id) => selectedIds.has(id));
           const someSelected = filteredIds.some((id) => selectedIds.has(id));
           return (
             <>
-            {selectedIds.size > 0 && (
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", marginBottom: 10, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8 }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: "#fecaca" }}>{selectedIds.size} selected</span>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button onClick={() => setSelectedIds(new Set())} style={{ padding: "5px 12px", borderRadius: 5, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.06)", color: "#fff", fontSize: 12, fontWeight: 500, cursor: "pointer" }}>Clear</button>
-                  <button onClick={() => setBulkDeleteOpen(true)} style={{ padding: "5px 12px", borderRadius: 5, border: "1px solid rgba(239,68,68,0.4)", background: "rgba(239,68,68,0.15)", color: "#ef4444", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Delete Selected</button>
-                </div>
-              </div>
-            )}
-            {filtered.length === 0 ? (
-          <div
-            style={{
-              textAlign: "center",
-              color: "#555",
-              padding: 40,
-              fontSize: 13,
-            }}
-          >
-            {searchTerm ? "No results found" : "No companies added yet."}
-          </div>
-        ) : (
-          <div
-            style={{
-              background: "transparent",
-              border: "1px solid rgba(255,255,255,0.07)",
-              borderRadius: 12,
-              overflow: "hidden",
-            }}
-          >
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                fontSize: 13,
-              }}
-            >
-              <thead>
-                <tr style={{ background: "transparent", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-                  <th style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap", width: 36 }}>
-                    <input
-                      type="checkbox"
-                      checked={allSelected}
-                      ref={(el) => { if (el) el.indeterminate = !allSelected && someSelected; }}
-                      onChange={() => toggleSelectAll(filteredIds, allSelected)}
-                      style={{ cursor: "pointer" }}
-                    />
-                  </th>
-                  {[
-                    "Company Name",
-                    "Type",
-                    "Contact Person",
-                    "Email",
-                    "GST Number",
-                    "Priority",
-                    "Status",
-                    "Actions",
-                  ].map((h) => (
-                    <th
-                      key={h}
-                      style={{
-                        padding: "10px 14px",
-                        textAlign: "left",
-                        fontSize: 11,
-                        fontWeight: 700,
-                        color: C.muted,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((company, i) => (
-                  <tr
-                    key={company._id}
-                    style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", background: selectedIds.has(company._id) ? "rgba(96,165,250,0.08)" : (i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)") }}
-                    onMouseEnter={e => { if (!selectedIds.has(company._id)) e.currentTarget.style.background="rgba(255,255,255,0.04)"; }}
-                    onMouseLeave={e => { if (!selectedIds.has(company._id)) e.currentTarget.style.background = (i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)"); }}
+              {selectedIds.size > 0 && (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "10px 14px",
+                    marginBottom: 10,
+                    background: "rgba(239,68,68,0.08)",
+                    border: "1px solid rgba(239,68,68,0.3)",
+                    borderRadius: 8,
+                  }}
+                >
+                  <span
+                    style={{ fontSize: 13, fontWeight: 600, color: "#fecaca" }}
                   >
-                    <td style={{ padding: "12px", width: 36 }}>
-                      <input
-                        type="checkbox"
-                        checked={selectedIds.has(company._id)}
-                        onChange={() => toggleSelect(company._id)}
-                        style={{ cursor: "pointer" }}
-                      />
-                    </td>
-                    <td
+                    {selectedIds.size} selected
+                  </span>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button
+                      onClick={() => setSelectedIds(new Set())}
                       style={{
-                        padding: "12px",
+                        padding: "5px 12px",
+                        borderRadius: 5,
+                        border: "1px solid rgba(255,255,255,0.15)",
+                        background: "rgba(255,255,255,0.06)",
+                        color: "#fff",
+                        fontSize: 12,
+                        fontWeight: 500,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Clear
+                    </button>
+                    <button
+                      onClick={() => setBulkDeleteOpen(true)}
+                      style={{
+                        padding: "5px 12px",
+                        borderRadius: 5,
+                        border: "1px solid rgba(239,68,68,0.4)",
+                        background: "rgba(239,68,68,0.15)",
+                        color: "#ef4444",
+                        fontSize: 12,
                         fontWeight: 600,
-                        color: "#e0e0e0",
+                        cursor: "pointer",
                       }}
                     >
-                      {company.name}
-                    </td>
-                    <td style={{ padding: "12px", color: "#aaa" }}>
-                      {company.category || "-"}
-                    </td>
-                    <td style={{ padding: "12px", color: "#aaa" }}>
-                      {company.contact || "-"}
-                    </td>
-                    <td style={{ padding: "12px", color: "#aaa" }}>
-                      {company.email || "-"}
-                    </td>
-                    <td
-                      style={{
-                        padding: "12px",
-                        color: "#aaa",
-                        fontSize: 11,
-                      }}
-                    >
-                      {company.gstin || "-"}
-                    </td>
-                    <td style={{ padding: "12px", color: "#aaa" }}>
-                      <span
+                      Delete Selected
+                    </button>
+                  </div>
+                </div>
+              )}
+              {filtered.length === 0 ? (
+                <div
+                  style={{
+                    textAlign: "center",
+                    color: "#555",
+                    padding: 40,
+                    fontSize: 13,
+                  }}
+                >
+                  {searchTerm ? "No results found" : "No companies added yet."}
+                </div>
+              ) : (
+                <div
+                  style={{
+                    background: "transparent",
+                    border: "1px solid rgba(255,255,255,0.07)",
+                    borderRadius: 12,
+                    overflow: "hidden",
+                  }}
+                >
+                  <table
+                    style={{
+                      width: "100%",
+                      borderCollapse: "collapse",
+                      fontSize: 13,
+                    }}
+                  >
+                    <thead>
+                      <tr
                         style={{
-                          color:
-                            company.priority === 1
-                              ? C.red
-                              : company.priority === 2
-                                ? C.orange
-                                : C.muted,
-                          fontWeight: 500,
+                          background: "transparent",
+                          borderBottom: "1px solid rgba(255,255,255,0.08)",
                         }}
                       >
-                        P{company.priority || 3}
-                      </span>
-                    </td>
-                    <td style={{ padding: "12px" }}>
-                      <span
-                        style={{
-                          padding: "3px 10px",
-                          borderRadius: 20,
-                          fontSize: 11,
-                          fontWeight: 500,
-                          background:
-                            company.status === "Active"
-                              ? "#4CAF5022"
-                              : "#f4433622",
-                          color:
-                            company.status === "Active" ? "#4CAF50" : "#f44336",
-                        }}
-                      >
-                        {company.status || "Active"}
-                      </span>
-                    </td>
-                    <td style={{ padding: "12px" }}>
-                      <div style={{ display: "flex", gap: 6 }}>
-                        <button
-                          onClick={() => handleEdit(company)}
+                        <th
                           style={{
-                            background: "transparent",
-                            color: "#8082ff",
-                            border: "1px solid #8082ff98",
-                            borderRadius: 6,
-                            padding: "6px 12px",
+                            padding: "10px 14px",
+                            textAlign: "left",
                             fontSize: 11,
-                            fontWeight: 500,
-                            cursor: "pointer",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 6,
+                            fontWeight: 700,
+                            color: C.muted,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.05em",
+                            whiteSpace: "nowrap",
+                            width: 36,
                           }}
                         >
-                          <i className="fa-solid fa-pen-to-square" /> Edit
-                        </button>
-                        <button
-                          onClick={() => handleToggleStatus(company)}
+                          <input
+                            type="checkbox"
+                            checked={allSelected}
+                            ref={(el) => {
+                              if (el)
+                                el.indeterminate = !allSelected && someSelected;
+                            }}
+                            onChange={() =>
+                              toggleSelectAll(filteredIds, allSelected)
+                            }
+                            style={{ cursor: "pointer" }}
+                          />
+                        </th>
+                        {[
+                          "Company Name",
+                          "Type",
+                          "Contact Person",
+                          "Email",
+                          "GST Number",
+                          "Priority",
+                          "Status",
+                          "Actions",
+                        ].map((h) => (
+                          <th
+                            key={h}
+                            style={{
+                              padding: "10px 14px",
+                              textAlign: "left",
+                              fontSize: 11,
+                              fontWeight: 700,
+                              color: C.muted,
+                              textTransform: "uppercase",
+                              letterSpacing: "0.05em",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filtered.map((company, i) => (
+                        <tr
+                          key={company._id}
                           style={{
-                            background: "transparent",
-                            color: "#8082ff",
-                            border: "1px solid #8082ff98",
-                            borderRadius: 6,
-                            padding: "6px 12px",
-                            fontSize: 11,
-                            fontWeight: 500,
-                            cursor: "pointer",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 6,
+                            borderBottom: "1px solid rgba(255,255,255,0.04)",
+                            background: selectedIds.has(company._id)
+                              ? "rgba(96,165,250,0.08)"
+                              : i % 2 === 0
+                                ? "transparent"
+                                : "rgba(255,255,255,0.01)",
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!selectedIds.has(company._id))
+                              e.currentTarget.style.background =
+                                "rgba(255,255,255,0.04)";
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!selectedIds.has(company._id))
+                              e.currentTarget.style.background =
+                                i % 2 === 0
+                                  ? "transparent"
+                                  : "rgba(255,255,255,0.01)";
                           }}
                         >
-                          <i
-                            className={`fa-solid ${company.status === "Active" ? "fa-pause" : "fa-play"}`}
-                          />{" "}
-                          {company.status === "Active" ? "Pause" : "Activate"}
-                        </button>
-                        <button
-                          onClick={() =>
-                            setConfirmModal({ isOpen: true, id: company._id })
-                          }
-                          style={{
-                            background: "transparent",
-                            color: "#8082ff",
-                            border: "1px solid #8082ff98",
-                            borderRadius: 6,
-                            padding: "6px 12px",
-                            fontSize: 11,
-                            fontWeight: 500,
-                            cursor: "pointer",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 6,
-                          }}
-                        >
-                          <i className="fa-solid fa-trash" /> Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                          <td style={{ padding: "12px", width: 36 }}>
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.has(company._id)}
+                              onChange={() => toggleSelect(company._id)}
+                              style={{ cursor: "pointer" }}
+                            />
+                          </td>
+                          <td
+                            style={{
+                              padding: "12px",
+                              fontWeight: 600,
+                              color: "#e0e0e0",
+                            }}
+                          >
+                            {company.name}
+                          </td>
+                          <td style={{ padding: "12px", color: "#aaa" }}>
+                            {company.category || "-"}
+                          </td>
+                          <td style={{ padding: "12px", color: "#aaa" }}>
+                            {company.contact || "-"}
+                          </td>
+                          <td style={{ padding: "12px", color: "#aaa" }}>
+                            {company.email || "-"}
+                          </td>
+                          <td
+                            style={{
+                              padding: "12px",
+                              color: "#aaa",
+                              fontSize: 11,
+                            }}
+                          >
+                            {company.gstin || "-"}
+                          </td>
+                          <td style={{ padding: "12px", color: "#aaa" }}>
+                            <span
+                              style={{
+                                color:
+                                  company.priority === 1
+                                    ? C.red
+                                    : company.priority === 2
+                                      ? C.orange
+                                      : C.muted,
+                                fontWeight: 500,
+                              }}
+                            >
+                              P{company.priority || 3}
+                            </span>
+                          </td>
+                          <td style={{ padding: "12px" }}>
+                            <span
+                              style={{
+                                padding: "3px 10px",
+                                borderRadius: 20,
+                                fontSize: 11,
+                                fontWeight: 500,
+                                background:
+                                  company.status === "Active"
+                                    ? "#4CAF5022"
+                                    : "#f4433622",
+                                color:
+                                  company.status === "Active"
+                                    ? "#4CAF50"
+                                    : "#f44336",
+                              }}
+                            >
+                              {company.status || "Active"}
+                            </span>
+                          </td>
+                          <td style={{ padding: "12px" }}>
+                            <div style={{ display: "flex", gap: 6 }}>
+                              <button
+                                onClick={() => handleEdit(company)}
+                                style={{
+                                  background: "transparent",
+                                  color: "#8082ff",
+                                  border: "1px solid #8082ff98",
+                                  borderRadius: 6,
+                                  padding: "6px 12px",
+                                  fontSize: 11,
+                                  fontWeight: 500,
+                                  cursor: "pointer",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 6,
+                                }}
+                              >
+                                <i className="fa-solid fa-pen-to-square" /> Edit
+                              </button>
+                              <button
+                                onClick={() => handleToggleStatus(company)}
+                                style={{
+                                  background: "transparent",
+                                  color: "#8082ff",
+                                  border: "1px solid #8082ff98",
+                                  borderRadius: 6,
+                                  padding: "6px 12px",
+                                  fontSize: 11,
+                                  fontWeight: 500,
+                                  cursor: "pointer",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 6,
+                                }}
+                              >
+                                <i
+                                  className={`fa-solid ${company.status === "Active" ? "fa-pause" : "fa-play"}`}
+                                />{" "}
+                                {company.status === "Active"
+                                  ? "Pause"
+                                  : "Activate"}
+                              </button>
+                              <button
+                                onClick={() =>
+                                  setConfirmModal({
+                                    isOpen: true,
+                                    id: company._id,
+                                  })
+                                }
+                                style={{
+                                  background: "transparent",
+                                  color: "#8082ff",
+                                  border: "1px solid #8082ff98",
+                                  borderRadius: 6,
+                                  padding: "6px 12px",
+                                  fontSize: 11,
+                                  fontWeight: 500,
+                                  cursor: "pointer",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 6,
+                                }}
+                              >
+                                <i className="fa-solid fa-trash" /> Delete
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </>
           );
         })()}

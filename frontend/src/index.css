@@ -6,21 +6,30 @@
 
 :root {
   /* ── Canonical liquid-glass tokens ── */
-  --glass-bg:        rgba(255, 255, 255, 0.06);
-  --glass-blur:      blur(14px) saturate(160%);
-  --glass-blur-lg:   blur(20px) saturate(180%);
-  --glass-distort:   url(#glass-distortion);
+  --glass-bg: rgba(255, 255, 255, 0.06);
+  --glass-blur: blur(14px) saturate(160%);
+  --glass-blur-lg: blur(20px) saturate(180%);
+  --glass-distort: url(#glass-distortion);
   --glass-distort-soft: url(#glass-distortion-soft);
-  --glass-border:    rgba(255, 255, 255, 0.22);
-  --glass-radius:    20px;
+  --glass-border: rgba(255, 255, 255, 0.22);
+  --glass-radius: 20px;
   --glass-shadow:
-    0 10px 40px rgba(0, 0, 0, 0.35),
-    0 2px 8px rgba(0, 0, 0, 0.25),
+    0 10px 40px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.25),
     inset 0 1px 0 rgba(255, 255, 255, 0.5),
     inset 0 -1px 0 rgba(255, 255, 255, 0.08),
     inset 0 0 30px rgba(255, 255, 255, 0.04);
-  --glass-sheen-top:  linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
-  --glass-sheen-left: linear-gradient(180deg, rgba(255,255,255,0.8), transparent, rgba(255,255,255,0.3));
+  --glass-sheen-top: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.8),
+    transparent
+  );
+  --glass-sheen-left: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.8),
+    transparent,
+    rgba(255, 255, 255, 0.3)
+  );
 
   --bg: #07070f;
   --surface: #0d0d1a;
@@ -46,26 +55,42 @@
 body {
   background-color: #07070f;
   color: var(--text);
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   letter-spacing: -0.01em;
 }
 
-html, body, input, button, select, textarea, table, th, td {
-  font-family: 'Inter', sans-serif;
+html,
+body,
+input,
+button,
+select,
+textarea,
+table,
+th,
+td {
+  font-family: "Inter", sans-serif;
 }
 
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--scrollbar); border-radius: 4px; }
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar);
+  border-radius: 4px;
+}
 
 /* ── Input typography & layout (glass treatment lives in liquid-glass.css) ── */
 input,
 select,
 textarea {
   padding: 9px 12px;
-  font-family: 'Josefin Sans', 'Poppins', sans-serif;
+  font-family: "Josefin Sans", "Poppins", sans-serif;
   font-size: 13px;
   width: 100%;
   outline: none;
@@ -78,7 +103,7 @@ select option {
 
 button {
   cursor: pointer;
-  font-family: 'Josefin Sans', 'Poppins', sans-serif;
+  font-family: "Josefin Sans", "Poppins", sans-serif;
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -105,9 +130,11 @@ button {
 .glass-card::before,
 .glass-panel::before,
 .glass-table-wrap::before {
-  content: '';
+  content: "";
   position: absolute;
-  top: 0; left: 0; right: 0;
+  top: 0;
+  left: 0;
+  right: 0;
   height: 1px;
   background: var(--glass-sheen-top);
   pointer-events: none;
@@ -115,7 +142,10 @@ button {
 }
 
 /* ── Glassmorphism Table ── */
-table { border-collapse: collapse; width: 100%; }
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
 
 thead tr {
   background: rgba(255, 255, 255, 0.08);
@@ -151,22 +181,47 @@ td {
 
 /* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 @keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(-10px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
-.fade, .fade-in { animation: fadeIn 0.22s ease; }
-.modal-backdrop { animation: fadeIn 0.2s ease; }
-.loading { animation: pulse 1.5s ease-in-out infinite; }
-.mono { font-family: 'Fira Code', monospace; }
+.fade,
+.fade-in {
+  animation: fadeIn 0.22s ease;
+}
+.modal-backdrop {
+  animation: fadeIn 0.2s ease;
+}
+.loading {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+.mono {
+  font-family: "Fira Code", monospace;
+}
 
 .status-pill {
   display: inline-flex;
@@ -176,17 +231,26 @@ td {
   border-radius: 20px;
   font-size: 12px;
   font-weight: 500;
-  font-family: 'Fira Code', monospace;
+  font-family: "Fira Code", monospace;
 }
 
 @media (max-width: 767px) {
-  table { min-width: 600px; }
-  .modal-content, [class*="modal"] {
+  table {
+    min-width: 600px;
+  }
+  .modal-content,
+  [class*="modal"] {
     max-width: 100vw !important;
     width: 100% !important;
     margin: 0 !important;
     border-radius: 16px 16px 0 0 !important;
   }
-  button { min-height: 36px; }
-  input, select, textarea { font-size: 16px; }
+  button {
+    min-height: 36px;
+  }
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
 }

@@ -1,69 +1,82 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const dispatchItemSchema = new mongoose.Schema({
-  itemName: String,
-  productCode: String,
-  companyCode: String,
-  qty: Number,
-  unit: String,
-  pcsPerBox: Number,
-  noOfBox: Number,
-  rate: Number,
-  amount: Number,
-  gstRate: Number,
-  taxAmount: Number,
-  totalWithTax: Number
-}, { _id: false });
+const dispatchItemSchema = new mongoose.Schema(
+  {
+    itemName: String,
+    productCode: String,
+    companyCode: String,
+    qty: Number,
+    unit: String,
+    pcsPerBox: Number,
+    noOfBox: Number,
+    rate: Number,
+    amount: Number,
+    gstRate: Number,
+    taxAmount: Number,
+    totalWithTax: Number,
+  },
+  { _id: false },
+);
 
-const dispatchSchema = new mongoose.Schema({
-  dispatchNo: {
-    type: String,
-    required: true,
-    unique: true
+const dispatchSchema = new mongoose.Schema(
+  {
+    dispatchNo: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    date: {
+      type: Date,
+      required: true,
+    },
+    companyName: {
+      type: String,
+      required: true,
+    },
+    soRef: String,
+    joRef: String,
+    vehicleNo: String,
+    driverName: String,
+    lrNo: String,
+    items: [dispatchItemSchema],
+    totalQty: {
+      type: Number,
+      default: 0,
+    },
+    totalAmount: {
+      type: Number,
+      default: 0,
+    },
+    remarks: String,
+    type: {
+      type: String,
+      enum: ["Outward", "Return"],
+      default: "Outward",
+    },
+    materialType: {
+      type: String,
+      enum: ["FG", "RM", "CG"],
+      default: "FG",
+    },
+    originalDispatchRef: String,
+    returnReason: String,
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
   },
-  date: {
-    type: Date,
-    required: true
+  {
+    timestamps: true,
   },
-  companyName: {
-    type: String,
-    required: true
-  },
-  soRef: String,
-  joRef: String,
-  vehicleNo: String,
-  driverName: String,
-  lrNo: String,
-  items: [dispatchItemSchema],
-  totalQty: {
-    type: Number,
-    default: 0
-  },
-  totalAmount: {
-    type: Number,
-    default: 0
-  },
-  remarks: String,
-  type: {
-    type: String,
-    enum: ['Outward', 'Return'],
-    default: 'Outward'
-  },
-  originalDispatchRef: String,
-  returnReason: String,
-  createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  }
-}, {
-  timestamps: true
-});
+);
 
-
-dispatchSchema.pre('save', function(next) {
+dispatchSchema.pre("save", function (next) {
   this.totalQty = this.items.reduce((sum, item) => sum + (item.qty || 0), 0);
-  this.totalAmount = this.items.reduce((sum, item) => sum + (item.amount || 0), 0);
+  this.totalAmount = this.items.reduce(
+    (sum, item) => sum + (item.amount || 0),
+    0,
+  );
   next();
 });
 
-module.exports = mongoose.model('Dispatch', dispatchSchema);
+module.exports = mongoose.model("Dispatch", dispatchSchema);

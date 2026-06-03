@@ -130,12 +130,19 @@ const jobOrderSchema = new mongoose.Schema(
       ref: "User",
     },
     rushApprovedAt: Date,
-    internalDueDate: Date, 
+    internalDueDate: Date,
     dispatchDate: Date,
 
     status: {
       type: String,
-      enum: ["Draft", "Scheduled", "In Progress", "Completed", "On Hold", "Cancelled"],
+      enum: [
+        "Draft",
+        "Scheduled",
+        "In Progress",
+        "Completed",
+        "On Hold",
+        "Cancelled",
+      ],
       default: "Draft",
     },
     currentStage: String,

@@ -7,7 +7,11 @@ import {
   TemplateBtn,
   ImportModal,
 } from "../components/ui/BasicComponents";
-import { brandMasterAPI, companyMasterAPI, categoryMasterAPI } from "../api/auth";
+import {
+  brandMasterAPI,
+  companyMasterAPI,
+  categoryMasterAPI,
+} from "../api/auth";
 import ConfirmModal from "../components/ConfirmModal";
 import * as XLSX from "xlsx";
 
@@ -29,7 +33,8 @@ const cardStyle = {
   borderRadius: 10,
   padding: 20,
   marginBottom: 16,
-  boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
+  boxShadow:
+    "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
 };
 
 export default function BrandMaster({ toast, canExportImport = true }) {
@@ -182,7 +187,11 @@ export default function BrandMaster({ toast, canExportImport = true }) {
       setSelectedIds(new Set());
       fetchBrands();
       if (failed === 0) toast(`${ids.length} brand(s) deleted`, "success");
-      else toast(`${ids.length - failed} deleted, ${failed} failed`, failed === ids.length ? "error" : "warning");
+      else
+        toast(
+          `${ids.length - failed} deleted, ${failed} failed`,
+          failed === ids.length ? "error" : "warning",
+        );
     } catch (error) {
       toast("Failed to delete selected brands", "error");
     } finally {
@@ -219,7 +228,12 @@ export default function BrandMaster({ toast, canExportImport = true }) {
   };
 
   const handleTemplate = () => {
-    const header = ["Brand Name", "Linked Company", "Client Category", "Description"];
+    const header = [
+      "Brand Name",
+      "Linked Company",
+      "Client Category",
+      "Description",
+    ];
     const ws = XLSX.utils.aoa_to_sheet([header]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Brand Template");
@@ -258,13 +272,11 @@ export default function BrandMaster({ toast, canExportImport = true }) {
           status: `Importing: ${row["Brand Name"] || row.name || "Brand"}`,
         }));
 
-        
         let companyId = null;
         let companyName = "";
         if (row["Linked Company"]) {
           const found = companies.find(
-            (c) =>
-              c.name.toLowerCase() === row["Linked Company"].toLowerCase(),
+            (c) => c.name.toLowerCase() === row["Linked Company"].toLowerCase(),
           );
           if (found) {
             companyId = found._id;
@@ -283,7 +295,7 @@ export default function BrandMaster({ toast, canExportImport = true }) {
         if (payload.name) {
           try {
             const existing = brands.find(
-              (b) => b.name.toLowerCase() === payload.name.toLowerCase()
+              (b) => b.name.toLowerCase() === payload.name.toLowerCase(),
             );
             if (existing) {
               await brandMasterAPI.update(existing._id, payload);
@@ -313,7 +325,13 @@ export default function BrandMaster({ toast, canExportImport = true }) {
       toast("No brands to export", "error");
       return;
     }
-    const header = ["Brand Name", "Linked Company", "Client Category", "Description", "Status"];
+    const header = [
+      "Brand Name",
+      "Linked Company",
+      "Client Category",
+      "Description",
+      "Status",
+    ];
     const rows = brands.map((b) => [
       b.name,
       b.companyName || "",
@@ -425,7 +443,9 @@ export default function BrandMaster({ toast, canExportImport = true }) {
             >
               <option value="">-- Select Category --</option>
               {clientCategories.map((cat) => (
-                <option key={cat} value={cat}>{cat}</option>
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
               ))}
             </select>
           </div>
@@ -492,9 +512,13 @@ export default function BrandMaster({ toast, canExportImport = true }) {
               Cancel
             </button>
           )}
-          {canExportImport && <ExportBtn onClick={handleExport} label="Export" />}
+          {canExportImport && (
+            <ExportBtn onClick={handleExport} label="Export" />
+          )}
           <TemplateBtn onClick={handleTemplate} />
-          {canExportImport && <ImportBtn onClick={() => fileInputRef.current.click()} />}
+          {canExportImport && (
+            <ImportBtn onClick={() => fileInputRef.current.click()} />
+          )}
           <input
             type="file"
             ref={fileInputRef}
@@ -537,206 +561,318 @@ export default function BrandMaster({ toast, canExportImport = true }) {
           >
             {searchTerm ? "No results found" : "No brands added yet."}
           </div>
-        ) : (() => {
-          const filteredIds = filtered.map((b) => b._id);
-          const allSelected = filteredIds.length > 0 && filteredIds.every((id) => selectedIds.has(id));
-          const someSelected = filteredIds.some((id) => selectedIds.has(id));
-          return (
-          <div>
-            {selectedIds.size > 0 && (
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", marginBottom: 10, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8 }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: "#fecaca" }}>{selectedIds.size} selected</span>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button onClick={() => setSelectedIds(new Set())} style={{ padding: "5px 12px", borderRadius: 5, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.06)", color: "#fff", fontSize: 12, fontWeight: 500, cursor: "pointer" }}>Clear</button>
-                  <button onClick={() => setBulkDeleteOpen(true)} style={{ padding: "5px 12px", borderRadius: 5, border: "1px solid rgba(239,68,68,0.4)", background: "rgba(239,68,68,0.15)", color: "#ef4444", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Delete Selected</button>
-                </div>
-              </div>
-            )}
-          <div
-            style={{
-              background: "transparent",
-              border: "1px solid rgba(255,255,255,0.07)",
-              borderRadius: 12,
-              overflow: "hidden",
-            }}
-          >
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                fontSize: 13,
-              }}
-            >
-              <thead>
-                <tr style={{ background: "transparent", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-                  <th style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap", width: 36 }}>
-                    <input
-                      type="checkbox"
-                      checked={allSelected}
-                      ref={(el) => { if (el) el.indeterminate = !allSelected && someSelected; }}
-                      onChange={() => toggleSelectAll(filteredIds, allSelected)}
-                      style={{ cursor: "pointer" }}
-                    />
-                  </th>
-                  {["Brand Name", "Linked Company", "Client Category", "Description", "Status", "Actions"].map(
-                    (h) => (
-                      <th
-                        key={h}
-                        style={{
-                          padding: "10px 14px",
-                          textAlign: "left",
-                          fontSize: 11,
-                          fontWeight: 700,
-                          color: C.muted,
-                          textTransform: "uppercase",
-                          letterSpacing: "0.05em",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {h}
-                      </th>
-                    ),
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((brand, i) => (
-                  <tr key={brand._id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", background: selectedIds.has(brand._id) ? "rgba(96,165,250,0.08)" : (i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)") }} onMouseEnter={e => { if (!selectedIds.has(brand._id)) e.currentTarget.style.background="rgba(255,255,255,0.04)"; }} onMouseLeave={e => { if (!selectedIds.has(brand._id)) e.currentTarget.style.background = (i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)"); }}>
-                    <td style={{ padding: "12px", width: 36 }}>
-                      <input
-                        type="checkbox"
-                        checked={selectedIds.has(brand._id)}
-                        onChange={() => toggleSelect(brand._id)}
-                        style={{ cursor: "pointer" }}
-                      />
-                    </td>
-                    <td
+        ) : (
+          (() => {
+            const filteredIds = filtered.map((b) => b._id);
+            const allSelected =
+              filteredIds.length > 0 &&
+              filteredIds.every((id) => selectedIds.has(id));
+            const someSelected = filteredIds.some((id) => selectedIds.has(id));
+            return (
+              <div>
+                {selectedIds.size > 0 && (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "10px 14px",
+                      marginBottom: 10,
+                      background: "rgba(239,68,68,0.08)",
+                      border: "1px solid rgba(239,68,68,0.3)",
+                      borderRadius: 8,
+                    }}
+                  >
+                    <span
                       style={{
-                        padding: "12px",
+                        fontSize: 13,
                         fontWeight: 600,
-                        color: "#e0e0e0",
+                        color: "#fecaca",
                       }}
                     >
-                      {brand.name}
-                    </td>
-                    <td style={{ padding: "12px", color: "#aaa" }}>
-                      {brand.companyName || "-"}
-                    </td>
-                    <td style={{ padding: "12px" }}>
-                      {brand.clientCategory ? (
-                        <span
-                          style={{
-                            padding: "3px 10px",
-                            borderRadius: 20,
-                            fontSize: 11,
-                            fontWeight: 500,
-                            background:
-                              brand.clientCategory === "HP"
-                                ? "#2196F322"
-                                : brand.clientCategory === "ZPL"
-                                ? "#9C27B022"
-                                : "#FF980022",
-                            color:
-                              brand.clientCategory === "HP"
-                                ? "#2196F3"
-                                : brand.clientCategory === "ZPL"
-                                ? "#9C27B0"
-                                : "#FF9800",
-                          }}
-                        >
-                          {brand.clientCategory}
-                        </span>
-                      ) : (
-                        "-"
-                      )}
-                    </td>
-                    <td style={{ padding: "12px", color: "#aaa" }}>
-                      {brand.description || "-"}
-                    </td>
-                    <td style={{ padding: "12px" }}>
-                      <span
+                      {selectedIds.size} selected
+                    </span>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        onClick={() => setSelectedIds(new Set())}
                         style={{
-                          padding: "3px 10px",
-                          borderRadius: 20,
-                          fontSize: 11,
+                          padding: "5px 12px",
+                          borderRadius: 5,
+                          border: "1px solid rgba(255,255,255,0.15)",
+                          background: "rgba(255,255,255,0.06)",
+                          color: "#fff",
+                          fontSize: 12,
                           fontWeight: 500,
-                          background:
-                            brand.status === "Active" ? "#4CAF5022" : "#f4433622",
-                          color: brand.status === "Active" ? "#4CAF50" : "#f44336",
+                          cursor: "pointer",
                         }}
                       >
-                        {brand.status || "Active"}
-                      </span>
-                    </td>
-                    <td style={{ padding: "12px" }}>
-                      <div style={{ display: "flex", gap: 6 }}>
-                        <button
-                          onClick={() => handleEdit(brand)}
+                        Clear
+                      </button>
+                      <button
+                        onClick={() => setBulkDeleteOpen(true)}
+                        style={{
+                          padding: "5px 12px",
+                          borderRadius: 5,
+                          border: "1px solid rgba(239,68,68,0.4)",
+                          background: "rgba(239,68,68,0.15)",
+                          color: "#ef4444",
+                          fontSize: 12,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                        }}
+                      >
+                        Delete Selected
+                      </button>
+                    </div>
+                  </div>
+                )}
+                <div
+                  style={{
+                    background: "transparent",
+                    border: "1px solid rgba(255,255,255,0.07)",
+                    borderRadius: 12,
+                    overflow: "hidden",
+                  }}
+                >
+                  <table
+                    style={{
+                      width: "100%",
+                      borderCollapse: "collapse",
+                      fontSize: 13,
+                    }}
+                  >
+                    <thead>
+                      <tr
+                        style={{
+                          background: "transparent",
+                          borderBottom: "1px solid rgba(255,255,255,0.08)",
+                        }}
+                      >
+                        <th
                           style={{
-                            background: "transparent",
-                            color: "#8082ff",
-                            border: "1px solid #8082ff98",
-                            borderRadius: 6,
-                            padding: "6px 12px",
+                            padding: "10px 14px",
+                            textAlign: "left",
                             fontSize: 11,
-                            fontWeight: 500,
-                            cursor: "pointer",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 6,
+                            fontWeight: 700,
+                            color: C.muted,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.05em",
+                            whiteSpace: "nowrap",
+                            width: 36,
                           }}
                         >
-                          <i className="fa-solid fa-pen-to-square" /> Edit
-                        </button>
-                        <button
-                          onClick={() => handleToggleStatus(brand)}
+                          <input
+                            type="checkbox"
+                            checked={allSelected}
+                            ref={(el) => {
+                              if (el)
+                                el.indeterminate = !allSelected && someSelected;
+                            }}
+                            onChange={() =>
+                              toggleSelectAll(filteredIds, allSelected)
+                            }
+                            style={{ cursor: "pointer" }}
+                          />
+                        </th>
+                        {[
+                          "Brand Name",
+                          "Linked Company",
+                          "Client Category",
+                          "Description",
+                          "Status",
+                          "Actions",
+                        ].map((h) => (
+                          <th
+                            key={h}
+                            style={{
+                              padding: "10px 14px",
+                              textAlign: "left",
+                              fontSize: 11,
+                              fontWeight: 700,
+                              color: C.muted,
+                              textTransform: "uppercase",
+                              letterSpacing: "0.05em",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filtered.map((brand, i) => (
+                        <tr
+                          key={brand._id}
                           style={{
-                            background: "transparent",
-                            color: "#8082ff",
-                            border: "1px solid #8082ff98",
-                            borderRadius: 6,
-                            padding: "6px 12px",
-                            fontSize: 11,
-                            fontWeight: 500,
-                            cursor: "pointer",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 6,
+                            borderBottom: "1px solid rgba(255,255,255,0.04)",
+                            background: selectedIds.has(brand._id)
+                              ? "rgba(96,165,250,0.08)"
+                              : i % 2 === 0
+                                ? "transparent"
+                                : "rgba(255,255,255,0.01)",
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!selectedIds.has(brand._id))
+                              e.currentTarget.style.background =
+                                "rgba(255,255,255,0.04)";
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!selectedIds.has(brand._id))
+                              e.currentTarget.style.background =
+                                i % 2 === 0
+                                  ? "transparent"
+                                  : "rgba(255,255,255,0.01)";
                           }}
                         >
-                          <i
-                            className={`fa-solid ${brand.status === "Active" ? "fa-pause" : "fa-play"}`}
-                          />{" "}
-                          {brand.status === "Active" ? "Pause" : "Activate"}
-                        </button>
-                        <button
-                          onClick={() => setConfirmModal({ isOpen: true, id: brand._id })}
-                          style={{
-                            background: "transparent",
-                            color: "#8082ff",
-                            border: "1px solid #8082ff98",
-                            borderRadius: 6,
-                            padding: "6px 12px",
-                            fontSize: 11,
-                            fontWeight: 500,
-                            cursor: "pointer",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 6,
-                          }}
-                        >
-                          <i className="fa-solid fa-trash" /> Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          </div>
-          );
-        })()}
+                          <td style={{ padding: "12px", width: 36 }}>
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.has(brand._id)}
+                              onChange={() => toggleSelect(brand._id)}
+                              style={{ cursor: "pointer" }}
+                            />
+                          </td>
+                          <td
+                            style={{
+                              padding: "12px",
+                              fontWeight: 600,
+                              color: "#e0e0e0",
+                            }}
+                          >
+                            {brand.name}
+                          </td>
+                          <td style={{ padding: "12px", color: "#aaa" }}>
+                            {brand.companyName || "-"}
+                          </td>
+                          <td style={{ padding: "12px" }}>
+                            {brand.clientCategory ? (
+                              <span
+                                style={{
+                                  padding: "3px 10px",
+                                  borderRadius: 20,
+                                  fontSize: 11,
+                                  fontWeight: 500,
+                                  background:
+                                    brand.clientCategory === "HP"
+                                      ? "#2196F322"
+                                      : brand.clientCategory === "ZPL"
+                                        ? "#9C27B022"
+                                        : "#FF980022",
+                                  color:
+                                    brand.clientCategory === "HP"
+                                      ? "#2196F3"
+                                      : brand.clientCategory === "ZPL"
+                                        ? "#9C27B0"
+                                        : "#FF9800",
+                                }}
+                              >
+                                {brand.clientCategory}
+                              </span>
+                            ) : (
+                              "-"
+                            )}
+                          </td>
+                          <td style={{ padding: "12px", color: "#aaa" }}>
+                            {brand.description || "-"}
+                          </td>
+                          <td style={{ padding: "12px" }}>
+                            <span
+                              style={{
+                                padding: "3px 10px",
+                                borderRadius: 20,
+                                fontSize: 11,
+                                fontWeight: 500,
+                                background:
+                                  brand.status === "Active"
+                                    ? "#4CAF5022"
+                                    : "#f4433622",
+                                color:
+                                  brand.status === "Active"
+                                    ? "#4CAF50"
+                                    : "#f44336",
+                              }}
+                            >
+                              {brand.status || "Active"}
+                            </span>
+                          </td>
+                          <td style={{ padding: "12px" }}>
+                            <div style={{ display: "flex", gap: 6 }}>
+                              <button
+                                onClick={() => handleEdit(brand)}
+                                style={{
+                                  background: "transparent",
+                                  color: "#8082ff",
+                                  border: "1px solid #8082ff98",
+                                  borderRadius: 6,
+                                  padding: "6px 12px",
+                                  fontSize: 11,
+                                  fontWeight: 500,
+                                  cursor: "pointer",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 6,
+                                }}
+                              >
+                                <i className="fa-solid fa-pen-to-square" /> Edit
+                              </button>
+                              <button
+                                onClick={() => handleToggleStatus(brand)}
+                                style={{
+                                  background: "transparent",
+                                  color: "#8082ff",
+                                  border: "1px solid #8082ff98",
+                                  borderRadius: 6,
+                                  padding: "6px 12px",
+                                  fontSize: 11,
+                                  fontWeight: 500,
+                                  cursor: "pointer",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 6,
+                                }}
+                              >
+                                <i
+                                  className={`fa-solid ${brand.status === "Active" ? "fa-pause" : "fa-play"}`}
+                                />{" "}
+                                {brand.status === "Active"
+                                  ? "Pause"
+                                  : "Activate"}
+                              </button>
+                              <button
+                                onClick={() =>
+                                  setConfirmModal({
+                                    isOpen: true,
+                                    id: brand._id,
+                                  })
+                                }
+                                style={{
+                                  background: "transparent",
+                                  color: "#8082ff",
+                                  border: "1px solid #8082ff98",
+                                  borderRadius: 6,
+                                  padding: "6px 12px",
+                                  fontSize: 11,
+                                  fontWeight: 500,
+                                  cursor: "pointer",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 6,
+                                }}
+                              >
+                                <i className="fa-solid fa-trash" /> Delete
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })()
+        )}
       </div>
 
       <ConfirmModal

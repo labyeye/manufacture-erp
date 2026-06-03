@@ -56,9 +56,12 @@ export default function FGStock({
 
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
-    if (!window.confirm(`Delete ${selectedIds.length} selected item(s)?`)) return;
+    if (!window.confirm(`Delete ${selectedIds.length} selected item(s)?`))
+      return;
     try {
-      await Promise.allSettled(selectedIds.filter(Boolean).map((id) => fgStockAPI.delete(id)));
+      await Promise.allSettled(
+        selectedIds.filter(Boolean).map((id) => fgStockAPI.delete(id)),
+      );
       if (refreshData) await refreshData();
       setSelectedIds([]);
       toast?.(`${selectedIds.length} item(s) deleted`, "success");
@@ -161,7 +164,8 @@ export default function FGStock({
               padding: "4px 8px",
               fontSize: 10,
               cursor: "pointer",
-              boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+              boxShadow:
+                "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
             }}
           >
             {saving ? "..." : "✓"}
@@ -253,7 +257,8 @@ export default function FGStock({
               padding: "4px 8px",
               fontSize: 10,
               cursor: "pointer",
-              boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+              boxShadow:
+                "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
             }}
           >
             {saving ? "..." : "✓"}
@@ -297,7 +302,7 @@ export default function FGStock({
           const code = s.itemCode || s.code;
           return code && masterCodes.has(code);
         })
-        .map((s) => s._id?.toString())
+        .map((s) => s._id?.toString()),
     );
 
     const fromStockOnly = (fgStock || [])
@@ -338,16 +343,22 @@ export default function FGStock({
       const reorder = +(s.reorder || 0);
       let matchStatus = true;
       if (stockStatusFilter !== "All") {
-        if (stockStatusFilter === "In Stock") matchStatus = qty > 0 && (reorder === 0 || qty > reorder);
-        else if (stockStatusFilter === "Low Stock") matchStatus = qty > 0 && reorder > 0 && qty <= reorder;
+        if (stockStatusFilter === "In Stock")
+          matchStatus = qty > 0 && (reorder === 0 || qty > reorder);
+        else if (stockStatusFilter === "Low Stock")
+          matchStatus = qty > 0 && reorder > 0 && qty <= reorder;
         else if (stockStatusFilter === "Out of Stock") matchStatus = qty <= 0;
       }
       const matchZero = stockStatusFilter !== "All" || showZeroStock || qty > 0;
       return matchSearch && matchCat && matchStatus && matchZero;
     });
     return result.sort((a, b) => {
-      const dateA = new Date(a.createdAt || a.lastUpdated || a.addedOn || 0).getTime();
-      const dateB = new Date(b.createdAt || b.lastUpdated || b.addedOn || 0).getTime();
+      const dateA = new Date(
+        a.createdAt || a.lastUpdated || a.addedOn || 0,
+      ).getTime();
+      const dateB = new Date(
+        b.createdAt || b.lastUpdated || b.addedOn || 0,
+      ).getTime();
       if (dateA !== dateB) return dateB - dateA;
       const ca = a.itemCode || a.code || "";
       const cb = b.itemCode || b.code || "";
@@ -371,12 +382,20 @@ export default function FGStock({
       { label: "31–60 days", days: [31, 60], items: [] },
       { label: "60+ days", days: [61, Infinity], items: [] },
     ];
-    filtered.filter((s) => (s.qty || 0) > 0 && (s.lastUpdated || s.addedOn || s.createdAt)).forEach((s) => {
-      const dateMs = new Date(s.lastUpdated || s.addedOn || s.createdAt).getTime();
-      const ageDays = Math.floor((now - dateMs) / 86400000);
-      const bucket = buckets.find((b) => ageDays >= b.days[0] && ageDays <= b.days[1]);
-      if (bucket) bucket.items.push({ ...s, ageDays });
-    });
+    filtered
+      .filter(
+        (s) => (s.qty || 0) > 0 && (s.lastUpdated || s.addedOn || s.createdAt),
+      )
+      .forEach((s) => {
+        const dateMs = new Date(
+          s.lastUpdated || s.addedOn || s.createdAt,
+        ).getTime();
+        const ageDays = Math.floor((now - dateMs) / 86400000);
+        const bucket = buckets.find(
+          (b) => ageDays >= b.days[0] && ageDays <= b.days[1],
+        );
+        if (bucket) bucket.items.push({ ...s, ageDays });
+      });
     return buckets;
   }, [filtered]);
 
@@ -399,8 +418,20 @@ export default function FGStock({
     ];
     const rows = filtered.map((s) => {
       const ageingDate = s.lastUpdated || s.addedOn || s.createdAt;
-      const ageDays = ageingDate && (s.qty || 0) > 0 ? Math.floor((Date.now() - new Date(ageingDate).getTime()) / 86400000) : "";
-      const ageBucket = ageDays === "" ? "" : ageDays <= 15 ? "0–15 days" : ageDays <= 30 ? "16–30 days" : ageDays <= 60 ? "31–60 days" : "60+ days";
+      const ageDays =
+        ageingDate && (s.qty || 0) > 0
+          ? Math.floor((Date.now() - new Date(ageingDate).getTime()) / 86400000)
+          : "";
+      const ageBucket =
+        ageDays === ""
+          ? ""
+          : ageDays <= 15
+            ? "0–15 days"
+            : ageDays <= 30
+              ? "16–30 days"
+              : ageDays <= 60
+                ? "31–60 days"
+                : "60+ days";
       return [
         s.itemCode || s.code || "",
         s.itemName || "",
@@ -431,13 +462,39 @@ export default function FGStock({
     const fmtN = (n) => (+n || 0).toLocaleString("en-IN");
     const rfmt = (n) => Math.round(+n || 0).toLocaleString("en-IN");
     const totalQty = filtered.reduce((s, r) => s + (+r.qty || 0), 0);
-    const totalVal = filtered.reduce((s, r) => s + (+r.qty || 0) * (+r.price || 0), 0);
+    const totalVal = filtered.reduce(
+      (s, r) => s + (+r.qty || 0) * (+r.price || 0),
+      0,
+    );
     const rowsHtml = filtered
       .map((s) => {
         const ageingDate = s.lastUpdated || s.addedOn || s.createdAt;
-        const ageDays = ageingDate && (s.qty || 0) > 0 ? Math.floor((Date.now() - new Date(ageingDate).getTime()) / 86400000) : null;
-        const ageBucket = ageDays === null ? "—" : ageDays <= 15 ? "0–15d" : ageDays <= 30 ? "16–30d" : ageDays <= 60 ? "31–60d" : "60+d";
-        const ageColor = ageDays === null ? "#94a3b8" : ageDays <= 15 ? "#16a34a" : ageDays <= 30 ? "#2563eb" : ageDays <= 60 ? "#d97706" : "#dc2626";
+        const ageDays =
+          ageingDate && (s.qty || 0) > 0
+            ? Math.floor(
+                (Date.now() - new Date(ageingDate).getTime()) / 86400000,
+              )
+            : null;
+        const ageBucket =
+          ageDays === null
+            ? "—"
+            : ageDays <= 15
+              ? "0–15d"
+              : ageDays <= 30
+                ? "16–30d"
+                : ageDays <= 60
+                  ? "31–60d"
+                  : "60+d";
+        const ageColor =
+          ageDays === null
+            ? "#94a3b8"
+            : ageDays <= 15
+              ? "#16a34a"
+              : ageDays <= 30
+                ? "#2563eb"
+                : ageDays <= 60
+                  ? "#d97706"
+                  : "#dc2626";
         return `
         <tr>
           <td>${s.itemCode || s.code || ""}</td>
@@ -505,7 +562,8 @@ export default function FGStock({
         </body>
       </html>`;
     const iframe = document.createElement("iframe");
-    iframe.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0";
+    iframe.style.cssText =
+      "position:fixed;right:0;bottom:0;width:0;height:0;border:0";
     document.body.appendChild(iframe);
     iframe.contentWindow.document.open();
     iframe.contentWindow.document.write(html);
@@ -564,10 +622,10 @@ export default function FGStock({
 
         // Build a name→master lookup for FG items
         const masterFGItems = (itemMasterFG || []).filter(
-          (i) => i.type === "Finished Goods"
+          (i) => i.type === "Finished Goods",
         );
         const masterByName = new Map(
-          masterFGItems.map((m) => [m.name?.toLowerCase().trim(), m])
+          masterFGItems.map((m) => [m.name?.toLowerCase().trim(), m]),
         );
 
         for (let i = 1; i < json.length; i++) {
@@ -584,7 +642,8 @@ export default function FGStock({
               itemCode,
               itemName,
               category: masterMatch?.category || (row[2] || "").toString(),
-              companyCat: masterMatch?.companyCategory || (row[3] || "").toString(),
+              companyCat:
+                masterMatch?.companyCategory || (row[3] || "").toString(),
               qty: parseFloat(row[4] || 0),
               reorder: parseFloat(row[5] || 0),
               price: parseFloat(row[6] || 0),
@@ -664,10 +723,22 @@ export default function FGStock({
   };
 
   const statCards = [
-    { label: "Total Items", value: totalItems, icon: "fa-solid fa-boxes-stacked" },
+    {
+      label: "Total Items",
+      value: totalItems,
+      icon: "fa-solid fa-boxes-stacked",
+    },
     { label: "In Stock", value: inStock, icon: "fa-solid fa-warehouse" },
-    { label: "Total Qty", value: totalQty.toLocaleString("en-IN", { maximumFractionDigits: 0 }), icon: "fa-solid fa-cubes" },
-    { label: "Total Value", value: `₹${totalValue.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`, icon: "fa-solid fa-indian-rupee-sign" },
+    {
+      label: "Total Qty",
+      value: totalQty.toLocaleString("en-IN", { maximumFractionDigits: 0 }),
+      icon: "fa-solid fa-cubes",
+    },
+    {
+      label: "Total Value",
+      value: `₹${totalValue.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`,
+      icon: "fa-solid fa-indian-rupee-sign",
+    },
   ];
 
   return (
@@ -680,39 +751,41 @@ export default function FGStock({
         title="Importing Finished Goods Stock"
       />
       <div style={{ display: "flex", alignItems: "center" }}>
-          <div>
-            <h2
-              style={{
-                fontSize: 22,
-                fontWeight: 500,
-                color: "#e0e0e0",
-                margin: 0,
-              }}
-            >
-              🎪 FG Stock
-            </h2>
-            <p style={{ fontSize: 13, color: "#777", margin: "4px 0 0" }}>
-              Finished goods inventory — all items from Item Master
-            </p>
-          </div>
-          <button
-            onClick={() => setShowZeroStock(!showZeroStock)}
+        <div>
+          <h2
             style={{
-              marginLeft: "auto",
-              padding: "8px 16px",
-              borderRadius: 8,
-              fontSize: 13,
+              fontSize: 22,
               fontWeight: 500,
-              background: showZeroStock ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.04)",
-              color: showZeroStock ? "#fff" : "rgba(255,255,255,0.45)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              cursor: "pointer",
-              transition: "all 0.2s",
+              color: "#e0e0e0",
+              margin: 0,
             }}
           >
-            {showZeroStock ? "Hide Zero Stock" : "Show Zero Stock"}
-          </button>
+            🎪 FG Stock
+          </h2>
+          <p style={{ fontSize: 13, color: "#777", margin: "4px 0 0" }}>
+            Finished goods inventory — all items from Item Master
+          </p>
         </div>
+        <button
+          onClick={() => setShowZeroStock(!showZeroStock)}
+          style={{
+            marginLeft: "auto",
+            padding: "8px 16px",
+            borderRadius: 8,
+            fontSize: 13,
+            fontWeight: 500,
+            background: showZeroStock
+              ? "rgba(255,255,255,0.12)"
+              : "rgba(255,255,255,0.04)",
+            color: showZeroStock ? "#fff" : "rgba(255,255,255,0.45)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            cursor: "pointer",
+            transition: "all 0.2s",
+          }}
+        >
+          {showZeroStock ? "Hide Zero Stock" : "Show Zero Stock"}
+        </button>
+      </div>
 
       {}
       <div
@@ -733,11 +806,43 @@ export default function FGStock({
               borderRadius: 12,
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-              <span style={{ fontSize: 19, color: "#ffffff", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
-              <i className={icon} style={{ color: C.muted, fontSize: 20, opacity: 0.9, display: "inline-flex", alignItems: "center", justifyContent: "center", height: 28, width: 28, lineHeight: 1 }} />
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 8,
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 19,
+                  color: "#ffffff",
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                }}
+              >
+                {label}
+              </span>
+              <i
+                className={icon}
+                style={{
+                  color: C.muted,
+                  fontSize: 20,
+                  opacity: 0.9,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: 28,
+                  width: 28,
+                  lineHeight: 1,
+                }}
+              />
             </div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>{value}</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>
+              {value}
+            </div>
           </div>
         ))}
       </div>
@@ -763,18 +868,43 @@ export default function FGStock({
           <ImportBtn onClick={() => fileInputRef.current?.click()} />
         )}
         {canExportImport && <ExportBtn onClick={handleExport} />}
-        {canExportImport && <ExportBtn onClick={handleExportPDF} label="Export PDF" />}
+        {canExportImport && (
+          <ExportBtn onClick={handleExportPDF} label="Export PDF" />
+        )}
         <button
           onClick={() => setShowAgeing((v) => !v)}
-          style={{ padding: "7px 14px", borderRadius: 6, border: `1px solid ${showAgeing ? "#f59e0b" : "#2a2a2a"}`, background: showAgeing ? "rgba(245,158,11,0.15)" : "transparent", color: showAgeing ? "#f59e0b" : "#888", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}
+          style={{
+            padding: "7px 14px",
+            borderRadius: 6,
+            border: `1px solid ${showAgeing ? "#f59e0b" : "#2a2a2a"}`,
+            background: showAgeing ? "rgba(245,158,11,0.15)" : "transparent",
+            color: showAgeing ? "#f59e0b" : "#888",
+            fontSize: 12,
+            fontWeight: 600,
+            cursor: "pointer",
+            whiteSpace: "nowrap",
+          }}
         >
-          <i className="fa-solid fa-clock-rotate-left" style={{ marginRight: 6 }} />
+          <i
+            className="fa-solid fa-clock-rotate-left"
+            style={{ marginRight: 6 }}
+          />
           Stock Ageing
         </button>
         {!isClient && canDelete && selectedIds.length > 0 && (
           <button
             onClick={handleBulkDelete}
-            style={{ padding: "7px 14px", borderRadius: 6, border: "1px solid rgba(239,68,68,0.4)", background: "rgba(239,68,68,0.15)", color: "#ef4444", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}
+            style={{
+              padding: "7px 14px",
+              borderRadius: 6,
+              border: "1px solid rgba(239,68,68,0.4)",
+              background: "rgba(239,68,68,0.15)",
+              color: "#ef4444",
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+            }}
           >
             <i className="fa-solid fa-trash" style={{ marginRight: 6 }} />
             Delete Selected ({selectedIds.length})
@@ -790,38 +920,164 @@ export default function FGStock({
       </div>
 
       {showAgeing && (
-        <div style={{ marginBottom: 14, border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, overflow: "hidden", background: "rgba(255,255,255,0.03)" }}>
-          <div style={{ background: "rgba(255,255,255,0.04)", padding: "12px 18px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: 10 }}>
-            <i className="fa-solid fa-clock-rotate-left" style={{ color: "#f59e0b" }} />
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>FG Stock Ageing Analysis</span>
-            <span style={{ fontSize: 11, color: "#666" }}>— based on last stock update date; resets when production adds new stock</span>
+        <div
+          style={{
+            marginBottom: 14,
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: 12,
+            overflow: "hidden",
+            background: "rgba(255,255,255,0.03)",
+          }}
+        >
+          <div
+            style={{
+              background: "rgba(255,255,255,0.04)",
+              padding: "12px 18px",
+              borderBottom: "1px solid rgba(255,255,255,0.06)",
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+            }}
+          >
+            <i
+              className="fa-solid fa-clock-rotate-left"
+              style={{ color: "#f59e0b" }}
+            />
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>
+              FG Stock Ageing Analysis
+            </span>
+            <span style={{ fontSize: 11, color: "#666" }}>
+              — based on last stock update date; resets when production adds new
+              stock
+            </span>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 0 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(4, 1fr)",
+              gap: 0,
+            }}
+          >
             {ageingData.map((bucket, bi) => {
               const colors = ["#10b981", "#60a5fa", "#f59e0b", "#ef4444"];
               const col = colors[bi];
               const isExpanded = expandedBucket === bi;
-              const totalQtyBucket = bucket.items.reduce((s, i) => s + (i.qty || 0), 0);
-              const totalValBucket = bucket.items.reduce((s, i) => s + (i.qty || 0) * (i.price || 0), 0);
-              const visibleItems = isExpanded ? bucket.items : bucket.items.slice(0, 5);
+              const totalQtyBucket = bucket.items.reduce(
+                (s, i) => s + (i.qty || 0),
+                0,
+              );
+              const totalValBucket = bucket.items.reduce(
+                (s, i) => s + (i.qty || 0) * (i.price || 0),
+                0,
+              );
+              const visibleItems = isExpanded
+                ? bucket.items
+                : bucket.items.slice(0, 5);
               const remaining = bucket.items.length - 5;
               return (
-                <div key={bi} style={{ borderRight: bi < 3 ? "1px solid rgba(255,255,255,0.06)" : "none", padding: "16px 18px" }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: col, textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: 8 }}>{bucket.label}</div>
-                  <div style={{ fontSize: 26, fontWeight: 800, color: col, marginBottom: 2 }}>{bucket.items.length}</div>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginBottom: 6 }}>items</div>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 2 }}>Qty: {totalQtyBucket.toLocaleString("en-IN")}</div>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 8 }}>Value: ₹{totalValBucket.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</div>
+                <div
+                  key={bi}
+                  style={{
+                    borderRight:
+                      bi < 3 ? "1px solid rgba(255,255,255,0.06)" : "none",
+                    padding: "16px 18px",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: col,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.4px",
+                      marginBottom: 8,
+                    }}
+                  >
+                    {bucket.label}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 26,
+                      fontWeight: 800,
+                      color: col,
+                      marginBottom: 2,
+                    }}
+                  >
+                    {bucket.items.length}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: "rgba(255,255,255,0.3)",
+                      marginBottom: 6,
+                    }}
+                  >
+                    items
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: "rgba(255,255,255,0.35)",
+                      marginBottom: 2,
+                    }}
+                  >
+                    Qty: {totalQtyBucket.toLocaleString("en-IN")}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: "rgba(255,255,255,0.35)",
+                      marginBottom: 8,
+                    }}
+                  >
+                    Value: ₹
+                    {totalValBucket.toLocaleString("en-IN", {
+                      maximumFractionDigits: 0,
+                    })}
+                  </div>
                   {visibleItems.map((it, ii) => (
-                    <div key={ii} style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", padding: "3px 0", borderTop: "1px solid rgba(255,255,255,0.05)", display: "flex", justifyContent: "space-between", gap: 6 }}>
-                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{it.itemName}</span>
-                      <span style={{ color: col, fontWeight: 600, flexShrink: 0 }}>{it.ageDays}d</span>
+                    <div
+                      key={ii}
+                      style={{
+                        fontSize: 10,
+                        color: "rgba(255,255,255,0.4)",
+                        padding: "3px 0",
+                        borderTop: "1px solid rgba(255,255,255,0.05)",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        gap: 6,
+                      }}
+                    >
+                      <span
+                        style={{
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {it.itemName}
+                      </span>
+                      <span
+                        style={{ color: col, fontWeight: 600, flexShrink: 0 }}
+                      >
+                        {it.ageDays}d
+                      </span>
                     </div>
                   ))}
                   {!isExpanded && remaining > 0 && (
                     <button
                       onClick={() => setExpandedBucket(bi)}
-                      style={{ marginTop: 6, fontSize: 10, color: col, background: "transparent", border: `1px solid ${col}40`, borderRadius: 4, padding: "2px 8px", cursor: "pointer", fontWeight: 600 }}
+                      style={{
+                        marginTop: 6,
+                        fontSize: 10,
+                        color: col,
+                        background: "transparent",
+                        border: `1px solid ${col}40`,
+                        borderRadius: 4,
+                        padding: "2px 8px",
+                        cursor: "pointer",
+                        fontWeight: 600,
+                      }}
                     >
                       +{remaining} more
                     </button>
@@ -829,7 +1085,17 @@ export default function FGStock({
                   {isExpanded && bucket.items.length > 5 && (
                     <button
                       onClick={() => setExpandedBucket(null)}
-                      style={{ marginTop: 6, fontSize: 10, color: "rgba(255,255,255,0.35)", background: "transparent", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 4, padding: "2px 8px", cursor: "pointer", fontWeight: 600 }}
+                      style={{
+                        marginTop: 6,
+                        fontSize: 10,
+                        color: "rgba(255,255,255,0.35)",
+                        background: "transparent",
+                        border: "1px solid rgba(255,255,255,0.08)",
+                        borderRadius: 4,
+                        padding: "2px 8px",
+                        cursor: "pointer",
+                        fontWeight: 600,
+                      }}
                     >
                       Show less
                     </button>
@@ -841,7 +1107,15 @@ export default function FGStock({
         </div>
       )}
 
-      <div style={{ marginBottom: 12, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+      <div
+        style={{
+          marginBottom: 12,
+          display: "flex",
+          gap: 8,
+          alignItems: "center",
+          flexWrap: "wrap",
+        }}
+      >
         {["All", ...categories].map((cat) => (
           <button
             key={cat}
@@ -852,7 +1126,8 @@ export default function FGStock({
               fontSize: 12,
               fontWeight: 500,
               cursor: "pointer",
-              background: filterCat === cat ? "rgba(128,130,255,0.12)" : "transparent",
+              background:
+                filterCat === cat ? "rgba(128,130,255,0.12)" : "transparent",
               color: filterCat === cat ? "#8082ff" : "#888",
               border: `1px solid ${filterCat === cat ? "#8082ff98" : "#2a2a2e"}`,
             }}
@@ -862,7 +1137,15 @@ export default function FGStock({
         ))}
       </div>
 
-      <div style={{ marginBottom: 14, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+      <div
+        style={{
+          marginBottom: 14,
+          display: "flex",
+          gap: 8,
+          alignItems: "center",
+          flexWrap: "wrap",
+        }}
+      >
         {["All", "In Stock", "Low Stock", "Out of Stock"].map((s) => (
           <button
             key={s}
@@ -873,7 +1156,10 @@ export default function FGStock({
               fontSize: 12,
               fontWeight: 500,
               cursor: "pointer",
-              background: stockStatusFilter === s ? "rgba(128,130,255,0.12)" : "transparent",
+              background:
+                stockStatusFilter === s
+                  ? "rgba(128,130,255,0.12)"
+                  : "transparent",
               color: stockStatusFilter === s ? "#8082ff" : "#888",
               border: `1px solid ${stockStatusFilter === s ? "#8082ff98" : "#2a2a2e"}`,
               display: "inline-flex",
@@ -881,12 +1167,17 @@ export default function FGStock({
               gap: 6,
             }}
           >
-            <i className={
-              s === "In Stock" ? "fa-solid fa-warehouse"
-              : s === "Low Stock" ? "fa-solid fa-triangle-exclamation"
-              : s === "Out of Stock" ? "fa-solid fa-circle-exclamation"
-              : "fa-solid fa-layer-group"
-            } />
+            <i
+              className={
+                s === "In Stock"
+                  ? "fa-solid fa-warehouse"
+                  : s === "Low Stock"
+                    ? "fa-solid fa-triangle-exclamation"
+                    : s === "Out of Stock"
+                      ? "fa-solid fa-circle-exclamation"
+                      : "fa-solid fa-layer-group"
+              }
+            />
             {s}
           </button>
         ))}
@@ -912,7 +1203,19 @@ export default function FGStock({
                   borderBottom: "1px solid rgba(255,255,255,0.08)",
                 }}
               >
-                <th style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap", width: 40 }}>
+                <th
+                  style={{
+                    padding: "10px 14px",
+                    textAlign: "left",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: C.muted,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    whiteSpace: "nowrap",
+                    width: 40,
+                  }}
+                >
                   <input
                     type="checkbox"
                     checked={
@@ -990,9 +1293,32 @@ export default function FGStock({
                   const isLow =
                     (s.reorder || 0) > 0 && (s.qty || 0) <= (s.reorder || 0);
                   const ageingDate = s.lastUpdated || s.addedOn || s.createdAt;
-                  const ageDays = ageingDate ? Math.floor((Date.now() - new Date(ageingDate).getTime()) / 86400000) : null;
-                  const ageColor = ageDays === null ? "#555" : ageDays <= 15 ? "#10b981" : ageDays <= 30 ? "#60a5fa" : ageDays <= 60 ? "#f59e0b" : "#ef4444";
-                  const ageLabel = ageDays === null ? "—" : ageDays <= 15 ? "0–15d" : ageDays <= 30 ? "16–30d" : ageDays <= 60 ? "31–60d" : "60+d";
+                  const ageDays = ageingDate
+                    ? Math.floor(
+                        (Date.now() - new Date(ageingDate).getTime()) /
+                          86400000,
+                      )
+                    : null;
+                  const ageColor =
+                    ageDays === null
+                      ? "#555"
+                      : ageDays <= 15
+                        ? "#10b981"
+                        : ageDays <= 30
+                          ? "#60a5fa"
+                          : ageDays <= 60
+                            ? "#f59e0b"
+                            : "#ef4444";
+                  const ageLabel =
+                    ageDays === null
+                      ? "—"
+                      : ageDays <= 15
+                        ? "0–15d"
+                        : ageDays <= 30
+                          ? "16–30d"
+                          : ageDays <= 60
+                            ? "31–60d"
+                            : "60+d";
                   return (
                     <tr
                       key={i}
@@ -1000,7 +1326,9 @@ export default function FGStock({
                         borderBottom: "1px solid rgba(255,255,255,0.04)",
                         background: selectedIds.includes(s._id || s.id)
                           ? "rgba(255,255,255,0.07)"
-                          : (i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)"),
+                          : i % 2 === 0
+                            ? "transparent"
+                            : "rgba(255,255,255,0.01)",
                       }}
                     >
                       <td style={{ padding: "10px 14px" }}>
@@ -1009,7 +1337,10 @@ export default function FGStock({
                           checked={selectedIds.includes(s._id || s.id)}
                           onChange={(e) => {
                             if (e.target.checked) {
-                              setSelectedIds((prev) => [...prev, s._id || s.id]);
+                              setSelectedIds((prev) => [
+                                ...prev,
+                                s._id || s.id,
+                              ]);
                             } else {
                               setSelectedIds((prev) =>
                                 prev.filter((id) => id !== (s._id || s.id)),
@@ -1071,7 +1402,10 @@ export default function FGStock({
                             fontSize: 11,
                             fontWeight: 500,
                             background: "rgba(255,255,255,0.06)",
-                            color: (s.qty || 0) > 0 ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.25)",
+                            color:
+                              (s.qty || 0) > 0
+                                ? "rgba(255,255,255,0.7)"
+                                : "rgba(255,255,255,0.25)",
                           }}
                         >
                           {(s.qty || 0) > 0 ? "Yes" : "No"}
@@ -1120,11 +1454,30 @@ export default function FGStock({
                       </td>
                       <td style={{ padding: "10px 14px", textAlign: "right" }}>
                         {(s.qty || 0) > 0 && ageDays !== null ? (
-                          <span style={{ display: "inline-flex", flexDirection: "column", alignItems: "flex-end", gap: 1 }}>
-                            <span style={{ fontSize: 11, fontWeight: 700, color: ageColor, background: `${ageColor}18`, padding: "2px 7px", borderRadius: 10, whiteSpace: "nowrap" }}>
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              flexDirection: "column",
+                              alignItems: "flex-end",
+                              gap: 1,
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 700,
+                                color: ageColor,
+                                background: `${ageColor}18`,
+                                padding: "2px 7px",
+                                borderRadius: 10,
+                                whiteSpace: "nowrap",
+                              }}
+                            >
                               {ageLabel}
                             </span>
-                            <span style={{ fontSize: 10, color: "#555" }}>{ageDays}d</span>
+                            <span style={{ fontSize: 10, color: "#555" }}>
+                              {ageDays}d
+                            </span>
                           </span>
                         ) : (
                           <span style={{ color: "#333", fontSize: 11 }}>—</span>
@@ -1157,14 +1510,22 @@ export default function FGStock({
                               <button
                                 onClick={async () => {
                                   if (s.isFromMaster) {
-                                    toast("This item has no stock record to delete. Remove it from Item Master if needed.", "error");
+                                    toast(
+                                      "This item has no stock record to delete. Remove it from Item Master if needed.",
+                                      "error",
+                                    );
                                     return;
                                   }
                                   if (confirm("Delete this item from stock?")) {
                                     try {
                                       await fgStockAPI.delete(s._id);
                                       if (refreshData) await refreshData();
-                                      else setFgStock((prev) => prev.filter((item) => item._id !== s._id));
+                                      else
+                                        setFgStock((prev) =>
+                                          prev.filter(
+                                            (item) => item._id !== s._id,
+                                          ),
+                                        );
                                       toast("Deleted successfully", "success");
                                     } catch (err) {
                                       toast("Failed to delete", "error");
@@ -1331,7 +1692,9 @@ function EditModal({ item, onClose, onSave, companyMaster = [] }) {
             <label style={labelStyle}>Company Name</label>
             <AutocompleteInput
               value={formData.companyName}
-              onChange={(v) => setFormData((prev) => ({ ...prev, companyName: v }))}
+              onChange={(v) =>
+                setFormData((prev) => ({ ...prev, companyName: v }))
+              }
               suggestions={companyMaster.map((c) => c.name)}
               placeholder="Type to search company..."
             />
@@ -1412,19 +1775,21 @@ function EditModal({ item, onClose, onSave, companyMaster = [] }) {
           <button
             onClick={onClose}
             style={{
-                      background: "transparent",
-                      color: "#ffffff",
-                      border: "1px solid rgba(255,255,255,0.2)",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-          ><i className="fa-solid fa-xmark" /> Cancel</button>
+              background: "transparent",
+              color: "#ffffff",
+              border: "1px solid rgba(255,255,255,0.2)",
+              borderRadius: 6,
+              padding: "6px 12px",
+              fontSize: 11,
+              fontWeight: 500,
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            <i className="fa-solid fa-xmark" /> Cancel
+          </button>
           <button
             onClick={() => {
               const cleaned = { ...formData };
@@ -1441,7 +1806,8 @@ function EditModal({ item, onClose, onSave, companyMaster = [] }) {
               borderRadius: 6,
               cursor: "pointer",
               fontWeight: 500,
-              boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+              boxShadow:
+                "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
             }}
           >
             Save Changes

@@ -17,9 +17,6 @@ const getHolidaySet = async (startDate, endDate) => {
   return set;
 };
 
-
-
-
 const addHoursToTime = (baseTime, hours) => {
   const [bh, bm] = baseTime.split(":").map(Number);
   const totalMins = bh * 60 + bm + Math.round(hours * 60);
@@ -68,15 +65,15 @@ const generateProductionCalendar = async (req, res) => {
 
     const machineState = {};
     machines.forEach((m) => {
-      const shiftHrs = m.standardShiftHours || 8; 
-      const otHours = m.overtimeAllowed ? m.maxOvertimeHours || 3 : 0; 
+      const shiftHrs = m.standardShiftHours || 8;
+      const otHours = m.overtimeAllowed ? m.maxOvertimeHours || 3 : 0;
       const numShifts = m.maxShiftsAllowed || 1;
-      const nightShiftHours = numShifts >= 2 ? shiftHrs : 0; 
+      const nightShiftHours = numShifts >= 2 ? shiftHrs : 0;
       const efficiency = m.efficiencyFactor || 0.95;
       const runRate = m.practicalRunRate || 1000;
 
       const effectiveRunRate = runRate * efficiency;
-      
+
       const dailyCapHours = shiftHrs + otHours + nightShiftHours;
 
       const workingDays = m.workingDays?.length
@@ -96,7 +93,7 @@ const generateProductionCalendar = async (req, res) => {
         nightShiftHours,
         effectiveRunRate,
         dailyUsedHours: {},
-        lastJobByDate: {}, 
+        lastJobByDate: {},
       };
     });
 
@@ -167,9 +164,6 @@ const generateProductionCalendar = async (req, res) => {
           continue;
         }
 
-        
-        
-        
         const shiftTiers = [
           {
             shift: "Morning",
@@ -212,9 +206,6 @@ const generateProductionCalendar = async (req, res) => {
                   : "RED";
             })();
 
-            
-            
-            
             const isFirstJobOnDate = (state.dailyUsedHours[dateStr] || 0) === 0;
             const lastJobOnDate = state.lastJobByDate[dateStr];
             const needsChangeover =
@@ -222,21 +213,18 @@ const generateProductionCalendar = async (req, res) => {
               lastJobOnDate &&
               lastJobOnDate !== job._id.toString() &&
               state.changeoverTime > 0;
-            
-            
+
             let jobSetupApplied = false;
 
             for (const tier of shiftTiers) {
               if (remaining <= 0) break;
 
               const tierCapacity = tier.end - tier.start;
-              if (tierCapacity <= 0) continue; 
+              if (tierCapacity <= 0) continue;
 
               const currentUsed = state.dailyUsedHours[dateStr] || 0;
-              if (currentUsed >= tier.end) continue; 
+              if (currentUsed >= tier.end) continue;
 
-              
-              
               if (
                 !jobSetupApplied &&
                 needsChangeover &&
@@ -247,13 +235,9 @@ const generateProductionCalendar = async (req, res) => {
               const usedInTier = Math.max(0, currentUsed - tier.start);
               const availableInTier = tierCapacity - usedInTier;
 
-              
-              
-              
-              
               const effectiveSetup = (() => {
                 if (tier.shift !== "Morning") return 0;
-                if (usedInTier === 0) return state.setupTime; 
+                if (usedInTier === 0) return state.setupTime;
                 if (!jobSetupApplied && needsChangeover)
                   return state.changeoverTime;
                 return 0;
@@ -273,7 +257,6 @@ const generateProductionCalendar = async (req, res) => {
               const actualWorkHrs = qtyToSchedule / state.effectiveRunRate;
               const scheduledHrs = actualWorkHrs + effectiveSetup;
 
-              
               const blockStartOffset = Math.max(currentUsed, tier.start);
               const startTime = addHoursToTime(
                 machineShiftStart,
@@ -320,8 +303,6 @@ const generateProductionCalendar = async (req, res) => {
                 (state.dailyUsedHours[dateStr] || 0) + scheduledHrs;
               remaining -= qtyToSchedule;
 
-              
-              
               if (effectiveSetup > 0) jobSetupApplied = true;
               state.lastJobByDate[dateStr] = job._id.toString();
             }
@@ -430,12 +411,12 @@ const planJob = async (req, res) => {
       const machine = machineMap[machineId.toString()];
       if (!machine || !machine.practicalRunRate) continue;
 
-      const shiftHrs = machine.standardShiftHours || 8; 
+      const shiftHrs = machine.standardShiftHours || 8;
       const otCapHours = machine.overtimeAllowed
         ? machine.maxOvertimeHours || 3
-        : 0; 
+        : 0;
       const numShifts = machine.maxShiftsAllowed || 1;
-      const nightShiftHours = numShifts >= 2 ? shiftHrs : 0; 
+      const nightShiftHours = numShifts >= 2 ? shiftHrs : 0;
 
       const machineShiftStart = machine.shiftStartTime || "09:00";
       const machineShiftEnd = machine.shiftEndTime || "17:30";
@@ -452,7 +433,6 @@ const planJob = async (req, res) => {
         ? machine.weeklyOff
         : ["Sunday"];
 
-      
       const existingEntries = await ProductionCalendar.find({
         machineId: { $in: machineIds },
         date: { $gte: processStart.toDate() },
@@ -481,7 +461,6 @@ const planJob = async (req, res) => {
           const dateStr = current.format("YYYY-MM-DD");
           const mIdStr = machineId.toString();
 
-          
           const usedAlready = (machineUsage[mIdStr] || {})[dateStr] || 0;
           const dayAvailable = Math.max(0, shiftHrs - usedAlready);
 
@@ -517,7 +496,6 @@ const planJob = async (req, res) => {
             }
           }
 
-          
           if (remaining > 0 && otCapHours > 0 && runRate > 0) {
             const usedAfterDay = (machineUsage[mIdStr] || {})[dateStr] || 0;
             const otAvailable = Math.max(
@@ -536,7 +514,7 @@ const planJob = async (req, res) => {
                 if (!machineUsage[mIdStr]) machineUsage[mIdStr] = {};
                 machineUsage[mIdStr][dateStr] = usedAfterDay + otScheduledHours;
 
-                const otStartTime = machineShiftEnd; 
+                const otStartTime = machineShiftEnd;
                 const otEndTime = addHoursToTime(otStartTime, otScheduledHours);
 
                 entries.push({
@@ -563,7 +541,6 @@ const planJob = async (req, res) => {
             }
           }
 
-          
           if (remaining > 0 && nightShiftHours > 0 && runRate > 0) {
             const usedAfterOT = (machineUsage[mIdStr] || {})[dateStr] || 0;
             const nightAvailable = Math.max(
@@ -583,7 +560,6 @@ const planJob = async (req, res) => {
                 machineUsage[mIdStr][dateStr] =
                   usedAfterOT + nightScheduledHours;
 
-                
                 const nightStartTime = addHoursToTime(
                   machineShiftEnd,
                   otCapHours,
@@ -676,7 +652,8 @@ const recalcJobCalendar = async (jobId) => {
     const mId = e.machineId.toString();
     const d = moment(e.date).format("YYYY-MM-DD");
     if (!existingUsage[mId]) existingUsage[mId] = {};
-    existingUsage[mId][d] = (existingUsage[mId][d] || 0) + (e.scheduledHours || 0);
+    existingUsage[mId][d] =
+      (existingUsage[mId][d] || 0) + (e.scheduledHours || 0);
   });
 
   const machineStateMap = {};
@@ -698,7 +675,8 @@ const recalcJobCalendar = async (jobId) => {
       changeoverTime: m.changeoverTimeDefault || 0,
       workingDays,
       weeklyOff,
-      effectiveRunRate: (m.practicalRunRate || 1000) * (m.efficiencyFactor || 0.95),
+      effectiveRunRate:
+        (m.practicalRunRate || 1000) * (m.efficiencyFactor || 0.95),
       dailyUsedHours: { ...(existingUsage[m._id.toString()] || {}) },
       lastJobByDate: {},
     };
@@ -720,7 +698,9 @@ const recalcJobCalendar = async (jobId) => {
     let selectedMachine = compatibleMachines[0];
     if (job.machineAssignments?.get(processType)) {
       const assignedId = job.machineAssignments.get(processType);
-      const found = compatibleMachines.find((m) => m._id.toString() === assignedId);
+      const found = compatibleMachines.find(
+        (m) => m._id.toString() === assignedId,
+      );
       if (found) selectedMachine = found;
     }
 
@@ -744,8 +724,10 @@ const recalcJobCalendar = async (jobId) => {
     }
 
     let bufferDays = 0;
-    if (previousProcess === "Printing" && processType.includes("Die Cut")) bufferDays = 1;
-    if (previousProcess?.includes("Die Cut") && processType === "Formation") bufferDays = 2;
+    if (previousProcess === "Printing" && processType.includes("Die Cut"))
+      bufferDays = 1;
+    if (previousProcess?.includes("Die Cut") && processType === "Formation")
+      bufferDays = 2;
 
     const state = machineStateMap[selectedMachine._id.toString()];
     let currentDate = previousStageMinStart.clone().add(bufferDays, "days");
@@ -754,8 +736,18 @@ const recalcJobCalendar = async (jobId) => {
 
     const shiftTiers = [
       { shift: "Morning", start: 0, end: state.shiftHrs, isOT: false },
-      { shift: "OT", start: state.shiftHrs, end: state.shiftHrs + state.otHours, isOT: true },
-      { shift: "Night", start: state.shiftHrs + state.otHours, end: state.shiftHrs + state.otHours + state.nightShiftHours, isOT: true },
+      {
+        shift: "OT",
+        start: state.shiftHrs,
+        end: state.shiftHrs + state.otHours,
+        isOT: true,
+      },
+      {
+        shift: "Night",
+        start: state.shiftHrs + state.otHours,
+        end: state.shiftHrs + state.otHours + state.nightShiftHours,
+        isOT: true,
+      },
     ];
 
     while (remaining > 0 && safety++ < 300) {
@@ -769,7 +761,9 @@ const recalcJobCalendar = async (jobId) => {
       ) {
         const machineShiftStart = selectedMachine.shiftStartTime || "09:00";
         const dueDate = moment(job.internalDueDate || job.deliveryDate);
-        const daysToDeadline = dueDate.isValid() ? dueDate.diff(currentDate, "days") : 999;
+        const daysToDeadline = dueDate.isValid()
+          ? dueDate.diff(currentDate, "days")
+          : 999;
         const deliveryFeasible =
           daysToDeadline > 2 ? "GREEN" : daysToDeadline >= 0 ? "ORANGE" : "RED";
 
@@ -788,28 +782,35 @@ const recalcJobCalendar = async (jobId) => {
           if (tierCapacity <= 0) continue;
           const currentUsed = state.dailyUsedHours[dateStr] || 0;
           if (currentUsed >= tier.end) continue;
-          if (!jobSetupApplied && needsChangeover && tier.shift !== "Morning") continue;
+          if (!jobSetupApplied && needsChangeover && tier.shift !== "Morning")
+            continue;
 
           const usedInTier = Math.max(0, currentUsed - tier.start);
           const availableInTier = tierCapacity - usedInTier;
           const effectiveSetup = (() => {
             if (tier.shift !== "Morning") return 0;
             if (usedInTier === 0) return state.setupTime;
-            if (!jobSetupApplied && needsChangeover) return state.changeoverTime;
+            if (!jobSetupApplied && needsChangeover)
+              return state.changeoverTime;
             return 0;
           })();
 
-          if (availableInTier <= effectiveSetup || state.effectiveRunRate <= 0) continue;
+          if (availableInTier <= effectiveSetup || state.effectiveRunRate <= 0)
+            continue;
 
           const workHrs = availableInTier - effectiveSetup;
           const qtyPossible = Math.floor(workHrs * state.effectiveRunRate);
           if (qtyPossible <= 0) continue;
 
           const qtyToSchedule = Math.min(remaining, qtyPossible);
-          const scheduledHrs = qtyToSchedule / state.effectiveRunRate + effectiveSetup;
+          const scheduledHrs =
+            qtyToSchedule / state.effectiveRunRate + effectiveSetup;
           const blockStartOffset = Math.max(currentUsed, tier.start);
           const startTime = addHoursToTime(machineShiftStart, blockStartOffset);
-          const endTime = addHoursToTime(machineShiftStart, blockStartOffset + scheduledHrs);
+          const endTime = addHoursToTime(
+            machineShiftStart,
+            blockStartOffset + scheduledHrs,
+          );
 
           blocks.push({
             machineId: selectedMachine._id,
@@ -830,17 +831,24 @@ const recalcJobCalendar = async (jobId) => {
             overtimeHours: tier.isOT ? scheduledHrs : 0,
             deliveryFeasible,
             status: tier.isOT ? "Pending Approval" : "Scheduled",
-            plannedStart: currentDate.clone().set({
-              hour: parseInt(startTime.split(":")[0]),
-              minute: parseInt(startTime.split(":")[1]),
-            }).toDate(),
-            plannedEnd: currentDate.clone().set({
-              hour: parseInt(endTime.split(":")[0]),
-              minute: parseInt(endTime.split(":")[1]),
-            }).toDate(),
+            plannedStart: currentDate
+              .clone()
+              .set({
+                hour: parseInt(startTime.split(":")[0]),
+                minute: parseInt(startTime.split(":")[1]),
+              })
+              .toDate(),
+            plannedEnd: currentDate
+              .clone()
+              .set({
+                hour: parseInt(endTime.split(":")[0]),
+                minute: parseInt(endTime.split(":")[1]),
+              })
+              .toDate(),
           });
 
-          state.dailyUsedHours[dateStr] = (state.dailyUsedHours[dateStr] || 0) + scheduledHrs;
+          state.dailyUsedHours[dateStr] =
+            (state.dailyUsedHours[dateStr] || 0) + scheduledHrs;
           remaining -= qtyToSchedule;
           if (effectiveSetup > 0) jobSetupApplied = true;
           state.lastJobByDate[dateStr] = job._id.toString();
@@ -893,7 +901,7 @@ const cascadeAffectedJobs = async (triggerJobId) => {
   });
 
   affectedJobs.sort((a, b) =>
-    moment(a.deliveryDate).diff(moment(b.deliveryDate))
+    moment(a.deliveryDate).diff(moment(b.deliveryDate)),
   );
 
   // Re-plan each affected job in priority order. Each call seeds from the
@@ -907,18 +915,25 @@ const shiftEntry = async (req, res) => {
   try {
     const { entryId, reason } = req.body;
     if (!entryId) {
-      return res.status(400).json({ success: false, message: "entryId required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "entryId required" });
     }
 
     const entry = await ProductionCalendar.findById(entryId).populate(
       "machineId",
-      "workingDays weeklyOff"
+      "workingDays weeklyOff",
     );
     if (!entry) {
-      return res.status(404).json({ success: false, message: "Entry not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Entry not found" });
     }
     if (entry.locked) {
-      return res.status(400).json({ success: false, message: "Entry is locked and cannot be shifted" });
+      return res.status(400).json({
+        success: false,
+        message: "Entry is locked and cannot be shifted",
+      });
     }
 
     const workingDays = entry.machineId?.workingDays?.length
@@ -929,7 +944,15 @@ const shiftEntry = async (req, res) => {
       : ["Sunday"];
 
     // Find the next working day from today (not just +1 from entry date)
-    const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const DAY_NAMES = [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ];
     let nextDate = moment().startOf("day");
     // If entry is already in the future, shift from next day after its date
     if (moment(entry.date).isSameOrAfter(moment().startOf("day"))) {
@@ -945,7 +968,9 @@ const shiftEntry = async (req, res) => {
     // Fetch job for history + deliveryFeasible
     const job = await JobOrder.findById(entry.jobOrderId);
     const dueDate = moment(job?.internalDueDate || job?.deliveryDate);
-    const daysToDeadline = dueDate.isValid() ? dueDate.diff(nextDate, "days") : 999;
+    const daysToDeadline = dueDate.isValid()
+      ? dueDate.diff(nextDate, "days")
+      : 999;
     const deliveryFeasible =
       daysToDeadline > 2 ? "GREEN" : daysToDeadline >= 0 ? "ORANGE" : "RED";
 
@@ -1029,7 +1054,7 @@ const shiftMissed = async (req, res) => {
         status: { $nin: ["Completed", "Cancelled", "Rescheduled"] },
         locked: { $ne: true },
       },
-      { $set: { status: "Rescheduled" } }
+      { $set: { status: "Rescheduled" } },
     );
 
     // Recalculate calendar for each affected job from today
@@ -1055,13 +1080,19 @@ const approveRush = async (req, res) => {
   try {
     const { jobOrderId, approvedBy } = req.body;
     if (!jobOrderId) {
-      return res.status(400).json({ success: false, message: "jobOrderId required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "jobOrderId required" });
     }
 
     const job = await JobOrder.findById(jobOrderId);
-    if (!job) return res.status(404).json({ success: false, message: "Job not found" });
+    if (!job)
+      return res.status(404).json({ success: false, message: "Job not found" });
     if (!["Rush", "Critical"].includes(job.orderPriorityOverride)) {
-      return res.status(400).json({ success: false, message: "Job is not Rush or Critical priority" });
+      return res.status(400).json({
+        success: false,
+        message: "Job is not Rush or Critical priority",
+      });
     }
 
     // Mark as rush-approved
@@ -1092,7 +1123,11 @@ const setupPreventiveMaintenance = async (req, res) => {
     // Generate PM windows for the next 6 months: 2h on the 2nd Saturday of each month
     const machines = await MachineMaster.find({ status: "Active" });
     if (machines.length === 0) {
-      return res.json({ success: true, message: "No active machines found", created: 0 });
+      return res.json({
+        success: true,
+        message: "No active machines found",
+        created: 0,
+      });
     }
 
     const today = moment().startOf("day");
@@ -1107,7 +1142,8 @@ const setupPreventiveMaintenance = async (req, res) => {
       for (let d = 0; d < 31; d++) {
         const day = monthStart.clone().add(d, "days");
         if (day.month() !== monthStart.month()) break;
-        if (day.day() === 6) { // Saturday
+        if (day.day() === 6) {
+          // Saturday
           satCount++;
           if (satCount === 2) {
             secondSat = day;
@@ -1118,8 +1154,14 @@ const setupPreventiveMaintenance = async (req, res) => {
       if (!secondSat) continue;
 
       // PM window: 08:00 – 10:00 (2 hours before shift starts)
-      const startDT = secondSat.clone().set({ hour: 8, minute: 0, second: 0 }).toDate();
-      const endDT = secondSat.clone().set({ hour: 10, minute: 0, second: 0 }).toDate();
+      const startDT = secondSat
+        .clone()
+        .set({ hour: 8, minute: 0, second: 0 })
+        .toDate();
+      const endDT = secondSat
+        .clone()
+        .set({ hour: 10, minute: 0, second: 0 })
+        .toDate();
 
       for (const machine of machines) {
         // Skip if already exists

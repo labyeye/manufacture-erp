@@ -1,6 +1,8 @@
 const Dispatch = require("../models/Dispatch");
 const Counter = require("../models/Counter");
 const FGStock = require("../models/FGStock");
+const RawMaterialStock = require("../models/RawMaterialStock");
+const ConsumableStock = require("../models/ConsumableStock");
 const CompanyMaster = require("../models/CompanyMaster");
 
 const adjustFGStock = async (items, direction = -1) => {
@@ -8,12 +10,10 @@ const adjustFGStock = async (items, direction = -1) => {
     let remainingToAdjust = Number(item.qty || 0);
     if (remainingToAdjust <= 0) continue;
 
-    
     if (direction === -1) {
-      
-      const stockItems = await FGStock.find({ 
+      const stockItems = await FGStock.find({
         itemName: item.itemName,
-        qty: { $gt: 0 } 
+        qty: { $gt: 0 },
       }).sort({ createdAt: 1 });
 
       for (const stock of stockItems) {
@@ -24,22 +24,59 @@ const adjustFGStock = async (items, direction = -1) => {
         await stock.save();
       }
 
-      
       if (remainingToAdjust > 0) {
-        const lastStock = await FGStock.findOne({ itemName: item.itemName }).sort({ createdAt: -1 });
+        const lastStock = await FGStock.findOne({
+          itemName: item.itemName,
+        }).sort({ createdAt: -1 });
         if (lastStock) {
           lastStock.qty -= remainingToAdjust;
           await lastStock.save();
         }
       }
     } else {
-      
-      const latestStock = await FGStock.findOne({ itemName: item.itemName }).sort({ createdAt: -1 });
+      const latestStock = await FGStock.findOne({
+        itemName: item.itemName,
+      }).sort({ createdAt: -1 });
       if (latestStock) {
         latestStock.qty += remainingToAdjust;
         await latestStock.save();
       }
     }
+  }
+};
+
+const adjustRMStock = async (items, direction = -1) => {
+  for (const item of items) {
+    const qty = Number(item.qty || 0);
+    const weight = Number(item.weight || item.qty || 0);
+    if (qty <= 0 && weight <= 0) continue;
+    const query = item.productCode
+      ? { code: item.productCode }
+      : {
+          name: {
+            $regex: new RegExp(`^${(item.itemName || "").trim()}$`, "i"),
+          },
+        };
+    await RawMaterialStock.findOneAndUpdate(query, {
+      $inc: { qty: qty * direction, weight: weight * direction },
+    });
+  }
+};
+
+const adjustCGStock = async (items, direction = -1) => {
+  for (const item of items) {
+    const qty = Number(item.qty || 0);
+    if (qty <= 0) continue;
+    const query = item.productCode
+      ? { code: item.productCode }
+      : {
+          name: {
+            $regex: new RegExp(`^${(item.itemName || "").trim()}$`, "i"),
+          },
+        };
+    await ConsumableStock.findOneAndUpdate(query, {
+      $inc: { qty: qty * direction },
+    });
   }
 };
 
@@ -111,6 +148,10 @@ exports.create = async (req, res) => {
     const dispatchNo = await getNextDispatchNo();
     const recordType = req.body.type === "Return" ? "Return" : "Outward";
 
+    const materialType = ["RM", "CG", "FG"].includes(req.body.materialType)
+      ? req.body.materialType
+      : "FG";
+
     const dispatch = new Dispatch({
       dispatchNo,
       date: new Date(date),
@@ -123,6 +164,7 @@ exports.create = async (req, res) => {
       items,
       remarks: remarks?.trim(),
       type: recordType,
+      materialType,
       originalDispatchRef: req.body.originalDispatchRef?.trim(),
       returnReason: req.body.returnReason?.trim(),
       createdBy: req.user._id,
@@ -131,8 +173,10 @@ exports.create = async (req, res) => {
     await dispatch.save();
     await dispatch.populate("createdBy", "name username");
 
-    // For Returns, add stock back (+1). For Outward, deduct (-1).
-    await adjustFGStock(items, recordType === "Return" ? 1 : -1);
+    const stockDirection = recordType === "Return" ? 1 : -1;
+    if (materialType === "RM") await adjustRMStock(items, stockDirection);
+    else if (materialType === "CG") await adjustCGStock(items, stockDirection);
+    else await adjustFGStock(items, stockDirection);
 
     res.status(201).json({
       message: "Dispatch created successfully",
@@ -173,9 +217,16 @@ exports.update = async (req, res) => {
     if (lrNo !== undefined) dispatch.lrNo = lrNo?.trim();
 
     if (items) {
-      await adjustFGStock(dispatch.items, 1);
+      const mt = dispatch.materialType || "FG";
+      const reverter =
+        mt === "RM"
+          ? adjustRMStock
+          : mt === "CG"
+            ? adjustCGStock
+            : adjustFGStock;
+      await reverter(dispatch.items, 1);
       dispatch.items = items;
-      await adjustFGStock(items, -1);
+      await reverter(items, -1);
     }
 
     await dispatch.save();
@@ -200,7 +251,10 @@ exports.delete = async (req, res) => {
       return res.status(404).json({ error: "Dispatch not found" });
     }
 
-    await adjustFGStock(dispatch.items, 1);
+    const mt = dispatch.materialType || "FG";
+    const reverter =
+      mt === "RM" ? adjustRMStock : mt === "CG" ? adjustCGStock : adjustFGStock;
+    await reverter(dispatch.items, 1);
 
     await Dispatch.findByIdAndDelete(id);
 

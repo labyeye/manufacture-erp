@@ -25,14 +25,22 @@ function daysLeft(expiresAt) {
 
 function fmt(dateStr) {
   const d = new Date(dateStr);
-  return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  return d.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 export default function Trash({ toast, session }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState("All");
-  const [confirmState, setConfirmState] = useState({ open: false, id: null, mode: null });
+  const [confirmState, setConfirmState] = useState({
+    open: false,
+    id: null,
+    mode: null,
+  });
   const [emptyConfirm, setEmptyConfirm] = useState(false);
 
   const fetchTrash = async () => {
@@ -48,11 +56,15 @@ export default function Trash({ toast, session }) {
     }
   };
 
-  useEffect(() => { fetchTrash(); }, []);
+  useEffect(() => {
+    fetchTrash();
+  }, []);
 
   const labels = ["All", ...Array.from(new Set(items.map((i) => i.label)))];
 
-  const filtered = (filter === "All" ? items : items.filter((i) => i.label === filter))
+  const filtered = (
+    filter === "All" ? items : items.filter((i) => i.label === filter)
+  )
     .slice()
     .sort(
       (a, b) =>
@@ -95,19 +107,46 @@ export default function Trash({ toast, session }) {
   return (
     <div style={{ padding: "24px 28px", maxWidth: 1100, margin: "0 auto" }}>
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 24,
+        }}
+      >
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{
-            width: 40, height: 40, borderRadius: 10,
-            background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.25)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <i className="fa-solid fa-trash" style={{ color: "#ef4444", fontSize: 16 }} />
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: "rgba(239,68,68,0.15)",
+              border: "1px solid rgba(239,68,68,0.25)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <i
+              className="fa-solid fa-trash"
+              style={{ color: "#ef4444", fontSize: 16 }}
+            />
           </div>
           <div>
-            <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: C.text }}>Trash</h2>
+            <h2
+              style={{
+                margin: 0,
+                fontSize: 18,
+                fontWeight: 600,
+                color: C.text,
+              }}
+            >
+              Trash
+            </h2>
             <p style={{ margin: 0, fontSize: 12, color: C.muted }}>
-              {items.length} item{items.length !== 1 ? "s" : ""} · auto-deleted after 7 days
+              {items.length} item{items.length !== 1 ? "s" : ""} · auto-deleted
+              after 7 days
             </p>
           </div>
         </div>
@@ -115,9 +154,14 @@ export default function Trash({ toast, session }) {
           <button
             onClick={() => setEmptyConfirm(true)}
             style={{
-              padding: "8px 16px", borderRadius: 8, fontSize: 12, fontWeight: 500,
-              background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)",
-              color: "#ef4444", cursor: "pointer",
+              padding: "8px 16px",
+              borderRadius: 8,
+              fontSize: 12,
+              fontWeight: 500,
+              background: "rgba(239,68,68,0.1)",
+              border: "1px solid rgba(239,68,68,0.25)",
+              color: "#ef4444",
+              cursor: "pointer",
             }}
           >
             <i className="fa-solid fa-trash-can" style={{ marginRight: 6 }} />
@@ -127,15 +171,24 @@ export default function Trash({ toast, session }) {
       </div>
 
       {/* Filter tabs */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+      <div
+        style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}
+      >
         {labels.map((l) => (
           <button
             key={l}
             onClick={() => setFilter(l)}
             style={{
-              padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 500,
-              cursor: "pointer", transition: "all .18s",
-              background: filter === l ? (LABEL_COLORS[l] || C.accent) : "rgba(255,255,255,0.05)",
+              padding: "6px 14px",
+              borderRadius: 20,
+              fontSize: 12,
+              fontWeight: 500,
+              cursor: "pointer",
+              transition: "all .18s",
+              background:
+                filter === l
+                  ? LABEL_COLORS[l] || C.accent
+                  : "rgba(255,255,255,0.05)",
               border: `1px solid ${filter === l ? "transparent" : "rgba(255,255,255,0.1)"}`,
               color: filter === l ? "#fff" : C.muted,
             }}
@@ -147,14 +200,28 @@ export default function Trash({ toast, session }) {
 
       {/* Items */}
       {loading ? (
-        <div style={{ textAlign: "center", color: C.muted, padding: 60 }}>Loading…</div>
+        <div style={{ textAlign: "center", color: C.muted, padding: 60 }}>
+          Loading…
+        </div>
       ) : filtered.length === 0 ? (
-        <div style={{
-          textAlign: "center", padding: "80px 0",
-          background: "rgba(255,255,255,0.02)", borderRadius: 16,
-          border: "1px solid rgba(255,255,255,0.06)",
-        }}>
-          <i className="fa-solid fa-trash-can" style={{ fontSize: 40, color: "rgba(255,255,255,0.1)", marginBottom: 16, display: "block" }} />
+        <div
+          style={{
+            textAlign: "center",
+            padding: "80px 0",
+            background: "rgba(255,255,255,0.02)",
+            borderRadius: 16,
+            border: "1px solid rgba(255,255,255,0.06)",
+          }}
+        >
+          <i
+            className="fa-solid fa-trash-can"
+            style={{
+              fontSize: 40,
+              color: "rgba(255,255,255,0.1)",
+              marginBottom: 16,
+              display: "block",
+            }}
+          />
           <div style={{ color: C.muted, fontSize: 14 }}>Trash is empty</div>
         </div>
       ) : (
@@ -177,28 +244,57 @@ export default function Trash({ toast, session }) {
                 }}
               >
                 {/* Icon */}
-                <div style={{
-                  width: 36, height: 36, borderRadius: 8, flexShrink: 0,
-                  background: color + "18", border: `1px solid ${color}30`,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  <i className={LABEL_ICONS[item.label] || "fa-solid fa-file"} style={{ color, fontSize: 13 }} />
+                <div
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 8,
+                    flexShrink: 0,
+                    background: color + "18",
+                    border: `1px solid ${color}30`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <i
+                    className={LABEL_ICONS[item.label] || "fa-solid fa-file"}
+                    style={{ color, fontSize: 13 }}
+                  />
                 </div>
 
                 {/* Info */}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{
-                      fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 10,
-                      background: color + "20", color,
-                    }}>
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 8 }}
+                  >
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        padding: "2px 8px",
+                        borderRadius: 10,
+                        background: color + "20",
+                        color,
+                      }}
+                    >
                       {item.label}
                     </span>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: C.text }}>
+                    <span
+                      style={{ fontSize: 13, fontWeight: 600, color: C.text }}
+                    >
                       {item.displayId || item._id}
                     </span>
                   </div>
-                  <div style={{ marginTop: 4, fontSize: 11, color: C.muted, display: "flex", gap: 12 }}>
+                  <div
+                    style={{
+                      marginTop: 4,
+                      fontSize: 11,
+                      color: C.muted,
+                      display: "flex",
+                      gap: 12,
+                    }}
+                  >
                     <span>Deleted {fmt(item.deletedAt)}</span>
                     {item.deletedBy && item.deletedBy !== "system" && (
                       <span>by {item.deletedBy}</span>
@@ -207,19 +303,33 @@ export default function Trash({ toast, session }) {
                 </div>
 
                 {/* Expiry badge */}
-                <div style={{
-                  fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 8, flexShrink: 0,
-                  background: urgent ? "rgba(239,68,68,0.15)" : "rgba(255,255,255,0.05)",
-                  color: urgent ? "#ef4444" : C.muted,
-                  border: `1px solid ${urgent ? "rgba(239,68,68,0.25)" : "rgba(255,255,255,0.08)"}`,
-                }}>
+                <div
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    padding: "4px 10px",
+                    borderRadius: 8,
+                    flexShrink: 0,
+                    background: urgent
+                      ? "rgba(239,68,68,0.15)"
+                      : "rgba(255,255,255,0.05)",
+                    color: urgent ? "#ef4444" : C.muted,
+                    border: `1px solid ${urgent ? "rgba(239,68,68,0.25)" : "rgba(255,255,255,0.08)"}`,
+                  }}
+                >
                   {days === 0 ? "Expires today" : `${days}d left`}
                 </div>
 
                 {/* Actions */}
                 <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
                   <button
-                    onClick={() => setConfirmState({ open: true, id: item._id, mode: "restore" })}
+                    onClick={() =>
+                      setConfirmState({
+                        open: true,
+                        id: item._id,
+                        mode: "restore",
+                      })
+                    }
                     style={{
                       background: "transparent",
                       color: "#8082ff",
@@ -238,7 +348,13 @@ export default function Trash({ toast, session }) {
                   </button>
                   {canAdmin && (
                     <button
-                      onClick={() => setConfirmState({ open: true, id: item._id, mode: "delete" })}
+                      onClick={() =>
+                        setConfirmState({
+                          open: true,
+                          id: item._id,
+                          mode: "delete",
+                        })
+                      }
                       style={{
                         background: "transparent",
                         color: "#8082ff",

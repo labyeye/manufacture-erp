@@ -6,7 +6,8 @@ exports.getAllPrintingDetails = async (req, res) => {
 
     const filter = {};
     if (itemName) filter.itemName = { $regex: itemName, $options: "i" };
-    if (companyName) filter.companyName = { $regex: companyName, $options: "i" };
+    if (companyName)
+      filter.companyName = { $regex: companyName, $options: "i" };
 
     const details = await PrintingDetailMaster.find(filter).sort({
       updatedAt: -1,
@@ -38,7 +39,10 @@ exports.getPrintingDetailByItemAndClient = async (req, res) => {
   try {
     const { itemName, companyName } = req.params;
 
-    const detail = await PrintingDetailMaster.findOne({ itemName, companyName });
+    const detail = await PrintingDetailMaster.findOne({
+      itemName,
+      companyName,
+    });
 
     if (!detail) {
       return res.status(404).json({ error: "Printing detail not found" });

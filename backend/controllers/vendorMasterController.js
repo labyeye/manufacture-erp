@@ -1,8 +1,5 @@
 const VendorMaster = require("../models/VendorMaster");
 
-
-
-
 exports.getAll = async (req, res) => {
   try {
     const vendors = await VendorMaster.find()
@@ -15,13 +12,12 @@ exports.getAll = async (req, res) => {
   }
 };
 
-
-
-
 exports.getOne = async (req, res) => {
   try {
-    const vendor = await VendorMaster.findById(req.params.id)
-      .populate("createdBy", "name username");
+    const vendor = await VendorMaster.findById(req.params.id).populate(
+      "createdBy",
+      "name username",
+    );
     if (!vendor) {
       return res.status(404).json({ error: "Vendor not found" });
     }
@@ -32,20 +28,17 @@ exports.getOne = async (req, res) => {
   }
 };
 
-
-
-
 exports.create = async (req, res) => {
   try {
-    const { name, category, contact, phone, email, address, gstin, status } = req.body;
+    const { name, category, contact, phone, email, address, gstin, status } =
+      req.body;
 
     if (!name || !name.trim()) {
       return res.status(400).json({ error: "Vendor name is required" });
     }
 
-    
     const existingVendor = await VendorMaster.findOne({
-      name: { $regex: new RegExp(`^${name.trim()}$`, 'i') }
+      name: { $regex: new RegExp(`^${name.trim()}$`, "i") },
     });
     if (existingVendor) {
       return res.status(400).json({ error: "Vendor name already exists" });
@@ -76,12 +69,10 @@ exports.create = async (req, res) => {
   }
 };
 
-
-
-
 exports.update = async (req, res) => {
   try {
-    const { name, category, contact, phone, email, address, gstin, status } = req.body;
+    const { name, category, contact, phone, email, address, gstin, status } =
+      req.body;
     const { id } = req.params;
 
     const vendor = await VendorMaster.findById(id);
@@ -89,11 +80,10 @@ exports.update = async (req, res) => {
       return res.status(404).json({ error: "Vendor not found" });
     }
 
-    
     if (name && name.trim() !== vendor.name) {
       const existingVendor = await VendorMaster.findOne({
-        name: { $regex: new RegExp(`^${name.trim()}$`, 'i') },
-        _id: { $ne: id }
+        name: { $regex: new RegExp(`^${name.trim()}$`, "i") },
+        _id: { $ne: id },
       });
       if (existingVendor) {
         return res.status(400).json({ error: "Vendor name already exists" });
@@ -122,9 +112,6 @@ exports.update = async (req, res) => {
   }
 };
 
-
-
-
 exports.delete = async (req, res) => {
   try {
     const { id } = req.params;
@@ -143,9 +130,6 @@ exports.delete = async (req, res) => {
   }
 };
 
-
-
-
 exports.updateStatus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -158,7 +142,7 @@ exports.updateStatus = async (req, res) => {
     const vendor = await VendorMaster.findByIdAndUpdate(
       id,
       { status },
-      { new: true }
+      { new: true },
     ).populate("createdBy", "name username");
 
     if (!vendor) {

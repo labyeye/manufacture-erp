@@ -1,11 +1,22 @@
 import React, { useState, useEffect } from "react";
-import { Card, SectionTitle, Badge, Button, Input, Select, Modal, Table } from "../components/ui/BasicComponents";
+import {
+  Card,
+  SectionTitle,
+  Badge,
+  Button,
+  Input,
+  Select,
+  Modal,
+  Table,
+} from "../components/ui/BasicComponents";
 import { C } from "../constants/colors";
 import { factoryCalendarAPI } from "../api/auth";
 import moment from "moment";
 
 export default function FactoryCalendar({ toast }) {
-  useEffect(() => { console.log("FactoryCalendar Mounted"); }, []);
+  useEffect(() => {
+    console.log("FactoryCalendar Mounted");
+  }, []);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -14,7 +25,7 @@ export default function FactoryCalendar({ toast }) {
     date: moment().format("YYYY-MM-DD"),
     type: "Holiday",
     description: "",
-    affectsAllMachines: true
+    affectsAllMachines: true,
   });
 
   const fetchData = async () => {
@@ -59,7 +70,7 @@ export default function FactoryCalendar({ toast }) {
       date: moment().format("YYYY-MM-DD"),
       type: "Holiday",
       description: "",
-      affectsAllMachines: true
+      affectsAllMachines: true,
     });
     setEditingId(null);
   };
@@ -77,22 +88,41 @@ export default function FactoryCalendar({ toast }) {
 
   return (
     <div className="fade">
-      <SectionTitle icon="🗓️" title="Factory Calendar" sub="Manage Holidays and Shutdowns">
-        <Button onClick={() => { resetForm(); setShowModal(true); }} text="+ Add Event" color={C.blue} />
+      <SectionTitle
+        icon="🗓️"
+        title="Factory Calendar"
+        sub="Manage Holidays and Shutdowns"
+      >
+        <Button
+          onClick={() => {
+            resetForm();
+            setShowModal(true);
+          }}
+          text="+ Add Event"
+          color={C.blue}
+        />
       </SectionTitle>
 
       <Card>
         <Table
           loading={loading}
           headers={["DATE", "TYPE", "DESCRIPTION", "SCOPE", "ACTIONS"]}
-          data={events.map(ev => [
+          data={events.map((ev) => [
             moment(ev.date).format("DD/MM/YYYY"),
-            <Badge text={ev.type} color={ev.type === 'Holiday' ? C.green : C.red} />,
+            <Badge
+              text={ev.type}
+              color={ev.type === "Holiday" ? C.green : C.red}
+            />,
             ev.description,
             ev.affectsAllMachines ? "All Machines" : "Specific Machines",
             <div style={{ display: "flex", gap: 8 }}>
-              <Button small text="Delete" color={C.red} onClick={() => handleDelete(ev._id)} />
-            </div>
+              <Button
+                small
+                text="Delete"
+                color={C.red}
+                onClick={() => handleDelete(ev._id)}
+              />
+            </div>,
           ])}
         />
       </Card>
@@ -104,24 +134,41 @@ export default function FactoryCalendar({ toast }) {
               label="Date"
               type="date"
               value={formData.date}
-              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, date: e.target.value })
+              }
               required
             />
             <Select
               label="Event Type"
               value={formData.type}
-              onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, type: e.target.value })
+              }
               options={["Holiday", "Shutdown", "Power Outage", "Half-day"]}
               required
             />
             <Input
               label="Description"
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
               required
             />
-            <div style={{ marginTop: 20, display: "flex", justifyContent: "flex-end", gap: 12 }}>
-              <Button text="Cancel" color="#666" onClick={() => setShowModal(false)} />
+            <div
+              style={{
+                marginTop: 20,
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 12,
+              }}
+            >
+              <Button
+                text="Cancel"
+                color="#666"
+                onClick={() => setShowModal(false)}
+              />
               <Button type="submit" text="Save Event" color={C.blue} />
             </div>
           </form>

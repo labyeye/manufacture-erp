@@ -5,7 +5,7 @@ import RMForecast from "./RMForecast";
 
 const TABS = [
   { id: "demand", icon: "📈", label: "Demand Forecast" },
-  { id: "rm",     icon: "🧮", label: "RM Forecast"     },
+  { id: "rm", icon: "🧮", label: "RM Forecast" },
 ];
 
 const ACCENT = "#ff7800";
@@ -45,7 +45,9 @@ export default function Forecast({
                 border: active
                   ? "1px solid rgba(255,120,0,0.5)"
                   : "1px solid rgba(255,255,255,0.12)",
-                borderBottom: active ? "1px solid transparent" : "1px solid rgba(255,255,255,0.12)",
+                borderBottom: active
+                  ? "1px solid transparent"
+                  : "1px solid rgba(255,255,255,0.12)",
                 background: active
                   ? "rgba(255,120,0,0.15)"
                   : "rgba(255,255,255,0.05)",
@@ -69,10 +71,7 @@ export default function Forecast({
 
       {}
       {activeTab === "demand" && (
-        <DemandForecast
-          salesOrders={salesOrders}
-          itemMasterFG={itemMasterFG}
-        />
+        <DemandForecast salesOrders={salesOrders} itemMasterFG={itemMasterFG} />
       )}
 
       {activeTab === "rm" && (

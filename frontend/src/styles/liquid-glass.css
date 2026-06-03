@@ -209,7 +209,7 @@
   background: var(--lg-bg);
   border: 1px solid var(--lg-border);
   border-radius: var(--lg-radius-sm);
-  backdrop-filter: var(--lg-blur) ;
+  backdrop-filter: var(--lg-blur);
   -webkit-backdrop-filter: var(--lg-blur);
   box-shadow: var(--lg-shadow-sm);
   cursor: pointer;
@@ -325,7 +325,7 @@
   background: var(--lg-bg);
   border: 1px solid var(--lg-border);
   border-radius: var(--lg-radius-sm);
-  backdrop-filter: var(--lg-blur-sm) ;
+  backdrop-filter: var(--lg-blur-sm);
   -webkit-backdrop-filter: var(--lg-blur-sm);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.1),
@@ -368,7 +368,7 @@ textarea {
   background: var(--lg-bg);
   border: 1px solid var(--lg-border);
   border-radius: var(--lg-radius-sm);
-  backdrop-filter: var(--lg-blur-sm) ;
+  backdrop-filter: var(--lg-blur-sm);
   -webkit-backdrop-filter: var(--lg-blur-sm);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
   color: #fff;
@@ -528,7 +528,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   background: var(--lg-bg);
   border: 1px solid var(--lg-border);
   border-radius: 999px;
-  backdrop-filter: var(--lg-blur-sm) ;
+  backdrop-filter: var(--lg-blur-sm);
   -webkit-backdrop-filter: var(--lg-blur-sm);
   box-shadow: var(--lg-shadow-sm);
   white-space: nowrap;
@@ -541,7 +541,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-left: 3px solid var(--lg-accent);
   border-radius: var(--lg-radius-sm);
-  backdrop-filter: var(--lg-blur-sm) ;
+  backdrop-filter: var(--lg-blur-sm);
   -webkit-backdrop-filter: var(--lg-blur-sm);
   position: relative;
   overflow: hidden;

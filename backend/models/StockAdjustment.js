@@ -66,7 +66,7 @@ const stockAdjustmentSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 stockAdjustmentSchema.index({ productCode: 1 });

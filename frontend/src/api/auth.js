@@ -623,7 +623,9 @@ export const stockAdjustmentAPI = {
 
 export const stockMovementAPI = {
   searchItems: async (type, q) => {
-    const response = await api.get("/stock-movement/items", { params: { type, q } });
+    const response = await api.get("/stock-movement/items", {
+      params: { type, q },
+    });
     return response.data;
   },
   getMovements: async (params) => {
@@ -682,12 +684,18 @@ export const planningAPI = {
   },
 
   shiftEntry: async (entryId, reason) => {
-    const response = await api.post("/planning/shift-entry", { entryId, reason });
+    const response = await api.post("/planning/shift-entry", {
+      entryId,
+      reason,
+    });
     return response.data;
   },
 
   approveRush: async (jobOrderId, approvedBy) => {
-    const response = await api.post("/planning/approve-rush", { jobOrderId, approvedBy });
+    const response = await api.post("/planning/approve-rush", {
+      jobOrderId,
+      approvedBy,
+    });
     return response.data;
   },
 

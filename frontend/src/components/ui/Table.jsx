@@ -1,9 +1,16 @@
-import { COLORS } from '../../constants';
+import { COLORS } from "../../constants";
 
 export function Table({ cols, rows, emptyMsg = "No records yet." }) {
   if (!rows.length) {
     return (
-      <div style={{ textAlign: "center", color: COLORS.muted, padding: "32px 0", fontSize: 13 }}>
+      <div
+        style={{
+          textAlign: "center",
+          color: COLORS.muted,
+          padding: "32px 0",
+          fontSize: 13,
+        }}
+      >
         {emptyMsg}
       </div>
     );
@@ -11,10 +18,12 @@ export function Table({ cols, rows, emptyMsg = "No records yet." }) {
 
   return (
     <div style={{ overflowX: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+      <table
+        style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}
+      >
         <thead>
           <tr style={{ borderBottom: `1px solid ${COLORS.border}` }}>
-            {cols.map(c => (
+            {cols.map((c) => (
               <th
                 key={c}
                 style={{
@@ -25,7 +34,7 @@ export function Table({ cols, rows, emptyMsg = "No records yet." }) {
                   fontSize: 11,
                   textTransform: "uppercase",
                   letterSpacing: 1,
-                  whiteSpace: "nowrap"
+                  whiteSpace: "nowrap",
                 }}
               >
                 {c}
@@ -39,17 +48,20 @@ export function Table({ cols, rows, emptyMsg = "No records yet." }) {
               key={i}
               style={{
                 borderBottom: `1px solid ${COLORS.border}22`,
-                transition: "background .15s"
+                transition: "background .15s",
               }}
-              onMouseEnter={e => (e.currentTarget.style.background = COLORS.surface)}
-              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = COLORS.surface)
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.background = "transparent")
+              }
             >
               {r.map((cell, j) => (
                 <td
                   key={j}
                   style={{
                     padding: "9px 12px",
-                    
                   }}
                 >
                   {cell}

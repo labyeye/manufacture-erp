@@ -133,8 +133,6 @@ exports.create = async (req, res) => {
 
     await inward.save();
 
-    
-    
     await adjustStock(items, 1, location);
 
     await inward.populate("purchaseOrderRef");
@@ -142,8 +140,7 @@ exports.create = async (req, res) => {
     await inward.populate("createdBy", "name email");
 
     res.status(201).json(inward);
-    
-    
+
     if (poRef) {
       await updatePurchaseOrderStatus(poRef);
     }
@@ -159,7 +156,8 @@ const adjustStock = async (items, direction, location) => {
       try {
         const itemCode = (item.productCode || "").trim() || null;
         const itemCategory = item.category || item.rmItem || "General";
-        const itemSubCategory = item.subCategory || item.paperType || "Standard";
+        const itemSubCategory =
+          item.subCategory || item.paperType || "Standard";
 
         const itemName =
           item.itemName ||
@@ -170,7 +168,8 @@ const adjustStock = async (items, direction, location) => {
           : { name: itemName, category: itemCategory };
 
         const weightChange = (Number(item.weight) || 0) * direction;
-        const qtyChange = (Number(item.noOfSheets || item.qty) || 0) * direction;
+        const qtyChange =
+          (Number(item.noOfSheets || item.qty) || 0) * direction;
 
         const incomingRate = Number(item.rate) || 0;
         await RawMaterialStock.findOneAndUpdate(
@@ -202,7 +201,11 @@ const adjustStock = async (items, direction, location) => {
           { upsert: true, new: true, setDefaultsOnInsert: true },
         );
       } catch (itemErr) {
-        console.error("Failed to update stock for item:", item.itemName || item.productCode, itemErr);
+        console.error(
+          "Failed to update stock for item:",
+          item.itemName || item.productCode,
+          itemErr,
+        );
       }
     } else if (item.materialType === "Consumable") {
       const ConsumableStock = require("../models/ConsumableStock");
@@ -302,7 +305,8 @@ exports.update = async (req, res) => {
       }
     }
 
-    const effectivePoRef = poRef || (await MaterialInward.findById(req.params.id))?.poRef;
+    const effectivePoRef =
+      poRef || (await MaterialInward.findById(req.params.id))?.poRef;
     if (effectivePoRef && items) {
       const po = await PurchaseOrder.findOne({ poNo: effectivePoRef });
       if (po) {
@@ -362,7 +366,6 @@ exports.update = async (req, res) => {
     const inward = await MaterialInward.findById(req.params.id);
     if (!inward) return res.status(404).json({ message: "Inward not found" });
 
-
     await adjustStock(inward.items, -1, inward.location);
 
     inward.inwardDate = inwardDate || inward.inwardDate;
@@ -380,7 +383,6 @@ exports.update = async (req, res) => {
 
     await inward.save();
 
-    
     await adjustStock(inward.items, 1, inward.location);
 
     await inward.populate("purchaseOrderRef");
@@ -389,7 +391,6 @@ exports.update = async (req, res) => {
 
     res.json(inward);
 
-    
     if (inward.poRef) {
       await updatePurchaseOrderStatus(inward.poRef);
     }
@@ -403,7 +404,6 @@ exports.delete = async (req, res) => {
     const inward = await MaterialInward.findById(req.params.id);
     if (!inward) return res.status(404).json({ message: "Inward not found" });
 
-    
     await adjustStock(inward.items, -1, inward.location);
 
     await TrashItem.create({

@@ -2,9 +2,6 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const ActivityLog = require("../models/ActivityLog");
 
-
-
-
 exports.login = async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -27,11 +24,9 @@ exports.login = async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    
     user.lastLogin = new Date();
     await user.save();
 
-    
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRES_IN || "7d",
     });
@@ -73,9 +68,6 @@ exports.login = async (req, res) => {
   }
 };
 
-
-
-
 exports.me = async (req, res) => {
   try {
     res.json({
@@ -99,9 +91,6 @@ exports.me = async (req, res) => {
   }
 };
 
-
-
-
 exports.logout = async (req, res) => {
   if (req.user) {
     const ip =
@@ -121,9 +110,6 @@ exports.logout = async (req, res) => {
   res.json({ message: "Logged out successfully" });
 };
 
-
-
-
 exports.getAllUsers = async (req, res) => {
   try {
     const users = await User.find().select("-password");
@@ -133,9 +119,6 @@ exports.getAllUsers = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch users" });
   }
 };
-
-
-
 
 exports.getUserById = async (req, res) => {
   try {
@@ -150,13 +133,23 @@ exports.getUserById = async (req, res) => {
   }
 };
 
-
-
-
 exports.createUser = async (req, res) => {
   try {
-    const { username, password, name, role, allowedTabs, editableTabs, createTabs, deleteTabs, clientTag, email, phone, allowExportImport, allowEditStock } =
-      req.body;
+    const {
+      username,
+      password,
+      name,
+      role,
+      allowedTabs,
+      editableTabs,
+      createTabs,
+      deleteTabs,
+      clientTag,
+      email,
+      phone,
+      allowExportImport,
+      allowEditStock,
+    } = req.body;
 
     if (!username || !password || !name) {
       return res
@@ -164,7 +157,6 @@ exports.createUser = async (req, res) => {
         .json({ error: "Username, password and name are required" });
     }
 
-    
     const existingUser = await User.findOne({
       username: username.toLowerCase(),
     });
@@ -201,14 +193,23 @@ exports.createUser = async (req, res) => {
   }
 };
 
-
-
-
 exports.updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, role, allowedTabs, editableTabs, createTabs, deleteTabs, isActive, password, clientTag, email, allowExportImport, allowEditStock } =
-      req.body;
+    const {
+      name,
+      role,
+      allowedTabs,
+      editableTabs,
+      createTabs,
+      deleteTabs,
+      isActive,
+      password,
+      clientTag,
+      email,
+      allowExportImport,
+      allowEditStock,
+    } = req.body;
 
     const user = await User.findById(id);
     if (!user) {
@@ -224,7 +225,8 @@ exports.updateUser = async (req, res) => {
     if (isActive !== undefined) user.isActive = isActive;
     if (clientTag !== undefined) user.clientTag = clientTag;
     if (email !== undefined) user.email = email ? email.toLowerCase() : null;
-    if (allowExportImport !== undefined) user.allowExportImport = allowExportImport;
+    if (allowExportImport !== undefined)
+      user.allowExportImport = allowExportImport;
     if (allowEditStock !== undefined) user.allowEditStock = allowEditStock;
     if (password) user.password = password;
 
@@ -240,9 +242,6 @@ exports.updateUser = async (req, res) => {
   }
 };
 
-
-
-
 exports.deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
@@ -252,7 +251,6 @@ exports.deleteUser = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    
     const adminCount = await User.countDocuments({ role: "Admin" });
     if (user.role === "Admin" && adminCount === 1) {
       return res

@@ -32,8 +32,8 @@ export default function CategoryMaster({ toast, canExportImport = true }) {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [editingCategory, setEditingCategory] = useState(null); 
-  const [editingSubType, setEditingSubType] = useState(null); 
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [editingSubType, setEditingSubType] = useState(null);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -296,7 +296,10 @@ export default function CategoryMaster({ toast, canExportImport = true }) {
     const ws = XLSX.utils.aoa_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Categories");
-    XLSX.writeFile(wb, `${activeTab.replace(" ", "_")}_categories_template.xlsx`);
+    XLSX.writeFile(
+      wb,
+      `${activeTab.replace(" ", "_")}_categories_template.xlsx`,
+    );
   };
 
   const handleImport = async (e) => {
@@ -500,8 +503,16 @@ export default function CategoryMaster({ toast, canExportImport = true }) {
 
           {}
           <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-            <TemplateBtn onClick={handleTemplate} style={{ flex: 1, padding: "6px 0", fontSize: 11 }} />
-            {canExportImport && <ImportBtn onClick={() => fileInputRef.current?.click()} style={{ flex: 1, padding: "6px 0", fontSize: 11 }} />}
+            <TemplateBtn
+              onClick={handleTemplate}
+              style={{ flex: 1, padding: "6px 0", fontSize: 11 }}
+            />
+            {canExportImport && (
+              <ImportBtn
+                onClick={() => fileInputRef.current?.click()}
+                style={{ flex: 1, padding: "6px 0", fontSize: 11 }}
+              />
+            )}
             <input
               ref={fileInputRef}
               type="file"

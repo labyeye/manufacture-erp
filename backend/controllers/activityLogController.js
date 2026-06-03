@@ -20,7 +20,7 @@ exports.getLogs = async (req, res) => {
     if (from || to) {
       filter.timestamp = {};
       if (from) filter.timestamp.$gte = new Date(from);
-      if (to)   filter.timestamp.$lte = new Date(to);
+      if (to) filter.timestamp.$lte = new Date(to);
     }
     if (search) {
       filter.$or = [
@@ -66,7 +66,9 @@ exports.clearOldLogs = async (req, res) => {
     const days = Number(req.query.days) || 90;
     const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
     const result = await ActivityLog.deleteMany({ timestamp: { $lt: cutoff } });
-    res.json({ message: `Cleared ${result.deletedCount} logs older than ${days} days` });
+    res.json({
+      message: `Cleared ${result.deletedCount} logs older than ${days} days`,
+    });
   } catch (error) {
     res.status(500).json({ error: "Failed to clear logs" });
   }

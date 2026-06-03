@@ -1,27 +1,20 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { auth } = require('../middleware/auth');
-const sizeMasterController = require('../controllers/sizeMasterController');
-
+const { auth } = require("../middleware/auth");
+const sizeMasterController = require("../controllers/sizeMasterController");
 
 router.use(auth);
 
+router.get("/", sizeMasterController.getAllSizes);
 
-router.get('/', sizeMasterController.getAllSizes);
+router.get("/:category", sizeMasterController.getSizesByCategory);
 
+router.post("/add", sizeMasterController.addSize);
 
-router.get('/:category', sizeMasterController.getSizesByCategory);
+router.put("/update", sizeMasterController.updateSize);
 
+router.delete("/delete", sizeMasterController.deleteSize);
 
-router.post('/add', sizeMasterController.addSize);
-
-
-router.put('/update', sizeMasterController.updateSize);
-
-
-router.delete('/delete', sizeMasterController.deleteSize);
-
-
-router.delete('/category/:category', sizeMasterController.deleteCategory);
+router.delete("/category/:category", sizeMasterController.deleteCategory);
 
 module.exports = router;

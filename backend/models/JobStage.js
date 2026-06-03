@@ -54,7 +54,7 @@ const jobStageSchema = new mongoose.Schema(
       enum: ["Eligible", "Blocked"],
       default: "Blocked",
     },
-    blockedReasonCodes: [String], 
+    blockedReasonCodes: [String],
 
     plannedSetupHrs: Number,
     plannedRunHrs: Number,

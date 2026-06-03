@@ -1,13 +1,3 @@
-
-
-
-
-
-
-
-
-
-
 require("dotenv").config();
 const mongoose = require("mongoose");
 const MachineMaster = require("../models/MachineMaster");
@@ -15,35 +5,27 @@ const MachineMaster = require("../models/MachineMaster");
 const MONGODB_URI =
   process.env.MONGODB_URI || "mongodb://localhost:27017/manufactureiq";
 
-
-
-
-
-
-
 const MACHINE_CAPACITY = [
-  
   {
     name: "Komori 28x40inch Machine",
     practicalRunRate: 3750,
     capacityUnit: "Sheets",
-    setupTimeDefault: 30 / 60,       
+    setupTimeDefault: 30 / 60,
     changeoverTimeDefault: 0,
   },
   {
     name: "Flexo Printing Machine",
     practicalRunRate: 3750,
     capacityUnit: "Pcs",
-    setupTimeDefault: 45 / 60,       
+    setupTimeDefault: 45 / 60,
     changeoverTimeDefault: 0,
   },
 
-  
   {
     name: "Manual Die Cutting Machine 1",
     practicalRunRate: 875,
     capacityUnit: "Sheets",
-    setupTimeDefault: 45 / 60,       
+    setupTimeDefault: 45 / 60,
     changeoverTimeDefault: 0,
   },
   {
@@ -57,11 +39,10 @@ const MACHINE_CAPACITY = [
     name: "Automatic Die Cutting",
     practicalRunRate: 2500,
     capacityUnit: "Sheets",
-    setupTimeDefault: 30 / 60,       
+    setupTimeDefault: 30 / 60,
     changeoverTimeDefault: 0,
   },
 
-  
   {
     name: "Laminator Machine 1",
     practicalRunRate: 1250,
@@ -71,19 +52,18 @@ const MACHINE_CAPACITY = [
   },
   {
     name: "Laminator Machine 2",
-    practicalRunRate: 1250,          
+    practicalRunRate: 1250,
     capacityUnit: "Sheets",
     setupTimeDefault: 30 / 60,
     changeoverTimeDefault: 0,
   },
 
-  
   {
     name: "Dip Bowl",
     practicalRunRate: 2750,
     capacityUnit: "Pcs",
-    setupTimeDefault: 10 / 60,       
-    changeoverTimeDefault: 360 / 60, 
+    setupTimeDefault: 10 / 60,
+    changeoverTimeDefault: 360 / 60,
   },
   {
     name: "Single Layer Lid",
@@ -93,7 +73,6 @@ const MACHINE_CAPACITY = [
     changeoverTimeDefault: 360 / 60,
   },
 
-  
   {
     name: "Single Wall Cup",
     practicalRunRate: 2750,
@@ -109,7 +88,6 @@ const MACHINE_CAPACITY = [
     changeoverTimeDefault: 360 / 60,
   },
 
-  
   {
     name: "Bowl 250ml",
     practicalRunRate: 2250,
@@ -139,7 +117,6 @@ const MACHINE_CAPACITY = [
     changeoverTimeDefault: 0,
   },
 
-  
   {
     name: "Lid 110mm 1",
     practicalRunRate: 2250,
@@ -149,19 +126,18 @@ const MACHINE_CAPACITY = [
   },
   {
     name: "Lid 110mm 2",
-    practicalRunRate: 1875,          
+    practicalRunRate: 1875,
     capacityUnit: "Pcs",
     setupTimeDefault: 10 / 60,
     changeoverTimeDefault: 0,
   },
 
-  
   {
     name: "Flat Bowl Machine 1",
     practicalRunRate: 2250,
     capacityUnit: "Pcs",
     setupTimeDefault: 10 / 60,
-    changeoverTimeDefault: 360 / 60, 
+    changeoverTimeDefault: 360 / 60,
   },
   {
     name: "Flat Bowl Machine 2",
@@ -178,13 +154,12 @@ const MACHINE_CAPACITY = [
     changeoverTimeDefault: 0,
   },
 
-  
   {
     name: "Carton Erection 1",
     practicalRunRate: 2750,
     capacityUnit: "Pcs",
     setupTimeDefault: 10 / 60,
-    changeoverTimeDefault: 150 / 60, 
+    changeoverTimeDefault: 150 / 60,
   },
   {
     name: "Carton Erection 2",
@@ -194,13 +169,12 @@ const MACHINE_CAPACITY = [
     changeoverTimeDefault: 150 / 60,
   },
 
-  
   {
     name: "SBBM 360 Machine 1",
     practicalRunRate: 5250,
     capacityUnit: "Pcs",
     setupTimeDefault: 10 / 60,
-    changeoverTimeDefault: 180 / 60, 
+    changeoverTimeDefault: 180 / 60,
   },
   {
     name: "SBBM 360 Machine 2",
@@ -210,17 +184,14 @@ const MACHINE_CAPACITY = [
     changeoverTimeDefault: 180 / 60,
   },
 
-  
   {
     name: "Sheet Cutting Machine",
     practicalRunRate: 11250,
     capacityUnit: "Pcs",
     setupTimeDefault: 10 / 60,
-    changeoverTimeDefault: 0,        
+    changeoverTimeDefault: 0,
   },
 ];
-
-
 
 async function seed() {
   await mongoose.connect(MONGODB_URI);
@@ -245,11 +216,10 @@ async function seed() {
         `  updated  "${data.name}"` +
           `  rate=${data.practicalRunRate}/hr` +
           `  setup=${Math.round(data.setupTimeDefault * 60)}min` +
-          `  changeover=${Math.round(data.changeoverTimeDefault * 60)}min`
+          `  changeover=${Math.round(data.changeoverTimeDefault * 60)}min`,
       );
       updated++;
     } else {
-      
       await MachineMaster.create({
         name: data.name,
         type: _inferType(data.name),

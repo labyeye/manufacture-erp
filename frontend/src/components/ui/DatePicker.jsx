@@ -16,9 +16,12 @@ export function DatePicker({ value, onChange, style = {} }) {
   useEffect(() => {
     const handler = (e) => {
       if (
-        ref.current && !ref.current.contains(e.target) &&
-        calRef.current && !calRef.current.contains(e.target)
-      ) setOpen(false);
+        ref.current &&
+        !ref.current.contains(e.target) &&
+        calRef.current &&
+        !calRef.current.contains(e.target)
+      )
+        setOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -32,8 +35,18 @@ export function DatePicker({ value, onChange, style = {} }) {
   }, [value]);
 
   const MONTHS = [
-    "January","February","March","April","May","June",
-    "July","August","September","October","November","December",
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
   const DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
@@ -53,11 +66,15 @@ export function DatePicker({ value, onChange, style = {} }) {
 
   const prevMonth = () =>
     setViewDate((v) =>
-      v.month === 0 ? { year: v.year - 1, month: 11 } : { ...v, month: v.month - 1 }
+      v.month === 0
+        ? { year: v.year - 1, month: 11 }
+        : { ...v, month: v.month - 1 },
     );
   const nextMonth = () =>
     setViewDate((v) =>
-      v.month === 11 ? { year: v.year + 1, month: 0 } : { ...v, month: v.month + 1 }
+      v.month === 11
+        ? { year: v.year + 1, month: 0 }
+        : { ...v, month: v.month + 1 },
     );
 
   const select = (day) => {
@@ -106,37 +123,115 @@ export function DatePicker({ value, onChange, style = {} }) {
         boxShadow: "0 8px 32px #0004",
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-        <button onClick={prevMonth} style={{ background: "none", border: "none", color: COLORS.muted, fontSize: 18, cursor: "pointer", padding: "0 4px" }}>‹</button>
-        <span style={{ fontWeight: 500, fontSize: 13, color: COLORS.text }}>{MONTHS[viewDate.month]} {viewDate.year}</span>
-        <button onClick={nextMonth} style={{ background: "none", border: "none", color: COLORS.muted, fontSize: 18, cursor: "pointer", padding: "0 4px" }}>›</button>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 10,
+        }}
+      >
+        <button
+          onClick={prevMonth}
+          style={{
+            background: "none",
+            border: "none",
+            color: COLORS.muted,
+            fontSize: 18,
+            cursor: "pointer",
+            padding: "0 4px",
+          }}
+        >
+          ‹
+        </button>
+        <span style={{ fontWeight: 500, fontSize: 13, color: COLORS.text }}>
+          {MONTHS[viewDate.month]} {viewDate.year}
+        </span>
+        <button
+          onClick={nextMonth}
+          style={{
+            background: "none",
+            border: "none",
+            color: COLORS.muted,
+            fontSize: 18,
+            cursor: "pointer",
+            padding: "0 4px",
+          }}
+        >
+          ›
+        </button>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2, marginBottom: 4 }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(7, 1fr)",
+          gap: 2,
+          marginBottom: 4,
+        }}
+      >
         {DAYS.map((d) => (
-          <div key={d} style={{ textAlign: "center", fontSize: 10, color: COLORS.muted, fontWeight: 500, padding: "2px 0" }}>{d}</div>
+          <div
+            key={d}
+            style={{
+              textAlign: "center",
+              fontSize: 10,
+              color: COLORS.muted,
+              fontWeight: 500,
+              padding: "2px 0",
+            }}
+          >
+            {d}
+          </div>
         ))}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2 }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(7, 1fr)",
+          gap: 2,
+        }}
+      >
         {cells.map((day, i) => {
           if (!day) return <div key={i} />;
           const thisDate = new Date(viewDate.year, viewDate.month, day);
-          const isSelected = selDate && thisDate.getTime() === selDate.getTime();
+          const isSelected =
+            selDate && thisDate.getTime() === selDate.getTime();
           const isToday = thisDate.getTime() === today.getTime();
           return (
             <div
               key={i}
               onClick={() => select(day)}
               style={{
-                textAlign: "center", padding: "5px 0", borderRadius: 5, fontSize: 12, cursor: "pointer",
+                textAlign: "center",
+                padding: "5px 0",
+                borderRadius: 5,
+                fontSize: 12,
+                cursor: "pointer",
                 fontWeight: isSelected || isToday ? 700 : 400,
-                background: isSelected ? COLORS.accent : isToday ? COLORS.accent + "22" : "transparent",
-                color: isSelected ? "#fff" : isToday ? COLORS.accent : COLORS.text,
+                background: isSelected
+                  ? COLORS.accent
+                  : isToday
+                    ? COLORS.accent + "22"
+                    : "transparent",
+                color: isSelected
+                  ? "#fff"
+                  : isToday
+                    ? COLORS.accent
+                    : COLORS.text,
                 transition: "background .1s",
               }}
-              onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = COLORS.surface; }}
-              onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = isToday ? COLORS.accent + "22" : "transparent"; }}
+              onMouseEnter={(e) => {
+                if (!isSelected)
+                  e.currentTarget.style.background = COLORS.surface;
+              }}
+              onMouseLeave={(e) => {
+                if (!isSelected)
+                  e.currentTarget.style.background = isToday
+                    ? COLORS.accent + "22"
+                    : "transparent";
+              }}
             >
               {day}
             </div>
@@ -144,10 +239,29 @@ export function DatePicker({ value, onChange, style = {} }) {
         })}
       </div>
 
-      <div style={{ marginTop: 10, borderTop: `1px solid ${COLORS.border}`, paddingTop: 8, textAlign: "center" }}>
+      <div
+        style={{
+          marginTop: 10,
+          borderTop: `1px solid ${COLORS.border}`,
+          paddingTop: 8,
+          textAlign: "center",
+        }}
+      >
         <button
-          onClick={() => { const now = new Date(); setViewDate({ year: now.getFullYear(), month: now.getMonth() }); select(now.getDate()); }}
-          style={{ background: "none", border: `1px solid ${COLORS.border}`, borderRadius: 5, color: COLORS.muted, fontSize: 11, padding: "3px 12px", cursor: "pointer" }}
+          onClick={() => {
+            const now = new Date();
+            setViewDate({ year: now.getFullYear(), month: now.getMonth() });
+            select(now.getDate());
+          }}
+          style={{
+            background: "none",
+            border: `1px solid ${COLORS.border}`,
+            borderRadius: 5,
+            color: COLORS.muted,
+            fontSize: 11,
+            padding: "3px 12px",
+            cursor: "pointer",
+          }}
         >
           Today
         </button>
@@ -162,10 +276,16 @@ export function DatePicker({ value, onChange, style = {} }) {
         style={{
           background: COLORS.inputBg,
           border: `1px solid ${open ? COLORS.accent : COLORS.border}`,
-          borderRadius: 6, padding: "9px 12px", fontSize: 13, cursor: "pointer",
-          display: "flex", justifyContent: "space-between", alignItems: "center",
+          borderRadius: 6,
+          padding: "9px 12px",
+          fontSize: 13,
+          cursor: "pointer",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
           color: display ? COLORS.text : COLORS.muted,
-          userSelect: "none", transition: "border .2s",
+          userSelect: "none",
+          transition: "border .2s",
         }}
       >
         <span>{display || "DD/MM/YYYY"}</span>

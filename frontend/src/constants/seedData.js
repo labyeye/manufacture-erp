@@ -157,7 +157,6 @@ export const FG_SIZE_CLIENT_CATS = [
   "Paper Boat Tray",
 ];
 
-
 export const PARALLEL_MACHINE_GROUPS = [
   "",
   "SBBM 360 Pair",
@@ -168,9 +167,7 @@ export const PARALLEL_MACHINE_GROUPS = [
   "Carton Erection Pair",
 ];
 
-
 export const ALL_SKU_FAMILIES = [
-  
   "Paper Dip Bowl",
   "Paper Dip Bowl Lid",
   "Paper Cup",
@@ -182,11 +179,11 @@ export const ALL_SKU_FAMILIES = [
   "Paper Salad Box",
   "Paper Burger Box",
   "Paper Boat Tray",
-  
+
   "Paper Bag with Handle",
   "Paper Bag without Handle",
   "Wrapping Paper",
-  
+
   "Cake Box",
   "Pastry Box",
   "Paper Bag Manual",
@@ -194,7 +191,6 @@ export const ALL_SKU_FAMILIES = [
   "Sleeve",
   "Sticker",
 ];
-
 
 const _SHEET_FG = [
   "Paper Dip Bowl",
@@ -210,8 +206,6 @@ const _SHEET_FG = [
 ];
 
 export const SEED_MACHINES = [
-  
-  
   {
     name: "Komori 28x40inch Machine",
     type: "Printing",
@@ -220,7 +214,7 @@ export const SEED_MACHINES = [
     productCompatibility: _SHEET_FG,
     parallelMachineGroup: "",
   },
-  
+
   {
     name: "Manual Die Cutting Machine 1",
     type: "Die Cutting",
@@ -246,9 +240,9 @@ export const SEED_MACHINES = [
     capacityUnit: "Sheets",
     productCompatibility: _SHEET_FG,
     parallelMachineGroup: "",
-    priorityRank: 1, 
+    priorityRank: 1,
   },
-  
+
   {
     name: "Laminator Machine 1",
     type: "Lamination",
@@ -265,7 +259,7 @@ export const SEED_MACHINES = [
     productCompatibility: _SHEET_FG,
     parallelMachineGroup: "Lamination Pair",
   },
-  
+
   {
     name: "Dip Bowl",
     type: "Formation",
@@ -282,7 +276,7 @@ export const SEED_MACHINES = [
     productCompatibility: ["Paper Dip Bowl Lid"],
     parallelMachineGroup: "",
   },
-  
+
   {
     name: "Single Wall Cup",
     type: "Formation",
@@ -299,7 +293,7 @@ export const SEED_MACHINES = [
     productCompatibility: ["Paper Cup"],
     parallelMachineGroup: "",
   },
-  
+
   {
     name: "Bowl 250ml",
     type: "Formation",
@@ -332,7 +326,7 @@ export const SEED_MACHINES = [
     productCompatibility: ["Paper Soup Bowl"],
     parallelMachineGroup: "",
   },
-  
+
   {
     name: "Lid 110mm 1",
     type: "Formation",
@@ -349,13 +343,13 @@ export const SEED_MACHINES = [
     productCompatibility: ["Paper Soup Bowl Lid"],
     parallelMachineGroup: "Lid 110mm Pair",
   },
-  
+
   {
     name: "Flat Bowl Machine 1",
     type: "Formation",
     division: "Sheet",
     capacityUnit: "Pcs",
-    productCompatibility: ["Paper Flat Bowl"], 
+    productCompatibility: ["Paper Flat Bowl"],
     parallelMachineGroup: "Flat Bowl Pair",
   },
   {
@@ -363,7 +357,7 @@ export const SEED_MACHINES = [
     type: "Formation",
     division: "Sheet",
     capacityUnit: "Pcs",
-    productCompatibility: ["Paper Flat Bowl"], 
+    productCompatibility: ["Paper Flat Bowl"],
     parallelMachineGroup: "Flat Bowl Pair",
   },
   {
@@ -374,13 +368,17 @@ export const SEED_MACHINES = [
     productCompatibility: ["Paper Flat Bowl Lid"],
     parallelMachineGroup: "",
   },
-  
+
   {
     name: "Carton Erection 1",
     type: "Formation",
     division: "Sheet",
     capacityUnit: "Pcs",
-    productCompatibility: ["Paper Salad Box", "Paper Boat Tray", "Paper Burger Box"],
+    productCompatibility: [
+      "Paper Salad Box",
+      "Paper Boat Tray",
+      "Paper Burger Box",
+    ],
     parallelMachineGroup: "Carton Erection Pair",
   },
   {
@@ -388,10 +386,14 @@ export const SEED_MACHINES = [
     type: "Formation",
     division: "Sheet",
     capacityUnit: "Pcs",
-    productCompatibility: ["Paper Salad Box", "Paper Boat Tray", "Paper Burger Box"],
+    productCompatibility: [
+      "Paper Salad Box",
+      "Paper Boat Tray",
+      "Paper Burger Box",
+    ],
     parallelMachineGroup: "Carton Erection Pair",
   },
-  
+
   {
     name: "Flexo Printing Machine",
     type: "Printing",
@@ -424,7 +426,7 @@ export const SEED_MACHINES = [
     productCompatibility: ["Wrapping Paper"],
     parallelMachineGroup: "",
   },
-  
+
   {
     name: "Akiyama 19x26inch Machine",
     type: "Printing",
@@ -514,17 +516,47 @@ export const DEFAULT_ROLES = {
   Store: {
     label: "Store",
     color: "#3b82f6",
-    tabs: ["dashboard", "inward", "rawstock", "fg", "consumablestock", "stockadjustment", "itemmaster", "purchase", "forecast"],
+    tabs: [
+      "dashboard",
+      "inward",
+      "rawstock",
+      "fg",
+      "consumablestock",
+      "stockadjustment",
+      "itemmaster",
+      "purchase",
+      "forecast",
+    ],
   },
   Sales: {
     label: "Sales",
     color: "#22c55e",
-    tabs: ["dashboard", "sales", "dispatch", "fg", "clientmaster", "brandmaster", "pricemaster", "forecast", "search", "designhub", "notificationhub"],
+    tabs: [
+      "dashboard",
+      "sales",
+      "dispatch",
+      "fg",
+      "clientmaster",
+      "brandmaster",
+      "pricemaster",
+      "forecast",
+      "search",
+      "designhub",
+      "notificationhub",
+    ],
   },
   Accounts: {
     label: "Accounts",
     color: "#a855f7",
-    tabs: ["dashboard", "purchase", "sales", "pricemaster", "search", "rawstock", "fg"],
+    tabs: [
+      "dashboard",
+      "purchase",
+      "sales",
+      "pricemaster",
+      "search",
+      "rawstock",
+      "fg",
+    ],
   },
   Client: {
     label: "Client",
@@ -535,32 +567,92 @@ export const DEFAULT_ROLES = {
 
 export const TABS = [
   { id: "notificationhub", icon: "fa-solid fa-bell", label: "Notifications" },
-  { id: "search", icon: "fa-solid fa-magnifying-glass", label: "Global Search" },
+  {
+    id: "search",
+    icon: "fa-solid fa-magnifying-glass",
+    label: "Global Search",
+  },
   { id: "dashboard", icon: "fa-solid fa-chart-pie", label: "Dashboard" },
   { id: "reports", icon: "fa-solid fa-chart-bar", label: "Reports" },
   { id: "forecast", icon: "fa-solid fa-chart-line", label: "Forecast" },
-  { id: "calendar", icon: "fa-solid fa-calendar-days", label: "Production Calendar" },
-  { id: "purchase", icon: "fa-solid fa-cart-shopping", label: "Purchase Orders" },
-  { id: "inward", icon: "fa-solid fa-truck-ramp-box", label: "Material Inward" },
-  { id: "sales", icon: "fa-solid fa-file-invoice-dollar", label: "Sales Orders" },
+  {
+    id: "calendar",
+    icon: "fa-solid fa-calendar-days",
+    label: "Production Calendar",
+  },
+  {
+    id: "purchase",
+    icon: "fa-solid fa-cart-shopping",
+    label: "Purchase Orders",
+  },
+  {
+    id: "inward",
+    icon: "fa-solid fa-truck-ramp-box",
+    label: "Material Inward",
+  },
+  {
+    id: "sales",
+    icon: "fa-solid fa-file-invoice-dollar",
+    label: "Sales Orders",
+  },
   { id: "jobs", icon: "fa-solid fa-gears", label: "Job Orders" },
-  { id: "production", icon: "fa-solid fa-industry", label: "Production Update" },
+  {
+    id: "production",
+    icon: "fa-solid fa-industry",
+    label: "Production Update",
+  },
   { id: "dispatch", icon: "fa-solid fa-truck-fast", label: "Dispatch" },
   { id: "rawstock", icon: "fa-solid fa-boxes-stacked", label: "RM Stock" },
   { id: "fg", icon: "fa-solid fa-warehouse", label: "FG Stock" },
-  { id: "consumablestock", icon: "fa-solid fa-layer-group", label: "Consumable Stock" },
-  { id: "stockadjustment", icon: "fa-solid fa-sliders", label: "Stock Adjustment" },
-  { id: "printingmaster", icon: "fa-solid fa-print", label: "Printing Detail Master" },
-  { id: "operatormaster", icon: "fa-solid fa-hard-hat", label: "Operator Master" },
+  {
+    id: "consumablestock",
+    icon: "fa-solid fa-layer-group",
+    label: "Consumable Stock",
+  },
+  {
+    id: "stockadjustment",
+    icon: "fa-solid fa-sliders",
+    label: "Stock Adjustment",
+  },
+  {
+    id: "printingmaster",
+    icon: "fa-solid fa-print",
+    label: "Printing Detail Master",
+  },
+  {
+    id: "operatormaster",
+    icon: "fa-solid fa-hard-hat",
+    label: "Operator Master",
+  },
   { id: "vendormaster", icon: "fa-solid fa-store", label: "Vendor Master" },
-  { id: "companymaster", icon: "fa-solid fa-building", label: "Company Master" },
+  {
+    id: "companymaster",
+    icon: "fa-solid fa-building",
+    label: "Company Master",
+  },
   { id: "brandmaster", icon: "fa-solid fa-tag", label: "Brand Master" },
-  { id: "sizemaster", icon: "fa-solid fa-ruler-combined", label: "Category Master" },
+  {
+    id: "sizemaster",
+    icon: "fa-solid fa-ruler-combined",
+    label: "Category Master",
+  },
   { id: "itemmaster", icon: "fa-solid fa-list-check", label: "Item Master" },
-  { id: "machinemaster", icon: "fa-solid fa-screwdriver-wrench", label: "Machine Master" },
+  {
+    id: "machinemaster",
+    icon: "fa-solid fa-screwdriver-wrench",
+    label: "Machine Master",
+  },
   { id: "pricemaster", icon: "fa-solid fa-tags", label: "Price List Master" },
-  { id: "machinetools", icon: "fa-solid fa-wrench", label: "Machine & Tooling" },
-  { id: "subcontracting", icon: "fa-solid fa-arrows-spin", label: "Sub Contracting" },
+  {
+    id: "machinetools",
+    icon: "fa-solid fa-wrench",
+    label: "Machine & Tooling",
+  },
+  {
+    id: "subcontracting",
+    icon: "fa-solid fa-arrows-spin",
+    label: "Sub Contracting",
+  },
   { id: "qualityhub", icon: "fa-solid fa-microscope", label: "Quality Hub" },
   { id: "designhub", icon: "fa-solid fa-pen-ruler", label: "Design Hub" },
   { id: "users", icon: "fa-solid fa-users", label: "User Management" },

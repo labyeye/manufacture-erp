@@ -182,7 +182,9 @@ function AppInner({
   const [currentTab, setCurrentTab] = useState(() => {
     const lastTab = localStorage.getItem("erp_lastTab");
     const candidate = lastTab || "dashboard";
-    return allowedTabs.includes(candidate) ? candidate : (allowedTabs[0] || "dashboard");
+    return allowedTabs.includes(candidate)
+      ? candidate
+      : allowedTabs[0] || "dashboard";
   });
   const [deepLink, setDeepLink] = useState(null);
   const [toast, setToast] = useState(null);
@@ -197,8 +199,11 @@ function AppInner({
 
   // Compute CRUD permissions for the currently active tab
   const tabPerms = React.useMemo(() => {
-    if (session.role === "Admin") return { canCreate: true, canEdit: true, canDelete: true };
-    const editable = Array.isArray(session.editableTabs) ? session.editableTabs : [];
+    if (session.role === "Admin")
+      return { canCreate: true, canEdit: true, canDelete: true };
+    const editable = Array.isArray(session.editableTabs)
+      ? session.editableTabs
+      : [];
     const create = Array.isArray(session.createTabs) ? session.createTabs : [];
     const del = Array.isArray(session.deleteTabs) ? session.deleteTabs : [];
     return {
@@ -397,7 +402,8 @@ function AppInner({
 
     const normalTag = tag.trim().toLowerCase();
 
-    if ((stockItem.companyCat || "").trim().toLowerCase() === normalTag) return true;
+    if ((stockItem.companyCat || "").trim().toLowerCase() === normalTag)
+      return true;
 
     const item = itemMasterFG.find((i) => i.code === stockItem.itemCode);
     return (item?.companyCategory || "").trim().toLowerCase() === normalTag;
@@ -484,7 +490,16 @@ function AppInner({
       setFgStock,
       consumableStock: [],
       setConsumableStock,
-      dispatches: dispatches.filter((d) => filteredSONos.has(d.soRef)),
+      dispatches: dispatches.filter((d) => {
+        if (filteredSONos.has(d.soRef)) return true;
+        // Also match direct dispatches by company name belonging to the client's category
+        const co = (companyMaster || []).find(
+          (c) =>
+            (c.name || "").toLowerCase() ===
+            (d.companyName || "").toLowerCase(),
+        );
+        return co && co.category === tag;
+      }),
       setDispatches,
       itemMasterFG: filteredItemMaster,
       setItemMasterFG,
@@ -548,10 +563,26 @@ function AppInner({
     const allowedSet = new Set(allowedTabs);
     if (currentTab !== "dashboard" && !allowedSet.has(currentTab)) {
       return (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "60vh", gap: 12 }}>
-          <i className="fa-solid fa-lock" style={{ fontSize: 40, color: "#555" }} />
-          <div style={{ fontSize: 16, fontWeight: 600, color: "#e0e0e0" }}>Access Denied</div>
-          <div style={{ fontSize: 13, color: "#888" }}>You don't have permission to view this module.</div>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            height: "60vh",
+            gap: 12,
+          }}
+        >
+          <i
+            className="fa-solid fa-lock"
+            style={{ fontSize: 40, color: "#555" }}
+          />
+          <div style={{ fontSize: 16, fontWeight: 600, color: "#e0e0e0" }}>
+            Access Denied
+          </div>
+          <div style={{ fontSize: 13, color: "#888" }}>
+            You don't have permission to view this module.
+          </div>
         </div>
       );
     }
@@ -725,20 +756,36 @@ function AppInner({
       case "dispatch":
         return <Dispatch {...data} {...tabPerms} toast={showToast} />;
       case "rawstock":
-        return <RMStock {...data} {...tabPerms} session={session} toast={showToast}
-          canEdit={tabPerms.canEdit && session.allowEditStock !== false}
-          canCreate={tabPerms.canCreate && session.allowEditStock !== false}
-          canDelete={tabPerms.canDelete && session.allowEditStock !== false}
-        />;
+        return (
+          <RMStock
+            {...data}
+            {...tabPerms}
+            session={session}
+            toast={showToast}
+            canEdit={tabPerms.canEdit && session.allowEditStock !== false}
+            canCreate={tabPerms.canCreate && session.allowEditStock !== false}
+            canDelete={tabPerms.canDelete && session.allowEditStock !== false}
+          />
+        );
       case "fg":
-        return <FGStock {...data} {...tabPerms} session={session} toast={showToast}
-          canEdit={tabPerms.canEdit && session.allowEditStock !== false}
-          canCreate={tabPerms.canCreate && session.allowEditStock !== false}
-          canDelete={tabPerms.canDelete && session.allowEditStock !== false}
-        />;
+        return (
+          <FGStock
+            {...data}
+            {...tabPerms}
+            session={session}
+            toast={showToast}
+            canEdit={tabPerms.canEdit && session.allowEditStock !== false}
+            canCreate={tabPerms.canCreate && session.allowEditStock !== false}
+            canDelete={tabPerms.canDelete && session.allowEditStock !== false}
+          />
+        );
       case "consumablestock":
         return (
-          <ConsumableStock {...data} {...tabPerms} session={session} toast={showToast}
+          <ConsumableStock
+            {...data}
+            {...tabPerms}
+            session={session}
+            toast={showToast}
             canEdit={tabPerms.canEdit && session.allowEditStock !== false}
             canCreate={tabPerms.canCreate && session.allowEditStock !== false}
             canDelete={tabPerms.canDelete && session.allowEditStock !== false}
@@ -751,7 +798,10 @@ function AppInner({
             session={session}
             toast={showToast}
             refreshData={fetchMasters}
-            canCreate={(tabPerms.canCreate || tabPerms.canEdit) && session.allowEditStock !== false}
+            canCreate={
+              (tabPerms.canCreate || tabPerms.canEdit) &&
+              session.allowEditStock !== false
+            }
             canDelete={tabPerms.canDelete && session.allowEditStock !== false}
           />
         );
@@ -875,7 +925,10 @@ function AppInner({
                 "dispatch",
               ],
             },
-            { label: "Inventory", ids: ["rawstock", "fg", "consumablestock", "stockadjustment"] },
+            {
+              label: "Inventory",
+              ids: ["rawstock", "fg", "consumablestock", "stockadjustment"],
+            },
             {
               label: "Masters",
               ids: [

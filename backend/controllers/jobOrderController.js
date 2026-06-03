@@ -9,7 +9,10 @@ const { generateJONo } = require("../utils/counters");
 const { generateJobCardPDF } = require("../utils/pdf");
 
 const JobStage = require("../models/JobStage");
-const { recalcJobCalendar, cascadeAffectedJobs } = require("./planningController");
+const {
+  recalcJobCalendar,
+  cascadeAffectedJobs,
+} = require("./planningController");
 
 const STAGES = [
   "Printing",
@@ -70,7 +73,10 @@ async function buildSchedule(jobOrder, machineAssignments) {
 async function adjustRMStock(jobOrder, direction = -1) {
   try {
     // Polycoated Blanks: match RM stock by polycoatedRmName, deduct weight
-    if (jobOrder.paperType === "Polycoated Blanks" && jobOrder.polycoatedWeightKg) {
+    if (
+      jobOrder.paperType === "Polycoated Blanks" &&
+      jobOrder.polycoatedWeightKg
+    ) {
       const rmName = (jobOrder.polycoatedRmName || "").trim();
       if (!rmName && !jobOrder.polycoatedRmStockId) return;
       let polyStock = jobOrder.polycoatedRmStockId
@@ -78,7 +84,12 @@ async function adjustRMStock(jobOrder, direction = -1) {
         : null;
       if (!polyStock && rmName) {
         polyStock = await RawMaterialStock.findOne({
-          name: { $regex: new RegExp(`^${rmName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i") },
+          name: {
+            $regex: new RegExp(
+              `^${rmName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`,
+              "i",
+            ),
+          },
         });
       }
       if (polyStock) {
@@ -90,7 +101,16 @@ async function adjustRMStock(jobOrder, direction = -1) {
       return;
     }
 
-    const findStock = async (id, cat, type, gsm, sheetSize, sheetW, sheetL, reelWidth) => {
+    const findStock = async (
+      id,
+      cat,
+      type,
+      gsm,
+      sheetSize,
+      sheetW,
+      sheetL,
+      reelWidth,
+    ) => {
       if (id) {
         const byId = await RawMaterialStock.findById(id);
         if (byId) return byId;
@@ -98,7 +118,10 @@ async function adjustRMStock(jobOrder, direction = -1) {
 
       if (!cat || !type) return null;
       const normCat = cat.trim().replace(/s$/i, "");
-      const typeRegex = new RegExp(type.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+      const typeRegex = new RegExp(
+        type.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+        "i",
+      );
       const query = {
         $or: [
           { paperType: { $regex: typeRegex } },
@@ -109,7 +132,9 @@ async function adjustRMStock(jobOrder, direction = -1) {
       };
 
       if (sheetSize) {
-        query.sheetSize = { $regex: new RegExp(sheetSize.replace(/\s+/g, ".*"), "i") };
+        query.sheetSize = {
+          $regex: new RegExp(sheetSize.replace(/\s+/g, ".*"), "i"),
+        };
       } else if (sheetW && sheetL) {
         query.sheetSize = { $regex: new RegExp(`${sheetW}.*${sheetL}`, "i") };
       } else if (reelWidth) {
@@ -127,12 +152,12 @@ async function adjustRMStock(jobOrder, direction = -1) {
       jobOrder.sheetSize,
       jobOrder.sheetW,
       jobOrder.sheetL,
-      jobOrder.reelWidthMm
+      jobOrder.reelWidthMm,
     );
 
     if (rmStock) {
       if (rmStock.unit === "kg" || jobOrder.paperCategory === "Paper Reel") {
-        const weightToAdjust = Number(jobOrder.reelWeightKg || 0) * direction; 
+        const weightToAdjust = Number(jobOrder.reelWeightKg || 0) * direction;
         rmStock.weight = Math.max(0, rmStock.weight + weightToAdjust);
         if (rmStock.unit === "sheets" && rmStock.weightPerSheet > 0) {
           rmStock.qty = Math.floor(rmStock.weight / rmStock.weightPerSheet);
@@ -160,7 +185,7 @@ async function adjustRMStock(jobOrder, direction = -1) {
         jobOrder.sheetSize2 || jobOrder.sheetSize,
         jobOrder.sheetW2 || jobOrder.sheetW,
         jobOrder.sheetL2 || jobOrder.sheetL,
-        jobOrder.reelWidthMm2 || jobOrder.reelWidthMm
+        jobOrder.reelWidthMm2 || jobOrder.reelWidthMm,
       );
 
       if (rmStock2) {
@@ -193,32 +218,61 @@ async function checkRMStockSufficiency(jobOrder, existingJOId = null) {
   try {
     // Polycoated Blanks: check by polycoatedRmName + weight
     if (jobOrder.paperType === "Polycoated Blanks") {
-      if ((!jobOrder.polycoatedRmName && !jobOrder.polycoatedRmStockId) || !jobOrder.polycoatedWeightKg) return { sufficient: true };
+      if (
+        (!jobOrder.polycoatedRmName && !jobOrder.polycoatedRmStockId) ||
+        !jobOrder.polycoatedWeightKg
+      )
+        return { sufficient: true };
       const rmName = (jobOrder.polycoatedRmName || "").trim();
       let polyStock = jobOrder.polycoatedRmStockId
         ? await RawMaterialStock.findById(jobOrder.polycoatedRmStockId)
         : null;
       if (!polyStock && rmName) {
         polyStock = await RawMaterialStock.findOne({
-          name: { $regex: new RegExp(`^${rmName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i") },
+          name: {
+            $regex: new RegExp(
+              `^${rmName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`,
+              "i",
+            ),
+          },
         });
       }
-      if (!polyStock) return { sufficient: false, message: `Polycoated Blank "${rmName || jobOrder.polycoatedRmStockId}" not found in RM stock` };
+      if (!polyStock)
+        return {
+          sufficient: false,
+          message: `Polycoated Blank "${rmName || jobOrder.polycoatedRmStockId}" not found in RM stock`,
+        };
       let available = Number(polyStock.weight || polyStock.qty || 0);
       if (existingJOId) {
         const oldJO = await JobOrder.findById(existingJOId);
-        if (oldJO && oldJO.paperType === "Polycoated Blanks" && oldJO.polycoatedRmName === rmName) {
+        if (
+          oldJO &&
+          oldJO.paperType === "Polycoated Blanks" &&
+          oldJO.polycoatedRmName === rmName
+        ) {
           available += Number(oldJO.polycoatedWeightKg || 0);
         }
       }
       const required = Number(jobOrder.polycoatedWeightKg);
       if (available < required) {
-        return { sufficient: false, message: `Insufficient stock for ${jobOrder.itemName}. Available: ${available} kg, Required: ${required} kg` };
+        return {
+          sufficient: false,
+          message: `Insufficient stock for ${jobOrder.itemName}. Available: ${available} kg, Required: ${required} kg`,
+        };
       }
       return { sufficient: true };
     }
 
-    const findStock = async (id, cat, type, gsm, sheetSize, sheetW, sheetL, reelWidth) => {
+    const findStock = async (
+      id,
+      cat,
+      type,
+      gsm,
+      sheetSize,
+      sheetW,
+      sheetL,
+      reelWidth,
+    ) => {
       if (id) {
         const byId = await RawMaterialStock.findById(id);
         if (byId) return byId;
@@ -226,7 +280,10 @@ async function checkRMStockSufficiency(jobOrder, existingJOId = null) {
 
       if (!cat || !type) return null;
       const normCat = cat.trim().replace(/s$/i, "");
-      const typeRegex = new RegExp(type.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+      const typeRegex = new RegExp(
+        type.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+        "i",
+      );
       const query = {
         $or: [
           { paperType: { $regex: typeRegex } },
@@ -237,7 +294,9 @@ async function checkRMStockSufficiency(jobOrder, existingJOId = null) {
       };
 
       if (sheetSize) {
-        query.sheetSize = { $regex: new RegExp(sheetSize.replace(/\s+/g, ".*"), "i") };
+        query.sheetSize = {
+          $regex: new RegExp(sheetSize.replace(/\s+/g, ".*"), "i"),
+        };
       } else if (sheetW && sheetL) {
         query.sheetSize = { $regex: new RegExp(`${sheetW}.*${sheetL}`, "i") };
       } else if (reelWidth) {
@@ -255,7 +314,7 @@ async function checkRMStockSufficiency(jobOrder, existingJOId = null) {
       jobOrder.sheetSize,
       jobOrder.sheetW,
       jobOrder.sheetL,
-      jobOrder.reelWidthMm
+      jobOrder.reelWidthMm,
     );
 
     if (!rmStock) return { sufficient: true };
@@ -263,11 +322,9 @@ async function checkRMStockSufficiency(jobOrder, existingJOId = null) {
     let currentWeight = Number(rmStock.weight || 0);
     let currentQty = Number(rmStock.qty || 0);
 
-    
     if (existingJOId) {
       const oldJO = await JobOrder.findById(existingJOId);
       if (oldJO) {
-        
         if (
           String(oldJO.rmStockId) === String(rmStock._id) ||
           (oldJO.paperType === jobOrder.paperType &&
@@ -312,7 +369,7 @@ async function checkRMStockSufficiency(jobOrder, existingJOId = null) {
         jobOrder.sheetSize2 || jobOrder.sheetSize,
         jobOrder.sheetW2 || jobOrder.sheetW,
         jobOrder.sheetL2 || jobOrder.sheetL,
-        jobOrder.reelWidthMm2 || jobOrder.reelWidthMm
+        jobOrder.reelWidthMm2 || jobOrder.reelWidthMm,
       );
       if (!rmStock2)
         return {
@@ -364,7 +421,7 @@ async function checkRMStockSufficiency(jobOrder, existingJOId = null) {
     return { sufficient: true };
   } catch (err) {
     console.error("❌ Stock Sufficiency Check Error:", err);
-    return { sufficient: true }; 
+    return { sufficient: true };
   }
 }
 
@@ -449,7 +506,7 @@ exports.create = async (req, res) => {
       process: sortedProcess,
       joNo,
       createdBy: req.userId,
-      status: "Draft", 
+      status: "Draft",
       completedProcesses: [],
       stageQtyMap: new Map(),
       stageTotalMap: new Map(),
@@ -457,7 +514,6 @@ exports.create = async (req, res) => {
     };
 
     if (req.body.deliveryDate) {
-      
       const deliveryDate = new Date(req.body.deliveryDate);
       const internalDueDate = new Date(deliveryDate);
       internalDueDate.setHours(internalDueDate.getHours() - 24);
@@ -483,7 +539,6 @@ exports.create = async (req, res) => {
 
     await jobOrder.save();
 
-    
     let prevStageId = null;
     for (let i = 0; i < sortedProcess.length; i++) {
       const processName = sortedProcess[i];
@@ -496,9 +551,9 @@ exports.create = async (req, res) => {
         eligibilityStatus: i === 0 ? "Eligible" : "Blocked",
         materialReady: i === 0 ? jobOrder.materialReady : false,
         artworkApproved: i === 0 ? jobOrder.artworkApproved : false,
-        
-        toolReady: false, 
-        predecessorComplete: i === 0
+
+        toolReady: false,
+        predecessorComplete: i === 0,
       });
       await jobStage.save();
       prevStageId = jobStage._id;
@@ -507,12 +562,12 @@ exports.create = async (req, res) => {
     await adjustRMStock(jobOrder, -1);
     await upsertPrintingMaster(jobOrder);
 
-    
-
     res.status(201).json(jobOrder);
   } catch (error) {
     console.error("Create job order error:", error);
-    res.status(500).json({ error: "Failed to create job order", details: error.message });
+    res
+      .status(500)
+      .json({ error: "Failed to create job order", details: error.message });
   }
 };
 
@@ -537,13 +592,11 @@ exports.update = async (req, res) => {
       );
     }
 
-    
     const stockCheck = await checkRMStockSufficiency(req.body, req.params.id);
     if (!stockCheck.sufficient) {
       return res.status(400).json({ error: stockCheck.message });
     }
 
-    
     await adjustRMStock(jobOrder, 1);
 
     Object.assign(jobOrder, req.body);
@@ -560,7 +613,6 @@ exports.update = async (req, res) => {
 
     await jobOrder.save();
 
-    
     await adjustRMStock(jobOrder, -1);
 
     res.json(jobOrder);
@@ -577,7 +629,6 @@ exports.delete = async (req, res) => {
       return res.status(404).json({ error: "Job order not found" });
     }
 
-    
     await adjustRMStock(jobOrder, 1);
 
     await TrashItem.create({
@@ -812,7 +863,7 @@ async function recalculateProductionStats(jobOrder) {
     }
 
     const ItemMaster = require("../models/ItemMaster");
-    
+
     const im = await ItemMaster.findOne({
       $or: [{ name: jobOrder.itemName }, { code: itemCode }],
     });

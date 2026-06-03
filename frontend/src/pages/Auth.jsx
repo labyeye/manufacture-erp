@@ -2,7 +2,7 @@
 import { useAuth } from "../context/AuthContext";
 import { C } from "../constants/colors";
 import { Card } from "../components/ui/BasicComponents";
-import companylogo from "../assets/logo.png" 
+import companylogo from "../assets/logo.png";
 const API = import.meta.env.VITE_API_URL || "https://backend.packbetter.in/api";
 
 const TOAST_DURATION = 4000;
@@ -329,7 +329,9 @@ export function LoginScreen() {
     transition: "all 0.18s ease",
     marginTop: 4,
     letterSpacing: "-0.01em",
-    boxShadow: disabled ? "none" : "0 4px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.18)",
+    boxShadow: disabled
+      ? "none"
+      : "0 4px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.18)",
   });
 
   const linkBtn = {
@@ -379,7 +381,11 @@ export function LoginScreen() {
 
   const Header = ({ title, sub }) => (
     <div style={{ textAlign: "center", marginBottom: 32 }}>
-      <img src={companylogo} alt="Company Logo" style={{ width: 100, height: 100, marginBottom: 12 }} />
+      <img
+        src={companylogo}
+        alt="Company Logo"
+        style={{ width: 100, height: 100, marginBottom: 12 }}
+      />
       <h1 style={{ fontSize: 24, fontWeight: 800, color: C.text }}>{title}</h1>
       <p style={{ fontSize: 12, color: C.muted, marginTop: 6 }}>{sub}</p>
     </div>

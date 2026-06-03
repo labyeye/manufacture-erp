@@ -6,7 +6,14 @@ const shiftHistorySchema = new mongoose.Schema(
     toDate: { type: Date },
     reason: {
       type: String,
-      enum: ['Breakdown', 'Urgent Insertion', 'Material Delay', 'Artwork Pending', 'Tool Unavailable', 'Manual'],
+      enum: [
+        "Breakdown",
+        "Urgent Insertion",
+        "Material Delay",
+        "Artwork Pending",
+        "Tool Unavailable",
+        "Manual",
+      ],
     },
     shiftedAt: { type: Date, default: Date.now },
   },
@@ -70,8 +77,8 @@ const productionCalendarSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    dailyTarget: Number,          
-    deliveryFeasible: {           
+    dailyTarget: Number,
+    deliveryFeasible: {
       type: String,
       enum: ["GREEN", "ORANGE", "RED"],
     },
@@ -93,7 +100,14 @@ const productionCalendarSchema = new mongoose.Schema(
     },
     rescheduleReasonCode: {
       type: String,
-      enum: ['Breakdown', 'Urgent Insertion', 'Material Delay', 'Artwork Pending', 'Tool Unavailable', 'Manual'],
+      enum: [
+        "Breakdown",
+        "Urgent Insertion",
+        "Material Delay",
+        "Artwork Pending",
+        "Tool Unavailable",
+        "Manual",
+      ],
     },
     plannedStart: Date,
     actualStart: Date,
@@ -103,7 +117,15 @@ const productionCalendarSchema = new mongoose.Schema(
     actualQty: Number,
     status: {
       type: String,
-      enum: ["Scheduled", "Pending Approval", "Approved", "In Progress", "Completed", "Rescheduled", "Cancelled"],
+      enum: [
+        "Scheduled",
+        "Pending Approval",
+        "Approved",
+        "In Progress",
+        "Completed",
+        "Rescheduled",
+        "Cancelled",
+      ],
       default: "Scheduled",
     },
     remarks: String,

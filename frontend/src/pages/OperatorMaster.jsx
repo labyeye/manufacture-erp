@@ -50,7 +50,9 @@ export default function OperatorMaster({ toast, canExportImport = true }) {
     status: "",
   });
 
-  useEffect(() => { fetchOperators(); }, []);
+  useEffect(() => {
+    fetchOperators();
+  }, []);
 
   const fetchOperators = async () => {
     try {
@@ -71,7 +73,12 @@ export default function OperatorMaster({ toast, canExportImport = true }) {
   };
 
   const openEdit = (op) => {
-    setForm({ name: op.name, phone: op.phone || "", username: op.username, password: "" });
+    setForm({
+      name: op.name,
+      phone: op.phone || "",
+      username: op.username,
+      password: "",
+    });
     setEditingId(op._id);
     setShowModal(true);
   };
@@ -87,12 +94,21 @@ export default function OperatorMaster({ toast, canExportImport = true }) {
     }
     try {
       if (editingId) {
-        const payload = { name: form.name, phone: form.phone, username: form.username };
+        const payload = {
+          name: form.name,
+          phone: form.phone,
+          username: form.username,
+        };
         if (form.password.trim()) payload.password = form.password;
         await operatorMasterAPI.update(editingId, payload);
         toast("Operator updated", "success");
       } else {
-        await operatorMasterAPI.create({ name: form.name, phone: form.phone, username: form.username, password: form.password });
+        await operatorMasterAPI.create({
+          name: form.name,
+          phone: form.phone,
+          username: form.username,
+          password: form.password,
+        });
         toast("Operator created", "success");
       }
       setShowModal(false);
@@ -126,8 +142,8 @@ export default function OperatorMaster({ toast, canExportImport = true }) {
   const filtered = operators
     .filter((op) =>
       [op.name, op.username, op.phone].some((v) =>
-        (v || "").toLowerCase().includes(searchTerm.toLowerCase())
-      )
+        (v || "").toLowerCase().includes(searchTerm.toLowerCase()),
+      ),
     )
     .slice()
     .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
@@ -157,7 +173,10 @@ export default function OperatorMaster({ toast, canExportImport = true }) {
     const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Operators");
-    XLSX.writeFile(wb, `operators_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    XLSX.writeFile(
+      wb,
+      `operators_${new Date().toISOString().slice(0, 10)}.xlsx`,
+    );
     toast("Exported successfully", "success");
   };
 
@@ -219,18 +238,40 @@ export default function OperatorMaster({ toast, canExportImport = true }) {
 
   return (
     <div className="fade">
-      <SectionTitle icon="👷" title="Operator Master" sub="Manage operators and their login credentials" />
+      <SectionTitle
+        icon="👷"
+        title="Operator Master"
+        sub="Manage operators and their login credentials"
+      />
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, gap: 12, flexWrap: "wrap" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 16,
+          gap: 12,
+          flexWrap: "wrap",
+        }}
+      >
         <input
           placeholder="Search by name, username, phone..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           style={{ ...inputStyle, maxWidth: 320 }}
         />
-        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            alignItems: "center",
+            flexWrap: "wrap",
+          }}
+        >
           <TemplateBtn onClick={handleTemplate} />
-          {canExportImport && <ImportBtn onClick={() => fileInputRef.current?.click()} />}
+          {canExportImport && (
+            <ImportBtn onClick={() => fileInputRef.current?.click()} />
+          )}
           {canExportImport && <ExportBtn onClick={handleExport} />}
           <input
             ref={fileInputRef}
@@ -242,9 +283,15 @@ export default function OperatorMaster({ toast, canExportImport = true }) {
           <button
             onClick={openCreate}
             style={{
-              padding: "9px 20px", borderRadius: 8, border: "none",
-              background: "#6366f1", color: "#fff", fontWeight: 600,
-              fontSize: 13, cursor: "pointer", whiteSpace: "nowrap",
+              padding: "9px 20px",
+              borderRadius: 8,
+              border: "none",
+              background: "#6366f1",
+              color: "#fff",
+              fontWeight: 600,
+              fontSize: 13,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
             }}
           >
             + Add Operator
@@ -263,119 +310,285 @@ export default function OperatorMaster({ toast, canExportImport = true }) {
       {loading ? (
         <div style={{ color: C.muted, fontSize: 13 }}>Loading...</div>
       ) : (
-        <div style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+        <div
+          style={{
+            background: "transparent",
+            border: "1px solid rgba(255,255,255,0.07)",
+            borderRadius: 12,
+            overflow: "hidden",
+          }}
+        >
+          <table
+            style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}
+          >
             <thead>
-              <tr style={{ background: "transparent", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-                {["Name", "Phone", "Username", "Status", "Last Login", "Actions"].map((h) => (
-                  <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
+              <tr
+                style={{
+                  background: "transparent",
+                  borderBottom: "1px solid rgba(255,255,255,0.08)",
+                }}
+              >
+                {[
+                  "Name",
+                  "Phone",
+                  "Username",
+                  "Status",
+                  "Last Login",
+                  "Actions",
+                ].map((h) => (
+                  <th
+                    key={h}
+                    style={{
+                      padding: "10px 14px",
+                      textAlign: "left",
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: C.muted,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {h}
+                  </th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
-                <tr><td colSpan={6} style={{ padding: "24px 12px", color: C.muted, fontSize: 13 }}>No operators found</td></tr>
-              ) : filtered.map((op, i) => (
-                <tr key={op._id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)" }}>
-                  <td style={{ padding: "10px 12px", color: C.text, fontWeight: 500 }}>{op.name}</td>
-                  <td style={{ padding: "10px 12px", color: C.muted }}>{op.phone || "—"}</td>
-                  <td style={{ padding: "10px 12px", color: "#6366f1", fontSize: 12 }}>{op.username}</td>
-                  <td style={{ padding: "10px 12px" }}>
-                    <span style={{
-                      padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600,
-                      background: op.isActive ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.12)",
-                      color: op.isActive ? "#22c55e" : "#ef4444",
-                    }}>{op.isActive ? "Active" : "Inactive"}</span>
-                  </td>
-                  <td style={{ padding: "10px 12px", color: C.muted, fontSize: 12 }}>
-                    {op.lastLogin ? new Date(op.lastLogin).toLocaleDateString("en-GB") : "Never"}
-                  </td>
-                  <td style={{ padding: "10px 12px" }}>
-                    <div style={{ display: "flex", gap: 6 }}>
-                      <button onClick={() => openEdit(op)} style={{
-                      background: "transparent",
-                      color: "#8082ff",
-                      border: "1px solid #8082ff98",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}><i className="fa-solid fa-pen-to-square" /> Edit</button>
-                      <button onClick={() => handleToggleActive(op)} style={{
-                      background: "transparent",
-                      color: "#8082ff",
-                      border: "1px solid #8082ff98",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}>
-                        <i className={`fa-solid ${op.isActive ? "fa-pause" : "fa-play"}`} /> {op.isActive ? "Deactivate" : "Activate"}
-                      </button>
-                      <button onClick={() => handleDelete(op._id)} style={{
-                      background: "transparent",
-                      color: "#8082ff",
-                      border: "1px solid #8082ff98",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}><i className="fa-solid fa-trash" /> Delete</button>
-                    </div>
+                <tr>
+                  <td
+                    colSpan={6}
+                    style={{
+                      padding: "24px 12px",
+                      color: C.muted,
+                      fontSize: 13,
+                    }}
+                  >
+                    No operators found
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filtered.map((op, i) => (
+                  <tr
+                    key={op._id}
+                    style={{
+                      borderBottom: "1px solid rgba(255,255,255,0.04)",
+                      background:
+                        i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)",
+                    }}
+                  >
+                    <td
+                      style={{
+                        padding: "10px 12px",
+                        color: C.text,
+                        fontWeight: 500,
+                      }}
+                    >
+                      {op.name}
+                    </td>
+                    <td style={{ padding: "10px 12px", color: C.muted }}>
+                      {op.phone || "—"}
+                    </td>
+                    <td
+                      style={{
+                        padding: "10px 12px",
+                        color: "#6366f1",
+                        fontSize: 12,
+                      }}
+                    >
+                      {op.username}
+                    </td>
+                    <td style={{ padding: "10px 12px" }}>
+                      <span
+                        style={{
+                          padding: "2px 10px",
+                          borderRadius: 20,
+                          fontSize: 11,
+                          fontWeight: 600,
+                          background: op.isActive
+                            ? "rgba(34,197,94,0.12)"
+                            : "rgba(239,68,68,0.12)",
+                          color: op.isActive ? "#22c55e" : "#ef4444",
+                        }}
+                      >
+                        {op.isActive ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+                    <td
+                      style={{
+                        padding: "10px 12px",
+                        color: C.muted,
+                        fontSize: 12,
+                      }}
+                    >
+                      {op.lastLogin
+                        ? new Date(op.lastLogin).toLocaleDateString("en-GB")
+                        : "Never"}
+                    </td>
+                    <td style={{ padding: "10px 12px" }}>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <button
+                          onClick={() => openEdit(op)}
+                          style={{
+                            background: "transparent",
+                            color: "#8082ff",
+                            border: "1px solid #8082ff98",
+                            borderRadius: 6,
+                            padding: "6px 12px",
+                            fontSize: 11,
+                            fontWeight: 500,
+                            cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                          }}
+                        >
+                          <i className="fa-solid fa-pen-to-square" /> Edit
+                        </button>
+                        <button
+                          onClick={() => handleToggleActive(op)}
+                          style={{
+                            background: "transparent",
+                            color: "#8082ff",
+                            border: "1px solid #8082ff98",
+                            borderRadius: 6,
+                            padding: "6px 12px",
+                            fontSize: 11,
+                            fontWeight: 500,
+                            cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                          }}
+                        >
+                          <i
+                            className={`fa-solid ${op.isActive ? "fa-pause" : "fa-play"}`}
+                          />{" "}
+                          {op.isActive ? "Deactivate" : "Activate"}
+                        </button>
+                        <button
+                          onClick={() => handleDelete(op._id)}
+                          style={{
+                            background: "transparent",
+                            color: "#8082ff",
+                            border: "1px solid #8082ff98",
+                            borderRadius: 6,
+                            padding: "6px 12px",
+                            fontSize: 11,
+                            fontWeight: 500,
+                            cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                          }}
+                        >
+                          <i className="fa-solid fa-trash" /> Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
       )}
 
       {showModal && (
-        <Modal onClose={() => setShowModal(false)} title={editingId ? "Edit Operator" : "Add Operator"}>
+        <Modal
+          onClose={() => setShowModal(false)}
+          title={editingId ? "Edit Operator" : "Add Operator"}
+        >
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div>
               <label style={labelStyle}>Full Name *</label>
-              <input style={inputStyle} placeholder="e.g. Ramesh Kumar" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
+              <input
+                style={inputStyle}
+                placeholder="e.g. Ramesh Kumar"
+                value={form.name}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, name: e.target.value }))
+                }
+              />
             </div>
             <div>
               <label style={labelStyle}>Phone</label>
-              <input style={inputStyle} placeholder="e.g. 9876543210" value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />
+              <input
+                style={inputStyle}
+                placeholder="e.g. 9876543210"
+                value={form.phone}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, phone: e.target.value }))
+                }
+              />
             </div>
             <div>
               <label style={labelStyle}>Login Username *</label>
-              <input style={inputStyle} placeholder="e.g. ramesh.op" value={form.username} onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))} />
+              <input
+                style={inputStyle}
+                placeholder="e.g. ramesh.op"
+                value={form.username}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, username: e.target.value }))
+                }
+              />
             </div>
             <div>
-              <label style={labelStyle}>{editingId ? "New Password (leave blank to keep)" : "Password *"}</label>
-              <input style={inputStyle} type="password" placeholder="Min 6 characters" value={form.password} onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))} />
+              <label style={labelStyle}>
+                {editingId
+                  ? "New Password (leave blank to keep)"
+                  : "Password *"}
+              </label>
+              <input
+                style={inputStyle}
+                type="password"
+                placeholder="Min 6 characters"
+                value={form.password}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, password: e.target.value }))
+                }
+              />
             </div>
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 6 }}>
-              <button onClick={() => setShowModal(false)} style={{
-                      background: "transparent",
-                      color: "#ffffff",
-                      border: "1px solid rgba(255,255,255,0.2)",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}><i className="fa-solid fa-xmark" /> Cancel</button>
-              <button onClick={handleSave} style={{ padding: "9px 22px", borderRadius: 6, border: "none", background: "#6366f1", color: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+            <div
+              style={{
+                display: "flex",
+                gap: 10,
+                justifyContent: "flex-end",
+                marginTop: 6,
+              }}
+            >
+              <button
+                onClick={() => setShowModal(false)}
+                style={{
+                  background: "transparent",
+                  color: "#ffffff",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  borderRadius: 6,
+                  padding: "6px 12px",
+                  fontSize: 11,
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                <i className="fa-solid fa-xmark" /> Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                style={{
+                  padding: "9px 22px",
+                  borderRadius: 6,
+                  border: "none",
+                  background: "#6366f1",
+                  color: "#fff",
+                  fontWeight: 600,
+                  fontSize: 13,
+                  cursor: "pointer",
+                }}
+              >
                 {editingId ? "Update" : "Create"}
               </button>
             </div>

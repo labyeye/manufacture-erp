@@ -3,60 +3,60 @@ import { C } from "../constants/colors";
 import { Card, SectionTitle } from "../components/ui/BasicComponents";
 
 const MODULE_COLORS = {
-  "Sales Order":      C.blue,
-  "Job Order":        C.purple,
-  "Purchase Order":   C.accent,
-  "Material Inward":  "#06b6d4",
-  "Dispatch":         "#06b6d4",
-  "Material Return":  C.red,
-  "FG Stock":         C.green,
-  "RM Stock":         "#f59e0b",
+  "Sales Order": C.blue,
+  "Job Order": C.purple,
+  "Purchase Order": C.accent,
+  "Material Inward": "#06b6d4",
+  Dispatch: "#06b6d4",
+  "Material Return": C.red,
+  "FG Stock": C.green,
+  "RM Stock": "#f59e0b",
   "Consumable Stock": C.yellow,
-  "Vendor Master":    "#ec4899",
-  "Company Master":   C.blue,
-  "Item Master":      C.green,
-  "Machine Master":   C.muted,
-  "Price List":       C.accent,
-  "Printing Master":  C.purple,
-  "Category":         "#10b981",
+  "Vendor Master": "#ec4899",
+  "Company Master": C.blue,
+  "Item Master": C.green,
+  "Machine Master": C.muted,
+  "Price List": C.accent,
+  "Printing Master": C.purple,
+  Category: "#10b981",
 };
 
 const TYPE_TO_TAB = {
-  "Sales Order":      "sales",
-  "Job Order":        "jobs",
-  "Purchase Order":   "purchase",
-  "Material Inward":  "inward",
-  "Dispatch":         "dispatch",
-  "Material Return":  "dispatch",
-  "FG Stock":         "fg",
-  "RM Stock":         "rawstock",
+  "Sales Order": "sales",
+  "Job Order": "jobs",
+  "Purchase Order": "purchase",
+  "Material Inward": "inward",
+  Dispatch: "dispatch",
+  "Material Return": "dispatch",
+  "FG Stock": "fg",
+  "RM Stock": "rawstock",
   "Consumable Stock": "consumablestock",
-  "Vendor Master":    "vendormaster",
-  "Company Master":   "companymaster",
-  "Item Master":      "itemmaster",
-  "Machine Master":   "machinemaster",
-  "Price List":       "pricemaster",
-  "Printing Master":  "printingmaster",
-  "Category":         "sizemaster",
+  "Vendor Master": "vendormaster",
+  "Company Master": "companymaster",
+  "Item Master": "itemmaster",
+  "Machine Master": "machinemaster",
+  "Price List": "pricemaster",
+  "Printing Master": "printingmaster",
+  Category: "sizemaster",
 };
 
 const TYPE_ICONS = {
-  "Sales Order":      "fa-solid fa-receipt",
-  "Job Order":        "fa-solid fa-gears",
-  "Purchase Order":   "fa-solid fa-cart-shopping",
-  "Material Inward":  "fa-solid fa-boxes-stacked",
-  "Dispatch":         "fa-solid fa-truck-fast",
-  "Material Return":  "fa-solid fa-rotate-left",
-  "FG Stock":         "fa-solid fa-warehouse",
-  "RM Stock":         "fa-solid fa-boxes-stacked",
+  "Sales Order": "fa-solid fa-receipt",
+  "Job Order": "fa-solid fa-gears",
+  "Purchase Order": "fa-solid fa-cart-shopping",
+  "Material Inward": "fa-solid fa-boxes-stacked",
+  Dispatch: "fa-solid fa-truck-fast",
+  "Material Return": "fa-solid fa-rotate-left",
+  "FG Stock": "fa-solid fa-warehouse",
+  "RM Stock": "fa-solid fa-boxes-stacked",
   "Consumable Stock": "fa-solid fa-wrench",
-  "Vendor Master":    "fa-solid fa-store",
-  "Company Master":   "fa-solid fa-building",
-  "Item Master":      "fa-solid fa-list-check",
-  "Machine Master":   "fa-solid fa-screwdriver-wrench",
-  "Price List":       "fa-solid fa-tags",
-  "Printing Master":  "fa-solid fa-print",
-  "Category":         "fa-solid fa-folder-open",
+  "Vendor Master": "fa-solid fa-store",
+  "Company Master": "fa-solid fa-building",
+  "Item Master": "fa-solid fa-list-check",
+  "Machine Master": "fa-solid fa-screwdriver-wrench",
+  "Price List": "fa-solid fa-tags",
+  "Printing Master": "fa-solid fa-print",
+  Category: "fa-solid fa-folder-open",
 };
 
 export function GlobalSearch({
@@ -92,7 +92,9 @@ export function GlobalSearch({
       const match =
         so.soNo?.toLowerCase().includes(term) ||
         company.toLowerCase().includes(term) ||
-        (so.items || []).some((it) => it.productCode?.toLowerCase().includes(term));
+        (so.items || []).some((it) =>
+          it.productCode?.toLowerCase().includes(term),
+        );
       if (match)
         results.push({
           type: "Sales Order",
@@ -131,7 +133,7 @@ export function GlobalSearch({
         (po.items || []).some(
           (it) =>
             it.productCode?.toLowerCase().includes(term) ||
-            it.category?.toLowerCase().includes(term)
+            it.category?.toLowerCase().includes(term),
         );
       if (match)
         results.push({
@@ -331,7 +333,10 @@ export function GlobalSearch({
     catArr.forEach((doc) => {
       const cats = doc.categories || Object.keys(doc.subTypes || {});
       cats.forEach((catName) => {
-        if (catName.toLowerCase().includes(term) || doc.type?.toLowerCase().includes(term)) {
+        if (
+          catName.toLowerCase().includes(term) ||
+          doc.type?.toLowerCase().includes(term)
+        ) {
           results.push({
             type: "Category",
             name: catName,
@@ -345,9 +350,21 @@ export function GlobalSearch({
     return results;
   }, [
     searchTerm,
-    salesOrders, jobOrders, purchaseOrders, inward, dispatches,
-    fgStock, rawStock, consumableStock, vendorMaster, companyMaster,
-    itemMasterFG, machineMaster, priceList, printingMaster, categoryMaster,
+    salesOrders,
+    jobOrders,
+    purchaseOrders,
+    inward,
+    dispatches,
+    fgStock,
+    rawStock,
+    consumableStock,
+    vendorMaster,
+    companyMaster,
+    itemMasterFG,
+    machineMaster,
+    priceList,
+    printingMaster,
+    categoryMaster,
   ]);
 
   const moduleTypes = useMemo(() => {
@@ -403,9 +420,19 @@ export function GlobalSearch({
 
       {/* Filter chips */}
       {allResults.length > 0 && (
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            flexWrap: "wrap",
+            marginBottom: 16,
+          }}
+        >
           {moduleTypes.map((type) => {
-            const count = type === "All" ? allResults.length : allResults.filter((r) => r.type === type).length;
+            const count =
+              type === "All"
+                ? allResults.length
+                : allResults.filter((r) => r.type === type).length;
             const isActive = activeFilter === type;
             const color = MODULE_COLORS[type] || C.accent;
             return (
@@ -452,7 +479,14 @@ export function GlobalSearch({
                     justifyContent: "space-between",
                   }}
                 >
-                  <span><i className={TYPE_ICONS[type] || "fa-solid fa-file"} style={{marginRight:6}} />{type} — {items.length} result{items.length !== 1 ? "s" : ""}</span>
+                  <span>
+                    <i
+                      className={TYPE_ICONS[type] || "fa-solid fa-file"}
+                      style={{ marginRight: 6 }}
+                    />
+                    {type} — {items.length} result
+                    {items.length !== 1 ? "s" : ""}
+                  </span>
                   {tab && onNavigate && (
                     <button
                       onClick={() => handleNavigate(type)}
@@ -476,8 +510,12 @@ export function GlobalSearch({
                   <div
                     key={i}
                     onClick={() => handleNavigate(result.type, result.name)}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = C.surface)}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.background = C.surface)
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.background = "transparent")
+                    }
                     style={{
                       padding: "10px 8px",
                       borderRadius: 6,
@@ -486,21 +524,35 @@ export function GlobalSearch({
                       justifyContent: "space-between",
                       alignItems: "center",
                       borderBottom:
-                        i < items.length - 1 ? `1px solid ${C.border}22` : "none",
+                        i < items.length - 1
+                          ? `1px solid ${C.border}22`
+                          : "none",
                       transition: "background 0.15s",
                     }}
                   >
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 500, color: C.text, fontSize: 14 }}>
+                      <div
+                        style={{ fontWeight: 500, color: C.text, fontSize: 14 }}
+                      >
                         {result.name}
                       </div>
                       {result.detail && (
-                        <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>
+                        <div
+                          style={{ fontSize: 12, color: C.muted, marginTop: 2 }}
+                        >
                           {result.detail}
                         </div>
                       )}
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: 12, flexShrink: 0 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        marginLeft: 12,
+                        flexShrink: 0,
+                      }}
+                    >
                       {result.meta && (
                         <span
                           style={{
@@ -549,7 +601,15 @@ export function GlobalSearch({
         </Card>
       ) : (
         <Card style={{ padding: 40, textAlign: "center", color: C.muted }}>
-          <i className="fa-solid fa-magnifying-glass" style={{fontSize:32, marginBottom:8, display:'block', color:'#444'}} />
+          <i
+            className="fa-solid fa-magnifying-glass"
+            style={{
+              fontSize: 32,
+              marginBottom: 8,
+              display: "block",
+              color: "#444",
+            }}
+          />
           <div>Start typing to search across all modules</div>
           <div style={{ fontSize: 12, marginTop: 6 }}>
             Orders · Stock · Vendors · Masters · Categories · and more

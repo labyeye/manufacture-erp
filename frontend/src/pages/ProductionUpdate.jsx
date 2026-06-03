@@ -54,7 +54,7 @@ export default function ProductionUpdate({
   const blankEntry = {
     joNo: "",
     productionStage: "",
-    operator: isOperator ? (session?.username || "") : "",
+    operator: isOperator ? session?.username || "" : "",
     date: today(),
     qtyCompleted: "",
     qtyRejected: 0,
@@ -92,10 +92,7 @@ export default function ProductionUpdate({
   }, []);
 
   const activeJOs = useMemo(
-    () =>
-      (jobOrders || []).filter(
-        (jo) => jo.status !== "Completed",
-      ),
+    () => (jobOrders || []).filter((jo) => jo.status !== "Completed"),
     [jobOrders],
   );
 
@@ -565,7 +562,17 @@ export default function ProductionUpdate({
             >
               <Field label="OPERATOR / WORKER *">
                 {isOperator ? (
-                  <div style={{ padding: "9px 12px", background: "transparent", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, fontSize: 13, color: "#e0e0e0", fontWeight: 600 }}>
+                  <div
+                    style={{
+                      padding: "9px 12px",
+                      background: "transparent",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      borderRadius: 6,
+                      fontSize: 13,
+                      color: "#e0e0e0",
+                      fontWeight: 600,
+                    }}
+                  >
                     {entry.operator || session?.username || "—"}
                   </div>
                 ) : (
@@ -575,9 +582,13 @@ export default function ProductionUpdate({
                     style={E("operator")}
                   >
                     <option value="">-- Select Operator --</option>
-                    {operatorMaster.filter((op) => op.isActive !== false).map((op) => (
-                      <option key={op._id} value={op.name}>{op.name}</option>
-                    ))}
+                    {operatorMaster
+                      .filter((op) => op.isActive !== false)
+                      .map((op) => (
+                        <option key={op._id} value={op.name}>
+                          {op.name}
+                        </option>
+                      ))}
                   </select>
                 )}
                 {EMsg("operator")}
@@ -762,34 +773,87 @@ export default function ProductionUpdate({
               <AutocompleteInput
                 value={searchTerm}
                 onChange={(v) => setSearchTerm(v)}
-                suggestions={[...new Set((jobOrders || []).map(jo => jo.joNo).filter(Boolean))].sort()}
+                suggestions={[
+                  ...new Set(
+                    (jobOrders || []).map((jo) => jo.joNo).filter(Boolean),
+                  ),
+                ].sort()}
                 placeholder="Filter by JO#..."
                 showAllOnFocus={true}
-                inputStyle={{ padding: "7px 10px", background: C.card, border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12, width: 140 }}
+                inputStyle={{
+                  padding: "7px 10px",
+                  background: C.card,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 6,
+                  color: "#fff",
+                  fontSize: 12,
+                  width: 140,
+                }}
               />
               <AutocompleteInput
                 value={filterClient}
                 onChange={(v) => setFilterClient(v)}
-                suggestions={[...new Set((jobOrders || []).map(jo => jo.companyName).filter(Boolean))].sort()}
+                suggestions={[
+                  ...new Set(
+                    (jobOrders || [])
+                      .map((jo) => jo.companyName)
+                      .filter(Boolean),
+                  ),
+                ].sort()}
                 placeholder="Filter by client..."
                 showAllOnFocus={true}
-                inputStyle={{ padding: "7px 10px", background: C.card, border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12, width: 180 }}
+                inputStyle={{
+                  padding: "7px 10px",
+                  background: C.card,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 6,
+                  color: "#fff",
+                  fontSize: 12,
+                  width: 180,
+                }}
               />
               <AutocompleteInput
                 value={filterItem}
                 onChange={(v) => setFilterItem(v)}
-                suggestions={[...new Set((jobOrders || []).map(jo => jo.itemName).filter(Boolean))].sort()}
+                suggestions={[
+                  ...new Set(
+                    (jobOrders || []).map((jo) => jo.itemName).filter(Boolean),
+                  ),
+                ].sort()}
                 placeholder="Filter by item..."
                 showAllOnFocus={true}
-                inputStyle={{ padding: "7px 10px", background: C.card, border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12, width: 180 }}
+                inputStyle={{
+                  padding: "7px 10px",
+                  background: C.card,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 6,
+                  color: "#fff",
+                  fontSize: 12,
+                  width: 180,
+                }}
               />
               <AutocompleteInput
                 value={filterStage}
                 onChange={(v) => setFilterStage(v)}
-                suggestions={["Printing", "Varnish", "Lamination", "Die Cutting", "Formation", "Manual Formation"]}
+                suggestions={[
+                  "Printing",
+                  "Varnish",
+                  "Lamination",
+                  "Die Cutting",
+                  "Formation",
+                  "Manual Formation",
+                ]}
                 placeholder="Filter by stage..."
                 showAllOnFocus={true}
-                inputStyle={{ padding: "7px 10px", background: C.card, border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12, width: 160 }}
+                inputStyle={{
+                  padding: "7px 10px",
+                  background: C.card,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 6,
+                  color: "#fff",
+                  fontSize: 12,
+                  width: 160,
+                }}
               />
 
               <div
@@ -843,51 +907,174 @@ export default function ProductionUpdate({
 
           {(() => {
             const allRecs = [];
-            jobOrders.forEach(jo => {
+            jobOrders.forEach((jo) => {
               if (searchTerm && jo.joNo !== searchTerm) return;
-              if (filterClient && (jo.companyName || "") !== filterClient) return;
+              if (filterClient && (jo.companyName || "") !== filterClient)
+                return;
               if (filterItem && (jo.itemName || "") !== filterItem) return;
-              (jo.stageHistory || []).forEach(r => {
+              (jo.stageHistory || []).forEach((r) => {
                 if (dateFrom && r.date < dateFrom) return;
                 if (dateTo && r.date > dateTo) return;
                 if (filterStage && r.stage !== filterStage) return;
                 allRecs.push({ ...r, jo });
               });
             });
-            allRecs.sort((a, b) => new Date(b.createdAt || b.enteredAt || b.date || 0) - new Date(a.createdAt || a.enteredAt || a.date || 0));
+            allRecs.sort(
+              (a, b) =>
+                new Date(b.createdAt || b.enteredAt || b.date || 0) -
+                new Date(a.createdAt || a.enteredAt || a.date || 0),
+            );
 
-            const totalDone = allRecs.reduce((s, r) => s + +(r.qtyCompleted || 0), 0);
-            const totalRejected = allRecs.reduce((s, r) => s + +(r.qtyRejected || 0), 0);
-            const uniqueJOs = new Set(allRecs.map(r => r.jo.joNo)).size;
+            const totalDone = allRecs.reduce(
+              (s, r) => s + +(r.qtyCompleted || 0),
+              0,
+            );
+            const totalRejected = allRecs.reduce(
+              (s, r) => s + +(r.qtyRejected || 0),
+              0,
+            );
+            const uniqueJOs = new Set(allRecs.map((r) => r.jo.joNo)).size;
             const statCards = [
-              { label: "Total Records", value: allRecs.length, icon: "fa-solid fa-clipboard-list" },
-              { label: "Unique JOs", value: uniqueJOs, icon: "fa-solid fa-gears" },
-              { label: "Total Done", value: fmt(totalDone), icon: "fa-solid fa-circle-check" },
-              { label: "Total Rejected", value: fmt(totalRejected), icon: "fa-solid fa-circle-xmark" },
+              {
+                label: "Total Records",
+                value: allRecs.length,
+                icon: "fa-solid fa-clipboard-list",
+              },
+              {
+                label: "Unique JOs",
+                value: uniqueJOs,
+                icon: "fa-solid fa-gears",
+              },
+              {
+                label: "Total Done",
+                value: fmt(totalDone),
+                icon: "fa-solid fa-circle-check",
+              },
+              {
+                label: "Total Rejected",
+                value: fmt(totalRejected),
+                icon: "fa-solid fa-circle-xmark",
+              },
             ];
             return (
               <>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 16 }}>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(4, 1fr)",
+                    gap: 12,
+                    marginBottom: 16,
+                  }}
+                >
                   {statCards.map(({ label, value, icon }) => (
-                    <div key={label} style={{ padding: "16px 20px", background: "transparent", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                        <span style={{ fontSize: 19, color: "#ffffff", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
-                        <i className={icon} style={{ color: C.muted, fontSize: 20, opacity: 0.9, display: "inline-flex", alignItems: "center", justifyContent: "center", height: 28, width: 28, lineHeight: 1 }} />
+                    <div
+                      key={label}
+                      style={{
+                        padding: "16px 20px",
+                        background: "transparent",
+                        border: "1px solid rgba(255,255,255,0.07)",
+                        borderRadius: 12,
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          marginBottom: 8,
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: 19,
+                            color: "#ffffff",
+                            fontWeight: 600,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.05em",
+                          }}
+                        >
+                          {label}
+                        </span>
+                        <i
+                          className={icon}
+                          style={{
+                            color: C.muted,
+                            fontSize: 20,
+                            opacity: 0.9,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            height: 28,
+                            width: 28,
+                            lineHeight: 1,
+                          }}
+                        />
                       </div>
-                      <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>{value}</div>
+                      <div
+                        style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}
+                      >
+                        {value}
+                      </div>
                     </div>
                   ))}
                 </div>
 
                 {allRecs.length === 0 ? (
-                  <div style={{ textAlign: "center", color: C.muted, padding: 32 }}>No production records found.</div>
+                  <div
+                    style={{ textAlign: "center", color: C.muted, padding: 32 }}
+                  >
+                    No production records found.
+                  </div>
                 ) : (
-                  <div style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <div
+                    style={{
+                      background: "transparent",
+                      border: "1px solid rgba(255,255,255,0.07)",
+                      borderRadius: 12,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <table
+                      style={{
+                        width: "100%",
+                        borderCollapse: "collapse",
+                        fontSize: 13,
+                      }}
+                    >
                       <thead>
-                        <tr style={{ background: "transparent", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-                          {["JO No", "Client", "Item", "Stage", "Date", "Done", "Rejected", "Operator", "Shift", "Actions"].map(h => (
-                            <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
+                        <tr
+                          style={{
+                            background: "transparent",
+                            borderBottom: "1px solid rgba(255,255,255,0.08)",
+                          }}
+                        >
+                          {[
+                            "JO No",
+                            "Client",
+                            "Item",
+                            "Stage",
+                            "Date",
+                            "Done",
+                            "Rejected",
+                            "Operator",
+                            "Shift",
+                            "Actions",
+                          ].map((h) => (
+                            <th
+                              key={h}
+                              style={{
+                                padding: "10px 14px",
+                                textAlign: "left",
+                                fontSize: 11,
+                                fontWeight: 700,
+                                color: C.muted,
+                                textTransform: "uppercase",
+                                letterSpacing: "0.05em",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {h}
+                            </th>
                           ))}
                         </tr>
                       </thead>
@@ -895,44 +1082,144 @@ export default function ProductionUpdate({
                         {allRecs.map((rec, i) => {
                           const { jo, ...r } = rec;
                           return (
-                            <tr key={r._id || i} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)" }}>
-                              <td style={{ padding: "11px 14px", fontWeight: 700, color: "#facc15", whiteSpace: "nowrap" }}>{jo.joNo}</td>
-                              <td style={{ padding: "11px 14px", color: C.muted, fontSize: 12 }}>{jo.companyName}</td>
-                              <td style={{ padding: "11px 14px", color: "#94a3b8" }}>{jo.itemName}</td>
-                              <td style={{ padding: "11px 14px" }}><span style={{ padding: "3px 10px", borderRadius: 4, fontSize: 11, fontWeight: 600, background: "#FF7F1122", color: "#FF7F11", border: "1px solid #FF7F1144" }}>{r.stage}</span></td>
-                              <td style={{ padding: "11px 14px", color: C.muted, whiteSpace: "nowrap", fontSize: 12 }}>{fmtDate(r.date)}</td>
-                              <td style={{ padding: "11px 14px", fontWeight: 700, color: "#10b981" }}>{fmt(r.qtyCompleted)}</td>
-                              <td style={{ padding: "11px 14px", color: r.qtyRejected > 0 ? "#ef4444" : C.muted }}>{r.qtyRejected || 0}</td>
-                              <td style={{ padding: "11px 14px", color: C.muted, fontSize: 12 }}>{r.operator || "—"}</td>
-                              <td style={{ padding: "11px 14px", color: C.muted, fontSize: 12 }}>{r.shift || "—"}</td>
+                            <tr
+                              key={r._id || i}
+                              style={{
+                                borderBottom:
+                                  "1px solid rgba(255,255,255,0.04)",
+                                background:
+                                  i % 2 === 0
+                                    ? "transparent"
+                                    : "rgba(255,255,255,0.01)",
+                              }}
+                            >
+                              <td
+                                style={{
+                                  padding: "11px 14px",
+                                  fontWeight: 700,
+                                  color: "#facc15",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {jo.joNo}
+                              </td>
+                              <td
+                                style={{
+                                  padding: "11px 14px",
+                                  color: C.muted,
+                                  fontSize: 12,
+                                }}
+                              >
+                                {jo.companyName}
+                              </td>
+                              <td
+                                style={{
+                                  padding: "11px 14px",
+                                  color: "#94a3b8",
+                                }}
+                              >
+                                {jo.itemName}
+                              </td>
+                              <td style={{ padding: "11px 14px" }}>
+                                <span
+                                  style={{
+                                    padding: "3px 10px",
+                                    borderRadius: 4,
+                                    fontSize: 11,
+                                    fontWeight: 600,
+                                    background: "#FF7F1122",
+                                    color: "#FF7F11",
+                                    border: "1px solid #FF7F1144",
+                                  }}
+                                >
+                                  {r.stage}
+                                </span>
+                              </td>
+                              <td
+                                style={{
+                                  padding: "11px 14px",
+                                  color: C.muted,
+                                  whiteSpace: "nowrap",
+                                  fontSize: 12,
+                                }}
+                              >
+                                {fmtDate(r.date)}
+                              </td>
+                              <td
+                                style={{
+                                  padding: "11px 14px",
+                                  fontWeight: 700,
+                                  color: "#10b981",
+                                }}
+                              >
+                                {fmt(r.qtyCompleted)}
+                              </td>
+                              <td
+                                style={{
+                                  padding: "11px 14px",
+                                  color:
+                                    r.qtyRejected > 0 ? "#ef4444" : C.muted,
+                                }}
+                              >
+                                {r.qtyRejected || 0}
+                              </td>
+                              <td
+                                style={{
+                                  padding: "11px 14px",
+                                  color: C.muted,
+                                  fontSize: 12,
+                                }}
+                              >
+                                {r.operator || "—"}
+                              </td>
+                              <td
+                                style={{
+                                  padding: "11px 14px",
+                                  color: C.muted,
+                                  fontSize: 12,
+                                }}
+                              >
+                                {r.shift || "—"}
+                              </td>
                               <td style={{ padding: "11px 14px" }}>
                                 <div style={{ display: "flex", gap: 6 }}>
-                                  <button onClick={() => handleEdit(jo, r)} style={{
-                      background: "transparent",
-                      color: "#8082ff",
-                      border: "1px solid #8082ff98",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}><i className="fa-solid fa-pen-to-square" /> Edit</button>
-                                  <button onClick={() => handleDelete(jo._id, r._id)} style={{
-                      background: "transparent",
-                      color: "#8082ff",
-                      border: "1px solid #8082ff98",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}><i className="fa-solid fa-trash" /> Delete</button>
+                                  <button
+                                    onClick={() => handleEdit(jo, r)}
+                                    style={{
+                                      background: "transparent",
+                                      color: "#8082ff",
+                                      border: "1px solid #8082ff98",
+                                      borderRadius: 6,
+                                      padding: "6px 12px",
+                                      fontSize: 11,
+                                      fontWeight: 500,
+                                      cursor: "pointer",
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: 6,
+                                    }}
+                                  >
+                                    <i className="fa-solid fa-pen-to-square" />{" "}
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() => handleDelete(jo._id, r._id)}
+                                    style={{
+                                      background: "transparent",
+                                      color: "#8082ff",
+                                      border: "1px solid #8082ff98",
+                                      borderRadius: 6,
+                                      padding: "6px 12px",
+                                      fontSize: 11,
+                                      fontWeight: 500,
+                                      cursor: "pointer",
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: 6,
+                                    }}
+                                  >
+                                    <i className="fa-solid fa-trash" /> Delete
+                                  </button>
                                 </div>
                               </td>
                             </tr>
@@ -946,7 +1233,8 @@ export default function ProductionUpdate({
             );
           })()}
 
-          {false && [].map((jo) => {
+          {false &&
+            [].map((jo) => {
               return (
                 <Card key={jo._id} style={{ marginBottom: 20, padding: 20 }}>
                   <div
@@ -1070,7 +1358,7 @@ export default function ProductionUpdate({
                                   gap: 4,
                                 }}
                               >
-                                  <i className="fa-solid fa-industry" />{" "}
+                                <i className="fa-solid fa-industry" />{" "}
                                 {machineMaster.find(
                                   (m) => m._id === r.machineId,
                                 )?.name || r.machineId}

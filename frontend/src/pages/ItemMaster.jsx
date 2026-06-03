@@ -170,7 +170,10 @@ export default function ItemMaster({
       else if (width) parts.push(width + "mm");
 
       setNewItemName(parts.filter(Boolean).join(" "));
-    } else if (activeTab === "Finished Goods" && selectedCategory === "Other" || selectedCategory === "Others") {
+    } else if (
+      (activeTab === "Finished Goods" && selectedCategory === "Other") ||
+      selectedCategory === "Others"
+    ) {
       // "Other" category: user types name manually, no auto-generation
       return;
     } else if (activeTab === "Finished Goods" && selectedCategory) {
@@ -333,9 +336,18 @@ export default function ItemMaster({
       return;
     }
     if (activeTab === "Raw Material") {
-      if (!gsm) { toast("GSM is required for Raw Material items", "error"); return; }
-      if (!width) { toast("Width (mm) is required for Raw Material items", "error"); return; }
-      if (selectedCategory !== "Paper Reel" && !length) { toast("Length (mm) is required for Raw Material items", "error"); return; }
+      if (!gsm) {
+        toast("GSM is required for Raw Material items", "error");
+        return;
+      }
+      if (!width) {
+        toast("Width (mm) is required for Raw Material items", "error");
+        return;
+      }
+      if (selectedCategory !== "Paper Reel" && !length) {
+        toast("Length (mm) is required for Raw Material items", "error");
+        return;
+      }
     }
 
     setLoading(true);
@@ -1052,151 +1064,116 @@ export default function ItemMaster({
         />
       )}
 
-      {(canCreate || (editingItem && canEdit)) && <div
-        style={
-          showEditModal && editingItem
-            ? {
-                position: "fixed",
-                top: "50%",
-                left: "50%",
-                transform: "translate(-50%, -50%)",
-                zIndex: 1000,
-                background: "transparent",
-                border: "1px solid rgba(255,255,255,0.1)",
-                borderRadius: 12,
-                padding: "20px 24px",
-                width: "90%",
-                maxWidth: 960,
-                maxHeight: "88vh",
-                overflowY: "auto",
-              }
-            : {
-                background: "transparent",
-                border: "1px solid rgba(255,255,255,0.1)",
-                borderRadius: 10,
-                padding: "16px 20px",
-                marginBottom: 14,
-              }
-        }
-      >
+      {(canCreate || (editingItem && canEdit)) && (
         <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: 14,
-          }}
+          style={
+            showEditModal && editingItem
+              ? {
+                  position: "fixed",
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%)",
+                  zIndex: 1000,
+                  background: "transparent",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: 12,
+                  padding: "20px 24px",
+                  width: "90%",
+                  maxWidth: 960,
+                  maxHeight: "88vh",
+                  overflowY: "auto",
+                }
+              : {
+                  background: "transparent",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: 10,
+                  padding: "16px 20px",
+                  marginBottom: 14,
+                }
+          }
         >
           <div
             style={{
-              fontSize: 12,
-              fontWeight: 500,
-              color: "#2196F3",
-              letterSpacing: "1px",
-              textTransform: "uppercase",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 14,
             }}
           >
-            {editingItem ? `Edit ${activeTab} Item` : `Add ${activeTab} Item`}
-          </div>
-          {showEditModal && editingItem && (
-            <button
-              onClick={() => {
-                setShowEditModal(false);
-                setEditingItem(null);
-                setNewItemName("");
-                setSelectedCategory("");
-                setSelectedSubCategory("");
-                setGsm("");
-                setWidth("");
-                setLength("");
-                setGussett("");
-                setHeight("");
-                setGstRate("18");
-                setHsnCode("");
-                setReorderLevel("0");
-                setProductCode("");
-              }}
+            <div
               style={{
-                background: "transparent",
-                border: "none",
-                color: "#888",
-                fontSize: 20,
-                cursor: "pointer",
-                lineHeight: 1,
-                padding: "0 4px",
+                fontSize: 12,
+                fontWeight: 500,
+                color: "#2196F3",
+                letterSpacing: "1px",
+                textTransform: "uppercase",
               }}
             >
-              ✕
-            </button>
+              {editingItem ? `Edit ${activeTab} Item` : `Add ${activeTab} Item`}
+            </div>
+            {showEditModal && editingItem && (
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingItem(null);
+                  setNewItemName("");
+                  setSelectedCategory("");
+                  setSelectedSubCategory("");
+                  setGsm("");
+                  setWidth("");
+                  setLength("");
+                  setGussett("");
+                  setHeight("");
+                  setGstRate("18");
+                  setHsnCode("");
+                  setReorderLevel("0");
+                  setProductCode("");
+                }}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "#888",
+                  fontSize: 20,
+                  cursor: "pointer",
+                  lineHeight: 1,
+                  padding: "0 4px",
+                }}
+              >
+                ✕
+              </button>
+            )}
+          </div>
+          {editingItem && (
+            <div style={{ marginBottom: 14 }}>
+              <label
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: "#666",
+                  display: "block",
+                  marginBottom: 6,
+                  letterSpacing: "0.5px",
+                }}
+              >
+                PRODUCT CODE
+              </label>
+              <input
+                style={inputStyle}
+                placeholder="e.g. RM0001"
+                value={productCode}
+                onChange={(e) => setProductCode(e.target.value)}
+              />
+            </div>
           )}
-        </div>
-        {editingItem && (
-          <div style={{ marginBottom: 14 }}>
-            <label
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: "#666",
-                display: "block",
-                marginBottom: 6,
-                letterSpacing: "0.5px",
-              }}
-            >
-              PRODUCT CODE
-            </label>
-            <input
-              style={inputStyle}
-              placeholder="e.g. RM0001"
-              value={productCode}
-              onChange={(e) => setProductCode(e.target.value)}
-            />
-          </div>
-        )}
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-            gap: 14,
-            marginBottom: 14,
-          }}
-        >
-          <div>
-            <label
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: "#666",
-                display: "block",
-                marginBottom: 6,
-                letterSpacing: "0.5px",
-              }}
-            >
-              CATEGORY *
-            </label>
-            <select
-              value={selectedCategory}
-              onChange={(e) => {
-                setSelectedCategory(e.target.value);
-                setSelectedSubCategory("");
-                setWidth("");
-                setLength("");
-                setHeight("");
-                setNewItemName("");
-                if (activeTab === "Consumable" || activeTab === "Machine Spare")
-                  setUom("mm");
-              }}
-              style={inputStyle}
-            >
-              <option value="">-- Select Category --</option>
-              {tabCategories.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
-          {tabSubCategories.length > 0 ? (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+              gap: 14,
+              marginBottom: 14,
+            }}
+          >
             <div>
               <label
                 style={{
@@ -1208,356 +1185,354 @@ export default function ItemMaster({
                   letterSpacing: "0.5px",
                 }}
               >
-                {activeTab === "Finished Goods"
-                  ? "SIZE *"
-                  : "SUB-CATEGORY / TYPE"}
+                CATEGORY *
               </label>
               <select
-                value={selectedSubCategory}
-                onChange={(e) => handleSizeChange(e.target.value)}
-                style={inputStyle}
-              >
-                <option value="">-- Manual / Custom --</option>
-                {tabSubCategories.map((sc) => (
-                  <option key={sc} value={sc}>
-                    {sc}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ) : (activeTab === "Consumable" || activeTab === "Machine Spare") &&
-            selectedCategory ? (
-            (() => {
-              const dimCfg = CONSUMABLE_DIM_CONFIG[selectedCategory];
-              const uomSelect = (
-                <div key="uom">
-                  <label
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 600,
-                      color: "#666",
-                      display: "block",
-                      marginBottom: 6,
-                      letterSpacing: "0.5px",
-                    }}
-                  >
-                    UNIT (UOM)
-                  </label>
-                  <select
-                    value={uom}
-                    onChange={(e) => setUom(e.target.value)}
-                    style={inputStyle}
-                  >
-                    <option value="mm">mm</option>
-                    <option value="cm">cm</option>
-                    <option value="inch">inch</option>
-                    <option value="N/A">Not Applicable</option>
-                  </select>
-                </div>
-              );
-              if (dimCfg) {
-                // Dimension fields for LDPE Polybag / Corrugated + UOM
-                return [
-                  uomSelect,
-                  ...dimCfg.fields.map((field) => (
-                    <div key={field}>
-                      <label
-                        style={{
-                          fontSize: 11,
-                          fontWeight: 600,
-                          color: "#666",
-                          display: "block",
-                          marginBottom: 6,
-                          letterSpacing: "0.5px",
-                        }}
-                      >
-                        {field}
-                        {uom !== "N/A" ? ` (${uom})` : ""}
-                      </label>
-                      <input
-                        type="number"
-                        placeholder="e.g. 200"
-                        style={inputStyle}
-                        value={
-                          field === "WIDTH"
-                            ? width
-                            : field === "LENGTH"
-                              ? length
-                              : height
-                        }
-                        onChange={(e) => {
-                          if (field === "WIDTH") setWidth(e.target.value);
-                          else if (field === "LENGTH")
-                            setLength(e.target.value);
-                          else setHeight(e.target.value);
-                        }}
-                      />
-                    </div>
-                  )),
-                ];
-              }
-              // Default: free-text SIZE / TYPE + UOM
-              return [
-                <div key="size">
-                  <label
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 600,
-                      color: "#666",
-                      display: "block",
-                      marginBottom: 6,
-                      letterSpacing: "0.5px",
-                    }}
-                  >
-                    SIZE / TYPE
-                  </label>
-                  <input
-                    style={inputStyle}
-                    placeholder="e.g. 100, A4, Large"
-                    value={selectedSubCategory}
-                    onChange={(e) => setSelectedSubCategory(e.target.value)}
-                  />
-                </div>,
-                uomSelect,
-              ];
-            })()
-          ) : null}
-          {activeTab === "Finished Goods" && (
-            <div>
-              <label
-                style={{
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: "#666",
-                  display: "block",
-                  marginBottom: 6,
-                  letterSpacing: "0.5px",
+                value={selectedCategory}
+                onChange={(e) => {
+                  setSelectedCategory(e.target.value);
+                  setSelectedSubCategory("");
+                  setWidth("");
+                  setLength("");
+                  setHeight("");
+                  setNewItemName("");
+                  if (
+                    activeTab === "Consumable" ||
+                    activeTab === "Machine Spare"
+                  )
+                    setUom("mm");
                 }}
-              >
-                BRAND NAME *
-              </label>
-              <select
                 style={inputStyle}
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-              >
-                <option value="">-- Select Brand --</option>
-                {brandMaster.map((b) => (
-                  <option key={b._id} value={b.name}>
-                    {b.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-          {activeTab === "Finished Goods" && (
-            <div>
-              <label
-                style={{
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: "#666",
-                  display: "block",
-                  marginBottom: 6,
-                  letterSpacing: "0.5px",
-                }}
-              >
-                CLIENT CATEGORY
-              </label>
-              <select
-                style={inputStyle}
-                value={companyCategory}
-                onChange={(e) => setCompanyCategory(e.target.value)}
               >
                 <option value="">-- Select Category --</option>
-                {clientCategories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
+                {tabCategories.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
                   </option>
                 ))}
               </select>
             </div>
-          )}
-          {activeTab === "Finished Goods" && selectedCategory && selectedCategory !== "Other" && (
-            <>
-              {(() => {
-                const config = CATEGORY_CONFIG[selectedCategory] || {
-                  layout: "2D",
-                  f1: "WIDTH",
-                  f2: "LENGTH",
-                };
-                const f1 = config.f1;
-                const f2 = config.f2;
-                const f3 = config.f3;
-
-                return (
-                  <>
-                    <div>
-                      <label
-                        style={{
-                          fontSize: 11,
-                          fontWeight: 600,
-                          color: "#666",
-                          display: "block",
-                          marginBottom: 6,
-                          letterSpacing: "0.5px",
-                        }}
-                      >
-                        UOM
-                      </label>
-                      <select
-                        value={uom}
-                        onChange={(e) => setUom(e.target.value)}
-                        style={inputStyle}
-                      >
-                        <option value="mm">mm</option>
-                        <option value="cm">cm</option>
-                        <option value="inch">inch</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label
-                        style={{
-                          fontSize: 11,
-                          fontWeight: 600,
-                          color: "#666",
-                          display: "block",
-                          marginBottom: 6,
-                          letterSpacing: "0.5px",
-                        }}
-                      >
-                        GSM
-                      </label>
-                      <input
-                        type="number"
-                        placeholder="e.g. 100"
-                        value={gsm}
-                        onChange={(e) => setGsm(e.target.value)}
-                        style={inputStyle}
-                      />
-                    </div>
-                    <div>
-                      <label
-                        style={{
-                          fontSize: 11,
-                          fontWeight: 600,
-                          color: "#666",
-                          display: "block",
-                          marginBottom: 6,
-                          letterSpacing: "0.5px",
-                        }}
-                      >
-                        {f1} ({uom})
-                      </label>
-                      <input
-                        type="number"
-                        placeholder={`e.g. 10`}
-                        value={width}
-                        onChange={(e) => setWidth(e.target.value)}
-                        style={inputStyle}
-                      />
-                    </div>
-                    {f2 && (
-                      <div>
-                        <label
-                          style={{
-                            fontSize: 11,
-                            fontWeight: 600,
-                            color: "#666",
-                            display: "block",
-                            marginBottom: 6,
-                            letterSpacing: "0.5px",
-                          }}
-                        >
-                          {f2} ({uom})
-                        </label>
-                        <input
-                          type="number"
-                          placeholder={`e.g. 10`}
-                          value={f2 === "GUSSETT" ? gussett : length}
-                          onChange={(e) =>
-                            f2 === "GUSSETT"
-                              ? setGussett(e.target.value)
-                              : setLength(e.target.value)
-                          }
-                          style={inputStyle}
-                        />
-                      </div>
-                    )}
-                    {f3 && (
-                      <div>
-                        <label
-                          style={{
-                            fontSize: 11,
-                            fontWeight: 600,
-                            color: "#666",
-                            display: "block",
-                            marginBottom: 6,
-                            letterSpacing: "0.5px",
-                          }}
-                        >
-                          {f3} ({uom})
-                        </label>
-                        <input
-                          type="number"
-                          placeholder={`e.g. 10`}
-                          value={height}
-                          onChange={(e) => setHeight(e.target.value)}
-                          style={inputStyle}
-                        />
-                      </div>
-                    )}
-                  </>
+            {tabSubCategories.length > 0 ? (
+              <div>
+                <label
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: "#666",
+                    display: "block",
+                    marginBottom: 6,
+                    letterSpacing: "0.5px",
+                  }}
+                >
+                  {activeTab === "Finished Goods"
+                    ? "SIZE *"
+                    : "SUB-CATEGORY / TYPE"}
+                </label>
+                <select
+                  value={selectedSubCategory}
+                  onChange={(e) => handleSizeChange(e.target.value)}
+                  style={inputStyle}
+                >
+                  <option value="">-- Manual / Custom --</option>
+                  {tabSubCategories.map((sc) => (
+                    <option key={sc} value={sc}>
+                      {sc}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : (activeTab === "Consumable" || activeTab === "Machine Spare") &&
+              selectedCategory ? (
+              (() => {
+                const dimCfg = CONSUMABLE_DIM_CONFIG[selectedCategory];
+                const uomSelect = (
+                  <div key="uom">
+                    <label
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: "#666",
+                        display: "block",
+                        marginBottom: 6,
+                        letterSpacing: "0.5px",
+                      }}
+                    >
+                      UNIT (UOM)
+                    </label>
+                    <select
+                      value={uom}
+                      onChange={(e) => setUom(e.target.value)}
+                      style={inputStyle}
+                    >
+                      <option value="mm">mm</option>
+                      <option value="cm">cm</option>
+                      <option value="inch">inch</option>
+                      <option value="N/A">Not Applicable</option>
+                    </select>
+                  </div>
                 );
-              })()}
-            </>
-          )}
+                if (dimCfg) {
+                  // Dimension fields for LDPE Polybag / Corrugated + UOM
+                  return [
+                    uomSelect,
+                    ...dimCfg.fields.map((field) => (
+                      <div key={field}>
+                        <label
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color: "#666",
+                            display: "block",
+                            marginBottom: 6,
+                            letterSpacing: "0.5px",
+                          }}
+                        >
+                          {field}
+                          {uom !== "N/A" ? ` (${uom})` : ""}
+                        </label>
+                        <input
+                          type="number"
+                          placeholder="e.g. 200"
+                          style={inputStyle}
+                          value={
+                            field === "WIDTH"
+                              ? width
+                              : field === "LENGTH"
+                                ? length
+                                : height
+                          }
+                          onChange={(e) => {
+                            if (field === "WIDTH") setWidth(e.target.value);
+                            else if (field === "LENGTH")
+                              setLength(e.target.value);
+                            else setHeight(e.target.value);
+                          }}
+                        />
+                      </div>
+                    )),
+                  ];
+                }
+                // Default: free-text SIZE / TYPE + UOM
+                return [
+                  <div key="size">
+                    <label
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: "#666",
+                        display: "block",
+                        marginBottom: 6,
+                        letterSpacing: "0.5px",
+                      }}
+                    >
+                      SIZE / TYPE
+                    </label>
+                    <input
+                      style={inputStyle}
+                      placeholder="e.g. 100, A4, Large"
+                      value={selectedSubCategory}
+                      onChange={(e) => setSelectedSubCategory(e.target.value)}
+                    />
+                  </div>,
+                  uomSelect,
+                ];
+              })()
+            ) : null}
+            {activeTab === "Finished Goods" && (
+              <div>
+                <label
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: "#666",
+                    display: "block",
+                    marginBottom: 6,
+                    letterSpacing: "0.5px",
+                  }}
+                >
+                  BRAND NAME *
+                </label>
+                <select
+                  style={inputStyle}
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                >
+                  <option value="">-- Select Brand --</option>
+                  {brandMaster.map((b) => (
+                    <option key={b._id} value={b.name}>
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {activeTab === "Finished Goods" && (
+              <div>
+                <label
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: "#666",
+                    display: "block",
+                    marginBottom: 6,
+                    letterSpacing: "0.5px",
+                  }}
+                >
+                  CLIENT CATEGORY
+                </label>
+                <select
+                  style={inputStyle}
+                  value={companyCategory}
+                  onChange={(e) => setCompanyCategory(e.target.value)}
+                >
+                  <option value="">-- Select Category --</option>
+                  {clientCategories.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {activeTab === "Finished Goods" &&
+              selectedCategory &&
+              selectedCategory !== "Other" && (
+                <>
+                  {(() => {
+                    const config = CATEGORY_CONFIG[selectedCategory] || {
+                      layout: "2D",
+                      f1: "WIDTH",
+                      f2: "LENGTH",
+                    };
+                    const f1 = config.f1;
+                    const f2 = config.f2;
+                    const f3 = config.f3;
 
-          {activeTab === "Raw Material" && (
-            <>
-              <div>
-                <label
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 600,
-                    color: "#666",
-                    display: "block",
-                    marginBottom: 6,
-                    letterSpacing: "0.5px",
-                  }}
-                >
-                  GSM *
-                </label>
-                <input
-                  type="number"
-                  placeholder="e.g. 70"
-                  value={gsm}
-                  onChange={(e) => setGsm(e.target.value)}
-                  style={inputStyle}
-                />
-              </div>
-              <div>
-                <label
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 600,
-                    color: "#666",
-                    display: "block",
-                    marginBottom: 6,
-                    letterSpacing: "0.5px",
-                  }}
-                >
-                  WIDTH (mm) *
-                </label>
-                <input
-                  type="number"
-                  placeholder="e.g. 1000"
-                  value={width}
-                  onChange={(e) => setWidth(e.target.value)}
-                  style={inputStyle}
-                />
-              </div>
-              {selectedCategory !== "Paper Reel" && (
+                    return (
+                      <>
+                        <div>
+                          <label
+                            style={{
+                              fontSize: 11,
+                              fontWeight: 600,
+                              color: "#666",
+                              display: "block",
+                              marginBottom: 6,
+                              letterSpacing: "0.5px",
+                            }}
+                          >
+                            UOM
+                          </label>
+                          <select
+                            value={uom}
+                            onChange={(e) => setUom(e.target.value)}
+                            style={inputStyle}
+                          >
+                            <option value="mm">mm</option>
+                            <option value="cm">cm</option>
+                            <option value="inch">inch</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label
+                            style={{
+                              fontSize: 11,
+                              fontWeight: 600,
+                              color: "#666",
+                              display: "block",
+                              marginBottom: 6,
+                              letterSpacing: "0.5px",
+                            }}
+                          >
+                            GSM
+                          </label>
+                          <input
+                            type="number"
+                            placeholder="e.g. 100"
+                            value={gsm}
+                            onChange={(e) => setGsm(e.target.value)}
+                            style={inputStyle}
+                          />
+                        </div>
+                        <div>
+                          <label
+                            style={{
+                              fontSize: 11,
+                              fontWeight: 600,
+                              color: "#666",
+                              display: "block",
+                              marginBottom: 6,
+                              letterSpacing: "0.5px",
+                            }}
+                          >
+                            {f1} ({uom})
+                          </label>
+                          <input
+                            type="number"
+                            placeholder={`e.g. 10`}
+                            value={width}
+                            onChange={(e) => setWidth(e.target.value)}
+                            style={inputStyle}
+                          />
+                        </div>
+                        {f2 && (
+                          <div>
+                            <label
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 600,
+                                color: "#666",
+                                display: "block",
+                                marginBottom: 6,
+                                letterSpacing: "0.5px",
+                              }}
+                            >
+                              {f2} ({uom})
+                            </label>
+                            <input
+                              type="number"
+                              placeholder={`e.g. 10`}
+                              value={f2 === "GUSSETT" ? gussett : length}
+                              onChange={(e) =>
+                                f2 === "GUSSETT"
+                                  ? setGussett(e.target.value)
+                                  : setLength(e.target.value)
+                              }
+                              style={inputStyle}
+                            />
+                          </div>
+                        )}
+                        {f3 && (
+                          <div>
+                            <label
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 600,
+                                color: "#666",
+                                display: "block",
+                                marginBottom: 6,
+                                letterSpacing: "0.5px",
+                              }}
+                            >
+                              {f3} ({uom})
+                            </label>
+                            <input
+                              type="number"
+                              placeholder={`e.g. 10`}
+                              value={height}
+                              onChange={(e) => setHeight(e.target.value)}
+                              style={inputStyle}
+                            />
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </>
+              )}
+
+            {activeTab === "Raw Material" && (
+              <>
                 <div>
                   <label
                     style={{
@@ -1569,227 +1544,279 @@ export default function ItemMaster({
                       letterSpacing: "0.5px",
                     }}
                   >
-                    LENGTH (mm) *
+                    GSM *
                   </label>
                   <input
                     type="number"
-                    placeholder="e.g. 700"
-                    value={length}
-                    onChange={(e) => setLength(e.target.value)}
+                    placeholder="e.g. 70"
+                    value={gsm}
+                    onChange={(e) => setGsm(e.target.value)}
                     style={inputStyle}
                   />
                 </div>
-              )}
-            </>
-          )}
-          <div>
-            <label
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: "#666",
-                display: "block",
-                marginBottom: 6,
-                letterSpacing: "0.5px",
-              }}
-            >
-              ITEM NAME *
-            </label>
-            <input
-              style={{
-                ...inputStyle,
-                background:
+                <div>
+                  <label
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: "#666",
+                      display: "block",
+                      marginBottom: 6,
+                      letterSpacing: "0.5px",
+                    }}
+                  >
+                    WIDTH (mm) *
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="e.g. 1000"
+                    value={width}
+                    onChange={(e) => setWidth(e.target.value)}
+                    style={inputStyle}
+                  />
+                </div>
+                {selectedCategory !== "Paper Reel" && (
+                  <div>
+                    <label
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: "#666",
+                        display: "block",
+                        marginBottom: 6,
+                        letterSpacing: "0.5px",
+                      }}
+                    >
+                      LENGTH (mm) *
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="e.g. 700"
+                      value={length}
+                      onChange={(e) => setLength(e.target.value)}
+                      style={inputStyle}
+                    />
+                  </div>
+                )}
+              </>
+            )}
+            <div>
+              <label
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: "#666",
+                  display: "block",
+                  marginBottom: 6,
+                  letterSpacing: "0.5px",
+                }}
+              >
+                ITEM NAME *
+              </label>
+              <input
+                style={{
+                  ...inputStyle,
+                  background:
+                    activeTab !== "Consumable" &&
+                    activeTab !== "Machine Spare" &&
+                    selectedSubCategory !== "Polycoated Blanks" &&
+                    selectedCategory !== "Polycoated Blanks" &&
+                    !(
+                      (activeTab === "Finished Goods" &&
+                        selectedCategory === "Other") ||
+                      selectedCategory === "Others"
+                    )
+                      ? "rgba(255,255,255,0.03)"
+                      : inputStyle.background,
+                }}
+                readOnly={
                   activeTab !== "Consumable" &&
                   activeTab !== "Machine Spare" &&
                   selectedSubCategory !== "Polycoated Blanks" &&
                   selectedCategory !== "Polycoated Blanks" &&
-                  !(activeTab === "Finished Goods" && selectedCategory === "Other" || selectedCategory === "Others")
-                    ? "rgba(255,255,255,0.03)"
-                    : inputStyle.background,
-              }}
-              readOnly={
-                activeTab !== "Consumable" &&
-                activeTab !== "Machine Spare" &&
-                selectedSubCategory !== "Polycoated Blanks" &&
-                selectedCategory !== "Polycoated Blanks" &&
-                !(activeTab === "Finished Goods" && selectedCategory === "Other" || selectedCategory === "Others")
-              }
-              placeholder={`Enter ${activeTab} name`}
-              value={newItemName}
-              onChange={(e) => setNewItemName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleAddItem()}
-            />
-          </div>
-          <div>
-            <label
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: "#666",
-                display: "block",
-                marginBottom: 6,
-                letterSpacing: "0.5px",
-              }}
-            >
-              GST RATE (%)
-            </label>
-            <input
-              type="number"
-              placeholder="e.g. 18"
-              value={gstRate}
-              onChange={(e) => setGstRate(e.target.value)}
-              style={inputStyle}
-            />
-          </div>
-          <div>
-            <label
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: "#666",
-                display: "block",
-                marginBottom: 6,
-                letterSpacing: "0.5px",
-              }}
-            >
-              HSN CODE
-            </label>
-            <input
-              placeholder="e.g. 4819"
-              value={hsnCode}
-              onChange={(e) => setHsnCode(e.target.value)}
-              style={inputStyle}
-            />
-          </div>
-          <div>
-            <label
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: "#666",
-                display: "block",
-                marginBottom: 6,
-                letterSpacing: "0.5px",
-              }}
-            >
-              REORDER LEVEL
-            </label>
-            <input
-              type="number"
-              placeholder="e.g. 500"
-              value={reorderLevel}
-              onChange={(e) => setReorderLevel(e.target.value)}
-              style={inputStyle}
-            />
-          </div>
-        </div>
-
-        {}
-        {(activeTab === "Raw Material" || activeTab === "Finished Goods") && (
-          <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
-            <div
-              style={{
-                flex: 1,
-                padding: "12px 16px",
-                background: "rgba(255,255,255,0.04)",
-                border: "1px dashed #2196F344",
-                borderRadius: 8,
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-              }}
-            >
-              <span style={{ fontSize: 11, color: "#555" }}>Preview:</span>
-              <span
+                  !(
+                    (activeTab === "Finished Goods" &&
+                      selectedCategory === "Other") ||
+                    selectedCategory === "Others"
+                  )
+                }
+                placeholder={`Enter ${activeTab} name`}
+                value={newItemName}
+                onChange={(e) => setNewItemName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleAddItem()}
+              />
+            </div>
+            <div>
+              <label
                 style={{
-                  fontSize: 15,
-                  fontWeight: 500,
-                  color: "#4CAF50",
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: "#666",
+                  display: "block",
+                  marginBottom: 6,
+                  letterSpacing: "0.5px",
                 }}
               >
-                {newItemName || "—"}
-              </span>
+                GST RATE (%)
+              </label>
+              <input
+                type="number"
+                placeholder="e.g. 18"
+                value={gstRate}
+                onChange={(e) => setGstRate(e.target.value)}
+                style={inputStyle}
+              />
             </div>
-            <div
-              style={{
-                width: 160,
-                padding: "12px 16px",
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                borderRadius: 8,
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-              }}
-            >
-              <span style={{ fontSize: 10, color: "#444" }}>Auto Code:</span>
-              <span
+            <div>
+              <label
                 style={{
-                  fontSize: 14,
-                  fontWeight: 500,
-                  color: "#4CAF50",
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: "#666",
+                  display: "block",
+                  marginBottom: 6,
+                  letterSpacing: "0.5px",
                 }}
               >
-                {ITEM_TABS.find((t) => t.key === activeTab)?.prefix}
-                {"????"}
-              </span>
+                HSN CODE
+              </label>
+              <input
+                placeholder="e.g. 4819"
+                value={hsnCode}
+                onChange={(e) => setHsnCode(e.target.value)}
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: "#666",
+                  display: "block",
+                  marginBottom: 6,
+                  letterSpacing: "0.5px",
+                }}
+              >
+                REORDER LEVEL
+              </label>
+              <input
+                type="number"
+                placeholder="e.g. 500"
+                value={reorderLevel}
+                onChange={(e) => setReorderLevel(e.target.value)}
+                style={inputStyle}
+              />
             </div>
           </div>
-        )}
 
-        <div style={{ display: "flex", gap: 10 }}>
-          <button
-            onClick={handleAddItem}
-            style={{
-              padding: "9px 20px",
-              background: "rgba(255,255,255,0.08)",
-              color: "#fff",
-              border: "1px solid rgba(255,255,255,0.18)",
-              borderRadius: 6,
-              fontWeight: 500,
-              fontSize: 13,
-              cursor: "pointer",
-              boxShadow:
-                "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
-            }}
-          >
-            {editingItem ? "Update Item" : `+ Add ${activeTab} Item`}
-          </button>
-          {editingItem && (
-            <button
-              onClick={() => {
-                setEditingItem(null);
-                setShowEditModal(false);
-                setNewItemName("");
-                setSelectedCategory("");
-                setSelectedSubCategory("");
-                setGsm("");
-                setWidth("");
-                setLength("");
-                setGstRate("18");
-                setHsnCode("");
-                setReorderLevel("0");
-                setProductCode("");
-              }}
-              style={{
-                background: "transparent",
-                color: "#ffffff",
-                border: "1px solid rgba(255,255,255,0.2)",
-                borderRadius: 6,
-                padding: "6px 12px",
-                fontSize: 11,
-                fontWeight: 500,
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-              }}
-            >
-              <i className="fa-solid fa-xmark" /> Cancel
-            </button>
+          {}
+          {(activeTab === "Raw Material" || activeTab === "Finished Goods") && (
+            <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
+              <div
+                style={{
+                  flex: 1,
+                  padding: "12px 16px",
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px dashed #2196F344",
+                  borderRadius: 8,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                }}
+              >
+                <span style={{ fontSize: 11, color: "#555" }}>Preview:</span>
+                <span
+                  style={{
+                    fontSize: 15,
+                    fontWeight: 500,
+                    color: "#4CAF50",
+                  }}
+                >
+                  {newItemName || "—"}
+                </span>
+              </div>
+              <div
+                style={{
+                  width: 160,
+                  padding: "12px 16px",
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: 8,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                }}
+              >
+                <span style={{ fontSize: 10, color: "#444" }}>Auto Code:</span>
+                <span
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 500,
+                    color: "#4CAF50",
+                  }}
+                >
+                  {ITEM_TABS.find((t) => t.key === activeTab)?.prefix}
+                  {"????"}
+                </span>
+              </div>
+            </div>
           )}
+
+          <div style={{ display: "flex", gap: 10 }}>
+            <button
+              onClick={handleAddItem}
+              style={{
+                padding: "9px 20px",
+                background: "rgba(255,255,255,0.08)",
+                color: "#fff",
+                border: "1px solid rgba(255,255,255,0.18)",
+                borderRadius: 6,
+                fontWeight: 500,
+                fontSize: 13,
+                cursor: "pointer",
+                boxShadow:
+                  "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+              }}
+            >
+              {editingItem ? "Update Item" : `+ Add ${activeTab} Item`}
+            </button>
+            {editingItem && (
+              <button
+                onClick={() => {
+                  setEditingItem(null);
+                  setShowEditModal(false);
+                  setNewItemName("");
+                  setSelectedCategory("");
+                  setSelectedSubCategory("");
+                  setGsm("");
+                  setWidth("");
+                  setLength("");
+                  setGstRate("18");
+                  setHsnCode("");
+                  setReorderLevel("0");
+                  setProductCode("");
+                }}
+                style={{
+                  background: "transparent",
+                  color: "#ffffff",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  borderRadius: 6,
+                  padding: "6px 12px",
+                  fontSize: 11,
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                <i className="fa-solid fa-xmark" /> Cancel
+              </button>
+            )}
+          </div>
         </div>
-      </div>}
+      )}
 
       {activeTab === "Finished Goods" && (
         <div
@@ -2391,42 +2418,46 @@ export default function ItemMaster({
 
               {/* actions */}
               <div style={{ display: "flex", gap: 6 }}>
-                {canEdit && <button
-                  onClick={() => handleEdit(item)}
-                  style={{
-                    background: "transparent",
-                    color: "#8082ff",
-                    border: "1px solid #8082ff98",
-                    borderRadius: 6,
-                    padding: "6px 12px",
-                    fontSize: 11,
-                    fontWeight: 500,
-                    cursor: "pointer",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 6,
-                  }}
-                >
-                  <i className="fa-solid fa-pen-to-square" /> Edit
-                </button>}
-                {canDelete && <button
-                  onClick={() => handleDelete(item)}
-                  style={{
-                    background: "transparent",
-                    color: "#8082ff",
-                    border: "1px solid #8082ff98",
-                    borderRadius: 6,
-                    padding: "6px 12px",
-                    fontSize: 11,
-                    fontWeight: 500,
-                    cursor: "pointer",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 6,
-                  }}
-                >
-                  <i className="fa-solid fa-trash" /> Delete
-                </button>}
+                {canEdit && (
+                  <button
+                    onClick={() => handleEdit(item)}
+                    style={{
+                      background: "transparent",
+                      color: "#8082ff",
+                      border: "1px solid #8082ff98",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <i className="fa-solid fa-pen-to-square" /> Edit
+                  </button>
+                )}
+                {canDelete && (
+                  <button
+                    onClick={() => handleDelete(item)}
+                    style={{
+                      background: "transparent",
+                      color: "#8082ff",
+                      border: "1px solid #8082ff98",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <i className="fa-solid fa-trash" /> Delete
+                  </button>
+                )}
               </div>
             </div>
           ))}
@@ -2840,42 +2871,46 @@ export default function ItemMaster({
                     justifyContent: "flex-end",
                   }}
                 >
-                  {canEdit && <button
-                    onClick={() => handleEdit(item)}
-                    style={{
-                      background: "transparent",
-                      color: "#8082ff",
-                      border: "1px solid #8082ff98",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    <i className="fa-solid fa-pen-to-square" /> Edit
-                  </button>}
-                  {canDelete && <button
-                    onClick={() => handleDelete(item)}
-                    style={{
-                      background: "transparent",
-                      color: "#8082ff",
-                      border: "1px solid #8082ff98",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    <i className="fa-solid fa-trash" /> Delete
-                  </button>}
+                  {canEdit && (
+                    <button
+                      onClick={() => handleEdit(item)}
+                      style={{
+                        background: "transparent",
+                        color: "#8082ff",
+                        border: "1px solid #8082ff98",
+                        borderRadius: 6,
+                        padding: "6px 12px",
+                        fontSize: 11,
+                        fontWeight: 500,
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                      }}
+                    >
+                      <i className="fa-solid fa-pen-to-square" /> Edit
+                    </button>
+                  )}
+                  {canDelete && (
+                    <button
+                      onClick={() => handleDelete(item)}
+                      style={{
+                        background: "transparent",
+                        color: "#8082ff",
+                        border: "1px solid #8082ff98",
+                        borderRadius: 6,
+                        padding: "6px 12px",
+                        fontSize: 11,
+                        fontWeight: 500,
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                      }}
+                    >
+                      <i className="fa-solid fa-trash" /> Delete
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

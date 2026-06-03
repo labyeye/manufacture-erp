@@ -9,9 +9,21 @@ const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("en-GB") : "—");
 const fmt = (n) => (n ?? 0).toLocaleString("en-IN");
 
 const TYPE_COLORS = {
-  Production: { bg: "rgba(99,102,241,0.15)", text: "#818cf8", border: "rgba(99,102,241,0.3)" },
-  Inward: { bg: "rgba(34,197,94,0.12)", text: "#4ade80", border: "rgba(34,197,94,0.3)" },
-  Outward: { bg: "rgba(239,68,68,0.12)", text: "#f87171", border: "rgba(239,68,68,0.3)" },
+  Production: {
+    bg: "rgba(99,102,241,0.15)",
+    text: "#818cf8",
+    border: "rgba(99,102,241,0.3)",
+  },
+  Inward: {
+    bg: "rgba(34,197,94,0.12)",
+    text: "#4ade80",
+    border: "rgba(34,197,94,0.3)",
+  },
+  Outward: {
+    bg: "rgba(239,68,68,0.12)",
+    text: "#f87171",
+    border: "rgba(239,68,68,0.3)",
+  },
 };
 
 const STOCK_TYPE_COLORS = {
@@ -30,7 +42,14 @@ const EMPTY_FORM = {
   reason: "",
 };
 
-export default function StockAdjustment({ itemMasterFG = [], session, toast, refreshData, canCreate = true, canDelete = true }) {
+export default function StockAdjustment({
+  itemMasterFG = [],
+  session,
+  toast,
+  refreshData,
+  canCreate = true,
+  canDelete = true,
+}) {
   const isClient = session?.role === "Client";
   const [view, setView] = useState("list");
   const [adjustments, setAdjustments] = useState([]);
@@ -87,18 +106,22 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
 
   const filteredItems = useMemo(() => {
     const allItems = itemMasterFG.filter((i) =>
-      ["Raw Material", "Finished Goods", "Consumable"].includes(i.type)
+      ["Raw Material", "Finished Goods", "Consumable"].includes(i.type),
     );
     const q = codeSearch.toLowerCase();
     return allItems.filter(
       (i) =>
         (i.code || "").toLowerCase().includes(q) ||
-        (i.name || "").toLowerCase().includes(q)
+        (i.name || "").toLowerCase().includes(q),
     );
   }, [itemMasterFG, codeSearch]);
 
   const handleSelectItem = (item) => {
-    setForm((f) => ({ ...f, productCode: item.code || "", itemName: item.name || "" }));
+    setForm((f) => ({
+      ...f,
+      productCode: item.code || "",
+      itemName: item.name || "",
+    }));
     setCodeSearch(`${item.code} — ${item.name}`);
     setShowCodeDropdown(false);
   };
@@ -129,14 +152,18 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
       if (refreshData) refreshData();
       setView("list");
     } catch (err) {
-      toast?.(err?.response?.data?.error || "Failed to save adjustment", "error");
+      toast?.(
+        err?.response?.data?.error || "Failed to save adjustment",
+        "error",
+      );
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Delete this adjustment? Stock will be reversed.")) return;
+    if (!window.confirm("Delete this adjustment? Stock will be reversed."))
+      return;
     try {
       await stockAdjustmentAPI.delete(id);
       setAdjustments((prev) => prev.filter((a) => a._id !== id));
@@ -150,8 +177,10 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
   const filtered = useMemo(() => {
     let list = adjustments;
     if (typeFilter) list = list.filter((a) => a.adjustmentType === typeFilter);
-    if (stockTypeFilter) list = list.filter((a) => a.stockType === stockTypeFilter);
-    if (dateFrom) list = list.filter((a) => new Date(a.date) >= new Date(dateFrom));
+    if (stockTypeFilter)
+      list = list.filter((a) => a.stockType === stockTypeFilter);
+    if (dateFrom)
+      list = list.filter((a) => new Date(a.date) >= new Date(dateFrom));
     if (dateTo) list = list.filter((a) => new Date(a.date) <= new Date(dateTo));
     if (search) {
       const q = search.toLowerCase();
@@ -159,7 +188,7 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
         (a) =>
           (a.adjustmentNo || "").toLowerCase().includes(q) ||
           (a.productCode || "").toLowerCase().includes(q) ||
-          (a.itemName || "").toLowerCase().includes(q)
+          (a.itemName || "").toLowerCase().includes(q),
       );
     }
     return list;
@@ -217,7 +246,14 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
     boxSizing: "border-box",
   };
 
-  const labelStyle = { fontSize: 11, color: C.muted, marginBottom: 4, display: "block", fontWeight: 500, letterSpacing: "0.04em" };
+  const labelStyle = {
+    fontSize: 11,
+    color: C.muted,
+    marginBottom: 4,
+    display: "block",
+    fontWeight: 500,
+    letterSpacing: "0.04em",
+  };
 
   const tabBtn = (id, label) => (
     <button
@@ -240,16 +276,31 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
   );
 
   return (
-    <div style={{ padding: "24px 28px",  margin: "0 auto" }}>
+    <div style={{ padding: "24px 28px", margin: "0 auto" }}>
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 24,
+          flexWrap: "wrap",
+          gap: 12,
+        }}
+      >
         <div>
-          <h2 style={{ color: C.text, fontSize: 22, fontWeight: 700, margin: 0 }}>
-            <i className="fa-solid fa-sliders" style={{ marginRight: 10, color: "#6366f1" }} />
+          <h2
+            style={{ color: C.text, fontSize: 22, fontWeight: 700, margin: 0 }}
+          >
+            <i
+              className="fa-solid fa-sliders"
+              style={{ marginRight: 10, color: "#6366f1" }}
+            />
             Stock Adjustment
           </h2>
           <p style={{ color: C.muted, fontSize: 13, margin: "4px 0 0" }}>
-            Record discrepancies — adds stock for Production/Inward, subtracts for Outward
+            Record discrepancies — adds stock for Production/Inward, subtracts
+            for Outward
           </p>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
@@ -261,20 +312,54 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
 
       {/* NEW ADJUSTMENT FORM */}
       {view === "new" && (
-        <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: 24, maxWidth: 640 }}>
-          <h3 style={{ color: C.text, fontSize: 16, fontWeight: 600, margin: "0 0 20px" }}>New Stock Adjustment</h3>
+        <div
+          style={{
+            background: "rgba(255,255,255,0.03)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: 12,
+            padding: 24,
+            maxWidth: 640,
+          }}
+        >
+          <h3
+            style={{
+              color: C.text,
+              fontSize: 16,
+              fontWeight: 600,
+              margin: "0 0 20px",
+            }}
+          >
+            New Stock Adjustment
+          </h3>
           <form onSubmit={handleSubmit}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 16,
+                marginBottom: 16,
+              }}
+            >
               <div>
                 <label style={labelStyle}>Date</label>
-                <input type="date" style={inputStyle} value={form.date} onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))} required />
+                <input
+                  type="date"
+                  style={inputStyle}
+                  value={form.date}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, date: e.target.value }))
+                  }
+                  required
+                />
               </div>
               <div>
                 <label style={labelStyle}>Adjustment Type</label>
                 <select
                   style={inputStyle}
                   value={form.adjustmentType}
-                  onChange={(e) => setForm((f) => ({ ...f, adjustmentType: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, adjustmentType: e.target.value }))
+                  }
                   required
                 >
                   <option value="Production">Production (adds stock)</option>
@@ -331,11 +416,24 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
                         alignItems: "center",
                         fontSize: 13,
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(99,102,241,0.15)")}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.background =
+                          "rgba(99,102,241,0.15)")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.background = "transparent")
+                      }
                     >
                       <span style={{ color: C.text }}>{item.name}</span>
-                      <span style={{ color: "#6366f1", fontWeight: 600, fontSize: 12 }}>{item.code}</span>
+                      <span
+                        style={{
+                          color: "#6366f1",
+                          fontWeight: 600,
+                          fontSize: 12,
+                        }}
+                      >
+                        {item.code}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -344,18 +442,46 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
 
             {form.productCode && (
               <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
-                <div style={{ background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.3)", borderRadius: 6, padding: "4px 10px", fontSize: 12, color: "#818cf8", fontWeight: 600 }}>
+                <div
+                  style={{
+                    background: "rgba(99,102,241,0.12)",
+                    border: "1px solid rgba(99,102,241,0.3)",
+                    borderRadius: 6,
+                    padding: "4px 10px",
+                    fontSize: 12,
+                    color: "#818cf8",
+                    fontWeight: 600,
+                  }}
+                >
                   {form.productCode}
                 </div>
-                <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "4px 10px", fontSize: 12, color: C.muted }}>
+                <div
+                  style={{
+                    background: "rgba(255,255,255,0.05)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    borderRadius: 6,
+                    padding: "4px 10px",
+                    fontSize: 12,
+                    color: C.muted,
+                  }}
+                >
                   {form.itemName}
                 </div>
               </div>
             )}
 
-            <div style={{ display: "grid", gridTemplateColumns: isRM ? "1fr 1fr" : "1fr", gap: 16, marginBottom: 16 }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: isRM ? "1fr 1fr" : "1fr",
+                gap: 16,
+                marginBottom: 16,
+              }}
+            >
               <div>
-                <label style={labelStyle}>Qty {isRM ? "(Sheets/Reels)" : "(Units)"}</label>
+                <label style={labelStyle}>
+                  Qty {isRM ? "(Sheets/Reels)" : "(Units)"}
+                </label>
                 <input
                   type="number"
                   min="0.01"
@@ -363,7 +489,9 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
                   style={inputStyle}
                   placeholder="Enter quantity"
                   value={form.qty}
-                  onChange={(e) => setForm((f) => ({ ...f, qty: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, qty: e.target.value }))
+                  }
                   required
                 />
               </div>
@@ -377,7 +505,9 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
                     style={inputStyle}
                     placeholder="Enter weight"
                     value={form.weight}
-                    onChange={(e) => setForm((f) => ({ ...f, weight: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, weight: e.target.value }))
+                    }
                   />
                 </div>
               )}
@@ -389,17 +519,33 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
                 style={{ ...inputStyle, resize: "vertical", minHeight: 64 }}
                 placeholder="Reason for adjustment (optional)"
                 value={form.reason}
-                onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, reason: e.target.value }))
+                }
               />
             </div>
 
             {/* Info banner */}
-            <div style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.2)", borderRadius: 8, padding: "10px 14px", marginBottom: 20, fontSize: 12, color: "#a5b4fc" }}>
-              <i className="fa-solid fa-circle-info" style={{ marginRight: 6 }} />
+            <div
+              style={{
+                background: "rgba(99,102,241,0.08)",
+                border: "1px solid rgba(99,102,241,0.2)",
+                borderRadius: 8,
+                padding: "10px 14px",
+                marginBottom: 20,
+                fontSize: 12,
+                color: "#a5b4fc",
+              }}
+            >
+              <i
+                className="fa-solid fa-circle-info"
+                style={{ marginRight: 6 }}
+              />
               {form.adjustmentType === "Outward"
                 ? "Outward will subtract qty from stock."
-                : `${form.adjustmentType} will add qty to stock.`}
-              {" "}Stock type is auto-detected from the product code prefix (RM/FG/CG).
+                : `${form.adjustmentType} will add qty to stock.`}{" "}
+              Stock type is auto-detected from the product code prefix
+              (RM/FG/CG).
             </div>
 
             <div style={{ display: "flex", gap: 10 }}>
@@ -421,8 +567,20 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
               </button>
               <button
                 type="button"
-                onClick={() => { setForm(EMPTY_FORM); setCodeSearch(""); setView("list"); }}
-                style={{ padding: "10px 18px", background: "rgba(255,255,255,0.06)", color: C.muted, border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 13, cursor: "pointer" }}
+                onClick={() => {
+                  setForm(EMPTY_FORM);
+                  setCodeSearch("");
+                  setView("list");
+                }}
+                style={{
+                  padding: "10px 18px",
+                  background: "rgba(255,255,255,0.06)",
+                  color: C.muted,
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: 8,
+                  fontSize: 13,
+                  cursor: "pointer",
+                }}
               >
                 Cancel
               </button>
@@ -435,7 +593,15 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
       {view === "list" && (
         <>
           {/* Filters */}
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 16, alignItems: "center" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: 10,
+              flexWrap: "wrap",
+              marginBottom: 16,
+              alignItems: "center",
+            }}
+          >
             <input
               type="text"
               placeholder="Search code, name, adj no..."
@@ -459,33 +625,114 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
               showAllOnFocus={true}
               inputStyle={{ ...inputStyle, width: 160, flex: "none" }}
             />
-            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} style={{ ...inputStyle, width: 140, flex: "none" }} title="From date" />
-            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} style={{ ...inputStyle, width: 140, flex: "none" }} title="To date" />
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              style={{ ...inputStyle, width: 140, flex: "none" }}
+              title="From date"
+            />
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              style={{ ...inputStyle, width: 140, flex: "none" }}
+              title="To date"
+            />
             <button
               onClick={handleExport}
-              style={{ padding: "9px 16px", background: "rgba(99,102,241,0.12)", color: "#818cf8", border: "1px solid rgba(99,102,241,0.3)", borderRadius: 8, fontSize: 13, cursor: "pointer", fontWeight: 500 }}
+              style={{
+                padding: "9px 16px",
+                background: "rgba(99,102,241,0.12)",
+                color: "#818cf8",
+                border: "1px solid rgba(99,102,241,0.3)",
+                borderRadius: 8,
+                fontSize: 13,
+                cursor: "pointer",
+                fontWeight: 500,
+              }}
             >
-              <i className="fa-solid fa-file-excel" style={{ marginRight: 6 }} />Export
+              <i
+                className="fa-solid fa-file-excel"
+                style={{ marginRight: 6 }}
+              />
+              Export
             </button>
-            {canCreate && <button
-              onClick={() => { setForm(EMPTY_FORM); setCodeSearch(""); setView("new"); }}
-              style={{ padding: "9px 16px", background: "#6366f1", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, cursor: "pointer", fontWeight: 600, marginLeft: "auto" }}
-            >
-              <i className="fa-solid fa-plus" style={{ marginRight: 6 }} />New Adjustment
-            </button>}
+            {canCreate && (
+              <button
+                onClick={() => {
+                  setForm(EMPTY_FORM);
+                  setCodeSearch("");
+                  setView("new");
+                }}
+                style={{
+                  padding: "9px 16px",
+                  background: "#6366f1",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 8,
+                  fontSize: 13,
+                  cursor: "pointer",
+                  fontWeight: 600,
+                  marginLeft: "auto",
+                }}
+              >
+                <i className="fa-solid fa-plus" style={{ marginRight: 6 }} />
+                New Adjustment
+              </button>
+            )}
           </div>
 
           {/* Stats row */}
-          <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: 12,
+              marginBottom: 20,
+              flexWrap: "wrap",
+            }}
+          >
             {[
-              { label: "Total Adjustments", value: filtered.length, color: "#818cf8" },
-              { label: "Production", value: filtered.filter((a) => a.adjustmentType === "Production").length, color: "#c084fc" },
-              { label: "Inward", value: filtered.filter((a) => a.adjustmentType === "Inward").length, color: "#4ade80" },
-              { label: "Outward", value: filtered.filter((a) => a.adjustmentType === "Outward").length, color: "#f87171" },
+              {
+                label: "Total Adjustments",
+                value: filtered.length,
+                color: "#818cf8",
+              },
+              {
+                label: "Production",
+                value: filtered.filter((a) => a.adjustmentType === "Production")
+                  .length,
+                color: "#c084fc",
+              },
+              {
+                label: "Inward",
+                value: filtered.filter((a) => a.adjustmentType === "Inward")
+                  .length,
+                color: "#4ade80",
+              },
+              {
+                label: "Outward",
+                value: filtered.filter((a) => a.adjustmentType === "Outward")
+                  .length,
+                color: "#f87171",
+              },
             ].map((s) => (
-              <div key={s.label} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "12px 20px", minWidth: 130 }}>
-                <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>{s.label}</div>
-                <div style={{ fontSize: 22, fontWeight: 700, color: s.color }}>{fmt(s.value)}</div>
+              <div
+                key={s.label}
+                style={{
+                  background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: 10,
+                  padding: "12px 20px",
+                  minWidth: 130,
+                }}
+              >
+                <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>
+                  {s.label}
+                </div>
+                <div style={{ fontSize: 22, fontWeight: 700, color: s.color }}>
+                  {fmt(s.value)}
+                </div>
               </div>
             ))}
           </div>
@@ -493,22 +740,64 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
           {/* Table */}
           {loading ? (
             <div style={{ textAlign: "center", padding: 48, color: C.muted }}>
-              <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: 24, marginBottom: 10 }} />
+              <i
+                className="fa-solid fa-spinner fa-spin"
+                style={{ fontSize: 24, marginBottom: 10 }}
+              />
               <div>Loading adjustments...</div>
             </div>
           ) : filtered.length === 0 ? (
             <div style={{ textAlign: "center", padding: 60, color: C.muted }}>
-              <i className="fa-solid fa-sliders" style={{ fontSize: 36, marginBottom: 12, opacity: 0.3 }} />
-              <div style={{ fontSize: 15, marginBottom: 6 }}>No adjustments found</div>
-              <div style={{ fontSize: 13 }}>Create a new adjustment to reconcile physical stock</div>
+              <i
+                className="fa-solid fa-sliders"
+                style={{ fontSize: 36, marginBottom: 12, opacity: 0.3 }}
+              />
+              <div style={{ fontSize: 15, marginBottom: 6 }}>
+                No adjustments found
+              </div>
+              <div style={{ fontSize: 13 }}>
+                Create a new adjustment to reconcile physical stock
+              </div>
             </div>
           ) : (
             <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <table
+                style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  fontSize: 13,
+                }}
+              >
                 <thead>
-                  <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-                    {["Adj No", "Date", "Product Code", "Item Name", "Stock Type", "Type", "Qty", "Weight", "Before→After", "Reason", "By", ""].map((h) => (
-                      <th key={h} style={{ padding: "10px 12px", textAlign: "left", color: C.muted, fontWeight: 600, fontSize: 11, letterSpacing: "0.04em", whiteSpace: "nowrap" }}>
+                  <tr
+                    style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}
+                  >
+                    {[
+                      "Adj No",
+                      "Date",
+                      "Product Code",
+                      "Item Name",
+                      "Stock Type",
+                      "Type",
+                      "Qty",
+                      "Weight",
+                      "Before→After",
+                      "Reason",
+                      "By",
+                      "",
+                    ].map((h) => (
+                      <th
+                        key={h}
+                        style={{
+                          padding: "10px 12px",
+                          textAlign: "left",
+                          color: C.muted,
+                          fontWeight: 600,
+                          fontSize: 11,
+                          letterSpacing: "0.04em",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
                         {h}
                       </th>
                     ))}
@@ -519,44 +808,174 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
                     const tc = TYPE_COLORS[a.adjustmentType] || {};
                     const sc = STOCK_TYPE_COLORS[a.stockType] || {};
                     return (
-                      <tr key={a._id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.02)")}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                      <tr
+                        key={a._id}
+                        style={{
+                          borderBottom: "1px solid rgba(255,255,255,0.04)",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.background =
+                            "rgba(255,255,255,0.02)")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.background = "transparent")
+                        }
                       >
-                        <td style={{ padding: "10px 12px", color: "#818cf8", fontWeight: 600 }}>{a.adjustmentNo || "—"}</td>
-                        <td style={{ padding: "10px 12px", color: C.muted, whiteSpace: "nowrap" }}>{fmtDate(a.date)}</td>
-                        <td style={{ padding: "10px 12px", color: "#6366f1", fontWeight: 600 }}>{a.productCode}</td>
-                        <td style={{ padding: "10px 12px", color: C.text, maxWidth: 200 }}>
-                          <div style={{ display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden", wordBreak: "break-word", lineHeight: 1.4 }}>{a.itemName}</div>
+                        <td
+                          style={{
+                            padding: "10px 12px",
+                            color: "#818cf8",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {a.adjustmentNo || "—"}
+                        </td>
+                        <td
+                          style={{
+                            padding: "10px 12px",
+                            color: C.muted,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {fmtDate(a.date)}
+                        </td>
+                        <td
+                          style={{
+                            padding: "10px 12px",
+                            color: "#6366f1",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {a.productCode}
+                        </td>
+                        <td
+                          style={{
+                            padding: "10px 12px",
+                            color: C.text,
+                            maxWidth: 200,
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: "-webkit-box",
+                              WebkitLineClamp: 3,
+                              WebkitBoxOrient: "vertical",
+                              overflow: "hidden",
+                              wordBreak: "break-word",
+                              lineHeight: 1.4,
+                            }}
+                          >
+                            {a.itemName}
+                          </div>
                         </td>
                         <td style={{ padding: "10px 12px" }}>
-                          <span style={{ background: sc.bg, color: sc.text, borderRadius: 5, padding: "3px 8px", fontSize: 11, fontWeight: 600 }}>{a.stockType}</span>
-                        </td>
-                        <td style={{ padding: "10px 12px" }}>
-                          <span style={{ background: tc.bg, color: tc.text, border: `1px solid ${tc.border}`, borderRadius: 5, padding: "3px 8px", fontSize: 11, fontWeight: 600 }}>
-                            {a.adjustmentType === "Outward" ? "↓ " : "↑ "}{a.adjustmentType}
+                          <span
+                            style={{
+                              background: sc.bg,
+                              color: sc.text,
+                              borderRadius: 5,
+                              padding: "3px 8px",
+                              fontSize: 11,
+                              fontWeight: 600,
+                            }}
+                          >
+                            {a.stockType}
                           </span>
                         </td>
-                        <td style={{ padding: "10px 12px", color: a.adjustmentType === "Outward" ? "#f87171" : "#4ade80", fontWeight: 600 }}>
-                          {a.adjustmentType === "Outward" ? "-" : "+"}{fmt(a.qty)}
+                        <td style={{ padding: "10px 12px" }}>
+                          <span
+                            style={{
+                              background: tc.bg,
+                              color: tc.text,
+                              border: `1px solid ${tc.border}`,
+                              borderRadius: 5,
+                              padding: "3px 8px",
+                              fontSize: 11,
+                              fontWeight: 600,
+                            }}
+                          >
+                            {a.adjustmentType === "Outward" ? "↓ " : "↑ "}
+                            {a.adjustmentType}
+                          </span>
                         </td>
-                        <td style={{ padding: "10px 12px", color: C.muted }}>{a.weight ? fmt(a.weight) + " kg" : "—"}</td>
-                        <td style={{ padding: "10px 12px", color: C.muted, whiteSpace: "nowrap", fontSize: 12 }}>
-                          {fmt(a.beforeQty)} → <span style={{ color: C.text, fontWeight: 600 }}>{fmt(a.afterQty)}</span>
-                          {a.stockType === "Raw Material" && (a.beforeWeight || a.afterWeight) ? (
-                            <div style={{ fontSize: 11, color: "#6b7280" }}>{fmt(a.beforeWeight)} → {fmt(a.afterWeight)} kg</div>
+                        <td
+                          style={{
+                            padding: "10px 12px",
+                            color:
+                              a.adjustmentType === "Outward"
+                                ? "#f87171"
+                                : "#4ade80",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {a.adjustmentType === "Outward" ? "-" : "+"}
+                          {fmt(a.qty)}
+                        </td>
+                        <td style={{ padding: "10px 12px", color: C.muted }}>
+                          {a.weight ? fmt(a.weight) + " kg" : "—"}
+                        </td>
+                        <td
+                          style={{
+                            padding: "10px 12px",
+                            color: C.muted,
+                            whiteSpace: "nowrap",
+                            fontSize: 12,
+                          }}
+                        >
+                          {fmt(a.beforeQty)} →{" "}
+                          <span style={{ color: C.text, fontWeight: 600 }}>
+                            {fmt(a.afterQty)}
+                          </span>
+                          {a.stockType === "Raw Material" &&
+                          (a.beforeWeight || a.afterWeight) ? (
+                            <div style={{ fontSize: 11, color: "#6b7280" }}>
+                              {fmt(a.beforeWeight)} → {fmt(a.afterWeight)} kg
+                            </div>
                           ) : null}
                         </td>
-                        <td style={{ padding: "10px 12px", color: C.muted, maxWidth: 160 }}>
-                          <div style={{ display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden", wordBreak: "break-word", lineHeight: 1.4 }}>{a.reason || "—"}</div>
+                        <td
+                          style={{
+                            padding: "10px 12px",
+                            color: C.muted,
+                            maxWidth: 160,
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: "-webkit-box",
+                              WebkitLineClamp: 3,
+                              WebkitBoxOrient: "vertical",
+                              overflow: "hidden",
+                              wordBreak: "break-word",
+                              lineHeight: 1.4,
+                            }}
+                          >
+                            {a.reason || "—"}
+                          </div>
                         </td>
-                        <td style={{ padding: "10px 12px", color: C.muted, fontSize: 12 }}>{a.createdBy || "—"}</td>
+                        <td
+                          style={{
+                            padding: "10px 12px",
+                            color: C.muted,
+                            fontSize: 12,
+                          }}
+                        >
+                          {a.createdBy || "—"}
+                        </td>
                         <td style={{ padding: "10px 12px" }}>
                           {!isClient && canDelete && (
                             <button
                               onClick={() => handleDelete(a._id)}
                               title="Delete & reverse stock"
-                              style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", color: "#f87171", borderRadius: 6, padding: "4px 10px", cursor: "pointer", fontSize: 12 }}
+                              style={{
+                                background: "rgba(239,68,68,0.1)",
+                                border: "1px solid rgba(239,68,68,0.25)",
+                                color: "#f87171",
+                                borderRadius: 6,
+                                padding: "4px 10px",
+                                cursor: "pointer",
+                                fontSize: 12,
+                              }}
                             >
                               <i className="fa-solid fa-trash" />
                             </button>
@@ -575,14 +994,32 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
       {/* REPORT VIEW */}
       {view === "report" && (
         <div>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 20, alignItems: "flex-end" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: 10,
+              flexWrap: "wrap",
+              marginBottom: 20,
+              alignItems: "flex-end",
+            }}
+          >
             <div>
               <label style={labelStyle}>From</label>
-              <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} style={{ ...inputStyle, width: 150 }} />
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                style={{ ...inputStyle, width: 150 }}
+              />
             </div>
             <div>
               <label style={labelStyle}>To</label>
-              <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} style={{ ...inputStyle, width: 150 }} />
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                style={{ ...inputStyle, width: 150 }}
+              />
             </div>
             <div>
               <label style={labelStyle}>Adjustment Type</label>
@@ -609,16 +1046,37 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
             <button
               onClick={fetchReport}
               disabled={reportLoading}
-              style={{ padding: "9px 20px", background: "#6366f1", color: "#fff", border: "none", borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: reportLoading ? "not-allowed" : "pointer" }}
+              style={{
+                padding: "9px 20px",
+                background: "#6366f1",
+                color: "#fff",
+                border: "none",
+                borderRadius: 8,
+                fontWeight: 600,
+                fontSize: 13,
+                cursor: reportLoading ? "not-allowed" : "pointer",
+              }}
             >
               {reportLoading ? "Loading..." : "Generate Report"}
             </button>
             {reportData && (
               <button
                 onClick={handleExportReport}
-                style={{ padding: "9px 16px", background: "rgba(99,102,241,0.12)", color: "#818cf8", border: "1px solid rgba(99,102,241,0.3)", borderRadius: 8, fontSize: 13, cursor: "pointer" }}
+                style={{
+                  padding: "9px 16px",
+                  background: "rgba(99,102,241,0.12)",
+                  color: "#818cf8",
+                  border: "1px solid rgba(99,102,241,0.3)",
+                  borderRadius: 8,
+                  fontSize: 13,
+                  cursor: "pointer",
+                }}
               >
-                <i className="fa-solid fa-file-excel" style={{ marginRight: 6 }} />Export
+                <i
+                  className="fa-solid fa-file-excel"
+                  style={{ marginRight: 6 }}
+                />
+                Export
               </button>
             )}
           </div>
@@ -626,28 +1084,117 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
           {reportData && (
             <>
               {/* Summary cards */}
-              <div style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
+              <div
+                style={{
+                  display: "flex",
+                  gap: 12,
+                  marginBottom: 24,
+                  flexWrap: "wrap",
+                }}
+              >
                 {[
-                  { label: "Total Records", value: reportData.adjustments?.length || 0, color: "#818cf8" },
-                  { label: "Items Affected", value: reportData.summary?.length || 0, color: "#60a5fa" },
-                  { label: "Total Production", value: reportData.summary?.reduce((s, r) => s + r.production, 0) || 0, color: "#c084fc" },
-                  { label: "Total Inward", value: reportData.summary?.reduce((s, r) => s + r.inward, 0) || 0, color: "#4ade80" },
-                  { label: "Total Outward", value: reportData.summary?.reduce((s, r) => s + r.outward, 0) || 0, color: "#f87171" },
+                  {
+                    label: "Total Records",
+                    value: reportData.adjustments?.length || 0,
+                    color: "#818cf8",
+                  },
+                  {
+                    label: "Items Affected",
+                    value: reportData.summary?.length || 0,
+                    color: "#60a5fa",
+                  },
+                  {
+                    label: "Total Production",
+                    value:
+                      reportData.summary?.reduce(
+                        (s, r) => s + r.production,
+                        0,
+                      ) || 0,
+                    color: "#c084fc",
+                  },
+                  {
+                    label: "Total Inward",
+                    value:
+                      reportData.summary?.reduce((s, r) => s + r.inward, 0) ||
+                      0,
+                    color: "#4ade80",
+                  },
+                  {
+                    label: "Total Outward",
+                    value:
+                      reportData.summary?.reduce((s, r) => s + r.outward, 0) ||
+                      0,
+                    color: "#f87171",
+                  },
                 ].map((s) => (
-                  <div key={s.label} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "12px 20px", minWidth: 130 }}>
-                    <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>{s.label}</div>
-                    <div style={{ fontSize: 22, fontWeight: 700, color: s.color }}>{fmt(s.value)}</div>
+                  <div
+                    key={s.label}
+                    style={{
+                      background: "rgba(255,255,255,0.03)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      borderRadius: 10,
+                      padding: "12px 20px",
+                      minWidth: 130,
+                    }}
+                  >
+                    <div
+                      style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}
+                    >
+                      {s.label}
+                    </div>
+                    <div
+                      style={{ fontSize: 22, fontWeight: 700, color: s.color }}
+                    >
+                      {fmt(s.value)}
+                    </div>
                   </div>
                 ))}
               </div>
 
-              <h4 style={{ color: C.text, fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Item-wise Summary</h4>
+              <h4
+                style={{
+                  color: C.text,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  marginBottom: 12,
+                }}
+              >
+                Item-wise Summary
+              </h4>
               <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    fontSize: 13,
+                  }}
+                >
                   <thead>
-                    <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-                      {["Product Code", "Item Name", "Stock Type", "Production Added", "Inward Added", "Outward Subtracted", "Net Change"].map((h) => (
-                        <th key={h} style={{ padding: "10px 12px", textAlign: "left", color: C.muted, fontWeight: 600, fontSize: 11, letterSpacing: "0.04em" }}>
+                    <tr
+                      style={{
+                        borderBottom: "1px solid rgba(255,255,255,0.08)",
+                      }}
+                    >
+                      {[
+                        "Product Code",
+                        "Item Name",
+                        "Stock Type",
+                        "Production Added",
+                        "Inward Added",
+                        "Outward Subtracted",
+                        "Net Change",
+                      ].map((h) => (
+                        <th
+                          key={h}
+                          style={{
+                            padding: "10px 12px",
+                            textAlign: "left",
+                            color: C.muted,
+                            fontWeight: 600,
+                            fontSize: 11,
+                            letterSpacing: "0.04em",
+                          }}
+                        >
                           {h}
                         </th>
                       ))}
@@ -657,20 +1204,81 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
                     {reportData.summary?.map((r, i) => {
                       const sc = STOCK_TYPE_COLORS[r.stockType] || {};
                       return (
-                        <tr key={i} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
-                          onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.02)")}
-                          onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                        <tr
+                          key={i}
+                          style={{
+                            borderBottom: "1px solid rgba(255,255,255,0.04)",
+                          }}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.background =
+                              "rgba(255,255,255,0.02)")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.background = "transparent")
+                          }
                         >
-                          <td style={{ padding: "10px 12px", color: "#6366f1", fontWeight: 600 }}>{r.productCode}</td>
-                          <td style={{ padding: "10px 12px", color: C.text }}>{r.itemName}</td>
-                          <td style={{ padding: "10px 12px" }}>
-                            <span style={{ background: sc.bg, color: sc.text, borderRadius: 5, padding: "3px 8px", fontSize: 11, fontWeight: 600 }}>{r.stockType}</span>
+                          <td
+                            style={{
+                              padding: "10px 12px",
+                              color: "#6366f1",
+                              fontWeight: 600,
+                            }}
+                          >
+                            {r.productCode}
                           </td>
-                          <td style={{ padding: "10px 12px", color: "#c084fc", fontWeight: 600 }}>{fmt(r.production)}</td>
-                          <td style={{ padding: "10px 12px", color: "#4ade80", fontWeight: 600 }}>{fmt(r.inward)}</td>
-                          <td style={{ padding: "10px 12px", color: "#f87171", fontWeight: 600 }}>{fmt(r.outward)}</td>
-                          <td style={{ padding: "10px 12px", color: r.net >= 0 ? "#4ade80" : "#f87171", fontWeight: 700 }}>
-                            {r.net >= 0 ? "+" : ""}{fmt(r.net)}
+                          <td style={{ padding: "10px 12px", color: C.text }}>
+                            {r.itemName}
+                          </td>
+                          <td style={{ padding: "10px 12px" }}>
+                            <span
+                              style={{
+                                background: sc.bg,
+                                color: sc.text,
+                                borderRadius: 5,
+                                padding: "3px 8px",
+                                fontSize: 11,
+                                fontWeight: 600,
+                              }}
+                            >
+                              {r.stockType}
+                            </span>
+                          </td>
+                          <td
+                            style={{
+                              padding: "10px 12px",
+                              color: "#c084fc",
+                              fontWeight: 600,
+                            }}
+                          >
+                            {fmt(r.production)}
+                          </td>
+                          <td
+                            style={{
+                              padding: "10px 12px",
+                              color: "#4ade80",
+                              fontWeight: 600,
+                            }}
+                          >
+                            {fmt(r.inward)}
+                          </td>
+                          <td
+                            style={{
+                              padding: "10px 12px",
+                              color: "#f87171",
+                              fontWeight: 600,
+                            }}
+                          >
+                            {fmt(r.outward)}
+                          </td>
+                          <td
+                            style={{
+                              padding: "10px 12px",
+                              color: r.net >= 0 ? "#4ade80" : "#f87171",
+                              fontWeight: 700,
+                            }}
+                          >
+                            {r.net >= 0 ? "+" : ""}
+                            {fmt(r.net)}
                           </td>
                         </tr>
                       );
@@ -680,13 +1288,50 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
               </div>
 
               {/* Detail log */}
-              <h4 style={{ color: C.text, fontSize: 14, fontWeight: 600, margin: "28px 0 12px" }}>Adjustment Log</h4>
+              <h4
+                style={{
+                  color: C.text,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  margin: "28px 0 12px",
+                }}
+              >
+                Adjustment Log
+              </h4>
               <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    fontSize: 13,
+                  }}
+                >
                   <thead>
-                    <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-                      {["Adj No", "Date", "Product Code", "Item Name", "Type", "Qty", "Reason", "By"].map((h) => (
-                        <th key={h} style={{ padding: "10px 12px", textAlign: "left", color: C.muted, fontWeight: 600, fontSize: 11 }}>
+                    <tr
+                      style={{
+                        borderBottom: "1px solid rgba(255,255,255,0.08)",
+                      }}
+                    >
+                      {[
+                        "Adj No",
+                        "Date",
+                        "Product Code",
+                        "Item Name",
+                        "Type",
+                        "Qty",
+                        "Reason",
+                        "By",
+                      ].map((h) => (
+                        <th
+                          key={h}
+                          style={{
+                            padding: "10px 12px",
+                            textAlign: "left",
+                            color: C.muted,
+                            fontWeight: 600,
+                            fontSize: 11,
+                          }}
+                        >
                           {h}
                         </th>
                       ))}
@@ -696,21 +1341,70 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
                     {reportData.adjustments?.map((a) => {
                       const tc = TYPE_COLORS[a.adjustmentType] || {};
                       return (
-                        <tr key={a._id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                          <td style={{ padding: "10px 12px", color: "#818cf8", fontWeight: 600 }}>{a.adjustmentNo}</td>
-                          <td style={{ padding: "10px 12px", color: C.muted }}>{fmtDate(a.date)}</td>
-                          <td style={{ padding: "10px 12px", color: "#6366f1", fontWeight: 600 }}>{a.productCode}</td>
-                          <td style={{ padding: "10px 12px", color: C.text }}>{a.itemName}</td>
+                        <tr
+                          key={a._id}
+                          style={{
+                            borderBottom: "1px solid rgba(255,255,255,0.04)",
+                          }}
+                        >
+                          <td
+                            style={{
+                              padding: "10px 12px",
+                              color: "#818cf8",
+                              fontWeight: 600,
+                            }}
+                          >
+                            {a.adjustmentNo}
+                          </td>
+                          <td style={{ padding: "10px 12px", color: C.muted }}>
+                            {fmtDate(a.date)}
+                          </td>
+                          <td
+                            style={{
+                              padding: "10px 12px",
+                              color: "#6366f1",
+                              fontWeight: 600,
+                            }}
+                          >
+                            {a.productCode}
+                          </td>
+                          <td style={{ padding: "10px 12px", color: C.text }}>
+                            {a.itemName}
+                          </td>
                           <td style={{ padding: "10px 12px" }}>
-                            <span style={{ background: tc.bg, color: tc.text, border: `1px solid ${tc.border}`, borderRadius: 5, padding: "3px 8px", fontSize: 11, fontWeight: 600 }}>
+                            <span
+                              style={{
+                                background: tc.bg,
+                                color: tc.text,
+                                border: `1px solid ${tc.border}`,
+                                borderRadius: 5,
+                                padding: "3px 8px",
+                                fontSize: 11,
+                                fontWeight: 600,
+                              }}
+                            >
                               {a.adjustmentType}
                             </span>
                           </td>
-                          <td style={{ padding: "10px 12px", color: a.adjustmentType === "Outward" ? "#f87171" : "#4ade80", fontWeight: 600 }}>
-                            {a.adjustmentType === "Outward" ? "-" : "+"}{fmt(a.qty)}
+                          <td
+                            style={{
+                              padding: "10px 12px",
+                              color:
+                                a.adjustmentType === "Outward"
+                                  ? "#f87171"
+                                  : "#4ade80",
+                              fontWeight: 600,
+                            }}
+                          >
+                            {a.adjustmentType === "Outward" ? "-" : "+"}
+                            {fmt(a.qty)}
                           </td>
-                          <td style={{ padding: "10px 12px", color: C.muted }}>{a.reason || "—"}</td>
-                          <td style={{ padding: "10px 12px", color: C.muted }}>{a.createdBy || "—"}</td>
+                          <td style={{ padding: "10px 12px", color: C.muted }}>
+                            {a.reason || "—"}
+                          </td>
+                          <td style={{ padding: "10px 12px", color: C.muted }}>
+                            {a.createdBy || "—"}
+                          </td>
                         </tr>
                       );
                     })}
@@ -722,8 +1416,13 @@ export default function StockAdjustment({ itemMasterFG = [], session, toast, ref
 
           {!reportData && !reportLoading && (
             <div style={{ textAlign: "center", padding: 60, color: C.muted }}>
-              <i className="fa-solid fa-chart-bar" style={{ fontSize: 36, marginBottom: 12, opacity: 0.3 }} />
-              <div style={{ fontSize: 15 }}>Set filters and click Generate Report</div>
+              <i
+                className="fa-solid fa-chart-bar"
+                style={{ fontSize: 36, marginBottom: 12, opacity: 0.3 }}
+              />
+              <div style={{ fontSize: 15 }}>
+                Set filters and click Generate Report
+              </div>
             </div>
           )}
         </div>

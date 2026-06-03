@@ -316,7 +316,9 @@ export function Modal({ title, children, onClose }) {
             <i className="fa-solid fa-xmark" />
           </button>
         </div>
-        <div style={{ padding: 20, overflowY: "auto", flex: 1 }}>{children}</div>
+        <div style={{ padding: 20, overflowY: "auto", flex: 1 }}>
+          {children}
+        </div>
       </div>
     </div>
   );
@@ -333,7 +335,10 @@ export function GlassTable({
 }) {
   if (loading)
     return (
-      <div className="lg-card" style={{ padding: 48, textAlign: "center", color: C.muted }}>
+      <div
+        className="lg-card"
+        style={{ padding: 48, textAlign: "center", color: C.muted }}
+      >
         <i
           className="fa-solid fa-circle-notch fa-spin"
           style={{ fontSize: 24, marginBottom: 12, display: "block" }}
@@ -343,7 +348,10 @@ export function GlassTable({
     );
   if (!rows.length)
     return (
-      <div className="lg-card" style={{ padding: 48, textAlign: "center", color: C.muted }}>
+      <div
+        className="lg-card"
+        style={{ padding: 48, textAlign: "center", color: C.muted }}
+      >
         <i
           className="fa-solid fa-inbox"
           style={{
@@ -416,7 +424,11 @@ export function AutocompleteInput({
 }) {
   const [open, setOpen] = React.useState(false);
   const [filtered, setFiltered] = React.useState([]);
-  const [dropdownPos, setDropdownPos] = React.useState({ top: 0, left: 0, width: 0 });
+  const [dropdownPos, setDropdownPos] = React.useState({
+    top: 0,
+    left: 0,
+    width: 0,
+  });
   const inputRef = React.useRef(null);
 
   const updatePos = () => {
@@ -438,7 +450,9 @@ export function AutocompleteInput({
     setFiltered(
       val.length > 0
         ? suggestions.filter((s) => s.toLowerCase().includes(val.toLowerCase()))
-        : showAllOnFocus ? suggestions : [],
+        : showAllOnFocus
+          ? suggestions
+          : [],
     );
   };
 
@@ -454,7 +468,9 @@ export function AutocompleteInput({
       const val = value || "";
       setFiltered(
         val.length > 0
-          ? suggestions.filter((s) => s.toLowerCase().includes(val.toLowerCase()))
+          ? suggestions.filter((s) =>
+              s.toLowerCase().includes(val.toLowerCase()),
+            )
           : suggestions,
       );
       setOpen(true);
@@ -463,43 +479,56 @@ export function AutocompleteInput({
     }
   };
 
-  const dropdown = open && filtered.length > 0 && ReactDOM.createPortal(
-    <div
-      style={{
-        position: "absolute",
-        top: dropdownPos.top,
-        left: dropdownPos.left,
-        width: dropdownPos.width,
-        background: "#1a1a2e",
-        border: "1px solid rgba(255,255,255,0.15)",
-        borderRadius: 8,
-        boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
-        padding: 0,
-        maxHeight: 220,
-        overflowY: "auto",
-        zIndex: 99999,
-      }}
-    >
-      {filtered.map((s, i) => (
-        <div
-          key={i}
-          onMouseDown={(e) => { e.preventDefault(); handleSelect(s); }}
-          style={{
-            padding: "9px 14px",
-            fontSize: 13,
-            color: "#e2e8f0",
-            borderBottom: i < filtered.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none",
-            cursor: "pointer",
-          }}
-          onMouseOver={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.09)")}
-          onMouseOut={(e) => (e.currentTarget.style.background = "transparent")}
-        >
-          {s}
-        </div>
-      ))}
-    </div>,
-    document.body
-  );
+  const dropdown =
+    open &&
+    filtered.length > 0 &&
+    ReactDOM.createPortal(
+      <div
+        style={{
+          position: "absolute",
+          top: dropdownPos.top,
+          left: dropdownPos.left,
+          width: dropdownPos.width,
+          background: "#1a1a2e",
+          border: "1px solid rgba(255,255,255,0.15)",
+          borderRadius: 8,
+          boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+          padding: 0,
+          maxHeight: 220,
+          overflowY: "auto",
+          zIndex: 99999,
+        }}
+      >
+        {filtered.map((s, i) => (
+          <div
+            key={i}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              handleSelect(s);
+            }}
+            style={{
+              padding: "9px 14px",
+              fontSize: 13,
+              color: "#e2e8f0",
+              borderBottom:
+                i < filtered.length - 1
+                  ? "1px solid rgba(255,255,255,0.06)"
+                  : "none",
+              cursor: "pointer",
+            }}
+            onMouseOver={(e) =>
+              (e.currentTarget.style.background = "rgba(255,255,255,0.09)")
+            }
+            onMouseOut={(e) =>
+              (e.currentTarget.style.background = "transparent")
+            }
+          >
+            {s}
+          </div>
+        ))}
+      </div>,
+      document.body,
+    );
 
   return (
     <div style={{ position: "relative" }}>
@@ -709,9 +738,7 @@ export function ImportModal({
           }}
         >
           <span>Progress</span>
-          <span
-            style={{ color: C.accent,  }}
-          >
+          <span style={{ color: C.accent }}>
             {current} / {total}
           </span>
         </div>

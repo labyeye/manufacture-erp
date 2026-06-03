@@ -1,32 +1,32 @@
 const ActivityLog = require("../models/ActivityLog");
 
 const PATH_TO_MODULE = {
-  "auth/login":               "Auth",
-  "auth/logout":              "Auth",
-  "auth/users":               "User Management",
-  "purchase-orders":          "Purchase Orders",
-  "material-inward":          "Material Inward",
-  "category-master":          "Category Master",
-  "vendor-master":            "Vendor Master",
-  "company-master":           "Company Master",
-  "sales-orders":             "Sales Orders",
-  "job-orders":               "Job Orders",
-  "dispatch":                 "Dispatch",
-  "item-master":              "Item Master",
-  "machine-master":           "Machine Master",
-  "planning":                 "Planning",
-  "size-master":              "Size Master",
-  "printing-detail-master":   "Printing Detail Master",
-  "raw-material-stock":       "RM Stock",
-  "fg-stock":                 "FG Stock",
-  "consumable-stock":         "Consumable Stock",
-  "brand-master":             "Brand Master",
-  "tooling-master":           "Tooling Master",
-  "factory-calendar":         "Factory Calendar",
-  "machine-maintenance":      "Machine Maintenance",
-  "breakdown-log":            "Breakdown Log",
-  "price-list":               "Price List",
-  "spare-issue-log":          "Spare Issue Log",
+  "auth/login": "Auth",
+  "auth/logout": "Auth",
+  "auth/users": "User Management",
+  "purchase-orders": "Purchase Orders",
+  "material-inward": "Material Inward",
+  "category-master": "Category Master",
+  "vendor-master": "Vendor Master",
+  "company-master": "Company Master",
+  "sales-orders": "Sales Orders",
+  "job-orders": "Job Orders",
+  dispatch: "Dispatch",
+  "item-master": "Item Master",
+  "machine-master": "Machine Master",
+  planning: "Planning",
+  "size-master": "Size Master",
+  "printing-detail-master": "Printing Detail Master",
+  "raw-material-stock": "RM Stock",
+  "fg-stock": "FG Stock",
+  "consumable-stock": "Consumable Stock",
+  "brand-master": "Brand Master",
+  "tooling-master": "Tooling Master",
+  "factory-calendar": "Factory Calendar",
+  "machine-maintenance": "Machine Maintenance",
+  "breakdown-log": "Breakdown Log",
+  "price-list": "Price List",
+  "spare-issue-log": "Spare Issue Log",
 };
 
 function resolveModule(path) {
@@ -40,35 +40,69 @@ function resolveModule(path) {
 
 function resolveAction(method, path) {
   const p = path.toLowerCase();
-  if (p.includes("/login"))                                   return "LOGIN";
-  if (p.includes("/logout"))                                  return "LOGOUT";
-  if (p.includes("/bulk-delete"))                             return "BULK_DELETED";
-  if (p.includes("/bulk-import"))                             return "BULK_IMPORTED";
-  if (p.includes("/status"))                                  return "STATUS_CHANGED";
-  if (p.includes("/stage"))                                   return "STATUS_CHANGED";
-  if (p.includes("/adjust") || p.includes("/stock-adjust"))  return "STOCK_ADJUSTED";
-  if (method === "POST")                                      return "CREATED";
-  if (method === "PUT" || method === "PATCH")                 return "UPDATED";
-  if (method === "DELETE")                                    return "DELETED";
+  if (p.includes("/login")) return "LOGIN";
+  if (p.includes("/logout")) return "LOGOUT";
+  if (p.includes("/bulk-delete")) return "BULK_DELETED";
+  if (p.includes("/bulk-import")) return "BULK_IMPORTED";
+  if (p.includes("/status")) return "STATUS_CHANGED";
+  if (p.includes("/stage")) return "STATUS_CHANGED";
+  if (p.includes("/adjust") || p.includes("/stock-adjust"))
+    return "STOCK_ADJUSTED";
+  if (method === "POST") return "CREATED";
+  if (method === "PUT" || method === "PATCH") return "UPDATED";
+  if (method === "DELETE") return "DELETED";
   return "UPDATED";
 }
 
 // All wrapper keys any controller might use
 const WRAPPER_KEYS = [
-  "item", "order", "jobOrder", "salesOrder", "purchaseOrder",
-  "dispatch", "vendor", "company", "brand", "machine", "user",
-  "category", "log", "record", "plan", "maintenance", "breakdown",
-  "tooling", "calendar", "spare", "price", "detail", "printing",
-  "stock", "entry", "inward", "size", "priceList",
+  "item",
+  "order",
+  "jobOrder",
+  "salesOrder",
+  "purchaseOrder",
+  "dispatch",
+  "vendor",
+  "company",
+  "brand",
+  "machine",
+  "user",
+  "category",
+  "log",
+  "record",
+  "plan",
+  "maintenance",
+  "breakdown",
+  "tooling",
+  "calendar",
+  "spare",
+  "price",
+  "detail",
+  "printing",
+  "stock",
+  "entry",
+  "inward",
+  "size",
+  "priceList",
 ];
 
 function pickName(obj) {
   if (!obj || typeof obj !== "object") return null;
   return (
-    obj.name || obj.username || obj.code ||
-    obj.orderNo || obj.soNumber || obj.poNumber || obj.joNumber ||
-    obj.grnNumber || obj.dispatchNo || obj.machineId ||
-    obj.itemCode || obj.description || obj.title || null
+    obj.name ||
+    obj.username ||
+    obj.code ||
+    obj.orderNo ||
+    obj.soNumber ||
+    obj.poNumber ||
+    obj.joNumber ||
+    obj.grnNumber ||
+    obj.dispatchNo ||
+    obj.machineId ||
+    obj.itemCode ||
+    obj.description ||
+    obj.title ||
+    null
   );
 }
 
@@ -80,26 +114,37 @@ function extractEntityInfo(body, action) {
     const val = body[key];
     if (val && typeof val === "object" && !Array.isArray(val)) {
       return {
-        id:   String(val._id || val.id || ""),
+        id: String(val._id || val.id || ""),
         name: pickName(val) || "",
       };
     }
   }
 
   // Direct response body (many controllers do res.json(record) directly)
-  if (body._id || body.id || body.name || body.code || body.orderNo || body.joNumber) {
+  if (
+    body._id ||
+    body.id ||
+    body.name ||
+    body.code ||
+    body.orderNo ||
+    body.joNumber
+  ) {
     return {
-      id:   String(body._id || body.id || ""),
+      id: String(body._id || body.id || ""),
       name: pickName(body) || "",
     };
   }
 
   // Bulk operations
   if (action === "BULK_IMPORTED" && body.results?.success?.length != null) {
-    return { id: null, name: `${body.results.success.length} records imported` };
+    return {
+      id: null,
+      name: `${body.results.success.length} records imported`,
+    };
   }
   if (action === "BULK_DELETED") {
-    if (body.deletedCount != null) return { id: null, name: `${body.deletedCount} records deleted` };
+    if (body.deletedCount != null)
+      return { id: null, name: `${body.deletedCount} records deleted` };
     if (body.message) return { id: null, name: body.message };
   }
 
@@ -127,8 +172,12 @@ function buildDetails(method, reqBody, resBody, action) {
 
   if (action === "STATUS_CHANGED") {
     d.newStatus =
-      reqBody?.status || reqBody?.stage || reqBody?.state ||
-      resBody?.status || resBody?.stage || "—";
+      reqBody?.status ||
+      reqBody?.stage ||
+      reqBody?.state ||
+      resBody?.status ||
+      resBody?.stage ||
+      "—";
   }
 
   if (action === "STOCK_ADJUSTED") {
@@ -160,18 +209,19 @@ function activityLogger(req, res, next) {
 
     const ip =
       req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
-      req.socket?.remoteAddress || null;
+      req.socket?.remoteAddress ||
+      null;
 
     const log = new ActivityLog({
       action,
       module,
-      entityId:        id || undefined,
-      entityName:      name || undefined,
+      entityId: id || undefined,
+      entityName: name || undefined,
       details,
-      performedBy:     req.user?._id || undefined,
+      performedBy: req.user?._id || undefined,
       performedByName: req.user?.name || body?.user?.name || undefined,
       performedByRole: req.user?.role || body?.user?.role || undefined,
-      ipAddress:       ip,
+      ipAddress: ip,
     });
 
     log.save().catch((err) => console.error("ActivityLog save error:", err));

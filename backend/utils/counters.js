@@ -1,20 +1,13 @@
-const Counter = require('../models/Counter');
-
-
-
-
-
-
-
+const Counter = require("../models/Counter");
 
 async function getNextSequence(name, prefix = null, padLength = 3) {
   const counter = await Counter.findOneAndUpdate(
     { name },
     { $inc: { seq: 1 } },
-    { new: true, upsert: true }
+    { new: true, upsert: true },
   );
 
-  const number = String(counter.seq).padStart(padLength, '0');
+  const number = String(counter.seq).padStart(padLength, "0");
 
   if (prefix) {
     return `${prefix}${number}`;
@@ -22,9 +15,6 @@ async function getNextSequence(name, prefix = null, padLength = 3) {
 
   return number;
 }
-
-
-
 
 async function generateSONo() {
   const year = new Date().getFullYear();
@@ -41,12 +31,10 @@ async function generatePONo() {
   return await getNextSequence(`PO-${year}`, `PO-${year}`, 3);
 }
 
-
 async function generateGRNNo() {
   const year = new Date().getFullYear();
   return await getNextSequence(`GRN-${year}`, `GRN-${year}`, 3);
 }
-
 
 async function generateDCNo() {
   const year = new Date().getFullYear();
@@ -55,13 +43,13 @@ async function generateDCNo() {
 
 async function generateItemCode(type) {
   const prefixMap = {
-    'Raw Material': 'RM',
-    'Finished Goods': 'FG',
-    'Consumable': 'CG',
-    'Machine Spare': 'SP'
+    "Raw Material": "RM",
+    "Finished Goods": "FG",
+    Consumable: "CG",
+    "Machine Spare": "SP",
   };
 
-  const prefix = prefixMap[type] || 'IT';
+  const prefix = prefixMap[type] || "IT";
   return await getNextSequence(prefix, prefix, 4);
 }
 
@@ -72,5 +60,5 @@ module.exports = {
   generatePONo,
   generateGRNNo,
   generateDCNo,
-  generateItemCode
+  generateItemCode,
 };

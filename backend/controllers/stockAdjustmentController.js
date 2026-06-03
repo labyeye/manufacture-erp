@@ -15,17 +15,26 @@ function detectStockType(productCode) {
 async function findStockRecord(stockType, productCode, itemName) {
   if (stockType === "Raw Material") {
     return await RawMaterialStock.findOne({
-      $or: [{ code: productCode }, { name: { $regex: new RegExp(`^${itemName}$`, "i") } }],
+      $or: [
+        { code: productCode },
+        { name: { $regex: new RegExp(`^${itemName}$`, "i") } },
+      ],
     });
   }
   if (stockType === "Finished Goods") {
     return await FGStock.findOne({
-      $or: [{ itemCode: productCode }, { itemName: { $regex: new RegExp(`^${itemName}$`, "i") } }],
+      $or: [
+        { itemCode: productCode },
+        { itemName: { $regex: new RegExp(`^${itemName}$`, "i") } },
+      ],
     });
   }
   if (stockType === "Consumable") {
     return await ConsumableStock.findOne({
-      $or: [{ code: productCode }, { name: { $regex: new RegExp(`^${itemName}$`, "i") } }],
+      $or: [
+        { code: productCode },
+        { name: { $regex: new RegExp(`^${itemName}$`, "i") } },
+      ],
     });
   }
   return null;
@@ -43,7 +52,10 @@ exports.getAll = async (req, res) => {
       if (from) filter.date.$gte = new Date(from);
       if (to) filter.date.$lte = new Date(to);
     }
-    const adjustments = await StockAdjustment.find(filter).sort({ date: -1, createdAt: -1 });
+    const adjustments = await StockAdjustment.find(filter).sort({
+      date: -1,
+      createdAt: -1,
+    });
     res.json({ adjustments });
   } catch (error) {
     console.error("Get all stock adjustments error:", error);
@@ -54,7 +66,8 @@ exports.getAll = async (req, res) => {
 exports.getOne = async (req, res) => {
   try {
     const adjustment = await StockAdjustment.findById(req.params.id);
-    if (!adjustment) return res.status(404).json({ error: "Adjustment not found" });
+    if (!adjustment)
+      return res.status(404).json({ error: "Adjustment not found" });
     res.json({ adjustment });
   } catch (error) {
     console.error("Get stock adjustment error:", error);
@@ -64,16 +77,24 @@ exports.getOne = async (req, res) => {
 
 exports.create = async (req, res) => {
   try {
-    const { date, productCode, itemName, adjustmentType, qty, weight, reason } = req.body;
+    const { date, productCode, itemName, adjustmentType, qty, weight, reason } =
+      req.body;
 
-    if (!productCode) return res.status(400).json({ error: "Product code is required" });
-    if (!itemName) return res.status(400).json({ error: "Item name is required" });
-    if (!adjustmentType) return res.status(400).json({ error: "Adjustment type is required" });
-    if (qty === undefined || qty === null) return res.status(400).json({ error: "Qty is required" });
+    if (!productCode)
+      return res.status(400).json({ error: "Product code is required" });
+    if (!itemName)
+      return res.status(400).json({ error: "Item name is required" });
+    if (!adjustmentType)
+      return res.status(400).json({ error: "Adjustment type is required" });
+    if (qty === undefined || qty === null)
+      return res.status(400).json({ error: "Qty is required" });
 
     const stockType = detectStockType(productCode);
     if (!stockType) {
-      return res.status(400).json({ error: "Cannot determine stock type from product code. Code must start with RM, FG, or CG." });
+      return res.status(400).json({
+        error:
+          "Cannot determine stock type from product code. Code must start with RM, FG, or CG.",
+      });
     }
 
     let stock = await findStockRecord(stockType, productCode, itemName);
@@ -81,14 +102,29 @@ exports.create = async (req, res) => {
     // If no stock record exists yet, create one with zero stock
     if (!stock) {
       if (adjustmentType === "Outward") {
-        return res.status(400).json({ error: `No stock record found for "${itemName}". Cannot do Outward adjustment on an item with no stock.` });
+        return res.status(400).json({
+          error: `No stock record found for "${itemName}". Cannot do Outward adjustment on an item with no stock.`,
+        });
       }
       if (stockType === "Raw Material") {
-        stock = new RawMaterialStock({ name: itemName, code: productCode.toUpperCase(), qty: 0, weight: 0 });
+        stock = new RawMaterialStock({
+          name: itemName,
+          code: productCode.toUpperCase(),
+          qty: 0,
+          weight: 0,
+        });
       } else if (stockType === "Finished Goods") {
-        stock = new FGStock({ itemName, itemCode: productCode.toUpperCase(), qty: 0 });
+        stock = new FGStock({
+          itemName,
+          itemCode: productCode.toUpperCase(),
+          qty: 0,
+        });
       } else if (stockType === "Consumable") {
-        stock = new ConsumableStock({ name: itemName, code: productCode.toUpperCase(), qty: 0 });
+        stock = new ConsumableStock({
+          name: itemName,
+          code: productCode.toUpperCase(),
+          qty: 0,
+        });
       }
       await stock.save();
     }
@@ -101,10 +137,15 @@ exports.create = async (req, res) => {
     const newWeight = beforeWeight + direction * Number(weight || 0);
 
     if (newQty < 0) {
-      return res.status(400).json({ error: "Insufficient stock: adjustment would result in negative quantity" });
+      return res.status(400).json({
+        error:
+          "Insufficient stock: adjustment would result in negative quantity",
+      });
     }
     if (stockType === "Raw Material" && newWeight < 0) {
-      return res.status(400).json({ error: "Insufficient stock: adjustment would result in negative weight" });
+      return res.status(400).json({
+        error: "Insufficient stock: adjustment would result in negative weight",
+      });
     }
 
     stock.qty = newQty;
@@ -142,9 +183,14 @@ exports.create = async (req, res) => {
 exports.deleteAdjustment = async (req, res) => {
   try {
     const adjustment = await StockAdjustment.findById(req.params.id);
-    if (!adjustment) return res.status(404).json({ error: "Adjustment not found" });
+    if (!adjustment)
+      return res.status(404).json({ error: "Adjustment not found" });
 
-    const stock = await findStockRecord(adjustment.stockType, adjustment.productCode, adjustment.itemName);
+    const stock = await findStockRecord(
+      adjustment.stockType,
+      adjustment.productCode,
+      adjustment.itemName,
+    );
     if (stock) {
       const direction = adjustment.adjustmentType === "Outward" ? 1 : -1;
       stock.qty = (stock.qty || 0) + direction * adjustment.qty;
@@ -181,7 +227,15 @@ exports.getReport = async (req, res) => {
     const summary = adjustments.reduce((acc, adj) => {
       const key = `${adj.productCode}|${adj.itemName}`;
       if (!acc[key]) {
-        acc[key] = { productCode: adj.productCode, itemName: adj.itemName, stockType: adj.stockType, production: 0, inward: 0, outward: 0, net: 0 };
+        acc[key] = {
+          productCode: adj.productCode,
+          itemName: adj.itemName,
+          stockType: adj.stockType,
+          production: 0,
+          inward: 0,
+          outward: 0,
+          net: 0,
+        };
       }
       if (adj.adjustmentType === "Production") acc[key].production += adj.qty;
       if (adj.adjustmentType === "Inward") acc[key].inward += adj.qty;

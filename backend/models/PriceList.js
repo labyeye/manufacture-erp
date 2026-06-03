@@ -17,7 +17,7 @@ const priceListSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
-    
+
     companyId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "CompanyMaster",
@@ -34,7 +34,7 @@ const priceListSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
-    
+
     vendorId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "VendorMaster",
@@ -61,7 +61,7 @@ const priceListSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
-    
+
     moq: {
       type: Number,
       default: 1,
@@ -80,9 +80,8 @@ const priceListSchema = new mongoose.Schema(
       trim: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
-
 
 priceListSchema.index({ listType: 1, itemCode: 1, companyId: 1 });
 priceListSchema.index({ listType: 1, itemCode: 1, vendorId: 1 });

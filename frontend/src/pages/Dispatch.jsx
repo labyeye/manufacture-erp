@@ -11,7 +11,12 @@ import {
   Modal,
 } from "../components/ui/BasicComponents";
 import { DatePicker } from "../components/ui/DatePicker";
-import { dispatchAPI, salesOrdersAPI, jobOrdersAPI, companyMasterAPI } from "../api/auth";
+import {
+  dispatchAPI,
+  salesOrdersAPI,
+  jobOrdersAPI,
+  companyMasterAPI,
+} from "../api/auth";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 const today = () => new Date().toISOString().slice(0, 10);
@@ -20,11 +25,23 @@ const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("en-GB") : "—");
 
 const UNIT_OPTIONS = ["pcs", "kg"];
 
-export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = [], toast, session, canCreate = true, canEdit = true, canDelete = true }) {
+export default function Dispatch({
+  fgStock = [],
+  rawStock = [],
+  consumableStock = [],
+  itemMasterFG = [],
+  priceList = [],
+  toast,
+  session,
+  canCreate = true,
+  canEdit = true,
+  canDelete = true,
+}) {
   const [dispatch, setDispatch] = useState([]);
   const [salesOrders, setSalesOrders] = useState([]);
   const [jobOrders, setJobOrders] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [materialType, setMaterialType] = useState("FG");
   const blankHeader = {
     dispatchDate: today(),
     soRef: "",
@@ -90,7 +107,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
   const fetchCompanies = async () => {
     try {
       const res = await companyMasterAPI.getAll();
-      setCompanyMaster(Array.isArray(res) ? res : (res?.companies || []));
+      setCompanyMaster(Array.isArray(res) ? res : res?.companies || []);
     } catch {
       // silently fail
     }
@@ -145,6 +162,14 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
     [fgStock],
   );
 
+  const itemNameOptions = useMemo(() => {
+    if (materialType === "RM")
+      return (rawStock || []).map((s) => s.name).filter(Boolean);
+    if (materialType === "CG")
+      return (consumableStock || []).map((s) => s.name || s.itemName).filter(Boolean);
+    return fgStockOptions;
+  }, [materialType, fgStockOptions, rawStock, consumableStock]);
+
   const setH = (k, v) => {
     if (k === "soRef") {
       if (v) {
@@ -165,7 +190,8 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
               (p) =>
                 p.listType === "selling" &&
                 (p.status === "Active" || !p.status) &&
-                (p.itemName === it.itemName || p.itemCode === (masterItem?.code || "")),
+                (p.itemName === it.itemName ||
+                  p.itemCode === (masterItem?.code || "")),
             );
             const priceEntry =
               soSellingPrices.find((p) => p.companyName === so.companyName) ||
@@ -193,7 +219,8 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
                 return amt > 0 ? ((amt * gst) / 100).toFixed(2) : 0;
               })(),
               totalWithTax: (() => {
-                if (it.totalWithTax && +it.totalWithTax !== 0) return it.totalWithTax;
+                if (it.totalWithTax && +it.totalWithTax !== 0)
+                  return it.totalWithTax;
                 const amt = +(it.amount || 0);
                 const gst = +(it.gstRate || 18);
                 return amt > 0 ? (amt + (amt * gst) / 100).toFixed(2) : 0;
@@ -252,12 +279,14 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
         const stock = (fgStock || []).find((s) => s.itemName === v);
         const masterItem = (itemMasterFG || []).find((m) => m.name === v);
 
-        it.productCode = stock?.itemCode || stock?.code || masterItem?.code || "";
+        it.productCode =
+          stock?.itemCode || stock?.code || masterItem?.code || "";
         it.unit = stock?.unit || it.unit || "nos";
 
-        it.companyCode = masterItem && header.companyName
-          ? masterItem.companyCodes?.[header.companyName] || ""
-          : "";
+        it.companyCode =
+          masterItem && header.companyName
+            ? masterItem.companyCodes?.[header.companyName] || ""
+            : "";
 
         if (header.companyName) {
           const priceEntry = (priceList || []).find(
@@ -280,7 +309,8 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
       const gst = k === "gstRate" ? +v : +(it.gstRate || 0);
 
       if (k !== "noOfBox") {
-        it.noOfBox = qty && ppb ? Math.ceil(qty / ppb).toString() : (it.noOfBox || "");
+        it.noOfBox =
+          qty && ppb ? Math.ceil(qty / ppb).toString() : it.noOfBox || "";
       }
       it.amount = qty && rate ? (qty * rate).toFixed(2) : "";
 
@@ -324,11 +354,15 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
       he.companyName = true;
     } else {
       const companyExists = companyMaster.some(
-        (c) => (c.name || "").toLowerCase() === header.companyName.toLowerCase()
+        (c) =>
+          (c.name || "").toLowerCase() === header.companyName.toLowerCase(),
       );
       if (!companyExists) {
         he.companyName = true;
-        toast(`Company "${header.companyName}" not found in Company Master`, "error");
+        toast(
+          `Company "${header.companyName}" not found in Company Master`,
+          "error",
+        );
       }
     }
     setHeaderErrors(he);
@@ -339,7 +373,9 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
       if (!it.qty) e.qty = true;
 
       if (!editId) {
-        const stockItem = (fgStock || []).find((s) => s.itemName === it.itemName);
+        const stockItem = (fgStock || []).find(
+          (s) => s.itemName === it.itemName,
+        );
         if (!stockItem) {
           e.itemName = true;
           toast(`Item "${it.itemName}" not found in FG Stock`, "error");
@@ -370,6 +406,7 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
       const payload = {
         date: new Date(header.dispatchDate),
         companyName: header.companyName,
+        materialType,
         soRef: header.soRef,
         poNumber: header.poNumber,
         joRef: header.joRef,
@@ -588,897 +625,1425 @@ export default function Dispatch({ fgStock = [], itemMasterFG = [], priceList = 
         sub="Record outgoing dispatches against sales orders"
       />
 
-      <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
-        {canCreate && <button
-          onClick={() => { setHeader(blankHeader); setItems([blankItem()]); setHeaderErrors({}); setItemErrors([{}]); setEditId(null); setShowModal(true); }}
-          style={{ background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", color: "#fff", padding: "9px 18px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
-        >
-          + New Dispatch
-        </button>}
-        {canCreate && <button
-          onClick={() => { setReturnHeader(blankReturnHeader); setReturnItems([blankItem()]); setShowReturnModal(true); }}
-          style={{ background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", color: "#fff", padding: "9px 18px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
-        >
-          Material Return
-        </button>}
+      <div
+        style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}
+      >
+        {canCreate && (
+          <button
+            onClick={() => {
+              setHeader(blankHeader);
+              setItems([blankItem()]);
+              setHeaderErrors({});
+              setItemErrors([{}]);
+              setEditId(null);
+              setShowModal(true);
+            }}
+            style={{
+              background: "rgba(255,255,255,0.08)",
+              border: "1px solid rgba(255,255,255,0.18)",
+              color: "#fff",
+              padding: "9px 18px",
+              borderRadius: 10,
+              fontWeight: 600,
+              fontSize: 13,
+              cursor: "pointer",
+              boxShadow:
+                "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+            }}
+          >
+            + New Dispatch
+          </button>
+        )}
+        {canCreate && (
+          <button
+            onClick={() => {
+              setReturnHeader(blankReturnHeader);
+              setReturnItems([blankItem()]);
+              setShowReturnModal(true);
+            }}
+            style={{
+              background: "rgba(255,255,255,0.08)",
+              border: "1px solid rgba(255,255,255,0.18)",
+              color: "#fff",
+              padding: "9px 18px",
+              borderRadius: 10,
+              fontWeight: 600,
+              fontSize: 13,
+              cursor: "pointer",
+              boxShadow:
+                "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+            }}
+          >
+            Material Return
+          </button>
+        )}
       </div>
 
       {showModal && (
-        <Modal title={editId ? "Edit Dispatch" : "New Dispatch"} onClose={() => { setShowModal(false); setEditId(null); setHeader(blankHeader); setItems([blankItem()]); setHeaderErrors({}); setItemErrors([{}]); }}>
-        <div>
-          {}
-          <Card style={{ marginBottom: 16 }}>
-            <h3
-              style={{
-                fontSize: 14,
-                fontWeight: 500,
-                color: C.purple,
-                marginBottom: 18,
-              }}
-            >
-              Dispatch Details
-            </h3>
-
+        <Modal
+          title={editId ? "Edit Dispatch" : "New Dispatch"}
+          onClose={() => {
+            setShowModal(false);
+            setEditId(null);
+            setHeader(blankHeader);
+            setItems([blankItem()]);
+            setHeaderErrors({});
+            setItemErrors([{}]);
+          }}
+        >
+          <div>
             {}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr",
-                gap: 14,
-                marginBottom: 14,
-              }}
-            >
-              <Field label="Dispatch Date *">
-                <DatePicker
-                  value={header.dispatchDate}
-                  onChange={(v) => setH("dispatchDate", v)}
-                  style={EH("dispatchDate")}
-                />
-                {EHMsg("dispatchDate")}
-              </Field>
-              <Field label="Sales Order #">
-                <select
-                  value={header.soRef}
-                  onChange={(e) => setH("soRef", e.target.value)}
-                >
-                  <option value="">-- Link to SO (optional) --</option>
-                  {activeSOList.map((s) => (
-                    <option key={s.soNo} value={s.soNo}>
-                      {s.soNo} — {s.clientName}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="PO Number">
-                <input
-                  placeholder="Customer PO No."
-                  value={header.poNumber}
-                  onChange={(e) => setH("poNumber", e.target.value)}
-                />
-              </Field>
-              <Field label="Company Name *">
-                <AutocompleteInput
-                  value={header.companyName}
-                  onChange={(v) => setH("companyName", v)}
-                  suggestions={companyMaster.map((c) => c.name)}
-                  placeholder="Type to search company..."
-                />
-              </Field>
-              <Field label="Delivery Address">
-                <input
-                  placeholder="Delivery address"
-                  value={header.deliveryAddress}
-                  onChange={(e) => setH("deliveryAddress", e.target.value)}
-                />
-              </Field>
-              <Field label="Vehicle No">
-                <input
-                  placeholder="e.g. DL01AB1234"
-                  value={header.vehicleNo}
-                  onChange={(e) => setH("vehicleNo", e.target.value)}
-                  style={EH("vehicleNo")}
-                />
-                {EHMsg("vehicleNo")}
-              </Field>
-            </div>
-
-            {}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 2fr",
-                gap: 14,
-              }}
-            >
-              <Field label="Driver Name">
-                <input
-                  placeholder="Driver name"
-                  value={header.driverName}
-                  onChange={(e) => setH("driverName", e.target.value)}
-                />
-              </Field>
-              <Field label="Remarks">
-                <input
-                  placeholder="Notes"
-                  value={header.remarks}
-                  onChange={(e) => setH("remarks", e.target.value)}
-                />
-              </Field>
-            </div>
-          </Card>
-
-          {}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 10,
-            }}
-          >
-            <h3 style={{ fontSize: 14, fontWeight: 500, color: C.purple }}>
-              Items ({items.length})
-            </h3>
-            <button
-              onClick={addItem}
-              style={{
-                background: "rgba(255,255,255,0.08)",
-                color: "#fff",
-                border: "1px solid rgba(255,255,255,0.18)",
-                borderRadius: 6,
-                padding: "8px 18px",
-                fontWeight: 500,
-                fontSize: 13,
-                cursor: "pointer",
-                boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
-              }}
-            >
-              + Add Item
-            </button>
-          </div>
-
-          {}
-          {items.map((it, idx) => (
-            <Card
-              key={it._id}
-              style={{ marginBottom: 12, }}
-            >
-              <div
+            <Card style={{ marginBottom: 16 }}>
+              <h3
                 style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: C.purple,
                   marginBottom: 14,
                 }}
               >
-                <span
-                  style={{ fontWeight: 500, color: C.purple, fontSize: 13 }}
-                >
-                  Item {idx + 1}
-                </span>
-                {items.length > 1 && (
+                Dispatch Details
+              </h3>
+
+              {/* Material Type selector */}
+              <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
+                {[
+                  { id: "FG", label: "Finished Goods", color: "#4ade80" },
+                  { id: "RM", label: "Raw Material", color: "#60a5fa" },
+                  { id: "CG", label: "Consumable", color: "#fb923c" },
+                ].map((t) => (
                   <button
-                    onClick={() => removeItem(idx)}
+                    key={t.id}
+                    onClick={() => { setMaterialType(t.id); setItems([blankItem()]); }}
                     style={{
-                      background: "transparent",
-                      color: "#ffffff",
-                      border: "1px solid rgba(255,255,255,0.2)",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
+                      padding: "7px 18px",
+                      borderRadius: 8,
+                      border: `1.5px solid ${materialType === t.id ? t.color : "rgba(255,255,255,0.1)"}`,
+                      background: materialType === t.id ? t.color + "18" : "transparent",
+                      color: materialType === t.id ? t.color : "#888",
+                      fontWeight: materialType === t.id ? 700 : 500,
+                      fontSize: 12,
                       cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
                     }}
-                  ><i className="fa-solid fa-trash" /> Delete</button>
-                )}
+                  >
+                    {t.label}
+                  </button>
+                ))}
               </div>
 
               {}
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "1.8fr 0.8fr 0.8fr 0.7fr 0.5fr 0.6fr 0.6fr 0.7fr 0.5fr 1fr",
-                  gap: 10,
-                  marginBottom: 12,
+                  gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr",
+                  gap: 14,
+                  marginBottom: 14,
                 }}
               >
-                <Field label="Item Name *">
-                  <AutocompleteInput
-                    value={it.itemName}
-                    onChange={(v) => setItem(idx, "itemName", v)}
-                    suggestions={fgStockOptions}
-                    placeholder="Type to search FG item..."
-                    inputStyle={EI(idx, "itemName")}
+                <Field label="Dispatch Date *">
+                  <DatePicker
+                    value={header.dispatchDate}
+                    onChange={(v) => setH("dispatchDate", v)}
+                    style={EH("dispatchDate")}
                   />
-                  {EIMsg(idx, "itemName")}
-                  {(() => {
-                    const st = (fgStock || []).find(
-                      (s) => s.itemName === it.itemName,
-                    );
-                    if (!it.itemName || !st) return null;
-                    const isLow = (st.qty || 0) < Number(it.qty || 0);
-                    return (
-                      <div
-                        style={{
-                          fontSize: 10,
-                          color: isLow ? C.red : C.green,
-                          marginTop: 4,
-                          fontWeight: 500,
-                        }}
-                      >
-                        Stock Available: {fmt(st.qty || 0)} {st.unit || ""}
-                        {isLow && " (Insufficient)"}
-                      </div>
-                    );
-                  })()}
+                  {EHMsg("dispatchDate")}
                 </Field>
-                <Field label="Product Code">
-                  <input
-                    placeholder="Auto-filled"
-                    value={it.productCode}
-                    onChange={(e) =>
-                      setItem(idx, "productCode", e.target.value)
-                    }
-                  />
-                </Field>
-                <Field label="Company Code">
-                  <input
-                    placeholder="From Item Master"
-                    value={it.companyCode}
-                    onChange={(e) => setItem(idx, "companyCode", e.target.value)}
-                  />
-                </Field>
-                <Field label="Quantity *">
-                  <input
-                    type="number"
-                    placeholder="Qty to dispatch"
-                    value={it.qty}
-                    onChange={(e) => setItem(idx, "qty", e.target.value)}
-                    style={EI(idx, "qty")}
-                  />
-                  {EIMsg(idx, "qty")}
-                </Field>
-                <Field label="Unit">
+                <Field label="Sales Order #">
                   <select
-                    value={it.unit}
-                    onChange={(e) => setItem(idx, "unit", e.target.value)}
+                    value={header.soRef}
+                    onChange={(e) => setH("soRef", e.target.value)}
                   >
-                    {UNIT_OPTIONS.map((u) => (
-                      <option key={u}>{u}</option>
+                    <option value="">-- Link to SO (optional) --</option>
+                    {activeSOList.map((s) => (
+                      <option key={s.soNo} value={s.soNo}>
+                        {s.soNo} — {s.clientName}
+                      </option>
                     ))}
                   </select>
                 </Field>
-                <Field label="Pcs/Box">
+                <Field label="PO Number">
                   <input
-                    type="number"
-                    placeholder="Pcs/Box"
-                    value={it.pcsPerBox}
-                    onChange={(e) => setItem(idx, "pcsPerBox", e.target.value)}
+                    placeholder="Customer PO No."
+                    value={header.poNumber}
+                    onChange={(e) => setH("poNumber", e.target.value)}
                   />
                 </Field>
-                <Field label="Boxes">
-                  <input
-                    type="number"
-                    placeholder="Boxes"
-                    value={it.noOfBox}
-                    onChange={(e) => setItem(idx, "noOfBox", e.target.value)}
+                <Field label="Company Name *">
+                  <AutocompleteInput
+                    value={header.companyName}
+                    onChange={(v) => setH("companyName", v)}
+                    suggestions={companyMaster.map((c) => c.name)}
+                    placeholder="Type to search company..."
                   />
                 </Field>
-                <Field label="Rate (₹)">
+                <Field label="Delivery Address">
                   <input
-                    type="number"
-                    value={it.rate || ""}
-                    onChange={(e) => setItem(idx, "rate", e.target.value)}
+                    placeholder="Delivery address"
+                    value={header.deliveryAddress}
+                    onChange={(e) => setH("deliveryAddress", e.target.value)}
                   />
                 </Field>
-                <Field label="GST (%)">
+                <Field label="Vehicle No">
                   <input
-                    type="number"
-                    value={it.gstRate || 18}
-                    onChange={(e) => setItem(idx, "gstRate", e.target.value)}
+                    placeholder="e.g. DL01AB1234"
+                    value={header.vehicleNo}
+                    onChange={(e) => setH("vehicleNo", e.target.value)}
+                    style={EH("vehicleNo")}
                   />
-                </Field>
-                <Field label="Total (incl Tax)">
-                  <div
-                    style={{
-                      padding: "9px 12px",
-                      background: C.inputBg,
-                      border: `1px solid ${C.border}`,
-                      borderRadius: 6,
-                      fontSize: 13,
-                      color: it.totalWithTax ? C.green : C.muted,
-                      fontWeight: it.totalWithTax ? 700 : 400,
-                    }}
-                  >
-                    {it.totalWithTax ? `₹${fmt(+it.totalWithTax)}` : "—"}
-                  </div>
+                  {EHMsg("vehicleNo")}
                 </Field>
               </div>
 
+              {}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 2fr",
+                  gap: 14,
+                }}
+              >
+                <Field label="Driver Name">
+                  <input
+                    placeholder="Driver name"
+                    value={header.driverName}
+                    onChange={(e) => setH("driverName", e.target.value)}
+                  />
+                </Field>
+                <Field label="Remarks">
+                  <input
+                    placeholder="Notes"
+                    value={header.remarks}
+                    onChange={(e) => setH("remarks", e.target.value)}
+                  />
+                </Field>
+              </div>
             </Card>
-          ))}
 
-          {}
-          <div
-            style={{
-              display: "flex",
-              gap: 10,
-              marginTop: 4,
-              alignItems: "center",
-            }}
-          >
-            <button
-              onClick={addItem}
+            {}
+            <div
               style={{
-                background: (C.purple || "#a855f7") + "22",
-                color: C.purple || "#a855f7",
-                border: `1px solid ${C.purple || "#a855f7"}44`,
-                borderRadius: 6,
-                padding: "9px 20px",
-                fontWeight: 500,
-                fontSize: 13,
-                cursor: "pointer",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 10,
               }}
             >
-              + Add Another Item
-            </button>
-            <SubmitBtn
-              label={`Record Dispatch (${items.length} item${items.length > 1 ? "s" : ""})`}
-              color={C.purple}
-              onClick={submit}
-            />
+              <h3 style={{ fontSize: 14, fontWeight: 500, color: C.purple }}>
+                Items ({items.length})
+              </h3>
+              <button
+                onClick={addItem}
+                style={{
+                  background: "rgba(255,255,255,0.08)",
+                  color: "#fff",
+                  border: "1px solid rgba(255,255,255,0.18)",
+                  borderRadius: 6,
+                  padding: "8px 18px",
+                  fontWeight: 500,
+                  fontSize: 13,
+                  cursor: "pointer",
+                  boxShadow:
+                    "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                }}
+              >
+                + Add Item
+              </button>
+            </div>
+
+            {}
+            {items.map((it, idx) => (
+              <Card key={it._id} style={{ marginBottom: 12 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: 14,
+                  }}
+                >
+                  <span
+                    style={{ fontWeight: 500, color: C.purple, fontSize: 13 }}
+                  >
+                    Item {idx + 1}
+                  </span>
+                  {items.length > 1 && (
+                    <button
+                      onClick={() => removeItem(idx)}
+                      style={{
+                        background: "transparent",
+                        color: "#ffffff",
+                        border: "1px solid rgba(255,255,255,0.2)",
+                        borderRadius: 6,
+                        padding: "6px 12px",
+                        fontSize: 11,
+                        fontWeight: 500,
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                      }}
+                    >
+                      <i className="fa-solid fa-trash" /> Delete
+                    </button>
+                  )}
+                </div>
+
+                {}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      "1.8fr 0.8fr 0.8fr 0.7fr 0.5fr 0.6fr 0.6fr 0.7fr 0.5fr 1fr",
+                    gap: 10,
+                    marginBottom: 12,
+                  }}
+                >
+                  <Field label="Item Name *">
+                    <AutocompleteInput
+                      value={it.itemName}
+                      onChange={(v) => setItem(idx, "itemName", v)}
+                      suggestions={itemNameOptions}
+                      placeholder="Type to search FG item..."
+                      inputStyle={EI(idx, "itemName")}
+                    />
+                    {EIMsg(idx, "itemName")}
+                    {(() => {
+                      const st = (fgStock || []).find(
+                        (s) => s.itemName === it.itemName,
+                      );
+                      if (!it.itemName || !st) return null;
+                      const isLow = (st.qty || 0) < Number(it.qty || 0);
+                      return (
+                        <div
+                          style={{
+                            fontSize: 10,
+                            color: isLow ? C.red : C.green,
+                            marginTop: 4,
+                            fontWeight: 500,
+                          }}
+                        >
+                          Stock Available: {fmt(st.qty || 0)} {st.unit || ""}
+                          {isLow && " (Insufficient)"}
+                        </div>
+                      );
+                    })()}
+                  </Field>
+                  <Field label="Product Code">
+                    <input
+                      placeholder="Auto-filled"
+                      value={it.productCode}
+                      onChange={(e) =>
+                        setItem(idx, "productCode", e.target.value)
+                      }
+                    />
+                  </Field>
+                  <Field label="Company Code">
+                    <input
+                      placeholder="From Item Master"
+                      value={it.companyCode}
+                      onChange={(e) =>
+                        setItem(idx, "companyCode", e.target.value)
+                      }
+                    />
+                  </Field>
+                  <Field label="Quantity *">
+                    <input
+                      type="number"
+                      placeholder="Qty to dispatch"
+                      value={it.qty}
+                      onChange={(e) => setItem(idx, "qty", e.target.value)}
+                      style={EI(idx, "qty")}
+                    />
+                    {EIMsg(idx, "qty")}
+                  </Field>
+                  <Field label="Unit">
+                    <select
+                      value={it.unit}
+                      onChange={(e) => setItem(idx, "unit", e.target.value)}
+                    >
+                      {UNIT_OPTIONS.map((u) => (
+                        <option key={u}>{u}</option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label="Pcs/Box">
+                    <input
+                      type="number"
+                      placeholder="Pcs/Box"
+                      value={it.pcsPerBox}
+                      onChange={(e) =>
+                        setItem(idx, "pcsPerBox", e.target.value)
+                      }
+                    />
+                  </Field>
+                  <Field label="Boxes">
+                    <input
+                      type="number"
+                      placeholder="Boxes"
+                      value={it.noOfBox}
+                      onChange={(e) => setItem(idx, "noOfBox", e.target.value)}
+                    />
+                  </Field>
+                  <Field label="Rate (₹)">
+                    <input
+                      type="number"
+                      value={it.rate || ""}
+                      onChange={(e) => setItem(idx, "rate", e.target.value)}
+                    />
+                  </Field>
+                  <Field label="GST (%)">
+                    <input
+                      type="number"
+                      value={it.gstRate || 18}
+                      onChange={(e) => setItem(idx, "gstRate", e.target.value)}
+                    />
+                  </Field>
+                  <Field label="Total (incl Tax)">
+                    <div
+                      style={{
+                        padding: "9px 12px",
+                        background: C.inputBg,
+                        border: `1px solid ${C.border}`,
+                        borderRadius: 6,
+                        fontSize: 13,
+                        color: it.totalWithTax ? C.green : C.muted,
+                        fontWeight: it.totalWithTax ? 700 : 400,
+                      }}
+                    >
+                      {it.totalWithTax ? `₹${fmt(+it.totalWithTax)}` : "—"}
+                    </div>
+                  </Field>
+                </div>
+              </Card>
+            ))}
+
+            {}
+            <div
+              style={{
+                display: "flex",
+                gap: 10,
+                marginTop: 4,
+                alignItems: "center",
+              }}
+            >
+              <button
+                onClick={addItem}
+                style={{
+                  background: (C.purple || "#a855f7") + "22",
+                  color: C.purple || "#a855f7",
+                  border: `1px solid ${C.purple || "#a855f7"}44`,
+                  borderRadius: 6,
+                  padding: "9px 20px",
+                  fontWeight: 500,
+                  fontSize: 13,
+                  cursor: "pointer",
+                }}
+              >
+                + Add Another Item
+              </button>
+              <SubmitBtn
+                label={`Record Dispatch (${items.length} item${items.length > 1 ? "s" : ""})`}
+                color={C.purple}
+                onClick={submit}
+              />
+            </div>
           </div>
-        </div>
         </Modal>
       )}
 
       {showReturnModal && (
-        <Modal title="Material Return" onClose={() => { setShowReturnModal(false); setReturnHeader(blankReturnHeader); setReturnItems([blankItem()]); }}>
-        <div>
-          <Card style={{ marginBottom: 16 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 500, color: C.orange || "#f97316", marginBottom: 18 }}>
-              Material Return Details
-            </h3>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 14, marginBottom: 14 }}>
-              <Field label="Return Date *">
-                <input
-                  type="date"
-                  value={returnHeader.returnDate}
-                  onChange={(e) => setReturnHeader((h) => ({ ...h, returnDate: e.target.value }))}
-                />
-              </Field>
-              <Field label="Company Name *">
-                <AutocompleteInput
-                  value={returnHeader.companyName}
-                  onChange={(v) => setReturnHeader((h) => ({ ...h, companyName: v }))}
-                  suggestions={companyMaster.map((c) => c.name)}
-                  placeholder="Type to search company..."
-                />
-              </Field>
-              <Field label="Original Dispatch Ref">
-                <AutocompleteInput
-                  value={returnHeader.originalDispatchRef}
-                  onChange={(v) => {
-                    const ref = (v || "").split(" — ")[0].trim();
-                    const orig = (dispatch || []).find((d) => d.dispatchNo === ref);
-                    setReturnHeader((h) => ({
-                      ...h,
-                      originalDispatchRef: ref,
-                      companyName: orig?.companyName || h.companyName,
-                    }));
-                    if (orig?.items?.length) {
-                      setReturnItems(orig.items.map((it) => ({
-                        _id: uid(),
-                        itemName: it.itemName || "",
-                        productCode: it.productCode || "",
-                        companyCode: it.companyCode || "",
-                        qty: "",
-                        unit: it.unit || "nos",
-                        pcsPerBox: "",
-                        noOfBox: "",
-                        rate: it.rate || "",
-                        gstRate: it.gstRate || 18,
-                        amount: "",
-                        taxAmount: "",
-                        totalWithTax: "",
-                      })));
+        <Modal
+          title="Material Return"
+          onClose={() => {
+            setShowReturnModal(false);
+            setReturnHeader(blankReturnHeader);
+            setReturnItems([blankItem()]);
+          }}
+        >
+          <div>
+            <Card style={{ marginBottom: 16 }}>
+              <h3
+                style={{
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: C.orange || "#f97316",
+                  marginBottom: 18,
+                }}
+              >
+                Material Return Details
+              </h3>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr 1fr 1fr",
+                  gap: 14,
+                  marginBottom: 14,
+                }}
+              >
+                <Field label="Return Date *">
+                  <input
+                    type="date"
+                    value={returnHeader.returnDate}
+                    onChange={(e) =>
+                      setReturnHeader((h) => ({
+                        ...h,
+                        returnDate: e.target.value,
+                      }))
                     }
-                  }}
-                  suggestions={(dispatch || [])
-                    .filter((d) => d.type !== "Return")
-                    .map((d) => `${d.dispatchNo} — ${d.companyName}${d.date ? " (" + new Date(d.date).toLocaleDateString("en-GB") + ")" : ""}`)}
-                  placeholder="Search dispatch number / company..."
-                />
-              </Field>
-              <Field label="Vehicle No">
-                <input
-                  placeholder="Vehicle number"
-                  value={returnHeader.vehicleNo}
-                  onChange={(e) => setReturnHeader((h) => ({ ...h, vehicleNo: e.target.value }))}
-                />
-              </Field>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 14 }}>
-              <Field label="Return Reason *">
-                <select
-                  value={returnHeader.returnReason}
-                  onChange={(e) => setReturnHeader((h) => ({ ...h, returnReason: e.target.value }))}
-                >
-                  <option value="">-- Select Reason --</option>
-                  {["Quality Issue", "Wrong Item", "Excess Quantity", "Damaged in Transit", "Customer Rejection", "Other"].map((r) => (
-                    <option key={r}>{r}</option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Remarks">
-                <input
-                  placeholder="Additional notes"
-                  value={returnHeader.remarks}
-                  onChange={(e) => setReturnHeader((h) => ({ ...h, remarks: e.target.value }))}
-                />
-              </Field>
-            </div>
-          </Card>
-
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 500, color: C.orange || "#f97316" }}>
-              Return Items ({returnItems.length})
-            </h3>
-            <button
-              onClick={() => setReturnItems((prev) => [...prev, blankItem()])}
-              style={{ background: "rgba(255,255,255,0.08)",  color: "#fff", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, padding: "8px 18px", fontWeight: 500, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
-            >
-              + Add Item
-            </button>
-          </div>
-
-          {returnItems.map((it, idx) => (
-            <Card key={it._id} style={{ marginBottom: 12 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-                <span style={{ fontWeight: 500, color: C.orange || "#f97316", fontSize: 13 }}>Item {idx + 1}</span>
-                {returnItems.length > 1 && (
-                  <button
-                    onClick={() => setReturnItems((prev) => prev.filter((_, i) => i !== idx))}
-                    style={{
-                      background: "transparent",
-                      color: "#ffffff",
-                      border: "1px solid rgba(255,255,255,0.2)",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
+                  />
+                </Field>
+                <Field label="Company Name *">
+                  <AutocompleteInput
+                    value={returnHeader.companyName}
+                    onChange={(v) =>
+                      setReturnHeader((h) => ({ ...h, companyName: v }))
+                    }
+                    suggestions={companyMaster.map((c) => c.name)}
+                    placeholder="Type to search company..."
+                  />
+                </Field>
+                <Field label="Original Dispatch Ref">
+                  <AutocompleteInput
+                    value={returnHeader.originalDispatchRef}
+                    onChange={(v) => {
+                      const ref = (v || "").split(" — ")[0].trim();
+                      const orig = (dispatch || []).find(
+                        (d) => d.dispatchNo === ref,
+                      );
+                      setReturnHeader((h) => ({
+                        ...h,
+                        originalDispatchRef: ref,
+                        companyName: orig?.companyName || h.companyName,
+                      }));
+                      if (orig?.items?.length) {
+                        setReturnItems(
+                          orig.items.map((it) => ({
+                            _id: uid(),
+                            itemName: it.itemName || "",
+                            productCode: it.productCode || "",
+                            companyCode: it.companyCode || "",
+                            qty: "",
+                            unit: it.unit || "nos",
+                            pcsPerBox: "",
+                            noOfBox: "",
+                            rate: it.rate || "",
+                            gstRate: it.gstRate || 18,
+                            amount: "",
+                            taxAmount: "",
+                            totalWithTax: "",
+                          })),
+                        );
+                      }
                     }}
-                  ><i className="fa-solid fa-trash" /> Delete</button>
-                )}
+                    suggestions={(dispatch || [])
+                      .filter((d) => d.type !== "Return")
+                      .map(
+                        (d) =>
+                          `${d.dispatchNo} — ${d.companyName}${d.date ? " (" + new Date(d.date).toLocaleDateString("en-GB") + ")" : ""}`,
+                      )}
+                    placeholder="Search dispatch number / company..."
+                  />
+                </Field>
+                <Field label="Vehicle No">
+                  <input
+                    placeholder="Vehicle number"
+                    value={returnHeader.vehicleNo}
+                    onChange={(e) =>
+                      setReturnHeader((h) => ({
+                        ...h,
+                        vehicleNo: e.target.value,
+                      }))
+                    }
+                  />
+                </Field>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 0.5fr", gap: 10 }}>
-                <Field label="Item Name *">
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 2fr",
+                  gap: 14,
+                }}
+              >
+                <Field label="Return Reason *">
                   <select
-                    value={it.itemName}
-                    onChange={(e) => setReturnItems((prev) => {
-                      const updated = [...prev];
-                      updated[idx] = { ...updated[idx], itemName: e.target.value };
-                      return updated;
-                    })}
+                    value={returnHeader.returnReason}
+                    onChange={(e) =>
+                      setReturnHeader((h) => ({
+                        ...h,
+                        returnReason: e.target.value,
+                      }))
+                    }
                   >
-                    <option value="">-- Select Item --</option>
-                    {(fgStock || []).map((s) => (
-                      <option key={s._id || s.id} value={s.itemName}>{s.itemName}</option>
+                    <option value="">-- Select Reason --</option>
+                    {[
+                      "Quality Issue",
+                      "Wrong Item",
+                      "Excess Quantity",
+                      "Damaged in Transit",
+                      "Customer Rejection",
+                      "Other",
+                    ].map((r) => (
+                      <option key={r}>{r}</option>
                     ))}
                   </select>
                 </Field>
-                <Field label="Return Qty *">
+                <Field label="Remarks">
                   <input
-                    type="number"
-                    placeholder="Qty being returned"
-                    value={it.qty}
-                    onChange={(e) => setReturnItems((prev) => {
-                      const updated = [...prev];
-                      updated[idx] = { ...updated[idx], qty: e.target.value };
-                      return updated;
-                    })}
-                  />
-                </Field>
-                <Field label="Unit">
-                  <select
-                    value={it.unit}
-                    onChange={(e) => setReturnItems((prev) => {
-                      const updated = [...prev];
-                      updated[idx] = { ...updated[idx], unit: e.target.value };
-                      return updated;
-                    })}
-                  >
-                    {UNIT_OPTIONS.map((u) => <option key={u}>{u}</option>)}
-                  </select>
-                </Field>
-                <Field label="Product Code">
-                  <input
-                    placeholder="Product code"
-                    value={it.productCode}
-                    onChange={(e) => setReturnItems((prev) => {
-                      const updated = [...prev];
-                      updated[idx] = { ...updated[idx], productCode: e.target.value };
-                      return updated;
-                    })}
-                  />
-                </Field>
-                <Field label="Rate (₹)">
-                  <input
-                    type="number"
-                    value={it.rate || ""}
-                    onChange={(e) => setReturnItems((prev) => {
-                      const updated = [...prev];
-                      updated[idx] = { ...updated[idx], rate: e.target.value };
-                      return updated;
-                    })}
+                    placeholder="Additional notes"
+                    value={returnHeader.remarks}
+                    onChange={(e) =>
+                      setReturnHeader((h) => ({
+                        ...h,
+                        remarks: e.target.value,
+                      }))
+                    }
                   />
                 </Field>
               </div>
             </Card>
-          ))}
 
-          <div style={{ marginTop: 8, display: "flex", gap: 10 }}>
-            <button
-              disabled={returnLoading}
-              onClick={async () => {
-                if (!returnHeader.companyName) { toast("Company name is required", "error"); return; }
-                if (!returnHeader.returnReason) { toast("Please select a return reason", "error"); return; }
-                const validItems = returnItems.filter((it) => it.itemName && it.qty);
-                if (validItems.length === 0) { toast("Add at least one item with quantity", "error"); return; }
-
-                setReturnLoading(true);
-                try {
-                  const res = await dispatchAPI.create({
-                    date: new Date(returnHeader.returnDate),
-                    companyName: returnHeader.companyName,
-                    vehicleNo: returnHeader.vehicleNo,
-                    remarks: returnHeader.remarks,
-                    type: "Return",
-                    originalDispatchRef: returnHeader.originalDispatchRef,
-                    returnReason: returnHeader.returnReason,
-                    items: validItems.map((it) => ({
-                      itemName: it.itemName,
-                      productCode: it.productCode || "",
-                      companyCode: it.companyCode || "",
-                      qty: Number(it.qty),
-                      unit: it.unit || "nos",
-                      rate: it.rate ? Number(it.rate) : 0,
-                      amount: 0,
-                      gstRate: 0,
-                      taxAmount: 0,
-                      totalWithTax: 0,
-                    })),
-                  });
-                  toast(`Material Return ${res.dispatch?.dispatchNo} recorded — FG stock updated`, "success");
-                  setReturnHeader(blankReturnHeader);
-                  setReturnItems([blankItem()]);
-                  fetchDispatches();
-                  setShowReturnModal(false);
-                } catch (err) {
-                  toast(err.response?.data?.error || "Failed to record return", "error");
-                } finally {
-                  setReturnLoading(false);
-                }
-              }}
+            <div
               style={{
-                background: "rgba(255,255,255,0.08)",
-                color: "#fff",
-                border: "1px solid rgba(255,255,255,0.18)",
-                borderRadius: 6,
-                padding: "10px 24px",
-                fontWeight: 500,
-                boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
-                opacity: returnLoading ? 0.6 : 1,
-                fontSize: 13,
-                cursor: returnLoading ? "not-allowed" : "pointer",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 10,
               }}
             >
-              {returnLoading ? "Saving…" : `Record Material Return (${returnItems.filter((it) => it.itemName && it.qty).length} item${returnItems.filter((it) => it.itemName && it.qty).length !== 1 ? "s" : ""})`}
-            </button>
+              <h3
+                style={{
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: C.orange || "#f97316",
+                }}
+              >
+                Return Items ({returnItems.length})
+              </h3>
+              <button
+                onClick={() => setReturnItems((prev) => [...prev, blankItem()])}
+                style={{
+                  background: "rgba(255,255,255,0.08)",
+                  color: "#fff",
+                  border: "1px solid rgba(255,255,255,0.18)",
+                  borderRadius: 6,
+                  padding: "8px 18px",
+                  fontWeight: 500,
+                  fontSize: 13,
+                  cursor: "pointer",
+                  boxShadow:
+                    "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                }}
+              >
+                + Add Item
+              </button>
+            </div>
+
+            {returnItems.map((it, idx) => (
+              <Card key={it._id} style={{ marginBottom: 12 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: 14,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontWeight: 500,
+                      color: C.orange || "#f97316",
+                      fontSize: 13,
+                    }}
+                  >
+                    Item {idx + 1}
+                  </span>
+                  {returnItems.length > 1 && (
+                    <button
+                      onClick={() =>
+                        setReturnItems((prev) =>
+                          prev.filter((_, i) => i !== idx),
+                        )
+                      }
+                      style={{
+                        background: "transparent",
+                        color: "#ffffff",
+                        border: "1px solid rgba(255,255,255,0.2)",
+                        borderRadius: 6,
+                        padding: "6px 12px",
+                        fontSize: 11,
+                        fontWeight: 500,
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                      }}
+                    >
+                      <i className="fa-solid fa-trash" /> Delete
+                    </button>
+                  )}
+                </div>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "2fr 1fr 1fr 1fr 0.5fr",
+                    gap: 10,
+                  }}
+                >
+                  <Field label="Item Name *">
+                    <select
+                      value={it.itemName}
+                      onChange={(e) =>
+                        setReturnItems((prev) => {
+                          const updated = [...prev];
+                          updated[idx] = {
+                            ...updated[idx],
+                            itemName: e.target.value,
+                          };
+                          return updated;
+                        })
+                      }
+                    >
+                      <option value="">-- Select Item --</option>
+                      {(fgStock || []).map((s) => (
+                        <option key={s._id || s.id} value={s.itemName}>
+                          {s.itemName}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label="Return Qty *">
+                    <input
+                      type="number"
+                      placeholder="Qty being returned"
+                      value={it.qty}
+                      onChange={(e) =>
+                        setReturnItems((prev) => {
+                          const updated = [...prev];
+                          updated[idx] = {
+                            ...updated[idx],
+                            qty: e.target.value,
+                          };
+                          return updated;
+                        })
+                      }
+                    />
+                  </Field>
+                  <Field label="Unit">
+                    <select
+                      value={it.unit}
+                      onChange={(e) =>
+                        setReturnItems((prev) => {
+                          const updated = [...prev];
+                          updated[idx] = {
+                            ...updated[idx],
+                            unit: e.target.value,
+                          };
+                          return updated;
+                        })
+                      }
+                    >
+                      {UNIT_OPTIONS.map((u) => (
+                        <option key={u}>{u}</option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label="Product Code">
+                    <input
+                      placeholder="Product code"
+                      value={it.productCode}
+                      onChange={(e) =>
+                        setReturnItems((prev) => {
+                          const updated = [...prev];
+                          updated[idx] = {
+                            ...updated[idx],
+                            productCode: e.target.value,
+                          };
+                          return updated;
+                        })
+                      }
+                    />
+                  </Field>
+                  <Field label="Rate (₹)">
+                    <input
+                      type="number"
+                      value={it.rate || ""}
+                      onChange={(e) =>
+                        setReturnItems((prev) => {
+                          const updated = [...prev];
+                          updated[idx] = {
+                            ...updated[idx],
+                            rate: e.target.value,
+                          };
+                          return updated;
+                        })
+                      }
+                    />
+                  </Field>
+                </div>
+              </Card>
+            ))}
+
+            <div style={{ marginTop: 8, display: "flex", gap: 10 }}>
+              <button
+                disabled={returnLoading}
+                onClick={async () => {
+                  if (!returnHeader.companyName) {
+                    toast("Company name is required", "error");
+                    return;
+                  }
+                  if (!returnHeader.returnReason) {
+                    toast("Please select a return reason", "error");
+                    return;
+                  }
+                  const validItems = returnItems.filter(
+                    (it) => it.itemName && it.qty,
+                  );
+                  if (validItems.length === 0) {
+                    toast("Add at least one item with quantity", "error");
+                    return;
+                  }
+
+                  setReturnLoading(true);
+                  try {
+                    const res = await dispatchAPI.create({
+                      date: new Date(returnHeader.returnDate),
+                      companyName: returnHeader.companyName,
+                      vehicleNo: returnHeader.vehicleNo,
+                      remarks: returnHeader.remarks,
+                      type: "Return",
+                      originalDispatchRef: returnHeader.originalDispatchRef,
+                      returnReason: returnHeader.returnReason,
+                      items: validItems.map((it) => ({
+                        itemName: it.itemName,
+                        productCode: it.productCode || "",
+                        companyCode: it.companyCode || "",
+                        qty: Number(it.qty),
+                        unit: it.unit || "nos",
+                        rate: it.rate ? Number(it.rate) : 0,
+                        amount: 0,
+                        gstRate: 0,
+                        taxAmount: 0,
+                        totalWithTax: 0,
+                      })),
+                    });
+                    toast(
+                      `Material Return ${res.dispatch?.dispatchNo} recorded — FG stock updated`,
+                      "success",
+                    );
+                    setReturnHeader(blankReturnHeader);
+                    setReturnItems([blankItem()]);
+                    fetchDispatches();
+                    setShowReturnModal(false);
+                  } catch (err) {
+                    toast(
+                      err.response?.data?.error || "Failed to record return",
+                      "error",
+                    );
+                  } finally {
+                    setReturnLoading(false);
+                  }
+                }}
+                style={{
+                  background: "rgba(255,255,255,0.08)",
+                  color: "#fff",
+                  border: "1px solid rgba(255,255,255,0.18)",
+                  borderRadius: 6,
+                  padding: "10px 24px",
+                  fontWeight: 500,
+                  boxShadow:
+                    "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                  opacity: returnLoading ? 0.6 : 1,
+                  fontSize: 13,
+                  cursor: returnLoading ? "not-allowed" : "pointer",
+                }}
+              >
+                {returnLoading
+                  ? "Saving…"
+                  : `Record Material Return (${returnItems.filter((it) => it.itemName && it.qty).length} item${returnItems.filter((it) => it.itemName && it.qty).length !== 1 ? "s" : ""})`}
+              </button>
+            </div>
           </div>
-        </div>
         </Modal>
       )}
 
       <Card>
-          {(() => {
-            const dispatchRecords = (dispatch || [])
-              .filter((d) => d.type !== "Return")
-              .slice()
-              .sort((a, b) => new Date(b.createdAt || b.date || 0) - new Date(a.createdAt || a.date || 0));
-            const returnRecords = (dispatch || [])
-              .filter((d) => d.type === "Return")
-              .slice()
-              .sort((a, b) => new Date(b.createdAt || b.date || 0) - new Date(a.createdAt || a.date || 0));
-            const filteredDispatch = dispatchRecords.filter(r => {
-              if (filterCompany && r.companyName !== filterCompany) return false;
-              if (filterVehicle && (r.vehicleNo || "") !== filterVehicle) return false;
-              if (drDateFrom || drDateTo) {
-                const d = r.date ? new Date(r.date).toISOString().slice(0, 10) : "";
-                if (drDateFrom && d < drDateFrom) return false;
-                if (drDateTo && d > drDateTo) return false;
-              }
-              return true;
-            });
-            const filteredReturn = returnRecords.filter(r => {
-              if (filterCompany && r.companyName !== filterCompany) return false;
-              if (filterVehicle && (r.vehicleNo || "") !== filterVehicle) return false;
-              if (drDateFrom || drDateTo) {
-                const d = r.date ? new Date(r.date).toISOString().slice(0, 10) : "";
-                if (drDateFrom && d < drDateFrom) return false;
-                if (drDateTo && d > drDateTo) return false;
-              }
-              return true;
-            });
-            const activeRecords = recordsTab === "return" ? filteredReturn : filteredDispatch;
-            const now = new Date();
-            const thisMonthCount = dispatchRecords.filter((d) => {
-              const dt = new Date(d.date || d.createdAt || 0);
-              return dt.getMonth() === now.getMonth() && dt.getFullYear() === now.getFullYear();
-            }).length;
-            const totalQty = dispatchRecords.reduce((s, d) => s + (d.items || []).reduce((si, it) => si + (Number(it.qty) || 0), 0), 0);
-            const totalValue = dispatchRecords.reduce((s, d) => s + (d.items || []).reduce((si, it) => si + (Number(it.totalWithTax) || 0), 0), 0);
-            const fmtLakh = (n) => {
-              if (n >= 10000000) return `₹${(n / 10000000).toFixed(2)}Cr`;
-              if (n >= 100000) return `₹${(n / 100000).toFixed(2)}L`;
-              return `₹${fmt(Math.round(n))}`;
-            };
-            const statCards = [
-              { label: "Total Dispatches", value: dispatchRecords.length, icon: "fa-solid fa-truck-fast" },
-              { label: "This Month", value: thisMonthCount, icon: "fa-solid fa-calendar-days" },
-              { label: "Total Qty", value: fmt(totalQty) + " pcs", icon: "fa-solid fa-boxes-stacked" },
-              { label: "Total Value", value: fmtLakh(totalValue), icon: "fa-solid fa-indian-rupee-sign" },
-            ];
-            const tabBtn = (id, label, count) => (
-              <button
-                key={id}
-                onClick={() => setRecordsTab(id)}
+        {(() => {
+          const dispatchRecords = (dispatch || [])
+            .filter((d) => d.type !== "Return")
+            .slice()
+            .sort(
+              (a, b) =>
+                new Date(b.createdAt || b.date || 0) -
+                new Date(a.createdAt || a.date || 0),
+            );
+          const returnRecords = (dispatch || [])
+            .filter((d) => d.type === "Return")
+            .slice()
+            .sort(
+              (a, b) =>
+                new Date(b.createdAt || b.date || 0) -
+                new Date(a.createdAt || a.date || 0),
+            );
+          const filteredDispatch = dispatchRecords.filter((r) => {
+            if (filterCompany && r.companyName !== filterCompany) return false;
+            if (filterVehicle && (r.vehicleNo || "") !== filterVehicle)
+              return false;
+            if (drDateFrom || drDateTo) {
+              const d = r.date
+                ? new Date(r.date).toISOString().slice(0, 10)
+                : "";
+              if (drDateFrom && d < drDateFrom) return false;
+              if (drDateTo && d > drDateTo) return false;
+            }
+            return true;
+          });
+          const filteredReturn = returnRecords.filter((r) => {
+            if (filterCompany && r.companyName !== filterCompany) return false;
+            if (filterVehicle && (r.vehicleNo || "") !== filterVehicle)
+              return false;
+            if (drDateFrom || drDateTo) {
+              const d = r.date
+                ? new Date(r.date).toISOString().slice(0, 10)
+                : "";
+              if (drDateFrom && d < drDateFrom) return false;
+              if (drDateTo && d > drDateTo) return false;
+            }
+            return true;
+          });
+          const activeRecords =
+            recordsTab === "return" ? filteredReturn : filteredDispatch;
+          const now = new Date();
+          const thisMonthCount = dispatchRecords.filter((d) => {
+            const dt = new Date(d.date || d.createdAt || 0);
+            return (
+              dt.getMonth() === now.getMonth() &&
+              dt.getFullYear() === now.getFullYear()
+            );
+          }).length;
+          const totalQty = dispatchRecords.reduce(
+            (s, d) =>
+              s +
+              (d.items || []).reduce((si, it) => si + (Number(it.qty) || 0), 0),
+            0,
+          );
+          const totalValue = dispatchRecords.reduce(
+            (s, d) =>
+              s +
+              (d.items || []).reduce(
+                (si, it) => si + (Number(it.totalWithTax) || 0),
+                0,
+              ),
+            0,
+          );
+          const fmtLakh = (n) => {
+            if (n >= 10000000) return `₹${(n / 10000000).toFixed(2)}Cr`;
+            if (n >= 100000) return `₹${(n / 100000).toFixed(2)}L`;
+            return `₹${fmt(Math.round(n))}`;
+          };
+          const statCards = [
+            {
+              label: "Total Dispatches",
+              value: dispatchRecords.length,
+              icon: "fa-solid fa-truck-fast",
+            },
+            {
+              label: "This Month",
+              value: thisMonthCount,
+              icon: "fa-solid fa-calendar-days",
+            },
+            {
+              label: "Total Qty",
+              value: fmt(totalQty) + " pcs",
+              icon: "fa-solid fa-boxes-stacked",
+            },
+            {
+              label: "Total Value",
+              value: fmtLakh(totalValue),
+              icon: "fa-solid fa-indian-rupee-sign",
+            },
+          ];
+          const tabBtn = (id, label, count) => (
+            <button
+              key={id}
+              onClick={() => setRecordsTab(id)}
+              style={{
+                background:
+                  recordsTab === id ? "rgba(128,130,255,0.12)" : "transparent",
+                color: recordsTab === id ? "#8082ff" : C.muted,
+                border: `1px solid ${recordsTab === id ? "#8082ff98" : "#2a2a2e"}`,
+                borderRadius: 6,
+                padding: "8px 16px",
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <i
+                className={
+                  id === "return"
+                    ? "fa-solid fa-rotate-left"
+                    : "fa-solid fa-truck-fast"
+                }
+              />
+              {label}
+              <span style={{ fontSize: 11, opacity: 0.85 }}>({count})</span>
+            </button>
+          );
+          return (
+            <>
+              {/* Stat cards */}
+              <div
                 style={{
-                  background: recordsTab === id ? "rgba(128,130,255,0.12)" : "transparent",
-                  color: recordsTab === id ? "#8082ff" : C.muted,
-                  border: `1px solid ${recordsTab === id ? "#8082ff98" : "#2a2a2e"}`,
-                  borderRadius: 6,
-                  padding: "8px 16px",
-                  fontSize: 12,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 8,
+                  display: "grid",
+                  gridTemplateColumns: "repeat(4, 1fr)",
+                  gap: 12,
+                  marginBottom: 20,
                 }}
               >
-                <i className={id === "return" ? "fa-solid fa-rotate-left" : "fa-solid fa-truck-fast"} />
-                {label}
-                <span style={{ fontSize: 11, opacity: 0.85 }}>({count})</span>
-              </button>
-            );
-            return (
-              <>
-              {/* Stat cards */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
                 {statCards.map(({ label, value, icon }) => (
-                  <div key={label} style={{ padding: "16px 20px", background: "transparent", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                      <span style={{ fontSize: 19, color: "#ffffff", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
-                      <i className={icon} style={{ color: C.muted, fontSize: 20, opacity: 0.9, display: "inline-flex", alignItems: "center", justifyContent: "center", height: 28, width: 28, lineHeight: 1 }} />
+                  <div
+                    key={label}
+                    style={{
+                      padding: "16px 20px",
+                      background: "transparent",
+                      border: "1px solid rgba(255,255,255,0.07)",
+                      borderRadius: 12,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: 8,
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: 19,
+                          color: "#ffffff",
+                          fontWeight: 600,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.05em",
+                        }}
+                      >
+                        {label}
+                      </span>
+                      <i
+                        className={icon}
+                        style={{
+                          color: C.muted,
+                          fontSize: 20,
+                          opacity: 0.9,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          height: 28,
+                          width: 28,
+                          lineHeight: 1,
+                        }}
+                      />
                     </div>
-                    <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>{value}</div>
+                    <div
+                      style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}
+                    >
+                      {value}
+                    </div>
                   </div>
                 ))}
               </div>
-          <div
-            style={{
-              display: "flex",
-              gap: 12,
-              alignItems: "center",
-              flexWrap: "wrap",
-              marginBottom: 14,
-            }}
-          >
-            <div style={{ display: "flex", gap: 6 }}>
-              {tabBtn("dispatch", "Dispatch", dispatchRecords.length)}
-              {tabBtn("return", "Return", returnRecords.length)}
-            </div>
-            <DateRangeFilter
-              dateFrom={drDateFrom}
-              setDateFrom={setDrDateFrom}
-              dateTo={drDateTo}
-              setDateTo={setDrDateTo}
-            />
-            <AutocompleteInput
-              value={filterCompany}
-              onChange={(v) => setFilterCompany(v)}
-              suggestions={[...new Set((dispatch || []).map(r => r.companyName).filter(Boolean))].sort()}
-              placeholder="Filter by company..."
-              showAllOnFocus={true}
-              inputStyle={{ padding: "6px 10px", background: "#0c0c0e", border: "1px solid #2a2a2e", borderRadius: 6, color: "#fff", fontSize: 12, width: 180 }}
-            />
-            <AutocompleteInput
-              value={filterVehicle}
-              onChange={(v) => setFilterVehicle(v)}
-              suggestions={[...new Set((dispatch || []).map(r => r.vehicleNo).filter(Boolean))].sort()}
-              placeholder="Filter by vehicle..."
-              showAllOnFocus={true}
-              inputStyle={{ padding: "6px 10px", background: "#0c0c0e", border: "1px solid #2a2a2e", borderRadius: 6, color: "#fff", fontSize: 12, width: 150 }}
-            />
-            <span style={{ fontSize: 12, color: C.muted, marginLeft: "auto" }}>
-              {activeRecords.length} records
-            </span>
-          </div>
-          {activeRecords.length === 0 ? (
-            <div style={{ textAlign: "center", color: C.muted, padding: 32, fontSize: 13 }}>
-              {recordsTab === "return" ? "No material return records yet." : "No dispatch records yet."}
-            </div>
-          ) : (
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-                <thead>
-                  <tr style={{ borderBottom: `2px solid ${C.border}` }}>
-                    {(recordsTab === "return"
-                      ? ["DC No", "Return Date", "Company", "Original Ref", "Reason", "Qty", "Vehicle", "Actions"]
-                      : ["DC No", "Date", "Company", "PO No", "SO Ref", "Qty", "Vehicle", "Status", "Actions"]
-                    ).map((h) => (
-                      <th key={h} style={{ padding: "8px 10px", textAlign: "left", fontWeight: 700, color: C.muted, fontSize: 11, whiteSpace: "nowrap" }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {activeRecords.map((r) => {
-                    const unitSummary = (r.items || []).reduce((acc, it) => {
-                      const u = it.unit || "nos";
-                      acc[u] = (acc[u] || 0) + Number(it.qty || 0);
-                      return acc;
-                    }, {});
-                    const qtySummary = Object.entries(unitSummary).map(([u, q]) => `${fmt(q)} ${u}`).join(", ");
-
-                    const handleEdit = () => {
-                      setEditId(r._id);
-                      setHeader({
-                        dispatchDate: r.date ? new Date(r.date).toISOString().slice(0, 10) : today(),
-                        soRef: r.soRef || "",
-                        poNumber: r.poNumber || "",
-                        companyName: r.companyName || "",
-                        deliveryAddress: r.deliveryAddress || "",
-                        vehicleNo: r.vehicleNo || "",
-                        driverName: r.driverName || "",
-                        remarks: r.remarks || "",
-                        status: r.status || "Dispatched",
-                      });
-                      setItems((r.items || []).map((it) => ({
-                        _id: uid(),
-                        itemName: it.itemName || "",
-                        productCode: it.productCode || "",
-                        companyCode: it.companyCode || "",
-                        qty: it.qty?.toString() || "",
-                        unit: it.unit || "nos",
-                        pcsPerBox: it.pcsPerBox?.toString() || "",
-                        noOfBox: it.noOfBox?.toString() || "",
-                        rate: it.rate || "",
-                        gstRate: it.gstRate || 18,
-                        amount: it.amount || "",
-                        taxAmount: it.taxAmount || "",
-                        totalWithTax: it.totalWithTax || "",
-                      })));
-                      setShowModal(true);
-                    };
-
-                    const handleDelete = async () => {
-                      if (!confirm(`Delete dispatch ${r.dispatchNo}?`)) return;
-                      try {
-                        await dispatchAPI.delete(r._id);
-                        toast(`Dispatch ${r.dispatchNo} deleted successfully`, "success");
-                        fetchDispatches();
-                      } catch (error) {
-                        toast(error.response?.data?.error || "Failed to delete dispatch", "error");
-                      }
-                    };
-
-                    const isReturn = r.type === "Return";
-                    const dcNoCell = (
-                      <td style={{ padding: "10px 10px", whiteSpace: "nowrap" }}>
-                        <span style={{ color: isReturn ? (C.orange || "#f97316") : C.purple, fontWeight: 600 }}>
-                          {r.dispatchNo}
-                        </span>
-                      </td>
-                    );
-                    const dateCell = (
-                      <td style={{ padding: "10px 10px", whiteSpace: "nowrap", color: C.muted }}>{fmtDate(r.date)}</td>
-                    );
-                    const companyCell = (
-                      <td style={{ padding: "10px 10px", fontWeight: 600 }}>{r.companyName}</td>
-                    );
-                    const qtyCell = (
-                      <td style={{ padding: "10px 10px", whiteSpace: "nowrap", color: C.muted }}>{qtySummary}</td>
-                    );
-                    const vehicleCell = (
-                      <td style={{ padding: "10px 10px", color: C.muted }}>{r.vehicleNo || "—"}</td>
-                    );
-                    return (
-                      <tr key={r._id} style={{ borderBottom: `1px solid ${C.border}22` }}>
-                        {dcNoCell}
-                        {dateCell}
-                        {companyCell}
-                        {isReturn ? (
-                          <>
-                            <td style={{ padding: "10px 10px", color: C.muted }}>{r.originalDispatchRef || "—"}</td>
-                            <td style={{ padding: "10px 10px" }}>
-                              <span style={{ fontSize: 11, color: C.orange || "#f97316", fontWeight: 600 }}>{r.returnReason || "Return"}</span>
-                            </td>
-                            {qtyCell}
-                            {vehicleCell}
-                          </>
-                        ) : (
-                          <>
-                            <td style={{ padding: "10px 10px", color: C.muted }}>{r.poNumber || "—"}</td>
-                            <td style={{ padding: "10px 10px", color: C.muted }}>{r.soRef || "—"}</td>
-                            {qtyCell}
-                            {vehicleCell}
-                            <td style={{ padding: "10px 10px" }}>
-                              <Badge text={r.status || "Dispatched"} color={C.green} />
-                            </td>
-                          </>
-                        )}
-                        <td style={{ padding: "10px 10px", whiteSpace: "nowrap" }}>
-                          <div style={{ display: "flex", gap: 6 }}>
-                            {canEdit && <button onClick={handleEdit} style={{
-                      background: "transparent",
-                      color: "#8082ff",
-                      border: "1px solid #8082ff98",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}><i className="fa-solid fa-pen-to-square" /> Edit</button>}
-                            <button onClick={() => generateDispatchPDF(r)} style={{
-                      background: "transparent",
-                      color: "#8082ff",
-                      border: "1px solid #8082ff98",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}><i className="fa-solid fa-file-pdf" /> PDF</button>
-                            {canDelete && <button onClick={handleDelete} style={{
-                      background: "transparent",
-                      color: "#8082ff",
-                      border: "1px solid #8082ff98",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}><i className="fa-solid fa-trash" /> Delete</button>}
-                          </div>
-                        </td>
+              <div
+                style={{
+                  display: "flex",
+                  gap: 12,
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  marginBottom: 14,
+                }}
+              >
+                <div style={{ display: "flex", gap: 6 }}>
+                  {tabBtn("dispatch", "Dispatch", dispatchRecords.length)}
+                  {tabBtn("return", "Return", returnRecords.length)}
+                </div>
+                <DateRangeFilter
+                  dateFrom={drDateFrom}
+                  setDateFrom={setDrDateFrom}
+                  dateTo={drDateTo}
+                  setDateTo={setDrDateTo}
+                />
+                <AutocompleteInput
+                  value={filterCompany}
+                  onChange={(v) => setFilterCompany(v)}
+                  suggestions={[
+                    ...new Set(
+                      (dispatch || [])
+                        .map((r) => r.companyName)
+                        .filter(Boolean),
+                    ),
+                  ].sort()}
+                  placeholder="Filter by company..."
+                  showAllOnFocus={true}
+                  inputStyle={{
+                    padding: "6px 10px",
+                    background: "#0c0c0e",
+                    border: "1px solid #2a2a2e",
+                    borderRadius: 6,
+                    color: "#fff",
+                    fontSize: 12,
+                    width: 180,
+                  }}
+                />
+                <AutocompleteInput
+                  value={filterVehicle}
+                  onChange={(v) => setFilterVehicle(v)}
+                  suggestions={[
+                    ...new Set(
+                      (dispatch || []).map((r) => r.vehicleNo).filter(Boolean),
+                    ),
+                  ].sort()}
+                  placeholder="Filter by vehicle..."
+                  showAllOnFocus={true}
+                  inputStyle={{
+                    padding: "6px 10px",
+                    background: "#0c0c0e",
+                    border: "1px solid #2a2a2e",
+                    borderRadius: 6,
+                    color: "#fff",
+                    fontSize: 12,
+                    width: 150,
+                  }}
+                />
+                <span
+                  style={{ fontSize: 12, color: C.muted, marginLeft: "auto" }}
+                >
+                  {activeRecords.length} records
+                </span>
+              </div>
+              {activeRecords.length === 0 ? (
+                <div
+                  style={{
+                    textAlign: "center",
+                    color: C.muted,
+                    padding: 32,
+                    fontSize: 13,
+                  }}
+                >
+                  {recordsTab === "return"
+                    ? "No material return records yet."
+                    : "No dispatch records yet."}
+                </div>
+              ) : (
+                <div style={{ overflowX: "auto" }}>
+                  <table
+                    style={{
+                      width: "100%",
+                      borderCollapse: "collapse",
+                      fontSize: 12,
+                    }}
+                  >
+                    <thead>
+                      <tr style={{ borderBottom: `2px solid ${C.border}` }}>
+                        {(recordsTab === "return"
+                          ? [
+                              "DC No",
+                              "Return Date",
+                              "Company",
+                              "Original Ref",
+                              "Reason",
+                              "Qty",
+                              "Vehicle",
+                              "Actions",
+                            ]
+                          : [
+                              "DC No",
+                              "Date",
+                              "Company",
+                              "PO No",
+                              "SO Ref",
+                              "Qty",
+                              "Vehicle",
+                              "Status",
+                              "Actions",
+                            ]
+                        ).map((h) => (
+                          <th
+                            key={h}
+                            style={{
+                              padding: "8px 10px",
+                              textAlign: "left",
+                              fontWeight: 700,
+                              color: C.muted,
+                              fontSize: 11,
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {h}
+                          </th>
+                        ))}
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-              </>
-            );
-          })()}
-        </Card>
+                    </thead>
+                    <tbody>
+                      {activeRecords.map((r) => {
+                        const unitSummary = (r.items || []).reduce(
+                          (acc, it) => {
+                            const u = it.unit || "nos";
+                            acc[u] = (acc[u] || 0) + Number(it.qty || 0);
+                            return acc;
+                          },
+                          {},
+                        );
+                        const qtySummary = Object.entries(unitSummary)
+                          .map(([u, q]) => `${fmt(q)} ${u}`)
+                          .join(", ");
+
+                        const handleEdit = () => {
+                          setEditId(r._id);
+                          setHeader({
+                            dispatchDate: r.date
+                              ? new Date(r.date).toISOString().slice(0, 10)
+                              : today(),
+                            soRef: r.soRef || "",
+                            poNumber: r.poNumber || "",
+                            companyName: r.companyName || "",
+                            deliveryAddress: r.deliveryAddress || "",
+                            vehicleNo: r.vehicleNo || "",
+                            driverName: r.driverName || "",
+                            remarks: r.remarks || "",
+                            status: r.status || "Dispatched",
+                          });
+                          setItems(
+                            (r.items || []).map((it) => ({
+                              _id: uid(),
+                              itemName: it.itemName || "",
+                              productCode: it.productCode || "",
+                              companyCode: it.companyCode || "",
+                              qty: it.qty?.toString() || "",
+                              unit: it.unit || "nos",
+                              pcsPerBox: it.pcsPerBox?.toString() || "",
+                              noOfBox: it.noOfBox?.toString() || "",
+                              rate: it.rate || "",
+                              gstRate: it.gstRate || 18,
+                              amount: it.amount || "",
+                              taxAmount: it.taxAmount || "",
+                              totalWithTax: it.totalWithTax || "",
+                            })),
+                          );
+                          setShowModal(true);
+                        };
+
+                        const handleDelete = async () => {
+                          if (!confirm(`Delete dispatch ${r.dispatchNo}?`))
+                            return;
+                          try {
+                            await dispatchAPI.delete(r._id);
+                            toast(
+                              `Dispatch ${r.dispatchNo} deleted successfully`,
+                              "success",
+                            );
+                            fetchDispatches();
+                          } catch (error) {
+                            toast(
+                              error.response?.data?.error ||
+                                "Failed to delete dispatch",
+                              "error",
+                            );
+                          }
+                        };
+
+                        const isReturn = r.type === "Return";
+                        const dcNoCell = (
+                          <td
+                            style={{
+                              padding: "10px 10px",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            <span
+                              style={{
+                                color: isReturn
+                                  ? C.orange || "#f97316"
+                                  : C.purple,
+                                fontWeight: 600,
+                              }}
+                            >
+                              {r.dispatchNo}
+                            </span>
+                          </td>
+                        );
+                        const dateCell = (
+                          <td
+                            style={{
+                              padding: "10px 10px",
+                              whiteSpace: "nowrap",
+                              color: C.muted,
+                            }}
+                          >
+                            {fmtDate(r.date)}
+                          </td>
+                        );
+                        const companyCell = (
+                          <td style={{ padding: "10px 10px", fontWeight: 600 }}>
+                            {r.companyName}
+                          </td>
+                        );
+                        const qtyCell = (
+                          <td
+                            style={{
+                              padding: "10px 10px",
+                              whiteSpace: "nowrap",
+                              color: C.muted,
+                            }}
+                          >
+                            {qtySummary}
+                          </td>
+                        );
+                        const vehicleCell = (
+                          <td style={{ padding: "10px 10px", color: C.muted }}>
+                            {r.vehicleNo || "—"}
+                          </td>
+                        );
+                        return (
+                          <tr
+                            key={r._id}
+                            style={{ borderBottom: `1px solid ${C.border}22` }}
+                          >
+                            {dcNoCell}
+                            {dateCell}
+                            {companyCell}
+                            {isReturn ? (
+                              <>
+                                <td
+                                  style={{
+                                    padding: "10px 10px",
+                                    color: C.muted,
+                                  }}
+                                >
+                                  {r.originalDispatchRef || "—"}
+                                </td>
+                                <td style={{ padding: "10px 10px" }}>
+                                  <span
+                                    style={{
+                                      fontSize: 11,
+                                      color: C.orange || "#f97316",
+                                      fontWeight: 600,
+                                    }}
+                                  >
+                                    {r.returnReason || "Return"}
+                                  </span>
+                                </td>
+                                {qtyCell}
+                                {vehicleCell}
+                              </>
+                            ) : (
+                              <>
+                                <td
+                                  style={{
+                                    padding: "10px 10px",
+                                    color: C.muted,
+                                  }}
+                                >
+                                  {r.poNumber || "—"}
+                                </td>
+                                <td
+                                  style={{
+                                    padding: "10px 10px",
+                                    color: C.muted,
+                                  }}
+                                >
+                                  {r.soRef || "—"}
+                                </td>
+                                {qtyCell}
+                                {vehicleCell}
+                                <td style={{ padding: "10px 10px" }}>
+                                  <Badge
+                                    text={r.status || "Dispatched"}
+                                    color={C.green}
+                                  />
+                                </td>
+                              </>
+                            )}
+                            <td
+                              style={{
+                                padding: "10px 10px",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              <div style={{ display: "flex", gap: 6 }}>
+                                {canEdit && (
+                                  <button
+                                    onClick={handleEdit}
+                                    style={{
+                                      background: "transparent",
+                                      color: "#8082ff",
+                                      border: "1px solid #8082ff98",
+                                      borderRadius: 6,
+                                      padding: "6px 12px",
+                                      fontSize: 11,
+                                      fontWeight: 500,
+                                      cursor: "pointer",
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: 6,
+                                    }}
+                                  >
+                                    <i className="fa-solid fa-pen-to-square" />{" "}
+                                    Edit
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => generateDispatchPDF(r)}
+                                  style={{
+                                    background: "transparent",
+                                    color: "#8082ff",
+                                    border: "1px solid #8082ff98",
+                                    borderRadius: 6,
+                                    padding: "6px 12px",
+                                    fontSize: 11,
+                                    fontWeight: 500,
+                                    cursor: "pointer",
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 6,
+                                  }}
+                                >
+                                  <i className="fa-solid fa-file-pdf" /> PDF
+                                </button>
+                                {canDelete && (
+                                  <button
+                                    onClick={handleDelete}
+                                    style={{
+                                      background: "transparent",
+                                      color: "#8082ff",
+                                      border: "1px solid #8082ff98",
+                                      borderRadius: 6,
+                                      padding: "6px 12px",
+                                      fontSize: 11,
+                                      fontWeight: 500,
+                                      cursor: "pointer",
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: 6,
+                                    }}
+                                  >
+                                    <i className="fa-solid fa-trash" /> Delete
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          );
+        })()}
+      </Card>
     </div>
   );
 }

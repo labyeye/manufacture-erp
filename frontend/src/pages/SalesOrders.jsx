@@ -206,16 +206,20 @@ export default function SalesOrders(props) {
       if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 100);
     const clear = setTimeout(() => setHighlightId(null), 3500);
-    return () => { clearTimeout(timer); clearTimeout(clear); };
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(clear);
+    };
   }, [highlightId]);
 
   const fetchSellingPrices = async () => {
     try {
-      const data = await priceListAPI.getAll({ listType: "selling", status: "Active" });
+      const data = await priceListAPI.getAll({
+        listType: "selling",
+        status: "Active",
+      });
       setSellingPrices(Array.isArray(data) ? data : []);
-    } catch {
-      
-    }
+    } catch {}
   };
 
   const fetchBrands = async () => {
@@ -304,7 +308,7 @@ export default function SalesOrders(props) {
       const next = { ...f, [k]: v };
       if (k === "companyCategory") {
         const stillValid = brands.some(
-          (b) => b.name === f.companyName && b.clientCategory === v
+          (b) => b.name === f.companyName && b.clientCategory === v,
         );
         if (!stillValid) {
           next.companyName = "";
@@ -315,9 +319,12 @@ export default function SalesOrders(props) {
       if (k === "companyName") {
         const foundBrand = brands.find((b) => b.name === v);
         if (foundBrand) {
-          next.companyCategory = foundBrand.clientCategory || next.companyCategory;
+          next.companyCategory =
+            foundBrand.clientCategory || next.companyCategory;
           next.companyMasterName = foundBrand.companyName || "";
-          const foundCo = companyMaster.find(c => c.name === foundBrand.companyName);
+          const foundCo = companyMaster.find(
+            (c) => c.name === foundBrand.companyName,
+          );
           if (foundCo) {
             next.clientContact = foundCo.contact || foundCo.phone || "";
           }
@@ -334,13 +341,16 @@ export default function SalesOrders(props) {
           const newIt = { ...it, itemName: generateItemName(it, nextH) };
           if (it.productCode) {
             const brandMatch = sellingPrices.find(
-              (p) => p.itemCode === it.productCode && p.brandName === v
+              (p) => p.itemCode === it.productCode && p.brandName === v,
             );
             const companyMatch = sellingPrices.find(
-              (p) => p.itemCode === it.productCode && p.companyName === nextH?.companyMasterName
+              (p) =>
+                p.itemCode === it.productCode &&
+                p.companyName === nextH?.companyMasterName,
             );
             const genericMatch = sellingPrices.find(
-              (p) => p.itemCode === it.productCode && !p.brandName && !p.companyName
+              (p) =>
+                p.itemCode === it.productCode && !p.brandName && !p.companyName,
             );
             const priceEntry = brandMatch || companyMatch || genericMatch;
             if (priceEntry) {
@@ -351,7 +361,8 @@ export default function SalesOrders(props) {
               const taxAmt = (amount * gst) / 100;
               newIt.amount = amount > 0 ? amount.toFixed(2) : "";
               newIt.taxAmount = taxAmt > 0 ? taxAmt.toFixed(2) : "";
-              newIt.totalWithTax = amount > 0 ? (amount + taxAmt).toFixed(2) : "";
+              newIt.totalWithTax =
+                amount > 0 ? (amount + taxAmt).toFixed(2) : "";
             }
           }
           return newIt;
@@ -390,15 +401,17 @@ export default function SalesOrders(props) {
             gsm: found.gsm || "",
           };
         }
-        
+
         const brandMatch = sellingPrices.find(
-          (p) => p.itemCode === codeOnly && p.brandName === header.companyName
+          (p) => p.itemCode === codeOnly && p.brandName === header.companyName,
         );
         const companyMatch = sellingPrices.find(
-          (p) => p.itemCode === codeOnly && p.companyName === header.companyMasterName
+          (p) =>
+            p.itemCode === codeOnly &&
+            p.companyName === header.companyMasterName,
         );
         const genericMatch = sellingPrices.find(
-          (p) => p.itemCode === codeOnly && !p.brandName && !p.companyName
+          (p) => p.itemCode === codeOnly && !p.brandName && !p.companyName,
         );
         const priceEntry = brandMatch || companyMatch || genericMatch;
         if (priceEntry) {
@@ -406,7 +419,6 @@ export default function SalesOrders(props) {
         }
       }
 
-      
       const orderQty = +(it.orderQty || 0);
       const price = +(it.price || 0);
       const gstRate = +(it.gstRate || 18);
@@ -425,13 +437,13 @@ export default function SalesOrders(props) {
 
       if (k === "size" && v && !isLiquid) {
         const config = CATEGORY_CONFIG[it.itemCategory];
-        
+
         const match3D = v
           .toLowerCase()
           .match(
             /^(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)\s*([a-z]+)?\s*(?:(\d+)\s*gsm)?/,
           );
-        
+
         const match2D = v
           .toLowerCase()
           .match(
@@ -440,7 +452,7 @@ export default function SalesOrders(props) {
 
         if (match3D) {
           it.width = match3D[1];
-          
+
           if (config?.f2 === "LENGTH") {
             it.length = match3D[2];
             it.gussett = "";
@@ -454,7 +466,7 @@ export default function SalesOrders(props) {
           if (match3D[5]) it.gsm = match3D[5];
         } else if (match2D) {
           it.width = match2D[1];
-          
+
           if (config?.f2 === "HEIGHT") {
             it.height = match2D[2];
             it.length = "";
@@ -622,11 +634,15 @@ export default function SalesOrders(props) {
       he.companyName = true;
     } else {
       const brandExists = brands.some(
-        (b) => (b.name || "").toLowerCase() === header.companyName.toLowerCase()
+        (b) =>
+          (b.name || "").toLowerCase() === header.companyName.toLowerCase(),
       );
       if (!brandExists) {
         he.companyName = true;
-        toast(`Brand "${header.companyName}" not found in Brand Master`, "error");
+        toast(
+          `Brand "${header.companyName}" not found in Brand Master`,
+          "error",
+        );
       }
     }
     if (!header.companyCategory) he.companyCategory = true;
@@ -910,405 +926,510 @@ export default function SalesOrders(props) {
 
   return (
     <>
-    <div className="fade">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
-        <SectionTitle
-          icon="fa-solid fa-file-invoice-dollar"
-          title="Sales Orders"
-          sub="Create and track customer sales orders"
-        />
-        {!isClient && canCreate && (
-          <button
-            onClick={() => { setHeader(blankHeader); setItems([blankItem()]); setHeaderErrors({}); setItemErrors([{}]); setEditId(null); setShowModal(true); }}
-            style={{
-              background: "rgba(255,255,255,0.08)",
-              border: "1px solid rgba(255,255,255,0.18)",
-              color: "#fff",
-              padding: "9px 18px",
-              borderRadius: 10,
-              fontWeight: 600,
-              fontSize: 13,
-              cursor: "pointer",
-              boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
-            }}
-          >
-            + New SO
-          </button>
-        )}
-      </div>
-
-      {}
-      {showModal && (
-        <Modal
-          title={editId ? "Edit Sales Order" : "New Sales Order"}
-          onClose={() => { setShowModal(false); setEditId(null); setHeader(blankHeader); setItems([blankItem()]); setHeaderErrors({}); setItemErrors([{}]); }}
+      <div className="fade">
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            marginBottom: 4,
+          }}
         >
-        <div>
-          {}
-          <Card style={{ marginBottom: 16 }}>
-            <h3
-              style={{
-                fontSize: 15,
-                fontWeight: 500,
-                color: C.green || "#4ade80",
-                marginBottom: 20,
-              }}
-            >
-              Order &amp; Client Details
-            </h3>
-
-            {}
-            <div style={sectionLabelStyle}>Order Details</div>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(3, 1fr)",
-                gap: 14,
-                marginBottom: 20,
-              }}
-            >
-              <Field label="Order Date *">
-                <DatePicker
-                  value={header.orderDate}
-                  onChange={(v) => setH("orderDate", v)}
-                  style={EH("orderDate")}
-                />
-                {EHMsg("orderDate")}
-              </Field>
-              <Field label="Delivery Date *">
-                <DatePicker
-                  value={header.deliveryDate}
-                  onChange={(v) => setH("deliveryDate", v)}
-                  style={EH("deliveryDate")}
-                />
-                {EHMsg("deliveryDate")}
-              </Field>
-              <Field label="Sales Person">
-                <select
-                  value={header.salesPerson}
-                  onChange={(e) => setH("salesPerson", e.target.value)}
-                >
-                  <option value="">-- Select --</option>
-                  {salesPersons.map((sp) => (
-                    <option key={sp} value={sp}>
-                      {sp}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-            </div>
-
-            {}
-            <div style={sectionLabelStyle}>Brand Details</div>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1.2fr 1fr 1.8fr",
-                gap: 14,
-              }}
-            >
-              <Field label="Client Category *">
-                <select
-                  value={header.companyCategory}
-                  onChange={(e) => setH("companyCategory", e.target.value)}
-                  style={EH("companyCategory")}
-                >
-                  <option value="">-- All Categories --</option>
-                  {uniqueClientCategories.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
-                  ))}
-                </select>
-                {EHMsg("companyCategory")}
-              </Field>
-              <Field label="Brand Name *">
-                <AutocompleteInput
-                  value={header.companyName}
-                  onChange={(v) => setH("companyName", v)}
-                  suggestions={(header.companyCategory
-                    ? brands.filter((b) => b.clientCategory === header.companyCategory)
-                    : brands
-                  ).map((b) => b.name)}
-                  placeholder="Type to search..."
-                  inputStyle={EH("companyName")}
-                />
-                {EHMsg("companyName")}
-              </Field>
-              <Field label="Company Name">
-                <AutocompleteInput
-                  value={header.companyMasterName || ""}
-                  onChange={(v) => {
-                    const foundCo = companyMaster.find((c) => c.name === v);
-                    const linkedBrand = brands.find((b) => b.companyName === v);
-                    setHeader((f) => ({
-                      ...f,
-                      companyMasterName: v,
-                      clientContact: foundCo?.contact || foundCo?.phone || f.clientContact,
-                      companyName: linkedBrand ? linkedBrand.name : f.companyName,
-                      companyCategory: linkedBrand?.clientCategory || f.companyCategory,
-                    }));
-                    setHeaderErrors((e) => ({ ...e, companyName: false }));
-                  }}
-                  suggestions={companyMaster.map((c) => c.name)}
-                  placeholder="Type to search company..."
-                />
-              </Field>
-              <Field label="Contact Details">
-                <input
-                  readOnly
-                  placeholder="— Auto-filled —"
-                  value={header.clientContact}
-                  style={{ color: C.muted, background: "transparent" }}
-                />
-              </Field>
-              <Field label="Remarks">
-                <input
-                  placeholder="Special instructions (optional)"
-                  value={header.remarks}
-                  onChange={(e) => setH("remarks", e.target.value)}
-                />
-              </Field>
-            </div>
-          </Card>
-
-          {}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 10,
-            }}
-          >
-            <h3
-              style={{
-                fontSize: 14,
-                fontWeight: 500,
-                color: C.green || "#4ade80",
-              }}
-            >
-              Order Items ({items.length})
-            </h3>
+          <SectionTitle
+            icon="fa-solid fa-file-invoice-dollar"
+            title="Sales Orders"
+            sub="Create and track customer sales orders"
+          />
+          {!isClient && canCreate && (
             <button
-              onClick={addItem}
+              onClick={() => {
+                setHeader(blankHeader);
+                setItems([blankItem()]);
+                setHeaderErrors({});
+                setItemErrors([{}]);
+                setEditId(null);
+                setShowModal(true);
+              }}
               style={{
                 background: "rgba(255,255,255,0.08)",
-                color: "#fff",
                 border: "1px solid rgba(255,255,255,0.18)",
-                borderRadius: 6,
-                padding: "8px 18px",
-                fontWeight: 500,
+                color: "#fff",
+                padding: "9px 18px",
+                borderRadius: 10,
+                fontWeight: 600,
                 fontSize: 13,
                 cursor: "pointer",
-                boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                boxShadow:
+                  "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
               }}
             >
-              + Add Item
+              + New SO
             </button>
-          </div>
+          )}
+        </div>
 
-          {}
-          {items.map((it, idx) => (
-            <Card
-              key={it._id}
-              style={{
-                marginBottom: 12,
-              }}
-            >
+        {}
+        {showModal && (
+          <Modal
+            title={editId ? "Edit Sales Order" : "New Sales Order"}
+            onClose={() => {
+              setShowModal(false);
+              setEditId(null);
+              setHeader(blankHeader);
+              setItems([blankItem()]);
+              setHeaderErrors({});
+              setItemErrors([{}]);
+            }}
+          >
+            <div>
+              {}
+              <Card style={{ marginBottom: 16 }}>
+                <h3
+                  style={{
+                    fontSize: 15,
+                    fontWeight: 500,
+                    color: C.green || "#4ade80",
+                    marginBottom: 20,
+                  }}
+                >
+                  Order &amp; Client Details
+                </h3>
+
+                {}
+                <div style={sectionLabelStyle}>Order Details</div>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(3, 1fr)",
+                    gap: 14,
+                    marginBottom: 20,
+                  }}
+                >
+                  <Field label="Order Date *">
+                    <DatePicker
+                      value={header.orderDate}
+                      onChange={(v) => setH("orderDate", v)}
+                      style={EH("orderDate")}
+                    />
+                    {EHMsg("orderDate")}
+                  </Field>
+                  <Field label="Delivery Date *">
+                    <DatePicker
+                      value={header.deliveryDate}
+                      onChange={(v) => setH("deliveryDate", v)}
+                      style={EH("deliveryDate")}
+                    />
+                    {EHMsg("deliveryDate")}
+                  </Field>
+                  <Field label="Sales Person">
+                    <select
+                      value={header.salesPerson}
+                      onChange={(e) => setH("salesPerson", e.target.value)}
+                    >
+                      <option value="">-- Select --</option>
+                      {salesPersons.map((sp) => (
+                        <option key={sp} value={sp}>
+                          {sp}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                </div>
+
+                {}
+                <div style={sectionLabelStyle}>Brand Details</div>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1.2fr 1fr 1.8fr",
+                    gap: 14,
+                  }}
+                >
+                  <Field label="Client Category *">
+                    <select
+                      value={header.companyCategory}
+                      onChange={(e) => setH("companyCategory", e.target.value)}
+                      style={EH("companyCategory")}
+                    >
+                      <option value="">-- All Categories --</option>
+                      {uniqueClientCategories.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </select>
+                    {EHMsg("companyCategory")}
+                  </Field>
+                  <Field label="Brand Name *">
+                    <AutocompleteInput
+                      value={header.companyName}
+                      onChange={(v) => setH("companyName", v)}
+                      suggestions={(header.companyCategory
+                        ? brands.filter(
+                            (b) => b.clientCategory === header.companyCategory,
+                          )
+                        : brands
+                      ).map((b) => b.name)}
+                      placeholder="Type to search..."
+                      inputStyle={EH("companyName")}
+                    />
+                    {EHMsg("companyName")}
+                  </Field>
+                  <Field label="Company Name">
+                    <AutocompleteInput
+                      value={header.companyMasterName || ""}
+                      onChange={(v) => {
+                        const foundCo = companyMaster.find((c) => c.name === v);
+                        const linkedBrand = brands.find(
+                          (b) => b.companyName === v,
+                        );
+                        setHeader((f) => ({
+                          ...f,
+                          companyMasterName: v,
+                          clientContact:
+                            foundCo?.contact ||
+                            foundCo?.phone ||
+                            f.clientContact,
+                          companyName: linkedBrand
+                            ? linkedBrand.name
+                            : f.companyName,
+                          companyCategory:
+                            linkedBrand?.clientCategory || f.companyCategory,
+                        }));
+                        setHeaderErrors((e) => ({ ...e, companyName: false }));
+                      }}
+                      suggestions={companyMaster.map((c) => c.name)}
+                      placeholder="Type to search company..."
+                    />
+                  </Field>
+                  <Field label="Contact Details">
+                    <input
+                      readOnly
+                      placeholder="— Auto-filled —"
+                      value={header.clientContact}
+                      style={{ color: C.muted, background: "transparent" }}
+                    />
+                  </Field>
+                  <Field label="Remarks">
+                    <input
+                      placeholder="Special instructions (optional)"
+                      value={header.remarks}
+                      onChange={(e) => setH("remarks", e.target.value)}
+                    />
+                  </Field>
+                </div>
+              </Card>
+
               {}
               <div
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  marginBottom: 14,
+                  marginBottom: 10,
                 }}
               >
-                <span
+                <h3
                   style={{
+                    fontSize: 14,
                     fontWeight: 500,
                     color: C.green || "#4ade80",
-                    fontSize: 13,
                   }}
                 >
-                  Item {idx + 1}
-                </span>
-                {items.length > 1 && (
-                  <button
-                    onClick={() => removeItem(idx)}
+                  Order Items ({items.length})
+                </h3>
+                <button
+                  onClick={addItem}
+                  style={{
+                    background: "rgba(255,255,255,0.08)",
+                    color: "#fff",
+                    border: "1px solid rgba(255,255,255,0.18)",
+                    borderRadius: 6,
+                    padding: "8px 18px",
+                    fontWeight: 500,
+                    fontSize: 13,
+                    cursor: "pointer",
+                    boxShadow:
+                      "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                  }}
+                >
+                  + Add Item
+                </button>
+              </div>
+
+              {}
+              {items.map((it, idx) => (
+                <Card
+                  key={it._id}
+                  style={{
+                    marginBottom: 12,
+                  }}
+                >
+                  {}
+                  <div
                     style={{
-                      background: "transparent",
-                      color: "#ffffff",
-                      border: "1px solid rgba(255,255,255,0.2)",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
+                      display: "flex",
+                      justifyContent: "space-between",
                       alignItems: "center",
-                      gap: 6,
+                      marginBottom: 14,
                     }}
-                  ><i className="fa-solid fa-trash" /> Delete</button>
-                )}
-              </div>
-
-              {}
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr 1fr 0.8fr",
-                  gap: 12,
-                  marginBottom: 12,
-                }}
-              >
-                <Field label="PRODUCT CODE">
-                  <AutocompleteInput
-                    value={it.productCode}
-                    onChange={(v) => setItem(idx, "productCode", v)}
-                    suggestions={sortedFGItems.map(
-                      (f) => `${f.code} — ${f.name}`,
-                    )}
-                    placeholder="Type or select code (optional)"
-                  />
-                </Field>
-                <Field label="CATEGORY *">
-                  <select
-                    value={it.itemCategory}
-                    onChange={(e) =>
-                      setItem(idx, "itemCategory", e.target.value)
-                    }
-                    style={EI(idx, "itemCategory")}
                   >
-                    <option value="">-- Select Category --</option>
-                    {fgCategories.map((c) => (
-                      <option key={c}>{c}</option>
-                    ))}
-                  </select>
-                  {EIMsg(idx, "itemCategory")}
-                </Field>
-                <Field label="GSM">
-                  <input
-                    type="number"
-                    placeholder="e.g. 100"
-                    value={it.gsm}
-                    onChange={(e) => setItem(idx, "gsm", e.target.value)}
-                  />
-                </Field>
-              </div>
-
-              {}
-              {(() => {
-                const categorySizes = subTypeMap[it.itemCategory] || [];
-                const config = CATEGORY_CONFIG[it.itemCategory];
-
-                const isLiquid = categorySizes.some((s) =>
-                  s.toLowerCase().includes("ml"),
-                );
-
-                
-                let layout = config?.layout;
-                let f1 = config?.f1 || "WIDTH";
-                let f2 = config?.f2;
-                let f3 = config?.f3;
-
-                if (!layout && !isLiquid) {
-                  const is3D = categorySizes.some(
-                    (s) => (s.match(/x/g) || []).length >= 2,
-                  );
-                  const is2D =
-                    !is3D &&
-                    categorySizes.some((s) => s.toLowerCase().includes("x"));
-
-                  if (is3D) {
-                    layout = "3D";
-                    f2 = "GUSSETT";
-                    f3 = "HEIGHT";
-                  } else if (is2D) {
-                    layout = "2D";
-                    f2 = "LENGTH";
-                  }
-                }
-
-                const showInputs = layout === "3D" || layout === "2D";
-
-                
-                const getKey = (label) => {
-                  if (label === "WIDTH") return "width";
-                  if (label === "LENGTH") return "length";
-                  if (label === "GUSSETT") return "gussett";
-                  if (label === "HEIGHT") return "height";
-                  return "width";
-                };
-
-                if (showInputs) {
-                  return (
-                    <>
-                      <div
+                    <span
+                      style={{
+                        fontWeight: 500,
+                        color: C.green || "#4ade80",
+                        fontSize: 13,
+                      }}
+                    >
+                      Item {idx + 1}
+                    </span>
+                    {items.length > 1 && (
+                      <button
+                        onClick={() => removeItem(idx)}
                         style={{
-                          display: "grid",
-                          gridTemplateColumns: "1fr 1fr 1fr 1fr",
-                          gap: 12,
-                          marginBottom: 12,
+                          background: "transparent",
+                          color: "#ffffff",
+                          border: "1px solid rgba(255,255,255,0.2)",
+                          borderRadius: 6,
+                          padding: "6px 12px",
+                          fontSize: 11,
+                          fontWeight: 500,
+                          cursor: "pointer",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
                         }}
                       >
-                        <Field label="STANDARD SIZE">
-                          <select
-                            value={it.size}
-                            onChange={(e) =>
-                              setItem(idx, "size", e.target.value)
-                            }
-                          >
-                            <option value="">-- Manual / Custom --</option>
-                            {categorySizes.map((s) => (
-                              <option key={s} value={s}>
-                                {s
-                                  .toLowerCase()
-                                  .split(/\s*\d+\s*gsm/)[0]
-                                  .trim()
-                                  .toLowerCase()}
-                              </option>
-                            ))}
-                          </select>
-                        </Field>
-                        <Field label="UOM *">
-                          <select
-                            value={it.uom}
-                            onChange={(e) =>
-                              setItem(idx, "uom", e.target.value)
-                            }
-                          >
-                            <option value="mm">mm</option>
-                            <option value="cm">cm</option>
-                            <option value="inch">inch</option>
-                          </select>
-                        </Field>
-                        <Field label={`${f1} *`}>
-                          <input
-                            type="number"
-                            placeholder="e.g. 9"
-                            value={it[getKey(f1)]}
-                            onChange={(e) =>
-                              setItem(idx, getKey(f1), e.target.value)
-                            }
-                            style={EI(idx, getKey(f1))}
-                          />
-                        </Field>
-                        {f2 && (
-                          <Field label={`${f2} *`}>
-                            <input
-                              type="number"
-                              placeholder="e.g. 6"
-                              value={it[getKey(f2)]}
-                              onChange={(e) =>
-                                setItem(idx, getKey(f2), e.target.value)
-                              }
-                              style={EI(idx, getKey(f2))}
-                            />
-                          </Field>
+                        <i className="fa-solid fa-trash" /> Delete
+                      </button>
+                    )}
+                  </div>
+
+                  {}
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr 1fr 0.8fr",
+                      gap: 12,
+                      marginBottom: 12,
+                    }}
+                  >
+                    <Field label="PRODUCT CODE">
+                      <AutocompleteInput
+                        value={it.productCode}
+                        onChange={(v) => setItem(idx, "productCode", v)}
+                        suggestions={sortedFGItems.map(
+                          (f) => `${f.code} — ${f.name}`,
                         )}
-                      </div>
+                        placeholder="Type or select code (optional)"
+                      />
+                    </Field>
+                    <Field label="CATEGORY *">
+                      <select
+                        value={it.itemCategory}
+                        onChange={(e) =>
+                          setItem(idx, "itemCategory", e.target.value)
+                        }
+                        style={EI(idx, "itemCategory")}
+                      >
+                        <option value="">-- Select Category --</option>
+                        {fgCategories.map((c) => (
+                          <option key={c}>{c}</option>
+                        ))}
+                      </select>
+                      {EIMsg(idx, "itemCategory")}
+                    </Field>
+                    <Field label="GSM">
+                      <input
+                        type="number"
+                        placeholder="e.g. 100"
+                        value={it.gsm}
+                        onChange={(e) => setItem(idx, "gsm", e.target.value)}
+                      />
+                    </Field>
+                  </div>
+
+                  {}
+                  {(() => {
+                    const categorySizes = subTypeMap[it.itemCategory] || [];
+                    const config = CATEGORY_CONFIG[it.itemCategory];
+
+                    const isLiquid = categorySizes.some((s) =>
+                      s.toLowerCase().includes("ml"),
+                    );
+
+                    let layout = config?.layout;
+                    let f1 = config?.f1 || "WIDTH";
+                    let f2 = config?.f2;
+                    let f3 = config?.f3;
+
+                    if (!layout && !isLiquid) {
+                      const is3D = categorySizes.some(
+                        (s) => (s.match(/x/g) || []).length >= 2,
+                      );
+                      const is2D =
+                        !is3D &&
+                        categorySizes.some((s) =>
+                          s.toLowerCase().includes("x"),
+                        );
+
+                      if (is3D) {
+                        layout = "3D";
+                        f2 = "GUSSETT";
+                        f3 = "HEIGHT";
+                      } else if (is2D) {
+                        layout = "2D";
+                        f2 = "LENGTH";
+                      }
+                    }
+
+                    const showInputs = layout === "3D" || layout === "2D";
+
+                    const getKey = (label) => {
+                      if (label === "WIDTH") return "width";
+                      if (label === "LENGTH") return "length";
+                      if (label === "GUSSETT") return "gussett";
+                      if (label === "HEIGHT") return "height";
+                      return "width";
+                    };
+
+                    if (showInputs) {
+                      return (
+                        <>
+                          <div
+                            style={{
+                              display: "grid",
+                              gridTemplateColumns: "1fr 1fr 1fr 1fr",
+                              gap: 12,
+                              marginBottom: 12,
+                            }}
+                          >
+                            <Field label="STANDARD SIZE">
+                              <select
+                                value={it.size}
+                                onChange={(e) =>
+                                  setItem(idx, "size", e.target.value)
+                                }
+                              >
+                                <option value="">-- Manual / Custom --</option>
+                                {categorySizes.map((s) => (
+                                  <option key={s} value={s}>
+                                    {s
+                                      .toLowerCase()
+                                      .split(/\s*\d+\s*gsm/)[0]
+                                      .trim()
+                                      .toLowerCase()}
+                                  </option>
+                                ))}
+                              </select>
+                            </Field>
+                            <Field label="UOM *">
+                              <select
+                                value={it.uom}
+                                onChange={(e) =>
+                                  setItem(idx, "uom", e.target.value)
+                                }
+                              >
+                                <option value="mm">mm</option>
+                                <option value="cm">cm</option>
+                                <option value="inch">inch</option>
+                              </select>
+                            </Field>
+                            <Field label={`${f1} *`}>
+                              <input
+                                type="number"
+                                placeholder="e.g. 9"
+                                value={it[getKey(f1)]}
+                                onChange={(e) =>
+                                  setItem(idx, getKey(f1), e.target.value)
+                                }
+                                style={EI(idx, getKey(f1))}
+                              />
+                            </Field>
+                            {f2 && (
+                              <Field label={`${f2} *`}>
+                                <input
+                                  type="number"
+                                  placeholder="e.g. 6"
+                                  value={it[getKey(f2)]}
+                                  onChange={(e) =>
+                                    setItem(idx, getKey(f2), e.target.value)
+                                  }
+                                  style={EI(idx, getKey(f2))}
+                                />
+                              </Field>
+                            )}
+                          </div>
+                          <div
+                            style={{
+                              display: "grid",
+                              gridTemplateColumns: "1fr 1fr 1fr",
+                              gap: 12,
+                              marginBottom: 12,
+                            }}
+                          >
+                            {layout === "3D" && f3 && (
+                              <Field label={`${f3} *`}>
+                                <input
+                                  type="number"
+                                  placeholder="e.g. 7"
+                                  value={it[getKey(f3)]}
+                                  onChange={(e) =>
+                                    setItem(idx, getKey(f3), e.target.value)
+                                  }
+                                  style={EI(idx, getKey(f3))}
+                                />
+                              </Field>
+                            )}
+                            <Field label="ORDER QTY & UNIT *">
+                              <div style={{ display: "flex", gap: 6 }}>
+                                <input
+                                  type="number"
+                                  placeholder="Qty"
+                                  value={it.orderQty}
+                                  onChange={(e) =>
+                                    setItem(idx, "orderQty", e.target.value)
+                                  }
+                                  style={{ ...EI(idx, "orderQty"), flex: 1 }}
+                                />
+                                <select
+                                  value={it.qtyUnit || "pcs"}
+                                  onChange={(e) =>
+                                    setItem(idx, "qtyUnit", e.target.value)
+                                  }
+                                  style={{
+                                    padding: "8px 12px",
+                                    borderRadius: 6,
+                                    border: `1px solid ${C.border}`,
+                                    background: C.inputBg,
+                                    color: C.text,
+                                    width: 80,
+                                  }}
+                                >
+                                  <option value="pcs">pcs</option>
+                                  <option value="kg">kg</option>
+                                </select>
+                              </div>
+                              {EIMsg(idx, "orderQty")}
+                            </Field>
+                            <Field label="PRICE (₹)">
+                              <input
+                                type="number"
+                                placeholder="Price per unit"
+                                value={it.price}
+                                onChange={(e) =>
+                                  setItem(idx, "price", e.target.value)
+                                }
+                                style={EI(idx, "price")}
+                              />
+                              {EIMsg(idx, "price")}
+                            </Field>
+                          </div>
+                        </>
+                      );
+                    }
+
+                    return (
                       <div
                         style={{
                           display: "grid",
@@ -1317,19 +1438,23 @@ export default function SalesOrders(props) {
                           marginBottom: 12,
                         }}
                       >
-                        {layout === "3D" && f3 && (
-                          <Field label={`${f3} *`}>
-                            <input
-                              type="number"
-                              placeholder="e.g. 7"
-                              value={it[getKey(f3)]}
-                              onChange={(e) =>
-                                setItem(idx, getKey(f3), e.target.value)
-                              }
-                              style={EI(idx, getKey(f3))}
-                            />
-                          </Field>
-                        )}
+                        <Field label="SIZE *">
+                          <select
+                            value={it.size}
+                            onChange={(e) =>
+                              setItem(idx, "size", e.target.value)
+                            }
+                            style={EI(idx, "size")}
+                          >
+                            <option value="">-- Select Size --</option>
+                            {categorySizes.map((s) => (
+                              <option key={s} value={s}>
+                                {s}
+                              </option>
+                            ))}
+                          </select>
+                          {EIMsg(idx, "size")}
+                        </Field>
                         <Field label="ORDER QTY & UNIT *">
                           <div style={{ display: "flex", gap: 6 }}>
                             <input
@@ -1374,11 +1499,10 @@ export default function SalesOrders(props) {
                           {EIMsg(idx, "price")}
                         </Field>
                       </div>
-                    </>
-                  );
-                }
+                    );
+                  })()}
 
-                return (
+                  {}
                   <div
                     style={{
                       display: "grid",
@@ -1387,300 +1511,253 @@ export default function SalesOrders(props) {
                       marginBottom: 12,
                     }}
                   >
-                    <Field label="SIZE *">
-                      <select
-                        value={it.size}
-                        onChange={(e) => setItem(idx, "size", e.target.value)}
-                        style={EI(idx, "size")}
+                    <Field label="AMOUNT (₹)">
+                      <div
+                        style={{
+                          padding: "9px 12px",
+                          background: C.inputBg,
+                          border: `1px solid ${C.border}`,
+                          borderRadius: 6,
+                          fontSize: 13,
+                          color: it.amount ? C.green || "#4ade80" : C.muted,
+                          fontWeight: it.amount ? 700 : 400,
+                          height: "100%",
+                          boxSizing: "border-box",
+                        }}
                       >
-                        <option value="">-- Select Size --</option>
-                        {categorySizes.map((s) => (
-                          <option key={s} value={s}>
-                            {s}
-                          </option>
-                        ))}
-                      </select>
-                      {EIMsg(idx, "size")}
-                    </Field>
-                    <Field label="ORDER QTY & UNIT *">
-                      <div style={{ display: "flex", gap: 6 }}>
-                        <input
-                          type="number"
-                          placeholder="Qty"
-                          value={it.orderQty}
-                          onChange={(e) =>
-                            setItem(idx, "orderQty", e.target.value)
-                          }
-                          style={{ ...EI(idx, "orderQty"), flex: 1 }}
-                        />
-                        <select
-                          value={it.qtyUnit || "pcs"}
-                          onChange={(e) =>
-                            setItem(idx, "qtyUnit", e.target.value)
-                          }
-                          style={{
-                            padding: "8px 12px",
-                            borderRadius: 6,
-                            border: `1px solid ${C.border}`,
-                            background: C.inputBg,
-                            color: C.text,
-                            width: 80,
-                          }}
-                        >
-                          <option value="pcs">pcs</option>
-                          <option value="kg">kg</option>
-                        </select>
+                        {it.amount ? (
+                          `₹${fmt(+it.amount)}`
+                        ) : (
+                          <span style={{ fontSize: 11, color: C.muted }}>
+                            — Qty × Price —
+                          </span>
+                        )}
                       </div>
-                      {EIMsg(idx, "orderQty")}
                     </Field>
-                    <Field label="PRICE (₹)">
+                    <Field label="GST (%)">
                       <input
                         type="number"
-                        placeholder="Price per unit"
-                        value={it.price}
-                        onChange={(e) => setItem(idx, "price", e.target.value)}
-                        style={EI(idx, "price")}
+                        placeholder="18"
+                        value={it.gstRate || 18}
+                        onChange={(e) =>
+                          setItem(idx, "gstRate", e.target.value)
+                        }
                       />
-                      {EIMsg(idx, "price")}
+                    </Field>
+                    <Field label="TOTAL (INCL TAX)">
+                      <div
+                        style={{
+                          padding: "9px 12px",
+                          background: C.inputBg,
+                          border: `1px solid ${C.border}`,
+                          borderRadius: 6,
+                          fontSize: 13,
+                          color: it.totalWithTax
+                            ? C.green || "#4ade80"
+                            : C.muted,
+                          fontWeight: it.totalWithTax ? 700 : 400,
+                        }}
+                      >
+                        {it.totalWithTax ? `₹${fmt(+it.totalWithTax)}` : "—"}
+                      </div>
                     </Field>
                   </div>
-                );
-              })()}
+
+                  {}
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 2fr",
+                      gap: 12,
+                      marginBottom: 12,
+                    }}
+                  >
+                    <Field label="HSN">
+                      <input
+                        placeholder="HSN"
+                        value={it.hsnCode || ""}
+                        onChange={(e) =>
+                          setItem(idx, "hsnCode", e.target.value)
+                        }
+                      />
+                    </Field>
+                    <Field label="ITEM NAME">
+                      <div
+                        style={{
+                          padding: "9px 12px",
+                          background: C.inputBg,
+                          border: `1px solid ${C.border}`,
+                          borderRadius: 6,
+                          fontSize: 13,
+                          color: C.green || "#4ade80",
+                          fontWeight: 500,
+                        }}
+                      >
+                        {it.itemName || "— Auto-generated —"}
+                      </div>
+                    </Field>
+                  </div>
+
+                  {}
+                  <div style={{ marginBottom: 4 }}>
+                    <Field label="ITEM REMARKS">
+                      <input
+                        placeholder="Special instructions for this item (optional)"
+                        value={it.remarks}
+                        onChange={(e) =>
+                          setItem(idx, "remarks", e.target.value)
+                        }
+                      />
+                    </Field>
+                  </div>
+                </Card>
+              ))}
 
               {}
               <div
                 style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr 1fr",
-                  gap: 12,
-                  marginBottom: 12,
-                }}
-              >
-                <Field label="AMOUNT (₹)">
-                  <div
-                    style={{
-                      padding: "9px 12px",
-                      background: C.inputBg,
-                      border: `1px solid ${C.border}`,
-                      borderRadius: 6,
-                      fontSize: 13,
-                      color: it.amount ? C.green || "#4ade80" : C.muted,
-                      fontWeight: it.amount ? 700 : 400,
-                      height: "100%",
-                      boxSizing: "border-box",
-                    }}
-                  >
-                    {it.amount ? (
-                      `₹${fmt(+it.amount)}`
-                    ) : (
-                      <span style={{ fontSize: 11, color: C.muted }}>
-                        — Qty × Price —
-                      </span>
-                    )}
-                  </div>
-                </Field>
-                <Field label="GST (%)">
-                  <input
-                    type="number"
-                    placeholder="18"
-                    value={it.gstRate || 18}
-                    onChange={(e) => setItem(idx, "gstRate", e.target.value)}
-                  />
-                </Field>
-                <Field label="TOTAL (INCL TAX)">
-                  <div
-                    style={{
-                      padding: "9px 12px",
-                      background: C.inputBg,
-                      border: `1px solid ${C.border}`,
-                      borderRadius: 6,
-                      fontSize: 13,
-                      color: it.totalWithTax ? C.green || "#4ade80" : C.muted,
-                      fontWeight: it.totalWithTax ? 700 : 400,
-                    }}
-                  >
-                    {it.totalWithTax ? `₹${fmt(+it.totalWithTax)}` : "—"}
-                  </div>
-                </Field>
-              </div>
-
-              {}
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 2fr",
-                  gap: 12,
-                  marginBottom: 12,
-                }}
-              >
-                <Field label="HSN">
-                  <input
-                    placeholder="HSN"
-                    value={it.hsnCode || ""}
-                    onChange={(e) => setItem(idx, "hsnCode", e.target.value)}
-                  />
-                </Field>
-                <Field label="ITEM NAME">
-                  <div
-                    style={{
-                      padding: "9px 12px",
-                      background: C.inputBg,
-                      border: `1px solid ${C.border}`,
-                      borderRadius: 6,
-                      fontSize: 13,
-                      color: C.green || "#4ade80",
-                      fontWeight: 500,
-                    }}
-                  >
-                    {it.itemName || "— Auto-generated —"}
-                  </div>
-                </Field>
-              </div>
-
-              {}
-              <div style={{ marginBottom: 4 }}>
-                <Field label="ITEM REMARKS">
-                  <input
-                    placeholder="Special instructions for this item (optional)"
-                    value={it.remarks}
-                    onChange={(e) => setItem(idx, "remarks", e.target.value)}
-                  />
-                </Field>
-              </div>
-            </Card>
-          ))}
-
-          {}
-          <div
-            style={{
-              display: "flex",
-              gap: 10,
-              marginTop: 4,
-              alignItems: "center",
-              flexWrap: "wrap",
-            }}
-          >
-            <button
-              onClick={addItem}
-              style={{
-                background: (C.green || "#4ade80") + "22",
-                color: C.green || "#4ade80",
-                border: `1px solid ${C.green || "#4ade80"}44`,
-                borderRadius: 6,
-                padding: "9px 20px",
-                fontWeight: 500,
-                fontSize: 13,
-                cursor: "pointer",
-              }}
-            >
-              + Add Another Item
-            </button>
-            <SubmitBtn
-              label={
-                editId
-                  ? `Update Sales Order (${items.length} item${items.length > 1 ? "s" : ""})`
-                  : `Create Sales Order (${items.length} item${items.length > 1 ? "s" : ""})`
-              }
-              color={C.green || "#4ade80"}
-              onClick={submit}
-              disabled={loading}
-            />
-            <button
-                onClick={() => { setShowModal(false); setEditId(null); setHeader(blankHeader); setItems([blankItem()]); setHeaderErrors({}); setItemErrors([{}]); }}
-                style={{
-                      background: "transparent",
-                      color: "#ffffff",
-                      border: "1px solid rgba(255,255,255,0.2)",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-              ><i className="fa-solid fa-xmark" /> Cancel</button>
-            {items.some((it) => it.amount) && (
-              <div
-                style={{
-                  marginLeft: "auto",
-                  padding: "12px 20px",
-                  background: (C.green || "#4ade80") + "11",
-                  border: `1px solid ${C.green || "#4ade80"}33`,
-                  borderRadius: 10,
                   display: "flex",
-                  flexDirection: "column",
-                  gap: 4,
-                  minWidth: 200,
+                  gap: 10,
+                  marginTop: 4,
+                  alignItems: "center",
+                  flexWrap: "wrap",
                 }}
               >
-                <div
+                <button
+                  onClick={addItem}
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    fontSize: 11,
-                    color: C.muted,
-                  }}
-                >
-                  <span>Subtotal:</span>
-                  <span>
-                    ₹
-                    {fmt(items.reduce((sum, it) => sum + +(it.amount || 0), 0))}
-                  </span>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    fontSize: 11,
-                    color: C.muted,
-                  }}
-                >
-                  <span>Total GST:</span>
-                  <span>
-                    ₹
-                    {fmt(
-                      items.reduce((sum, it) => sum + +(it.taxAmount || 0), 0),
-                    )}
-                  </span>
-                </div>
-                <div
-                  style={{
-                    height: 1,
                     background: (C.green || "#4ade80") + "22",
-                    margin: "4px 0",
-                  }}
-                />
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    fontWeight: 800,
                     color: C.green || "#4ade80",
-                    fontSize: 15,
+                    border: `1px solid ${C.green || "#4ade80"}44`,
+                    borderRadius: 6,
+                    padding: "9px 20px",
+                    fontWeight: 500,
+                    fontSize: 13,
+                    cursor: "pointer",
                   }}
                 >
-                  <span>Net Total:</span>
-                  <span>
-                    ₹
-                    {fmt(
-                      items.reduce(
-                        (sum, it) => sum + +(it.totalWithTax || 0),
-                        0,
-                      ),
-                    )}
-                  </span>
-                </div>
+                  + Add Another Item
+                </button>
+                <SubmitBtn
+                  label={
+                    editId
+                      ? `Update Sales Order (${items.length} item${items.length > 1 ? "s" : ""})`
+                      : `Create Sales Order (${items.length} item${items.length > 1 ? "s" : ""})`
+                  }
+                  color={C.green || "#4ade80"}
+                  onClick={submit}
+                  disabled={loading}
+                />
+                <button
+                  onClick={() => {
+                    setShowModal(false);
+                    setEditId(null);
+                    setHeader(blankHeader);
+                    setItems([blankItem()]);
+                    setHeaderErrors({});
+                    setItemErrors([{}]);
+                  }}
+                  style={{
+                    background: "transparent",
+                    color: "#ffffff",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    borderRadius: 6,
+                    padding: "6px 12px",
+                    fontSize: 11,
+                    fontWeight: 500,
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  <i className="fa-solid fa-xmark" /> Cancel
+                </button>
+                {items.some((it) => it.amount) && (
+                  <div
+                    style={{
+                      marginLeft: "auto",
+                      padding: "12px 20px",
+                      background: (C.green || "#4ade80") + "11",
+                      border: `1px solid ${C.green || "#4ade80"}33`,
+                      borderRadius: 10,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 4,
+                      minWidth: 200,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        fontSize: 11,
+                        color: C.muted,
+                      }}
+                    >
+                      <span>Subtotal:</span>
+                      <span>
+                        ₹
+                        {fmt(
+                          items.reduce((sum, it) => sum + +(it.amount || 0), 0),
+                        )}
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        fontSize: 11,
+                        color: C.muted,
+                      }}
+                    >
+                      <span>Total GST:</span>
+                      <span>
+                        ₹
+                        {fmt(
+                          items.reduce(
+                            (sum, it) => sum + +(it.taxAmount || 0),
+                            0,
+                          ),
+                        )}
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        height: 1,
+                        background: (C.green || "#4ade80") + "22",
+                        margin: "4px 0",
+                      }}
+                    />
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        fontWeight: 800,
+                        color: C.green || "#4ade80",
+                        fontSize: 15,
+                      }}
+                    >
+                      <span>Net Total:</span>
+                      <span>
+                        ₹
+                        {fmt(
+                          items.reduce(
+                            (sum, it) => sum + +(it.totalWithTax || 0),
+                            0,
+                          ),
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </div>
-        </Modal>
-      )}
+            </div>
+          </Modal>
+        )}
 
-      {}
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        {}
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <Card style={{ padding: "12px 20px" }}>
             <div
               style={{
@@ -1709,18 +1786,47 @@ export default function SalesOrders(props) {
               <AutocompleteInput
                 value={filterClient}
                 onChange={(v) => setFilterClient(v)}
-                suggestions={[...new Set((salesOrders || []).map(r => r.companyName || r.clientName).filter(Boolean))].sort()}
+                suggestions={[
+                  ...new Set(
+                    (salesOrders || [])
+                      .map((r) => r.companyName || r.clientName)
+                      .filter(Boolean),
+                  ),
+                ].sort()}
                 placeholder="Filter by client..."
                 showAllOnFocus={true}
-                inputStyle={{ padding: "6px 10px", background: "#0c0c0e", border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12, width: 180 }}
+                inputStyle={{
+                  padding: "6px 10px",
+                  background: "#0c0c0e",
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 6,
+                  color: "#fff",
+                  fontSize: 12,
+                  width: 180,
+                }}
               />
               <AutocompleteInput
                 value={filterStatus}
                 onChange={(v) => setFilterStatus(v)}
-                suggestions={["Open", "In Production", "Completed", "Closed", "Cancelled", "Partial"]}
+                suggestions={[
+                  "Open",
+                  "In Production",
+                  "Completed",
+                  "Closed",
+                  "Cancelled",
+                  "Partial",
+                ]}
                 placeholder="Filter by status..."
                 showAllOnFocus={true}
-                inputStyle={{ padding: "6px 10px", background: "#0c0c0e", border: `1px solid ${C.border}`, borderRadius: 6, color: "#fff", fontSize: 12, width: 150 }}
+                inputStyle={{
+                  padding: "6px 10px",
+                  background: "#0c0c0e",
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 6,
+                  color: "#fff",
+                  fontSize: 12,
+                  width: 150,
+                }}
               />
               <span
                 style={{ fontSize: 12, color: C.muted, marginLeft: "auto" }}
@@ -1731,38 +1837,126 @@ export default function SalesOrders(props) {
           </Card>
 
           {(() => {
-            const filteredSOs = (salesOrders || []).slice().sort((a, b) => new Date(b.createdAt || b.orderDate || 0) - new Date(a.createdAt || a.orderDate || 0)).filter(r => {
-              if (drDateFrom || drDateTo) {
-                const d = r.orderDate ? new Date(r.orderDate).toISOString().slice(0, 10) : "";
-                if (drDateFrom && d < drDateFrom) return false;
-                if (drDateTo && d > drDateTo) return false;
-              }
-              if (filterClient && (r.companyName || r.clientName || "") !== filterClient) return false;
-              if (filterStatus && r.status !== filterStatus) return false;
-              return true;
-            });
+            const filteredSOs = (salesOrders || [])
+              .slice()
+              .sort(
+                (a, b) =>
+                  new Date(b.createdAt || b.orderDate || 0) -
+                  new Date(a.createdAt || a.orderDate || 0),
+              )
+              .filter((r) => {
+                if (drDateFrom || drDateTo) {
+                  const d = r.orderDate
+                    ? new Date(r.orderDate).toISOString().slice(0, 10)
+                    : "";
+                  if (drDateFrom && d < drDateFrom) return false;
+                  if (drDateTo && d > drDateTo) return false;
+                }
+                if (
+                  filterClient &&
+                  (r.companyName || r.clientName || "") !== filterClient
+                )
+                  return false;
+                if (filterStatus && r.status !== filterStatus) return false;
+                return true;
+              });
             const filteredIds = filteredSOs.map((r) => r._id);
-            const allSelected = filteredIds.length > 0 && filteredIds.every((id) => selectedIds.has(id));
+            const allSelected =
+              filteredIds.length > 0 &&
+              filteredIds.every((id) => selectedIds.has(id));
             const someSelected = filteredIds.some((id) => selectedIds.has(id));
-            const totalValue = filteredSOs.reduce((s, r) => s + (r.items || []).reduce((ss, it) => ss + +(it.amount || 0), 0), 0);
-            const openCount = filteredSOs.filter(r => !r.status || r.status === "Open").length;
-            const completedCount = filteredSOs.filter(r => r.status === "Completed" || r.status === "Complated" || r.status === "Closed").length;
+            const totalValue = filteredSOs.reduce(
+              (s, r) =>
+                s +
+                (r.items || []).reduce((ss, it) => ss + +(it.amount || 0), 0),
+              0,
+            );
+            const openCount = filteredSOs.filter(
+              (r) => !r.status || r.status === "Open",
+            ).length;
+            const completedCount = filteredSOs.filter(
+              (r) =>
+                r.status === "Completed" ||
+                r.status === "Complated" ||
+                r.status === "Closed",
+            ).length;
             const statCards = [
-              { label: "Total SOs", value: filteredSOs.length, icon: "fa-solid fa-file-lines" },
+              {
+                label: "Total SOs",
+                value: filteredSOs.length,
+                icon: "fa-solid fa-file-lines",
+              },
               { label: "Open", value: openCount, icon: "fa-solid fa-clock" },
-              { label: "Completed", value: completedCount, icon: "fa-solid fa-circle-check" },
-              { label: "Total Value", value: `₹${fmt(totalValue)}`, icon: "fa-solid fa-indian-rupee-sign" },
+              {
+                label: "Completed",
+                value: completedCount,
+                icon: "fa-solid fa-circle-check",
+              },
+              {
+                label: "Total Value",
+                value: `₹${fmt(totalValue)}`,
+                icon: "fa-solid fa-indian-rupee-sign",
+              },
             ];
             return (
               <>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 16 }}>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(4, 1fr)",
+                    gap: 12,
+                    marginBottom: 16,
+                  }}
+                >
                   {statCards.map(({ label, value, icon }) => (
-                    <div key={label} style={{ padding: "16px 20px", background: "transparent", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                        <span style={{ fontSize: 19, color: "#ffffff", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
-                        <i className={icon} style={{ color: C.muted, fontSize: 20, opacity: 0.9, display: "inline-flex", alignItems: "center", justifyContent: "center", height: 28, width: 28, lineHeight: 1 }} />
+                    <div
+                      key={label}
+                      style={{
+                        padding: "16px 20px",
+                        background: "transparent",
+                        border: "1px solid rgba(255,255,255,0.07)",
+                        borderRadius: 12,
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          marginBottom: 8,
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: 19,
+                            color: "#ffffff",
+                            fontWeight: 600,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.05em",
+                          }}
+                        >
+                          {label}
+                        </span>
+                        <i
+                          className={icon}
+                          style={{
+                            color: C.muted,
+                            fontSize: 20,
+                            opacity: 0.9,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            height: 28,
+                            width: 28,
+                            lineHeight: 1,
+                          }}
+                        />
                       </div>
-                      <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>{value}</div>
+                      <div
+                        style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}
+                      >
+                        {value}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1773,129 +1967,349 @@ export default function SalesOrders(props) {
                       textAlign: "center",
                       color: C.muted,
                       padding: 32,
-                fontSize: 13,
-                background: "#1a1a1a",
-                borderRadius: 10,
-              }}
-            >
-              No sales orders yet.
-            </div>
+                      fontSize: 13,
+                      background: "#1a1a1a",
+                      borderRadius: 10,
+                    }}
+                  >
+                    No sales orders yet.
+                  </div>
                 )}
 
                 {!isClient && canDelete && selectedIds.size > 0 && (
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", marginBottom: 8, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: "#fecaca" }}>{selectedIds.size} selected</span>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "10px 14px",
+                      marginBottom: 8,
+                      background: "rgba(239,68,68,0.08)",
+                      border: "1px solid rgba(239,68,68,0.3)",
+                      borderRadius: 8,
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: "#fecaca",
+                      }}
+                    >
+                      {selectedIds.size} selected
+                    </span>
                     <div style={{ display: "flex", gap: 8 }}>
-                      <button onClick={() => setSelectedIds(new Set())} style={{ padding: "5px 12px", borderRadius: 5, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.06)", color: "#fff", fontSize: 12, fontWeight: 500, cursor: "pointer" }}>Clear</button>
-                      <button onClick={() => setBulkDeleteOpen(true)} style={{ padding: "5px 12px", borderRadius: 5, border: "1px solid rgba(239,68,68,0.4)", background: "rgba(239,68,68,0.15)", color: "#ef4444", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Delete Selected</button>
+                      <button
+                        onClick={() => setSelectedIds(new Set())}
+                        style={{
+                          padding: "5px 12px",
+                          borderRadius: 5,
+                          border: "1px solid rgba(255,255,255,0.15)",
+                          background: "rgba(255,255,255,0.06)",
+                          color: "#fff",
+                          fontSize: 12,
+                          fontWeight: 500,
+                          cursor: "pointer",
+                        }}
+                      >
+                        Clear
+                      </button>
+                      <button
+                        onClick={() => setBulkDeleteOpen(true)}
+                        style={{
+                          padding: "5px 12px",
+                          borderRadius: 5,
+                          border: "1px solid rgba(239,68,68,0.4)",
+                          background: "rgba(239,68,68,0.15)",
+                          color: "#ef4444",
+                          fontSize: 12,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                        }}
+                      >
+                        Delete Selected
+                      </button>
                     </div>
                   </div>
                 )}
 
                 {filteredSOs.length > 0 && (
-                  <div style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <div
+                    style={{
+                      background: "transparent",
+                      border: "1px solid rgba(255,255,255,0.07)",
+                      borderRadius: 12,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <table
+                      style={{
+                        width: "100%",
+                        borderCollapse: "collapse",
+                        fontSize: 13,
+                      }}
+                    >
                       <thead>
-                        <tr style={{ background: "transparent", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                        <tr
+                          style={{
+                            background: "transparent",
+                            borderBottom: "1px solid rgba(255,255,255,0.08)",
+                          }}
+                        >
                           {!isClient && (
-                            <th style={{ padding: "10px 14px", textAlign: "left", width: 36 }}>
+                            <th
+                              style={{
+                                padding: "10px 14px",
+                                textAlign: "left",
+                                width: 36,
+                              }}
+                            >
                               <input
                                 type="checkbox"
                                 checked={allSelected}
-                                ref={(el) => { if (el) el.indeterminate = !allSelected && someSelected; }}
-                                onChange={() => toggleSelectAll(filteredIds, allSelected)}
-                                style={{ cursor: "pointer", accentColor: C.accent || "#60a5fa" }}
+                                ref={(el) => {
+                                  if (el)
+                                    el.indeterminate =
+                                      !allSelected && someSelected;
+                                }}
+                                onChange={() =>
+                                  toggleSelectAll(filteredIds, allSelected)
+                                }
+                                style={{
+                                  cursor: "pointer",
+                                  accentColor: C.accent || "#60a5fa",
+                                }}
                               />
                             </th>
                           )}
-                          {["SO No", "Date", "Client", "Items", "Delivery", "Sales Person", "Total", "Status", "Actions"].map(h => (
-                            <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
+                          {[
+                            "SO No",
+                            "Date",
+                            "Client",
+                            "Items",
+                            "Delivery",
+                            "Sales Person",
+                            "Total",
+                            "Status",
+                            "Actions",
+                          ].map((h) => (
+                            <th
+                              key={h}
+                              style={{
+                                padding: "10px 14px",
+                                textAlign: "left",
+                                fontSize: 11,
+                                fontWeight: 700,
+                                color: C.muted,
+                                textTransform: "uppercase",
+                                letterSpacing: "0.05em",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {h}
+                            </th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
                         {filteredSOs.map((r, i) => {
-              const total = (r.items || []).reduce(
-                (s, it) => s + +(it.amount || 0),
-                0,
-              );
+                          const total = (r.items || []).reduce(
+                            (s, it) => s + +(it.amount || 0),
+                            0,
+                          );
 
-              return (
-                <tr
-                  key={r._id}
-                  data-record-id={r.soNo}
-                  style={{
-                    borderBottom: "1px solid rgba(255,255,255,0.04)",
-                    background: selectedIds.has(r._id) ? "rgba(96,165,250,0.08)" : r.soNo === highlightId ? `${C.accent}11` : i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)",
-                    transition: "all 0.4s ease",
-                  }}
-                >
-                  {!isClient && (
-                    <td style={{ padding: "12px 14px", width: 36 }}>
-                      <input
-                        type="checkbox"
-                        checked={selectedIds.has(r._id)}
-                        onChange={() => toggleSelect(r._id)}
-                        style={{ cursor: "pointer", accentColor: C.accent || "#60a5fa" }}
-                      />
-                    </td>
-                  )}
-                  <td style={{ padding: "12px 14px", fontWeight: 700, color: "#4ade80", whiteSpace: "nowrap" }}>{r.soNo}</td>
-                  <td style={{ padding: "12px 14px", color: C.muted, whiteSpace: "nowrap", fontSize: 12 }}>{r.orderDate ? new Date(r.orderDate).toLocaleDateString("en-GB") : "—"}</td>
-                  <td style={{ padding: "12px 14px", fontWeight: 500 }}>{r.companyName}</td>
-                  <td style={{ padding: "12px 14px", color: C.muted }}>{(r.items || []).length} item{(r.items || []).length !== 1 ? "s" : ""}</td>
-                  <td style={{ padding: "12px 14px", color: C.muted, whiteSpace: "nowrap", fontSize: 12 }}>{r.deliveryDate ? new Date(r.deliveryDate).toLocaleDateString("en-GB") : "—"}</td>
-                  <td style={{ padding: "12px 14px", color: C.muted, fontSize: 12 }}>{r.salesPerson || "—"}</td>
-                  <td style={{ padding: "12px 14px", fontWeight: 700, color: "#4ade80", whiteSpace: "nowrap" }}>₹{fmt(total)}</td>
-                  <td style={{ padding: "12px 14px" }}>
-                    <span style={{ padding: "3px 10px", borderRadius: 5, fontSize: 11, fontWeight: 600, background: (r.status === "Complated" || r.status === "Completed" || r.status === "Received") ? "#06422233" : "#453b0333", color: (r.status === "Complated" || r.status === "Completed" || r.status === "Received") ? "#10b981" : "#f59e0b", border: "1px solid rgba(255,255,255,0.06)" }}>{r.status || "Open"}</span>
-                  </td>
-                  <td style={{ padding: "12px 14px" }}>
-                    <div style={{ display: "flex", gap: 6 }}>
-                      {!isClient && canEdit && <button onClick={() => handleEdit(r)} style={{
-                      background: "transparent",
-                      color: "#8082ff",
-                      border: "1px solid #8082ff98",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}><i className="fa-solid fa-pen-to-square" /> Edit</button>}
-                      <button onClick={() => generateSOPDF(r)} style={{
-                      background: "transparent",
-                      color: "#8082ff",
-                      border: "1px solid #8082ff98",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}><i className="fa-solid fa-file-pdf" /> PDF</button>
-                      {!isClient && canDelete && <button onClick={() => setDeleteTarget(r._id)} style={{
-                      background: "transparent",
-                      color: "#8082ff",
-                      border: "1px solid #8082ff98",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}><i className="fa-solid fa-trash" /> Delete</button>}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
+                          return (
+                            <tr
+                              key={r._id}
+                              data-record-id={r.soNo}
+                              style={{
+                                borderBottom:
+                                  "1px solid rgba(255,255,255,0.04)",
+                                background: selectedIds.has(r._id)
+                                  ? "rgba(96,165,250,0.08)"
+                                  : r.soNo === highlightId
+                                    ? `${C.accent}11`
+                                    : i % 2 === 0
+                                      ? "transparent"
+                                      : "rgba(255,255,255,0.01)",
+                                transition: "all 0.4s ease",
+                              }}
+                            >
+                              {!isClient && (
+                                <td style={{ padding: "12px 14px", width: 36 }}>
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedIds.has(r._id)}
+                                    onChange={() => toggleSelect(r._id)}
+                                    style={{
+                                      cursor: "pointer",
+                                      accentColor: C.accent || "#60a5fa",
+                                    }}
+                                  />
+                                </td>
+                              )}
+                              <td
+                                style={{
+                                  padding: "12px 14px",
+                                  fontWeight: 700,
+                                  color: "#4ade80",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {r.soNo}
+                              </td>
+                              <td
+                                style={{
+                                  padding: "12px 14px",
+                                  color: C.muted,
+                                  whiteSpace: "nowrap",
+                                  fontSize: 12,
+                                }}
+                              >
+                                {r.orderDate
+                                  ? new Date(r.orderDate).toLocaleDateString(
+                                      "en-GB",
+                                    )
+                                  : "—"}
+                              </td>
+                              <td
+                                style={{
+                                  padding: "12px 14px",
+                                  fontWeight: 500,
+                                }}
+                              >
+                                {r.companyName}
+                              </td>
+                              <td
+                                style={{ padding: "12px 14px", color: C.muted }}
+                              >
+                                {(r.items || []).length} item
+                                {(r.items || []).length !== 1 ? "s" : ""}
+                              </td>
+                              <td
+                                style={{
+                                  padding: "12px 14px",
+                                  color: C.muted,
+                                  whiteSpace: "nowrap",
+                                  fontSize: 12,
+                                }}
+                              >
+                                {r.deliveryDate
+                                  ? new Date(r.deliveryDate).toLocaleDateString(
+                                      "en-GB",
+                                    )
+                                  : "—"}
+                              </td>
+                              <td
+                                style={{
+                                  padding: "12px 14px",
+                                  color: C.muted,
+                                  fontSize: 12,
+                                }}
+                              >
+                                {r.salesPerson || "—"}
+                              </td>
+                              <td
+                                style={{
+                                  padding: "12px 14px",
+                                  fontWeight: 700,
+                                  color: "#4ade80",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                ₹{fmt(total)}
+                              </td>
+                              <td style={{ padding: "12px 14px" }}>
+                                <span
+                                  style={{
+                                    padding: "3px 10px",
+                                    borderRadius: 5,
+                                    fontSize: 11,
+                                    fontWeight: 600,
+                                    background:
+                                      r.status === "Complated" ||
+                                      r.status === "Completed" ||
+                                      r.status === "Received"
+                                        ? "#06422233"
+                                        : "#453b0333",
+                                    color:
+                                      r.status === "Complated" ||
+                                      r.status === "Completed" ||
+                                      r.status === "Received"
+                                        ? "#10b981"
+                                        : "#f59e0b",
+                                    border: "1px solid rgba(255,255,255,0.06)",
+                                  }}
+                                >
+                                  {r.status || "Open"}
+                                </span>
+                              </td>
+                              <td style={{ padding: "12px 14px" }}>
+                                <div style={{ display: "flex", gap: 6 }}>
+                                  {!isClient && canEdit && (
+                                    <button
+                                      onClick={() => handleEdit(r)}
+                                      style={{
+                                        background: "transparent",
+                                        color: "#8082ff",
+                                        border: "1px solid #8082ff98",
+                                        borderRadius: 6,
+                                        padding: "6px 12px",
+                                        fontSize: 11,
+                                        fontWeight: 500,
+                                        cursor: "pointer",
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: 6,
+                                      }}
+                                    >
+                                      <i className="fa-solid fa-pen-to-square" />{" "}
+                                      Edit
+                                    </button>
+                                  )}
+                                  <button
+                                    onClick={() => generateSOPDF(r)}
+                                    style={{
+                                      background: "transparent",
+                                      color: "#8082ff",
+                                      border: "1px solid #8082ff98",
+                                      borderRadius: 6,
+                                      padding: "6px 12px",
+                                      fontSize: 11,
+                                      fontWeight: 500,
+                                      cursor: "pointer",
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: 6,
+                                    }}
+                                  >
+                                    <i className="fa-solid fa-file-pdf" /> PDF
+                                  </button>
+                                  {!isClient && canDelete && (
+                                    <button
+                                      onClick={() => setDeleteTarget(r._id)}
+                                      style={{
+                                        background: "transparent",
+                                        color: "#8082ff",
+                                        border: "1px solid #8082ff98",
+                                        borderRadius: 6,
+                                        padding: "6px 12px",
+                                        fontSize: 11,
+                                        fontWeight: 500,
+                                        cursor: "pointer",
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: 6,
+                                      }}
+                                    >
+                                      <i className="fa-solid fa-trash" /> Delete
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -1904,28 +2318,28 @@ export default function SalesOrders(props) {
             );
           })()}
         </div>
-    </div>
+      </div>
 
-    <ConfirmModal
-      isOpen={!!deleteTarget}
-      onClose={() => setDeleteTarget(null)}
-      onConfirm={handleDelete}
-      title="Move to Trash"
-      message="This sales order will be moved to trash. You can restore it within 7 days."
-      confirmText="Move to Trash"
-      cancelText="Cancel"
-      type="danger"
-    />
-    <ConfirmModal
-      isOpen={bulkDeleteOpen}
-      onClose={() => setBulkDeleteOpen(false)}
-      onConfirm={handleBulkDelete}
-      title="Move to Trash"
-      message={`${selectedIds.size} sales order(s) will be moved to trash. You can restore them within 7 days.`}
-      confirmText="Move to Trash"
-      cancelText="Cancel"
-      type="danger"
-    />
+      <ConfirmModal
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        title="Move to Trash"
+        message="This sales order will be moved to trash. You can restore it within 7 days."
+        confirmText="Move to Trash"
+        cancelText="Cancel"
+        type="danger"
+      />
+      <ConfirmModal
+        isOpen={bulkDeleteOpen}
+        onClose={() => setBulkDeleteOpen(false)}
+        onConfirm={handleBulkDelete}
+        title="Move to Trash"
+        message={`${selectedIds.size} sales order(s) will be moved to trash. You can restore them within 7 days.`}
+        confirmText="Move to Trash"
+        cancelText="Cancel"
+        type="danger"
+      />
     </>
   );
 }

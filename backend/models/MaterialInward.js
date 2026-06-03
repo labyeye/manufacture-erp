@@ -33,7 +33,7 @@ const materialInwardItemSchema = new mongoose.Schema(
     hsnCode: String,
     taxAmount: Number,
     totalWithTax: Number,
-    poRemarks: String
+    poRemarks: String,
   },
   { _id: false },
 );

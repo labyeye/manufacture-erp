@@ -1,4 +1,3 @@
-
 export const C = {
   bg: "#07070f",
   surface: "#0d0d1a",
@@ -26,51 +25,58 @@ export const GLASS = {
 };
 
 export const PROCESS_COLORS = {
-  "Printing":         C.blue,
-  "Varnish":          "#0891b2",
-  "Lamination":       C.purple,
-  "Die Cutting":      "#ea580c",
-  "Formation":        C.green,
+  Printing: C.blue,
+  Varnish: "#0891b2",
+  Lamination: C.purple,
+  "Die Cutting": "#ea580c",
+  Formation: C.green,
   "Manual Formation": "#059669",
 };
 
 export const PROCESS_ICONS = {
-  "Printing":         "fa-solid fa-print",
-  "Varnish":          "fa-solid fa-droplet",
-  "Lamination":       "fa-solid fa-layer-group",
-  "Die Cutting":      "fa-solid fa-scissors",
-  "Formation":        "fa-solid fa-box",
+  Printing: "fa-solid fa-print",
+  Varnish: "fa-solid fa-droplet",
+  Lamination: "fa-solid fa-layer-group",
+  "Die Cutting": "fa-solid fa-scissors",
+  Formation: "fa-solid fa-box",
   "Manual Formation": "fa-solid fa-hands",
 };
 
 export const MACHINE_TYPE_COLORS = {
-  "Printing":      C.blue,
-  "Cutting":       "#ea580c",
-  "Die Cutting":   "#ea580c",
-  "Bag Making":    C.purple,
-  "Sheeting":      "#0891b2",
+  Printing: C.blue,
+  Cutting: "#ea580c",
+  "Die Cutting": "#ea580c",
+  "Bag Making": C.purple,
+  Sheeting: "#0891b2",
   "Sheet Cutting": "#0891b2",
-  "Formation":     C.green,
-  "Handmade":      C.yellow,
+  Formation: C.green,
+  Handmade: C.yellow,
 };
 
 export const MACHINE_TYPE_ICONS = {
-  "Printing":      "fa-solid fa-print",
-  "Cutting":       "fa-solid fa-scissors",
-  "Die Cutting":   "fa-solid fa-scissors",
-  "Bag Making":    "fa-solid fa-bag-shopping",
-  "Sheeting":      "fa-solid fa-file",
+  Printing: "fa-solid fa-print",
+  Cutting: "fa-solid fa-scissors",
+  "Die Cutting": "fa-solid fa-scissors",
+  "Bag Making": "fa-solid fa-bag-shopping",
+  Sheeting: "fa-solid fa-file",
   "Sheet Cutting": "fa-solid fa-file",
-  "Formation":     "fa-solid fa-industry",
-  "Handmade":      "fa-solid fa-hands",
+  Formation: "fa-solid fa-industry",
+  Handmade: "fa-solid fa-hands",
 };
 
 export const ITEM_TYPE_COLORS = {
-  "Raw Material":    C.blue,
-  "Consumable":      C.yellow,
-  "Finished Goods":  C.green,
-  "Machine Spare":   C.red,
+  "Raw Material": C.blue,
+  Consumable: C.yellow,
+  "Finished Goods": C.green,
+  "Machine Spare": C.red,
 };
 
-export const STAGES = ["Printing", "Varnish", "Lamination", "Die Cutting", "Formation", "Manual Formation"];
+export const STAGES = [
+  "Printing",
+  "Varnish",
+  "Lamination",
+  "Die Cutting",
+  "Formation",
+  "Manual Formation",
+];
 export const MACHINE_TYPES = Object.keys(MACHINE_TYPE_COLORS);

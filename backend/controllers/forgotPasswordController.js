@@ -15,12 +15,15 @@ function generateOtp() {
 exports.requestOtp = async (req, res) => {
   try {
     const { username } = req.body;
-    if (!username) return res.status(400).json({ error: "Username is required" });
+    if (!username)
+      return res.status(400).json({ error: "Username is required" });
 
     const user = await User.findOne({ username: username.toLowerCase() });
 
     if (!user || !user.isActive) {
-      return res.json({ message: "If an account exists, an OTP has been sent." });
+      return res.json({
+        message: "If an account exists, an OTP has been sent.",
+      });
     }
 
     const otp = generateOtp();
@@ -33,7 +36,9 @@ exports.requestOtp = async (req, res) => {
     res.json({ message: "OTP sent to the admin email." });
   } catch (err) {
     console.error("Forgot password error:", err);
-    res.status(500).json({ error: "Failed to send OTP. Check email configuration." });
+    res
+      .status(500)
+      .json({ error: "Failed to send OTP. Check email configuration." });
   }
 };
 
@@ -41,7 +46,8 @@ exports.requestOtp = async (req, res) => {
 exports.verifyOtp = async (req, res) => {
   try {
     const { username, otp } = req.body;
-    if (!username || !otp) return res.status(400).json({ error: "Username and OTP are required" });
+    if (!username || !otp)
+      return res.status(400).json({ error: "Username and OTP are required" });
 
     const entry = otpStore.get(username.toLowerCase());
     if (!entry || Date.now() > entry.expiresAt) {
@@ -69,12 +75,21 @@ exports.resetPassword = async (req, res) => {
       return res.status(400).json({ error: "All fields are required" });
     }
     if (newPassword.length < 6) {
-      return res.status(400).json({ error: "Password must be at least 6 characters" });
+      return res
+        .status(400)
+        .json({ error: "Password must be at least 6 characters" });
     }
 
     const entry = otpStore.get(username.toLowerCase());
-    if (!entry || !entry.verified || Date.now() > entry.expiresAt || entry.otp !== otp) {
-      return res.status(400).json({ error: "Invalid or expired session. Request a new OTP." });
+    if (
+      !entry ||
+      !entry.verified ||
+      Date.now() > entry.expiresAt ||
+      entry.otp !== otp
+    ) {
+      return res
+        .status(400)
+        .json({ error: "Invalid or expired session. Request a new OTP." });
     }
 
     const user = await User.findOne({ username: username.toLowerCase() });

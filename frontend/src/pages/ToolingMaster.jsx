@@ -1,10 +1,21 @@
 import React, { useState, useEffect } from "react";
-import { Card, SectionTitle, Badge, Button, Input, Select, Modal, Table } from "../components/ui/BasicComponents";
+import {
+  Card,
+  SectionTitle,
+  Badge,
+  Button,
+  Input,
+  Select,
+  Modal,
+  Table,
+} from "../components/ui/BasicComponents";
 import { C } from "../constants/colors";
 import { toolingMasterAPI, machineMasterAPI } from "../api/auth";
 
 export default function ToolingMaster({ toast }) {
-  useEffect(() => { console.log("ToolingMaster Mounted"); }, []);
+  useEffect(() => {
+    console.log("ToolingMaster Mounted");
+  }, []);
   const [tools, setTools] = useState([]);
   const [machines, setMachines] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -18,7 +29,7 @@ export default function ToolingMaster({ toast }) {
     status: "Available",
     maxImpressionsBeforeRecondition: 1000000,
     location: "",
-    reconditioningLeadTime: 7
+    reconditioningLeadTime: 7,
   });
 
   const fetchData = async () => {
@@ -26,7 +37,7 @@ export default function ToolingMaster({ toast }) {
       setLoading(true);
       const [toolData, machineData] = await Promise.all([
         toolingMasterAPI.getAll(),
-        machineMasterAPI.getAll()
+        machineMasterAPI.getAll(),
       ]);
       setTools(Array.isArray(toolData) ? toolData : []);
       setMachines(machineData?.machines || machineData || []);
@@ -71,7 +82,7 @@ export default function ToolingMaster({ toast }) {
       status: "Available",
       maxImpressionsBeforeRecondition: 1000000,
       location: "",
-      reconditioningLeadTime: 7
+      reconditioningLeadTime: 7,
     });
     setEditingId(null);
   };
@@ -81,11 +92,11 @@ export default function ToolingMaster({ toast }) {
       toolType: tool.toolType,
       designCode: tool.designCode,
       linkedSKU: tool.linkedSKU,
-      compatibleMachines: tool.compatibleMachines.map(m => m._id || m),
+      compatibleMachines: tool.compatibleMachines.map((m) => m._id || m),
       status: tool.status,
       maxImpressionsBeforeRecondition: tool.maxImpressionsBeforeRecondition,
       location: tool.location,
-      reconditioningLeadTime: tool.reconditioningLeadTime
+      reconditioningLeadTime: tool.reconditioningLeadTime,
     });
     setEditingId(tool._id);
     setShowModal(true);
@@ -104,100 +115,194 @@ export default function ToolingMaster({ toast }) {
 
   return (
     <div className="fade">
-      <SectionTitle icon="🛠️" title="Tooling Master" sub="Manage Cylinders, Dies, and Plates">
-        <Button onClick={() => { resetForm(); setShowModal(true); }} text="+ Add New Tool" color={C.blue} />
+      <SectionTitle
+        icon="🛠️"
+        title="Tooling Master"
+        sub="Manage Cylinders, Dies, and Plates"
+      >
+        <Button
+          onClick={() => {
+            resetForm();
+            setShowModal(true);
+          }}
+          text="+ Add New Tool"
+          color={C.blue}
+        />
       </SectionTitle>
 
       <Card>
         <Table
           loading={loading}
-          headers={["TYPE", "DESIGN CODE", "LINKED SKU", "STATUS", "IMPRESSIONS", "LOCATION", "ACTIONS"]}
+          headers={[
+            "TYPE",
+            "DESIGN CODE",
+            "LINKED SKU",
+            "STATUS",
+            "IMPRESSIONS",
+            "LOCATION",
+            "ACTIONS",
+          ]}
           data={[...tools]
-            .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
-            .map(tool => [
-            <Badge text={tool.toolType} color={tool.toolType === 'Cylinder' ? C.blue : tool.toolType === 'Die' ? C.orange : C.purple} />,
-            <span style={{ fontWeight: 700 }}>{tool.designCode}</span>,
-            tool.linkedSKU,
-            <Badge text={tool.status} color={tool.status === 'Available' ? C.green : tool.status === 'In Use' ? C.blue : C.red} />,
-            `${(tool.impressionsDone || 0).toLocaleString()} / ${(tool.maxImpressionsBeforeRecondition || 0).toLocaleString()}`,
-            tool.location || "-",
-            <div style={{ display: "flex", gap: 6 }}>
-              <button onClick={() => handleEdit(tool)} style={{
-                background: "transparent",
-                color: "#8082ff",
-                border: "1px solid #8082ff98",
-                borderRadius: 6,
-                padding: "6px 12px",
-                fontSize: 11,
-                fontWeight: 500,
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-              }}><i className="fa-solid fa-pen-to-square" /> Edit</button>
-              <button onClick={() => handleDelete(tool._id)} style={{
-                background: "transparent",
-                color: "#8082ff",
-                border: "1px solid #8082ff98",
-                borderRadius: 6,
-                padding: "6px 12px",
-                fontSize: 11,
-                fontWeight: 500,
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-              }}><i className="fa-solid fa-trash" /> Delete</button>
-            </div>
-          ])}
+            .sort(
+              (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
+            )
+            .map((tool) => [
+              <Badge
+                text={tool.toolType}
+                color={
+                  tool.toolType === "Cylinder"
+                    ? C.blue
+                    : tool.toolType === "Die"
+                      ? C.orange
+                      : C.purple
+                }
+              />,
+              <span style={{ fontWeight: 700 }}>{tool.designCode}</span>,
+              tool.linkedSKU,
+              <Badge
+                text={tool.status}
+                color={
+                  tool.status === "Available"
+                    ? C.green
+                    : tool.status === "In Use"
+                      ? C.blue
+                      : C.red
+                }
+              />,
+              `${(tool.impressionsDone || 0).toLocaleString()} / ${(tool.maxImpressionsBeforeRecondition || 0).toLocaleString()}`,
+              tool.location || "-",
+              <div style={{ display: "flex", gap: 6 }}>
+                <button
+                  onClick={() => handleEdit(tool)}
+                  style={{
+                    background: "transparent",
+                    color: "#8082ff",
+                    border: "1px solid #8082ff98",
+                    borderRadius: 6,
+                    padding: "6px 12px",
+                    fontSize: 11,
+                    fontWeight: 500,
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  <i className="fa-solid fa-pen-to-square" /> Edit
+                </button>
+                <button
+                  onClick={() => handleDelete(tool._id)}
+                  style={{
+                    background: "transparent",
+                    color: "#8082ff",
+                    border: "1px solid #8082ff98",
+                    borderRadius: 6,
+                    padding: "6px 12px",
+                    fontSize: 11,
+                    fontWeight: 500,
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  <i className="fa-solid fa-trash" /> Delete
+                </button>
+              </div>,
+            ])}
         />
       </Card>
 
       {showModal && (
-        <Modal title={editingId ? "Edit Tool" : "Add New Tool"} onClose={() => setShowModal(false)}>
+        <Modal
+          title={editingId ? "Edit Tool" : "Add New Tool"}
+          onClose={() => setShowModal(false)}
+        >
           <form onSubmit={handleSubmit}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 16,
+              }}
+            >
               <Select
                 label="Tool Type"
                 value={formData.toolType}
-                onChange={(e) => setFormData({ ...formData, toolType: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, toolType: e.target.value })
+                }
                 options={["Cylinder", "Die", "Plate"]}
                 required
               />
               <Input
                 label="Design Code"
                 value={formData.designCode}
-                onChange={(e) => setFormData({ ...formData, designCode: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, designCode: e.target.value })
+                }
                 required
               />
               <Input
                 label="Linked SKU / Product"
                 value={formData.linkedSKU}
-                onChange={(e) => setFormData({ ...formData, linkedSKU: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, linkedSKU: e.target.value })
+                }
                 required
               />
               <Select
                 label="Status"
                 value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                options={["Available", "In Use", "Under Recondition", "Scrapped"]}
+                onChange={(e) =>
+                  setFormData({ ...formData, status: e.target.value })
+                }
+                options={[
+                  "Available",
+                  "In Use",
+                  "Under Recondition",
+                  "Scrapped",
+                ]}
                 required
               />
               <Input
                 label="Max Impressions"
                 type="number"
                 value={formData.maxImpressionsBeforeRecondition}
-                onChange={(e) => setFormData({ ...formData, maxImpressionsBeforeRecondition: e.target.value })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    maxImpressionsBeforeRecondition: e.target.value,
+                  })
+                }
               />
               <Input
                 label="Location"
                 value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, location: e.target.value })
+                }
               />
             </div>
-            <div style={{ marginTop: 20, display: "flex", justifyContent: "flex-end", gap: 12 }}>
-              <Button text="Cancel" color="#666" onClick={() => setShowModal(false)} />
-              <Button type="submit" text={editingId ? "Update Tool" : "Create Tool"} color={C.blue} loading={loading} />
+            <div
+              style={{
+                marginTop: 20,
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 12,
+              }}
+            >
+              <Button
+                text="Cancel"
+                color="#666"
+                onClick={() => setShowModal(false)}
+              />
+              <Button
+                type="submit"
+                text={editingId ? "Update Tool" : "Create Tool"}
+                color={C.blue}
+                loading={loading}
+              />
             </div>
           </form>
         </Modal>

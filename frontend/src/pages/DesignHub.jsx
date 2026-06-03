@@ -2,93 +2,157 @@ import React, { useState, useMemo } from "react";
 import { C } from "../constants/colors";
 import { Modal } from "../components/ui/BasicComponents";
 
-
 const today = () => new Date().toISOString().slice(0, 10);
-const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const uid = () =>
+  Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("en-GB") : "—");
 
-const LS_ART   = "artwork_records";
-const LS_DIEL  = "dieline_records";
+const LS_ART = "artwork_records";
+const LS_DIEL = "dieline_records";
 
-const load = (k) => { try { return JSON.parse(localStorage.getItem(k) || "[]"); } catch { return []; } };
+const load = (k) => {
+  try {
+    return JSON.parse(localStorage.getItem(k) || "[]");
+  } catch {
+    return [];
+  }
+};
 const save = (k, v) => localStorage.setItem(k, JSON.stringify(v));
 
 const inp = {
-  padding: "9px 12px", border: "1px solid #2a2a2a", borderRadius: 6,
-  fontSize: 13, background: "#141414",
-  color: "#e0e0e0", outline: "none", width: "100%", boxSizing: "border-box",
+  padding: "9px 12px",
+  border: "1px solid #2a2a2a",
+  borderRadius: 6,
+  fontSize: 13,
+  background: "#141414",
+  color: "#e0e0e0",
+  outline: "none",
+  width: "100%",
+  boxSizing: "border-box",
 };
-const lbl = { fontSize: 11, fontWeight: 600, color: "#666", display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.04em" };
+const lbl = {
+  fontSize: 11,
+  fontWeight: 600,
+  color: "#666",
+  display: "block",
+  marginBottom: 5,
+  textTransform: "uppercase",
+  letterSpacing: "0.04em",
+};
 
 const TABS = [
-  { id: "artwork",  icon: "🎨", label: "Artwork Approval" },
-  { id: "dieline",  icon: "✂️", label: "Dieline Library" },
+  { id: "artwork", icon: "🎨", label: "Artwork Approval" },
+  { id: "dieline", icon: "✂️", label: "Dieline Library" },
 ];
-
 
 const ART_STAGES = [
-  { id: "received",        label: "Received",         icon: "📥", color: "#6b7280" },
-  { id: "internal_review", label: "Internal Review",  icon: "🔍", color: "#3b82f6" },
-  { id: "proof_sent",      label: "Proof Sent",       icon: "📤", color: "#8b5cf6" },
-  { id: "client_approved", label: "Client Approved",  icon: "✅", color: "#22c55e" },
-  { id: "released",        label: "Production Release",icon: "🚀", color: "#f97316" },
-  { id: "rejected",        label: "Rejected",         icon: "❌", color: "#ef4444" },
+  { id: "received", label: "Received", icon: "📥", color: "#6b7280" },
+  {
+    id: "internal_review",
+    label: "Internal Review",
+    icon: "🔍",
+    color: "#3b82f6",
+  },
+  { id: "proof_sent", label: "Proof Sent", icon: "📤", color: "#8b5cf6" },
+  {
+    id: "client_approved",
+    label: "Client Approved",
+    icon: "✅",
+    color: "#22c55e",
+  },
+  { id: "released", label: "Production Release", icon: "🚀", color: "#f97316" },
+  { id: "rejected", label: "Rejected", icon: "❌", color: "#ef4444" },
 ];
 
-const stageOrder = ART_STAGES.filter((s) => s.id !== "rejected").map((s) => s.id);
-
+const stageOrder = ART_STAGES.filter((s) => s.id !== "rejected").map(
+  (s) => s.id,
+);
 
 export default function DesignHub({ salesOrders = [], jobOrders = [], toast }) {
   const [tab, setTab] = useState("artwork");
   return (
     <div className="fade">
-      <div style={{ display: "flex", gap: 4, marginBottom: 24, borderBottom: "1px solid #2a2a2a" }}>
+      <div
+        style={{
+          display: "flex",
+          gap: 4,
+          marginBottom: 24,
+          borderBottom: "1px solid #2a2a2a",
+        }}
+      >
         {TABS.map((t) => {
           const active = tab === t.id;
           return (
-            <button key={t.id} onClick={() => setTab(t.id)} style={{
-              padding: "10px 20px", border: "none",
-              borderBottom: `2px solid ${active ? "#ff7800" : "transparent"}`,
-              background: "transparent", color: active ? "#ff7800" : C.muted,
-              fontWeight: active ? 700 : 500, fontSize: 13, cursor: "pointer",
-              display: "flex", alignItems: "center", gap: 7,
-            }}>
-              <span style={{ fontSize: 16 }}>{t.icon}</span>{t.label}
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              style={{
+                padding: "10px 20px",
+                border: "none",
+                borderBottom: `2px solid ${active ? "#ff7800" : "transparent"}`,
+                background: "transparent",
+                color: active ? "#ff7800" : C.muted,
+                fontWeight: active ? 700 : 500,
+                fontSize: 13,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 7,
+              }}
+            >
+              <span style={{ fontSize: 16 }}>{t.icon}</span>
+              {t.label}
             </button>
           );
         })}
       </div>
-      {tab === "artwork" && <ArtworkTab salesOrders={salesOrders} jobOrders={jobOrders} toast={toast} />}
+      {tab === "artwork" && (
+        <ArtworkTab
+          salesOrders={salesOrders}
+          jobOrders={jobOrders}
+          toast={toast}
+        />
+      )}
       {tab === "dieline" && <DielineTab jobOrders={jobOrders} toast={toast} />}
     </div>
   );
 }
 
-
-
-
 function ArtworkTab({ salesOrders, jobOrders, toast }) {
   const [records, setRecords] = useState(load(LS_ART));
   const [showModal, setShowModal] = useState(false);
-  const [editId, setEditId]   = useState(null);
+  const [editId, setEditId] = useState(null);
   const [expandId, setExpandId] = useState(null);
   const [filterStage, setFilterStage] = useState("All");
 
   const blankForm = {
-    soRef: "", jobRef: "", artworkName: "", version: "v1",
-    clientContact: "", notes: "", fileDataUrl: "", fileName: "",
-    currentStage: "received", stageHistory: [],
+    soRef: "",
+    jobRef: "",
+    artworkName: "",
+    version: "v1",
+    clientContact: "",
+    notes: "",
+    fileDataUrl: "",
+    fileName: "",
+    currentStage: "received",
+    stageHistory: [],
   };
   const [form, setForm] = useState(blankForm);
   const [advanceUser, setAdvanceUser] = useState("");
   const [advanceNotes, setAdvanceNotes] = useState("");
 
-  const persist = (r) => { setRecords(r); save(LS_ART, r); };
+  const persist = (r) => {
+    setRecords(r);
+    save(LS_ART, r);
+  };
   const setF = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-  const soOptions = useMemo(() =>
-    (salesOrders || []).filter((s) => !["Completed", "Cancelled"].includes(s.status)),
-    [salesOrders]
+  const soOptions = useMemo(
+    () =>
+      (salesOrders || []).filter(
+        (s) => !["Completed", "Cancelled"].includes(s.status),
+      ),
+    [salesOrders],
   );
 
   const handleFile = (e) => {
@@ -101,48 +165,100 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
   };
 
   const handleSubmit = () => {
-    if (!form.artworkName) { toast?.("Enter artwork name", "error"); return; }
-    const initialHistory = [{
-      stage: "received", date: today(), user: form.clientContact || "System", notes: "Artwork received",
-    }];
+    if (!form.artworkName) {
+      toast?.("Enter artwork name", "error");
+      return;
+    }
+    const initialHistory = [
+      {
+        stage: "received",
+        date: today(),
+        user: form.clientContact || "System",
+        notes: "Artwork received",
+      },
+    ];
     const rec = {
       id: editId || uid(),
       ...form,
       stageHistory: editId ? form.stageHistory : initialHistory,
       currentStage: editId ? form.currentStage : "received",
-      createdAt: editId ? (records.find((r) => r.id === editId)?.createdAt || new Date().toISOString()) : new Date().toISOString(),
+      createdAt: editId
+        ? records.find((r) => r.id === editId)?.createdAt ||
+          new Date().toISOString()
+        : new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    if (editId) { persist(records.map((r) => (r.id === editId ? rec : r))); toast?.("Artwork record updated", "success"); }
-    else { persist([rec, ...records]); toast?.("Artwork record created", "success"); }
-    setForm(blankForm); setEditId(null); setShowModal(false);
+    if (editId) {
+      persist(records.map((r) => (r.id === editId ? rec : r)));
+      toast?.("Artwork record updated", "success");
+    } else {
+      persist([rec, ...records]);
+      toast?.("Artwork record created", "success");
+    }
+    setForm(blankForm);
+    setEditId(null);
+    setShowModal(false);
   };
 
   const advanceStage = (rec) => {
     const idx = stageOrder.indexOf(rec.currentStage);
     const nextStage = idx < stageOrder.length - 1 ? stageOrder[idx + 1] : null;
-    if (!nextStage) { toast?.("Already at final stage", "info"); return; }
-    if (!advanceUser) { toast?.("Enter who is advancing this stage", "error"); return; }
+    if (!nextStage) {
+      toast?.("Already at final stage", "info");
+      return;
+    }
+    if (!advanceUser) {
+      toast?.("Enter who is advancing this stage", "error");
+      return;
+    }
     const newHistory = [
       ...(rec.stageHistory || []),
-      { stage: nextStage, date: today(), user: advanceUser, notes: advanceNotes },
+      {
+        stage: nextStage,
+        date: today(),
+        user: advanceUser,
+        notes: advanceNotes,
+      },
     ];
-    const updated = { ...rec, currentStage: nextStage, stageHistory: newHistory, updatedAt: new Date().toISOString() };
+    const updated = {
+      ...rec,
+      currentStage: nextStage,
+      stageHistory: newHistory,
+      updatedAt: new Date().toISOString(),
+    };
     persist(records.map((r) => (r.id === rec.id ? updated : r)));
-    toast?.(`Advanced to: ${ART_STAGES.find((s) => s.id === nextStage)?.label}`, "success");
-    setAdvanceUser(""); setAdvanceNotes("");
+    toast?.(
+      `Advanced to: ${ART_STAGES.find((s) => s.id === nextStage)?.label}`,
+      "success",
+    );
+    setAdvanceUser("");
+    setAdvanceNotes("");
   };
 
   const rejectArtwork = (rec) => {
-    if (!advanceUser) { toast?.("Enter who is rejecting", "error"); return; }
+    if (!advanceUser) {
+      toast?.("Enter who is rejecting", "error");
+      return;
+    }
     const newHistory = [
       ...(rec.stageHistory || []),
-      { stage: "rejected", date: today(), user: advanceUser, notes: advanceNotes || "Rejected" },
+      {
+        stage: "rejected",
+        date: today(),
+        user: advanceUser,
+        notes: advanceNotes || "Rejected",
+      },
     ];
-    const updated = { ...rec, currentStage: "rejected", stageHistory: newHistory, updatedAt: new Date().toISOString() };
+    const updated = {
+      ...rec,
+      currentStage: "rejected",
+      stageHistory: newHistory,
+      updatedAt: new Date().toISOString(),
+    };
     persist(records.map((r) => (r.id === rec.id ? updated : r)));
     toast?.("Artwork rejected", "success");
-    setAdvanceUser(""); setAdvanceNotes("");
+    setAdvanceUser("");
+    setAdvanceNotes("");
   };
 
   const versionUp = (rec) => {
@@ -151,47 +267,113 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
     const newVer = `v${num}`;
     const newHistory = [
       ...(rec.stageHistory || []),
-      { stage: "received", date: today(), user: "System", notes: `New version ${newVer} uploaded` },
+      {
+        stage: "received",
+        date: today(),
+        user: "System",
+        notes: `New version ${newVer} uploaded`,
+      },
     ];
-    const updated = { ...rec, version: newVer, currentStage: "received", stageHistory: newHistory, fileDataUrl: "", fileName: "", updatedAt: new Date().toISOString() };
+    const updated = {
+      ...rec,
+      version: newVer,
+      currentStage: "received",
+      stageHistory: newHistory,
+      fileDataUrl: "",
+      fileName: "",
+      updatedAt: new Date().toISOString(),
+    };
     persist(records.map((r) => (r.id === rec.id ? updated : r)));
-    toast?.(`New version ${newVer} created — artwork reset to Received`, "success");
+    toast?.(
+      `New version ${newVer} created — artwork reset to Received`,
+      "success",
+    );
   };
 
-  const filtered = useMemo(() =>
-    records
-      .filter((r) => filterStage === "All" || r.currentStage === filterStage)
-      .sort(
-        (a, b) =>
-          new Date(b.createdAt || 0) - new Date(a.createdAt || 0) ||
-          String(b.id || "").localeCompare(String(a.id || "")),
-      ),
-    [records, filterStage]
+  const filtered = useMemo(
+    () =>
+      records
+        .filter((r) => filterStage === "All" || r.currentStage === filterStage)
+        .sort(
+          (a, b) =>
+            new Date(b.createdAt || 0) - new Date(a.createdAt || 0) ||
+            String(b.id || "").localeCompare(String(a.id || "")),
+        ),
+    [records, filterStage],
   );
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18, flexWrap: "wrap", gap: 10 }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          marginBottom: 18,
+          flexWrap: "wrap",
+          gap: 10,
+        }}
+      >
         <div>
-          <div style={{ fontSize: 17, fontWeight: 800 }}>Artwork Approval Workflow</div>
+          <div style={{ fontSize: 17, fontWeight: 800 }}>
+            Artwork Approval Workflow
+          </div>
           <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
-            Received → Internal Review → Proof Sent → Client Approved → Production Release · Eliminates version conflicts
+            Received → Internal Review → Proof Sent → Client Approved →
+            Production Release · Eliminates version conflicts
           </div>
         </div>
-        <button onClick={() => { setForm(blankForm); setEditId(null); setShowModal(true); }}
-          style={{ background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", color: "#fff", padding: "9px 18px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
+        <button
+          onClick={() => {
+            setForm(blankForm);
+            setEditId(null);
+            setShowModal(true);
+          }}
+          style={{
+            background: "rgba(255,255,255,0.08)",
+            border: "1px solid rgba(255,255,255,0.18)",
+            color: "#fff",
+            padding: "9px 18px",
+            borderRadius: 10,
+            fontWeight: 600,
+            fontSize: 13,
+            cursor: "pointer",
+            boxShadow:
+              "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+          }}
+        >
           + New Artwork
         </button>
       </div>
 
       {}
-      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+      <div
+        style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}
+      >
         {["All", ...ART_STAGES.map((s) => s.id)].map((s) => {
           const stg = ART_STAGES.find((x) => x.id === s);
-          const n = s === "All" ? records.length : records.filter((r) => r.currentStage === s).length;
+          const n =
+            s === "All"
+              ? records.length
+              : records.filter((r) => r.currentStage === s).length;
           return (
-            <button key={s} onClick={() => setFilterStage(filterStage === s ? "All" : s)}
-              style={{ padding: "3px 12px", background: filterStage === s ? (stg?.color || "#888") + "33" : "transparent", border: `1px solid ${filterStage === s ? (stg?.color || "#888") : "#2a2a2a"}`, borderRadius: 20, fontSize: 11, color: filterStage === s ? stg?.color || "#fff" : "#666", cursor: "pointer", fontWeight: filterStage === s ? 700 : 400 }}>
+            <button
+              key={s}
+              onClick={() => setFilterStage(filterStage === s ? "All" : s)}
+              style={{
+                padding: "3px 12px",
+                background:
+                  filterStage === s
+                    ? (stg?.color || "#888") + "33"
+                    : "transparent",
+                border: `1px solid ${filterStage === s ? stg?.color || "#888" : "#2a2a2a"}`,
+                borderRadius: 20,
+                fontSize: 11,
+                color: filterStage === s ? stg?.color || "#fff" : "#666",
+                cursor: "pointer",
+                fontWeight: filterStage === s ? 700 : 400,
+              }}
+            >
               {s === "All" ? `All (${n})` : `${stg?.icon} ${stg?.label} (${n})`}
             </button>
           );
@@ -200,43 +382,282 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
 
       {}
       {showModal && (
-        <Modal title={editId ? "Edit Artwork Record" : "Register New Artwork"} onClose={() => { setForm(blankForm); setEditId(null); setShowModal(false); }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginBottom: 14 }}>
+        <Modal
+          title={editId ? "Edit Artwork Record" : "Register New Artwork"}
+          onClose={() => {
+            setForm(blankForm);
+            setEditId(null);
+            setShowModal(false);
+          }}
+        >
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: 14,
+              marginBottom: 14,
+            }}
+          >
             <div>
               <label style={lbl}>Artwork Name *</label>
-              <input value={form.artworkName} onChange={(e) => setF("artworkName", e.target.value)} placeholder="e.g. Harsukh Packaging Front" style={inp} />
+              <input
+                value={form.artworkName}
+                onChange={(e) => setF("artworkName", e.target.value)}
+                placeholder="e.g. Harsukh Packaging Front"
+                style={inp}
+              />
             </div>
             <div>
               <label style={lbl}>Version</label>
-              <input value={form.version} onChange={(e) => setF("version", e.target.value)} placeholder="v1" style={inp} />
+              <input
+                value={form.version}
+                onChange={(e) => setF("version", e.target.value)}
+                placeholder="v1"
+                style={inp}
+              />
             </div>
             <div>
               <label style={lbl}>Sales Order</label>
-              <select value={form.soRef} onChange={(e) => setF("soRef", e.target.value)} style={inp}>
+              <select
+                value={form.soRef}
+                onChange={(e) => setF("soRef", e.target.value)}
+                style={inp}
+              >
                 <option value="">-- Link to SO (optional) --</option>
-                {soOptions.map((s) => <option key={s._id} value={s.soNo}>{s.soNo} — {s.companyName}</option>)}
+                {soOptions.map((s) => (
+                  <option key={s._id} value={s.soNo}>
+                    {s.soNo} — {s.companyName}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
               <label style={lbl}>Client Contact</label>
-              <input value={form.clientContact} onChange={(e) => setF("clientContact", e.target.value)} placeholder="Who sent the artwork?" style={inp} />
+              <input
+                value={form.clientContact}
+                onChange={(e) => setF("clientContact", e.target.value)}
+                placeholder="Who sent the artwork?"
+                style={inp}
+              />
             </div>
             <div style={{ gridColumn: "1 / -1" }}>
               <label style={lbl}>Notes</label>
-              <input value={form.notes} onChange={(e) => setF("notes", e.target.value)} placeholder="Colour references, special instructions..." style={inp} />
+              <input
+                value={form.notes}
+                onChange={(e) => setF("notes", e.target.value)}
+                placeholder="Colour references, special instructions..."
+                style={inp}
+              />
             </div>
             <div>
               <label style={lbl}>Artwork File</label>
-              <input type="file" onChange={handleFile} style={{ fontSize: 12, color: "#888" }} />
-              {form.fileName && <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>📎 {form.fileName}</div>}
+              <input
+                type="file"
+                onChange={handleFile}
+                style={{ fontSize: 12, color: "#888" }}
+              />
+              {form.fileName && (
+                <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>
+                  📎 {form.fileName}
+                </div>
+              )}
             </div>
           </div>
           <div style={{ display: "flex", gap: 10 }}>
-            <button onClick={handleSubmit} style={{ padding: "9px 22px", background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>{editId ? "Save Changes" : "Register Artwork"}</button>
-            <button onClick={() => { setForm(blankForm); setEditId(null); setShowModal(false); }} style={{
+            <button
+              onClick={handleSubmit}
+              style={{
+                padding: "9px 22px",
+                background: "rgba(255,255,255,0.08)",
+                border: "1px solid rgba(255,255,255,0.18)",
+                borderRadius: 6,
+                color: "#fff",
+                fontWeight: 500,
+                cursor: "pointer",
+                boxShadow:
+                  "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+              }}
+            >
+              {editId ? "Save Changes" : "Register Artwork"}
+            </button>
+            <button
+              onClick={() => {
+                setForm(blankForm);
+                setEditId(null);
+                setShowModal(false);
+              }}
+              style={{
+                background: "transparent",
+                color: "#ffffff",
+                border: "1px solid rgba(255,255,255,0.2)",
+                borderRadius: 6,
+                padding: "6px 12px",
+                fontSize: 11,
+                fontWeight: 500,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <i className="fa-solid fa-xmark" /> Cancel
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {}
+      <div
+        style={{
+          background: "#111",
+          border: "1px solid #2a2a2a",
+          borderRadius: 10,
+          padding: 20,
+        }}
+      >
+        {filtered.length === 0 && (
+          <div style={{ textAlign: "center", color: "#555", padding: 40 }}>
+            {records.length === 0
+              ? "No artwork records. Register the first artwork to start the approval workflow."
+              : "No records match the filter."}
+          </div>
+        )}
+        {filtered.map((rec) => {
+          const stage =
+            ART_STAGES.find((s) => s.id === rec.currentStage) || ART_STAGES[0];
+          const idx = stageOrder.indexOf(rec.currentStage);
+          const nextStage =
+            idx >= 0 && idx < stageOrder.length - 1
+              ? ART_STAGES.find((s) => s.id === stageOrder[idx + 1])
+              : null;
+          const canAdvance =
+            rec.currentStage !== "released" && rec.currentStage !== "rejected";
+          const isExpanded = expandId === rec.id;
+
+          return (
+            <div
+              key={rec.id}
+              style={{ borderBottom: "1px solid #1a1a1a", padding: "14px 4px" }}
+            >
+              {}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
+                  gap: 8,
+                  marginBottom: 10,
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 10,
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <span style={{ fontWeight: 500, fontSize: 14 }}>
+                    {rec.artworkName}
+                  </span>
+                  <span
+                    style={{
+                      padding: "1px 8px",
+                      background: "#ffffff11",
+                      borderRadius: 4,
+                      fontSize: 11,
+                      color: "#888",
+                    }}
+                  >
+                    {rec.version}
+                  </span>
+                  {rec.soRef && (
+                    <span style={{ fontSize: 12, color: "#facc15" }}>
+                      {rec.soRef}
+                    </span>
+                  )}
+                  <span
+                    style={{
+                      padding: "2px 8px",
+                      background: stage.color + "22",
+                      border: `1px solid ${stage.color}33`,
+                      borderRadius: 4,
+                      fontSize: 11,
+                      color: stage.color,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {stage.icon} {stage.label}
+                  </span>
+                  {rec.clientContact && (
+                    <span style={{ fontSize: 11, color: "#888" }}>
+                      · {rec.clientContact}
+                    </span>
+                  )}
+                </div>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button
+                    onClick={() => setExpandId(isExpanded ? null : rec.id)}
+                    style={{
+                      padding: "4px 10px",
+                      border: "1px solid rgba(255,255,255,0.15)",
                       background: "transparent",
-                      color: "#ffffff",
-                      border: "1px solid rgba(255,255,255,0.2)",
+                      color: "#aaa",
+                      borderRadius: 4,
+                      fontSize: 11,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {isExpanded ? "▲ Collapse" : "▼ Timeline"}
+                  </button>
+                  {rec.fileDataUrl && (
+                    <button
+                      onClick={() => window.open(rec.fileDataUrl, "_blank")}
+                      style={{
+                        padding: "4px 10px",
+                        background: "rgba(255,255,255,0.08)",
+                        border: "1px solid rgba(255,255,255,0.18)",
+                        borderRadius: 4,
+                        color: "#fff",
+                        fontSize: 11,
+                        cursor: "pointer",
+                        boxShadow:
+                          "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                      }}
+                    >
+                      📎 File
+                    </button>
+                  )}
+                  {rec.currentStage === "client_approved" && (
+                    <button
+                      onClick={() => versionUp(rec)}
+                      style={{
+                        background: "transparent",
+                        color: "#8082ff",
+                        border: "1px solid #8082ff98",
+                        borderRadius: 6,
+                        padding: "6px 12px",
+                        fontSize: 11,
+                        fontWeight: 500,
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                      }}
+                    >
+                      <i className="fa-solid fa-plus" /> New Version
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      setForm({ ...rec });
+                      setEditId(rec.id);
+                      setShowModal(true);
+                    }}
+                    style={{
+                      background: "transparent",
+                      color: "#8082ff",
+                      border: "1px solid #8082ff98",
                       borderRadius: 6,
                       padding: "6px 12px",
                       fontSize: 11,
@@ -245,146 +666,229 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
                       display: "inline-flex",
                       alignItems: "center",
                       gap: 6,
-                    }}><i className="fa-solid fa-xmark" /> Cancel</button>
-          </div>
-        </Modal>
-      )}
+                    }}
+                  >
+                    <i className="fa-solid fa-pen-to-square" /> Edit
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (confirm("Delete?"))
+                        persist(records.filter((r) => r.id !== rec.id));
+                    }}
+                    style={{
+                      background: "transparent",
+                      color: "#8082ff",
+                      border: "1px solid #8082ff98",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <i className="fa-solid fa-trash" /> Delete
+                  </button>
+                </div>
+              </div>
 
-      {}
-      <div style={{ background: "#111", border: "1px solid #2a2a2a", borderRadius: 10, padding: 20 }}>
-          {filtered.length === 0 && (
-            <div style={{ textAlign: "center", color: "#555", padding: 40 }}>
-              {records.length === 0 ? "No artwork records. Register the first artwork to start the approval workflow." : "No records match the filter."}
-            </div>
-          )}
-          {filtered.map((rec) => {
-            const stage = ART_STAGES.find((s) => s.id === rec.currentStage) || ART_STAGES[0];
-            const idx = stageOrder.indexOf(rec.currentStage);
-            const nextStage = idx >= 0 && idx < stageOrder.length - 1 ? ART_STAGES.find((s) => s.id === stageOrder[idx + 1]) : null;
-            const canAdvance = rec.currentStage !== "released" && rec.currentStage !== "rejected";
-            const isExpanded = expandId === rec.id;
+              {}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                  marginBottom: 8,
+                }}
+              >
+                {stageOrder.map((s, i) => {
+                  const stg = ART_STAGES.find((x) => x.id === s);
+                  const done = stageOrder.indexOf(rec.currentStage) >= i;
+                  const isCurrent = rec.currentStage === s;
+                  return (
+                    <React.Fragment key={s}>
+                      <div
+                        title={stg?.label}
+                        style={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: "50%",
+                          background: done ? stg?.color + "cc" : "#1a1a1a",
+                          border: `2px solid ${isCurrent ? stg?.color : done ? stg?.color + "44" : "#2a2a2a"}`,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: 12,
+                        }}
+                      >
+                        {stg?.icon}
+                      </div>
+                      {i < stageOrder.length - 1 && (
+                        <div
+                          style={{
+                            flex: 1,
+                            height: 2,
+                            background:
+                              stageOrder.indexOf(rec.currentStage) > i
+                                ? "#22c55e44"
+                                : "#1a1a1a",
+                          }}
+                        />
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </div>
 
-            return (
-              <div key={rec.id} style={{ borderBottom: "1px solid #1a1a1a", padding: "14px 4px" }}>
-                {}
-                <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
-                  <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                    <span style={{ fontWeight: 500, fontSize: 14 }}>{rec.artworkName}</span>
-                    <span style={{ padding: "1px 8px", background: "#ffffff11", borderRadius: 4, fontSize: 11, color: "#888" }}>{rec.version}</span>
-                    {rec.soRef && <span style={{ fontSize: 12, color: "#facc15" }}>{rec.soRef}</span>}
-                    <span style={{ padding: "2px 8px", background: stage.color + "22", border: `1px solid ${stage.color}33`, borderRadius: 4, fontSize: 11, color: stage.color, fontWeight: 700 }}>
-                      {stage.icon} {stage.label}
-                    </span>
-                    {rec.clientContact && <span style={{ fontSize: 11, color: "#888" }}>· {rec.clientContact}</span>}
+              {}
+              {canAdvance && isExpanded && (
+                <div
+                  style={{
+                    background: "#0a0a0a",
+                    border: "1px solid #2a2a2a",
+                    borderRadius: 8,
+                    padding: 14,
+                    marginBottom: 10,
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: "#888",
+                      marginBottom: 10,
+                      fontWeight: 700,
+                    }}
+                  >
+                    ADVANCE TO:{" "}
+                    {nextStage
+                      ? `${nextStage.icon} ${nextStage.label}`
+                      : "Final Stage"}
                   </div>
-                  <div style={{ display: "flex", gap: 6 }}>
-                    <button onClick={() => setExpandId(isExpanded ? null : rec.id)}
-                      style={{ padding: "4px 10px", border: "1px solid rgba(255,255,255,0.15)", background: "transparent", color: "#aaa", borderRadius: 4, fontSize: 11, cursor: "pointer" }}>
-                      {isExpanded ? "▲ Collapse" : "▼ Timeline"}
-                    </button>
-                    {rec.fileDataUrl && (
-                      <button onClick={() => window.open(rec.fileDataUrl, "_blank")}
-                        style={{ padding: "4px 10px", background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", borderRadius: 4, color: "#fff", fontSize: 11, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
-                        📎 File
+                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                    <input
+                      value={advanceUser}
+                      onChange={(e) => setAdvanceUser(e.target.value)}
+                      placeholder="Your name *"
+                      style={{ ...inp, flex: 1, minWidth: 160 }}
+                    />
+                    <input
+                      value={advanceNotes}
+                      onChange={(e) => setAdvanceNotes(e.target.value)}
+                      placeholder="Notes (optional)"
+                      style={{ ...inp, flex: 2, minWidth: 200 }}
+                    />
+                    {nextStage && (
+                      <button
+                        onClick={() => advanceStage(rec)}
+                        style={{
+                          padding: "9px 16px",
+                          background: nextStage.color + "22",
+                          border: `1px solid ${nextStage.color}44`,
+                          color: nextStage.color,
+                          borderRadius: 6,
+                          fontWeight: 500,
+                          cursor: "pointer",
+                          fontSize: 12,
+                        }}
+                      >
+                        → {nextStage.label}
                       </button>
                     )}
-                    {rec.currentStage === "client_approved" && (
-                      <button onClick={() => versionUp(rec)}
-                        style={{ background: "transparent", color: "#8082ff", border: "1px solid #8082ff98", borderRadius: 6, padding: "6px 12px", fontSize: 11, fontWeight: 500, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
-                        <i className="fa-solid fa-plus" /> New Version
+                    {rec.currentStage !== "rejected" && (
+                      <button
+                        onClick={() => rejectArtwork(rec)}
+                        style={{
+                          padding: "9px 16px",
+                          background: "#ef444411",
+                          border: "1px solid #ef444433",
+                          color: "#ef4444",
+                          borderRadius: 6,
+                          fontWeight: 500,
+                          cursor: "pointer",
+                          fontSize: 12,
+                        }}
+                      >
+                        ✕ Reject
                       </button>
                     )}
-                    <button onClick={() => { setForm({ ...rec }); setEditId(rec.id); setShowModal(true); }}
-                      style={{ background: "transparent", color: "#8082ff", border: "1px solid #8082ff98", borderRadius: 6, padding: "6px 12px", fontSize: 11, fontWeight: 500, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}><i className="fa-solid fa-pen-to-square" /> Edit</button>
-                    <button onClick={() => { if (confirm("Delete?")) persist(records.filter((r) => r.id !== rec.id)); }}
-                      style={{ background: "transparent", color: "#8082ff", border: "1px solid #8082ff98", borderRadius: 6, padding: "6px 12px", fontSize: 11, fontWeight: 500, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}><i className="fa-solid fa-trash" /> Delete</button>
                   </div>
                 </div>
+              )}
 
-                {}
-                <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 8 }}>
-                  {stageOrder.map((s, i) => {
-                    const stg = ART_STAGES.find((x) => x.id === s);
-                    const done = stageOrder.indexOf(rec.currentStage) >= i;
-                    const isCurrent = rec.currentStage === s;
+              {}
+              {isExpanded && (rec.stageHistory || []).length > 0 && (
+                <div style={{ paddingLeft: 10 }}>
+                  {rec.stageHistory.map((h, i) => {
+                    const stg = ART_STAGES.find((s) => s.id === h.stage);
                     return (
-                      <React.Fragment key={s}>
-                        <div title={stg?.label} style={{ width: 28, height: 28, borderRadius: "50%", background: done ? stg?.color + "cc" : "#1a1a1a", border: `2px solid ${isCurrent ? stg?.color : done ? stg?.color + "44" : "#2a2a2a"}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12 }}>
-                          {stg?.icon}
-                        </div>
-                        {i < stageOrder.length - 1 && (
-                          <div style={{ flex: 1, height: 2, background: stageOrder.indexOf(rec.currentStage) > i ? "#22c55e44" : "#1a1a1a" }} />
+                      <div
+                        key={i}
+                        style={{
+                          display: "flex",
+                          gap: 10,
+                          paddingBottom: 8,
+                          fontSize: 12,
+                        }}
+                      >
+                        <span
+                          style={{ color: stg?.color || "#888", minWidth: 20 }}
+                        >
+                          {stg?.icon || "•"}
+                        </span>
+                        <span
+                          style={{
+                            color: stg?.color || "#888",
+                            fontWeight: 500,
+                            minWidth: 130,
+                          }}
+                        >
+                          {stg?.label || h.stage}
+                        </span>
+                        <span style={{ color: "#666", minWidth: 90 }}>
+                          {fmtDate(h.date)}
+                        </span>
+                        <span style={{ color: "#888" }}>{h.user}</span>
+                        {h.notes && (
+                          <span style={{ color: "#555" }}>· {h.notes}</span>
                         )}
-                      </React.Fragment>
+                      </div>
                     );
                   })}
                 </div>
-
-                {}
-                {canAdvance && isExpanded && (
-                  <div style={{ background: "#0a0a0a", border: "1px solid #2a2a2a", borderRadius: 8, padding: 14, marginBottom: 10 }}>
-                    <div style={{ fontSize: 11, color: "#888", marginBottom: 10, fontWeight: 700 }}>
-                      ADVANCE TO: {nextStage ? `${nextStage.icon} ${nextStage.label}` : "Final Stage"}
-                    </div>
-                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                      <input value={advanceUser} onChange={(e) => setAdvanceUser(e.target.value)} placeholder="Your name *" style={{ ...inp, flex: 1, minWidth: 160 }} />
-                      <input value={advanceNotes} onChange={(e) => setAdvanceNotes(e.target.value)} placeholder="Notes (optional)" style={{ ...inp, flex: 2, minWidth: 200 }} />
-                      {nextStage && (
-                        <button onClick={() => advanceStage(rec)} style={{ padding: "9px 16px", background: nextStage.color + "22", border: `1px solid ${nextStage.color}44`, color: nextStage.color, borderRadius: 6, fontWeight: 500, cursor: "pointer", fontSize: 12 }}>
-                          → {nextStage.label}
-                        </button>
-                      )}
-                      {rec.currentStage !== "rejected" && (
-                        <button onClick={() => rejectArtwork(rec)} style={{ padding: "9px 16px", background: "#ef444411", border: "1px solid #ef444433", color: "#ef4444", borderRadius: 6, fontWeight: 500, cursor: "pointer", fontSize: 12 }}>
-                          ✕ Reject
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {}
-                {isExpanded && (rec.stageHistory || []).length > 0 && (
-                  <div style={{ paddingLeft: 10 }}>
-                    {rec.stageHistory.map((h, i) => {
-                      const stg = ART_STAGES.find((s) => s.id === h.stage);
-                      return (
-                        <div key={i} style={{ display: "flex", gap: 10, paddingBottom: 8, fontSize: 12 }}>
-                          <span style={{ color: stg?.color || "#888", minWidth: 20 }}>{stg?.icon || "•"}</span>
-                          <span style={{ color: stg?.color || "#888", fontWeight: 500, minWidth: 130 }}>{stg?.label || h.stage}</span>
-                          <span style={{ color: "#666", minWidth: 90 }}>{fmtDate(h.date)}</span>
-                          <span style={{ color: "#888" }}>{h.user}</span>
-                          {h.notes && <span style={{ color: "#555" }}>· {h.notes}</span>}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
 
-
-
-
 function DielineTab({ jobOrders, toast }) {
   const [dielines, setDielines] = useState(load(LS_DIEL));
   const [showModal, setShowModal] = useState(false);
-  const [editId, setEditId]     = useState(null);
-  const [search, setSearch]     = useState("");
+  const [editId, setEditId] = useState(null);
+  const [search, setSearch] = useState("");
 
   const blankForm = {
-    dieCode: "", description: "", dimensions: "", clientTags: "",
-    machineCompatible: "", notes: "", previewDataUrl: "", previewFileName: "",
+    dieCode: "",
+    description: "",
+    dimensions: "",
+    clientTags: "",
+    machineCompatible: "",
+    notes: "",
+    previewDataUrl: "",
+    previewFileName: "",
     lastUsedDate: today(),
   };
   const [form, setForm] = useState(blankForm);
 
-  const persist = (d) => { setDielines(d); save(LS_DIEL, d); };
+  const persist = (d) => {
+    setDielines(d);
+    save(LS_DIEL, d);
+  };
   const setF = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   const handlePreview = (e) => {
@@ -397,137 +901,438 @@ function DielineTab({ jobOrders, toast }) {
   };
 
   const handleSubmit = () => {
-    if (!form.dieCode) { toast?.("Enter a die code", "error"); return; }
-    const rec = { id: editId || uid(), ...form, updatedAt: new Date().toISOString() };
-    if (editId) { persist(dielines.map((d) => (d.id === editId ? rec : d))); toast?.("Dieline updated", "success"); }
-    else { persist([rec, ...dielines]); toast?.("Dieline added to library", "success"); }
-    setForm(blankForm); setEditId(null); setShowModal(false);
+    if (!form.dieCode) {
+      toast?.("Enter a die code", "error");
+      return;
+    }
+    const rec = {
+      id: editId || uid(),
+      ...form,
+      updatedAt: new Date().toISOString(),
+    };
+    if (editId) {
+      persist(dielines.map((d) => (d.id === editId ? rec : d)));
+      toast?.("Dieline updated", "success");
+    } else {
+      persist([rec, ...dielines]);
+      toast?.("Dieline added to library", "success");
+    }
+    setForm(blankForm);
+    setEditId(null);
+    setShowModal(false);
   };
 
-  
   const dieUsageMap = useMemo(() => {
     const map = {};
     (jobOrders || []).forEach((jo) => {
       const code = jo.dieCode || jo.dieline;
-      if (code) { map[code] = (map[code] || 0) + 1; }
+      if (code) {
+        map[code] = (map[code] || 0) + 1;
+      }
     });
     return map;
   }, [jobOrders]);
 
-  const filtered = useMemo(() =>
-    dielines
-      .filter((d) => !search || [d.dieCode, d.description, d.dimensions, d.clientTags, d.machineCompatible].join(" ").toLowerCase().includes(search.toLowerCase()))
-      .sort(
-        (a, b) =>
-          new Date(b.createdAt || 0) - new Date(a.createdAt || 0) ||
-          String(b.id || "").localeCompare(String(a.id || "")),
-      ),
-    [dielines, search]
+  const filtered = useMemo(
+    () =>
+      dielines
+        .filter(
+          (d) =>
+            !search ||
+            [
+              d.dieCode,
+              d.description,
+              d.dimensions,
+              d.clientTags,
+              d.machineCompatible,
+            ]
+              .join(" ")
+              .toLowerCase()
+              .includes(search.toLowerCase()),
+        )
+        .sort(
+          (a, b) =>
+            new Date(b.createdAt || 0) - new Date(a.createdAt || 0) ||
+            String(b.id || "").localeCompare(String(a.id || "")),
+        ),
+    [dielines, search],
   );
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18, flexWrap: "wrap", gap: 10 }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          marginBottom: 18,
+          flexWrap: "wrap",
+          gap: 10,
+        }}
+      >
         <div>
           <div style={{ fontSize: 17, fontWeight: 800 }}>Dieline Library</div>
-          <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>Cutting patterns as versioned assets · dimensions · compatible machines · client history</div>
+          <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
+            Cutting patterns as versioned assets · dimensions · compatible
+            machines · client history
+          </div>
         </div>
-        <button onClick={() => { setForm(blankForm); setEditId(null); setShowModal(true); }}
-          style={{ background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", color: "#fff", padding: "9px 18px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
+        <button
+          onClick={() => {
+            setForm(blankForm);
+            setEditId(null);
+            setShowModal(true);
+          }}
+          style={{
+            background: "rgba(255,255,255,0.08)",
+            border: "1px solid rgba(255,255,255,0.18)",
+            color: "#fff",
+            padding: "9px 18px",
+            borderRadius: 10,
+            fontWeight: 600,
+            fontSize: 13,
+            cursor: "pointer",
+            boxShadow:
+              "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+          }}
+        >
           + Add Dieline
         </button>
       </div>
 
       {showModal && (
-        <Modal title={editId ? "Edit Dieline" : "Add Dieline to Library"} onClose={() => { setForm(blankForm); setEditId(null); setShowModal(false); }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginBottom: 14 }}>
-            <div><label style={lbl}>Die Code *</label><input value={form.dieCode} onChange={(e) => setF("dieCode", e.target.value)} placeholder="e.g. DIE-2412-A3" style={inp} /></div>
-            <div><label style={lbl}>Description</label><input value={form.description} onChange={(e) => setF("description", e.target.value)} placeholder="e.g. Retail Box 500g" style={inp} /></div>
-            <div><label style={lbl}>Dimensions (W × H × D)</label><input value={form.dimensions} onChange={(e) => setF("dimensions", e.target.value)} placeholder="e.g. 120 × 80 × 40 mm" style={inp} /></div>
-            <div><label style={lbl}>Compatible Machine</label><input value={form.machineCompatible} onChange={(e) => setF("machineCompatible", e.target.value)} placeholder="e.g. Automatic Die Cutting" style={inp} /></div>
-            <div><label style={lbl}>Client Tags</label><input value={form.clientTags} onChange={(e) => setF("clientTags", e.target.value)} placeholder="Comma-separated clients" style={inp} /></div>
-            <div><label style={lbl}>Last Used Date</label><input type="date" value={form.lastUsedDate} onChange={(e) => setF("lastUsedDate", e.target.value)} style={inp} /></div>
-            <div style={{ gridColumn: "1 / -1" }}><label style={lbl}>Notes</label><input value={form.notes} onChange={(e) => setF("notes", e.target.value)} placeholder="Material thickness, special notes..." style={inp} /></div>
+        <Modal
+          title={editId ? "Edit Dieline" : "Add Dieline to Library"}
+          onClose={() => {
+            setForm(blankForm);
+            setEditId(null);
+            setShowModal(false);
+          }}
+        >
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: 14,
+              marginBottom: 14,
+            }}
+          >
+            <div>
+              <label style={lbl}>Die Code *</label>
+              <input
+                value={form.dieCode}
+                onChange={(e) => setF("dieCode", e.target.value)}
+                placeholder="e.g. DIE-2412-A3"
+                style={inp}
+              />
+            </div>
+            <div>
+              <label style={lbl}>Description</label>
+              <input
+                value={form.description}
+                onChange={(e) => setF("description", e.target.value)}
+                placeholder="e.g. Retail Box 500g"
+                style={inp}
+              />
+            </div>
+            <div>
+              <label style={lbl}>Dimensions (W × H × D)</label>
+              <input
+                value={form.dimensions}
+                onChange={(e) => setF("dimensions", e.target.value)}
+                placeholder="e.g. 120 × 80 × 40 mm"
+                style={inp}
+              />
+            </div>
+            <div>
+              <label style={lbl}>Compatible Machine</label>
+              <input
+                value={form.machineCompatible}
+                onChange={(e) => setF("machineCompatible", e.target.value)}
+                placeholder="e.g. Automatic Die Cutting"
+                style={inp}
+              />
+            </div>
+            <div>
+              <label style={lbl}>Client Tags</label>
+              <input
+                value={form.clientTags}
+                onChange={(e) => setF("clientTags", e.target.value)}
+                placeholder="Comma-separated clients"
+                style={inp}
+              />
+            </div>
+            <div>
+              <label style={lbl}>Last Used Date</label>
+              <input
+                type="date"
+                value={form.lastUsedDate}
+                onChange={(e) => setF("lastUsedDate", e.target.value)}
+                style={inp}
+              />
+            </div>
+            <div style={{ gridColumn: "1 / -1" }}>
+              <label style={lbl}>Notes</label>
+              <input
+                value={form.notes}
+                onChange={(e) => setF("notes", e.target.value)}
+                placeholder="Material thickness, special notes..."
+                style={inp}
+              />
+            </div>
             <div>
               <label style={lbl}>Preview / Drawing</label>
-              <input type="file" accept="image/*,.pdf" onChange={handlePreview} style={{ fontSize: 12, color: "#888" }} />
-              {form.previewFileName && <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>📎 {form.previewFileName}</div>}
+              <input
+                type="file"
+                accept="image/*,.pdf"
+                onChange={handlePreview}
+                style={{ fontSize: 12, color: "#888" }}
+              />
+              {form.previewFileName && (
+                <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>
+                  📎 {form.previewFileName}
+                </div>
+              )}
             </div>
           </div>
           <div style={{ display: "flex", gap: 10 }}>
-            <button onClick={handleSubmit} style={{ padding: "9px 22px", background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>{editId ? "Save" : "Add Dieline"}</button>
-            <button onClick={() => { setForm(blankForm); setEditId(null); setShowModal(false); }} style={{
-                      background: "transparent",
-                      color: "#ffffff",
-                      border: "1px solid rgba(255,255,255,0.2)",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}><i className="fa-solid fa-xmark" /> Cancel</button>
+            <button
+              onClick={handleSubmit}
+              style={{
+                padding: "9px 22px",
+                background: "rgba(255,255,255,0.08)",
+                border: "1px solid rgba(255,255,255,0.18)",
+                borderRadius: 6,
+                color: "#fff",
+                fontWeight: 500,
+                cursor: "pointer",
+                boxShadow:
+                  "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+              }}
+            >
+              {editId ? "Save" : "Add Dieline"}
+            </button>
+            <button
+              onClick={() => {
+                setForm(blankForm);
+                setEditId(null);
+                setShowModal(false);
+              }}
+              style={{
+                background: "transparent",
+                color: "#ffffff",
+                border: "1px solid rgba(255,255,255,0.2)",
+                borderRadius: 6,
+                padding: "6px 12px",
+                fontSize: 11,
+                fontWeight: 500,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <i className="fa-solid fa-xmark" /> Cancel
+            </button>
           </div>
         </Modal>
       )}
 
       <>
         <div style={{ marginBottom: 14 }}>
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search die code, description, client..." style={{ ...inp, maxWidth: 320 }} />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search die code, description, client..."
+            style={{ ...inp, maxWidth: 320 }}
+          />
         </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 14 }}>
-            {filtered.length === 0 && (
-              <div style={{ gridColumn: "1/-1", textAlign: "center", color: "#555", padding: 40 }}>
-                {dielines.length === 0 ? "No dielines in library. Add cutting patterns to start tracking." : "No results."}
-              </div>
-            )}
-            {filtered.map((d) => {
-              const usage = dieUsageMap[d.dieCode] || 0;
-              return (
-                <div key={d.id} style={{ background: "#111", border: "1px solid #2a2a2a", borderRadius: 10, overflow: "hidden" }}>
-                  {d.previewDataUrl && (
-                    <img src={d.previewDataUrl} alt={d.dieCode} style={{ width: "100%", height: 120, objectFit: "contain", background: "#0a0a0a", cursor: "pointer" }}
-                      onClick={() => window.open(d.previewDataUrl, "_blank")} />
-                  )}
-                  {!d.previewDataUrl && (
-                    <div style={{ width: "100%", height: 80, background: "#0a0a0a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32 }}>✂️</div>
-                  )}
-                  <div style={{ padding: 14 }}>
-                    <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 4 }}>{d.dieCode}</div>
-                    {d.description && <div style={{ fontSize: 12, color: "#aaa", marginBottom: 6 }}>{d.description}</div>}
-                    {d.dimensions && (
-                      <div style={{ fontSize: 11, color: "#888", marginBottom: 4 }}>📐 {d.dimensions}</div>
-                    )}
-                    {d.machineCompatible && (
-                      <div style={{ fontSize: 11, color: "#888", marginBottom: 4 }}>⚙️ {d.machineCompatible}</div>
-                    )}
-                    {d.clientTags && (
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 6 }}>
-                        {d.clientTags.split(",").map((c, i) => (
-                          <span key={i} style={{ padding: "1px 6px", background: "#3b82f611", border: "1px solid #3b82f622", borderRadius: 10, fontSize: 10, color: "#60a5fa" }}>{c.trim()}</span>
-                        ))}
-                      </div>
-                    )}
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8, paddingTop: 8, borderTop: "1px solid #1a1a1a" }}>
-                      <div style={{ fontSize: 10, color: "#555" }}>
-                        Last used: {fmtDate(d.lastUsedDate)} · {usage} JO{usage !== 1 ? "s" : ""}
-                      </div>
-                      <div style={{ display: "flex", gap: 6 }}>
-                        <button onClick={() => { setForm({ ...d }); setEditId(d.id); setShowModal(true); }}
-                          style={{ background: "transparent", color: "#8082ff", border: "1px solid #8082ff98", borderRadius: 6, padding: "6px 12px", fontSize: 11, fontWeight: 500, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}><i className="fa-solid fa-pen-to-square" /> Edit</button>
-                        <button onClick={() => { if (confirm("Delete?")) persist(dielines.filter((x) => x.id !== d.id)); }}
-                          style={{ background: "transparent", color: "#8082ff", border: "1px solid #8082ff98", borderRadius: 6, padding: "6px 12px", fontSize: 11, fontWeight: 500, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}><i className="fa-solid fa-trash" /> Delete</button>
-                      </div>
-                    </div>
-                    {d.notes && <div style={{ fontSize: 10, color: "#555", marginTop: 6 }}>{d.notes}</div>}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+            gap: 14,
+          }}
+        >
+          {filtered.length === 0 && (
+            <div
+              style={{
+                gridColumn: "1/-1",
+                textAlign: "center",
+                color: "#555",
+                padding: 40,
+              }}
+            >
+              {dielines.length === 0
+                ? "No dielines in library. Add cutting patterns to start tracking."
+                : "No results."}
+            </div>
+          )}
+          {filtered.map((d) => {
+            const usage = dieUsageMap[d.dieCode] || 0;
+            return (
+              <div
+                key={d.id}
+                style={{
+                  background: "#111",
+                  border: "1px solid #2a2a2a",
+                  borderRadius: 10,
+                  overflow: "hidden",
+                }}
+              >
+                {d.previewDataUrl && (
+                  <img
+                    src={d.previewDataUrl}
+                    alt={d.dieCode}
+                    style={{
+                      width: "100%",
+                      height: 120,
+                      objectFit: "contain",
+                      background: "#0a0a0a",
+                      cursor: "pointer",
+                    }}
+                    onClick={() => window.open(d.previewDataUrl, "_blank")}
+                  />
+                )}
+                {!d.previewDataUrl && (
+                  <div
+                    style={{
+                      width: "100%",
+                      height: 80,
+                      background: "#0a0a0a",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 32,
+                    }}
+                  >
+                    ✂️
                   </div>
+                )}
+                <div style={{ padding: 14 }}>
+                  <div
+                    style={{ fontWeight: 800, fontSize: 14, marginBottom: 4 }}
+                  >
+                    {d.dieCode}
+                  </div>
+                  {d.description && (
+                    <div
+                      style={{ fontSize: 12, color: "#aaa", marginBottom: 6 }}
+                    >
+                      {d.description}
+                    </div>
+                  )}
+                  {d.dimensions && (
+                    <div
+                      style={{ fontSize: 11, color: "#888", marginBottom: 4 }}
+                    >
+                      📐 {d.dimensions}
+                    </div>
+                  )}
+                  {d.machineCompatible && (
+                    <div
+                      style={{ fontSize: 11, color: "#888", marginBottom: 4 }}
+                    >
+                      ⚙️ {d.machineCompatible}
+                    </div>
+                  )}
+                  {d.clientTags && (
+                    <div
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 4,
+                        marginBottom: 6,
+                      }}
+                    >
+                      {d.clientTags.split(",").map((c, i) => (
+                        <span
+                          key={i}
+                          style={{
+                            padding: "1px 6px",
+                            background: "#3b82f611",
+                            border: "1px solid #3b82f622",
+                            borderRadius: 10,
+                            fontSize: 10,
+                            color: "#60a5fa",
+                          }}
+                        >
+                          {c.trim()}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginTop: 8,
+                      paddingTop: 8,
+                      borderTop: "1px solid #1a1a1a",
+                    }}
+                  >
+                    <div style={{ fontSize: 10, color: "#555" }}>
+                      Last used: {fmtDate(d.lastUsedDate)} · {usage} JO
+                      {usage !== 1 ? "s" : ""}
+                    </div>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button
+                        onClick={() => {
+                          setForm({ ...d });
+                          setEditId(d.id);
+                          setShowModal(true);
+                        }}
+                        style={{
+                          background: "transparent",
+                          color: "#8082ff",
+                          border: "1px solid #8082ff98",
+                          borderRadius: 6,
+                          padding: "6px 12px",
+                          fontSize: 11,
+                          fontWeight: 500,
+                          cursor: "pointer",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
+                        }}
+                      >
+                        <i className="fa-solid fa-pen-to-square" /> Edit
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm("Delete?"))
+                            persist(dielines.filter((x) => x.id !== d.id));
+                        }}
+                        style={{
+                          background: "transparent",
+                          color: "#8082ff",
+                          border: "1px solid #8082ff98",
+                          borderRadius: 6,
+                          padding: "6px 12px",
+                          fontSize: 11,
+                          fontWeight: 500,
+                          cursor: "pointer",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
+                        }}
+                      >
+                        <i className="fa-solid fa-trash" /> Delete
+                      </button>
+                    </div>
+                  </div>
+                  {d.notes && (
+                    <div style={{ fontSize: 10, color: "#555", marginTop: 6 }}>
+                      {d.notes}
+                    </div>
+                  )}
                 </div>
-              );
-            })}
-          </div>
-        </>
+              </div>
+            );
+          })}
+        </div>
+      </>
     </div>
   );
 }

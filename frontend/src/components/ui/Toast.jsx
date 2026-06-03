@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { COLORS } from '../../constants';
+import { useEffect } from "react";
+import { COLORS } from "../../constants";
 
 export function Toast({ msg, onClose, type = "success" }) {
   useEffect(() => {
@@ -7,7 +7,12 @@ export function Toast({ msg, onClose, type = "success" }) {
     return () => clearTimeout(t);
   }, [onClose, type]);
 
-  const bg = type === "error" ? COLORS.red : type === "validation" ? COLORS.red : COLORS.green;
+  const bg =
+    type === "error"
+      ? COLORS.red
+      : type === "validation"
+        ? COLORS.red
+        : COLORS.green;
   const icon = type === "error" || type === "validation" ? "✕" : "✓";
   const msgs = Array.isArray(msg) ? msg : [msg];
 
@@ -37,13 +42,15 @@ export function Toast({ msg, onClose, type = "success" }) {
             style={{
               fontWeight: 800,
               fontSize: 14,
-              marginBottom: msgs.length > 1 ? 8 : 0
+              marginBottom: msgs.length > 1 ? 8 : 0,
             }}
           >
             ⚠ Please fill in the required fields:
           </div>
           {msgs.length > 1 ? (
-            <ul style={{ margin: "4px 0 0 0", paddingLeft: 18, lineHeight: 1.7 }}>
+            <ul
+              style={{ margin: "4px 0 0 0", paddingLeft: 18, lineHeight: 1.7 }}
+            >
               {msgs.map((m, i) => (
                 <li key={i}>{m}</li>
               ))}

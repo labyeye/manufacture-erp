@@ -12,7 +12,7 @@ const toolingMasterSchema = new mongoose.Schema(
       required: true,
     },
     linkedSKU: {
-      type: String, 
+      type: String,
       required: true,
     },
     compatibleMachines: [
@@ -38,7 +38,7 @@ const toolingMasterSchema = new mongoose.Schema(
     lastUsedDate: Date,
     reconditioningLeadTime: {
       type: Number,
-      default: 7, 
+      default: 7,
     },
   },
   {

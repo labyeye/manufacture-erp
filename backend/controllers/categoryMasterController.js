@@ -1,15 +1,13 @@
 const CategoryMaster = require("../models/CategoryMaster");
 
-
 exports.getAll = async (req, res) => {
   try {
     const categories = await CategoryMaster.find()
-      .populate('createdBy', 'name username')
+      .populate("createdBy", "name username")
       .sort({ type: 1 });
 
-    
     const grouped = {};
-    
+
     categories.forEach((cat) => {
       if (!grouped[cat.type]) {
         grouped[cat.type] = {
@@ -20,7 +18,7 @@ exports.getAll = async (req, res) => {
           createdAt: cat.createdAt,
           updatedAt: cat.updatedAt,
           categories: [...(cat.categories || [])],
-          subTypes: cat.subTypes || {}
+          subTypes: cat.subTypes || {},
         };
       } else {
         const existing = grouped[cat.type].categories || [];
@@ -28,12 +26,11 @@ exports.getAll = async (req, res) => {
         grouped[cat.type].categories = [...new Set([...existing, ...incoming])];
         grouped[cat.type].subTypes = {
           ...grouped[cat.type].subTypes,
-          ...cat.subTypes
+          ...cat.subTypes,
         };
       }
     });
 
-    
     const result = Object.values(grouped);
 
     res.json({ categories: result });
@@ -42,7 +39,6 @@ exports.getAll = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch categories" });
   }
 };
-
 
 exports.getOne = async (req, res) => {
   try {
@@ -62,12 +58,17 @@ exports.getOne = async (req, res) => {
   }
 };
 
-
 exports.create = async (req, res) => {
   try {
     const { name, type, categories, subTypes, status } = req.body;
 
-    console.log("Create request body:", { name, type, categories, subTypes, status });
+    console.log("Create request body:", {
+      name,
+      type,
+      categories,
+      subTypes,
+      status,
+    });
 
     if (!type) {
       return res.status(400).json({ error: "Type is required" });
@@ -78,7 +79,7 @@ exports.create = async (req, res) => {
       type,
       categories: categories || [],
       subTypes: subTypes || {},
-      status: status || 'Active',
+      status: status || "Active",
       createdBy: req.user?._id,
     });
 
@@ -91,7 +92,6 @@ exports.create = async (req, res) => {
   }
 };
 
-
 exports.update = async (req, res) => {
   try {
     const { name, type, categories, subTypes, status } = req.body;
@@ -102,7 +102,6 @@ exports.update = async (req, res) => {
       return res.status(404).json({ error: "Category not found" });
     }
 
-    
     if (name !== undefined) category.name = name.trim();
     if (type !== undefined) category.type = type;
     if (categories !== undefined) category.categories = categories;
@@ -118,7 +117,6 @@ exports.update = async (req, res) => {
   }
 };
 
-
 exports.delete = async (req, res) => {
   try {
     const category = await CategoryMaster.findByIdAndDelete(req.params.id);
@@ -133,7 +131,6 @@ exports.delete = async (req, res) => {
     res.status(500).json({ error: "Failed to delete category" });
   }
 };
-
 
 exports.addSubType = async (req, res) => {
   try {
@@ -168,7 +165,6 @@ exports.addSubType = async (req, res) => {
   }
 };
 
-
 exports.removeSubType = async (req, res) => {
   try {
     const { name, type, subType } = req.body;
@@ -198,7 +194,6 @@ exports.removeSubType = async (req, res) => {
   }
 };
 
-
 exports.bulkImport = async (req, res) => {
   try {
     const { type, categories } = req.body;
@@ -224,14 +219,12 @@ exports.bulkImport = async (req, res) => {
           continue;
         }
 
-        
         const existing = await CategoryMaster.findOne({
           name: { $regex: new RegExp(`^${name.trim()}$`, "i") },
           type,
         });
 
         if (existing) {
-          
           const newSubTypes = [
             ...new Set([...existing.subTypes, ...(subTypes || [])]),
           ];
@@ -239,7 +232,6 @@ exports.bulkImport = async (req, res) => {
           await existing.save();
           results.updated++;
         } else {
-          
           const category = new CategoryMaster({
             name: name.trim(),
             type,

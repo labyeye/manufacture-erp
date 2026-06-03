@@ -1,7 +1,24 @@
-import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import React, {
+  useState,
+  useMemo,
+  useRef,
+  useEffect,
+  useCallback,
+} from "react";
 import * as XLSX from "xlsx";
 import { C } from "../constants/colors";
-import { Card, SectionTitle, Badge, Field, SubmitBtn, DateRangeFilter, ImportBtn, ExportBtn, TemplateBtn, ImportModal } from "../components/ui/BasicComponents";
+import {
+  Card,
+  SectionTitle,
+  Badge,
+  Field,
+  SubmitBtn,
+  DateRangeFilter,
+  ImportBtn,
+  ExportBtn,
+  TemplateBtn,
+  ImportModal,
+} from "../components/ui/BasicComponents";
 import { consumableStockAPI, spareIssueLogAPI } from "../api/auth";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
@@ -50,9 +67,12 @@ export default function ConsumableStock({
 
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
-    if (!window.confirm(`Delete ${selectedIds.length} selected item(s)?`)) return;
+    if (!window.confirm(`Delete ${selectedIds.length} selected item(s)?`))
+      return;
     try {
-      await Promise.allSettled(selectedIds.filter(Boolean).map((id) => consumableStockAPI.delete(id)));
+      await Promise.allSettled(
+        selectedIds.filter(Boolean).map((id) => consumableStockAPI.delete(id)),
+      );
       if (refreshData) await refreshData();
       setSelectedIds([]);
       toast?.(`${selectedIds.length} item(s) deleted`, "success");
@@ -150,7 +170,6 @@ export default function ConsumableStock({
     0,
   );
 
-  
   const handleIssue = async () => {
     if (!selectedStock || !issueQty) {
       toast("Please select item and enter quantity", "error");
@@ -177,10 +196,15 @@ export default function ConsumableStock({
         unit: selectedStock.unit || selectedStock.uom || "nos",
         issuedBy: session?.name || session?.username || "",
         remarks: issueRemarks,
-        stockId: selectedStock.isFromMaster ? undefined : (selectedStock._id || selectedStock.id),
+        stockId: selectedStock.isFromMaster
+          ? undefined
+          : selectedStock._id || selectedStock.id,
       });
 
-      toast(`Issued ${qty} units of ${selectedStock.name}${issueMachine ? ` to ${issueMachine.name}` : ""}`, "success");
+      toast(
+        `Issued ${qty} units of ${selectedStock.name}${issueMachine ? ` to ${issueMachine.name}` : ""}`,
+        "success",
+      );
       setSelectedStock(null);
       setIssueQty("");
       setIssueMachine(null);
@@ -193,7 +217,6 @@ export default function ConsumableStock({
     }
   };
 
-  
   const handleExport = () => {
     const headers = [
       "Code",
@@ -231,7 +254,10 @@ export default function ConsumableStock({
     const fmtN = (n) => (+n || 0).toLocaleString("en-IN");
     const rfmt = (n) => Math.round(+n || 0).toLocaleString("en-IN");
     const totalQty = filtered.reduce((s, r) => s + (+r.qty || 0), 0);
-    const totalVal = filtered.reduce((s, r) => s + (+r.qty || 0) * (+r.rate || 0), 0);
+    const totalVal = filtered.reduce(
+      (s, r) => s + (+r.qty || 0) * (+r.rate || 0),
+      0,
+    );
     const rowsHtml = filtered
       .map(
         (s) => `
@@ -298,7 +324,8 @@ export default function ConsumableStock({
         </body>
       </html>`;
     const iframe = document.createElement("iframe");
-    iframe.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0";
+    iframe.style.cssText =
+      "position:fixed;right:0;bottom:0;width:0;height:0;border:0";
     document.body.appendChild(iframe);
     iframe.contentWindow.document.open();
     iframe.contentWindow.document.write(html);
@@ -312,7 +339,6 @@ export default function ConsumableStock({
     };
   };
 
-  
   const handleImport = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -365,7 +391,8 @@ export default function ConsumableStock({
 
               const existing = (consumableStock || []).find(
                 (s) =>
-                  s.name.toLowerCase().trim() === item.name.toLowerCase().trim(),
+                  s.name.toLowerCase().trim() ===
+                  item.name.toLowerCase().trim(),
               );
 
               try {
@@ -385,7 +412,12 @@ export default function ConsumableStock({
               `Import complete: ${successCount} new, ${updateCount} updated`,
               "success",
             );
-            setImportProgress({ show: false, current: 0, total: 0, status: "" });
+            setImportProgress({
+              show: false,
+              current: 0,
+              total: 0,
+              status: "",
+            });
             if (refreshData) refreshData();
           })();
         }
@@ -421,10 +453,14 @@ export default function ConsumableStock({
             borderRadius: 6,
             fontSize: 13,
             fontWeight: 500,
-            background: showZeroStock ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.05)",
+            background: showZeroStock
+              ? "rgba(255,255,255,0.12)"
+              : "rgba(255,255,255,0.05)",
             color: "#fff",
             border: `1px solid ${showZeroStock ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.18)"}`,
-            boxShadow: showZeroStock ? "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" : "none",
+            boxShadow: showZeroStock
+              ? "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)"
+              : "none",
             cursor: "pointer",
           }}
         >
@@ -446,9 +482,15 @@ export default function ConsumableStock({
               padding: "8px 20px",
               borderRadius: 6,
               border: `1px solid ${view === v ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.18)"}`,
-              background: view === v ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.05)",
+              background:
+                view === v
+                  ? "rgba(255,255,255,0.12)"
+                  : "rgba(255,255,255,0.05)",
               color: "#fff",
-              boxShadow: view === v ? "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" : "none",
+              boxShadow:
+                view === v
+                  ? "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)"
+                  : "none",
               fontWeight: 500,
               fontSize: 13,
               cursor: "pointer",
@@ -463,73 +505,210 @@ export default function ConsumableStock({
       {view === "stock" && (
         <div>
           {}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12, marginBottom: 18 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(5, 1fr)",
+              gap: 12,
+              marginBottom: 18,
+            }}
+          >
             {[
-              { label: "Total Items", value: fmt(totalItemsCount), icon: "fa-solid fa-boxes-stacked" },
-              { label: "In Stock", value: fmt(inStockCount), icon: "fa-solid fa-warehouse" },
-              { label: "Out of Stock", value: fmt(outOfStockCount), icon: "fa-solid fa-circle-exclamation" },
-              { label: "Below Reorder", value: fmt(belowReorderCount), icon: "fa-solid fa-triangle-exclamation" },
-              { label: "Total Value", value: `₹${fmt(Math.round(totalValueSum))}`, icon: "fa-solid fa-indian-rupee-sign" },
+              {
+                label: "Total Items",
+                value: fmt(totalItemsCount),
+                icon: "fa-solid fa-boxes-stacked",
+              },
+              {
+                label: "In Stock",
+                value: fmt(inStockCount),
+                icon: "fa-solid fa-warehouse",
+              },
+              {
+                label: "Out of Stock",
+                value: fmt(outOfStockCount),
+                icon: "fa-solid fa-circle-exclamation",
+              },
+              {
+                label: "Below Reorder",
+                value: fmt(belowReorderCount),
+                icon: "fa-solid fa-triangle-exclamation",
+              },
+              {
+                label: "Total Value",
+                value: `₹${fmt(Math.round(totalValueSum))}`,
+                icon: "fa-solid fa-indian-rupee-sign",
+              },
             ].map(({ label, value, icon }) => (
-              <div key={label} style={{ padding: "16px 20px", background: "transparent", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                  <span style={{ fontSize: 19, color: "#ffffff", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
-                  <i className={icon} style={{ color: C.muted, fontSize: 20, opacity: 0.9, display: "inline-flex", alignItems: "center", justifyContent: "center", height: 28, width: 28, lineHeight: 1 }} />
+              <div
+                key={label}
+                style={{
+                  padding: "16px 20px",
+                  background: "transparent",
+                  border: "1px solid rgba(255,255,255,0.07)",
+                  borderRadius: 12,
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: 8,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: 19,
+                      color: "#ffffff",
+                      fontWeight: 600,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                    }}
+                  >
+                    {label}
+                  </span>
+                  <i
+                    className={icon}
+                    style={{
+                      color: C.muted,
+                      fontSize: 20,
+                      opacity: 0.9,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      height: 28,
+                      width: 28,
+                      lineHeight: 1,
+                    }}
+                  />
                 </div>
-                <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>{value}</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>
+                  {value}
+                </div>
               </div>
             ))}
           </div>
 
           {}
-          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 12 }}>
+          <div
+            style={{
+              display: "flex",
+              gap: 10,
+              alignItems: "center",
+              flexWrap: "wrap",
+              marginBottom: 12,
+            }}
+          >
             <div style={{ position: "relative", flex: 1, minWidth: 180 }}>
               <input
                 placeholder="Search item..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                style={{ width: "100%", padding: "9px 12px 9px 30px", border: `1px solid ${C.border}`, borderRadius: 6, fontSize: 13, background: C.inputBg, color: C.text || "#e5e7eb", boxSizing: "border-box" }}
+                style={{
+                  width: "100%",
+                  padding: "9px 12px 9px 30px",
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 6,
+                  fontSize: 13,
+                  background: C.inputBg,
+                  color: C.text || "#e5e7eb",
+                  boxSizing: "border-box",
+                }}
               />
             </div>
-            <TemplateBtn onClick={() => {
-              const headers = ["Code", "Name", "Category", "Type", "Qty", "Unit", "Reorder Level", "Rate (₹)"];
-              const example = ["CS001", "Example Item", "General", "Consumable", "0", "nos", "10", "100"];
-              const worksheet = XLSX.utils.aoa_to_sheet([headers, example]);
-              const workbook = XLSX.utils.book_new();
-              XLSX.utils.book_append_sheet(workbook, worksheet, "Template");
-              XLSX.writeFile(workbook, "consumable_template.xlsx");
-            }} />
+            <TemplateBtn
+              onClick={() => {
+                const headers = [
+                  "Code",
+                  "Name",
+                  "Category",
+                  "Type",
+                  "Qty",
+                  "Unit",
+                  "Reorder Level",
+                  "Rate (₹)",
+                ];
+                const example = [
+                  "CS001",
+                  "Example Item",
+                  "General",
+                  "Consumable",
+                  "0",
+                  "nos",
+                  "10",
+                  "100",
+                ];
+                const worksheet = XLSX.utils.aoa_to_sheet([headers, example]);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Template");
+                XLSX.writeFile(workbook, "consumable_template.xlsx");
+              }}
+            />
             {canExportImport && !isClient && (
               <ImportBtn onClick={() => fileInputRef.current?.click()} />
             )}
             {canExportImport && <ExportBtn onClick={handleExport} />}
-            {canExportImport && <ExportBtn onClick={handleExportPDF} label="Export PDF" />}
+            {canExportImport && (
+              <ExportBtn onClick={handleExportPDF} label="Export PDF" />
+            )}
             {!isClient && canDelete && selectedIds.length > 0 && (
               <button
                 onClick={handleBulkDelete}
-                style={{ padding: "7px 14px", borderRadius: 6, border: "1px solid rgba(239,68,68,0.4)", background: "rgba(239,68,68,0.15)", color: "#ef4444", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}
+                style={{
+                  padding: "7px 14px",
+                  borderRadius: 6,
+                  border: "1px solid rgba(239,68,68,0.4)",
+                  background: "rgba(239,68,68,0.15)",
+                  color: "#ef4444",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
               >
                 <i className="fa-solid fa-trash" style={{ marginRight: 6 }} />
                 Delete Selected ({selectedIds.length})
               </button>
             )}
-            <input ref={fileInputRef} type="file" accept=".xlsx" style={{ display: "none" }} onChange={handleImport} />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx"
+              style={{ display: "none" }}
+              onChange={handleImport}
+            />
 
             {}
-            <div style={{ display: "flex", gap: 0, borderRadius: 6, overflow: "hidden", border: `1px solid ${C.border}`, marginLeft: 4 }}>
+            <div
+              style={{
+                display: "flex",
+                gap: 0,
+                borderRadius: 6,
+                overflow: "hidden",
+                border: `1px solid ${C.border}`,
+                marginLeft: 4,
+              }}
+            >
               {TYPE_FILTERS.map((t) => (
                 <button
                   key={t}
                   onClick={() => setTypeFilter(t)}
                   style={{
                     padding: "7px 14px",
-                    background: typeFilter === t ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.05)",
+                    background:
+                      typeFilter === t
+                        ? "rgba(255,255,255,0.12)"
+                        : "rgba(255,255,255,0.05)",
                     color: "#fff",
                     fontWeight: typeFilter === t ? 700 : 400,
                     fontSize: 12,
                     border: "none",
                     cursor: "pointer",
-                    borderRight: t !== TYPE_FILTERS[TYPE_FILTERS.length - 1] ? `1px solid ${C.border}` : "none",
+                    borderRight:
+                      t !== TYPE_FILTERS[TYPE_FILTERS.length - 1]
+                        ? `1px solid ${C.border}`
+                        : "none",
                   }}
                 >
                   {t}
@@ -537,29 +716,77 @@ export default function ConsumableStock({
               ))}
             </div>
 
-            <span style={{ fontSize: 12, color: C.muted, whiteSpace: "nowrap" }}>{filtered.length} items</span>
+            <span
+              style={{ fontSize: 12, color: C.muted, whiteSpace: "nowrap" }}
+            >
+              {filtered.length} items
+            </span>
           </div>
 
           {}
-          <div style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
+          <div
+            style={{
+              background: "transparent",
+              border: "1px solid rgba(255,255,255,0.07)",
+              borderRadius: 12,
+              overflow: "hidden",
+            }}
+          >
             {filtered.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "60px 20px", color: C.muted }}>
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "60px 20px",
+                  color: C.muted,
+                }}
+              >
                 <div style={{ fontSize: 48, marginBottom: 12 }}>📦</div>
-                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6, color: C.text || "#e5e7eb" }}>
+                <div
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 600,
+                    marginBottom: 6,
+                    color: C.text || "#e5e7eb",
+                  }}
+                >
                   {search ? "No items found" : "No consumable stock yet"}
                 </div>
                 {!search && (
                   <div style={{ fontSize: 12, color: C.muted }}>
-                    Stock auto-updates when you record a GRN with Consumable or Other items
+                    Stock auto-updates when you record a GRN with Consumable or
+                    Other items
                   </div>
                 )}
               </div>
             ) : (
               <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    fontSize: 13,
+                  }}
+                >
                   <thead>
-                    <tr style={{ background: "transparent", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-                      <th style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap", width: 40 }}>
+                    <tr
+                      style={{
+                        background: "transparent",
+                        borderBottom: "1px solid rgba(255,255,255,0.08)",
+                      }}
+                    >
+                      <th
+                        style={{
+                          padding: "10px 14px",
+                          textAlign: "left",
+                          fontSize: 11,
+                          fontWeight: 700,
+                          color: C.muted,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.05em",
+                          whiteSpace: "nowrap",
+                          width: 40,
+                        }}
+                      >
                         <input
                           type="checkbox"
                           checked={
@@ -568,7 +795,9 @@ export default function ConsumableStock({
                           }
                           onChange={(e) => {
                             if (e.target.checked) {
-                              setSelectedIds(filtered.map((s) => s._id || s.id));
+                              setSelectedIds(
+                                filtered.map((s) => s._id || s.id),
+                              );
                             } else {
                               setSelectedIds([]);
                             }
@@ -608,10 +837,20 @@ export default function ConsumableStock({
                   </thead>
                   <tbody>
                     {filtered.map((s, i) => {
-                      const low = (s.reorderLevel || 0) > 0 && (s.qty || 0) <= (s.reorderLevel || 0);
+                      const low =
+                        (s.reorderLevel || 0) > 0 &&
+                        (s.qty || 0) <= (s.reorderLevel || 0);
                       const out = (s.qty || 0) <= 0;
-                      const statusColor = out ? C.red || "#ef4444" : low ? C.orange || "#f97316" : C.green || "#22c55e";
-                      const statusLabel = out ? "Out of Stock" : low ? "Low Stock" : "In Stock";
+                      const statusColor = out
+                        ? C.red || "#ef4444"
+                        : low
+                          ? C.orange || "#f97316"
+                          : C.green || "#22c55e";
+                      const statusLabel = out
+                        ? "Out of Stock"
+                        : low
+                          ? "Low Stock"
+                          : "In Stock";
                       return (
                         <tr
                           key={s.id || i}
@@ -630,7 +869,10 @@ export default function ConsumableStock({
                               checked={selectedIds.includes(s._id || s.id)}
                               onChange={(e) => {
                                 if (e.target.checked) {
-                                  setSelectedIds((prev) => [...prev, s._id || s.id]);
+                                  setSelectedIds((prev) => [
+                                    ...prev,
+                                    s._id || s.id,
+                                  ]);
                                 } else {
                                   setSelectedIds((prev) =>
                                     prev.filter((id) => id !== (s._id || s.id)),
@@ -648,95 +890,161 @@ export default function ConsumableStock({
                           >
                             {s.code || "—"}
                           </td>
-                          <td style={{ padding: "10px 14px", fontWeight: 600 }}>{s.name}</td>
-                          <td style={{ padding: "10px 14px", color: C.muted, fontSize: 12 }}>{s.category || "—"}</td>
+                          <td style={{ padding: "10px 14px", fontWeight: 600 }}>
+                            {s.name}
+                          </td>
+                          <td
+                            style={{
+                              padding: "10px 14px",
+                              color: C.muted,
+                              fontSize: 12,
+                            }}
+                          >
+                            {s.category || "—"}
+                          </td>
                           <td style={{ padding: "10px 14px", fontSize: 12 }}>
-                            <span style={{ padding: "2px 8px", borderRadius: 4, background: (C.blue || "#3b82f6") + "22", color: C.blue || "#3b82f6", fontSize: 11, fontWeight: 600 }}>
+                            <span
+                              style={{
+                                padding: "2px 8px",
+                                borderRadius: 4,
+                                background: (C.blue || "#3b82f6") + "22",
+                                color: C.blue || "#3b82f6",
+                                fontSize: 11,
+                                fontWeight: 600,
+                              }}
+                            >
                               {s.type || "Consumable"}
                             </span>
                           </td>
-                          <td style={{ padding: "10px 14px", fontWeight: 600, color: out ? C.red : C.text || "#e5e7eb" }}>{fmt(s.qty || 0)}</td>
-                          <td style={{ padding: "10px 14px", color: C.muted, fontSize: 12 }}>{s.unit || "nos"}</td>
-                          <td style={{ padding: "10px 14px", color: C.muted, fontSize: 12 }}>{s.reorderLevel ? fmt(s.reorderLevel) : "—"}</td>
-                          <td style={{ padding: "10px 14px", color: C.muted }}>{s.rate ? `₹${fmt(s.rate)}` : "—"}</td>
-                          <td style={{ padding: "10px 14px", fontWeight: 600, color: C.green || "#22c55e" }}>{s.rate && s.qty ? `₹${fmt(Math.round((s.qty || 0) * (s.rate || 0)))}` : "—"}</td>
+                          <td
+                            style={{
+                              padding: "10px 14px",
+                              fontWeight: 600,
+                              color: out ? C.red : C.text || "#e5e7eb",
+                            }}
+                          >
+                            {fmt(s.qty || 0)}
+                          </td>
+                          <td
+                            style={{
+                              padding: "10px 14px",
+                              color: C.muted,
+                              fontSize: 12,
+                            }}
+                          >
+                            {s.unit || "nos"}
+                          </td>
+                          <td
+                            style={{
+                              padding: "10px 14px",
+                              color: C.muted,
+                              fontSize: 12,
+                            }}
+                          >
+                            {s.reorderLevel ? fmt(s.reorderLevel) : "—"}
+                          </td>
+                          <td style={{ padding: "10px 14px", color: C.muted }}>
+                            {s.rate ? `₹${fmt(s.rate)}` : "—"}
+                          </td>
+                          <td
+                            style={{
+                              padding: "10px 14px",
+                              fontWeight: 600,
+                              color: C.green || "#22c55e",
+                            }}
+                          >
+                            {s.rate && s.qty
+                              ? `₹${fmt(Math.round((s.qty || 0) * (s.rate || 0)))}`
+                              : "—"}
+                          </td>
                           <td style={{ padding: "10px 14px" }}>
-                            <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 4, background: statusColor + "22", color: statusColor, fontWeight: 600 }}>
+                            <span
+                              style={{
+                                fontSize: 11,
+                                padding: "2px 8px",
+                                borderRadius: 4,
+                                background: statusColor + "22",
+                                color: statusColor,
+                                fontWeight: 600,
+                              }}
+                            >
                               {statusLabel}
                             </span>
                           </td>
                           <td style={{ padding: "12px 14px" }}>
-                        <div style={{ display: "flex", gap: 6 }}>
-                          {!isClient && canEdit && (
-                            <button
-                              onClick={() => {
-                                setSelectedStock(s);
-                                setView("form");
-                                setEditId(s._id || s.id);
-                                setEditData(s);
-                              }}
-                              style={{
-                                background: "transparent",
-                                color: "#8082ff",
-                                border: "1px solid #8082ff98",
-                                borderRadius: 6,
-                                padding: "6px 12px",
-                                fontSize: 11,
-                                fontWeight: 500,
-                                cursor: "pointer",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 6,
-                              }}
-                            >
-                              <i className="fa-solid fa-pen-to-square" /> Edit
-                            </button>
-                          )}
-                          {!isClient && canDelete && (
-                            <button
-                              onClick={() => handleDelete(s._id || s.id)}
-                              style={{
-                                background: "transparent",
-                                color: "#8082ff",
-                                border: "1px solid #8082ff98",
-                                borderRadius: 6,
-                                padding: "6px 12px",
-                                fontSize: 11,
-                                fontWeight: 500,
-                                cursor: "pointer",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 6,
-                              }}
-                            >
-                              <i className="fa-solid fa-trash" /> Delete
-                            </button>
-                          )}
-                          {!isClient && (
-                            <button
-                              onClick={() => {
-                                setSelectedStock(s);
-                                setView("issue");
-                              }}
-                              style={{
-                                background: "transparent",
-                                color: "#8082ff",
-                                border: "1px solid #8082ff98",
-                                borderRadius: 6,
-                                padding: "6px 12px",
-                                fontSize: 11,
-                                fontWeight: 500,
-                                cursor: "pointer",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 6,
-                              }}
-                            >
-                              <i className="fa-solid fa-arrow-right-from-bracket" /> Issue
-                            </button>
-                          )}
-                        </div>
-                      </td>
+                            <div style={{ display: "flex", gap: 6 }}>
+                              {!isClient && canEdit && (
+                                <button
+                                  onClick={() => {
+                                    setSelectedStock(s);
+                                    setView("form");
+                                    setEditId(s._id || s.id);
+                                    setEditData(s);
+                                  }}
+                                  style={{
+                                    background: "transparent",
+                                    color: "#8082ff",
+                                    border: "1px solid #8082ff98",
+                                    borderRadius: 6,
+                                    padding: "6px 12px",
+                                    fontSize: 11,
+                                    fontWeight: 500,
+                                    cursor: "pointer",
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 6,
+                                  }}
+                                >
+                                  <i className="fa-solid fa-pen-to-square" />{" "}
+                                  Edit
+                                </button>
+                              )}
+                              {!isClient && canDelete && (
+                                <button
+                                  onClick={() => handleDelete(s._id || s.id)}
+                                  style={{
+                                    background: "transparent",
+                                    color: "#8082ff",
+                                    border: "1px solid #8082ff98",
+                                    borderRadius: 6,
+                                    padding: "6px 12px",
+                                    fontSize: 11,
+                                    fontWeight: 500,
+                                    cursor: "pointer",
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 6,
+                                  }}
+                                >
+                                  <i className="fa-solid fa-trash" /> Delete
+                                </button>
+                              )}
+                              {!isClient && (
+                                <button
+                                  onClick={() => {
+                                    setSelectedStock(s);
+                                    setView("issue");
+                                  }}
+                                  style={{
+                                    background: "transparent",
+                                    color: "#8082ff",
+                                    border: "1px solid #8082ff98",
+                                    borderRadius: 6,
+                                    padding: "6px 12px",
+                                    fontSize: 11,
+                                    fontWeight: 500,
+                                    cursor: "pointer",
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 6,
+                                  }}
+                                >
+                                  <i className="fa-solid fa-arrow-right-from-bracket" />{" "}
+                                  Issue
+                                </button>
+                              )}
+                            </div>
+                          </td>
                         </tr>
                       );
                     })}
@@ -751,17 +1059,38 @@ export default function ConsumableStock({
       {}
       {view === "issue" && (
         <Card>
-          <h3 style={{ fontSize: 14, fontWeight: 500, color: C.orange || "#f97316", marginBottom: 16 }}>Issue Spare / Consumable Item</h3>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 14, marginBottom: 16 }}>
+          <h3
+            style={{
+              fontSize: 14,
+              fontWeight: 500,
+              color: C.orange || "#f97316",
+              marginBottom: 16,
+            }}
+          >
+            Issue Spare / Consumable Item
+          </h3>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+              gap: 14,
+              marginBottom: 16,
+            }}
+          >
             {machineSpareCategories.length > 0 && (
               <Field label="Filter by Category">
                 <select
                   value={issueCategoryFilter}
-                  onChange={(e) => { setIssueCategoryFilter(e.target.value); setSelectedStock(null); }}
+                  onChange={(e) => {
+                    setIssueCategoryFilter(e.target.value);
+                    setSelectedStock(null);
+                  }}
                 >
                   <option value="">-- All Categories --</option>
                   {machineSpareCategories.map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
                   ))}
                 </select>
               </Field>
@@ -770,16 +1099,24 @@ export default function ConsumableStock({
               <select
                 value={selectedStock?._id || selectedStock?.id || ""}
                 onChange={(e) => {
-                  const found = allItems.find((s) => (s._id || s.id) === e.target.value);
+                  const found = allItems.find(
+                    (s) => (s._id || s.id) === e.target.value,
+                  );
                   setSelectedStock(found || null);
                 }}
               >
                 <option value="">-- Select Item --</option>
                 {allItems
-                  .filter((s) => !issueCategoryFilter || s.category === issueCategoryFilter)
+                  .filter(
+                    (s) =>
+                      !issueCategoryFilter ||
+                      s.category === issueCategoryFilter,
+                  )
                   .map((s) => (
                     <option key={s._id || s.id} value={s._id || s.id}>
-                      {s.name}{s.category ? ` [${s.category}]` : ""} — Avail: {fmt(s.qty || 0)} {s.unit || "nos"}
+                      {s.name}
+                      {s.category ? ` [${s.category}]` : ""} — Avail:{" "}
+                      {fmt(s.qty || 0)} {s.unit || "nos"}
                     </option>
                   ))}
               </select>
@@ -787,12 +1124,26 @@ export default function ConsumableStock({
             {selectedStock && (
               <>
                 <Field label="Available Quantity">
-                  <div style={{ padding: "9px 12px", background: C.inputBg, border: `1px solid ${C.border}`, borderRadius: 6, fontSize: 13, fontWeight: 600 }}>
+                  <div
+                    style={{
+                      padding: "9px 12px",
+                      background: C.inputBg,
+                      border: `1px solid ${C.border}`,
+                      borderRadius: 6,
+                      fontSize: 13,
+                      fontWeight: 600,
+                    }}
+                  >
                     {fmt(selectedStock.qty || 0)} {selectedStock.unit || "nos"}
                   </div>
                 </Field>
                 <Field label="Quantity to Issue *">
-                  <input type="number" placeholder="Enter quantity" value={issueQty} onChange={(e) => setIssueQty(e.target.value)} />
+                  <input
+                    type="number"
+                    placeholder="Enter quantity"
+                    value={issueQty}
+                    onChange={(e) => setIssueQty(e.target.value)}
+                  />
                 </Field>
               </>
             )}
@@ -800,16 +1151,21 @@ export default function ConsumableStock({
               <select
                 value={issueMachine?._id || issueMachine?.id || ""}
                 onChange={(e) => {
-                  const m = machineMaster.find((m) => (m._id || m.id) === e.target.value);
+                  const m = machineMaster.find(
+                    (m) => (m._id || m.id) === e.target.value,
+                  );
                   setIssueMachine(m || null);
                 }}
               >
                 <option value="">-- Select Machine (optional) --</option>
-                {(machineMaster || []).filter((m) => m.status === "Active" || !m.status).map((m) => (
-                  <option key={m._id || m.id} value={m._id || m.id}>
-                    {m.name}{m.type ? ` (${m.type})` : ""}
-                  </option>
-                ))}
+                {(machineMaster || [])
+                  .filter((m) => m.status === "Active" || !m.status)
+                  .map((m) => (
+                    <option key={m._id || m.id} value={m._id || m.id}>
+                      {m.name}
+                      {m.type ? ` (${m.type})` : ""}
+                    </option>
+                  ))}
               </select>
             </Field>
             <Field label="Remarks">
@@ -822,16 +1178,57 @@ export default function ConsumableStock({
             </Field>
           </div>
           {selectedStock && issueQty && (
-            <div style={{ padding: "12px 16px", background: (C.orange || "#f97316") + "11", border: `1px solid ${(C.orange || "#f97316")}44`, borderRadius: 6, marginBottom: 16, fontSize: 13 }}>
-              Issue <strong style={{ color: C.orange || "#f97316" }}>{fmt(+issueQty)}</strong> {selectedStock.unit || "nos"} of <strong>{selectedStock.name}</strong>
-              {issueMachine && <> → Machine: <strong style={{ color: C.blue || "#3b82f6" }}>{issueMachine.name}</strong></>}
+            <div
+              style={{
+                padding: "12px 16px",
+                background: (C.orange || "#f97316") + "11",
+                border: `1px solid ${C.orange || "#f97316"}44`,
+                borderRadius: 6,
+                marginBottom: 16,
+                fontSize: 13,
+              }}
+            >
+              Issue{" "}
+              <strong style={{ color: C.orange || "#f97316" }}>
+                {fmt(+issueQty)}
+              </strong>{" "}
+              {selectedStock.unit || "nos"} of{" "}
+              <strong>{selectedStock.name}</strong>
+              {issueMachine && (
+                <>
+                  {" "}
+                  → Machine:{" "}
+                  <strong style={{ color: C.blue || "#3b82f6" }}>
+                    {issueMachine.name}
+                  </strong>
+                </>
+              )}
             </div>
           )}
           <div style={{ display: "flex", gap: 10 }}>
-            <SubmitBtn label="Issue Item" color={C.green} onClick={handleIssue} />
+            <SubmitBtn
+              label="Issue Item"
+              color={C.green}
+              onClick={handleIssue}
+            />
             <button
-              onClick={() => { setSelectedStock(null); setIssueQty(""); setIssueMachine(null); setIssueRemarks(""); setIssueCategoryFilter(""); }}
-              style={{ padding: "9px 20px", borderRadius: 6, border: `1px solid ${C.border}`, background: C.inputBg, color: C.muted, fontWeight: 500, fontSize: 13, cursor: "pointer" }}
+              onClick={() => {
+                setSelectedStock(null);
+                setIssueQty("");
+                setIssueMachine(null);
+                setIssueRemarks("");
+                setIssueCategoryFilter("");
+              }}
+              style={{
+                padding: "9px 20px",
+                borderRadius: 6,
+                border: `1px solid ${C.border}`,
+                background: C.inputBg,
+                color: C.muted,
+                fontWeight: 500,
+                fontSize: 13,
+                cursor: "pointer",
+              }}
             >
               Clear
             </button>
@@ -842,53 +1239,212 @@ export default function ConsumableStock({
       {}
       {view === "log" && (
         <Card>
-          <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 14, flexWrap: "wrap" }}>
-            <h3 style={{ fontSize: 14, fontWeight: 500, color: C.muted, margin: 0 }}>Spare Issue History</h3>
-            <DateRangeFilter dateFrom={drDateFrom} setDateFrom={setDrDateFrom} dateTo={drDateTo} setDateTo={setDrDateTo} />
+          <div
+            style={{
+              display: "flex",
+              gap: 12,
+              alignItems: "center",
+              marginBottom: 14,
+              flexWrap: "wrap",
+            }}
+          >
+            <h3
+              style={{
+                fontSize: 14,
+                fontWeight: 500,
+                color: C.muted,
+                margin: 0,
+              }}
+            >
+              Spare Issue History
+            </h3>
+            <DateRangeFilter
+              dateFrom={drDateFrom}
+              setDateFrom={setDrDateFrom}
+              dateTo={drDateTo}
+              setDateTo={setDrDateTo}
+            />
             <button
               onClick={fetchLogs}
-              style={{ padding: "6px 14px", borderRadius: 6, border: `1px solid ${C.border}`, background: C.inputBg, color: C.muted, fontSize: 12, fontWeight: 500, cursor: "pointer" }}
+              style={{
+                padding: "6px 14px",
+                borderRadius: 6,
+                border: `1px solid ${C.border}`,
+                background: C.inputBg,
+                color: C.muted,
+                fontSize: 12,
+                fontWeight: 500,
+                cursor: "pointer",
+              }}
             >
               {logsLoading ? "Loading…" : "Refresh"}
             </button>
           </div>
           {logsLoading ? (
-            <div style={{ textAlign: "center", color: C.muted, padding: 32, fontSize: 13 }}>Loading records…</div>
+            <div
+              style={{
+                textAlign: "center",
+                color: C.muted,
+                padding: 32,
+                fontSize: 13,
+              }}
+            >
+              Loading records…
+            </div>
           ) : fetchedLogs.length === 0 ? (
-            <div style={{ textAlign: "center", color: C.muted, padding: 32, fontSize: 13 }}>No issues recorded yet</div>
+            <div
+              style={{
+                textAlign: "center",
+                color: C.muted,
+                padding: 32,
+                fontSize: 13,
+              }}
+            >
+              No issues recorded yet
+            </div>
           ) : (
-            <div style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+            <div
+              style={{
+                background: "transparent",
+                border: "1px solid rgba(255,255,255,0.07)",
+                borderRadius: 12,
+                overflow: "hidden",
+              }}
+            >
+              <table
+                style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  fontSize: 13,
+                }}
+              >
                 <thead>
-                  <tr style={{ background: "transparent", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-                    {["DATE", "ITEM", "CATEGORY", "QTY", "ISSUED TO MACHINE", "REMARKS", "ISSUED BY"].map((h) => (
-                      <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
+                  <tr
+                    style={{
+                      background: "transparent",
+                      borderBottom: "1px solid rgba(255,255,255,0.08)",
+                    }}
+                  >
+                    {[
+                      "DATE",
+                      "ITEM",
+                      "CATEGORY",
+                      "QTY",
+                      "ISSUED TO MACHINE",
+                      "REMARKS",
+                      "ISSUED BY",
+                    ].map((h) => (
+                      <th
+                        key={h}
+                        style={{
+                          padding: "10px 14px",
+                          textAlign: "left",
+                          fontSize: 11,
+                          fontWeight: 700,
+                          color: C.muted,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.05em",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {h}
+                      </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {fetchedLogs.map((log, i) => (
-                    <tr key={log._id || i} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)" }}>
-                      <td style={{ padding: "9px 12px", color: C.muted, fontSize: 11, whiteSpace: "nowrap" }}>{fmtDate(log.issuedAt)}</td>
+                    <tr
+                      key={log._id || i}
+                      style={{
+                        borderBottom: "1px solid rgba(255,255,255,0.04)",
+                        background:
+                          i % 2 === 0
+                            ? "transparent"
+                            : "rgba(255,255,255,0.01)",
+                      }}
+                    >
+                      <td
+                        style={{
+                          padding: "9px 12px",
+                          color: C.muted,
+                          fontSize: 11,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {fmtDate(log.issuedAt)}
+                      </td>
                       <td style={{ padding: "9px 12px", fontWeight: 600 }}>
                         {log.itemName}
-                        {log.itemCode && <span style={{ fontSize: 10, color: C.muted, marginLeft: 6 }}>{log.itemCode}</span>}
+                        {log.itemCode && (
+                          <span
+                            style={{
+                              fontSize: 10,
+                              color: C.muted,
+                              marginLeft: 6,
+                            }}
+                          >
+                            {log.itemCode}
+                          </span>
+                        )}
                       </td>
-                      <td style={{ padding: "9px 12px", fontSize: 12, color: C.muted }}>{log.category || "—"}</td>
-                      <td style={{ padding: "9px 12px", fontWeight: 500, color: C.orange || "#f97316", whiteSpace: "nowrap" }}>
+                      <td
+                        style={{
+                          padding: "9px 12px",
+                          fontSize: 12,
+                          color: C.muted,
+                        }}
+                      >
+                        {log.category || "—"}
+                      </td>
+                      <td
+                        style={{
+                          padding: "9px 12px",
+                          fontWeight: 500,
+                          color: C.orange || "#f97316",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
                         -{fmt(log.qty)} {log.unit || "nos"}
                       </td>
                       <td style={{ padding: "9px 12px" }}>
                         {log.machineName ? (
-                          <span style={{ padding: "2px 8px", borderRadius: 4, background: (C.blue || "#3b82f6") + "22", color: C.blue || "#3b82f6", fontSize: 11, fontWeight: 600 }}>
+                          <span
+                            style={{
+                              padding: "2px 8px",
+                              borderRadius: 4,
+                              background: (C.blue || "#3b82f6") + "22",
+                              color: C.blue || "#3b82f6",
+                              fontSize: 11,
+                              fontWeight: 600,
+                            }}
+                          >
                             {log.machineName}
                           </span>
                         ) : (
-                          <span style={{ color: C.muted, fontSize: 11 }}>—</span>
+                          <span style={{ color: C.muted, fontSize: 11 }}>
+                            —
+                          </span>
                         )}
                       </td>
-                      <td style={{ padding: "9px 12px", color: C.muted, fontSize: 12 }}>{log.remarks || "—"}</td>
-                      <td style={{ padding: "9px 12px", color: C.muted, fontSize: 12 }}>{log.issuedBy || "—"}</td>
+                      <td
+                        style={{
+                          padding: "9px 12px",
+                          color: C.muted,
+                          fontSize: 12,
+                        }}
+                      >
+                        {log.remarks || "—"}
+                      </td>
+                      <td
+                        style={{
+                          padding: "9px 12px",
+                          color: C.muted,
+                          fontSize: 12,
+                        }}
+                      >
+                        {log.issuedBy || "—"}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -903,16 +1459,40 @@ export default function ConsumableStock({
 
 function StatCard({ value, label, color }) {
   return (
-    <div style={{ padding: "16px 18px", border: `1px solid ${color}44`, borderRadius: 8, background: color + "08" }}>
+    <div
+      style={{
+        padding: "16px 18px",
+        border: `1px solid ${color}44`,
+        borderRadius: 8,
+        background: color + "08",
+      }}
+    >
       <div style={{ fontSize: 22, fontWeight: 900, color }}>{value}</div>
-      <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 4 }}>{label}</div>
+      <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 4 }}>
+        {label}
+      </div>
     </div>
   );
 }
 
 function ActionBtn({ label, color, onClick }) {
   return (
-    <button onClick={onClick} style={{ padding: "9px 14px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.18)", background: "rgba(255,255,255,0.08)",  color: "#fff", fontWeight: 500, fontSize: 12, cursor: "pointer", whiteSpace: "nowrap", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
+    <button
+      onClick={onClick}
+      style={{
+        padding: "9px 14px",
+        borderRadius: 6,
+        border: "1px solid rgba(255,255,255,0.18)",
+        background: "rgba(255,255,255,0.08)",
+        color: "#fff",
+        fontWeight: 500,
+        fontSize: 12,
+        cursor: "pointer",
+        whiteSpace: "nowrap",
+        boxShadow:
+          "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+      }}
+    >
       {label}
     </button>
   );

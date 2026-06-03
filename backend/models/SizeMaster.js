@@ -1,17 +1,20 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const sizeMasterSchema = new mongoose.Schema({
-  category: {
-    type: String,
-    required: true,
-    unique: true
+const sizeMasterSchema = new mongoose.Schema(
+  {
+    category: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    paperTypes: {
+      type: [String],
+      default: [],
+    },
   },
-  paperTypes: {
-    type: [String],
-    default: []
-  }
-}, {
-  timestamps: true
-});
+  {
+    timestamps: true,
+  },
+);
 
-module.exports = mongoose.model('SizeMaster', sizeMasterSchema);
+module.exports = mongoose.model("SizeMaster", sizeMasterSchema);

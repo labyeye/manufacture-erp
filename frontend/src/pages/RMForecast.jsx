@@ -167,7 +167,8 @@ function DraftPOModal({
         style={{
           background: "transparent",
           border: "1px solid rgba(255,255,255,0.1)",
-          boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
+          boxShadow:
+            "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
           borderRadius: 8,
           padding: "12px 16px",
           marginBottom: 16,
@@ -410,7 +411,8 @@ export default function RMForecast({
             style={{
               background: "transparent",
               border: "1px solid rgba(255,255,255,0.1)",
-              boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
+              boxShadow:
+                "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
               borderRadius: 16,
               padding: "14px 18px",
             }}
@@ -438,7 +440,8 @@ export default function RMForecast({
           padding: "12px 18px",
           background: "transparent",
           border: "1px solid rgba(255,255,255,0.1)",
-          boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
+          boxShadow:
+            "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
         }}
       >
         <div
@@ -548,7 +551,8 @@ export default function RMForecast({
         style={{
           background: "transparent",
           border: "1px solid rgba(255,255,255,0.1)",
-          boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
+          boxShadow:
+            "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
         }}
       >
         {filtered.length === 0 ? (
@@ -568,12 +572,14 @@ export default function RMForecast({
             </span>
           </div>
         ) : (
-          <div style={{
-            overflowX: "auto",
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: 12,
-          }}>
+          <div
+            style={{
+              overflowX: "auto",
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 12,
+            }}
+          >
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr>
@@ -848,7 +854,8 @@ export default function RMForecast({
               background: "rgba(129,140,248,0.1)",
               border: "1px solid rgba(129,140,248,0.3)",
               borderRadius: 12,
-              boxShadow: "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
+              boxShadow:
+                "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
             }}
           >
             <div

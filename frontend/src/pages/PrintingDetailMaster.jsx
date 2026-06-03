@@ -12,12 +12,20 @@ import {
   Modal,
   AutocompleteInput,
 } from "../components/ui/BasicComponents";
-import { printingDetailMasterAPI, companyMasterAPI, toolingMasterAPI, itemMasterAPI } from "../api/auth";
+import {
+  printingDetailMasterAPI,
+  companyMasterAPI,
+  toolingMasterAPI,
+  itemMasterAPI,
+} from "../api/auth";
 import * as XLSX from "xlsx";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 
-export default function PrintingDetailMaster({ toast, canExportImport = true }) {
+export default function PrintingDetailMaster({
+  toast,
+  canExportImport = true,
+}) {
   const [printingMaster, setPrintingMaster] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -72,7 +80,7 @@ export default function PrintingDetailMaster({ toast, canExportImport = true }) 
       const tools = Array.isArray(toolData) ? toolData : [];
       setPlateTools(tools.filter((t) => t.toolType === "Plate"));
       setDieTools(tools.filter((t) => t.toolType === "Die"));
-      const items = Array.isArray(itemData) ? itemData : (itemData?.items || []);
+      const items = Array.isArray(itemData) ? itemData : itemData?.items || [];
       setFgItems(items.filter((i) => i.type === "Finished Goods" && i.code));
     } catch {
       // silently fail — tooling/items are optional enrichment
@@ -121,7 +129,8 @@ export default function PrintingDetailMaster({ toast, canExportImport = true }) 
           item.itemName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           item.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           item.itemCategory?.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesCat = catFilter === "All" || item.itemCategory === catFilter;
+        const matchesCat =
+          catFilter === "All" || item.itemCategory === catFilter;
         return matchesSearch && matchesCat;
       })
       .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
@@ -236,7 +245,9 @@ export default function PrintingDetailMaster({ toast, canExportImport = true }) 
       err.itemName = true;
     } else {
       const itemExists = fgItems.some(
-        (i) => (i.name || i.itemName || "").toLowerCase() === entry.itemName.toLowerCase()
+        (i) =>
+          (i.name || i.itemName || "").toLowerCase() ===
+          entry.itemName.toLowerCase(),
       );
       if (!itemExists) {
         err.itemName = true;
@@ -247,17 +258,21 @@ export default function PrintingDetailMaster({ toast, canExportImport = true }) 
       err.companyName = true;
     } else {
       const companyExists = companyMaster.some(
-        (c) => (c.name || "").toLowerCase() === entry.companyName.toLowerCase()
+        (c) => (c.name || "").toLowerCase() === entry.companyName.toLowerCase(),
       );
       if (!companyExists) {
         err.companyName = true;
-        toast(`Company "${entry.companyName}" not found in Company Master`, "error");
+        toast(
+          `Company "${entry.companyName}" not found in Company Master`,
+          "error",
+        );
       }
     }
     setErrors(err);
 
     if (Object.keys(err).length > 0) {
-      if (!err.itemName && !err.companyName) toast("Item Name and Company Name are required", "error");
+      if (!err.itemName && !err.companyName)
+        toast("Item Name and Company Name are required", "error");
       return;
     }
 
@@ -300,7 +315,8 @@ export default function PrintingDetailMaster({ toast, canExportImport = true }) 
 
   const handleBulkDelete = async () => {
     if (selectedIds.size === 0) return;
-    if (!window.confirm(`Delete ${selectedIds.size} selected detail(s)?`)) return;
+    if (!window.confirm(`Delete ${selectedIds.size} selected detail(s)?`))
+      return;
     const ids = Array.from(selectedIds);
     try {
       const results = await Promise.allSettled(
@@ -310,7 +326,11 @@ export default function PrintingDetailMaster({ toast, canExportImport = true }) 
       setSelectedIds(new Set());
       fetchPrintingDetails();
       if (failed === 0) toast(`${ids.length} detail(s) deleted`, "success");
-      else toast(`${ids.length - failed} deleted, ${failed} failed`, failed === ids.length ? "error" : "warning");
+      else
+        toast(
+          `${ids.length - failed} deleted, ${failed} failed`,
+          failed === ids.length ? "error" : "warning",
+        );
     } catch (error) {
       toast("Failed to delete selected details", "error");
     }
@@ -414,7 +434,9 @@ export default function PrintingDetailMaster({ toast, canExportImport = true }) 
         <div style={{ display: "flex", gap: 10 }}>
           <TemplateBtn onClick={downloadTemplate} />
 
-          {canExportImport && <ImportBtn onClick={() => fileInputRef.current?.click()} />}
+          {canExportImport && (
+            <ImportBtn onClick={() => fileInputRef.current?.click()} />
+          )}
           <input
             ref={fileInputRef}
             type="file"
@@ -426,8 +448,23 @@ export default function PrintingDetailMaster({ toast, canExportImport = true }) 
           {canExportImport && <ExportBtn onClick={exportToExcel} />}
 
           <button
-            onClick={() => { setEditingId(null); setEntry(blankEntry); setShowModal(true); }}
-            style={{ background: "rgba(255,255,255,0.08)",  border: "1px solid rgba(255,255,255,0.18)", color: "#fff", padding: "9px 18px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
+            onClick={() => {
+              setEditingId(null);
+              setEntry(blankEntry);
+              setShowModal(true);
+            }}
+            style={{
+              background: "rgba(255,255,255,0.08)",
+              border: "1px solid rgba(255,255,255,0.18)",
+              color: "#fff",
+              padding: "9px 18px",
+              borderRadius: 10,
+              fontWeight: 600,
+              fontSize: 13,
+              cursor: "pointer",
+              boxShadow:
+                "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+            }}
           >
             ➕ Add Spec
           </button>
@@ -435,504 +472,645 @@ export default function PrintingDetailMaster({ toast, canExportImport = true }) 
       </div>
 
       {showModal && (
-        <Modal title={editingId ? "Edit Printing Specification" : "New Printing Specification"} onClose={() => { setShowModal(false); setEditingId(null); setEntry(blankEntry); }}>
-        <Card style={{ marginBottom: 0 }}>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(4, 1fr)",
-              gap: 16,
-            }}
-          >
-            <Field label="FG Product Code">
-              <select
-                value={entry.linkedFGCode}
-                onChange={(e) => {
-                  const code = e.target.value;
-                  const item = fgItems.find((i) => i.code === code);
-                  setField("linkedFGCode", code);
-                  if (item) {
-                    setField("itemName", item.name || item.itemName || code);
-                    if (item.category) setField("itemCategory", item.category);
-                  }
-                }}
-                style={{ border: errors.linkedFGCode ? "1px solid red" : "" }}
-              >
-                <option value="">— Select FG Product —</option>
-                {fgItems.map((i) => (
-                  <option key={i.code} value={i.code}>
-                    {i.code}{i.name ? ` — ${i.name}` : ""}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Item Name *">
-              <input
-                placeholder="Auto-filled from FG code or type manually"
-                value={entry.itemName}
-                onChange={(e) => setField("itemName", e.target.value)}
-                style={{ border: errors.itemName ? "1px solid red" : "" }}
-              />
-            </Field>
-            <Field label="Company Name *">
-              <AutocompleteInput
-                value={entry.companyName}
-                onChange={(name) => {
-                  const co = companyMaster.find((c) => c.name === name);
-                  setField("companyName", name);
-                  if (co?.category) setField("companyCategory", co.category);
-                }}
-                suggestions={companyMaster.map((c) => c.name)}
-                placeholder="Type to search company..."
-                inputStyle={{ border: errors.companyName ? "1px solid red" : "" }}
-              />
-            </Field>
-            <Field label="Company Category">
-              <input
-                placeholder="Auto-filled from company"
-                value={entry.companyCategory}
-                onChange={(e) => setField("companyCategory", e.target.value)}
-              />
-            </Field>
-            <Field label="Item Category">
-              <input
-                placeholder="e.g. Stickers, Labels"
-                value={entry.itemCategory}
-                onChange={(e) => setField("itemCategory", e.target.value)}
-              />
-            </Field>
-            <Field label="Printing">
-              <select
-                value={entry.printing}
-                onChange={(e) => setField("printing", e.target.value)}
-              >
-                <option value="">-- Printing --</option>
-                {["No Printing", "1", "2", "3", "4", "5", "6"].map((v) => (
-                  <option key={v} value={v}>
-                    {v}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Plate Status">
-              <select
-                value={entry.plate}
-                onChange={(e) => setField("plate", e.target.value)}
-              >
-                <option value="">-- Plate Status --</option>
-                {["Plain", "Old", "New"].map((v) => (
-                  <option key={v} value={v}>
-                    {v}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Linked Plate (Tooling)">
-              <select
-                value={entry.linkedPlateCode}
-                onChange={(e) => setField("linkedPlateCode", e.target.value)}
-              >
-                <option value="">— Select Plate —</option>
-                {plateTools.map((p) => (
-                  <option key={p._id} value={p.designCode}>
-                    {p.designCode}{p.linkedSKU ? ` · ${p.linkedSKU}` : ""} [{p.status}]
-                  </option>
-                ))}
-              </select>
-            </Field>
-            {entry.process.includes("Die Cutting") && (
-              <Field label="Linked Die (Tooling)">
+        <Modal
+          title={
+            editingId
+              ? "Edit Printing Specification"
+              : "New Printing Specification"
+          }
+          onClose={() => {
+            setShowModal(false);
+            setEditingId(null);
+            setEntry(blankEntry);
+          }}
+        >
+          <Card style={{ marginBottom: 0 }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(4, 1fr)",
+                gap: 16,
+              }}
+            >
+              <Field label="FG Product Code">
                 <select
-                  value={entry.linkedDieCode}
-                  onChange={(e) => setField("linkedDieCode", e.target.value)}
+                  value={entry.linkedFGCode}
+                  onChange={(e) => {
+                    const code = e.target.value;
+                    const item = fgItems.find((i) => i.code === code);
+                    setField("linkedFGCode", code);
+                    if (item) {
+                      setField("itemName", item.name || item.itemName || code);
+                      if (item.category)
+                        setField("itemCategory", item.category);
+                    }
+                  }}
+                  style={{ border: errors.linkedFGCode ? "1px solid red" : "" }}
                 >
-                  <option value="">— Select Die —</option>
-                  {dieTools.map((d) => (
-                    <option key={d._id} value={d.designCode}>
-                      {d.designCode}{d.linkedSKU ? ` · ${d.linkedSKU}` : ""} [{d.status}]
+                  <option value="">— Select FG Product —</option>
+                  {fgItems.map((i) => (
+                    <option key={i.code} value={i.code}>
+                      {i.code}
+                      {i.name ? ` — ${i.name}` : ""}
                     </option>
                   ))}
                 </select>
               </Field>
-            )}
-            <Field label="Paper Category">
-              <select
-                value={entry.paperCategory}
-                onChange={(e) => setField("paperCategory", e.target.value)}
-              >
-                {["Paper Sheets", "Paper Reel"].map((v) => (
-                  <option key={v} value={v}>
-                    {v}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Paper Type">
-              <input
-                placeholder="Paper type"
-                value={entry.paperType}
-                onChange={(e) => setField("paperType", e.target.value)}
-              />
-            </Field>
-            <Field label="Paper GSM">
-              <input
-                type="number"
-                placeholder="GSM"
-                value={entry.paperGsm}
-                onChange={(e) => setField("paperGsm", e.target.value)}
-              />
-            </Field>
-
-            <Field label="# of Ups">
-              <input
-                type="number"
-                placeholder="Ups"
-                value={entry.noOfUps}
-                onChange={(e) => setField("noOfUps", e.target.value)}
-              />
-            </Field>
-
-            {entry.paperCategory === "Paper Sheets" ? (
-              <>
-                <Field label="Sheet UOM">
+              <Field label="Item Name *">
+                <input
+                  placeholder="Auto-filled from FG code or type manually"
+                  value={entry.itemName}
+                  onChange={(e) => setField("itemName", e.target.value)}
+                  style={{ border: errors.itemName ? "1px solid red" : "" }}
+                />
+              </Field>
+              <Field label="Company Name *">
+                <AutocompleteInput
+                  value={entry.companyName}
+                  onChange={(name) => {
+                    const co = companyMaster.find((c) => c.name === name);
+                    setField("companyName", name);
+                    if (co?.category) setField("companyCategory", co.category);
+                  }}
+                  suggestions={companyMaster.map((c) => c.name)}
+                  placeholder="Type to search company..."
+                  inputStyle={{
+                    border: errors.companyName ? "1px solid red" : "",
+                  }}
+                />
+              </Field>
+              <Field label="Company Category">
+                <input
+                  placeholder="Auto-filled from company"
+                  value={entry.companyCategory}
+                  onChange={(e) => setField("companyCategory", e.target.value)}
+                />
+              </Field>
+              <Field label="Item Category">
+                <input
+                  placeholder="e.g. Stickers, Labels"
+                  value={entry.itemCategory}
+                  onChange={(e) => setField("itemCategory", e.target.value)}
+                />
+              </Field>
+              <Field label="Printing">
+                <select
+                  value={entry.printing}
+                  onChange={(e) => setField("printing", e.target.value)}
+                >
+                  <option value="">-- Printing --</option>
+                  {["No Printing", "1", "2", "3", "4", "5", "6"].map((v) => (
+                    <option key={v} value={v}>
+                      {v}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Plate Status">
+                <select
+                  value={entry.plate}
+                  onChange={(e) => setField("plate", e.target.value)}
+                >
+                  <option value="">-- Plate Status --</option>
+                  {["Plain", "Old", "New"].map((v) => (
+                    <option key={v} value={v}>
+                      {v}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Linked Plate (Tooling)">
+                <select
+                  value={entry.linkedPlateCode}
+                  onChange={(e) => setField("linkedPlateCode", e.target.value)}
+                >
+                  <option value="">— Select Plate —</option>
+                  {plateTools.map((p) => (
+                    <option key={p._id} value={p.designCode}>
+                      {p.designCode}
+                      {p.linkedSKU ? ` · ${p.linkedSKU}` : ""} [{p.status}]
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              {entry.process.includes("Die Cutting") && (
+                <Field label="Linked Die (Tooling)">
                   <select
-                    value={entry.sheetUom}
-                    onChange={(e) => setField("sheetUom", e.target.value)}
+                    value={entry.linkedDieCode}
+                    onChange={(e) => setField("linkedDieCode", e.target.value)}
                   >
-                    {["mm", "inch", "cm"].map((v) => (
-                      <option key={v} value={v}>
-                        {v}
+                    <option value="">— Select Die —</option>
+                    {dieTools.map((d) => (
+                      <option key={d._id} value={d.designCode}>
+                        {d.designCode}
+                        {d.linkedSKU ? ` · ${d.linkedSKU}` : ""} [{d.status}]
                       </option>
                     ))}
                   </select>
                 </Field>
-                <Field label="Sheet Width">
-                  <input
-                    type="number"
-                    placeholder="Width"
-                    value={entry.sheetW}
-                    onChange={(e) => setField("sheetW", e.target.value)}
-                  />
-                </Field>
-                <Field label="Sheet Length">
-                  <input
-                    type="number"
-                    placeholder="Length"
-                    value={entry.sheetL}
-                    onChange={(e) => setField("sheetL", e.target.value)}
-                  />
-                </Field>
-              </>
-            ) : (
-              <>
-                <Field label="Reel Width (mm)">
-                  <input
-                    type="number"
-                    placeholder="Width"
-                    value={entry.reelWidthMm}
-                    onChange={(e) => setField("reelWidthMm", e.target.value)}
-                  />
-                </Field>
-                <Field label="Cutting Length (mm)">
-                  <input
-                    type="number"
-                    placeholder="Length"
-                    value={entry.cuttingLengthMm}
-                    onChange={(e) =>
-                      setField("cuttingLengthMm", e.target.value)
-                    }
-                  />
-                </Field>
-              </>
-            )}
+              )}
+              <Field label="Paper Category">
+                <select
+                  value={entry.paperCategory}
+                  onChange={(e) => setField("paperCategory", e.target.value)}
+                >
+                  {["Paper Sheets", "Paper Reel"].map((v) => (
+                    <option key={v} value={v}>
+                      {v}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Paper Type">
+                <input
+                  placeholder="Paper type"
+                  value={entry.paperType}
+                  onChange={(e) => setField("paperType", e.target.value)}
+                />
+              </Field>
+              <Field label="Paper GSM">
+                <input
+                  type="number"
+                  placeholder="GSM"
+                  value={entry.paperGsm}
+                  onChange={(e) => setField("paperGsm", e.target.value)}
+                />
+              </Field>
 
-            <Field label="Processes" span={4}>
-              <div
-                style={{
-                  display: "flex",
-                  gap: 12,
-                  flexWrap: "wrap",
-                  marginTop: 8,
-                }}
-              >
-                {[
-                  "Printing",
-                  "Varnish",
-                  "Lamination",
-                  "Die Cutting",
-                  "Formation",
-                  "Manual Formation",
-                ].map((proc) => (
-                  <label
-                    key={proc}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      cursor: "pointer",
-                      background: entry.process.includes(proc)
-                        ? "#FF7F1122"
-                        : "#1e293b",
-                      padding: "6px 12px",
-                      borderRadius: 20,
-                      border: `1px solid ${entry.process.includes(proc) ? "#FF7F11" : "#334155"}`,
-                      fontSize: 12,
-                    }}
-                  >
+              <Field label="# of Ups">
+                <input
+                  type="number"
+                  placeholder="Ups"
+                  value={entry.noOfUps}
+                  onChange={(e) => setField("noOfUps", e.target.value)}
+                />
+              </Field>
+
+              {entry.paperCategory === "Paper Sheets" ? (
+                <>
+                  <Field label="Sheet UOM">
+                    <select
+                      value={entry.sheetUom}
+                      onChange={(e) => setField("sheetUom", e.target.value)}
+                    >
+                      {["mm", "inch", "cm"].map((v) => (
+                        <option key={v} value={v}>
+                          {v}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label="Sheet Width">
                     <input
-                      type="checkbox"
-                      hidden
-                      checked={entry.process.includes(proc)}
-                      onChange={() => toggleProcess(proc)}
+                      type="number"
+                      placeholder="Width"
+                      value={entry.sheetW}
+                      onChange={(e) => setField("sheetW", e.target.value)}
                     />
-                    <span
+                  </Field>
+                  <Field label="Sheet Length">
+                    <input
+                      type="number"
+                      placeholder="Length"
+                      value={entry.sheetL}
+                      onChange={(e) => setField("sheetL", e.target.value)}
+                    />
+                  </Field>
+                </>
+              ) : (
+                <>
+                  <Field label="Reel Width (mm)">
+                    <input
+                      type="number"
+                      placeholder="Width"
+                      value={entry.reelWidthMm}
+                      onChange={(e) => setField("reelWidthMm", e.target.value)}
+                    />
+                  </Field>
+                  <Field label="Cutting Length (mm)">
+                    <input
+                      type="number"
+                      placeholder="Length"
+                      value={entry.cuttingLengthMm}
+                      onChange={(e) =>
+                        setField("cuttingLengthMm", e.target.value)
+                      }
+                    />
+                  </Field>
+                </>
+              )}
+
+              <Field label="Processes" span={4}>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 12,
+                    flexWrap: "wrap",
+                    marginTop: 8,
+                  }}
+                >
+                  {[
+                    "Printing",
+                    "Varnish",
+                    "Lamination",
+                    "Die Cutting",
+                    "Formation",
+                    "Manual Formation",
+                  ].map((proc) => (
+                    <label
+                      key={proc}
                       style={{
-                        color: entry.process.includes(proc)
-                          ? "#FF7F11"
-                          : "#94a3b8",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        cursor: "pointer",
+                        background: entry.process.includes(proc)
+                          ? "#FF7F1122"
+                          : "#1e293b",
+                        padding: "6px 12px",
+                        borderRadius: 20,
+                        border: `1px solid ${entry.process.includes(proc) ? "#FF7F11" : "#334155"}`,
+                        fontSize: 12,
                       }}
                     >
-                      {entry.process.includes(proc) ? "✓" : "+"} {proc}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </Field>
-          </div>
+                      <input
+                        type="checkbox"
+                        hidden
+                        checked={entry.process.includes(proc)}
+                        onChange={() => toggleProcess(proc)}
+                      />
+                      <span
+                        style={{
+                          color: entry.process.includes(proc)
+                            ? "#FF7F11"
+                            : "#94a3b8",
+                        }}
+                      >
+                        {entry.process.includes(proc) ? "✓" : "+"} {proc}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </Field>
+            </div>
 
-          <div style={{ marginTop: 24, display: "flex", gap: 12 }}>
-            <SubmitBtn
-              label={editingId ? "Update Specification" : "Save Specification"}
-              color="#FF7F11"
-              onClick={submit}
-            />
-            <button
-              onClick={() => { setShowModal(false); setEditingId(null); setEntry(blankEntry); }}
-              style={{
-                padding: "10px 24px",
-                borderRadius: 8,
-                background: "transparent",
-                border: `1px solid ${C.border}`,
-                color: C.muted,
-                fontWeight: 500,
-                fontSize: 13,
-              }}
-            >
-              Cancel
-            </button>
-          </div>
-        </Card>
+            <div style={{ marginTop: 24, display: "flex", gap: 12 }}>
+              <SubmitBtn
+                label={
+                  editingId ? "Update Specification" : "Save Specification"
+                }
+                color="#FF7F11"
+                onClick={submit}
+              />
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  setEditingId(null);
+                  setEntry(blankEntry);
+                }}
+                style={{
+                  padding: "10px 24px",
+                  borderRadius: 8,
+                  background: "transparent",
+                  border: `1px solid ${C.border}`,
+                  color: C.muted,
+                  fontWeight: 500,
+                  fontSize: 13,
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </Card>
         </Modal>
       )}
 
       {(() => {
         const filteredIds = filteredData.map((d) => d._id);
-        const allSelected = filteredIds.length > 0 && filteredIds.every((id) => selectedIds.has(id));
+        const allSelected =
+          filteredIds.length > 0 &&
+          filteredIds.every((id) => selectedIds.has(id));
         const someSelected = filteredIds.some((id) => selectedIds.has(id));
         return (
-        <>
-        {selectedIds.size > 0 && (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", marginBottom: 10, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8 }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: "#fecaca" }}>{selectedIds.size} selected</span>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => setSelectedIds(new Set())} style={{ padding: "5px 12px", borderRadius: 5, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.06)", color: "#fff", fontSize: 12, fontWeight: 500, cursor: "pointer" }}>Clear</button>
-              <button onClick={handleBulkDelete} style={{ padding: "5px 12px", borderRadius: 5, border: "1px solid rgba(239,68,68,0.4)", background: "rgba(239,68,68,0.15)", color: "#ef4444", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Delete Selected</button>
-            </div>
-          </div>
-        )}
-      <Card style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-            <thead>
-              <tr style={{ background: "transparent", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-                <th style={{ ...TABLE_HEADER_STYLE, width: 36 }}>
-                  <input
-                    type="checkbox"
-                    checked={allSelected}
-                    ref={(el) => { if (el) el.indeterminate = !allSelected && someSelected; }}
-                    onChange={() => toggleSelectAll(filteredIds, allSelected)}
-                    style={{ cursor: "pointer" }}
-                  />
-                </th>
-                <th style={TABLE_HEADER_STYLE}>Item Name / Company</th>
-                <th style={TABLE_HEADER_STYLE}>Item Cat.</th>
-                <th style={TABLE_HEADER_STYLE}>Company Cat.</th>
-                <th style={TABLE_HEADER_STYLE}>Printing Plate</th>
-                <th style={TABLE_HEADER_STYLE}>Process</th>
-                <th style={TABLE_HEADER_STYLE}>Paper Type</th>
-                <th style={TABLE_HEADER_STYLE}>GSM</th>
-                <th style={TABLE_HEADER_STYLE}>Ups / Reel</th>
-                <th style={TABLE_HEADER_STYLE}>Size / Width</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredData.length === 0 && (
-                <tr>
-                  <td
-                    colSpan="10"
-                    style={{ padding: 48, textAlign: "center", color: C.muted }}
+          <>
+            {selectedIds.size > 0 && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "10px 14px",
+                  marginBottom: 10,
+                  background: "rgba(239,68,68,0.08)",
+                  border: "1px solid rgba(239,68,68,0.3)",
+                  borderRadius: 8,
+                }}
+              >
+                <span
+                  style={{ fontSize: 13, fontWeight: 600, color: "#fecaca" }}
+                >
+                  {selectedIds.size} selected
+                </span>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button
+                    onClick={() => setSelectedIds(new Set())}
+                    style={{
+                      padding: "5px 12px",
+                      borderRadius: 5,
+                      border: "1px solid rgba(255,255,255,0.15)",
+                      background: "rgba(255,255,255,0.06)",
+                      color: "#fff",
+                      fontSize: 12,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                    }}
                   >
-                    No records found.
-                  </td>
-                </tr>
-              )}
-              {filteredData.map((item, i) => (
-                <tr key={item._id} className="row-hover" style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", background: selectedIds.has(item._id) ? "rgba(96,165,250,0.08)" : (i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)") }}>
-                  <td style={{ ...CELL_STYLE, width: 36 }}>
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.has(item._id)}
-                      onChange={() => toggleSelect(item._id)}
-                      style={{ cursor: "pointer" }}
-                    />
-                  </td>
-                  <td style={CELL_STYLE}>
-                    <div style={{ fontWeight: 800, fontSize: 14 }}>
-                      {item.itemName}
-                    </div>
-                    <div
+                    Clear
+                  </button>
+                  <button
+                    onClick={handleBulkDelete}
+                    style={{
+                      padding: "5px 12px",
+                      borderRadius: 5,
+                      border: "1px solid rgba(239,68,68,0.4)",
+                      background: "rgba(239,68,68,0.15)",
+                      color: "#ef4444",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Delete Selected
+                  </button>
+                </div>
+              </div>
+            )}
+            <Card style={{ padding: 0, overflow: "hidden" }}>
+              <div
+                style={{
+                  background: "transparent",
+                  border: "1px solid rgba(255,255,255,0.07)",
+                  borderRadius: 12,
+                  overflow: "hidden",
+                }}
+              >
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    fontSize: 13,
+                  }}
+                >
+                  <thead>
+                    <tr
                       style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                        marginTop: 4,
+                        background: "transparent",
+                        borderBottom: "1px solid rgba(255,255,255,0.08)",
                       }}
                     >
-                      <span style={{ fontSize: 11, color: "#94a3b8" }}>
-                        {item.companyName}
-                      </span>
-                    </div>
-                    <div style={{ display: "flex", gap: 6, marginTop: 12 }}>
-                      <button
-                        onClick={() => handleEdit(item)}
-                        style={{
-                          background: "transparent",
-                          color: "#8082ff",
-                          border: "1px solid #8082ff98",
-                          borderRadius: 6,
-                          padding: "6px 12px",
-                          fontSize: 11,
-                          fontWeight: 500,
-                          cursor: "pointer",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 6,
-                        }}
-                      >
-                        <i className="fa-solid fa-pen-to-square" /> Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(item._id)}
-                        style={{
-                          background: "transparent",
-                          color: "#8082ff",
-                          border: "1px solid #8082ff98",
-                          borderRadius: 6,
-                          padding: "6px 12px",
-                          fontSize: 11,
-                          fontWeight: 500,
-                          cursor: "pointer",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 6,
-                        }}
-                      >
-                        <i className="fa-solid fa-trash" /> Delete
-                      </button>
-                    </div>
-                  </td>
-                  <td style={CELL_STYLE}>
-                    {item.itemCategory ? (
-                      <Badge text={item.itemCategory} color="#FF7F11" />
-                    ) : (
-                      "—"
-                    )}
-                  </td>
-                  <td style={CELL_STYLE}>
-                    {item.companyCategory ? (
-                      <Badge text={item.companyCategory} color="#3b82f6" />
-                    ) : (
-                      "—"
-                    )}
-                  </td>
-                  <td style={CELL_STYLE}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      {item.plate && <Badge text={item.plate} color="#3b82f6" />}
-                      <span style={{ fontWeight: 700 }}>{item.printing || "0"}</span>
-                    </div>
-                    {item.linkedPlateCode && (
-                      <div style={{ marginTop: 4, fontSize: 10, color: "#a78bfa", fontWeight: 700 }}>
-                        🪨 {item.linkedPlateCode}
-                      </div>
-                    )}
-                    {item.linkedDieCode && (
-                      <div style={{ marginTop: 2, fontSize: 10, color: "#fb923c", fontWeight: 700 }}>
-                        ✂️ {item.linkedDieCode}
-                      </div>
-                    )}
-                    {item.linkedFGCode && (
-                      <div style={{ marginTop: 2, fontSize: 10, color: "#ff7800", fontWeight: 700 }}>
-                        📦 {item.linkedFGCode}
-                      </div>
-                    )}
-                  </td>
-                  <td style={CELL_STYLE}>
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: 4,
-                        flexWrap: "wrap",
-                        maxWidth: 200,
-                      }}
-                    >
-                      {(item.process || []).map((p) => (
-                        <span
-                          key={p}
+                      <th style={{ ...TABLE_HEADER_STYLE, width: 36 }}>
+                        <input
+                          type="checkbox"
+                          checked={allSelected}
+                          ref={(el) => {
+                            if (el)
+                              el.indeterminate = !allSelected && someSelected;
+                          }}
+                          onChange={() =>
+                            toggleSelectAll(filteredIds, allSelected)
+                          }
+                          style={{ cursor: "pointer" }}
+                        />
+                      </th>
+                      <th style={TABLE_HEADER_STYLE}>Item Name / Company</th>
+                      <th style={TABLE_HEADER_STYLE}>Item Cat.</th>
+                      <th style={TABLE_HEADER_STYLE}>Company Cat.</th>
+                      <th style={TABLE_HEADER_STYLE}>Printing Plate</th>
+                      <th style={TABLE_HEADER_STYLE}>Process</th>
+                      <th style={TABLE_HEADER_STYLE}>Paper Type</th>
+                      <th style={TABLE_HEADER_STYLE}>GSM</th>
+                      <th style={TABLE_HEADER_STYLE}>Ups / Reel</th>
+                      <th style={TABLE_HEADER_STYLE}>Size / Width</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredData.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan="10"
                           style={{
-                            fontSize: 9,
-                            padding: "2px 6px",
-                            borderRadius: 4,
-                            background: "#FF7F1115",
-                            color: "#FF7F11",
-                            fontWeight: 800,
-                            border: "1px solid #FF7F1133",
+                            padding: 48,
+                            textAlign: "center",
+                            color: C.muted,
                           }}
                         >
-                          {p.toUpperCase()}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td style={CELL_STYLE}>{item.paperType || "—"}</td>
-                  <td style={CELL_STYLE}>
-                    <span style={{ color: "#3b82f6", fontWeight: 700 }}>
-                      {item.paperGsm}g
-                    </span>
-                  </td>
-                  <td style={CELL_STYLE}>
-                    <div style={{ fontWeight: 700 }}>
-                      {item.paperCategory === "Paper Sheets"
-                        ? item.noOfUps || "—"
-                        : "—"}
-                    </div>
-                  </td>
-                  <td style={CELL_STYLE}>
-                    <span style={{ color: "#22c55e", fontWeight: 700 }}>
-                      {item.paperCategory === "Paper Reel"
-                        ? `${item.reelWidthMm || "—"}mm`
-                        : item.sheetW && item.sheetL
-                          ? `${item.sheetW}x${item.sheetL}${item.sheetUom}`
-                          : "—"}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-      </>
+                          No records found.
+                        </td>
+                      </tr>
+                    )}
+                    {filteredData.map((item, i) => (
+                      <tr
+                        key={item._id}
+                        className="row-hover"
+                        style={{
+                          borderBottom: "1px solid rgba(255,255,255,0.04)",
+                          background: selectedIds.has(item._id)
+                            ? "rgba(96,165,250,0.08)"
+                            : i % 2 === 0
+                              ? "transparent"
+                              : "rgba(255,255,255,0.01)",
+                        }}
+                      >
+                        <td style={{ ...CELL_STYLE, width: 36 }}>
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(item._id)}
+                            onChange={() => toggleSelect(item._id)}
+                            style={{ cursor: "pointer" }}
+                          />
+                        </td>
+                        <td style={CELL_STYLE}>
+                          <div style={{ fontWeight: 800, fontSize: 14 }}>
+                            {item.itemName}
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 6,
+                              marginTop: 4,
+                            }}
+                          >
+                            <span style={{ fontSize: 11, color: "#94a3b8" }}>
+                              {item.companyName}
+                            </span>
+                          </div>
+                          <div
+                            style={{ display: "flex", gap: 6, marginTop: 12 }}
+                          >
+                            <button
+                              onClick={() => handleEdit(item)}
+                              style={{
+                                background: "transparent",
+                                color: "#8082ff",
+                                border: "1px solid #8082ff98",
+                                borderRadius: 6,
+                                padding: "6px 12px",
+                                fontSize: 11,
+                                fontWeight: 500,
+                                cursor: "pointer",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 6,
+                              }}
+                            >
+                              <i className="fa-solid fa-pen-to-square" /> Edit
+                            </button>
+                            <button
+                              onClick={() => handleDelete(item._id)}
+                              style={{
+                                background: "transparent",
+                                color: "#8082ff",
+                                border: "1px solid #8082ff98",
+                                borderRadius: 6,
+                                padding: "6px 12px",
+                                fontSize: 11,
+                                fontWeight: 500,
+                                cursor: "pointer",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 6,
+                              }}
+                            >
+                              <i className="fa-solid fa-trash" /> Delete
+                            </button>
+                          </div>
+                        </td>
+                        <td style={CELL_STYLE}>
+                          {item.itemCategory ? (
+                            <Badge text={item.itemCategory} color="#FF7F11" />
+                          ) : (
+                            "—"
+                          )}
+                        </td>
+                        <td style={CELL_STYLE}>
+                          {item.companyCategory ? (
+                            <Badge
+                              text={item.companyCategory}
+                              color="#3b82f6"
+                            />
+                          ) : (
+                            "—"
+                          )}
+                        </td>
+                        <td style={CELL_STYLE}>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 6,
+                            }}
+                          >
+                            {item.plate && (
+                              <Badge text={item.plate} color="#3b82f6" />
+                            )}
+                            <span style={{ fontWeight: 700 }}>
+                              {item.printing || "0"}
+                            </span>
+                          </div>
+                          {item.linkedPlateCode && (
+                            <div
+                              style={{
+                                marginTop: 4,
+                                fontSize: 10,
+                                color: "#a78bfa",
+                                fontWeight: 700,
+                              }}
+                            >
+                              🪨 {item.linkedPlateCode}
+                            </div>
+                          )}
+                          {item.linkedDieCode && (
+                            <div
+                              style={{
+                                marginTop: 2,
+                                fontSize: 10,
+                                color: "#fb923c",
+                                fontWeight: 700,
+                              }}
+                            >
+                              ✂️ {item.linkedDieCode}
+                            </div>
+                          )}
+                          {item.linkedFGCode && (
+                            <div
+                              style={{
+                                marginTop: 2,
+                                fontSize: 10,
+                                color: "#ff7800",
+                                fontWeight: 700,
+                              }}
+                            >
+                              📦 {item.linkedFGCode}
+                            </div>
+                          )}
+                        </td>
+                        <td style={CELL_STYLE}>
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: 4,
+                              flexWrap: "wrap",
+                              maxWidth: 200,
+                            }}
+                          >
+                            {(item.process || []).map((p) => (
+                              <span
+                                key={p}
+                                style={{
+                                  fontSize: 9,
+                                  padding: "2px 6px",
+                                  borderRadius: 4,
+                                  background: "#FF7F1115",
+                                  color: "#FF7F11",
+                                  fontWeight: 800,
+                                  border: "1px solid #FF7F1133",
+                                }}
+                              >
+                                {p.toUpperCase()}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                        <td style={CELL_STYLE}>{item.paperType || "—"}</td>
+                        <td style={CELL_STYLE}>
+                          <span style={{ color: "#3b82f6", fontWeight: 700 }}>
+                            {item.paperGsm}g
+                          </span>
+                        </td>
+                        <td style={CELL_STYLE}>
+                          <div style={{ fontWeight: 700 }}>
+                            {item.paperCategory === "Paper Sheets"
+                              ? item.noOfUps || "—"
+                              : "—"}
+                          </div>
+                        </td>
+                        <td style={CELL_STYLE}>
+                          <span style={{ color: "#22c55e", fontWeight: 700 }}>
+                            {item.paperCategory === "Paper Reel"
+                              ? `${item.reelWidthMm || "—"}mm`
+                              : item.sheetW && item.sheetL
+                                ? `${item.sheetW}x${item.sheetL}${item.sheetUom}`
+                                : "—"}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          </>
         );
       })()}
 

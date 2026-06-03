@@ -521,7 +521,8 @@ export default function UserManagement({
                 Allow Edit Stock
               </div>
               <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>
-                Manually adjust stock quantities in RM Stock, FG Stock &amp; Consumable Stock
+                Manually adjust stock quantities in RM Stock, FG Stock &amp;
+                Consumable Stock
               </div>
             </div>
             <div
@@ -576,7 +577,10 @@ export default function UserManagement({
                   letterSpacing: "0.5px",
                 }}
               >
-                PAGE ACCESS — View:{form.allowedTabs?.length || 0} Create:{form.createTabs?.length || 0} Edit:{form.editableTabs?.length || 0} Delete:{form.deleteTabs?.length || 0}
+                PAGE ACCESS — View:{form.allowedTabs?.length || 0} Create:
+                {form.createTabs?.length || 0} Edit:
+                {form.editableTabs?.length || 0} Delete:
+                {form.deleteTabs?.length || 0}
               </span>
               <button
                 onClick={handleAllAccess}
@@ -625,7 +629,13 @@ export default function UserManagement({
 
                 const CrudCheck = ({ active, color, label, type }) => (
                   <div
-                    style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, cursor: "pointer" }}
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: 3,
+                      cursor: "pointer",
+                    }}
                     onClick={() => handleModuleToggle(tab.id, type)}
                     title={`Toggle ${label}`}
                   >
@@ -635,16 +645,32 @@ export default function UserManagement({
                         height: 18,
                         border: `2px solid ${active ? color : "#444"}`,
                         borderRadius: 4,
-                        background: active ? color + "22" : "rgba(255,255,255,0.04)",
+                        background: active
+                          ? color + "22"
+                          : "rgba(255,255,255,0.04)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         transition: "all 0.15s",
                       }}
                     >
-                      {active && <i className="fa-solid fa-check" style={{ fontSize: 9, color }} />}
+                      {active && (
+                        <i
+                          className="fa-solid fa-check"
+                          style={{ fontSize: 9, color }}
+                        />
+                      )}
                     </div>
-                    <span style={{ fontSize: 8, color: active ? color : "#555", fontWeight: 600, letterSpacing: "0.03em" }}>{label}</span>
+                    <span
+                      style={{
+                        fontSize: 8,
+                        color: active ? color : "#555",
+                        fontWeight: 600,
+                        letterSpacing: "0.03em",
+                      }}
+                    >
+                      {label}
+                    </span>
                   </div>
                 );
 
@@ -656,24 +682,78 @@ export default function UserManagement({
                       alignItems: "center",
                       justifyContent: "space-between",
                       padding: "9px 12px",
-                      background: hasView ? "rgba(255,255,255,0.03)" : "transparent",
+                      background: hasView
+                        ? "rgba(255,255,255,0.03)"
+                        : "transparent",
                       borderRadius: 8,
                       border: `1px solid ${hasView ? "rgba(255,255,255,0.13)" : "rgba(255,255,255,0.07)"}`,
                       transition: "all 0.15s",
                     }}
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: 9, minWidth: 0 }}>
-                      <i className={tab.icon} style={{ fontSize: 13, color: hasView ? "#818cf8" : "#444", width: 16, textAlign: "center", flexShrink: 0 }} />
-                      <span style={{ fontSize: 12, color: hasView ? "#e0e0e0" : "#555", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 9,
+                        minWidth: 0,
+                      }}
+                    >
+                      <i
+                        className={tab.icon}
+                        style={{
+                          fontSize: 13,
+                          color: hasView ? "#818cf8" : "#444",
+                          width: 16,
+                          textAlign: "center",
+                          flexShrink: 0,
+                        }}
+                      />
+                      <span
+                        style={{
+                          fontSize: 12,
+                          color: hasView ? "#e0e0e0" : "#555",
+                          fontWeight: 600,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
                         {tab.label}
                       </span>
                     </div>
 
-                    <div style={{ display: "flex", gap: 12, flexShrink: 0, marginLeft: 8 }}>
-                      <CrudCheck active={hasView}   color="#4CAF50" label="VIEW"   type="view"   />
-                      <CrudCheck active={hasCreate} color="#2196F3" label="CREATE" type="create" />
-                      <CrudCheck active={hasEdit}   color="#FF9800" label="EDIT"   type="edit"   />
-                      <CrudCheck active={hasDelete} color="#f44336" label="DELETE" type="delete" />
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 12,
+                        flexShrink: 0,
+                        marginLeft: 8,
+                      }}
+                    >
+                      <CrudCheck
+                        active={hasView}
+                        color="#4CAF50"
+                        label="VIEW"
+                        type="view"
+                      />
+                      <CrudCheck
+                        active={hasCreate}
+                        color="#2196F3"
+                        label="CREATE"
+                        type="create"
+                      />
+                      <CrudCheck
+                        active={hasEdit}
+                        color="#FF9800"
+                        label="EDIT"
+                        type="edit"
+                      />
+                      <CrudCheck
+                        active={hasDelete}
+                        color="#f44336"
+                        label="DELETE"
+                        type="delete"
+                      />
                     </div>
                   </div>
                 );
@@ -817,13 +897,27 @@ export default function UserManagement({
                   <span style={{ fontSize: 12, color: "#555" }}>
                     {modCount} pages
                   </span>
-                  {(user.createTabs?.length > 0 || user.deleteTabs?.length > 0) && (
-                    <span style={{ fontSize: 11, color: "#555", background: "rgba(255,255,255,0.05)", borderRadius: 20, padding: "2px 8px" }}>
+                  {(user.createTabs?.length > 0 ||
+                    user.deleteTabs?.length > 0) && (
+                    <span
+                      style={{
+                        fontSize: 11,
+                        color: "#555",
+                        background: "rgba(255,255,255,0.05)",
+                        borderRadius: 20,
+                        padding: "2px 8px",
+                      }}
+                    >
                       {[
-                        user.createTabs?.length > 0 && `C:${user.createTabs.length}`,
-                        user.editableTabs?.length > 0 && `E:${user.editableTabs.length}`,
-                        user.deleteTabs?.length > 0 && `D:${user.deleteTabs.length}`,
-                      ].filter(Boolean).join(" ")}
+                        user.createTabs?.length > 0 &&
+                          `C:${user.createTabs.length}`,
+                        user.editableTabs?.length > 0 &&
+                          `E:${user.editableTabs.length}`,
+                        user.deleteTabs?.length > 0 &&
+                          `D:${user.deleteTabs.length}`,
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
                     </span>
                   )}
                   <span
@@ -857,9 +951,7 @@ export default function UserManagement({
                           ? "#2196F311"
                           : "#f4433611",
                       color:
-                        user.allowEditStock !== false
-                          ? "#2196F3"
-                          : "#f44336",
+                        user.allowEditStock !== false ? "#2196F3" : "#f44336",
                     }}
                   >
                     {user.allowEditStock !== false

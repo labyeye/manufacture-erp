@@ -1,42 +1,46 @@
-import React, { useState, useEffect } from 'react';
-import { C } from '../constants/colors';
-import { Card, SectionTitle, Field, SubmitBtn } from '../components/ui/BasicComponents';
-import { sizeMasterAPI } from '../api/auth';
+import React, { useState, useEffect } from "react";
+import { C } from "../constants/colors";
+import {
+  Card,
+  SectionTitle,
+  Field,
+  SubmitBtn,
+} from "../components/ui/BasicComponents";
+import { sizeMasterAPI } from "../api/auth";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 
 const SIZE_CATEGORIES = [
-  'Paper Cup',
-  'Bowl',
-  'Tray',
-  'Plate',
-  'Container',
-  'Cake Box',
-  'Food Box',
-  'Printed Box',
-  'Insert',
-  'Flat Item',
-  'Label',
-  'Paper Bag with Handle',
-  'Paper Bag',
-  'Gusseted Bag',
-  'Wrapping Paper',
-  'Tissue Paper',
-  'Kraft Paper Wrap',
-  'Paper Reel',
-  'Paper Sheets',
+  "Paper Cup",
+  "Bowl",
+  "Tray",
+  "Plate",
+  "Container",
+  "Cake Box",
+  "Food Box",
+  "Printed Box",
+  "Insert",
+  "Flat Item",
+  "Label",
+  "Paper Bag with Handle",
+  "Paper Bag",
+  "Gusseted Bag",
+  "Wrapping Paper",
+  "Tissue Paper",
+  "Kraft Paper Wrap",
+  "Paper Reel",
+  "Paper Sheets",
 ];
 
 export default function SizeMaster({ toast }) {
   const [sizeMaster, setSizeMaster] = useState({});
   const [loading, setLoading] = useState(false);
-  const [tab, setTab] = useState('list');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [newSize, setNewSize] = useState('');
+  const [tab, setTab] = useState("list");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [newSize, setNewSize] = useState("");
   const [editingId, setEditingId] = useState(null);
-  const [editingValue, setEditingValue] = useState('');
+  const [editingValue, setEditingValue] = useState("");
 
-  
   useEffect(() => {
     fetchSizes();
   }, []);
@@ -46,30 +50,32 @@ export default function SizeMaster({ toast }) {
       const res = await sizeMasterAPI.getAll();
       setSizeMaster(res.sizes || {});
     } catch (error) {
-      toast?.('Failed to load sizes', 'error');
+      toast?.("Failed to load sizes", "error");
     }
   };
 
-  const currentSizes = selectedCategory ? (sizeMaster[selectedCategory] || []) : [];
+  const currentSizes = selectedCategory
+    ? sizeMaster[selectedCategory] || []
+    : [];
 
   const handleAddSize = async () => {
     if (!selectedCategory) {
-      toast('Please select a category', 'error');
+      toast("Please select a category", "error");
       return;
     }
     if (!newSize.trim()) {
-      toast('Please enter a size', 'error');
+      toast("Please enter a size", "error");
       return;
     }
 
     setLoading(true);
     try {
       await sizeMasterAPI.addSize(selectedCategory, newSize.trim());
-      toast(`Size "${newSize}" added to ${selectedCategory}`, 'success');
-      setNewSize('');
+      toast(`Size "${newSize}" added to ${selectedCategory}`, "success");
+      setNewSize("");
       fetchSizes();
     } catch (error) {
-      toast(error.response?.data?.error || 'Failed to add size', 'error');
+      toast(error.response?.data?.error || "Failed to add size", "error");
     } finally {
       setLoading(false);
     }
@@ -78,27 +84,31 @@ export default function SizeMaster({ toast }) {
   const handleDeleteSize = async (size) => {
     try {
       await sizeMasterAPI.deleteSize(selectedCategory, size);
-      toast('Size deleted', 'success');
+      toast("Size deleted", "success");
       fetchSizes();
     } catch (error) {
-      toast(error.response?.data?.error || 'Failed to delete size', 'error');
+      toast(error.response?.data?.error || "Failed to delete size", "error");
     }
   };
 
   const handleEditSize = async (oldSize, newValue) => {
     if (!newValue.trim()) {
-      toast('Size cannot be empty', 'error');
+      toast("Size cannot be empty", "error");
       return;
     }
 
     try {
-      await sizeMasterAPI.updateSize(selectedCategory, oldSize, newValue.trim());
-      toast('Size updated', 'success');
+      await sizeMasterAPI.updateSize(
+        selectedCategory,
+        oldSize,
+        newValue.trim(),
+      );
+      toast("Size updated", "success");
       setEditingId(null);
-      setEditingValue('');
+      setEditingValue("");
       fetchSizes();
     } catch (error) {
-      toast(error.response?.data?.error || 'Failed to update size', 'error');
+      toast(error.response?.data?.error || "Failed to update size", "error");
     }
   };
 
@@ -112,47 +122,47 @@ export default function SizeMaster({ toast }) {
 
       <div
         style={{
-          display: 'flex',
+          display: "flex",
           gap: 8,
           marginBottom: 20,
           borderBottom: `1px solid ${C.border}`,
         }}
       >
         <button
-          onClick={() => setTab('list')}
+          onClick={() => setTab("list")}
           style={{
-            padding: '9px 20px',
-            borderRadius: '6px 6px 0 0',
+            padding: "9px 20px",
+            borderRadius: "6px 6px 0 0",
             fontWeight: 500,
             fontSize: 13,
-            border: `1px solid ${tab === 'list' ? C.blue : C.border}`,
-            background: tab === 'list' ? C.card : 'transparent',
-            color: tab === 'list' ? C.blue : C.muted,
+            border: `1px solid ${tab === "list" ? C.blue : C.border}`,
+            background: tab === "list" ? C.card : "transparent",
+            color: tab === "list" ? C.blue : C.muted,
             marginBottom: -1,
-            cursor: 'pointer',
+            cursor: "pointer",
           }}
         >
           📋 View Sizes
         </button>
         <button
-          onClick={() => setTab('new')}
+          onClick={() => setTab("new")}
           style={{
-            padding: '9px 20px',
-            borderRadius: '6px 6px 0 0',
+            padding: "9px 20px",
+            borderRadius: "6px 6px 0 0",
             fontWeight: 500,
             fontSize: 13,
-            border: `1px solid ${tab === 'new' ? C.blue : C.border}`,
-            background: tab === 'new' ? C.card : 'transparent',
-            color: tab === 'new' ? C.blue : C.muted,
+            border: `1px solid ${tab === "new" ? C.blue : C.border}`,
+            background: tab === "new" ? C.card : "transparent",
+            color: tab === "new" ? C.blue : C.muted,
             marginBottom: -1,
-            cursor: 'pointer',
+            cursor: "pointer",
           }}
         >
           ➕ Add Size
         </button>
       </div>
 
-      {tab === 'list' && (
+      {tab === "list" && (
         <Card>
           <div style={{ marginBottom: 16 }}>
             <label style={{ fontSize: 13, fontWeight: 600, color: C.muted }}>
@@ -162,9 +172,9 @@ export default function SizeMaster({ toast }) {
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
               style={{
-                width: '100%',
+                width: "100%",
                 marginTop: 8,
-                padding: '9px 12px',
+                padding: "9px 12px",
                 border: `1px solid ${C.border}`,
                 borderRadius: 6,
                 fontSize: 13,
@@ -183,7 +193,7 @@ export default function SizeMaster({ toast }) {
             currentSizes.length === 0 ? (
               <div
                 style={{
-                  textAlign: 'center',
+                  textAlign: "center",
                   color: C.muted,
                   padding: 32,
                   fontSize: 13,
@@ -194,8 +204,8 @@ export default function SizeMaster({ toast }) {
             ) : (
               <div
                 style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
                   gap: 12,
                 }}
               >
@@ -203,13 +213,13 @@ export default function SizeMaster({ toast }) {
                   <div
                     key={idx}
                     style={{
-                      padding: '12px 16px',
+                      padding: "12px 16px",
                       background: C.surface,
                       border: `1px solid ${C.border}`,
                       borderRadius: 6,
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
                       gap: 8,
                     }}
                   >
@@ -219,16 +229,16 @@ export default function SizeMaster({ toast }) {
                     <button
                       onClick={() => handleDeleteSize(size)}
                       style={{
-                        background: 'transparent',
-                        color: '#8082ff',
-                        border: '1px solid #8082ff98',
+                        background: "transparent",
+                        color: "#8082ff",
+                        border: "1px solid #8082ff98",
                         borderRadius: 6,
-                        padding: '6px 12px',
+                        padding: "6px 12px",
                         fontSize: 11,
                         fontWeight: 500,
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
                         gap: 6,
                       }}
                     >
@@ -241,7 +251,7 @@ export default function SizeMaster({ toast }) {
           ) : (
             <div
               style={{
-                textAlign: 'center',
+                textAlign: "center",
                 color: C.muted,
                 padding: 32,
                 fontSize: 13,
@@ -253,7 +263,7 @@ export default function SizeMaster({ toast }) {
         </Card>
       )}
 
-      {tab === 'new' && (
+      {tab === "new" && (
         <Card>
           <h3
             style={{
@@ -268,8 +278,8 @@ export default function SizeMaster({ toast }) {
 
           <div
             style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
               gap: 14,
               marginBottom: 20,
             }}
@@ -279,8 +289,8 @@ export default function SizeMaster({ toast }) {
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
                 style={{
-                  width: '100%',
-                  padding: '9px 12px',
+                  width: "100%",
+                  padding: "9px 12px",
                   border: `1px solid ${C.border}`,
                   borderRadius: 6,
                   fontSize: 13,
@@ -302,8 +312,8 @@ export default function SizeMaster({ toast }) {
                 value={newSize}
                 onChange={(e) => setNewSize(e.target.value)}
                 style={{
-                  width: '100%',
-                  padding: '9px 12px',
+                  width: "100%",
+                  padding: "9px 12px",
                   border: `1px solid ${C.border}`,
                   borderRadius: 6,
                   fontSize: 13,
@@ -312,7 +322,7 @@ export default function SizeMaster({ toast }) {
             </Field>
           </div>
 
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div style={{ display: "flex", gap: 10 }}>
             <SubmitBtn
               label="Add Size"
               color={C.blue}
@@ -320,18 +330,18 @@ export default function SizeMaster({ toast }) {
             />
             <button
               onClick={() => {
-                setSelectedCategory('');
-                setNewSize('');
+                setSelectedCategory("");
+                setNewSize("");
               }}
               style={{
-                padding: '9px 20px',
+                padding: "9px 20px",
                 borderRadius: 6,
                 border: `1px solid ${C.border}`,
                 background: C.inputBg,
                 color: C.text,
                 fontWeight: 500,
                 fontSize: 13,
-                cursor: 'pointer',
+                cursor: "pointer",
               }}
             >
               Clear
@@ -342,17 +352,15 @@ export default function SizeMaster({ toast }) {
             <div
               style={{
                 marginTop: 20,
-                padding: '12px 16px',
-                background: C.blue + '11',
+                padding: "12px 16px",
+                background: C.blue + "11",
                 border: `1px solid ${C.blue}44`,
                 borderRadius: 6,
                 fontSize: 12,
               }}
             >
-              <strong>Current Sizes in {selectedCategory}:</strong>{' '}
-              {currentSizes.length === 0
-                ? 'None'
-                : currentSizes.join(', ')}
+              <strong>Current Sizes in {selectedCategory}:</strong>{" "}
+              {currentSizes.length === 0 ? "None" : currentSizes.join(", ")}
             </div>
           )}
         </Card>

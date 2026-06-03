@@ -228,10 +228,12 @@ exports.updateItem = async (req, res) => {
     if (gstRate !== undefined) item.gstRate = Number(gstRate);
     if (hsnCode !== undefined) item.hsnCode = hsnCode?.trim();
     if (reorderLevel !== undefined) item.reorderLevel = Number(reorderLevel);
-    if (gussett !== undefined) item.gussett = gussett ? Number(gussett) : undefined;
+    if (gussett !== undefined)
+      item.gussett = gussett ? Number(gussett) : undefined;
     if (height !== undefined) item.height = height ? Number(height) : undefined;
     if (uom !== undefined) item.uom = uom;
-    if (companyCategory !== undefined) item.companyCategory = companyCategory?.trim();
+    if (companyCategory !== undefined)
+      item.companyCategory = companyCategory?.trim();
     if (status) item.status = status;
 
     await item.save();

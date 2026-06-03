@@ -22,7 +22,6 @@ import { PMSchedulerTab, SparePartsTab } from "./MaintenancePlanner";
 import moment from "moment";
 import * as XLSX from "xlsx";
 
-
 const SUBTABS = [
   { id: "cylinders", icon: "🔩", label: "Cylinders" },
   { id: "dies", icon: "✂️", label: "Dies" },
@@ -76,7 +75,6 @@ function SubTabBar({ active, onChange }) {
   );
 }
 
-
 const TOOL_CONFIG = {
   cylinders: { type: "Cylinder", icon: "🔩", color: C.blue, label: "Cylinder" },
   dies: { type: "Die", icon: "✂️", color: C.orange, label: "Die" },
@@ -128,9 +126,11 @@ function ToolTypeSection({ tabId, toast }) {
       ]);
       const all = Array.isArray(data) ? data : [];
       setTools(all.filter((t) => t.toolType === cfg.type));
-      const items = Array.isArray(itemData) ? itemData : (itemData?.items || []);
+      const items = Array.isArray(itemData) ? itemData : itemData?.items || [];
       setFgItems(items.filter((i) => i.type === "Finished Goods" && i.code));
-      setAllMachines(Array.isArray(macData) ? macData : macData?.machines || []);
+      setAllMachines(
+        Array.isArray(macData) ? macData : macData?.machines || [],
+      );
     } catch {
       toast?.("Failed to fetch data", "error");
     } finally {
@@ -181,7 +181,9 @@ function ToolTypeSection({ tabId, toast }) {
     setFormData({
       designCode: tool.designCode,
       linkedSKU: tool.linkedSKU || "",
-      compatibleMachines: (tool.compatibleMachines || []).map((m) => m._id || m),
+      compatibleMachines: (tool.compatibleMachines || []).map(
+        (m) => m._id || m,
+      ),
       status: tool.status,
       maxImpressionsBeforeRecondition: tool.maxImpressionsBeforeRecondition,
       location: tool.location,
@@ -212,7 +214,6 @@ function ToolTypeSection({ tabId, toast }) {
     }
   };
 
-  
   const handleDownloadTemplate = () => {
     const headers = TOOL_COLUMNS.map((c) => c.header);
     const example = {
@@ -232,7 +233,6 @@ function ToolTypeSection({ tabId, toast }) {
     toast?.("Template downloaded", "success");
   };
 
-  
   const handleExport = () => {
     if (!tools.length) {
       toast?.("No data to export", "error");
@@ -248,7 +248,6 @@ function ToolTypeSection({ tabId, toast }) {
     toast?.(`${cfg.label}s exported`, "success");
   };
 
-  
   const handleImport = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -264,7 +263,7 @@ function ToolTypeSection({ tabId, toast }) {
         return;
       }
 
-      const [, ...rows] = rawData; 
+      const [, ...rows] = rawData;
       let created = 0;
       let skipped = 0;
 
@@ -272,7 +271,7 @@ function ToolTypeSection({ tabId, toast }) {
         if (!row || !row[0]) {
           skipped++;
           continue;
-        } 
+        }
         const [
           designCode,
           linkedSKU,
@@ -347,7 +346,9 @@ function ToolTypeSection({ tabId, toast }) {
           style={{ display: "none" }}
           onChange={handleImport}
         />
-        {canExportImport && <Button text="⬇ Export" color="#555" onClick={handleExport} />}
+        {canExportImport && (
+          <Button text="⬇ Export" color="#555" onClick={handleExport} />
+        )}
         <Button
           onClick={() => {
             resetForm();
@@ -370,70 +371,114 @@ function ToolTypeSection({ tabId, toast }) {
             "ACTIONS",
           ]}
           data={[...tools]
-            .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+            .sort(
+              (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
+            )
             .map((tool) => {
-            const linkedItem = fgItems.find((i) => i.code === tool.linkedSKU);
-            const linkedMachineIds = (tool.compatibleMachines || []).map((m) => m._id || m);
-            const linkedMachineNames = allMachines
-              .filter((m) => linkedMachineIds.includes(m._id))
-              .map((m) => m.name);
-            return [
-              <span style={{ fontWeight: 700 }}>{tool.designCode}</span>,
-              tool.linkedSKU ? (
-                <div>
-                  <div style={{ fontWeight: 500, color: "#ff7800", fontSize: 12 }}>{tool.linkedSKU}</div>
-                  {linkedItem && <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>{linkedItem.name}</div>}
-                </div>
-              ) : <span style={{ color: "#444" }}>—</span>,
-              linkedMachineNames.length > 0 ? (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                  {linkedMachineNames.map((n) => (
-                    <span key={n} style={{ padding: "2px 7px", borderRadius: 10, background: "#3b82f622", color: "#3b82f6", fontSize: 10, fontWeight: 600 }}>{n}</span>
-                  ))}
-                </div>
-              ) : <span style={{ color: "#444", fontSize: 11 }}>—</span>,
-              <Badge
-                text={tool.status}
-                color={
-                  tool.status === "Available"
-                    ? C.green
-                    : tool.status === "In Use"
-                      ? C.blue
-                      : C.red
-                }
-              />,
-              `${(tool.impressionsDone || 0).toLocaleString()} / ${(tool.maxImpressionsBeforeRecondition || 0).toLocaleString()}`,
-              tool.location || "-",
-              <div style={{ display: "flex", gap: 6 }}>
-                <button onClick={() => handleEdit(tool)} style={{
-                  background: "transparent",
-                  color: "#8082ff",
-                  border: "1px solid #8082ff98",
-                  borderRadius: 6,
-                  padding: "6px 12px",
-                  fontSize: 11,
-                  fontWeight: 500,
-                  cursor: "pointer",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}><i className="fa-solid fa-pen-to-square" /> Edit</button>
-                <button onClick={() => handleDelete(tool._id)} style={{
-                  background: "transparent",
-                  color: "#8082ff",
-                  border: "1px solid #8082ff98",
-                  borderRadius: 6,
-                  padding: "6px 12px",
-                  fontSize: 11,
-                  fontWeight: 500,
-                  cursor: "pointer",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}><i className="fa-solid fa-trash" /> Delete</button>
-              </div>,
-            ];
-          })}
+              const linkedItem = fgItems.find((i) => i.code === tool.linkedSKU);
+              const linkedMachineIds = (tool.compatibleMachines || []).map(
+                (m) => m._id || m,
+              );
+              const linkedMachineNames = allMachines
+                .filter((m) => linkedMachineIds.includes(m._id))
+                .map((m) => m.name);
+              return [
+                <span style={{ fontWeight: 700 }}>{tool.designCode}</span>,
+                tool.linkedSKU ? (
+                  <div>
+                    <div
+                      style={{
+                        fontWeight: 500,
+                        color: "#ff7800",
+                        fontSize: 12,
+                      }}
+                    >
+                      {tool.linkedSKU}
+                    </div>
+                    {linkedItem && (
+                      <div
+                        style={{ fontSize: 11, color: "#888", marginTop: 2 }}
+                      >
+                        {linkedItem.name}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <span style={{ color: "#444" }}>—</span>
+                ),
+                linkedMachineNames.length > 0 ? (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                    {linkedMachineNames.map((n) => (
+                      <span
+                        key={n}
+                        style={{
+                          padding: "2px 7px",
+                          borderRadius: 10,
+                          background: "#3b82f622",
+                          color: "#3b82f6",
+                          fontSize: 10,
+                          fontWeight: 600,
+                        }}
+                      >
+                        {n}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <span style={{ color: "#444", fontSize: 11 }}>—</span>
+                ),
+                <Badge
+                  text={tool.status}
+                  color={
+                    tool.status === "Available"
+                      ? C.green
+                      : tool.status === "In Use"
+                        ? C.blue
+                        : C.red
+                  }
+                />,
+                `${(tool.impressionsDone || 0).toLocaleString()} / ${(tool.maxImpressionsBeforeRecondition || 0).toLocaleString()}`,
+                tool.location || "-",
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button
+                    onClick={() => handleEdit(tool)}
+                    style={{
+                      background: "transparent",
+                      color: "#8082ff",
+                      border: "1px solid #8082ff98",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <i className="fa-solid fa-pen-to-square" /> Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(tool._id)}
+                    style={{
+                      background: "transparent",
+                      color: "#8082ff",
+                      border: "1px solid #8082ff98",
+                      borderRadius: 6,
+                      padding: "6px 12px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <i className="fa-solid fa-trash" /> Delete
+                  </button>
+                </div>,
+              ];
+            })}
         />
       </Card>
 
@@ -522,7 +567,16 @@ function ToolTypeSection({ tabId, toast }) {
 
             {allMachines.length > 0 && (
               <div style={{ marginTop: 16 }}>
-                <label style={{ display: "block", fontSize: 11, color: "#666", fontWeight: 500, marginBottom: 8, textTransform: "uppercase" }}>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: 11,
+                    color: "#666",
+                    fontWeight: 500,
+                    marginBottom: 8,
+                    textTransform: "uppercase",
+                  }}
+                >
                   Compatible Machines
                   {formData.compatibleMachines.length > 0 && (
                     <span style={{ marginLeft: 8, color: "#ff7800" }}>
@@ -532,7 +586,9 @@ function ToolTypeSection({ tabId, toast }) {
                 </label>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                   {allMachines.map((m) => {
-                    const selected = (formData.compatibleMachines || []).includes(m._id);
+                    const selected = (
+                      formData.compatibleMachines || []
+                    ).includes(m._id);
                     return (
                       <button
                         key={m._id}
@@ -586,7 +642,6 @@ function ToolTypeSection({ tabId, toast }) {
     </>
   );
 }
-
 
 function CalendarSection({ toast }) {
   const [events, setEvents] = useState([]);
@@ -746,7 +801,6 @@ function CalendarSection({ toast }) {
   );
 }
 
-
 function MaintenanceSection({ toast }) {
   const [records, setRecords] = useState([]);
   const [machines, setMachines] = useState([]);
@@ -813,28 +867,30 @@ function MaintenanceSection({ toast }) {
           loading={loading}
           headers={["MACHINE", "TYPE", "START", "END", "TECHNICIAN", "ACTIONS"]}
           data={[...records]
-            .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+            .sort(
+              (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
+            )
             .map((rec) => [
-            rec.machineId?.name || "Unknown",
-            <Badge
-              text={rec.type}
-              color={rec.type === "Preventive" ? C.blue : C.orange}
-            />,
-            moment(rec.startDateTime).format("DD/MM HH:mm"),
-            moment(rec.endDateTime).format("DD/MM HH:mm"),
-            rec.technician,
-            <Button
-              small
-              text="Delete"
-              color={C.red}
-              onClick={async () => {
-                if (window.confirm("Cancel this maintenance?")) {
-                  await machineMaintenanceAPI.delete(rec._id);
-                  fetchData();
-                }
-              }}
-            />,
-          ])}
+              rec.machineId?.name || "Unknown",
+              <Badge
+                text={rec.type}
+                color={rec.type === "Preventive" ? C.blue : C.orange}
+              />,
+              moment(rec.startDateTime).format("DD/MM HH:mm"),
+              moment(rec.endDateTime).format("DD/MM HH:mm"),
+              rec.technician,
+              <Button
+                small
+                text="Delete"
+                color={C.red}
+                onClick={async () => {
+                  if (window.confirm("Cancel this maintenance?")) {
+                    await machineMaintenanceAPI.delete(rec._id);
+                    fetchData();
+                  }
+                }}
+              />,
+            ])}
         />
       </Card>
 
@@ -911,7 +967,6 @@ function MaintenanceSection({ toast }) {
     </>
   );
 }
-
 
 function BreakdownSection({ toast }) {
   const [logs, setLogs] = useState([]);
@@ -1102,8 +1157,13 @@ function BreakdownSection({ toast }) {
   );
 }
 
-
-export default function MachineTools({ machineMaster = [], itemMasterFG = [], categoryMaster = [], toast, canExportImport = true }) {
+export default function MachineTools({
+  machineMaster = [],
+  itemMasterFG = [],
+  categoryMaster = [],
+  toast,
+  canExportImport = true,
+}) {
   const [activeTab, setActiveTab] = useState("cylinders");
 
   return (
@@ -1122,8 +1182,17 @@ export default function MachineTools({ machineMaster = [], itemMasterFG = [], ca
       {activeTab === "calendar" && <CalendarSection toast={toast} />}
       {activeTab === "maintenance" && <MaintenanceSection toast={toast} />}
       {activeTab === "breakdowns" && <BreakdownSection toast={toast} />}
-      {activeTab === "pm" && <PMSchedulerTab machineMaster={machineMaster} toast={toast} />}
-      {activeTab === "parts" && <SparePartsTab machineMaster={machineMaster} itemMasterFG={itemMasterFG} categoryMaster={categoryMaster} toast={toast} />}
+      {activeTab === "pm" && (
+        <PMSchedulerTab machineMaster={machineMaster} toast={toast} />
+      )}
+      {activeTab === "parts" && (
+        <SparePartsTab
+          machineMaster={machineMaster}
+          itemMasterFG={itemMasterFG}
+          categoryMaster={categoryMaster}
+          toast={toast}
+        />
+      )}
     </div>
   );
 }

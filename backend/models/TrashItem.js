@@ -1,10 +1,10 @@
 const mongoose = require("mongoose");
 
 const trashItemSchema = new mongoose.Schema({
-  modelName: { type: String, required: true },       // e.g. "PurchaseOrder"
-  collectionName: { type: String, required: true },  // e.g. "purchaseorders"
-  displayId: { type: String },                       // e.g. PO-001, GRN-001
-  label: { type: String, required: true },           // human-readable type, e.g. "Purchase Order"
+  modelName: { type: String, required: true }, // e.g. "PurchaseOrder"
+  collectionName: { type: String, required: true }, // e.g. "purchaseorders"
+  displayId: { type: String }, // e.g. PO-001, GRN-001
+  label: { type: String, required: true }, // human-readable type, e.g. "Purchase Order"
   data: { type: mongoose.Schema.Types.Mixed, required: true },
   deletedAt: { type: Date, default: Date.now },
   deletedBy: { type: String, default: "system" },

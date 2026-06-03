@@ -1,12 +1,15 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const brandMasterSchema = new mongoose.Schema({
-  name: { type: String, required: true, unique: true },
-  description: { type: String },
-  companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'CompanyMaster' },
-  companyName: { type: String },
-  clientCategory: { type: String, default: null },
-  status: { type: String, default: 'Active' },
-}, { timestamps: true });
+const brandMasterSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true, unique: true },
+    description: { type: String },
+    companyId: { type: mongoose.Schema.Types.ObjectId, ref: "CompanyMaster" },
+    companyName: { type: String },
+    clientCategory: { type: String, default: null },
+    status: { type: String, default: "Active" },
+  },
+  { timestamps: true },
+);
 
-module.exports = mongoose.model('BrandMaster', brandMasterSchema);
+module.exports = mongoose.model("BrandMaster", brandMasterSchema);

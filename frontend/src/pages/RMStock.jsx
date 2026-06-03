@@ -99,8 +99,10 @@ export default function RMStock({
       list = list.filter((s) => {
         const wt = +(s.weight || s.weightKg || 0);
         const reorder = +(s.reorderLevel || 0);
-        if (stockStatusFilter === "In Stock") return wt > 0 && (reorder === 0 || wt > reorder);
-        if (stockStatusFilter === "Low Stock") return wt > 0 && reorder > 0 && wt <= reorder;
+        if (stockStatusFilter === "In Stock")
+          return wt > 0 && (reorder === 0 || wt > reorder);
+        if (stockStatusFilter === "Low Stock")
+          return wt > 0 && reorder > 0 && wt <= reorder;
         if (stockStatusFilter === "Out of Stock") return wt <= 0;
         return true;
       });
@@ -129,9 +131,14 @@ export default function RMStock({
     try {
       let res;
       if (item.isFromMaster) {
-        res = await rawMaterialStockAPI.create({ ...item, reorderLevel: newVal });
+        res = await rawMaterialStockAPI.create({
+          ...item,
+          reorderLevel: newVal,
+        });
       } else {
-        res = await rawMaterialStockAPI.update(item._id || item.id, { reorderLevel: newVal });
+        res = await rawMaterialStockAPI.update(item._id || item.id, {
+          reorderLevel: newVal,
+        });
       }
       applyStockUpdate(res?.stock);
       toast?.("Reorder level updated", "success");
@@ -173,10 +180,17 @@ export default function RMStock({
 
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
-    if (!window.confirm(`Delete ${selectedIds.length} selected item(s)?`)) return;
+    if (!window.confirm(`Delete ${selectedIds.length} selected item(s)?`))
+      return;
     try {
-      await Promise.allSettled(selectedIds.map((id) => rawMaterialStockAPI.delete(id)));
-      setRawStock((rawStock || []).filter((s) => !selectedIds.includes(s._id) && !selectedIds.includes(s.id)));
+      await Promise.allSettled(
+        selectedIds.map((id) => rawMaterialStockAPI.delete(id)),
+      );
+      setRawStock(
+        (rawStock || []).filter(
+          (s) => !selectedIds.includes(s._id) && !selectedIds.includes(s.id),
+        ),
+      );
       setSelectedIds([]);
       toast?.(`${selectedIds.length} item(s) deleted`, "success");
     } catch {
@@ -236,7 +250,10 @@ export default function RMStock({
     }
     const rfmt = (n) => Math.round(+n || 0).toLocaleString("en-IN");
     const totalWt = filtered.reduce((s, r) => s + +(r.weight || 0), 0);
-    const totalVal = filtered.reduce((s, r) => s + (+r.weight || 0) * (+r.rate || 0), 0);
+    const totalVal = filtered.reduce(
+      (s, r) => s + (+r.weight || 0) * (+r.rate || 0),
+      0,
+    );
     const rowsHtml = filtered
       .map(
         (s) => `
@@ -302,7 +319,8 @@ export default function RMStock({
         </body>
       </html>`;
     const iframe = document.createElement("iframe");
-    iframe.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0";
+    iframe.style.cssText =
+      "position:fixed;right:0;bottom:0;width:0;height:0;border:0";
     document.body.appendChild(iframe);
     iframe.contentWindow.document.open();
     iframe.contentWindow.document.write(html);
@@ -367,7 +385,8 @@ export default function RMStock({
               const existing = (rawStock || []).find(
                 (s) =>
                   (item.code && s.code === item.code) ||
-                  s.name.toLowerCase().trim() === item.name.toLowerCase().trim(),
+                  s.name.toLowerCase().trim() ===
+                    item.name.toLowerCase().trim(),
               );
 
               try {
@@ -392,7 +411,12 @@ export default function RMStock({
               `Import complete: ${successCount} new, ${updateCount} updated`,
               "success",
             );
-            setImportProgress({ show: false, current: 0, total: 0, status: "" });
+            setImportProgress({
+              show: false,
+              current: 0,
+              total: 0,
+              status: "",
+            });
             if (refreshData) refreshData();
           })();
         }
@@ -444,7 +468,8 @@ export default function RMStock({
               padding: "4px 8px",
               fontSize: 10,
               cursor: "pointer",
-              boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+              boxShadow:
+                "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
             }}
           >
             {saving ? "..." : "✓"}
@@ -764,7 +789,8 @@ export default function RMStock({
                   color: "#fff",
                   fontWeight: 500,
                   cursor: "pointer",
-                  boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                  boxShadow:
+                    "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
                 }}
               >
                 Save Changes
@@ -831,16 +857,68 @@ export default function RMStock({
         }}
       >
         {[
-          { label: "Total Items", value: fmt(totalItems), icon: "fa-solid fa-boxes-stacked" },
-          { label: "Total Weight", value: `${fmt(Math.round(totalWeightKg))} kg`, icon: "fa-solid fa-weight-hanging" },
-          { label: "Total Value", value: `₹${fmt(Math.round(totalValue))}`, icon: "fa-solid fa-indian-rupee-sign" },
+          {
+            label: "Total Items",
+            value: fmt(totalItems),
+            icon: "fa-solid fa-boxes-stacked",
+          },
+          {
+            label: "Total Weight",
+            value: `${fmt(Math.round(totalWeightKg))} kg`,
+            icon: "fa-solid fa-weight-hanging",
+          },
+          {
+            label: "Total Value",
+            value: `₹${fmt(Math.round(totalValue))}`,
+            icon: "fa-solid fa-indian-rupee-sign",
+          },
         ].map(({ label, value, icon }) => (
-          <div key={label} style={{ padding: "16px 20px", background: "transparent", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-              <span style={{ fontSize: 19, color: "#ffffff", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
-              <i className={icon} style={{ color: C.muted, fontSize: 20, opacity: 0.9, display: "inline-flex", alignItems: "center", justifyContent: "center", height: 28, width: 28, lineHeight: 1 }} />
+          <div
+            key={label}
+            style={{
+              padding: "16px 20px",
+              background: "transparent",
+              border: "1px solid rgba(255,255,255,0.07)",
+              borderRadius: 12,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 8,
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 19,
+                  color: "#ffffff",
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                }}
+              >
+                {label}
+              </span>
+              <i
+                className={icon}
+                style={{
+                  color: C.muted,
+                  fontSize: 20,
+                  opacity: 0.9,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: 28,
+                  width: 28,
+                  lineHeight: 1,
+                }}
+              />
             </div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>{value}</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>
+              {value}
+            </div>
           </div>
         ))}
       </div>
@@ -855,7 +933,6 @@ export default function RMStock({
         }}
       >
         <div style={{ position: "relative", flex: 1 }}>
-          
           <input
             placeholder="Search material..."
             value={search}
@@ -901,11 +978,23 @@ export default function RMStock({
           <ImportBtn onClick={() => fileInputRef.current?.click()} />
         )}
         {canExportImport && <ExportBtn onClick={handleExport} />}
-        {canExportImport && <ExportBtn onClick={handleExportPDF} label="Export PDF" />}
+        {canExportImport && (
+          <ExportBtn onClick={handleExportPDF} label="Export PDF" />
+        )}
         {!isClient && selectedIds.length > 0 && (
           <button
             onClick={handleBulkDelete}
-            style={{ padding: "7px 14px", borderRadius: 6, border: "1px solid rgba(239,68,68,0.4)", background: "rgba(239,68,68,0.15)", color: "#ef4444", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}
+            style={{
+              padding: "7px 14px",
+              borderRadius: 6,
+              border: "1px solid rgba(239,68,68,0.4)",
+              background: "rgba(239,68,68,0.15)",
+              color: "#ef4444",
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+            }}
           >
             <i className="fa-solid fa-trash" style={{ marginRight: 6 }} />
             Delete Selected ({selectedIds.length})
@@ -921,7 +1010,9 @@ export default function RMStock({
       </div>
 
       {}
-      <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+      <div
+        style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}
+      >
         {categories.map((cat) => (
           <button
             key={cat}
@@ -932,7 +1023,8 @@ export default function RMStock({
               fontSize: 12,
               fontWeight: 500,
               cursor: "pointer",
-              background: activeFilter === cat ? "rgba(128,130,255,0.12)" : "transparent",
+              background:
+                activeFilter === cat ? "rgba(128,130,255,0.12)" : "transparent",
               color: activeFilter === cat ? "#8082ff" : "#888",
               border: `1px solid ${activeFilter === cat ? "#8082ff98" : "#2a2a2e"}`,
             }}
@@ -943,7 +1035,9 @@ export default function RMStock({
       </div>
 
       {}
-      <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+      <div
+        style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}
+      >
         {["All", "In Stock", "Low Stock", "Out of Stock"].map((s) => (
           <button
             key={s}
@@ -954,7 +1048,10 @@ export default function RMStock({
               fontSize: 12,
               fontWeight: 500,
               cursor: "pointer",
-              background: stockStatusFilter === s ? "rgba(128,130,255,0.12)" : "transparent",
+              background:
+                stockStatusFilter === s
+                  ? "rgba(128,130,255,0.12)"
+                  : "transparent",
               color: stockStatusFilter === s ? "#8082ff" : "#888",
               border: `1px solid ${stockStatusFilter === s ? "#8082ff98" : "#2a2a2e"}`,
               display: "inline-flex",
@@ -962,12 +1059,17 @@ export default function RMStock({
               gap: 6,
             }}
           >
-            <i className={
-              s === "In Stock" ? "fa-solid fa-warehouse"
-              : s === "Low Stock" ? "fa-solid fa-triangle-exclamation"
-              : s === "Out of Stock" ? "fa-solid fa-circle-exclamation"
-              : "fa-solid fa-layer-group"
-            } />
+            <i
+              className={
+                s === "In Stock"
+                  ? "fa-solid fa-warehouse"
+                  : s === "Low Stock"
+                    ? "fa-solid fa-triangle-exclamation"
+                    : s === "Out of Stock"
+                      ? "fa-solid fa-circle-exclamation"
+                      : "fa-solid fa-layer-group"
+              }
+            />
             {s}
           </button>
         ))}
@@ -991,12 +1093,30 @@ export default function RMStock({
           }}
         >
           <thead>
-            <tr style={{ background: "transparent", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-              <th style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap", width: 40 }}>
+            <tr
+              style={{
+                background: "transparent",
+                borderBottom: "1px solid rgba(255,255,255,0.08)",
+              }}
+            >
+              <th
+                style={{
+                  padding: "10px 14px",
+                  textAlign: "left",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: C.muted,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                  whiteSpace: "nowrap",
+                  width: 40,
+                }}
+              >
                 <input
                   type="checkbox"
                   checked={
-                    filtered.length > 0 && selectedIds.length === filtered.length
+                    filtered.length > 0 &&
+                    selectedIds.length === filtered.length
                   }
                   onChange={(e) => {
                     if (e.target.checked) {
@@ -1051,7 +1171,9 @@ export default function RMStock({
                     borderBottom: "1px solid rgba(255,255,255,0.04)",
                     background: selectedIds.includes(s._id || s.id)
                       ? "rgba(0, 122, 255, 0.05)"
-                      : (idx % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)"),
+                      : idx % 2 === 0
+                        ? "transparent"
+                        : "rgba(255,255,255,0.01)",
                   }}
                 >
                   <td style={{ padding: "16px" }}>

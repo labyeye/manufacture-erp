@@ -1,8 +1,3 @@
-
-
-
-
-
 const COMPANY_HEADER = `
 <div style="border-bottom:2px solid #1e3a5f;padding-bottom:14px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-start">
   <div>
@@ -17,9 +12,6 @@ const COMPANY_HEADER = `
   </div>
 </div>
 `;
-
-
-
 
 const BASE_STYLES = `
   body { font-family: Arial, sans-serif; font-size: 12px; color: #000; margin: 30px; }
@@ -43,16 +35,10 @@ const BASE_STYLES = `
   @media print { body { margin: 15px; } }
 `;
 
-
-
-
-
-
-
-async function generatePDF(html, title = 'Document') {
+async function generatePDF(html, title = "Document") {
   const browser = await puppeteer.launch({
-    headless: 'new',
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
+    headless: "new",
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
   });
 
   try {
@@ -71,17 +57,17 @@ async function generatePDF(html, title = 'Document') {
       </html>
     `;
 
-    await page.setContent(fullHtml, { waitUntil: 'networkidle0' });
+    await page.setContent(fullHtml, { waitUntil: "networkidle0" });
 
     const pdf = await page.pdf({
-      format: 'A4',
+      format: "A4",
       printBackground: true,
       margin: {
-        top: '20px',
-        right: '20px',
-        bottom: '20px',
-        left: '20px'
-      }
+        top: "20px",
+        right: "20px",
+        bottom: "20px",
+        left: "20px",
+      },
     });
 
     return pdf;
@@ -90,33 +76,30 @@ async function generatePDF(html, title = 'Document') {
   }
 }
 
-
-
-
 async function generateJobCardPDF(jobOrder) {
   const html = `
     ${COMPANY_HEADER}
     <h1>Job Card</h1>
     <div style="color:#666;font-size:12px;margin-bottom:16px">
-      JO No: <strong>${jobOrder.joNo}</strong> &nbsp;·&nbsp; Date: ${new Date(jobOrder.jobcardDate).toLocaleDateString('en-IN')}
+      JO No: <strong>${jobOrder.joNo}</strong> &nbsp;·&nbsp; Date: ${new Date(jobOrder.jobcardDate).toLocaleDateString("en-IN")}
     </div>
 
     <div class="info-grid">
-      <div class="info-row"><div class="info-label">Client:</div><div class="info-value">${jobOrder.clientName || '—'}</div></div>
-      <div class="info-row"><div class="info-label">Item:</div><div class="info-value">${jobOrder.itemName || jobOrder.product || '—'}</div></div>
-      <div class="info-row"><div class="info-label">Order Qty:</div><div class="info-value">${(jobOrder.orderQty || 0).toLocaleString('en-IN')}</div></div>
-      <div class="info-row"><div class="info-label">Delivery Date:</div><div class="info-value">${jobOrder.deliveryDate ? new Date(jobOrder.deliveryDate).toLocaleDateString('en-IN') : '—'}</div></div>
-      <div class="info-row"><div class="info-label">SO Ref:</div><div class="info-value">${jobOrder.soRef || '—'}</div></div>
-      <div class="info-row"><div class="info-label">Status:</div><div class="info-value">${jobOrder.status || 'Open'}</div></div>
+      <div class="info-row"><div class="info-label">Client:</div><div class="info-value">${jobOrder.clientName || "—"}</div></div>
+      <div class="info-row"><div class="info-label">Item:</div><div class="info-value">${jobOrder.itemName || jobOrder.product || "—"}</div></div>
+      <div class="info-row"><div class="info-label">Order Qty:</div><div class="info-value">${(jobOrder.orderQty || 0).toLocaleString("en-IN")}</div></div>
+      <div class="info-row"><div class="info-label">Delivery Date:</div><div class="info-value">${jobOrder.deliveryDate ? new Date(jobOrder.deliveryDate).toLocaleDateString("en-IN") : "—"}</div></div>
+      <div class="info-row"><div class="info-label">SO Ref:</div><div class="info-value">${jobOrder.soRef || "—"}</div></div>
+      <div class="info-row"><div class="info-label">Status:</div><div class="info-value">${jobOrder.status || "Open"}</div></div>
     </div>
 
     <h2>Paper Specification</h2>
     <div class="info-grid">
-      <div class="info-row"><div class="info-label">Paper Type:</div><div class="info-value">${jobOrder.paperType || '—'}</div></div>
-      <div class="info-row"><div class="info-label">GSM:</div><div class="info-value">${jobOrder.paperGsm || '—'}</div></div>
-      ${jobOrder.sheetSize ? `<div class="info-row"><div class="info-label">Sheet Size:</div><div class="info-value">${jobOrder.sheetSize}</div></div>` : ''}
-      ${jobOrder.noOfUps ? `<div class="info-row"><div class="info-label">No. of Ups:</div><div class="info-value">${jobOrder.noOfUps}</div></div>` : ''}
-      ${jobOrder.noOfSheets ? `<div class="info-row"><div class="info-label">No. of Sheets:</div><div class="info-value">${jobOrder.noOfSheets.toLocaleString('en-IN')}</div></div>` : ''}
+      <div class="info-row"><div class="info-label">Paper Type:</div><div class="info-value">${jobOrder.paperType || "—"}</div></div>
+      <div class="info-row"><div class="info-label">GSM:</div><div class="info-value">${jobOrder.paperGsm || "—"}</div></div>
+      ${jobOrder.sheetSize ? `<div class="info-row"><div class="info-label">Sheet Size:</div><div class="info-value">${jobOrder.sheetSize}</div></div>` : ""}
+      ${jobOrder.noOfUps ? `<div class="info-row"><div class="info-label">No. of Ups:</div><div class="info-value">${jobOrder.noOfUps}</div></div>` : ""}
+      ${jobOrder.noOfSheets ? `<div class="info-row"><div class="info-label">No. of Sheets:</div><div class="info-value">${jobOrder.noOfSheets.toLocaleString("en-IN")}</div></div>` : ""}
     </div>
 
     <h2>Process List</h2>
@@ -130,29 +113,41 @@ async function generateJobCardPDF(jobOrder) {
         </tr>
       </thead>
       <tbody>
-        ${(jobOrder.process || []).map(proc => {
-          const completed = (jobOrder.completedProcesses || []).includes(proc);
-          const machineId = jobOrder.machineAssignments ? jobOrder.machineAssignments.get(proc) : null;
-          const qty = jobOrder.stageQtyMap ? jobOrder.stageQtyMap.get(proc) || 0 : 0;
-          return `
+        ${(jobOrder.process || [])
+          .map((proc) => {
+            const completed = (jobOrder.completedProcesses || []).includes(
+              proc,
+            );
+            const machineId = jobOrder.machineAssignments
+              ? jobOrder.machineAssignments.get(proc)
+              : null;
+            const qty = jobOrder.stageQtyMap
+              ? jobOrder.stageQtyMap.get(proc) || 0
+              : 0;
+            return `
             <tr>
               <td>${proc}</td>
-              <td>${machineId || '—'}</td>
-              <td>${completed ? '✓ Completed' : 'Pending'}</td>
-              <td class="right">${qty > 0 ? qty.toLocaleString('en-IN') : '—'}</td>
+              <td>${machineId || "—"}</td>
+              <td>${completed ? "✓ Completed" : "Pending"}</td>
+              <td class="right">${qty > 0 ? qty.toLocaleString("en-IN") : "—"}</td>
             </tr>
           `;
-        }).join('')}
+          })
+          .join("")}
       </tbody>
     </table>
 
-    ${jobOrder.remarks ? `
+    ${
+      jobOrder.remarks
+        ? `
       <h2>Remarks</h2>
       <div style="padding:10px;background:#f9f9f9;border-left:3px solid #1e3a5f;margin-top:10px">${jobOrder.remarks}</div>
-    ` : ''}
+    `
+        : ""
+    }
 
     <div class="footer">
-      <span>Generated on ${new Date().toLocaleDateString('en-IN')}</span>
+      <span>Generated on ${new Date().toLocaleDateString("en-IN")}</span>
       <span>This is a computer generated document</span>
     </div>
   `;
@@ -164,5 +159,5 @@ module.exports = {
   generatePDF,
   generateJobCardPDF,
   COMPANY_HEADER,
-  BASE_STYLES
+  BASE_STYLES,
 };

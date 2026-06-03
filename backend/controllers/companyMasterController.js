@@ -14,8 +14,10 @@ exports.getAll = async (req, res) => {
 
 exports.getOne = async (req, res) => {
   try {
-    const company = await CompanyMaster.findById(req.params.id)
-      .populate("createdBy", "name username");
+    const company = await CompanyMaster.findById(req.params.id).populate(
+      "createdBy",
+      "name username",
+    );
     if (!company) {
       return res.status(404).json({ error: "Company not found" });
     }
@@ -28,14 +30,15 @@ exports.getOne = async (req, res) => {
 
 exports.create = async (req, res) => {
   try {
-    const { name, category, contact, phone, email, address, gstin, status } = req.body;
+    const { name, category, contact, phone, email, address, gstin, status } =
+      req.body;
 
     if (!name || !name.trim()) {
       return res.status(400).json({ error: "Company name is required" });
     }
 
     const existingCompany = await CompanyMaster.findOne({
-      name: { $regex: new RegExp(`^${name.trim()}$`, 'i') }
+      name: { $regex: new RegExp(`^${name.trim()}$`, "i") },
     });
     if (existingCompany) {
       return res.status(400).json({ error: "Company name already exists" });
@@ -68,7 +71,8 @@ exports.create = async (req, res) => {
 
 exports.update = async (req, res) => {
   try {
-    const { name, category, contact, phone, email, address, gstin, status } = req.body;
+    const { name, category, contact, phone, email, address, gstin, status } =
+      req.body;
     const { id } = req.params;
 
     const company = await CompanyMaster.findById(id);
@@ -78,8 +82,8 @@ exports.update = async (req, res) => {
 
     if (name && name.trim() !== company.name) {
       const existingCompany = await CompanyMaster.findOne({
-        name: { $regex: new RegExp(`^${name.trim()}$`, 'i') },
-        _id: { $ne: id }
+        name: { $regex: new RegExp(`^${name.trim()}$`, "i") },
+        _id: { $ne: id },
       });
       if (existingCompany) {
         return res.status(400).json({ error: "Company name already exists" });
@@ -138,7 +142,7 @@ exports.updateStatus = async (req, res) => {
     const company = await CompanyMaster.findByIdAndUpdate(
       id,
       { status },
-      { new: true }
+      { new: true },
     ).populate("createdBy", "name username");
 
     if (!company) {

@@ -34,7 +34,7 @@ npm run dev
 Start with these files in this order:
 
 1. **QUICK_REFERENCE.md** - Developer quick start (5 min read)
-2. **INTEGRATION_GUIDE.md** - Architecture & setup (15 min read)  
+2. **INTEGRATION_GUIDE.md** - Architecture & setup (15 min read)
 3. **IMPLEMENTATION_CHECKLIST.md** - Tasks to implement (20 min read)
 4. **PROJECT_SUMMARY.md** - High-level overview (5 min read)
 5. **MODULAR_ARCHITECTURE.md** - Detailed architecture (30 min read)

@@ -777,11 +777,14 @@ export default function PurchaseOrders({
       he.vendorName = true;
     } else {
       const vendorExists = (vendorMaster || []).some(
-        (v) => (v.name || "").toLowerCase() === header.vendorName.toLowerCase()
+        (v) => (v.name || "").toLowerCase() === header.vendorName.toLowerCase(),
       );
       if (!vendorExists) {
         he.vendorName = true;
-        toast(`Vendor "${header.vendorName}" not found in Vendor Master`, "error");
+        toast(
+          `Vendor "${header.vendorName}" not found in Vendor Master`,
+          "error",
+        );
       }
     }
     setHeaderErrors(he);
@@ -1863,7 +1866,11 @@ export default function PurchaseOrders({
 
           const baseFiltered = (purchaseOrders || [])
             .slice()
-            .sort((a, b) => new Date(b.createdAt || b.poDate || 0) - new Date(a.createdAt || a.poDate || 0))
+            .sort(
+              (a, b) =>
+                new Date(b.createdAt || b.poDate || 0) -
+                new Date(a.createdAt || a.poDate || 0),
+            )
             .filter((r) => {
               if (drDateFrom || drDateTo) {
                 const d = (r.poDate || "").slice(0, 10);
@@ -2188,7 +2195,15 @@ export default function PurchaseOrders({
                     suggestions={vendorOptions}
                     placeholder="Filter by vendor..."
                     showAllOnFocus={true}
-                    inputStyle={{ minWidth: 140, padding: "9px 12px", background: "transparent", border: "1px solid #2a2a2e", borderRadius: 6, color: "#fff", fontSize: 13 }}
+                    inputStyle={{
+                      minWidth: 140,
+                      padding: "9px 12px",
+                      background: "transparent",
+                      border: "1px solid #2a2a2e",
+                      borderRadius: 6,
+                      color: "#fff",
+                      fontSize: 13,
+                    }}
                   />
                   <AutocompleteInput
                     value={statusFilter}
@@ -2196,7 +2211,15 @@ export default function PurchaseOrders({
                     suggestions={["Open", "Pending", "Received", "Cancelled"]}
                     placeholder="Filter by status..."
                     showAllOnFocus={true}
-                    inputStyle={{ minWidth: 120, padding: "9px 12px", background: "transparent", border: "1px solid #2a2a2e", borderRadius: 6, color: "#fff", fontSize: 13 }}
+                    inputStyle={{
+                      minWidth: 120,
+                      padding: "9px 12px",
+                      background: "transparent",
+                      border: "1px solid #2a2a2e",
+                      borderRadius: 6,
+                      color: "#fff",
+                      fontSize: 13,
+                    }}
                   />
                   <DateRangeFilter
                     dateFrom={drDateFrom}
@@ -2258,9 +2281,13 @@ export default function PurchaseOrders({
                       const reader = new FileReader();
                       reader.onload = async (ev) => {
                         try {
-                          const wb = XLSX.read(ev.target.result, { type: "binary" });
+                          const wb = XLSX.read(ev.target.result, {
+                            type: "binary",
+                          });
                           const ws = wb.Sheets[wb.SheetNames[0]];
-                          const rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
+                          const rows = XLSX.utils.sheet_to_json(ws, {
+                            defval: "",
+                          });
                           if (!rows.length) {
                             toast("No rows found in Excel file", "error");
                             return;
@@ -2273,7 +2300,8 @@ export default function PurchaseOrders({
                                 poNo: row["PO No"] || row.poNo || "",
                                 poDate: row["Date"] || row.poDate || todayStr,
                                 vendor: row["Vendor"] || row.vendor || "",
-                                deliveryDate: row["Delivery"] || row.deliveryDate || "",
+                                deliveryDate:
+                                  row["Delivery"] || row.deliveryDate || "",
                                 remarks: row["Remarks"] || row.remarks || "",
                                 items: [],
                               });
@@ -2282,7 +2310,10 @@ export default function PurchaseOrders({
                               failed++;
                             }
                           }
-                          toast(`Imported ${ok} PO(s)${failed ? `, ${failed} failed` : ""}`, failed ? "warning" : "success");
+                          toast(
+                            `Imported ${ok} PO(s)${failed ? `, ${failed} failed` : ""}`,
+                            failed ? "warning" : "success",
+                          );
                           fetchPOs();
                         } catch (err) {
                           toast("Failed to read Excel file", "error");
