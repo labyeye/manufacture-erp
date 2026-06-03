@@ -305,6 +305,14 @@ export default function JobOrders(props) {
     fetchItemMaster();
   }, []);
 
+  useEffect(() => {
+    if (!showModal) return;
+    rawMaterialStockAPI.getAll().then((res) => {
+      const fresh = res?.stock || res;
+      if (Array.isArray(fresh) && setRawStock) setRawStock(fresh);
+    }).catch(() => {});
+  }, [showModal]);
+
   const fetchItemMaster = async () => {
     try {
       const data = await itemMasterAPI.getAll();
