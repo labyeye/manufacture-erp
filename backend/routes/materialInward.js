@@ -4,6 +4,7 @@ const { auth } = require("../middleware/auth");
 const materialInwardController = require("../controllers/materialInwardController");
 
 router.get("/", auth, materialInwardController.getAll);
+router.post("/recalculate-stock", auth, materialInwardController.recalculateStock);
 router.get("/:id", auth, materialInwardController.getOne);
 router.post("/", auth, materialInwardController.create);
 router.put("/:id", auth, materialInwardController.update);

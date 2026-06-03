@@ -498,4 +498,39 @@ const updatePurchaseOrderStatus = async (poRef) => {
   }
 };
 
+exports.recalculateStock = async (_req, res) => {
+  try {
+    const RawMaterialStock = require("../models/RawMaterialStock");
+    const ConsumableStock = require("../models/ConsumableStock");
+    const FGStock = require("../models/FGStock");
+
+    // Zero out all stock quantities (keep metadata, wipe counts)
+    await RawMaterialStock.updateMany({}, { $set: { qty: 0, weight: 0 } });
+    await ConsumableStock.updateMany({}, { $set: { qty: 0 } });
+    await FGStock.updateMany({}, { $set: { qty: 0 } });
+
+    // Replay every inward in chronological order
+    const allInwards = await MaterialInward.find().sort({ createdAt: 1 });
+    let processed = 0;
+    const errors = [];
+
+    for (const inward of allInwards) {
+      try {
+        await adjustStock(inward.items, 1, inward.location);
+        processed++;
+      } catch (err) {
+        errors.push({ inwardNo: inward.inwardNo, error: err.message });
+      }
+    }
+
+    res.json({
+      message: `Stock recalculated from ${allInwards.length} GRNs. ${processed} succeeded, ${errors.length} failed.`,
+      processed,
+      errors,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = exports;
