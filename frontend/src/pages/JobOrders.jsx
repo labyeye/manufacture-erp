@@ -154,7 +154,7 @@ export default function JobOrders(props) {
     if (isSheet && (!header.sheetW || !header.sheetL)) return null;
     if (isReel && !header.reelWidthMm) return null;
 
-    return (rawStock || []).find((s) => {
+    const matchFn1 = (s) => {
       const sCat = (s.category || s.paperCategory || "")
         .toLowerCase()
         .replace(/s$/, "");
@@ -189,7 +189,9 @@ export default function JobOrders(props) {
       }
 
       return true;
-    });
+    };
+    const allMatches1 = (rawStock || []).filter(matchFn1);
+    return allMatches1.find((s) => s.code) ?? allMatches1[0] ?? null;
   }, [
     rawStock,
     header.paperCategory,
@@ -214,7 +216,7 @@ export default function JobOrders(props) {
     const hType = (header.paperType2 || "").toLowerCase();
     const hGsm = (header.paperGsm2 || "").toString();
 
-    return (rawStock || []).find((s) => {
+    const matchFn2 = (s) => {
       const sCat = (s.category || s.paperCategory || "")
         .toLowerCase()
         .replace(/s$/, "");
@@ -250,7 +252,9 @@ export default function JobOrders(props) {
       }
 
       return true;
-    });
+    };
+    const allMatches2 = (rawStock || []).filter(matchFn2);
+    return allMatches2.find((s) => s.code) ?? allMatches2[0] ?? null;
   }, [
     rawStock,
     header.hasSecondPaper,
