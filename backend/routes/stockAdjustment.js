@@ -8,6 +8,7 @@ router.use(auth);
 router.get("/report", ctrl.getReport);
 router.get("/", ctrl.getAll);
 router.get("/:id", ctrl.getOne);
+router.post("/bulk", ctrl.bulkCreate);
 router.post("/", ctrl.create);
 router.delete("/:id", ctrl.deleteAdjustment);
 

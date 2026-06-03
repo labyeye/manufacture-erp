@@ -624,6 +624,11 @@ export const stockAdjustmentAPI = {
     const response = await api.delete(`/stock-adjustment/${id}`);
     return response.data;
   },
+
+  importBulk: async (rows, date) => {
+    const response = await api.post("/stock-adjustment/bulk", { rows, date });
+    return response.data;
+  },
 };
 
 export const stockMovementAPI = {
