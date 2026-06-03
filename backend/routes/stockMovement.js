@@ -101,31 +101,43 @@ router.get("/", async (req, res) => {
 
     /* ─── RAW MATERIAL ─── */
     if (type === "rm") {
-      const stock = await RawMaterialStock.findOne({ name: nameRegex });
+      // Look up by code first (more reliable), then name
+      const stock =
+        (await RawMaterialStock.findOne({ name: nameRegex })) ||
+        null;
       const currentQty = stock ? stock.qty || 0 : 0;
       const currentWeight = stock ? stock.weight || 0 : 0;
       const unit = stock?.unit || "sheets";
       const isWeightBased =
         unit === "kg" || (stock?.category || "").toLowerCase().includes("reel");
 
-      // ── Material Inward (GRN) ──
+      // Helper: does a GRN item match the requested stock item?
+      const itemMatches = (item) =>
+        nameRegex.test(item.rmItem || "") ||
+        nameRegex.test(item.itemName || "") ||
+        (stock?.code &&
+          (item.productCode || "").trim().toUpperCase() ===
+            (stock.code || "").trim().toUpperCase());
+
+      // ── Material Inward (GRN) ── match by rmItem, itemName, OR productCode
+      const inwardOrClauses = [
+        { "items.rmItem": nameRegex },
+        { "items.itemName": nameRegex },
+      ];
+      if (stock?.code) {
+        inwardOrClauses.push({ "items.productCode": stock.code });
+      }
+
       const inwards = await MaterialInward.find({
-        $or: [
-          { "items.rmItem": nameRegex },
-          ...(stock?.code ? [{ "items.productCode": stock.code }] : []),
-        ],
+        $or: inwardOrClauses,
         ...(fromDate || toDate ? { inwardDate: dRange(fromDate, toDate) } : {}),
       }).select("inwardNo inwardDate vendorName items");
 
       for (const inward of inwards) {
         for (const item of inward.items) {
-          if (
-            !nameRegex.test(item.rmItem || "") &&
-            !(stock?.code && item.productCode === stock.code)
-          )
-            continue;
-          const qty = item.noOfSheets || item.qty || 0;
-          const weight = item.weight || 0;
+          if (!itemMatches(item)) continue;
+          const qty = Number(item.noOfSheets || item.qty || 0);
+          const weight = Number(item.weight || 0);
           txns.push({
             date: inward.inwardDate,
             txnType: "Inward",
@@ -228,16 +240,70 @@ router.get("/", async (req, res) => {
 
       txns.sort((a, b) => new Date(a.date) - new Date(b.date));
 
+      // Compute opening balance by replaying all transactions BEFORE the date range
+      // (not backwards from current stock, which can be stale)
+      let openingQty = 0;
+      let openingWeight = 0;
+      if (fromDate) {
+        const prevInwards = await MaterialInward.find({
+          $or: inwardOrClauses,
+          inwardDate: { $lt: fromDate },
+        }).select("items inwardDate");
+        for (const inw of prevInwards) {
+          for (const item of inw.items) {
+            if (!itemMatches(item)) continue;
+            openingQty += Number(item.noOfSheets || item.qty || 0);
+            openingWeight += Number(item.weight || 0);
+          }
+        }
+
+        const prevAdjs = await StockAdjustment.find({
+          itemName: nameRegex,
+          stockType: "Raw Material",
+          date: { $lt: fromDate },
+        }).select("adjustmentType qty weight");
+        for (const adj of prevAdjs) {
+          const dir = adj.adjustmentType === "Outward" ? -1 : 1;
+          openingQty += dir * (Number(adj.qty) || 0);
+          openingWeight += dir * (Number(adj.weight) || 0);
+        }
+
+        if (joOrClauses.length) {
+          const prevJos = await JobOrder.find({
+            $or: joOrClauses,
+            status: { $in: ["In Progress", "Completed", "Scheduled", "Draft"] },
+            jobcardDate: { $lt: fromDate },
+          }).select("noOfSheets noOfSheets2 reelWeightKg polycoatedWeightKg polycoatedRmName rmStockId rmStockId2 polycoatedRmStockId paperCategory");
+          for (const jo of prevJos) {
+            const isPolycoated =
+              nameRegex.test(jo.polycoatedRmName || "") ||
+              (stock?._id && String(jo.polycoatedRmStockId) === String(stock._id));
+            const isSecond =
+              stock?._id && String(jo.rmStockId2) === String(stock._id);
+            const isReel = (jo.paperCategory || "").toLowerCase().includes("reel");
+            const outQty = isPolycoated
+              ? jo.polycoatedWeightKg || 0
+              : isWeightBased || isReel
+                ? jo.reelWeightKg || 0
+                : isSecond
+                  ? jo.noOfSheets2 || 0
+                  : jo.noOfSheets || 0;
+            openingQty -= outQty;
+            openingWeight -= isPolycoated || isReel ? outQty : jo.reelWeightKg || 0;
+          }
+        }
+
+        openingQty = Math.max(0, openingQty);
+        openingWeight = Math.max(0, openingWeight);
+      }
+
       const totalIn = txns.reduce((s, t) => s + t.inward, 0);
       const totalOut = txns.reduce((s, t) => s + t.outward, 0);
-      const openingQty = isWeightBased
-        ? Math.max(0, currentWeight - totalIn + totalOut)
-        : Math.max(0, currentQty - totalIn + totalOut);
 
       return res.json({
         ledger: txns,
-        openingQty,
-        openingWeight: Math.max(0, currentWeight - totalIn + totalOut),
+        openingQty: isWeightBased ? openingWeight : openingQty,
+        openingWeight,
         currentStock: { qty: currentQty, weight: currentWeight, unit },
         isWeightBased,
         itemCode: stock?.code || "",
@@ -352,26 +418,31 @@ router.get("/", async (req, res) => {
       const currentQty = stock ? stock.qty || 0 : 0;
       const unit = stock?.unit || "pcs";
 
+      const cnOrClauses = [
+        { "items.itemName": nameRegex },
+        ...(stock?.code ? [{ "items.productCode": stock.code }] : []),
+      ];
+
+      const cnItemMatches = (item) =>
+        item.materialType === "Consumable" &&
+        (nameRegex.test(item.itemName || "") ||
+          (stock?.code && (item.productCode || "") === stock.code));
+
       // Inward: Material Inward
       const inwards = await MaterialInward.find({
-        "items.itemName": nameRegex,
-        "items.materialType": "Consumable",
+        $or: cnOrClauses,
         ...(fromDate || toDate ? { inwardDate: dRange(fromDate, toDate) } : {}),
       }).select("inwardNo inwardDate vendorName items");
 
       for (const inward of inwards) {
         for (const item of inward.items) {
-          if (
-            item.materialType !== "Consumable" ||
-            !nameRegex.test(item.itemName || "")
-          )
-            continue;
+          if (!cnItemMatches(item)) continue;
           txns.push({
             date: inward.inwardDate,
             txnType: "Inward",
             ref: inward.inwardNo,
             description: `GRN from ${inward.vendorName || "Vendor"}`,
-            inward: item.qty || 0,
+            inward: Number(item.qty || 0),
             outward: 0,
             weight: 0,
           });
@@ -399,9 +470,31 @@ router.get("/", async (req, res) => {
       }
 
       txns.sort((a, b) => new Date(a.date) - new Date(b.date));
-      const totalIn = txns.reduce((s, t) => s + t.inward, 0);
-      const totalOut = txns.reduce((s, t) => s + t.outward, 0);
-      const openingQty = Math.max(0, currentQty - totalIn + totalOut);
+
+      // Opening balance = sum of all transactions before fromDate
+      let openingQty = 0;
+      if (fromDate) {
+        const prevInwards = await MaterialInward.find({
+          $or: cnOrClauses,
+          inwardDate: { $lt: fromDate },
+        }).select("items");
+        for (const inw of prevInwards) {
+          for (const item of inw.items) {
+            if (!cnItemMatches(item)) continue;
+            openingQty += Number(item.qty || 0);
+          }
+        }
+        const prevAdjs = await StockAdjustment.find({
+          itemName: nameRegex,
+          stockType: "Consumable",
+          date: { $lt: fromDate },
+        }).select("adjustmentType qty");
+        for (const adj of prevAdjs) {
+          const dir = adj.adjustmentType === "Outward" ? -1 : 1;
+          openingQty += dir * (Number(adj.qty) || 0);
+        }
+        openingQty = Math.max(0, openingQty);
+      }
 
       return res.json({
         ledger: txns,

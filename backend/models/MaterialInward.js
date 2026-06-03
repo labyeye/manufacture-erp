@@ -4,7 +4,7 @@ const materialInwardItemSchema = new mongoose.Schema(
   {
     materialType: {
       type: String,
-      enum: ["Raw Material", "Consumable"],
+      enum: ["Raw Material", "Consumable", "Finished Goods", "Finished Good"],
       default: "Raw Material",
     },
 

@@ -1114,6 +1114,38 @@ export default function MaterialInward({
           title="Material Inward"
           sub="Record incoming paper / board material receipts"
         >
+          <button
+            onClick={async () => {
+              if (!window.confirm("This will recalculate ALL RM/Consumable/FG stock from every saved GRN. Continue?")) return;
+              try {
+                setLoading(true);
+                const result = await materialInwardAPI.recalculateStock();
+                toast(result.message, result.errors?.length ? "warning" : "success");
+                if (result.errors?.length) {
+                  console.error("Recalculate errors:", result.errors);
+                }
+              } catch (e) {
+                toast(e.response?.data?.message || "Recalculate failed", "error");
+              } finally {
+                setLoading(false);
+              }
+            }}
+            style={{
+              background: "rgba(234,179,8,0.12)",
+              color: "#eab308",
+              border: "1px solid rgba(234,179,8,0.3)",
+              padding: "9px 18px",
+              borderRadius: 6,
+              fontWeight: 500,
+              fontSize: 13,
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            <i className="fa-solid fa-rotate" /> Sync Stock
+          </button>
           {canCreate && (
             <button
               onClick={() => {

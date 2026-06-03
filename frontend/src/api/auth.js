@@ -194,6 +194,11 @@ export const materialInwardAPI = {
     });
     return response.data;
   },
+
+  recalculateStock: async () => {
+    const response = await api.post("/material-inward/recalculate-stock");
+    return response.data;
+  },
 };
 
 export const categoryMasterAPI = {

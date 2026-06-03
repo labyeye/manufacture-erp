@@ -157,41 +157,38 @@ exports.create = async (req, res) => {
 const adjustStock = async (items, direction, location) => {
   const RawMaterialStock = require("../models/RawMaterialStock");
   for (const item of items) {
-    if (item.materialType === "Raw Material" || !item.materialType) {
+    const mType = (item.materialType || "Raw Material").trim();
+
+    if (mType === "Raw Material") {
       try {
         const itemCode = (item.productCode || "").trim() || null;
         const itemCategory = item.category || item.rmItem || "General";
-        const itemSubCategory =
-          item.subCategory || item.paperType || "Standard";
-
+        const itemSubCategory = item.subCategory || item.paperType || "Standard";
         const itemName =
           item.itemName ||
           `${itemCategory} | ${itemSubCategory}${item.gsm ? ` | ${item.gsm}gsm` : ""}${item.widthMm ? ` | ${item.widthMm}mm` : ""}`;
 
-        // Resolve the stock record to update:
-        // 1. Try by code (exact match)
-        // 2. Fall back to name (handles records created before a code was assigned)
-        // Using _id on found docs avoids duplicate-key errors on the name unique index
-        // when a code-based upsert would otherwise try to insert a second record.
+        const weightChange = Number(item.weight) * direction;
+        const qtyChange = Number(item.noOfSheets || item.qty || 0) * direction;
+
+        console.log(
+          `[adjustStock RM] code=${itemCode} name="${itemName}" weight=${item.weight}(${typeof item.weight}) noOfSheets=${item.noOfSheets} weightChange=${weightChange} qtyChange=${qtyChange} dir=${direction}`,
+        );
+
+        // Always look up by code first, then by name to avoid inserting a
+        // duplicate that conflicts with the unique name index.
         let existingDoc = null;
-        if (itemCode) {
-          existingDoc = await RawMaterialStock.findOne({ code: itemCode });
-        }
-        if (!existingDoc && itemName) {
-          existingDoc = await RawMaterialStock.findOne({ name: itemName });
-        }
+        if (itemCode) existingDoc = await RawMaterialStock.findOne({ code: itemCode });
+        if (!existingDoc && itemName) existingDoc = await RawMaterialStock.findOne({ name: itemName });
+
         const query = existingDoc
           ? { _id: existingDoc._id }
           : itemCode
             ? { code: itemCode }
             : { name: itemName };
 
-        const weightChange = (Number(item.weight) || 0) * direction;
-        const qtyChange =
-          (Number(item.noOfSheets || item.qty) || 0) * direction;
-
         const incomingRate = Number(item.rate) || 0;
-        await RawMaterialStock.findOneAndUpdate(
+        const result = await RawMaterialStock.findOneAndUpdate(
           query,
           {
             $set: {
@@ -199,7 +196,7 @@ const adjustStock = async (items, direction, location) => {
               ...(itemCode ? { code: itemCode } : {}),
               category: itemCategory,
               paperType: itemSubCategory,
-              gsm: item.gsm || 0,
+              gsm: Number(item.gsm) || 0,
               sheetSize:
                 item.widthMm && item.lengthMm
                   ? `${item.widthMm}x${item.lengthMm}mm`
@@ -214,18 +211,20 @@ const adjustStock = async (items, direction, location) => {
               weight: weightChange,
               qty: qtyChange,
             },
-            $setOnInsert: {
-              reorderLevel: 50,
-            },
+            $setOnInsert: { reorderLevel: 50 },
           },
           { upsert: true, new: true, setDefaultsOnInsert: true },
         );
+        console.log(
+          `[adjustStock RM] after update: weight=${result?.weight} qty=${result?.qty}`,
+        );
       } catch (itemErr) {
+        console.error("[adjustStock RM] ERROR:", itemErr.message);
         throw new Error(
           `Stock update failed for "${item.itemName || item.productCode}": ${itemErr.message}`,
         );
       }
-    } else if (item.materialType === "Consumable") {
+    } else if (mType === "Consumable") {
       const ConsumableStock = require("../models/ConsumableStock");
       try {
         const itemCode = (item.productCode || "").trim() || null;
@@ -384,7 +383,11 @@ exports.update = async (req, res) => {
     const inward = await MaterialInward.findById(req.params.id);
     if (!inward) return res.status(404).json({ message: "Inward not found" });
 
-    await adjustStock(inward.items, -1, inward.location);
+    // Snapshot old items/location before mutating, so we can re-apply if new stock fails
+    const oldItems = inward.items.map((i) => i.toObject());
+    const oldLocation = inward.location;
+
+    await adjustStock(oldItems, -1, oldLocation);
 
     inward.inwardDate = inwardDate || inward.inwardDate;
     inward.poRef = poRef || inward.poRef;
@@ -401,7 +404,13 @@ exports.update = async (req, res) => {
 
     await inward.save();
 
-    await adjustStock(inward.items, 1, inward.location);
+    try {
+      await adjustStock(inward.items, 1, inward.location);
+    } catch (stockErr) {
+      // Re-apply the old stock to restore state before returning the error
+      await adjustStock(oldItems, 1, oldLocation).catch(() => {});
+      return res.status(400).json({ message: stockErr.message });
+    }
 
     await inward.populate("purchaseOrderRef");
     await inward.populate("vendor.id");
