@@ -133,7 +133,12 @@ exports.create = async (req, res) => {
 
     await inward.save();
 
-    await adjustStock(items, 1, location);
+    try {
+      await adjustStock(items, 1, location);
+    } catch (stockErr) {
+      await MaterialInward.findByIdAndDelete(inward._id);
+      return res.status(400).json({ message: stockErr.message });
+    }
 
     await inward.populate("purchaseOrderRef");
     await inward.populate("vendor.id");
@@ -163,9 +168,12 @@ const adjustStock = async (items, direction, location) => {
           item.itemName ||
           `${itemCategory} | ${itemSubCategory}${item.gsm ? ` | ${item.gsm}gsm` : ""}${item.widthMm ? ` | ${item.widthMm}mm` : ""}`;
 
+        // Query must match the unique index on RawMaterialStock (name is unique),
+        // so never query by {name, category} together — it would miss existing docs
+        // with a different category and then fail on insert with a duplicate-key error.
         const query = itemCode
           ? { code: itemCode }
-          : { name: itemName, category: itemCategory };
+          : { name: itemName };
 
         const weightChange = (Number(item.weight) || 0) * direction;
         const qtyChange =
@@ -201,10 +209,8 @@ const adjustStock = async (items, direction, location) => {
           { upsert: true, new: true, setDefaultsOnInsert: true },
         );
       } catch (itemErr) {
-        console.error(
-          "Failed to update stock for item:",
-          item.itemName || item.productCode,
-          itemErr,
+        throw new Error(
+          `Stock update failed for "${item.itemName || item.productCode}": ${itemErr.message}`,
         );
       }
     } else if (item.materialType === "Consumable") {
@@ -235,10 +241,8 @@ const adjustStock = async (items, direction, location) => {
           { upsert: true, new: true, setDefaultsOnInsert: true },
         );
       } catch (err) {
-        console.error(
-          "Failed to update consumable stock for item:",
-          item.itemName,
-          err,
+        throw new Error(
+          `Consumable stock update failed for "${item.itemName}": ${err.message}`,
         );
       }
     } else if (
@@ -265,7 +269,9 @@ const adjustStock = async (items, direction, location) => {
           { upsert: true, new: true, setDefaultsOnInsert: true },
         );
       } catch (err) {
-        console.error("Failed to update FG stock for item:", itemCode, err);
+        throw new Error(
+          `FG stock update failed for "${itemCode}": ${err.message}`,
+        );
       }
     }
   }
