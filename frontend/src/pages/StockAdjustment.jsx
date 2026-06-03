@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import * as XLSX from "xlsx";
 import { C } from "../constants/colors";
-import { stockAdjustmentAPI } from "../api/auth";
+import { stockAdjustmentAPI, rawMaterialStockAPI } from "../api/auth";
 import { AutocompleteInput } from "../components/ui/BasicComponents";
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -71,9 +71,22 @@ export default function StockAdjustment({
     return code.startsWith("RM");
   }, [form.productCode]);
 
+  const [rmStockItems, setRmStockItems] = useState([]);
+  const [currentStock, setCurrentStock] = useState(null);
+
   useEffect(() => {
     fetchAdjustments();
+    loadRMStock();
   }, []);
+
+  const loadRMStock = async () => {
+    try {
+      const res = await rawMaterialStockAPI.getAll({});
+      setRmStockItems(res.stock || []);
+    } catch {
+      // non-critical
+    }
+  };
 
   const fetchAdjustments = async () => {
     setLoading(true);
@@ -105,16 +118,27 @@ export default function StockAdjustment({
   };
 
   const filteredItems = useMemo(() => {
-    const allItems = itemMasterFG.filter((i) =>
-      ["Raw Material", "Finished Goods", "Consumable"].includes(i.type),
-    );
     const q = codeSearch.toLowerCase();
-    return allItems.filter(
-      (i) =>
+    // Item master items (FG, Consumable, RM that are in master)
+    const masterItems = itemMasterFG
+      .filter((i) => ["Raw Material", "Finished Goods", "Consumable"].includes(i.type))
+      .filter((i) =>
         (i.code || "").toLowerCase().includes(q) ||
         (i.name || "").toLowerCase().includes(q),
-    );
-  }, [itemMasterFG, codeSearch]);
+      );
+
+    // RM stock records (includes items created by GRNs, not in item master)
+    const masterCodes = new Set(masterItems.map((i) => (i.code || "").toUpperCase()));
+    const rmExtra = rmStockItems
+      .filter((s) => s.code && !masterCodes.has((s.code || "").toUpperCase()))
+      .filter((s) =>
+        (s.code || "").toLowerCase().includes(q) ||
+        (s.name || "").toLowerCase().includes(q),
+      )
+      .map((s) => ({ code: s.code, name: s.name, type: "Raw Material", _id: s._id }));
+
+    return [...masterItems, ...rmExtra];
+  }, [itemMasterFG, rmStockItems, codeSearch]);
 
   const handleSelectItem = (item) => {
     setForm((f) => ({
@@ -124,6 +148,11 @@ export default function StockAdjustment({
     }));
     setCodeSearch(`${item.code} — ${item.name}`);
     setShowCodeDropdown(false);
+    // Look up current RM stock from already-loaded list (no extra API call needed)
+    const found = rmStockItems.find(
+      (s) => (s.code || "").toUpperCase() === (item.code || "").toUpperCase(),
+    );
+    setCurrentStock(found || null);
   };
 
   const handleSubmit = async (e) => {
@@ -149,6 +178,7 @@ export default function StockAdjustment({
       toast?.(`Adjustment ${res.adjustment.adjustmentNo} saved`, "success");
       setForm(EMPTY_FORM);
       setCodeSearch("");
+      setCurrentStock(null);
       if (refreshData) refreshData();
       setView("list");
     } catch (err) {
@@ -362,9 +392,9 @@ export default function StockAdjustment({
                   }
                   required
                 >
-                  <option value="Production">Production (adds stock)</option>
                   <option value="Inward">Inward (adds stock)</option>
                   <option value="Outward">Outward (subtracts stock)</option>
+                  <option value="Production">Production (adds stock)</option>
                 </select>
               </div>
             </div>
@@ -441,33 +471,31 @@ export default function StockAdjustment({
             </div>
 
             {form.productCode && (
-              <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
-                <div
-                  style={{
-                    background: "rgba(99,102,241,0.12)",
-                    border: "1px solid rgba(99,102,241,0.3)",
-                    borderRadius: 6,
-                    padding: "4px 10px",
-                    fontSize: 12,
-                    color: "#818cf8",
-                    fontWeight: 600,
-                  }}
-                >
-                  {form.productCode}
+              <>
+                <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
+                  <div style={{ background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.3)", borderRadius: 6, padding: "4px 10px", fontSize: 12, color: "#818cf8", fontWeight: 600 }}>
+                    {form.productCode}
+                  </div>
+                  <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "4px 10px", fontSize: 12, color: C.muted }}>
+                    {form.itemName}
+                  </div>
                 </div>
-                <div
-                  style={{
-                    background: "rgba(255,255,255,0.05)",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    borderRadius: 6,
-                    padding: "4px 10px",
-                    fontSize: 12,
-                    color: C.muted,
-                  }}
-                >
-                  {form.itemName}
-                </div>
-              </div>
+
+                {/* Current stock — shown for RM items so user knows what they're adjusting */}
+                {isRM && currentStock && (
+                  <div style={{ background: "rgba(234,179,8,0.08)", border: "1px solid rgba(234,179,8,0.25)", borderRadius: 8, padding: "10px 16px", marginBottom: 16, display: "flex", gap: 32, alignItems: "center" }}>
+                    <span style={{ fontSize: 11, color: "#eab308", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em" }}>Current Stock</span>
+                    <div>
+                      <span style={{ fontSize: 11, color: C.muted }}>Qty </span>
+                      <span style={{ fontWeight: 700, color: "#fbbf24" }}>{(currentStock.qty || 0).toLocaleString("en-IN")} sheets</span>
+                    </div>
+                    <div>
+                      <span style={{ fontSize: 11, color: C.muted }}>Weight </span>
+                      <span style={{ fontWeight: 700, color: "#fbbf24" }}>{(currentStock.weight || 0).toLocaleString("en-IN")} kg</span>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
 
             <div
@@ -479,19 +507,15 @@ export default function StockAdjustment({
               }}
             >
               <div>
-                <label style={labelStyle}>
-                  Qty {isRM ? "(Sheets/Reels)" : "(Units)"}
-                </label>
+                <label style={labelStyle}>Qty {isRM ? "(Sheets/Reels)" : "(Units)"}</label>
                 <input
                   type="number"
-                  min="0.01"
+                  min="0"
                   step="any"
                   style={inputStyle}
                   placeholder="Enter quantity"
                   value={form.qty}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, qty: e.target.value }))
-                  }
+                  onChange={(e) => setForm((f) => ({ ...f, qty: e.target.value }))}
                   required
                 />
               </div>
@@ -503,11 +527,9 @@ export default function StockAdjustment({
                     min="0"
                     step="any"
                     style={inputStyle}
-                    placeholder="Enter weight"
+                    placeholder="Enter weight in kg"
                     value={form.weight}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, weight: e.target.value }))
-                    }
+                    onChange={(e) => setForm((f) => ({ ...f, weight: e.target.value }))}
                   />
                 </div>
               )}

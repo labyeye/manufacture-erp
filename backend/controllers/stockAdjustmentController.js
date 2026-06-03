@@ -129,17 +129,16 @@ exports.create = async (req, res) => {
       await stock.save();
     }
 
-    const direction = adjustmentType === "Outward" ? -1 : 1;
-
     const beforeQty = stock.qty || 0;
     const beforeWeight = stock.weight || 0;
+
+    const direction = adjustmentType === "Outward" ? -1 : 1;
     const newQty = beforeQty + direction * Number(qty);
     const newWeight = beforeWeight + direction * Number(weight || 0);
 
     if (newQty < 0) {
       return res.status(400).json({
-        error:
-          "Insufficient stock: adjustment would result in negative quantity",
+        error: "Insufficient stock: adjustment would result in negative quantity",
       });
     }
     if (stockType === "Raw Material" && newWeight < 0) {
@@ -149,7 +148,7 @@ exports.create = async (req, res) => {
     }
 
     stock.qty = newQty;
-    if (stockType === "Raw Material" && weight) stock.weight = newWeight;
+    if (stockType === "Raw Material") stock.weight = newWeight;
     await stock.save();
 
     const year = new Date().getFullYear();
