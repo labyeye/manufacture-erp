@@ -38,6 +38,19 @@ const calcSheets = (q, u) => {
   return "";
 };
 
+const calcRmWeight = (sheets, w, l, uom, gsm) => {
+  const n = Number(sheets);
+  const W = Number(w);
+  const L = Number(l);
+  const g = Number(gsm);
+  if (!n || !W || !L || !g) return null;
+  let areaSqM;
+  if (uom === "cm") areaSqM = (W * L) / 10_000;
+  else if (uom === "inch") areaSqM = W * L * 0.00064516;
+  else areaSqM = (W * L) / 1_000_000;
+  return Math.round((n * areaSqM * g) / 1000);
+};
+
 const PRINTING_OPTIONS = ["No Printing", "1", "2", "3", "4", "5", "6"];
 const PLATE_OPTIONS = ["No", "Old", "New"];
 const PROCESS_TAGS = [
@@ -268,6 +281,11 @@ export default function JobOrders(props) {
       (s) => (s.name || "").trim().toLowerCase() === header.polycoatedRmName.trim().toLowerCase(),
     );
   }, [rawStock, header.paperType, header.polycoatedRmName]);
+
+  const isPaperBag = useMemo(() => {
+    const n = (header.itemName || "").toLowerCase();
+    return n.includes("paper bag");
+  }, [header.itemName]);
 
   const [headerErrors, setHeaderErrors] = useState({});
   const [showModal, setShowModal] = useState(false);
@@ -1562,6 +1580,48 @@ export default function JobOrders(props) {
                   </Field>
                 )}
               </div>
+
+              {isPaperBag && header.noOfUps && header.paperGsm && header.noOfSheets && (
+                <div
+                  style={{
+                    margin: "0 0 16px",
+                    padding: "12px 18px",
+                    background: "rgba(250,204,21,0.06)",
+                    border: "1px solid rgba(250,204,21,0.2)",
+                    borderRadius: 8,
+                    display: "flex",
+                    gap: 32,
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#facc15", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                    RM Required
+                  </div>
+                  <div style={{ display: "flex", gap: 24, flexWrap: "wrap", alignItems: "center" }}>
+                    <div>
+                      <div style={{ fontSize: 10, color: "#94a3b8", marginBottom: 2, textTransform: "uppercase" }}>Sheets</div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: "#e2e8f0" }}>{fmt(header.noOfSheets)}</div>
+                    </div>
+                    {calcRmWeight(header.noOfSheets, header.sheetW, header.sheetL, header.sheetUom, header.paperGsm) !== null && (
+                      <div>
+                        <div style={{ fontSize: 10, color: "#94a3b8", marginBottom: 2, textTransform: "uppercase" }}>Est. Weight</div>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: "#e2e8f0" }}>
+                          ~{fmt(calcRmWeight(header.noOfSheets, header.sheetW, header.sheetL, header.sheetUom, header.paperGsm))} kg
+                        </div>
+                      </div>
+                    )}
+                    {matchedStock && (
+                      <div>
+                        <div style={{ fontSize: 10, color: "#94a3b8", marginBottom: 2, textTransform: "uppercase" }}>Stock Available</div>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: Number(matchedStock.qty) >= Number(header.noOfSheets) ? "#10b981" : "#ef4444" }}>
+                          {fmt(matchedStock.qty)} sheets
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {header.paperCategory === "Paper Reel" && (
                 <div

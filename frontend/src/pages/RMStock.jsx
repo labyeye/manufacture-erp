@@ -112,20 +112,30 @@ export default function RMStock({
     );
   }, [allItems, search, activeFilter, stockStatusFilter, showZeroStock]);
 
+  const applyStockUpdate = (savedStock) => {
+    if (!savedStock || !setRawStock) return;
+    const current = rawStock || [];
+    const idx = current.findIndex((s) => s._id === savedStock._id);
+    if (idx >= 0) {
+      const next = [...current];
+      next[idx] = savedStock;
+      setRawStock(next);
+    } else {
+      setRawStock([...current, savedStock]);
+    }
+  };
+
   const handleUpdateReorder = async (item, newVal) => {
     try {
+      let res;
       if (item.isFromMaster) {
-        await rawMaterialStockAPI.create({
-          ...item,
-          reorderLevel: newVal,
-        });
+        res = await rawMaterialStockAPI.create({ ...item, reorderLevel: newVal });
       } else {
-        await rawMaterialStockAPI.update(item._id || item.id, {
-          reorderLevel: newVal,
-        });
+        res = await rawMaterialStockAPI.update(item._id || item.id, { reorderLevel: newVal });
       }
-      if (refreshData) await refreshData();
+      applyStockUpdate(res?.stock);
       toast?.("Reorder level updated", "success");
+      if (refreshData) refreshData();
     } catch (err) {
       toast?.("Failed to update", "error");
     }
@@ -134,15 +144,17 @@ export default function RMStock({
   const handleSaveEdit = async () => {
     if (!editingItem) return;
     try {
+      let res;
       if (editingItem.isFromMaster) {
-        await rawMaterialStockAPI.create(editingItem);
+        res = await rawMaterialStockAPI.create(editingItem);
       } else {
         const id = editingItem._id || editingItem.id;
-        await rawMaterialStockAPI.update(id, editingItem);
+        res = await rawMaterialStockAPI.update(id, editingItem);
       }
+      applyStockUpdate(res?.stock);
       setEditingItem(null);
       toast?.("Item updated successfully", "success");
-      if (refreshData) await refreshData();
+      if (refreshData) refreshData();
     } catch (err) {
       toast?.("Failed to save changes", "error");
     }
