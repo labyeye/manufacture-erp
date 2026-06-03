@@ -196,6 +196,21 @@ export default function MaterialInward({
     return result;
   }, [categoryMaster, rmItems]);
 
+  const fgCategoryList = useMemo(() => {
+    const fgCat = Object.values(categoryMaster || {}).find(
+      (c) => (c.type || "").trim().toLowerCase() === "finished goods",
+    );
+    return [...new Set((fgCat?.categories || []).map((k) => k.trim()))];
+  }, [categoryMaster]);
+
+  const consumableCategoryList = useMemo(() => {
+    const csCat = Object.values(categoryMaster || {}).find(
+      (c) => (c.type || "").trim().toLowerCase() === "consumable",
+    );
+    const fromMaster = (csCat?.categories || []).map((k) => k.trim());
+    return fromMaster.length > 0 ? fromMaster : consumableCategories;
+  }, [categoryMaster]);
+
   const sortedItemMasterItems = useMemo(() => {
     return [...itemMasterItems].sort((a, b) => {
       const codeA = a.code || "";
@@ -421,7 +436,27 @@ export default function MaterialInward({
                 it.uom = consDimMatch[4];
               }
             }
+          } else if (it.materialType === "Finished Goods") {
+            it.category = (masterItem.category || "").trim();
+            it.gstRate = masterItem.gstRate || 18;
+            it.hsnCode = masterItem.hsnCode || "";
+            it.unit = masterItem.unit || "nos";
+            it.rate = masterItem.rate || it.rate || "";
           }
+        }
+      }
+
+      if (k === "itemName" && it.materialType === "Finished Goods") {
+        const masterItem = itemMasterItems.find(
+          (x) => (x.name || "").trim().toLowerCase() === (v || "").trim().toLowerCase(),
+        );
+        if (masterItem) {
+          it.productCode = masterItem.code || "";
+          it.category = (masterItem.category || "").trim();
+          it.gstRate = masterItem.gstRate || 18;
+          it.hsnCode = masterItem.hsnCode || "";
+          it.unit = masterItem.unit || "nos";
+          it.rate = masterItem.rate || it.rate || "";
         }
       }
 
@@ -468,20 +503,21 @@ export default function MaterialInward({
       it.taxAmount = tax.toFixed(2);
       it.totalWithTax = (amt + tax).toFixed(2);
 
-      if (it.materialType === "Consumable" && !it.productCode) {
+      if (it.materialType === "Consumable" && !it.productCode && it.category) {
         const uom = it.uom || "";
         const uomPart = uom ? ` ${uom}` : "";
-        if (it.category === "Corrugated Box") {
+        const cat = it.category;
+        if (cat === "Corrugated Box") {
           const dims = [it.widthMm, it.lengthMm, it.height].filter(Boolean);
           const sizePart = it.size || (dims.length > 0 ? dims.join("x") : "");
           it.itemName = `Corrugated Box ${sizePart}${uomPart}`.trim();
-        } else if (it.category === "LDPE Polybag") {
+        } else if (cat === "LDPE Polybag") {
           const dims = [it.widthMm, it.height].filter(Boolean);
           const sizePart = it.size || (dims.length > 0 ? dims.join("x") : "");
           it.itemName = `LDPE Polybag ${sizePart}${uomPart}`.trim();
-        } else if (it.category === "Tape" || it.category === "Glue") {
+        } else {
           const sizePart = it.size ? ` ${it.size}` : "";
-          it.itemName = `${it.category}${sizePart}${uomPart}`.trim();
+          it.itemName = `${cat}${sizePart}${uomPart}`.trim();
         }
       }
 
@@ -1530,12 +1566,30 @@ export default function MaterialInward({
                     {it.materialType === "Finished Goods" && (
                       <>
                         <Field label="Category">
-                          <input
-                            placeholder="e.g. Corrugated Box"
+                          <select
                             value={it.category}
                             onChange={(e) =>
                               setItem(idx, "category", e.target.value)
                             }
+                          >
+                            <option value="">-- Select Category --</option>
+                            {fgCategoryList.map((c) => (
+                              <option key={c} value={c}>{c}</option>
+                            ))}
+                          </select>
+                        </Field>
+                        <Field label="Item Name *">
+                          <AutocompleteInput
+                            value={it.itemName}
+                            onChange={(v) => setItem(idx, "itemName", v)}
+                            suggestions={sortedItemMasterItems
+                              .filter(
+                                (i) =>
+                                  (i.type || "").toLowerCase().includes("finished") &&
+                                  (!it.category || (i.category || "").toLowerCase() === it.category.toLowerCase()),
+                              )
+                              .map((i) => i.name)}
+                            placeholder="Search FG item..."
                           />
                         </Field>
                         <Field label="Qty *">
@@ -1549,7 +1603,37 @@ export default function MaterialInward({
                             style={EI(idx, "qty")}
                           />
                         </Field>
-                        <div style={{ gridColumn: "span 3" }} />
+                        <Field label="Unit">
+                          <select
+                            value={it.unit || "nos"}
+                            onChange={(e) => setItem(idx, "unit", e.target.value)}
+                          >
+                            <option value="nos">nos</option>
+                            <option value="pcs">pcs</option>
+                            <option value="kg">kg</option>
+                            <option value="set">set</option>
+                          </select>
+                        </Field>
+                        <Field label="Rate (₹) *">
+                          <input
+                            type="number"
+                            placeholder="Rate per unit"
+                            value={it.rate}
+                            onChange={(e) => setItem(idx, "rate", e.target.value)}
+                            style={EI(idx, "rate")}
+                          />
+                        </Field>
+                        <Field label="Amount (₹)">
+                          <input
+                            readOnly
+                            value={it.amount ? `₹${fmt(+it.amount)}` : "— Qty × Rate —"}
+                            style={{
+                              background: C.border + "22",
+                              color: it.amount ? C.green : C.muted,
+                              fontWeight: 500,
+                            }}
+                          />
+                        </Field>
                       </>
                     )}
 
@@ -1564,7 +1648,7 @@ export default function MaterialInward({
                             style={EI(idx, "category")}
                           >
                             <option value="">-- Select Category --</option>
-                            {consumableCategories.map((c) => (
+                            {consumableCategoryList.map((c) => (
                               <option key={c} value={c}>
                                 {c}
                               </option>

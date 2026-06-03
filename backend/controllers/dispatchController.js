@@ -94,11 +94,16 @@ exports.getAll = async (req, res) => {
     const filter = {};
 
     if (req.user?.role === "Client" && req.user?.clientTag) {
+      const tag = req.user.clientTag.trim();
       const companies = await CompanyMaster.find({
-        category: { $regex: new RegExp(`^${req.user.clientTag.trim()}$`, "i") },
+        category: { $regex: new RegExp(`^${tag}$`, "i") },
       }).select("name");
       const allowedNames = companies.map((c) => c.name);
-      filter.companyName = { $in: allowedNames };
+      filter.$or = [
+        { clientCategory: { $regex: new RegExp(`^${tag}$`, "i") } },
+        { clientCategory: { $in: [null, ""] }, companyName: { $in: allowedNames } },
+        { clientCategory: { $exists: false }, companyName: { $in: allowedNames } },
+      ];
     }
 
     const dispatches = await Dispatch.find(filter)
@@ -139,6 +144,7 @@ exports.create = async (req, res) => {
       lrNo,
       items,
       remarks,
+      clientCategory,
     } = req.body;
 
     if (!date || !companyName || !items || items.length === 0) {
@@ -165,6 +171,7 @@ exports.create = async (req, res) => {
       remarks: remarks?.trim(),
       type: recordType,
       materialType,
+      clientCategory: clientCategory?.trim() || "",
       originalDispatchRef: req.body.originalDispatchRef?.trim(),
       returnReason: req.body.returnReason?.trim(),
       createdBy: req.user._id,
@@ -215,6 +222,7 @@ exports.update = async (req, res) => {
     if (vehicleNo !== undefined) dispatch.vehicleNo = vehicleNo?.trim();
     if (driverName !== undefined) dispatch.driverName = driverName?.trim();
     if (lrNo !== undefined) dispatch.lrNo = lrNo?.trim();
+    if (req.body.clientCategory !== undefined) dispatch.clientCategory = req.body.clientCategory?.trim() || "";
 
     if (items) {
       const mt = dispatch.materialType || "FG";

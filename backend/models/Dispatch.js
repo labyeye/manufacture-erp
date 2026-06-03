@@ -58,6 +58,7 @@ const dispatchSchema = new mongoose.Schema(
       enum: ["FG", "RM", "CG"],
       default: "FG",
     },
+    clientCategory: String,
     originalDispatchRef: String,
     returnReason: String,
     createdBy: {

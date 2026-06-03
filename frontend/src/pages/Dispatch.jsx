@@ -16,6 +16,7 @@ import {
   salesOrdersAPI,
   jobOrdersAPI,
   companyMasterAPI,
+  categoryMasterAPI,
 } from "../api/auth";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
@@ -47,6 +48,7 @@ export default function Dispatch({
     soRef: "",
     poNumber: "",
     companyName: "",
+    clientCategory: "",
     deliveryAddress: "",
     vehicleNo: "",
     driverName: "",
@@ -73,6 +75,7 @@ export default function Dispatch({
   const [header, setHeader] = useState(blankHeader);
   const [items, setItems] = useState([blankItem()]);
   const [companyMaster, setCompanyMaster] = useState([]);
+  const [clientCategories, setClientCategories] = useState([]);
   const [headerErrors, setHeaderErrors] = useState({});
   const [itemErrors, setItemErrors] = useState([{}]);
   const [showModal, setShowModal] = useState(false);
@@ -102,12 +105,35 @@ export default function Dispatch({
     fetchSalesOrders();
     fetchJobOrders();
     fetchCompanies();
+    fetchClientCategories();
   }, []);
 
   const fetchCompanies = async () => {
     try {
       const res = await companyMasterAPI.getAll();
-      setCompanyMaster(Array.isArray(res) ? res : res?.companies || []);
+      const companies = Array.isArray(res) ? res : res?.companies || [];
+      setCompanyMaster(companies);
+      const fromCompanies = companies.map((c) => c.category).filter(Boolean);
+      setClientCategories((prev) => {
+        return [...new Set([...prev, ...fromCompanies])].sort();
+      });
+    } catch {
+      // silently fail
+    }
+  };
+
+  const fetchClientCategories = async () => {
+    try {
+      const res = await categoryMasterAPI.getAll();
+      const list = Array.isArray(res) ? res : res?.categories || [];
+      const fromCategoryMaster = list
+        .filter((c) => c.type === "Client" && c.status !== "Inactive")
+        .flatMap((c) => c.categories || [c.name])
+        .filter(Boolean);
+      setClientCategories((prev) => {
+        const merged = [...new Set([...fromCategoryMaster, ...prev])].sort();
+        return merged;
+      });
     } catch {
       // silently fail
     }
@@ -247,6 +273,12 @@ export default function Dispatch({
       setHeader((f) => ({ ...f, [k]: v }));
 
       if (k === "companyName") {
+        const selectedCompany = companyMaster.find(
+          (c) => (c.name || "").toLowerCase() === (v || "").toLowerCase(),
+        );
+        if (selectedCompany?.category) {
+          setHeader((f) => ({ ...f, clientCategory: selectedCompany.category }));
+        }
         setItems((prev) =>
           prev.map((it) => {
             const masterItem = (itemMasterFG || []).find(
@@ -406,6 +438,7 @@ export default function Dispatch({
       const payload = {
         date: new Date(header.dispatchDate),
         companyName: header.companyName,
+        clientCategory: header.clientCategory,
         materialType,
         soRef: header.soRef,
         poNumber: header.poNumber,
@@ -735,7 +768,7 @@ export default function Dispatch({
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr",
+                  gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 1fr",
                   gap: 14,
                   marginBottom: 14,
                 }}
@@ -775,6 +808,17 @@ export default function Dispatch({
                     suggestions={companyMaster.map((c) => c.name)}
                     placeholder="Type to search company..."
                   />
+                </Field>
+                <Field label="Client Category">
+                  <select
+                    value={header.clientCategory}
+                    onChange={(e) => setH("clientCategory", e.target.value)}
+                  >
+                    <option value="">-- Select Category --</option>
+                    {clientCategories.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
                 </Field>
                 <Field label="Delivery Address">
                   <input
@@ -1808,6 +1852,7 @@ export default function Dispatch({
                             soRef: r.soRef || "",
                             poNumber: r.poNumber || "",
                             companyName: r.companyName || "",
+                            clientCategory: r.clientCategory || "",
                             deliveryAddress: r.deliveryAddress || "",
                             vehicleNo: r.vehicleNo || "",
                             driverName: r.driverName || "",
