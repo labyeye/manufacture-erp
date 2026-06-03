@@ -47,6 +47,7 @@ exports.createStock = async (req, res) => {
       sheetSize,
       location,
       reorderLevel,
+      rate,
     } = req.body;
 
     if (!name) {
@@ -86,6 +87,7 @@ exports.createStock = async (req, res) => {
       sheetSize,
       location,
       reorderLevel: reorderLevel || 50,
+      rate: rate || 0,
     });
 
     await stock.save();
@@ -117,6 +119,7 @@ exports.updateStock = async (req, res) => {
       sheetSize,
       location,
       reorderLevel,
+      rate,
     } = req.body;
 
     const stock = await RawMaterialStock.findById(req.params.id);
@@ -160,6 +163,7 @@ exports.updateStock = async (req, res) => {
     if (sheetSize !== undefined) stock.sheetSize = sheetSize;
     if (location !== undefined) stock.location = location;
     if (reorderLevel !== undefined) stock.reorderLevel = reorderLevel;
+    if (rate !== undefined) stock.rate = rate;
 
     await stock.save();
 
