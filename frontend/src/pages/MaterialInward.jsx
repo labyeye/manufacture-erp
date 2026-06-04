@@ -944,7 +944,7 @@ export default function MaterialInward({
   };
 
   const generateGRNPDF = (r) => {
-    const rfmt = (n) => Math.round(n ?? 0).toLocaleString("en-IN");
+    const rfmt = (n) => (+n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const itemsArr = (r.items || []).map((it) => {
       const amt = Number(it.amount || 0);
       const gst = Number(

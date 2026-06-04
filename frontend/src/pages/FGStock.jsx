@@ -460,7 +460,7 @@ export default function FGStock({
       return;
     }
     const fmtN = (n) => (+n || 0).toLocaleString("en-IN");
-    const rfmt = (n) => Math.round(+n || 0).toLocaleString("en-IN");
+    const rfmt = (n) => (+n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const totalQty = filtered.reduce((s, r) => s + (+r.qty || 0), 0);
     const totalVal = filtered.reduce(
       (s, r) => s + (+r.qty || 0) * (+r.price || 0),
