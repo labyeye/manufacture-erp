@@ -516,15 +516,21 @@ export default function CompanyMaster({ toast, canExportImport = true }) {
           }}
         >
           <span style={{ fontSize: 14, fontWeight: 500, color: "#e0e0e0" }}>
-            Companies ({companies.length})
+            Companies{searchTerm ? ` (${filtered.length} of ${companies.length})` : ` (${companies.length})`}
           </span>
-          <input
-            type="text"
-            placeholder=" Search entities..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ ...inputStyle, width: 220 }}
-          />
+          <div style={{ position: "relative", width: 260 }}>
+            <i className="fa-solid fa-magnifying-glass" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#888", fontSize: 12, pointerEvents: "none" }} />
+            <input
+              type="text"
+              placeholder="Search by name, contact..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{ ...inputStyle, width: "100%", paddingLeft: 30, paddingRight: searchTerm ? 28 : 12 }}
+            />
+            {searchTerm && (
+              <button onClick={() => setSearchTerm("")} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#888", cursor: "pointer", fontSize: 13, padding: 0, lineHeight: 1 }}>✕</button>
+            )}
+          </div>
         </div>
 
         {(() => {
