@@ -511,59 +511,61 @@ export default function FGStock({
       toast("No data to export", "error");
       return;
     }
-    const header = [
-      "Code",
-      "Item Name",
-      "Category",
-      "Company Cat",
-      "Qty",
-      "Reorder",
-      "Price",
-      "Value",
-      "Ageing (Days)",
-      "Ageing Bucket",
-      "FIFO Ageing Detail",
+
+    const AGE_COLS = [
+      { label: "0-15 days", min: 0, max: 15 },
+      { label: "15-30 days", min: 16, max: 30 },
+      { label: "30-60 days", min: 31, max: 60 },
+      { label: "60+ days", min: 61, max: Infinity },
     ];
-    const rows = filtered.map((s) => {
-      const fifoKey = (s.itemName || "").toLowerCase().trim();
-      const fifo = fifoAgeingMap.get(fifoKey);
-      let ageDays = "";
-      let ageBucket = "";
-      if ((s.qty || 0) > 0) {
-        if (fifo && fifo.worstAge !== null) {
-          ageDays = fifo.worstAge;
-        } else {
-          const d = s.lastUpdated || s.addedOn || s.createdAt;
-          ageDays = d ? Math.floor((Date.now() - new Date(d).getTime()) / 86400000) : "";
-        }
-        if (ageDays !== "") {
-          ageBucket = ageDays <= 7 ? "0–7 days" : ageDays <= 15 ? "8–15 days" : ageDays <= 30 ? "16–30 days" : ageDays <= 60 ? "31–60 days" : "60+ days";
-        }
-      }
-      // Build FIFO bucket detail string for export
-      const bucketDetail = fifo
-        ? Object.values(fifo.buckets).filter((b) => b.qty > 0).map((b) => `${b.label}: ${b.qty}`).join(" | ")
-        : "";
-      return [
-        s.itemCode || s.code || "",
-        s.itemName || "",
-        s.category || "",
-        s.companyCat || "",
-        s.qty || 0,
-        s.reorder || 0,
-        s.price || 0,
-        (s.qty || 0) * (s.price || 0),
-        ageDays,
-        ageBucket,
-        bucketDetail,
-      ];
-    });
 
-    const worksheet = XLSX.utils.aoa_to_sheet([header, ...rows]);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "FG Stock");
-    XLSX.writeFile(workbook, `fg_stock_${today().slice(0, 10)}.xlsx`);
+    // Sheet 1 — stock details
+    const header1 = ["Code", "Item Name", "Category", "Company Cat", "Total Qty", "Reorder", "Price (₹)", "Value (₹)"];
+    const rows1 = filtered.map((s) => [
+      s.itemCode || s.code || "",
+      s.itemName || "",
+      s.category || "",
+      s.companyCat || "",
+      s.qty || 0,
+      s.reorder || 0,
+      s.price || 0,
+      (s.qty || 0) * (s.price || 0),
+    ]);
 
+    // Sheet 2 — ageing matrix pivot
+    const header2 = ["Item Name", "Total Qty", ...AGE_COLS.map((c) => c.label)];
+    const rows2 = filtered
+      .filter((s) => (s.qty || 0) > 0)
+      .map((s) => {
+        const fifoKey = (s.itemName || "").toLowerCase().trim();
+        const fifo = fifoAgeingMap.get(fifoKey);
+        const bucketQtys = AGE_COLS.map((col) => {
+          if (!fifo) {
+            // Fallback: use single date age
+            const d = s.lastUpdated || s.addedOn || s.createdAt;
+            const age = d ? Math.floor((Date.now() - new Date(d).getTime()) / 86400000) : null;
+            if (age === null) return 0;
+            return age >= col.min && age <= col.max ? (s.qty || 0) : 0;
+          }
+          // Sum qty from FIFO lots in this age range
+          return (fifo.lots || [])
+            .filter((l) => l.ageDays >= col.min && l.ageDays <= col.max)
+            .reduce((sum, l) => sum + l.qty, 0);
+        });
+        return [s.itemName || "", s.qty || 0, ...bucketQtys];
+      });
+
+    const wb = XLSX.utils.book_new();
+
+    const ws1 = XLSX.utils.aoa_to_sheet([header1, ...rows1]);
+    ws1["!cols"] = [{ wch: 14 }, { wch: 40 }, { wch: 18 }, { wch: 18 }, { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 14 }];
+    XLSX.utils.book_append_sheet(wb, ws1, "FG Stock");
+
+    const ws2 = XLSX.utils.aoa_to_sheet([header2, ...rows2]);
+    ws2["!cols"] = [{ wch: 40 }, { wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 12 }];
+    XLSX.utils.book_append_sheet(wb, ws2, "Ageing");
+
+    XLSX.writeFile(wb, `fg_stock_${today().slice(0, 10)}.xlsx`);
     toast("Exported as Excel successfully", "success");
   };
 
