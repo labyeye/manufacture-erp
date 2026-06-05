@@ -399,30 +399,34 @@ export default function FGStock({
         (a, b) => new Date(a.date) - new Date(b.date)
       );
 
-      // If no history, fall back to a single opening-balance lot from addedOn
-      if (history.length === 0) {
-        const openDate = new Date(s.addedOn || s.createdAt || now);
-        const ageDays = Math.max(0, Math.floor((now - openDate.getTime()) / 86400000));
-        const bucket = BUCKETS.find((b) => ageDays >= b.min && ageDays <= b.max);
-        const buckets = {};
-        BUCKETS.forEach((b) => { buckets[b.key] = { ...b, qty: 0 }; });
-        if (bucket) buckets[bucket.key].qty = s.qty;
-        const lot = { date: openDate, qty: s.qty, ref: "Opening Balance", type: "opening", ageDays };
-        map.set(key, { lots: [lot], buckets, txHistory: [{ ...lot, txType: "opening" }], worstAge: ageDays });
-        return;
+      // Net qty accounted for by history entries
+      const netFromHistory = history.reduce((sum, h) => sum + Number(h.qty), 0);
+      // Opening balance = stock that existed before any tracked history entry
+      const openingQty = Math.max(0, (s.qty || 0) - netFromHistory);
+      const openDate = new Date(s.addedOn || s.createdAt || now);
+
+      // Start FIFO with the opening balance as the oldest lot
+      const lots = [];
+      if (openingQty > 0) {
+        lots.push({ date: openDate, qty: openingQty, ref: "Opening Balance", type: "opening" });
       }
 
-      // Replay history using FIFO lots
-      const lots = []; // active lots sorted oldest-first
+      // Build txHistory for display
       const txHistory = [];
+      if (openingQty > 0) {
+        txHistory.push({ date: openDate, qty: openingQty, ref: "Opening Balance", type: "opening", txType: "opening" });
+      }
 
+      // Replay history entries in chronological order
       history.forEach((h) => {
         const qty = Number(h.qty);
         const date = new Date(h.date);
-        txHistory.push({ date, qty, ref: h.ref, type: h.type, txType: qty >= 0 ? (h.type === "dispatch" ? "dispatch" : h.type === "return" ? "return" : "production") : "dispatch" });
+        txHistory.push({
+          date, qty, ref: h.ref, type: h.type,
+          txType: qty >= 0 ? (h.type === "dispatch" ? "return" : h.type === "return" ? "return" : "production") : "dispatch",
+        });
 
         if (qty > 0) {
-          // Inflow: new lot
           lots.push({ date, qty, ref: h.ref || h.type, type: h.type });
         } else {
           // Outflow: consume oldest lots first (FIFO)
