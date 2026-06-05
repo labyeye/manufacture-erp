@@ -214,12 +214,17 @@ export default function JobOrders(props) {
         "";
       const sGsm = gsmFromField !== "0" ? gsmFromField : gsmFromName;
 
-      // If category is missing on old records, fall back to checking the name
+      // If category is wrong/missing on old records, fall back to name check
+      const blankCats = new Set(["", "general", "standard"]);
       const catMatch =
         sCat === hCat ||
-        (!sCat && sNameLower.replace(/s\b/g, "").includes(hCat));
+        (blankCats.has(sCat) && sNameLower.includes(hCat));
+      // sType may be just paperType with no GSM; also try name for type check
+      const typeMatch =
+        sType.includes(hType) ||
+        (sNameLower.includes(hType));
       const basicMatch =
-        catMatch && sType.includes(hType) && sGsm === hGsm;
+        catMatch && typeMatch && sGsm === hGsm;
 
       if (!basicMatch) return false;
 
@@ -284,11 +289,15 @@ export default function JobOrders(props) {
         "";
       const sGsm = gsmFromField !== "0" ? gsmFromField : gsmFromName;
 
+      const blankCats2 = new Set(["", "general", "standard"]);
       const catMatch =
         sCat === hCat ||
-        (!sCat && sNameLower.replace(/s\b/g, "").includes(hCat));
+        (blankCats2.has(sCat) && sNameLower.includes(hCat));
+      const typeMatch =
+        sType.includes(hType) ||
+        sNameLower.includes(hType);
       const basicMatch =
-        catMatch && sType.includes(hType) && sGsm === hGsm;
+        catMatch && typeMatch && sGsm === hGsm;
       if (!basicMatch) return false;
 
       const isSheet = hCat === "paper sheet";
