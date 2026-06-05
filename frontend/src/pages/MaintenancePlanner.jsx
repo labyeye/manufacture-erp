@@ -615,6 +615,11 @@ function SparePartsTab({
   const [issueForm, setIssueForm] = useState({ qty: "", machineId: "", issuedBy: "", remarks: "" });
   const [issuing, setIssuing] = useState(false);
 
+  // Edit usage log state
+  const [editingLog, setEditingLog] = useState(null);
+  const [editLogForm, setEditLogForm] = useState({});
+  const [savingLog, setSavingLog] = useState(false);
+
   // Usage history state
   const [usageLogs, setUsageLogs] = useState([]);
   const [logsLoading, setLogsLoading] = useState(false);
@@ -795,6 +800,38 @@ function SparePartsTab({
       toast?.("Record deleted", "success");
     } catch {
       toast?.("Failed to delete record", "error");
+    }
+  };
+
+  const openEditLog = (log) => {
+    setEditingLog(log);
+    setEditLogForm({
+      itemName: log.itemName || "",
+      itemCode: log.itemCode || "",
+      category: log.category || "",
+      machineName: log.machineName || "",
+      qty: log.qty || "",
+      unit: log.unit || "nos",
+      issuedBy: log.issuedBy || "",
+      remarks: log.remarks || "",
+      issuedAt: log.issuedAt ? new Date(log.issuedAt).toISOString().slice(0, 10) : "",
+    });
+  };
+
+  const handleSaveLog = async () => {
+    if (!editLogForm.itemName || !editLogForm.qty || Number(editLogForm.qty) <= 0) {
+      toast?.("Part name and quantity are required", "error"); return;
+    }
+    setSavingLog(true);
+    try {
+      const res = await spareIssueLogAPI.update(editingLog._id, editLogForm);
+      setUsageLogs((prev) => prev.map((l) => l._id === editingLog._id ? res.log : l));
+      toast?.("Record updated", "success");
+      setEditingLog(null);
+    } catch {
+      toast?.("Failed to update record", "error");
+    } finally {
+      setSavingLog(false);
     }
   };
 
@@ -1737,6 +1774,60 @@ function SparePartsTab({
         </>
       )}
 
+      {editingLog && (
+        <Modal title="Edit Issue Record" onClose={() => setEditingLog(null)}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
+            <div>
+              <label style={lbl}>Part Name *</label>
+              <input value={editLogForm.itemName} onChange={(e) => setEditLogForm((f) => ({ ...f, itemName: e.target.value }))} style={inp} placeholder="Part name" />
+            </div>
+            <div>
+              <label style={lbl}>Part Code</label>
+              <input value={editLogForm.itemCode} onChange={(e) => setEditLogForm((f) => ({ ...f, itemCode: e.target.value }))} style={inp} placeholder="Code" />
+            </div>
+            <div>
+              <label style={lbl}>Category</label>
+              <input value={editLogForm.category} onChange={(e) => setEditLogForm((f) => ({ ...f, category: e.target.value }))} style={inp} placeholder="Category" />
+            </div>
+            <div>
+              <label style={lbl}>Machine</label>
+              <select value={editLogForm.machineName} onChange={(e) => setEditLogForm((f) => ({ ...f, machineName: e.target.value }))} style={inp}>
+                <option value="">— Select Machine —</option>
+                {machines.map((m) => <option key={m._id || m.id} value={m.name}>{m.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={lbl}>Qty *</label>
+              <input type="number" min={1} value={editLogForm.qty} onChange={(e) => setEditLogForm((f) => ({ ...f, qty: e.target.value }))} style={inp} />
+            </div>
+            <div>
+              <label style={lbl}>Unit</label>
+              <input value={editLogForm.unit} onChange={(e) => setEditLogForm((f) => ({ ...f, unit: e.target.value }))} style={inp} placeholder="nos" />
+            </div>
+            <div>
+              <label style={lbl}>Issued By</label>
+              <input value={editLogForm.issuedBy} onChange={(e) => setEditLogForm((f) => ({ ...f, issuedBy: e.target.value }))} style={inp} placeholder="Name" />
+            </div>
+            <div>
+              <label style={lbl}>Date</label>
+              <input type="date" value={editLogForm.issuedAt} onChange={(e) => setEditLogForm((f) => ({ ...f, issuedAt: e.target.value }))} style={inp} />
+            </div>
+            <div style={{ gridColumn: "1 / -1" }}>
+              <label style={lbl}>Remarks</label>
+              <input value={editLogForm.remarks} onChange={(e) => setEditLogForm((f) => ({ ...f, remarks: e.target.value }))} style={inp} placeholder="Purpose / notes" />
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button onClick={handleSaveLog} disabled={savingLog} style={{ padding: "9px 22px", background: savingLog ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 600, cursor: savingLog ? "not-allowed" : "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
+              {savingLog ? "Saving…" : "Save Changes"}
+            </button>
+            <button onClick={() => setEditingLog(null)} style={{ background: "transparent", color: "#aaa", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, cursor: "pointer" }}>
+              Cancel
+            </button>
+          </div>
+        </Modal>
+      )}
+
       {view === "usage" && (
         <div>
           <div
@@ -1927,12 +2018,20 @@ function SparePartsTab({
                         {log.remarks || "—"}
                       </td>
                       <td style={{ padding: "10px 12px" }}>
-                        <button
-                          onClick={() => handleDeleteLog(log._id)}
-                          style={{ background: "transparent", color: "#ef4444", border: "1px solid #ef444460", borderRadius: 6, padding: "5px 10px", fontSize: 11, fontWeight: 500, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5 }}
-                        >
-                          <i className="fa-solid fa-trash" /> Delete
-                        </button>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <button
+                            onClick={() => openEditLog(log)}
+                            style={{ background: "transparent", color: "#8082ff", border: "1px solid #8082ff98", borderRadius: 6, padding: "5px 10px", fontSize: 11, fontWeight: 500, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5 }}
+                          >
+                            <i className="fa-solid fa-pen-to-square" /> Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteLog(log._id)}
+                            style={{ background: "transparent", color: "#ef4444", border: "1px solid #ef444460", borderRadius: 6, padding: "5px 10px", fontSize: 11, fontWeight: 500, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5 }}
+                          >
+                            <i className="fa-solid fa-trash" /> Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

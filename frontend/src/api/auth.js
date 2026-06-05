@@ -597,6 +597,10 @@ export const spareIssueLogAPI = {
     const response = await api.post("/spare-issue-log", data);
     return response.data;
   },
+  update: async (id, data) => {
+    const response = await api.put(`/spare-issue-log/${id}`, data);
+    return response.data;
+  },
   delete: async (id) => {
     const response = await api.delete(`/spare-issue-log/${id}`);
     return response.data;
