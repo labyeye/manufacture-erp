@@ -547,6 +547,11 @@ export const fgStockAPI = {
     const response = await api.delete(`/fg-stock/${id}`);
     return response.data;
   },
+
+  addHistory: async (id, entry) => {
+    const response = await api.post(`/fg-stock/${id}/history`, entry);
+    return response.data;
+  },
 };
 
 export const consumableStockAPI = {

@@ -12,6 +12,7 @@ router.get("/:id", fgStockController.getStockById);
 router.post("/", fgStockController.createStock);
 
 router.patch("/:id/adjust", fgStockController.adjustStock);
+router.post("/:id/history", fgStockController.addHistory);
 
 router.put("/:id", fgStockController.updateStock);
 

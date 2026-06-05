@@ -29,8 +29,6 @@ export default function FGStock({
   itemMasterFG = [],
   categoryMaster,
   companyMaster = [],
-  jobOrders = [],
-  dispatches = [],
   session,
   toast,
   refreshData,
@@ -381,71 +379,58 @@ export default function FGStock({
     const now = Date.now();
     const map = new Map();
 
-    // Index FG outward dispatches by itemName (lowercase)
-    const dispatchOutflows = new Map();
-    (dispatches || []).forEach((d) => {
-      if (d.type !== "Outward") return;
-      (d.items || []).forEach((di) => {
-        const key = (di.itemName || "").toLowerCase().trim();
-        if (!key || !(di.qty > 0)) return;
-        if (!dispatchOutflows.has(key)) dispatchOutflows.set(key, []);
-        dispatchOutflows.get(key).push({ date: new Date(d.date), qty: di.qty, ref: d.dispatchNo || d._id });
-      });
-    });
-
-    // Index completed job order inflows by itemName (lowercase)
-    const productionInflows = new Map();
-    (jobOrders || []).filter((jo) => jo.status === "Completed").forEach((jo) => {
-      const key = (jo.itemName || jo.product || "").toLowerCase().trim();
-      if (!key || !(jo.orderQty > 0)) return;
-      const lastStage = jo.stageHistory?.[jo.stageHistory.length - 1];
-      const date = new Date(lastStage?.enteredAt || jo.updatedAt || jo.jobcardDate);
-      if (isNaN(date.getTime())) return;
-      if (!productionInflows.has(key)) productionInflows.set(key, []);
-      productionInflows.get(key).push({ date, qty: jo.orderQty, ref: jo.joNo || jo._id });
-    });
-
     const BUCKETS = [
-      { key: "0-7d", label: "0–7 days", min: 0, max: 7, color: "#10b981" },
-      { key: "8-15d", label: "8–15 days", min: 8, max: 15, color: "#60a5fa" },
-      { key: "16-30d", label: "16–30 days", min: 16, max: 30, color: "#f59e0b" },
-      { key: "31-60d", label: "31–60 days", min: 31, max: 60, color: "#f97316" },
-      { key: "60+d", label: "60+ days", min: 61, max: Infinity, color: "#ef4444" },
+      { key: "0-7d",   label: "0–7 days",   min: 0,  max: 7,        color: "#10b981" },
+      { key: "8-15d",  label: "8–15 days",  min: 8,  max: 15,       color: "#60a5fa" },
+      { key: "16-30d", label: "16–30 days", min: 16, max: 30,       color: "#f59e0b" },
+      { key: "31-60d", label: "31–60 days", min: 31, max: 60,       color: "#f97316" },
+      { key: "60+d",   label: "60+ days",   min: 61, max: Infinity,  color: "#ef4444" },
     ];
 
     filtered.filter((s) => (s.qty || 0) > 0).forEach((s) => {
       const key = (s.itemName || "").toLowerCase().trim();
       if (!key) return;
 
-      const inflows = [...(productionInflows.get(key) || [])].sort((a, b) => a.date - b.date);
-      const outflows = [...(dispatchOutflows.get(key) || [])].sort((a, b) => a.date - b.date);
+      const history = [...(s.stockHistory || [])].sort(
+        (a, b) => new Date(a.date) - new Date(b.date)
+      );
 
-      // Compute opening balance: qty that existed before any tracked JO
-      // Formula: current_qty = opening + JO_inflows - dispatches
-      // → opening = current_qty - JO_inflows + dispatches
-      const joTotal = inflows.reduce((sum, i) => sum + i.qty, 0);
-      const dispTotal = outflows.reduce((sum, o) => sum + o.qty, 0);
-      const openingQty = Math.max(0, (s.qty || 0) - joTotal + dispTotal);
-      const openDate = new Date(s.addedOn || s.createdAt || now);
-
-      // Build full lot list: opening balance first, then JO inflows — all sorted oldest first
-      const lots = [];
-      if (openingQty > 0) {
-        lots.push({ date: openDate, qty: openingQty, ref: "Opening Balance" });
+      // If no history, fall back to a single opening-balance lot from addedOn
+      if (history.length === 0) {
+        const openDate = new Date(s.addedOn || s.createdAt || now);
+        const ageDays = Math.max(0, Math.floor((now - openDate.getTime()) / 86400000));
+        const bucket = BUCKETS.find((b) => ageDays >= b.min && ageDays <= b.max);
+        const buckets = {};
+        BUCKETS.forEach((b) => { buckets[b.key] = { ...b, qty: 0 }; });
+        if (bucket) buckets[bucket.key].qty = s.qty;
+        const lot = { date: openDate, qty: s.qty, ref: "Opening Balance", type: "opening", ageDays };
+        map.set(key, { lots: [lot], buckets, txHistory: [{ ...lot, txType: "opening" }], worstAge: ageDays });
+        return;
       }
-      inflows.forEach((i) => lots.push({ ...i }));
-      lots.sort((a, b) => a.date - b.date);
 
-      // Apply outflows FIFO — dispatches consume oldest lots first
-      outflows.forEach((o) => {
-        let remaining = o.qty;
-        for (let li = 0; li < lots.length && remaining > 0; li++) {
-          if (lots[li].qty <= remaining) {
-            remaining -= lots[li].qty;
-            lots[li].qty = 0;
-          } else {
-            lots[li].qty -= remaining;
-            remaining = 0;
+      // Replay history using FIFO lots
+      const lots = []; // active lots sorted oldest-first
+      const txHistory = [];
+
+      history.forEach((h) => {
+        const qty = Number(h.qty);
+        const date = new Date(h.date);
+        txHistory.push({ date, qty, ref: h.ref, type: h.type, txType: qty >= 0 ? (h.type === "dispatch" ? "dispatch" : h.type === "return" ? "return" : "production") : "dispatch" });
+
+        if (qty > 0) {
+          // Inflow: new lot
+          lots.push({ date, qty, ref: h.ref || h.type, type: h.type });
+        } else {
+          // Outflow: consume oldest lots first (FIFO)
+          let remaining = Math.abs(qty);
+          for (let li = 0; li < lots.length && remaining > 0; li++) {
+            if (lots[li].qty <= remaining) {
+              remaining -= lots[li].qty;
+              lots[li].qty = 0;
+            } else {
+              lots[li].qty -= remaining;
+              remaining = 0;
+            }
           }
         }
       });
@@ -465,27 +450,18 @@ export default function FGStock({
         if (b) buckets[b.key].qty += l.qty;
       });
 
-      const txHistory = [
-        ...(openingQty > 0 ? [{ date: openDate, qty: openingQty, ref: "Opening Balance", txType: "opening" }] : []),
-        ...inflows.map((i) => ({ ...i, txType: "production" })),
-        ...outflows.map((o) => ({ ...o, txType: "dispatch" })),
-      ].sort((a, b) => a.date - b.date);
-
       const worstAge = remainingLots.length > 0 ? Math.max(...remainingLots.map((l) => l.ageDays)) : null;
 
       map.set(key, {
         lots: remainingLots,
         buckets,
         txHistory,
-        trackedQty: joTotal,
-        untrackedQty: openingQty,
-        oldestLot: remainingLots[0] || null,
         worstAge,
       });
     });
 
     return map;
-  }, [filtered, jobOrders, dispatches]);
+  }, [filtered]);
 
   const ageingData = useMemo(() => {
     const BUCKETS = [
@@ -793,11 +769,13 @@ export default function FGStock({
 
             try {
               if (existingFGStockItem) {
-                // Item exists in DB — replace qty; also backfill code if master matched
+                const prevQty = existingFGStockItem.qty || 0;
+                const delta = item.qty - prevQty;
                 const updatePayload = {
                   qty: item.qty,
                   reorder: item.reorder,
                   price: item.price,
+                  ...(delta !== 0 && { historyType: "import", historyRef: "Excel Import", historyNote: `Import: ${prevQty} → ${item.qty}` }),
                 };
                 if (item.itemCode && !existingFGStockItem.itemCode) {
                   updatePayload.itemCode = item.itemCode;
@@ -805,8 +783,11 @@ export default function FGStock({
                 await fgStockAPI.update(existingFGStockItem._id, updatePayload);
                 updateCount++;
               } else {
-                // Item not in DB yet — create it fresh
-                await fgStockAPI.create(item);
+                await fgStockAPI.create({
+                  ...item,
+                  historyType: "import",
+                  historyRef: "Excel Import",
+                });
                 successCount++;
               }
             } catch (err) {
@@ -1975,19 +1956,17 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
               <div style={{ fontSize: 10, color: "#666", textTransform: "uppercase", marginBottom: 2 }}>Stock in Hand</div>
               <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>{fmtN(totalQty)}</div>
             </div>
+            {fifoData && fifoData.lots.length > 0 && (
+              <div>
+                <div style={{ fontSize: 10, color: "#666", textTransform: "uppercase", marginBottom: 2 }}>Oldest Stock</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "#f59e0b" }}>{fifoData.lots[0].ageDays}d ago</div>
+              </div>
+            )}
             {fifoData && (
-              <>
-                <div>
-                  <div style={{ fontSize: 10, color: "#666", textTransform: "uppercase", marginBottom: 2 }}>Tracked via JO</div>
-                  <div style={{ fontSize: 20, fontWeight: 800, color: "#10b981" }}>{fmtN(fifoData.trackedQty)}</div>
-                </div>
-                {fifoData.untrackedQty > 0 && (
-                  <div>
-                    <div style={{ fontSize: 10, color: "#666", textTransform: "uppercase", marginBottom: 2 }}>Opening Balance</div>
-                    <div style={{ fontSize: 20, fontWeight: 800, color: "#f59e0b" }}>{fmtN(fifoData.untrackedQty)}</div>
-                  </div>
-                )}
-              </>
+              <div>
+                <div style={{ fontSize: 10, color: "#666", textTransform: "uppercase", marginBottom: 2 }}>Lots</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "#60a5fa" }}>{fifoData.lots.length}</div>
+              </div>
             )}
           </div>
         </div>

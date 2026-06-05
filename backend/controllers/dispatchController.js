@@ -5,7 +5,10 @@ const RawMaterialStock = require("../models/RawMaterialStock");
 const ConsumableStock = require("../models/ConsumableStock");
 const CompanyMaster = require("../models/CompanyMaster");
 
-const adjustFGStock = async (items, direction = -1) => {
+const adjustFGStock = async (items, direction = -1, dispatchMeta = {}) => {
+  const { dispatchNo, dispatchDate, dispatchType, createdBy } = dispatchMeta;
+  const histType = dispatchType === "Return" ? "return" : direction === -1 ? "dispatch" : "return";
+
   for (const item of items) {
     let remainingToAdjust = Number(item.qty || 0);
     if (remainingToAdjust <= 0) continue;
@@ -16,11 +19,13 @@ const adjustFGStock = async (items, direction = -1) => {
         qty: { $gt: 0 },
       }).sort({ createdAt: 1 });
 
+      let totalDeducted = 0;
       for (const stock of stockItems) {
         if (remainingToAdjust <= 0) break;
         const deduct = Math.min(stock.qty, remainingToAdjust);
         stock.qty -= deduct;
         remainingToAdjust -= deduct;
+        totalDeducted += deduct;
         await stock.save();
       }
 
@@ -30,7 +35,28 @@ const adjustFGStock = async (items, direction = -1) => {
         }).sort({ createdAt: -1 });
         if (lastStock) {
           lastStock.qty -= remainingToAdjust;
+          totalDeducted += remainingToAdjust;
+          lastStock.stockHistory.push({
+            date: dispatchDate ? new Date(dispatchDate) : new Date(),
+            qty: -(totalDeducted),
+            type: histType,
+            ref: dispatchNo || "",
+            createdBy,
+          });
           await lastStock.save();
+        }
+      } else {
+        // Record history on the first matching stock item
+        const primaryStock = await FGStock.findOne({ itemName: item.itemName }).sort({ createdAt: 1 });
+        if (primaryStock) {
+          primaryStock.stockHistory.push({
+            date: dispatchDate ? new Date(dispatchDate) : new Date(),
+            qty: -Number(item.qty),
+            type: histType,
+            ref: dispatchNo || "",
+            createdBy,
+          });
+          await primaryStock.save();
         }
       }
     } else {
@@ -39,6 +65,13 @@ const adjustFGStock = async (items, direction = -1) => {
       }).sort({ createdAt: -1 });
       if (latestStock) {
         latestStock.qty += remainingToAdjust;
+        latestStock.stockHistory.push({
+          date: dispatchDate ? new Date(dispatchDate) : new Date(),
+          qty: remainingToAdjust,
+          type: histType,
+          ref: dispatchNo || "",
+          createdBy,
+        });
         await latestStock.save();
       }
     }
@@ -183,7 +216,7 @@ exports.create = async (req, res) => {
     const stockDirection = recordType === "Return" ? 1 : -1;
     if (materialType === "RM") await adjustRMStock(items, stockDirection);
     else if (materialType === "CG") await adjustCGStock(items, stockDirection);
-    else await adjustFGStock(items, stockDirection);
+    else await adjustFGStock(items, stockDirection, { dispatchNo, dispatchDate: date, dispatchType: recordType, createdBy: req.user?._id });
 
     res.status(201).json({
       message: "Dispatch created successfully",
@@ -226,15 +259,20 @@ exports.update = async (req, res) => {
 
     if (items) {
       const mt = dispatch.materialType || "FG";
-      const reverter =
-        mt === "RM"
-          ? adjustRMStock
-          : mt === "CG"
-            ? adjustCGStock
-            : adjustFGStock;
-      await reverter(dispatch.items, 1);
-      dispatch.items = items;
-      await reverter(items, -1);
+      const meta = { dispatchNo: dispatch.dispatchNo, dispatchDate: dispatch.date, dispatchType: dispatch.type, createdBy: req.user?._id };
+      if (mt === "RM") {
+        await adjustRMStock(dispatch.items, 1);
+        dispatch.items = items;
+        await adjustRMStock(items, -1);
+      } else if (mt === "CG") {
+        await adjustCGStock(dispatch.items, 1);
+        dispatch.items = items;
+        await adjustCGStock(items, -1);
+      } else {
+        await adjustFGStock(dispatch.items, 1, { ...meta, dispatchType: "Return" });
+        dispatch.items = items;
+        await adjustFGStock(items, -1, meta);
+      }
     }
 
     await dispatch.save();
@@ -260,9 +298,9 @@ exports.delete = async (req, res) => {
     }
 
     const mt = dispatch.materialType || "FG";
-    const reverter =
-      mt === "RM" ? adjustRMStock : mt === "CG" ? adjustCGStock : adjustFGStock;
-    await reverter(dispatch.items, 1);
+    if (mt === "RM") await adjustRMStock(dispatch.items, 1);
+    else if (mt === "CG") await adjustCGStock(dispatch.items, 1);
+    else await adjustFGStock(dispatch.items, 1, { dispatchNo: dispatch.dispatchNo, dispatchDate: dispatch.date, dispatchType: "Return", createdBy: req.user?._id });
 
     await Dispatch.findByIdAndDelete(id);
 

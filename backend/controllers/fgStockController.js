@@ -77,6 +77,7 @@ exports.createStock = async (req, res) => {
         .json({ error: "Item with this name already exists in FG Stock" });
     }
 
+    const initQty = qty || 0;
     const stock = new FGStock({
       itemName,
       itemCode,
@@ -84,12 +85,24 @@ exports.createStock = async (req, res) => {
       soRef,
       companyName,
       companyCat,
-      qty: qty || 0,
+      qty: initQty,
       unit,
       price,
       category,
       reorder,
     });
+
+    if (initQty > 0) {
+      const histType = req.body.historyType || "opening";
+      stock.stockHistory.push({
+        date: new Date(),
+        qty: initQty,
+        type: histType,
+        ref: req.body.historyRef || joNo || "",
+        note: req.body.historyNote || "",
+        createdBy: req.user?._id,
+      });
+    }
 
     await stock.save();
 
@@ -145,7 +158,22 @@ exports.updateStock = async (req, res) => {
     if (soRef !== undefined) stock.soRef = soRef;
     if (companyName !== undefined) stock.companyName = companyName;
     if (companyCat !== undefined) stock.companyCat = companyCat;
-    if (qty !== undefined) stock.qty = qty;
+    if (qty !== undefined) {
+      const prevQty = stock.qty || 0;
+      const newQty = Number(qty);
+      const delta = newQty - prevQty;
+      stock.qty = newQty;
+      if (delta !== 0 && req.body.historyType) {
+        stock.stockHistory.push({
+          date: req.body.historyDate ? new Date(req.body.historyDate) : new Date(),
+          qty: delta,
+          type: req.body.historyType,
+          ref: req.body.historyRef || joNo || "",
+          note: req.body.historyNote || "",
+          createdBy: req.user?._id,
+        });
+      }
+    }
     if (unit !== undefined) stock.unit = unit;
     if (price !== undefined) stock.price = price;
     if (category !== undefined) stock.category = category;
@@ -184,12 +212,49 @@ exports.adjustStock = async (req, res) => {
       return res.status(400).json({ error: "Insufficient stock" });
     }
 
+    stock.stockHistory.push({
+      date: req.body.date ? new Date(req.body.date) : new Date(),
+      qty: adjustment,
+      type: req.body.type || "adjustment",
+      ref: req.body.ref || "",
+      note: req.body.note || "",
+      createdBy: req.user?._id,
+    });
+
     await stock.save();
 
     res.json({ message: "Stock adjusted successfully", stock });
   } catch (error) {
     console.error("Adjust stock error:", error);
     res.status(500).json({ error: "Failed to adjust stock" });
+  }
+};
+
+exports.addHistory = async (req, res) => {
+  if (req.user && req.user.role === "Client") {
+    return res.status(403).json({ error: "Not authorized" });
+  }
+  try {
+    const { date, qty, type, ref, note } = req.body;
+    if (!qty || !type) {
+      return res.status(400).json({ error: "qty and type are required" });
+    }
+    const stock = await FGStock.findById(req.params.id);
+    if (!stock) return res.status(404).json({ error: "Stock item not found" });
+
+    stock.stockHistory.push({
+      date: date ? new Date(date) : new Date(),
+      qty: Number(qty),
+      type,
+      ref: ref || "",
+      note: note || "",
+      createdBy: req.user?._id,
+    });
+    await stock.save();
+    res.json({ history: stock.stockHistory });
+  } catch (error) {
+    console.error("Add history error:", error);
+    res.status(500).json({ error: "Failed to add history entry" });
   }
 };
 
