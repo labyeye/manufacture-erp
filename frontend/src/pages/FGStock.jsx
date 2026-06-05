@@ -405,6 +405,14 @@ export default function FGStock({
       productionInflows.get(key).push({ date, qty: jo.orderQty, ref: jo.joNo || jo._id });
     });
 
+    const BUCKETS = [
+      { key: "0-7d", label: "0–7 days", min: 0, max: 7, color: "#10b981" },
+      { key: "8-15d", label: "8–15 days", min: 8, max: 15, color: "#60a5fa" },
+      { key: "16-30d", label: "16–30 days", min: 16, max: 30, color: "#f59e0b" },
+      { key: "31-60d", label: "31–60 days", min: 31, max: 60, color: "#f97316" },
+      { key: "60+d", label: "60+ days", min: 61, max: Infinity, color: "#ef4444" },
+    ];
+
     filtered.filter((s) => (s.qty || 0) > 0).forEach((s) => {
       const key = (s.itemName || "").toLowerCase().trim();
       if (!key) return;
@@ -412,15 +420,23 @@ export default function FGStock({
       const inflows = [...(productionInflows.get(key) || [])].sort((a, b) => a.date - b.date);
       const outflows = [...(dispatchOutflows.get(key) || [])].sort((a, b) => a.date - b.date);
 
-      // Build FIFO lots from production inflows
-      const lots = inflows.map((i) => ({ ...i }));
+      // Compute opening balance: qty that existed before any tracked JO
+      // Formula: current_qty = opening + JO_inflows - dispatches
+      // → opening = current_qty - JO_inflows + dispatches
+      const joTotal = inflows.reduce((sum, i) => sum + i.qty, 0);
+      const dispTotal = outflows.reduce((sum, o) => sum + o.qty, 0);
+      const openingQty = Math.max(0, (s.qty || 0) - joTotal + dispTotal);
+      const openDate = new Date(s.addedOn || s.createdAt || now);
 
-      // Apply outflows to consume oldest lots first
-      const txHistory = [
-        ...inflows.map((i) => ({ ...i, txType: "production" })),
-        ...outflows.map((o) => ({ ...o, txType: "dispatch" })),
-      ].sort((a, b) => a.date - b.date);
+      // Build full lot list: opening balance first, then JO inflows — all sorted oldest first
+      const lots = [];
+      if (openingQty > 0) {
+        lots.push({ date: openDate, qty: openingQty, ref: "Opening Balance" });
+      }
+      inflows.forEach((i) => lots.push({ ...i }));
+      lots.sort((a, b) => a.date - b.date);
 
+      // Apply outflows FIFO — dispatches consume oldest lots first
       outflows.forEach((o) => {
         let remaining = o.qty;
         for (let li = 0; li < lots.length && remaining > 0; li++) {
@@ -434,48 +450,38 @@ export default function FGStock({
         }
       });
 
-      const remainingLots = lots.filter((l) => l.qty > 0).map((l) => ({
-        ...l,
-        ageDays: Math.max(0, Math.floor((now - l.date.getTime()) / 86400000)),
-      }));
-
-      const trackedQty = remainingLots.reduce((sum, l) => sum + l.qty, 0);
-      const untrackedQty = (s.qty || 0) - trackedQty;
-
-      // Opening balance lot (stock not explained by tracked job orders)
-      const allLots = [...remainingLots];
-      if (untrackedQty > 0) {
-        const openDate = new Date(s.addedOn || s.createdAt || s.lastUpdated || now);
-        allLots.unshift({
-          date: openDate,
-          qty: untrackedQty,
-          ref: "Opening Balance",
-          ageDays: Math.max(0, Math.floor((now - openDate.getTime()) / 86400000)),
-        });
-      }
-
-      // Sort all lots oldest first
-      allLots.sort((a, b) => a.date - b.date);
+      const remainingLots = lots
+        .filter((l) => l.qty > 0)
+        .map((l) => ({
+          ...l,
+          ageDays: Math.max(0, Math.floor((now - l.date.getTime()) / 86400000)),
+        }));
 
       // Bucket summary
-      const BUCKETS = [
-        { key: "0-7d", label: "0–7 days", min: 0, max: 7, color: "#10b981" },
-        { key: "8-15d", label: "8–15 days", min: 8, max: 15, color: "#60a5fa" },
-        { key: "16-30d", label: "16–30 days", min: 16, max: 30, color: "#f59e0b" },
-        { key: "31-60d", label: "31–60 days", min: 31, max: 60, color: "#f97316" },
-        { key: "60+d", label: "60+ days", min: 61, max: Infinity, color: "#ef4444" },
-      ];
       const buckets = {};
       BUCKETS.forEach((b) => { buckets[b.key] = { ...b, qty: 0 }; });
-      allLots.forEach((l) => {
+      remainingLots.forEach((l) => {
         const b = BUCKETS.find((b) => l.ageDays >= b.min && l.ageDays <= b.max);
         if (b) buckets[b.key].qty += l.qty;
       });
 
-      const oldestLot = allLots[0];
-      const worstAge = allLots.length > 0 ? Math.max(...allLots.map((l) => l.ageDays)) : null;
+      const txHistory = [
+        ...(openingQty > 0 ? [{ date: openDate, qty: openingQty, ref: "Opening Balance", txType: "opening" }] : []),
+        ...inflows.map((i) => ({ ...i, txType: "production" })),
+        ...outflows.map((o) => ({ ...o, txType: "dispatch" })),
+      ].sort((a, b) => a.date - b.date);
 
-      map.set(key, { lots: allLots, buckets, txHistory, trackedQty, untrackedQty, oldestLot, worstAge });
+      const worstAge = remainingLots.length > 0 ? Math.max(...remainingLots.map((l) => l.ageDays)) : null;
+
+      map.set(key, {
+        lots: remainingLots,
+        buckets,
+        txHistory,
+        trackedQty: joTotal,
+        untrackedQty: openingQty,
+        oldestLot: remainingLots[0] || null,
+        worstAge,
+      });
     });
 
     return map;
@@ -2048,24 +2054,25 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
           <div style={{ padding: "16px 24px" }}>
             <div style={{ fontSize: 11, color: "#888", fontWeight: 700, textTransform: "uppercase", marginBottom: 10 }}>Transaction History</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              {fifoData.txHistory.map((tx, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 10px", borderRadius: 6, background: tx.txType === "production" ? "rgba(16,185,129,0.05)" : "rgba(239,68,68,0.05)" }}>
-                  <i
-                    className={tx.txType === "production" ? "fa-solid fa-plus" : "fa-solid fa-arrow-up-right-from-square"}
-                    style={{ color: tx.txType === "production" ? "#10b981" : "#ef4444", fontSize: 10, width: 14 }}
-                  />
-                  <div style={{ flex: 1 }}>
-                    <span style={{ fontSize: 12, color: tx.txType === "production" ? "#10b981" : "#ef4444", fontWeight: 600 }}>
-                      {tx.txType === "production" ? "Production" : "Dispatch"}
-                    </span>
-                    <span style={{ fontSize: 11, color: "#555", marginLeft: 8 }}>{tx.ref}</span>
+              {fifoData.txHistory.map((tx, i) => {
+                const isIn = tx.txType === "production" || tx.txType === "opening";
+                const color = tx.txType === "opening" ? "#a78bfa" : isIn ? "#10b981" : "#ef4444";
+                const icon = tx.txType === "opening" ? "fa-solid fa-database" : isIn ? "fa-solid fa-plus" : "fa-solid fa-arrow-up-right-from-square";
+                const label = tx.txType === "opening" ? "Opening Balance" : isIn ? "Production" : "Dispatch";
+                return (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 10px", borderRadius: 6, background: `${color}08` }}>
+                    <i className={icon} style={{ color, fontSize: 10, width: 14 }} />
+                    <div style={{ flex: 1 }}>
+                      <span style={{ fontSize: 12, color, fontWeight: 600 }}>{label}</span>
+                      {tx.txType !== "opening" && <span style={{ fontSize: 11, color: "#555", marginLeft: 8 }}>{tx.ref}</span>}
+                    </div>
+                    <div style={{ fontSize: 11, color: "#666" }}>{fmtDate(tx.date)}</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color, minWidth: 80, textAlign: "right" }}>
+                      {isIn ? "+" : "-"}{fmtN(tx.qty)}
+                    </div>
                   </div>
-                  <div style={{ fontSize: 11, color: "#666" }}>{fmtDate(tx.date)}</div>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: tx.txType === "production" ? "#10b981" : "#ef4444", minWidth: 80, textAlign: "right" }}>
-                    {tx.txType === "production" ? "+" : "-"}{fmtN(tx.qty)}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
