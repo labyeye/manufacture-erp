@@ -292,6 +292,10 @@ export default function FGStock({
         itemCode: m.code,
         category: m.category || "",
         companyCat: m.companyCategory || s?.companyCat || "",
+        stockHistory: s?.stockHistory || [],
+        addedOn: s?.addedOn,
+        createdAt: s?.createdAt,
+        lastUpdated: s?.lastUpdated,
       };
     });
 

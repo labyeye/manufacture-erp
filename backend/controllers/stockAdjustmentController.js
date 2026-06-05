@@ -149,6 +149,24 @@ exports.create = async (req, res) => {
 
     stock.qty = newQty;
     if (stockType === "Raw Material") stock.weight = newWeight;
+
+    // Record stockHistory for FG items
+    if (stockType === "Finished Goods") {
+      const histQty = direction * Number(qty);
+      const histType =
+        adjustmentType === "Production" ? "production"
+        : adjustmentType === "Outward" ? "adjustment"
+        : "import";
+      stock.stockHistory.push({
+        date: date ? new Date(date) : new Date(),
+        qty: histQty,
+        type: histType,
+        ref: "",
+        note: reason || adjustmentType,
+        createdBy: req.user?._id,
+      });
+    }
+
     await stock.save();
 
     const year = new Date().getFullYear();
@@ -198,6 +216,19 @@ exports.deleteAdjustment = async (req, res) => {
       }
       if (stock.qty < 0) stock.qty = 0;
       if (stock.weight < 0) stock.weight = 0;
+
+      // Reversal history entry for FG items
+      if (adjustment.stockType === "Finished Goods") {
+        stock.stockHistory.push({
+          date: new Date(),
+          qty: direction * adjustment.qty,
+          type: "adjustment",
+          ref: adjustment.adjustmentNo,
+          note: `Reversal of ${adjustment.adjustmentType} (deleted)`,
+          createdBy: req.user?._id,
+        });
+      }
+
       await stock.save();
     }
 

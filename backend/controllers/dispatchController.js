@@ -8,73 +8,30 @@ const CompanyMaster = require("../models/CompanyMaster");
 const adjustFGStock = async (items, direction = -1, dispatchMeta = {}) => {
   const { dispatchNo, dispatchDate, dispatchType, createdBy } = dispatchMeta;
   const histType = dispatchType === "Return" ? "return" : direction === -1 ? "dispatch" : "return";
+  const histDate = dispatchDate ? new Date(dispatchDate) : new Date();
 
   for (const item of items) {
     let remainingToAdjust = Number(item.qty || 0);
     if (remainingToAdjust <= 0) continue;
 
-    if (direction === -1) {
-      const stockItems = await FGStock.find({
-        itemName: item.itemName,
-        qty: { $gt: 0 },
-      }).sort({ createdAt: 1 });
+    // Find the single FGStock record for this item (unique index on itemName)
+    const stock = await FGStock.findOne({ itemName: item.itemName });
+    if (!stock) continue;
 
-      let totalDeducted = 0;
-      for (const stock of stockItems) {
-        if (remainingToAdjust <= 0) break;
-        const deduct = Math.min(stock.qty, remainingToAdjust);
-        stock.qty -= deduct;
-        remainingToAdjust -= deduct;
-        totalDeducted += deduct;
-        await stock.save();
-      }
+    stock.qty = (stock.qty || 0) + direction * remainingToAdjust;
 
-      if (remainingToAdjust > 0) {
-        const lastStock = await FGStock.findOne({
-          itemName: item.itemName,
-        }).sort({ createdAt: -1 });
-        if (lastStock) {
-          lastStock.qty -= remainingToAdjust;
-          totalDeducted += remainingToAdjust;
-          lastStock.stockHistory.push({
-            date: dispatchDate ? new Date(dispatchDate) : new Date(),
-            qty: -(totalDeducted),
-            type: histType,
-            ref: dispatchNo || "",
-            createdBy,
-          });
-          await lastStock.save();
-        }
-      } else {
-        // Record history on the first matching stock item
-        const primaryStock = await FGStock.findOne({ itemName: item.itemName }).sort({ createdAt: 1 });
-        if (primaryStock) {
-          primaryStock.stockHistory.push({
-            date: dispatchDate ? new Date(dispatchDate) : new Date(),
-            qty: -Number(item.qty),
-            type: histType,
-            ref: dispatchNo || "",
-            createdBy,
-          });
-          await primaryStock.save();
-        }
-      }
-    } else {
-      const latestStock = await FGStock.findOne({
-        itemName: item.itemName,
-      }).sort({ createdAt: -1 });
-      if (latestStock) {
-        latestStock.qty += remainingToAdjust;
-        latestStock.stockHistory.push({
-          date: dispatchDate ? new Date(dispatchDate) : new Date(),
-          qty: remainingToAdjust,
-          type: histType,
-          ref: dispatchNo || "",
-          createdBy,
-        });
-        await latestStock.save();
-      }
+    // Push history entry if meta is provided (i.e. called from dispatch controller)
+    if (dispatchNo !== undefined) {
+      stock.stockHistory.push({
+        date: histDate,
+        qty: direction * remainingToAdjust,
+        type: histType,
+        ref: dispatchNo || "",
+        createdBy,
+      });
     }
+
+    await stock.save();
   }
 };
 
