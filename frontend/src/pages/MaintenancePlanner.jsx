@@ -623,7 +623,7 @@ function SparePartsTab({
   const blankForm = {
     partName: "",
     partNumber: "",
-    machineId: "",
+    compatibleMachines: [],
     category: "",
     qty: "",
     reorderPoint: "",
@@ -671,9 +671,22 @@ function SparePartsTab({
   };
   const setF = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
+  const toggleMachine = (name) => {
+    setForm((f) => {
+      const cur = f.compatibleMachines || [];
+      return {
+        ...f,
+        compatibleMachines: cur.includes(name)
+          ? cur.filter((n) => n !== name)
+          : [...cur, name],
+      };
+    });
+  };
+
   const openIssue = (p) => {
     setIssuingPart(p);
-    setIssueForm({ qty: "", machineId: p.machineId || "", issuedBy: "", remarks: "" });
+    const defaultMachine = p.compatibleMachines?.[0] || p.machineId || "";
+    setIssueForm({ qty: "", machineId: defaultMachine, issuedBy: "", remarks: "" });
   };
 
   const closeIssue = () => {
@@ -683,20 +696,23 @@ function SparePartsTab({
 
   const handleIssue = async () => {
     const qty = Number(issueForm.qty);
-    if (!qty || qty <= 0) { toast?.("Enter a valid quantity", "error"); return; }
+    if (!qty || qty <= 0) { toast?.("Quantity is required", "error"); return; }
     const avail = Number(issuingPart.qty);
     if (qty > avail) { toast?.(`Insufficient stock. Available: ${avail}`, "error"); return; }
+    if (!issueForm.machineId) { toast?.("Machine is required", "error"); return; }
+    if (!issueForm.issuedBy.trim()) { toast?.("Issued By is required", "error"); return; }
+    if (!issueForm.remarks.trim()) { toast?.("Remarks is required", "error"); return; }
     setIssuing(true);
     try {
       await spareIssueLogAPI.create({
         itemCode: issuingPart.partNumber || "",
         itemName: issuingPart.partName,
         category: issuingPart.category || "",
-        machineName: issueForm.machineId || "",
+        machineName: issueForm.machineId,
         qty,
         unit: "nos",
-        issuedBy: issueForm.issuedBy || "",
-        remarks: issueForm.remarks || "",
+        issuedBy: issueForm.issuedBy.trim(),
+        remarks: issueForm.remarks.trim(),
       });
       persist(parts.map((p) => p.id === issuingPart.id ? { ...p, qty: avail - qty } : p));
       toast?.(`Issued ${qty} × ${issuingPart.partName}`, "success");
@@ -972,20 +988,44 @@ function SparePartsTab({
                   style={inp}
                 />
               </div>
-              <div>
-                <label style={lbl}>Compatible Machine</label>
-                <select
-                  value={form.machineId}
-                  onChange={(e) => setF("machineId", e.target.value)}
-                  style={inp}
-                >
-                  <option value="">All / Any</option>
-                  {machines.map((m) => (
-                    <option key={m._id || m.id} value={m.name}>
-                      {m.name}
-                    </option>
-                  ))}
-                </select>
+              <div style={{ gridColumn: "1 / -1" }}>
+                <label style={lbl}>
+                  Compatible Machines
+                  {(form.compatibleMachines || []).length > 0 && (
+                    <span style={{ marginLeft: 8, color: "#ff7800", textTransform: "none", fontWeight: 600 }}>
+                      ({form.compatibleMachines.length} selected)
+                    </span>
+                  )}
+                </label>
+                {machines.length === 0 ? (
+                  <div style={{ ...inp, color: "#555", fontSize: 12 }}>No machines found</div>
+                ) : (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: "6px 0" }}>
+                    {machines.map((m) => {
+                      const selected = (form.compatibleMachines || []).includes(m.name);
+                      return (
+                        <button
+                          key={m._id || m.id}
+                          type="button"
+                          onClick={() => toggleMachine(m.name)}
+                          style={{
+                            padding: "4px 12px",
+                            borderRadius: 20,
+                            fontSize: 12,
+                            fontWeight: 600,
+                            background: selected ? "#ff7800" : "#1a1a1a",
+                            color: selected ? "#fff" : "#666",
+                            border: `1px solid ${selected ? "#ff7800" : "#333"}`,
+                            cursor: "pointer",
+                            transition: "all 0.15s",
+                          }}
+                        >
+                          {m.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
               <div>
                 <label style={lbl}>Current Qty</label>
@@ -1140,33 +1180,41 @@ function SparePartsTab({
               />
             </div>
             <div>
-              <label style={lbl}>Issue to Machine</label>
+              <label style={lbl}>Issue to Machine *</label>
               <select
                 value={issueForm.machineId}
                 onChange={(e) => setIssueForm((f) => ({ ...f, machineId: e.target.value }))}
                 style={inp}
               >
-                <option value="">— Select Machine (optional) —</option>
-                {machines.map((m) => (
+                <option value="">— Select Machine —</option>
+                {(issuingPart?.compatibleMachines?.length
+                  ? machines.filter((m) => issuingPart.compatibleMachines.includes(m.name))
+                  : machines
+                ).map((m) => (
                   <option key={m._id || m.id} value={m.name}>{m.name}</option>
                 ))}
               </select>
+              {issuingPart?.compatibleMachines?.length > 0 && (
+                <div style={{ fontSize: 10, color: "#555", marginTop: 3 }}>
+                  Showing {issuingPart.compatibleMachines.length} compatible machine{issuingPart.compatibleMachines.length > 1 ? "s" : ""}
+                </div>
+              )}
             </div>
             <div>
-              <label style={lbl}>Issued By</label>
+              <label style={lbl}>Issued By *</label>
               <input
                 value={issueForm.issuedBy}
                 onChange={(e) => setIssueForm((f) => ({ ...f, issuedBy: e.target.value }))}
-                placeholder="Name"
+                placeholder="Enter name"
                 style={inp}
               />
             </div>
             <div style={{ gridColumn: "1 / -1" }}>
-              <label style={lbl}>Remarks</label>
+              <label style={lbl}>Remarks *</label>
               <input
                 value={issueForm.remarks}
                 onChange={(e) => setIssueForm((f) => ({ ...f, remarks: e.target.value }))}
-                placeholder="Purpose / notes (optional)"
+                placeholder="Purpose / reason for issue"
                 style={inp}
               />
             </div>
@@ -1330,14 +1378,35 @@ function SparePartsTab({
                           </div>
                         )}
                       </td>
-                      <td
-                        style={{
-                          padding: "10px 12px",
-                          fontSize: 12,
-                          color: "#888",
-                        }}
-                      >
-                        {p.machineId || "Any"}
+                      <td style={{ padding: "10px 12px" }}>
+                        {(() => {
+                          const names = p.compatibleMachines?.length
+                            ? p.compatibleMachines
+                            : p.machineId
+                            ? [p.machineId]
+                            : [];
+                          return names.length === 0 ? (
+                            <span style={{ color: "#555", fontSize: 11 }}>Any</span>
+                          ) : (
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                              {names.map((n) => (
+                                <span
+                                  key={n}
+                                  style={{
+                                    padding: "2px 7px",
+                                    borderRadius: 10,
+                                    background: "#ff780022",
+                                    color: "#ff7800",
+                                    fontSize: 10,
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  {n}
+                                </span>
+                              ))}
+                            </div>
+                          );
+                        })()}
                       </td>
                       <td style={{ padding: "10px 12px" }}>
                         <span
@@ -1403,6 +1472,11 @@ function SparePartsTab({
                                 qty: p.qty,
                                 reorderPoint: p.reorderPoint,
                                 unitCost: p.unitCost,
+                                compatibleMachines: p.compatibleMachines?.length
+                                  ? p.compatibleMachines
+                                  : p.machineId
+                                  ? [p.machineId]
+                                  : [],
                               });
                               setEditId(p.id);
                               setShowModal(true);
