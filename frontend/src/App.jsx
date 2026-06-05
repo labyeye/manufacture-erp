@@ -731,6 +731,7 @@ function AppInner({
             machineMaster={data.machineMaster}
             itemMasterFG={data.itemMasterFG}
             categoryMaster={data.categoryMaster}
+            vendorMaster={data.vendorMaster}
             toast={showToast}
             canExportImport={session?.allowExportImport !== false}
           />

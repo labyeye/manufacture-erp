@@ -42,6 +42,7 @@ exports.create = async (req, res) => {
       issuedBy,
       remarks,
       stockId,
+      skipStockDeduction,
     } = req.body;
 
     if (!itemName || !qty || Number(qty) <= 0) {
@@ -52,32 +53,33 @@ exports.create = async (req, res) => {
 
     const issueQty = Number(qty);
 
-    // Find and deduct from ConsumableStock
+    // Find and deduct from ConsumableStock (skipped when stock is managed locally, e.g. SparePartsTab)
     let stock = null;
-    if (stockId) {
-      stock = await ConsumableStock.findById(stockId);
-    } else if (itemCode) {
-      stock = await ConsumableStock.findOne({ code: itemCode });
-    }
-
-    if (stock) {
-      if ((stock.qty || 0) < issueQty) {
-        return res.status(400).json({
-          error: `Insufficient stock. Available: ${stock.qty || 0}`,
-        });
+    if (!skipStockDeduction) {
+      if (stockId) {
+        stock = await ConsumableStock.findById(stockId);
+      } else if (itemCode) {
+        stock = await ConsumableStock.findOne({ code: itemCode });
       }
-      stock.qty = (stock.qty || 0) - issueQty;
-      await stock.save();
-    } else {
-      // Item exists in ItemMaster but has no stock entry yet — create one
-      stock = new ConsumableStock({
-        name: itemName,
-        code: itemCode,
-        category,
-        qty: -issueQty,
-        unit: unit || "nos",
-      });
-      await stock.save();
+
+      if (stock) {
+        if ((stock.qty || 0) < issueQty) {
+          return res.status(400).json({
+            error: `Insufficient stock. Available: ${stock.qty || 0}`,
+          });
+        }
+        stock.qty = (stock.qty || 0) - issueQty;
+        await stock.save();
+      } else if (stockId || itemCode) {
+        stock = new ConsumableStock({
+          name: itemName,
+          code: itemCode,
+          category,
+          qty: -issueQty,
+          unit: unit || "nos",
+        });
+        await stock.save();
+      }
     }
 
     const log = new SpareIssueLog({

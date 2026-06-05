@@ -600,6 +600,7 @@ function SparePartsTab({
   machineMaster,
   itemMasterFG = [],
   categoryMaster = [],
+  vendorMaster = [],
   toast,
 }) {
   const [parts, setParts] = useState(loadArr(LS_PARTS));
@@ -713,6 +714,7 @@ function SparePartsTab({
         unit: "nos",
         issuedBy: issueForm.issuedBy.trim(),
         remarks: issueForm.remarks.trim(),
+        skipStockDeduction: true,
       });
       persist(parts.map((p) => p.id === issuingPart.id ? { ...p, qty: avail - qty } : p));
       toast?.(`Issued ${qty} × ${issuingPart.partName}`, "success");
@@ -1051,12 +1053,25 @@ function SparePartsTab({
               </div>
               <div>
                 <label style={lbl}>Supplier / Vendor</label>
-                <input
-                  value={form.vendor}
-                  onChange={(e) => setF("vendor", e.target.value)}
-                  placeholder="Vendor name"
-                  style={inp}
-                />
+                {vendorMaster.length > 0 ? (
+                  <select
+                    value={form.vendor}
+                    onChange={(e) => setF("vendor", e.target.value)}
+                    style={inp}
+                  >
+                    <option value="">— Select Vendor —</option>
+                    {vendorMaster.map((v) => (
+                      <option key={v._id || v.id} value={v.name}>{v.name}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    value={form.vendor}
+                    onChange={(e) => setF("vendor", e.target.value)}
+                    placeholder="Vendor name"
+                    style={inp}
+                  />
+                )}
               </div>
               <div>
                 <label style={lbl}>Storage Location</label>

@@ -1161,6 +1161,7 @@ export default function MachineTools({
   machineMaster = [],
   itemMasterFG = [],
   categoryMaster = [],
+  vendorMaster = [],
   toast,
   canExportImport = true,
 }) {
@@ -1190,6 +1191,7 @@ export default function MachineTools({
           machineMaster={machineMaster}
           itemMasterFG={itemMasterFG}
           categoryMaster={categoryMaster}
+          vendorMaster={vendorMaster}
           toast={toast}
         />
       )}
