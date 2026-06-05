@@ -26,6 +26,20 @@ exports.getAll = async (req, res) => {
   }
 };
 
+exports.deleteLog = async (req, res) => {
+  if (req.user && req.user.role === "Client") {
+    return res.status(403).json({ error: "Not authorized" });
+  }
+  try {
+    const deleted = await SpareIssueLog.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ error: "Log not found" });
+    res.json({ message: "Deleted" });
+  } catch (err) {
+    console.error("Delete spare issue log error:", err);
+    res.status(500).json({ error: "Failed to delete log" });
+  }
+};
+
 exports.create = async (req, res) => {
   if (req.user && req.user.role === "Client") {
     return res.status(403).json({ error: "Not authorized" });

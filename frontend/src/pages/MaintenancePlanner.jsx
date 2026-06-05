@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import * as XLSX from "xlsx";
 import { C } from "../constants/colors";
 import { machineMaintenanceAPI, spareIssueLogAPI } from "../api/auth";
 import { Modal } from "../components/ui/BasicComponents";
@@ -783,6 +784,159 @@ function SparePartsTab({
   useEffect(() => {
     if (view === "usage") fetchUsageLogs();
   }, [view, fetchUsageLogs]);
+
+  const importRef = useRef(null);
+
+  const handleDeleteLog = async (id) => {
+    if (!window.confirm("Delete this issue record?")) return;
+    try {
+      await spareIssueLogAPI.delete(id);
+      setUsageLogs((prev) => prev.filter((l) => l._id !== id));
+      toast?.("Record deleted", "success");
+    } catch {
+      toast?.("Failed to delete record", "error");
+    }
+  };
+
+  const handleExportLogs = () => {
+    if (!filteredUsageLogs.length) { toast?.("No records to export", "error"); return; }
+    const headers = ["Date", "Part Name", "Part Code", "Category", "Qty", "Unit", "Machine", "Issued By", "Remarks"];
+    const rows = filteredUsageLogs.map((l) => [
+      l.issuedAt ? new Date(l.issuedAt).toLocaleDateString("en-GB") : "",
+      l.itemName || "",
+      l.itemCode || "",
+      l.category || "",
+      l.qty || 0,
+      l.unit || "nos",
+      l.machineName || "",
+      l.issuedBy || "",
+      l.remarks || "",
+    ]);
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws["!cols"] = headers.map(() => ({ wch: 20 }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Spare Issue Logs");
+    XLSX.writeFile(wb, `spare_issue_logs_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    toast?.("Exported successfully", "success");
+  };
+
+  const handleImportLogs = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array" });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+      if (rows.length < 2) { toast?.("No data rows found", "error"); return; }
+      const [, ...dataRows] = rows;
+      let success = 0, failed = 0;
+      for (const row of dataRows) {
+        if (!row || !row[1]) { failed++; continue; }
+        const [, itemName, itemCode, category, qty, unit, machineName, issuedBy, remarks] = row;
+        if (!itemName || !qty) { failed++; continue; }
+        try {
+          await spareIssueLogAPI.create({
+            itemName: String(itemName).trim(),
+            itemCode: String(itemCode || "").trim(),
+            category: String(category || "").trim(),
+            machineName: String(machineName || "").trim(),
+            qty: Number(qty),
+            unit: String(unit || "nos").trim(),
+            issuedBy: String(issuedBy || "").trim(),
+            remarks: String(remarks || "").trim(),
+            skipStockDeduction: true,
+          });
+          success++;
+        } catch { failed++; }
+      }
+      toast?.(`Imported ${success} records${failed ? `, ${failed} skipped` : ""}`, "success");
+      fetchUsageLogs();
+    } catch {
+      toast?.("Failed to parse file", "error");
+    } finally {
+      e.target.value = "";
+    }
+  };
+
+  const handlePrintReport = () => {
+    if (!filteredUsageLogs.length) { toast?.("No records to report", "error"); return; }
+    const totalQty = filteredUsageLogs.reduce((s, l) => s + (l.qty || 0), 0);
+    const byMachine = {};
+    const byPart = {};
+    filteredUsageLogs.forEach((l) => {
+      const m = l.machineName || "Unassigned";
+      byMachine[m] = (byMachine[m] || 0) + (l.qty || 0);
+      const p = l.itemName || "Unknown";
+      byPart[p] = (byPart[p] || 0) + (l.qty || 0);
+    });
+    const machineRows = Object.entries(byMachine).sort((a, b) => b[1] - a[1])
+      .map(([m, q]) => `<tr><td>${m}</td><td class="num">${q}</td></tr>`).join("");
+    const partRows = Object.entries(byPart).sort((a, b) => b[1] - a[1])
+      .map(([p, q]) => `<tr><td>${p}</td><td class="num">${q}</td></tr>`).join("");
+    const detailRows = filteredUsageLogs.map((l) => `
+      <tr>
+        <td>${l.issuedAt ? new Date(l.issuedAt).toLocaleDateString("en-GB") : "—"}</td>
+        <td>${l.itemName || ""}${l.itemCode ? ` <span class="code">[${l.itemCode}]</span>` : ""}</td>
+        <td>${l.category || "—"}</td>
+        <td class="num">${l.qty} ${l.unit || "nos"}</td>
+        <td>${l.machineName || "—"}</td>
+        <td>${l.issuedBy || "—"}</td>
+        <td>${l.remarks || "—"}</td>
+      </tr>`).join("");
+    const dateRange = usageDateFrom || usageDateTo
+      ? `${usageDateFrom || "—"} to ${usageDateTo || "—"}`
+      : "All dates";
+    const html = `<html><head><title>Spare Parts Usage Report</title><style>
+      body{font-family:Arial,sans-serif;padding:20px 30px;color:#1a1a1a;}
+      .header{text-align:center;border-bottom:2px solid #ff7800;padding-bottom:10px;margin-bottom:16px;}
+      .header h1{color:#c25a00;margin:0;font-size:20px;font-weight:800;}
+      .header p{margin:2px 0;font-size:11px;color:#666;}
+      h2{font-size:13px;font-weight:700;margin:16px 0 6px;color:#333;text-transform:uppercase;letter-spacing:.05em;}
+      .summary{display:flex;gap:20px;margin-bottom:16px;}
+      .stat{padding:10px 16px;border:1px solid #ddd;border-radius:6px;flex:1;text-align:center;}
+      .stat .val{font-size:22px;font-weight:900;color:#ff7800;}
+      .stat .lbl{font-size:10px;color:#888;margin-top:2px;}
+      table{width:100%;border-collapse:collapse;margin-top:6px;font-size:10px;}
+      th{background:#f5f5f5;border:1px solid #ddd;padding:5px 8px;text-align:left;font-size:9px;text-transform:uppercase;color:#555;}
+      td{border:1px solid #eee;padding:4px 8px;}
+      .num{text-align:right;}
+      .code{color:#888;font-size:9px;}
+      .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+      @media print{@page{margin:1cm;size:A4 landscape;}}
+    </style></head><body>
+      <div class="header">
+        <h1>AARAY PACKAGING PRIVATE LIMITED</h1>
+        <p>Spare Parts Usage Report &nbsp;|&nbsp; Period: ${dateRange} &nbsp;|&nbsp; Generated: ${new Date().toLocaleString()}</p>
+      </div>
+      <div class="summary">
+        <div class="stat"><div class="val">${filteredUsageLogs.length}</div><div class="lbl">Total Records</div></div>
+        <div class="stat"><div class="val">${totalQty}</div><div class="lbl">Total Qty Issued</div></div>
+        <div class="stat"><div class="val">${Object.keys(byMachine).length}</div><div class="lbl">Machines</div></div>
+        <div class="stat"><div class="val">${Object.keys(byPart).length}</div><div class="lbl">Unique Parts</div></div>
+      </div>
+      <div class="grid">
+        <div>
+          <h2>By Machine</h2>
+          <table><thead><tr><th>Machine</th><th class="num">Qty</th></tr></thead><tbody>${machineRows}</tbody></table>
+        </div>
+        <div>
+          <h2>By Part</h2>
+          <table><thead><tr><th>Part Name</th><th class="num">Qty</th></tr></thead><tbody>${partRows}</tbody></table>
+        </div>
+      </div>
+      <h2>Detailed Log</h2>
+      <table><thead><tr><th>Date</th><th>Part</th><th>Category</th><th class="num">Qty</th><th>Machine</th><th>Issued By</th><th>Remarks</th></tr></thead>
+      <tbody>${detailRows}</tbody></table>
+    </body></html>`;
+    const iframe = document.createElement("iframe");
+    iframe.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0";
+    document.body.appendChild(iframe);
+    iframe.contentWindow.document.open();
+    iframe.contentWindow.document.write(html);
+    iframe.contentWindow.document.close();
+    iframe.onload = () => { setTimeout(() => { iframe.contentWindow.focus(); iframe.contentWindow.print(); setTimeout(() => document.body.removeChild(iframe), 1000); }, 400); };
+  };
 
   const filteredUsageLogs = useMemo(() => {
     if (!usageMachineFilter) return usageLogs;
@@ -1597,20 +1751,9 @@ function SparePartsTab({
             <div style={{ fontSize: 14, fontWeight: 500, color: "#888" }}>
               Spare Part Usage History
             </div>
-            <div
-              style={{
-                display: "flex",
-                gap: 8,
-                alignItems: "center",
-                flexWrap: "wrap",
-              }}
-            >
+            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
               <div>
-                <label
-                  style={{ ...lbl, display: "inline-block", marginRight: 6 }}
-                >
-                  From
-                </label>
+                <label style={{ ...lbl, display: "inline-block", marginRight: 6 }}>From</label>
                 <input
                   type="date"
                   value={usageDateFrom}
@@ -1619,11 +1762,7 @@ function SparePartsTab({
                 />
               </div>
               <div>
-                <label
-                  style={{ ...lbl, display: "inline-block", marginRight: 6 }}
-                >
-                  To
-                </label>
+                <label style={{ ...lbl, display: "inline-block", marginRight: 6 }}>To</label>
                 <input
                   type="date"
                   value={usageDateTo}
@@ -1637,23 +1776,17 @@ function SparePartsTab({
                 placeholder="Filter by machine..."
                 style={{ ...inp, width: "auto", padding: "6px 10px" }}
               />
-              <button
-                onClick={fetchUsageLogs}
-                style={{
-                  padding: "6px 14px",
-                  background: "rgba(255,255,255,0.08)",
-                  border: "1px solid rgba(255,255,255,0.18)",
-                  borderRadius: 6,
-                  color: "#fff",
-                  fontSize: 12,
-                  fontWeight: 500,
-                  cursor: "pointer",
-                  boxShadow:
-                    "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
-                }}
-              >
-                {logsLoading ? "Loading…" : "Refresh"}
-              </button>
+              {[
+                { label: logsLoading ? "Loading…" : "Refresh", onClick: fetchUsageLogs, color: "rgba(255,255,255,0.08)", border: "rgba(255,255,255,0.18)" },
+                { label: "⬆ Import", onClick: () => importRef.current?.click(), color: "rgba(255,255,255,0.08)", border: "rgba(255,255,255,0.18)" },
+                { label: "⬇ Export", onClick: handleExportLogs, color: "rgba(255,255,255,0.08)", border: "rgba(255,255,255,0.18)" },
+                { label: "🖨 Report", onClick: handlePrintReport, color: "rgba(255,120,0,0.15)", border: "#ff780055" },
+              ].map(({ label, onClick, color, border }) => (
+                <button key={label} onClick={onClick} style={{ padding: "6px 14px", background: color, border: `1px solid ${border}`, borderRadius: 6, color: "#fff", fontSize: 12, fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)", whiteSpace: "nowrap" }}>
+                  {label}
+                </button>
+              ))}
+              <input ref={importRef} type="file" accept=".xlsx,.xls" style={{ display: "none" }} onChange={handleImportLogs} />
             </div>
           </div>
           {logsLoading ? (
@@ -1695,6 +1828,7 @@ function SparePartsTab({
                       "Machine",
                       "Issued By",
                       "Remarks",
+                      "Actions",
                     ].map((h) => (
                       <th
                         key={h}
@@ -1789,14 +1923,16 @@ function SparePartsTab({
                       >
                         {log.issuedBy || "—"}
                       </td>
-                      <td
-                        style={{
-                          padding: "10px 12px",
-                          fontSize: 12,
-                          color: "#888",
-                        }}
-                      >
+                      <td style={{ padding: "10px 12px", fontSize: 12, color: "#888" }}>
                         {log.remarks || "—"}
+                      </td>
+                      <td style={{ padding: "10px 12px" }}>
+                        <button
+                          onClick={() => handleDeleteLog(log._id)}
+                          style={{ background: "transparent", color: "#ef4444", border: "1px solid #ef444460", borderRadius: 6, padding: "5px 10px", fontSize: 11, fontWeight: 500, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5 }}
+                        >
+                          <i className="fa-solid fa-trash" /> Delete
+                        </button>
                       </td>
                     </tr>
                   ))}

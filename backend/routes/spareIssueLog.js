@@ -7,5 +7,6 @@ router.use(auth);
 
 router.get("/", controller.getAll);
 router.post("/", controller.create);
+router.delete("/:id", controller.deleteLog);
 
 module.exports = router;
