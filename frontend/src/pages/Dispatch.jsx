@@ -405,16 +405,25 @@ export default function Dispatch({
       if (!it.qty) e.qty = true;
 
       if (!editId) {
-        const stockItem = (fgStock || []).find(
-          (s) => s.itemName === it.itemName,
-        );
+        let stockItem;
+        let stockLabel;
+        if (materialType === "RM") {
+          stockItem = (rawStock || []).find((s) => (s.name || s.itemName || "") === it.itemName);
+          stockLabel = "Raw Material Stock";
+        } else if (materialType === "CG") {
+          stockItem = (consumableStock || []).find((s) => (s.name || s.itemName || "") === it.itemName);
+          stockLabel = "Consumable Stock";
+        } else {
+          stockItem = (fgStock || []).find((s) => s.itemName === it.itemName);
+          stockLabel = "FG Stock";
+        }
         if (!stockItem) {
           e.itemName = true;
-          toast(`Item "${it.itemName}" not found in FG Stock`, "error");
-        } else if (Number(it.qty) > (stockItem.qty || 0)) {
+          toast(`Item "${it.itemName}" not found in ${stockLabel}`, "error");
+        } else if (Number(it.qty) > ((stockItem.qty || stockItem.currentStock || 0))) {
           e.qty = true;
           toast(
-            `Insufficient stock for "${it.itemName}". Available: ${stockItem.qty || 0}`,
+            `Insufficient stock for "${it.itemName}". Available: ${stockItem.qty || stockItem.currentStock || 0}`,
             "error",
           );
         }
@@ -947,16 +956,22 @@ export default function Dispatch({
                       value={it.itemName}
                       onChange={(v) => setItem(idx, "itemName", v)}
                       suggestions={itemNameOptions}
-                      placeholder="Type to search FG item..."
+                      placeholder={materialType === "RM" ? "Type to search RM item..." : materialType === "CG" ? "Type to search consumable..." : "Type to search FG item..."}
                       inputStyle={EI(idx, "itemName")}
                     />
                     {EIMsg(idx, "itemName")}
                     {(() => {
-                      const st = (fgStock || []).find(
-                        (s) => s.itemName === it.itemName,
-                      );
+                      let st;
+                      if (materialType === "RM") {
+                        st = (rawStock || []).find((s) => (s.name || s.itemName || "") === it.itemName);
+                      } else if (materialType === "CG") {
+                        st = (consumableStock || []).find((s) => (s.name || s.itemName || "") === it.itemName);
+                      } else {
+                        st = (fgStock || []).find((s) => s.itemName === it.itemName);
+                      }
                       if (!it.itemName || !st) return null;
-                      const isLow = (st.qty || 0) < Number(it.qty || 0);
+                      const avail = st.qty ?? st.currentStock ?? 0;
+                      const isLow = avail < Number(it.qty || 0);
                       return (
                         <div
                           style={{
@@ -966,7 +981,7 @@ export default function Dispatch({
                             fontWeight: 500,
                           }}
                         >
-                          Stock Available: {fmt(st.qty || 0)} {st.unit || ""}
+                          Stock Available: {fmt(avail)} {st.unit || ""}
                           {isLow && " (Insufficient)"}
                         </div>
                       );

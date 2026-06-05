@@ -522,23 +522,28 @@ export default function FGStock({
       "Value",
       "Ageing (Days)",
       "Ageing Bucket",
+      "FIFO Ageing Detail",
     ];
     const rows = filtered.map((s) => {
-      const ageingDate = s.lastUpdated || s.addedOn || s.createdAt;
-      const ageDays =
-        ageingDate && (s.qty || 0) > 0
-          ? Math.floor((Date.now() - new Date(ageingDate).getTime()) / 86400000)
-          : "";
-      const ageBucket =
-        ageDays === ""
-          ? ""
-          : ageDays <= 15
-            ? "0–15 days"
-            : ageDays <= 30
-              ? "16–30 days"
-              : ageDays <= 60
-                ? "31–60 days"
-                : "60+ days";
+      const fifoKey = (s.itemName || "").toLowerCase().trim();
+      const fifo = fifoAgeingMap.get(fifoKey);
+      let ageDays = "";
+      let ageBucket = "";
+      if ((s.qty || 0) > 0) {
+        if (fifo && fifo.worstAge !== null) {
+          ageDays = fifo.worstAge;
+        } else {
+          const d = s.lastUpdated || s.addedOn || s.createdAt;
+          ageDays = d ? Math.floor((Date.now() - new Date(d).getTime()) / 86400000) : "";
+        }
+        if (ageDays !== "") {
+          ageBucket = ageDays <= 7 ? "0–7 days" : ageDays <= 15 ? "8–15 days" : ageDays <= 30 ? "16–30 days" : ageDays <= 60 ? "31–60 days" : "60+ days";
+        }
+      }
+      // Build FIFO bucket detail string for export
+      const bucketDetail = fifo
+        ? Object.values(fifo.buckets).filter((b) => b.qty > 0).map((b) => `${b.label}: ${b.qty}`).join(" | ")
+        : "";
       return [
         s.itemCode || s.code || "",
         s.itemName || "",
@@ -550,6 +555,7 @@ export default function FGStock({
         (s.qty || 0) * (s.price || 0),
         ageDays,
         ageBucket,
+        bucketDetail,
       ];
     });
 
@@ -575,33 +581,22 @@ export default function FGStock({
     );
     const rowsHtml = filtered
       .map((s) => {
-        const ageingDate = s.lastUpdated || s.addedOn || s.createdAt;
-        const ageDays =
-          ageingDate && (s.qty || 0) > 0
-            ? Math.floor(
-                (Date.now() - new Date(ageingDate).getTime()) / 86400000,
-              )
-            : null;
+        const fifoKey = (s.itemName || "").toLowerCase().trim();
+        const fifo = fifoAgeingMap.get(fifoKey);
+        let ageDays = null;
+        if ((s.qty || 0) > 0) {
+          if (fifo && fifo.worstAge !== null) {
+            ageDays = fifo.worstAge;
+          } else {
+            const d = s.lastUpdated || s.addedOn || s.createdAt;
+            ageDays = d ? Math.floor((Date.now() - new Date(d).getTime()) / 86400000) : null;
+          }
+        }
         const ageBucket =
-          ageDays === null
-            ? "—"
-            : ageDays <= 15
-              ? "0–15d"
-              : ageDays <= 30
-                ? "16–30d"
-                : ageDays <= 60
-                  ? "31–60d"
-                  : "60+d";
+          ageDays === null ? "—" : ageDays <= 7 ? "0–7d" : ageDays <= 15 ? "8–15d" : ageDays <= 30 ? "16–30d" : ageDays <= 60 ? "31–60d" : "60+d";
         const ageColor =
-          ageDays === null
-            ? "#94a3b8"
-            : ageDays <= 15
-              ? "#16a34a"
-              : ageDays <= 30
-                ? "#2563eb"
-                : ageDays <= 60
-                  ? "#d97706"
-                  : "#dc2626";
+          ageDays === null ? "#94a3b8" : ageDays <= 7 ? "#16a34a" : ageDays <= 15 ? "#2563eb" : ageDays <= 30 ? "#d97706" : ageDays <= 60 ? "#ea580c" : "#dc2626";
+        const fifoBuckets = fifo ? Object.values(fifo.buckets).filter((b) => b.qty > 0).map((b) => `<span style="color:${b.color};font-size:8px;margin-right:4px">${b.label}:${(b.qty).toLocaleString("en-IN")}</span>`).join("") : "";
         return `
         <tr>
           <td>${s.itemCode || s.code || ""}</td>
@@ -613,7 +608,7 @@ export default function FGStock({
           <td class="num">${fmtN(s.price || 0)}</td>
           <td class="num">₹${rfmt((s.qty || 0) * (s.price || 0))}</td>
           <td class="num">${ageDays !== null ? ageDays + "d" : "—"}</td>
-          <td style="text-align:center;"><span style="background:${ageColor}18;color:${ageColor};padding:1px 6px;border-radius:4px;font-weight:700;font-size:9px;">${ageBucket}</span></td>
+          <td style="text-align:center;"><span style="background:${ageColor}18;color:${ageColor};padding:1px 6px;border-radius:4px;font-weight:700;font-size:9px;">${ageBucket}</span>${fifoBuckets ? `<div style="margin-top:2px">${fifoBuckets}</div>` : ""}</td>
         </tr>`;
       })
       .join("");
