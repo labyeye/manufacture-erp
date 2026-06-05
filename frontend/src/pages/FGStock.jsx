@@ -29,6 +29,8 @@ export default function FGStock({
   itemMasterFG = [],
   categoryMaster,
   companyMaster = [],
+  jobOrders = [],
+  dispatches = [],
   session,
   toast,
   refreshData,
@@ -46,6 +48,7 @@ export default function FGStock({
   const [selectedIds, setSelectedIds] = useState([]);
   const [showAgeing, setShowAgeing] = useState(false);
   const [expandedBucket, setExpandedBucket] = useState(null);
+  const [ageingModalItem, setAgeingModalItem] = useState(null);
   const [importProgress, setImportProgress] = useState({
     show: false,
     current: 0,
@@ -374,30 +377,134 @@ export default function FGStock({
     0,
   );
 
-  const ageingData = useMemo(() => {
+  const fifoAgeingMap = useMemo(() => {
     const now = Date.now();
-    const buckets = [
+    const map = new Map();
+
+    // Index FG outward dispatches by itemName (lowercase)
+    const dispatchOutflows = new Map();
+    (dispatches || []).forEach((d) => {
+      if (d.type !== "Outward") return;
+      (d.items || []).forEach((di) => {
+        const key = (di.itemName || "").toLowerCase().trim();
+        if (!key || !(di.qty > 0)) return;
+        if (!dispatchOutflows.has(key)) dispatchOutflows.set(key, []);
+        dispatchOutflows.get(key).push({ date: new Date(d.date), qty: di.qty, ref: d.dispatchNo || d._id });
+      });
+    });
+
+    // Index completed job order inflows by itemName (lowercase)
+    const productionInflows = new Map();
+    (jobOrders || []).filter((jo) => jo.status === "Completed").forEach((jo) => {
+      const key = (jo.itemName || jo.product || "").toLowerCase().trim();
+      if (!key || !(jo.orderQty > 0)) return;
+      const lastStage = jo.stageHistory?.[jo.stageHistory.length - 1];
+      const date = new Date(lastStage?.enteredAt || jo.updatedAt || jo.jobcardDate);
+      if (isNaN(date.getTime())) return;
+      if (!productionInflows.has(key)) productionInflows.set(key, []);
+      productionInflows.get(key).push({ date, qty: jo.orderQty, ref: jo.joNo || jo._id });
+    });
+
+    filtered.filter((s) => (s.qty || 0) > 0).forEach((s) => {
+      const key = (s.itemName || "").toLowerCase().trim();
+      if (!key) return;
+
+      const inflows = [...(productionInflows.get(key) || [])].sort((a, b) => a.date - b.date);
+      const outflows = [...(dispatchOutflows.get(key) || [])].sort((a, b) => a.date - b.date);
+
+      // Build FIFO lots from production inflows
+      const lots = inflows.map((i) => ({ ...i }));
+
+      // Apply outflows to consume oldest lots first
+      const txHistory = [
+        ...inflows.map((i) => ({ ...i, txType: "production" })),
+        ...outflows.map((o) => ({ ...o, txType: "dispatch" })),
+      ].sort((a, b) => a.date - b.date);
+
+      outflows.forEach((o) => {
+        let remaining = o.qty;
+        for (let li = 0; li < lots.length && remaining > 0; li++) {
+          if (lots[li].qty <= remaining) {
+            remaining -= lots[li].qty;
+            lots[li].qty = 0;
+          } else {
+            lots[li].qty -= remaining;
+            remaining = 0;
+          }
+        }
+      });
+
+      const remainingLots = lots.filter((l) => l.qty > 0).map((l) => ({
+        ...l,
+        ageDays: Math.max(0, Math.floor((now - l.date.getTime()) / 86400000)),
+      }));
+
+      const trackedQty = remainingLots.reduce((sum, l) => sum + l.qty, 0);
+      const untrackedQty = (s.qty || 0) - trackedQty;
+
+      // Opening balance lot (stock not explained by tracked job orders)
+      const allLots = [...remainingLots];
+      if (untrackedQty > 0) {
+        const openDate = new Date(s.addedOn || s.createdAt || s.lastUpdated || now);
+        allLots.unshift({
+          date: openDate,
+          qty: untrackedQty,
+          ref: "Opening Balance",
+          ageDays: Math.max(0, Math.floor((now - openDate.getTime()) / 86400000)),
+        });
+      }
+
+      // Sort all lots oldest first
+      allLots.sort((a, b) => a.date - b.date);
+
+      // Bucket summary
+      const BUCKETS = [
+        { key: "0-7d", label: "0–7 days", min: 0, max: 7, color: "#10b981" },
+        { key: "8-15d", label: "8–15 days", min: 8, max: 15, color: "#60a5fa" },
+        { key: "16-30d", label: "16–30 days", min: 16, max: 30, color: "#f59e0b" },
+        { key: "31-60d", label: "31–60 days", min: 31, max: 60, color: "#f97316" },
+        { key: "60+d", label: "60+ days", min: 61, max: Infinity, color: "#ef4444" },
+      ];
+      const buckets = {};
+      BUCKETS.forEach((b) => { buckets[b.key] = { ...b, qty: 0 }; });
+      allLots.forEach((l) => {
+        const b = BUCKETS.find((b) => l.ageDays >= b.min && l.ageDays <= b.max);
+        if (b) buckets[b.key].qty += l.qty;
+      });
+
+      const oldestLot = allLots[0];
+      const worstAge = allLots.length > 0 ? Math.max(...allLots.map((l) => l.ageDays)) : null;
+
+      map.set(key, { lots: allLots, buckets, txHistory, trackedQty, untrackedQty, oldestLot, worstAge });
+    });
+
+    return map;
+  }, [filtered, jobOrders, dispatches]);
+
+  const ageingData = useMemo(() => {
+    const BUCKETS = [
       { label: "0–15 days", days: [0, 15], items: [] },
       { label: "16–30 days", days: [16, 30], items: [] },
       { label: "31–60 days", days: [31, 60], items: [] },
       { label: "60+ days", days: [61, Infinity], items: [] },
     ];
-    filtered
-      .filter(
-        (s) => (s.qty || 0) > 0 && (s.lastUpdated || s.addedOn || s.createdAt),
-      )
-      .forEach((s) => {
-        const dateMs = new Date(
-          s.lastUpdated || s.addedOn || s.createdAt,
-        ).getTime();
-        const ageDays = Math.floor((now - dateMs) / 86400000);
-        const bucket = buckets.find(
-          (b) => ageDays >= b.days[0] && ageDays <= b.days[1],
-        );
-        if (bucket) bucket.items.push({ ...s, ageDays });
-      });
-    return buckets;
-  }, [filtered]);
+    const now = Date.now();
+    filtered.filter((s) => (s.qty || 0) > 0).forEach((s) => {
+      const key = (s.itemName || "").toLowerCase().trim();
+      const fifo = fifoAgeingMap.get(key);
+      let ageDays;
+      if (fifo && fifo.worstAge !== null) {
+        ageDays = fifo.worstAge;
+      } else {
+        const d = s.lastUpdated || s.addedOn || s.createdAt;
+        ageDays = d ? Math.floor((now - new Date(d).getTime()) / 86400000) : null;
+      }
+      if (ageDays === null) return;
+      const bucket = BUCKETS.find((b) => ageDays >= b.days[0] && ageDays <= b.days[1]);
+      if (bucket) bucket.items.push({ ...s, ageDays });
+    });
+    return BUCKETS;
+  }, [filtered, fifoAgeingMap]);
 
   const handleExport = () => {
     if (!filtered.length) {
@@ -947,8 +1054,7 @@ export default function FGStock({
               FG Stock Ageing Analysis
             </span>
             <span style={{ fontSize: 11, color: "#666" }}>
-              — based on last stock update date; resets when production adds new
-              stock
+              — FIFO basis: production lots consumed by dispatches oldest-first · click ageing cell for item detail
             </span>
           </div>
           <div
@@ -1292,33 +1398,15 @@ export default function FGStock({
                   const value = (s.qty || 0) * (s.price || 0);
                   const isLow =
                     (s.reorder || 0) > 0 && (s.qty || 0) <= (s.reorder || 0);
-                  const ageingDate = s.lastUpdated || s.addedOn || s.createdAt;
-                  const ageDays = ageingDate
-                    ? Math.floor(
-                        (Date.now() - new Date(ageingDate).getTime()) /
-                          86400000,
-                      )
-                    : null;
+                  const fifoKey = (s.itemName || "").toLowerCase().trim();
+                  const fifoData = fifoAgeingMap.get(fifoKey);
+                  const ageDays = fifoData?.worstAge ?? (s.lastUpdated || s.addedOn || s.createdAt
+                    ? Math.floor((Date.now() - new Date(s.lastUpdated || s.addedOn || s.createdAt).getTime()) / 86400000)
+                    : null);
                   const ageColor =
-                    ageDays === null
-                      ? "#555"
-                      : ageDays <= 15
-                        ? "#10b981"
-                        : ageDays <= 30
-                          ? "#60a5fa"
-                          : ageDays <= 60
-                            ? "#f59e0b"
-                            : "#ef4444";
+                    ageDays === null ? "#555" : ageDays <= 7 ? "#10b981" : ageDays <= 15 ? "#60a5fa" : ageDays <= 30 ? "#f59e0b" : ageDays <= 60 ? "#f97316" : "#ef4444";
                   const ageLabel =
-                    ageDays === null
-                      ? "—"
-                      : ageDays <= 15
-                        ? "0–15d"
-                        : ageDays <= 30
-                          ? "16–30d"
-                          : ageDays <= 60
-                            ? "31–60d"
-                            : "60+d";
+                    ageDays === null ? "—" : ageDays <= 7 ? "0–7d" : ageDays <= 15 ? "8–15d" : ageDays <= 30 ? "16–30d" : ageDays <= 60 ? "31–60d" : "60+d";
                   return (
                     <tr
                       key={i}
@@ -1455,26 +1543,39 @@ export default function FGStock({
                       <td style={{ padding: "10px 14px", textAlign: "right" }}>
                         {(s.qty || 0) > 0 && ageDays !== null ? (
                           <span
+                            onClick={() => setAgeingModalItem(s)}
                             style={{
                               display: "inline-flex",
                               flexDirection: "column",
                               alignItems: "flex-end",
-                              gap: 1,
+                              gap: 2,
+                              cursor: "pointer",
                             }}
+                            title="Click to view FIFO ageing detail"
                           >
-                            <span
-                              style={{
-                                fontSize: 11,
-                                fontWeight: 700,
-                                color: ageColor,
-                                background: `${ageColor}18`,
-                                padding: "2px 7px",
-                                borderRadius: 10,
-                                whiteSpace: "nowrap",
-                              }}
-                            >
-                              {ageLabel}
-                            </span>
+                            {fifoData && Object.values(fifoData.buckets).some((b) => b.qty > 0) ? (
+                              <span style={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "flex-end" }}>
+                                {Object.values(fifoData.buckets).filter((b) => b.qty > 0).map((b) => (
+                                  <span key={b.key} style={{ fontSize: 10, fontWeight: 600, color: b.color, background: `${b.color}18`, padding: "1px 6px", borderRadius: 8, whiteSpace: "nowrap" }}>
+                                    {b.label}: {b.qty.toLocaleString("en-IN")}
+                                  </span>
+                                ))}
+                              </span>
+                            ) : (
+                              <span
+                                style={{
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  color: ageColor,
+                                  background: `${ageColor}18`,
+                                  padding: "2px 7px",
+                                  borderRadius: 10,
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {ageLabel}
+                              </span>
+                            )}
                             <span style={{ fontSize: 10, color: "#555" }}>
                               {ageDays}d
                             </span>
@@ -1599,6 +1700,13 @@ export default function FGStock({
               toast("Failed to update item", "error");
             }
           }}
+        />
+      )}
+      {ageingModalItem && (
+        <FifoAgeingModal
+          item={ageingModalItem}
+          fifoData={fifoAgeingMap.get((ageingModalItem.itemName || "").toLowerCase().trim())}
+          onClose={() => setAgeingModalItem(null)}
         />
       )}
     </div>
@@ -1813,6 +1921,165 @@ function EditModal({ item, onClose, onSave, companyMaster = [] }) {
             Save Changes
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function FifoAgeingModal({ item, fifoData, onClose }) {
+  const fmtN = (n) => Number(n || 0).toLocaleString("en-IN");
+  const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—";
+  const totalQty = item.qty || 0;
+
+  const BUCKET_ORDER = ["0-7d", "8-15d", "16-30d", "31-60d", "60+d"];
+
+  return (
+    <div
+      style={{
+        position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
+        background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center",
+        justifyContent: "center", zIndex: 1100,
+      }}
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div
+        style={{
+          background: "#141418", border: "1px solid rgba(255,255,255,0.1)",
+          borderRadius: 14, width: 680, maxWidth: "95vw", maxHeight: "90vh",
+          overflowY: "auto", boxShadow: "0 24px 60px rgba(0,0,0,0.6)",
+        }}
+      >
+        {/* Header */}
+        <div style={{ padding: "20px 24px 16px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <div>
+              <div style={{ fontSize: 11, color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: 4 }}>
+                <i className="fa-solid fa-clock-rotate-left" style={{ marginRight: 6 }} />
+                FIFO Stock Ageing
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "#fff", marginBottom: 2 }}>{item.itemName}</div>
+              <div style={{ fontSize: 12, color: "#666" }}>
+                {item.itemCode && <span style={{ marginRight: 12 }}>{item.itemCode}</span>}
+                {item.category && <span>{item.category}</span>}
+              </div>
+            </div>
+            <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#555", fontSize: 20, cursor: "pointer", padding: "4px 8px" }}>×</button>
+          </div>
+
+          {/* Summary bar */}
+          <div style={{ display: "flex", gap: 20, marginTop: 14 }}>
+            <div>
+              <div style={{ fontSize: 10, color: "#666", textTransform: "uppercase", marginBottom: 2 }}>Stock in Hand</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>{fmtN(totalQty)}</div>
+            </div>
+            {fifoData && (
+              <>
+                <div>
+                  <div style={{ fontSize: 10, color: "#666", textTransform: "uppercase", marginBottom: 2 }}>Tracked via JO</div>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: "#10b981" }}>{fmtN(fifoData.trackedQty)}</div>
+                </div>
+                {fifoData.untrackedQty > 0 && (
+                  <div>
+                    <div style={{ fontSize: 10, color: "#666", textTransform: "uppercase", marginBottom: 2 }}>Opening Balance</div>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: "#f59e0b" }}>{fmtN(fifoData.untrackedQty)}</div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Ageing Buckets */}
+        {fifoData && (
+          <div style={{ padding: "16px 24px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+            <div style={{ fontSize: 11, color: "#888", fontWeight: 700, textTransform: "uppercase", marginBottom: 10 }}>Age Breakdown (FIFO)</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {BUCKET_ORDER.map((bk) => {
+                const b = fifoData.buckets[bk];
+                if (!b || b.qty <= 0) return null;
+                const pct = totalQty > 0 ? Math.round((b.qty / totalQty) * 100) : 0;
+                return (
+                  <div key={bk} style={{ background: `${b.color}12`, border: `1px solid ${b.color}40`, borderRadius: 8, padding: "8px 14px", minWidth: 110 }}>
+                    <div style={{ fontSize: 10, color: b.color, fontWeight: 700, marginBottom: 3 }}>{b.label}</div>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: b.color }}>{fmtN(b.qty)}</div>
+                    <div style={{ fontSize: 10, color: "#555", marginTop: 1 }}>{pct}% of stock</div>
+                  </div>
+                );
+              })}
+            </div>
+            {/* Visual bar */}
+            <div style={{ marginTop: 12, height: 8, borderRadius: 4, overflow: "hidden", display: "flex" }}>
+              {BUCKET_ORDER.map((bk) => {
+                const b = fifoData.buckets[bk];
+                if (!b || b.qty <= 0) return null;
+                const pct = totalQty > 0 ? (b.qty / totalQty) * 100 : 0;
+                return <div key={bk} style={{ width: `${pct}%`, background: b.color, minWidth: 1 }} title={`${b.label}: ${fmtN(b.qty)}`} />;
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Stock Lots */}
+        {fifoData && fifoData.lots.length > 0 && (
+          <div style={{ padding: "16px 24px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+            <div style={{ fontSize: 11, color: "#888", fontWeight: 700, textTransform: "uppercase", marginBottom: 10 }}>Current Stock Lots (oldest first)</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {fifoData.lots.map((lot, i) => {
+                const bc = lot.ageDays <= 7 ? "#10b981" : lot.ageDays <= 15 ? "#60a5fa" : lot.ageDays <= 30 ? "#f59e0b" : lot.ageDays <= 60 ? "#f97316" : "#ef4444";
+                return (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 12px", background: "rgba(255,255,255,0.025)", borderRadius: 6, border: "1px solid rgba(255,255,255,0.05)" }}>
+                    <div style={{ width: 6, height: 6, borderRadius: "50%", background: bc, flexShrink: 0 }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 12, color: "#aaa" }}>
+                        {lot.ref === "Opening Balance" ? "Opening Balance" : `Production: ${lot.ref}`}
+                      </div>
+                      <div style={{ fontSize: 11, color: "#555", marginTop: 2 }}>{fmtDate(lot.date)}</div>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#e0e0e0" }}>{fmtN(lot.qty)}</div>
+                      <div style={{ fontSize: 10, color: bc, fontWeight: 600 }}>{lot.ageDays}d old</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Transaction History */}
+        {fifoData && fifoData.txHistory.length > 0 && (
+          <div style={{ padding: "16px 24px" }}>
+            <div style={{ fontSize: 11, color: "#888", fontWeight: 700, textTransform: "uppercase", marginBottom: 10 }}>Transaction History</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              {fifoData.txHistory.map((tx, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 10px", borderRadius: 6, background: tx.txType === "production" ? "rgba(16,185,129,0.05)" : "rgba(239,68,68,0.05)" }}>
+                  <i
+                    className={tx.txType === "production" ? "fa-solid fa-plus" : "fa-solid fa-arrow-up-right-from-square"}
+                    style={{ color: tx.txType === "production" ? "#10b981" : "#ef4444", fontSize: 10, width: 14 }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <span style={{ fontSize: 12, color: tx.txType === "production" ? "#10b981" : "#ef4444", fontWeight: 600 }}>
+                      {tx.txType === "production" ? "Production" : "Dispatch"}
+                    </span>
+                    <span style={{ fontSize: 11, color: "#555", marginLeft: 8 }}>{tx.ref}</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: "#666" }}>{fmtDate(tx.date)}</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: tx.txType === "production" ? "#10b981" : "#ef4444", minWidth: 80, textAlign: "right" }}>
+                    {tx.txType === "production" ? "+" : "-"}{fmtN(tx.qty)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {!fifoData && (
+          <div style={{ padding: 32, textAlign: "center", color: "#555" }}>
+            <i className="fa-solid fa-circle-info" style={{ fontSize: 28, marginBottom: 10, display: "block" }} />
+            <div style={{ fontSize: 13 }}>No production or dispatch data found for this item.</div>
+            <div style={{ fontSize: 11, marginTop: 4 }}>Ageing is based on stock record date only.</div>
+          </div>
+        )}
       </div>
     </div>
   );
