@@ -608,6 +608,11 @@ function SparePartsTab({
   const [editId, setEditId] = useState(null);
   const [search, setSearch] = useState("");
 
+  // Issue spare part state
+  const [issuingPart, setIssuingPart] = useState(null);
+  const [issueForm, setIssueForm] = useState({ qty: "", machineId: "", issuedBy: "", remarks: "" });
+  const [issuing, setIssuing] = useState(false);
+
   // Usage history state
   const [usageLogs, setUsageLogs] = useState([]);
   const [logsLoading, setLogsLoading] = useState(false);
@@ -665,6 +670,43 @@ function SparePartsTab({
     save(LS_PARTS, p);
   };
   const setF = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  const openIssue = (p) => {
+    setIssuingPart(p);
+    setIssueForm({ qty: "", machineId: p.machineId || "", issuedBy: "", remarks: "" });
+  };
+
+  const closeIssue = () => {
+    setIssuingPart(null);
+    setIssueForm({ qty: "", machineId: "", issuedBy: "", remarks: "" });
+  };
+
+  const handleIssue = async () => {
+    const qty = Number(issueForm.qty);
+    if (!qty || qty <= 0) { toast?.("Enter a valid quantity", "error"); return; }
+    const avail = Number(issuingPart.qty);
+    if (qty > avail) { toast?.(`Insufficient stock. Available: ${avail}`, "error"); return; }
+    setIssuing(true);
+    try {
+      await spareIssueLogAPI.create({
+        itemCode: issuingPart.partNumber || "",
+        itemName: issuingPart.partName,
+        category: issuingPart.category || "",
+        machineName: issueForm.machineId || "",
+        qty,
+        unit: "nos",
+        issuedBy: issueForm.issuedBy || "",
+        remarks: issueForm.remarks || "",
+      });
+      persist(parts.map((p) => p.id === issuingPart.id ? { ...p, qty: avail - qty } : p));
+      toast?.(`Issued ${qty} × ${issuingPart.partName}`, "success");
+      closeIssue();
+    } catch (err) {
+      toast?.(err?.response?.data?.error || "Failed to issue part", "error");
+    } finally {
+      setIssuing(false);
+    }
+  };
 
   const handleCategoryChange = (cat) => {
     setForm((f) => ({ ...f, category: cat, partName: "", partNumber: "" }));
@@ -1072,6 +1114,87 @@ function SparePartsTab({
         </Modal>
       )}
 
+      {issuingPart && (
+        <Modal
+          title={`Issue — ${issuingPart.partName}`}
+          onClose={closeIssue}
+        >
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
+            <div>
+              <label style={lbl}>Available Stock</label>
+              <div style={{ ...inp, fontWeight: 700, color: Number(issuingPart.qty) === 0 ? "#ef4444" : "#e0e0e0" }}>
+                {issuingPart.qty} nos
+              </div>
+            </div>
+            <div>
+              <label style={lbl}>Quantity to Issue *</label>
+              <input
+                type="number"
+                min={1}
+                max={issuingPart.qty}
+                value={issueForm.qty}
+                onChange={(e) => setIssueForm((f) => ({ ...f, qty: e.target.value }))}
+                placeholder="Enter qty"
+                style={inp}
+                autoFocus
+              />
+            </div>
+            <div>
+              <label style={lbl}>Issue to Machine</label>
+              <select
+                value={issueForm.machineId}
+                onChange={(e) => setIssueForm((f) => ({ ...f, machineId: e.target.value }))}
+                style={inp}
+              >
+                <option value="">— Select Machine (optional) —</option>
+                {machines.map((m) => (
+                  <option key={m._id || m.id} value={m.name}>{m.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label style={lbl}>Issued By</label>
+              <input
+                value={issueForm.issuedBy}
+                onChange={(e) => setIssueForm((f) => ({ ...f, issuedBy: e.target.value }))}
+                placeholder="Name"
+                style={inp}
+              />
+            </div>
+            <div style={{ gridColumn: "1 / -1" }}>
+              <label style={lbl}>Remarks</label>
+              <input
+                value={issueForm.remarks}
+                onChange={(e) => setIssueForm((f) => ({ ...f, remarks: e.target.value }))}
+                placeholder="Purpose / notes (optional)"
+                style={inp}
+              />
+            </div>
+          </div>
+          {issueForm.qty && Number(issueForm.qty) > 0 && (
+            <div style={{ padding: "10px 14px", background: "#f97316" + "11", border: "1px solid " + "#f97316" + "44", borderRadius: 6, marginBottom: 14, fontSize: 13 }}>
+              Issue <strong style={{ color: "#f97316" }}>{issueForm.qty} nos</strong> of <strong>{issuingPart.partName}</strong>
+              {issueForm.machineId ? <> → <strong style={{ color: "#3b82f6" }}>{issueForm.machineId}</strong></> : null}
+            </div>
+          )}
+          <div style={{ display: "flex", gap: 10 }}>
+            <button
+              onClick={handleIssue}
+              disabled={issuing}
+              style={{ padding: "9px 22px", background: issuing ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 600, cursor: issuing ? "not-allowed" : "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
+            >
+              {issuing ? "Issuing…" : "Confirm Issue"}
+            </button>
+            <button
+              onClick={closeIssue}
+              style={{ background: "transparent", color: "#aaa", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, cursor: "pointer" }}
+            >
+              Cancel
+            </button>
+          </div>
+        </Modal>
+      )}
+
       {view === "list" && (
         <>
           <div style={{ marginBottom: 14, display: "flex", gap: 10 }}>
@@ -1320,6 +1443,24 @@ function SparePartsTab({
                             }}
                           >
                             <i className="fa-solid fa-trash" /> Delete
+                          </button>
+                          <button
+                            onClick={() => openIssue(p)}
+                            style={{
+                              background: "transparent",
+                              color: "#f97316",
+                              border: "1px solid #f9731698",
+                              borderRadius: 6,
+                              padding: "6px 12px",
+                              fontSize: 11,
+                              fontWeight: 500,
+                              cursor: "pointer",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 6,
+                            }}
+                          >
+                            <i className="fa-solid fa-arrow-right-from-bracket" /> Issue
                           </button>
                         </div>
                       </td>

@@ -205,12 +205,21 @@ export default function JobOrders(props) {
         .trim().toLowerCase()
         .replace(/s$/, "");
       const sType = (s.paperType || s.name || "").trim().toLowerCase();
+      const sNameLower = (s.name || "").toLowerCase();
       const gsmFromField = (s.gsm || s.paperGsm || 0).toString().trim();
-      const gsmFromName = (sType.match(/(\d+)\s*gsm/) || [])[1] || "";
+      // Also search s.name for GSM in case paperType has no digits (old records with gsm=0)
+      const gsmFromName =
+        (sType.match(/(\d+)\s*gsm/) || [])[1] ||
+        (sNameLower.match(/(\d+)\s*gsm/) || [])[1] ||
+        "";
       const sGsm = gsmFromField !== "0" ? gsmFromField : gsmFromName;
 
+      // If category is missing on old records, fall back to checking the name
+      const catMatch =
+        sCat === hCat ||
+        (!sCat && sNameLower.replace(/s\b/g, "").includes(hCat));
       const basicMatch =
-        sCat === hCat && sType.includes(hType) && sGsm === hGsm;
+        catMatch && sType.includes(hType) && sGsm === hGsm;
 
       if (!basicMatch) return false;
 
@@ -267,12 +276,19 @@ export default function JobOrders(props) {
         .trim().toLowerCase()
         .replace(/s$/, "");
       const sType = (s.paperType || s.name || "").trim().toLowerCase();
+      const sNameLower = (s.name || "").toLowerCase();
       const gsmFromField = (s.gsm || s.paperGsm || 0).toString().trim();
-      const gsmFromName = (sType.match(/(\d+)\s*gsm/) || [])[1] || "";
+      const gsmFromName =
+        (sType.match(/(\d+)\s*gsm/) || [])[1] ||
+        (sNameLower.match(/(\d+)\s*gsm/) || [])[1] ||
+        "";
       const sGsm = gsmFromField !== "0" ? gsmFromField : gsmFromName;
 
+      const catMatch =
+        sCat === hCat ||
+        (!sCat && sNameLower.replace(/s\b/g, "").includes(hCat));
       const basicMatch =
-        sCat === hCat && sType.includes(hType) && sGsm === hGsm;
+        catMatch && sType.includes(hType) && sGsm === hGsm;
       if (!basicMatch) return false;
 
       const isSheet = hCat === "paper sheet";
