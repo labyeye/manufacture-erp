@@ -96,7 +96,7 @@ const TOOL_COLUMNS = [
   },
 ];
 
-function ToolTypeSection({ tabId, toast }) {
+function ToolTypeSection({ tabId, toast, canExportImport = true }) {
   const cfg = TOOL_CONFIG[tabId];
   const [tools, setTools] = useState([]);
   const [fgItems, setFgItems] = useState([]);
@@ -1177,7 +1177,7 @@ export default function MachineTools({
       {(activeTab === "cylinders" ||
         activeTab === "dies" ||
         activeTab === "plates") && (
-        <ToolTypeSection key={activeTab} tabId={activeTab} toast={toast} />
+        <ToolTypeSection key={activeTab} tabId={activeTab} toast={toast} canExportImport={canExportImport} />
       )}
       {activeTab === "calendar" && <CalendarSection toast={toast} />}
       {activeTab === "maintenance" && <MaintenanceSection toast={toast} />}

@@ -162,11 +162,12 @@ const adjustStock = async (items, direction, location) => {
     if (mType === "Raw Material") {
       try {
         const itemCode = (item.productCode || "").trim() || null;
-        const itemCategory = item.category || item.rmItem || "General";
-        const itemSubCategory = item.subCategory || item.paperType || "Standard";
-        const itemName =
+        const itemCategory = (item.category || item.rmItem || "General").trim();
+        const itemSubCategory = (item.subCategory || item.paperType || "Standard").trim();
+        const itemName = (
           item.itemName ||
-          `${itemCategory} | ${itemSubCategory}${item.gsm ? ` | ${item.gsm}gsm` : ""}${item.widthMm ? ` | ${item.widthMm}mm` : ""}`;
+          `${itemCategory} | ${itemSubCategory}${item.gsm ? ` | ${item.gsm}gsm` : ""}${item.widthMm ? ` | ${item.widthMm}mm` : ""}`
+        ).trim();
 
         const weightChange = Number(item.weight) * direction;
         const qtyChange = Number(item.noOfSheets || item.qty || 0) * direction;

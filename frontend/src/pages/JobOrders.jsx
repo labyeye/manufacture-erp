@@ -191,9 +191,9 @@ export default function JobOrders(props) {
     if (!header.paperCategory || !header.paperType || !header.paperGsm)
       return null;
 
-    const hCat = header.paperCategory.toLowerCase().replace(/s$/, "");
-    const hType = (header.paperType || "").toLowerCase();
-    const hGsm = (header.paperGsm || "").toString();
+    const hCat = header.paperCategory.trim().toLowerCase().replace(/s$/, "");
+    const hType = (header.paperType || "").trim().toLowerCase();
+    const hGsm = (header.paperGsm || "").toString().trim();
 
     const isSheet = hCat === "paper sheet";
     const isReel = hCat === "paper reel";
@@ -202,10 +202,10 @@ export default function JobOrders(props) {
 
     const matchFn1 = (s) => {
       const sCat = (s.category || s.paperCategory || "")
-        .toLowerCase()
+        .trim().toLowerCase()
         .replace(/s$/, "");
-      const sType = (s.name || s.paperType || "").toLowerCase();
-      const gsmFromField = (s.gsm || s.paperGsm || 0).toString();
+      const sType = (s.paperType || s.name || "").trim().toLowerCase();
+      const gsmFromField = (s.gsm || s.paperGsm || 0).toString().trim();
       const gsmFromName = (sType.match(/(\d+)\s*gsm/) || [])[1] || "";
       const sGsm = gsmFromField !== "0" ? gsmFromField : gsmFromName;
 
@@ -258,16 +258,16 @@ export default function JobOrders(props) {
     )
       return null;
 
-    const hCat = header.paperCategory2.toLowerCase().replace(/s$/, "");
-    const hType = (header.paperType2 || "").toLowerCase();
-    const hGsm = (header.paperGsm2 || "").toString();
+    const hCat = header.paperCategory2.trim().toLowerCase().replace(/s$/, "");
+    const hType = (header.paperType2 || "").trim().toLowerCase();
+    const hGsm = (header.paperGsm2 || "").toString().trim();
 
     const matchFn2 = (s) => {
       const sCat = (s.category || s.paperCategory || "")
-        .toLowerCase()
+        .trim().toLowerCase()
         .replace(/s$/, "");
-      const sType = (s.name || s.paperType || "").toLowerCase();
-      const gsmFromField = (s.gsm || s.paperGsm || 0).toString();
+      const sType = (s.paperType || s.name || "").trim().toLowerCase();
+      const gsmFromField = (s.gsm || s.paperGsm || 0).toString().trim();
       const gsmFromName = (sType.match(/(\d+)\s*gsm/) || [])[1] || "";
       const sGsm = gsmFromField !== "0" ? gsmFromField : gsmFromName;
 

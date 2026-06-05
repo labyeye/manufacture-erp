@@ -732,6 +732,7 @@ function AppInner({
             itemMasterFG={data.itemMasterFG}
             categoryMaster={data.categoryMaster}
             toast={showToast}
+            canExportImport={session?.allowExportImport !== false}
           />
         );
       case "pricemaster":
