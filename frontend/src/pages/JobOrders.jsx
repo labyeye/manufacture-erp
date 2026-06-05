@@ -442,7 +442,9 @@ export default function JobOrders(props) {
       sheetUom: jo.sheetUom || "mm",
       sheetW: jo.sheetW || "",
       sheetL: jo.sheetL || "",
-      sheetSize: jo.sheetSize || "",
+      sheetSize: jo.sheetW && jo.sheetL
+        ? `${jo.sheetW}x${jo.sheetL}${jo.sheetUom || "mm"}`
+        : jo.sheetSize || "",
       hasSecondPaper: jo.hasSecondPaper || false,
       paperCategory2: jo.paperCategory2 || "",
       paperType2: jo.paperType2 || "",
@@ -452,7 +454,9 @@ export default function JobOrders(props) {
       sheetUom2: jo.sheetUom2 || "mm",
       sheetW2: jo.sheetW2 || "",
       sheetL2: jo.sheetL2 || "",
-      sheetSize2: jo.sheetSize2 || "",
+      sheetSize2: jo.sheetW2 && jo.sheetL2
+        ? `${jo.sheetW2}x${jo.sheetL2}${jo.sheetUom2 || "mm"}`
+        : jo.sheetSize2 || "",
       reelWidthMm2: jo.reelWidthMm2 || "",
       reelWeightKg2: jo.reelWeightKg2 || "",
       cuttingLengthMm2: jo.cuttingLengthMm2 || "",
@@ -671,14 +675,14 @@ export default function JobOrders(props) {
         const vW = k === "sheetW" ? v : updated.sheetW;
         const vL = k === "sheetL" ? v : updated.sheetL;
         const vUom = k === "sheetUom" ? v : updated.sheetUom;
-        updated.sheetSize = vW && vL ? `${vW} x ${vL} ${vUom}` : "";
+        updated.sheetSize = vW && vL ? `${vW}x${vL}${vUom}` : "";
       }
 
       if (["sheetW2", "sheetL2", "sheetUom2"].includes(k)) {
         const vW = k === "sheetW2" ? v : updated.sheetW2;
         const vL = k === "sheetL2" ? v : updated.sheetL2;
         const vUom = k === "sheetUom2" ? v : updated.sheetUom2;
-        updated.sheetSize2 = vW && vL ? `${vW} x ${vL} ${vUom}` : "";
+        updated.sheetSize2 = vW && vL ? `${vW}x${vL}${vUom}` : "";
       }
 
       return updated;
