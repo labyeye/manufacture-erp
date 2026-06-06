@@ -31,14 +31,36 @@ exports.updateLog = async (req, res) => {
     return res.status(403).json({ error: "Not authorized" });
   }
   try {
-    const { itemName, itemCode, category, machineName, qty, unit, issuedBy, remarks, issuedAt } = req.body;
+    const {
+      itemName,
+      itemCode,
+      category,
+      machineName,
+      qty,
+      unit,
+      issuedBy,
+      remarks,
+      issuedAt,
+    } = req.body;
     if (!itemName || !qty || Number(qty) <= 0) {
-      return res.status(400).json({ error: "itemName and a positive qty are required" });
+      return res
+        .status(400)
+        .json({ error: "itemName and a positive qty are required" });
     }
     const log = await SpareIssueLog.findByIdAndUpdate(
       req.params.id,
-      { itemName, itemCode, category, machineName, qty: Number(qty), unit: unit || "nos", issuedBy, remarks, ...(issuedAt ? { issuedAt: new Date(issuedAt) } : {}) },
-      { new: true }
+      {
+        itemName,
+        itemCode,
+        category,
+        machineName,
+        qty: Number(qty),
+        unit: unit || "nos",
+        issuedBy,
+        remarks,
+        ...(issuedAt ? { issuedAt: new Date(issuedAt) } : {}),
+      },
+      { new: true },
     ).populate("machineId", "name type");
     if (!log) return res.status(404).json({ error: "Log not found" });
     res.json({ log });

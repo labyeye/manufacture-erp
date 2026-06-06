@@ -248,7 +248,11 @@ export default function RMStock({
       toast?.("No data to export", "error");
       return;
     }
-    const rfmt = (n) => (+n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const rfmt = (n) =>
+      (+n || 0).toLocaleString("en-IN", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
     const totalWt = filtered.reduce((s, r) => s + +(r.weight || 0), 0);
     const totalVal = filtered.reduce(
       (s, r) => s + (+r.weight || 0) * (+r.rate || 0),

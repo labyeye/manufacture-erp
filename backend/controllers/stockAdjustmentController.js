@@ -138,7 +138,8 @@ exports.create = async (req, res) => {
 
     if (newQty < 0) {
       return res.status(400).json({
-        error: "Insufficient stock: adjustment would result in negative quantity",
+        error:
+          "Insufficient stock: adjustment would result in negative quantity",
       });
     }
     if (stockType === "Raw Material" && newWeight < 0) {
@@ -154,9 +155,11 @@ exports.create = async (req, res) => {
     if (stockType === "Finished Goods") {
       const histQty = direction * Number(qty);
       const histType =
-        adjustmentType === "Production" ? "production"
-        : adjustmentType === "Outward" ? "adjustment"
-        : "import";
+        adjustmentType === "Production"
+          ? "production"
+          : adjustmentType === "Outward"
+            ? "adjustment"
+            : "import";
       stock.stockHistory.push({
         date: date ? new Date(date) : new Date(),
         qty: histQty,
@@ -295,22 +298,43 @@ exports.bulkCreate = async (req, res) => {
     const { itemName, adjustmentType, qty, weight } = row;
     const rowNo = i + 2; // Excel row number (1=header, data starts at 2)
 
-    if (!itemName) { errors.push({ row: rowNo, error: "Item Name is required" }); continue; }
-    if (!["Inward", "Outward", "Production"].includes(adjustmentType)) {
-      errors.push({ row: rowNo, itemName, error: `Invalid Adjustment Type "${adjustmentType}". Use Inward/Outward/Production` });
+    if (!itemName) {
+      errors.push({ row: rowNo, error: "Item Name is required" });
       continue;
     }
-    if (!qty && !weight) { errors.push({ row: rowNo, itemName, error: "Sheets or Weight is required" }); continue; }
+    if (!["Inward", "Outward", "Production"].includes(adjustmentType)) {
+      errors.push({
+        row: rowNo,
+        itemName,
+        error: `Invalid Adjustment Type "${adjustmentType}". Use Inward/Outward/Production`,
+      });
+      continue;
+    }
+    if (!qty && !weight) {
+      errors.push({
+        row: rowNo,
+        itemName,
+        error: "Sheets or Weight is required",
+      });
+      continue;
+    }
 
     try {
-      const nameRegex = new RegExp(`^${itemName.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i");
+      const nameRegex = new RegExp(
+        `^${itemName.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`,
+        "i",
+      );
       // Find the RM stock record by name or code
       let stock = await RawMaterialStock.findOne({
         $or: [{ name: nameRegex }, { code: itemName.trim().toUpperCase() }],
       });
 
       if (!stock) {
-        errors.push({ row: rowNo, itemName, error: `RM stock record not found for "${itemName}"` });
+        errors.push({
+          row: rowNo,
+          itemName,
+          error: `RM stock record not found for "${itemName}"`,
+        });
         continue;
       }
 
@@ -324,15 +348,33 @@ exports.bulkCreate = async (req, res) => {
       const newQty = beforeQty + direction * Number(qty || 0);
       const newWeight = beforeWeight + direction * Number(weight || 0);
 
-      if (newQty < 0) { errors.push({ row: rowNo, itemName, error: `Outward qty (${qty}) exceeds current stock (${beforeQty} sheets)` }); continue; }
-      if (newWeight < 0) { errors.push({ row: rowNo, itemName, error: `Outward weight (${weight}) exceeds current stock (${beforeWeight} kg)` }); continue; }
+      if (newQty < 0) {
+        errors.push({
+          row: rowNo,
+          itemName,
+          error: `Outward qty (${qty}) exceeds current stock (${beforeQty} sheets)`,
+        });
+        continue;
+      }
+      if (newWeight < 0) {
+        errors.push({
+          row: rowNo,
+          itemName,
+          error: `Outward weight (${weight}) exceeds current stock (${beforeWeight} kg)`,
+        });
+        continue;
+      }
 
       stock.qty = newQty;
       stock.weight = newWeight;
       await stock.save();
 
       const year = new Date().getFullYear();
-      const adjustmentNo = await getNextSequence(`ADJ-${year}`, `ADJ-${year}`, 3);
+      const adjustmentNo = await getNextSequence(
+        `ADJ-${year}`,
+        `ADJ-${year}`,
+        3,
+      );
 
       const adjustment = new StockAdjustment({
         adjustmentNo,
@@ -351,7 +393,13 @@ exports.bulkCreate = async (req, res) => {
         createdBy: req.user?.username || req.user?.name || "System",
       });
       await adjustment.save();
-      results.push({ row: rowNo, itemName: resolvedName, adjustmentNo, newQty, newWeight });
+      results.push({
+        row: rowNo,
+        itemName: resolvedName,
+        adjustmentNo,
+        newQty,
+        newWeight,
+      });
     } catch (err) {
       errors.push({ row: rowNo, itemName, error: err.message });
     }

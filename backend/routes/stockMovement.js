@@ -103,8 +103,7 @@ router.get("/", async (req, res) => {
     if (type === "rm") {
       // Look up by code first (more reliable), then name
       const stock =
-        (await RawMaterialStock.findOne({ name: nameRegex })) ||
-        null;
+        (await RawMaterialStock.findOne({ name: nameRegex })) || null;
       const currentQty = stock ? stock.qty || 0 : 0;
       const currentWeight = stock ? stock.weight || 0 : 0;
       const unit = stock?.unit || "sheets";
@@ -158,7 +157,10 @@ router.get("/", async (req, res) => {
       let stockSheetL = null;
       if (stock?.sheetSize) {
         const m = stock.sheetSize.match(/^(\d+)[x×](\d+)/i);
-        if (m) { stockSheetW = parseInt(m[1]); stockSheetL = parseInt(m[2]); }
+        if (m) {
+          stockSheetW = parseInt(m[1]);
+          stockSheetL = parseInt(m[2]);
+        }
       }
 
       const joOrClauses = [];
@@ -170,8 +172,18 @@ router.get("/", async (req, res) => {
         );
         // Primary: exact paper type + gsm + sheet dimensions (both primary and second-paper slots)
         if (stockSheetW && stockSheetL) {
-          joOrClauses.push({ paperType: ptRx, paperGsm: stock.gsm || undefined, sheetW: stockSheetW, sheetL: stockSheetL });
-          joOrClauses.push({ paperType2: ptRx, paperGsm2: stock.gsm || undefined, sheetW: stockSheetW, sheetL: stockSheetL });
+          joOrClauses.push({
+            paperType: ptRx,
+            paperGsm: stock.gsm || undefined,
+            sheetW: stockSheetW,
+            sheetL: stockSheetL,
+          });
+          joOrClauses.push({
+            paperType2: ptRx,
+            paperGsm2: stock.gsm || undefined,
+            sheetW: stockSheetW,
+            sheetL: stockSheetL,
+          });
         } else if (stock.gsm) {
           // No size info — fall back to type+gsm (less precise)
           joOrClauses.push({ paperType: ptRx, paperGsm: stock.gsm });
@@ -212,13 +224,17 @@ router.get("/", async (req, res) => {
           } else {
             // Determine if this matched via second-paper slot
             const ptRx2 = stock?.paperType
-              ? new RegExp(stock.paperType.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i")
+              ? new RegExp(
+                  stock.paperType.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+                  "i",
+                )
               : null;
             const isSecond =
               ptRx2 &&
               ptRx2.test(jo.paperType2 || "") &&
               (!stock?.gsm || jo.paperGsm2 === stock.gsm) &&
-              (!stockSheetW || (jo.sheetW === stockSheetW && jo.sheetL === stockSheetL));
+              (!stockSheetW ||
+                (jo.sheetW === stockSheetW && jo.sheetL === stockSheetL));
             const isReel = (jo.paperCategory || "")
               .toLowerCase()
               .includes("reel");
@@ -294,20 +310,29 @@ router.get("/", async (req, res) => {
             $or: joOrClauses,
             status: { $in: ["In Progress", "Completed", "Scheduled", "Draft"] },
             jobcardDate: { $lt: fromDate },
-          }).select("noOfSheets noOfSheets2 reelWeightKg polycoatedWeightKg polycoatedRmName paperType2 paperGsm2 sheetW sheetL polycoatedRmStockId paperCategory");
+          }).select(
+            "noOfSheets noOfSheets2 reelWeightKg polycoatedWeightKg polycoatedRmName paperType2 paperGsm2 sheetW sheetL polycoatedRmStockId paperCategory",
+          );
           for (const jo of prevJos) {
             const isPolycoated =
               nameRegex.test(jo.polycoatedRmName || "") ||
-              (stock?._id && String(jo.polycoatedRmStockId) === String(stock._id));
+              (stock?._id &&
+                String(jo.polycoatedRmStockId) === String(stock._id));
             const ptRx2 = stock?.paperType
-              ? new RegExp(stock.paperType.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i")
+              ? new RegExp(
+                  stock.paperType.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+                  "i",
+                )
               : null;
             const isSecond =
               ptRx2 &&
               ptRx2.test(jo.paperType2 || "") &&
               (!stock?.gsm || jo.paperGsm2 === stock.gsm) &&
-              (!stockSheetW || (jo.sheetW === stockSheetW && jo.sheetL === stockSheetL));
-            const isReel = (jo.paperCategory || "").toLowerCase().includes("reel");
+              (!stockSheetW ||
+                (jo.sheetW === stockSheetW && jo.sheetL === stockSheetL));
+            const isReel = (jo.paperCategory || "")
+              .toLowerCase()
+              .includes("reel");
             const outQty = isPolycoated
               ? jo.polycoatedWeightKg || 0
               : isWeightBased || isReel
@@ -316,7 +341,8 @@ router.get("/", async (req, res) => {
                   ? jo.noOfSheets2 || 0
                   : jo.noOfSheets || 0;
             openingQty -= outQty;
-            openingWeight -= isPolycoated || isReel ? outQty : jo.reelWeightKg || 0;
+            openingWeight -=
+              isPolycoated || isReel ? outQty : jo.reelWeightKg || 0;
           }
         }
 

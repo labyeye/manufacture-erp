@@ -6,10 +6,17 @@ const stockHistorySchema = new mongoose.Schema(
     qty: { type: Number, required: true }, // positive = in, negative = out
     type: {
       type: String,
-      enum: ["opening", "production", "import", "dispatch", "return", "adjustment"],
+      enum: [
+        "opening",
+        "production",
+        "import",
+        "dispatch",
+        "return",
+        "adjustment",
+      ],
       required: true,
     },
-    ref: String,   // JO number, dispatch number, etc.
+    ref: String, // JO number, dispatch number, etc.
     note: String,
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },

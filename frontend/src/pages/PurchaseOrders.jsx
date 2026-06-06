@@ -362,7 +362,11 @@ export default function PurchaseOrders({
   };
 
   const generatePOPDF = (po) => {
-    const rfmt = (n) => (+n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const rfmt = (n) =>
+      (+n || 0).toLocaleString("en-IN", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
     const itemsArr = (po.items || []).map((it) => {
       const amt = Number(it.amount || 0);
       const gst = Number(

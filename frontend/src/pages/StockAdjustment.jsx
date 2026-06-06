@@ -111,13 +111,25 @@ export default function StockAdjustment({
       const wb = XLSX.read(ev.target.result, { type: "binary" });
       const ws = wb.Sheets[wb.SheetNames[0]];
       const raw = XLSX.utils.sheet_to_json(ws, { defval: "" });
-      const rows = raw.map((r) => ({
-        itemName: String(r["Item Name"] || r["item name"] || r["itemName"] || "").trim(),
-        adjustmentType: String(r["Adjustment Type"] || r["adjustment type"] || r["adjustmentType"] || "Inward").trim(),
-        qty: Number(r["Sheets"] || r["sheets"] || r["Qty"] || r["qty"] || 0),
-        weight: Number(r["Weight"] || r["weight"] || 0),
-      })).filter((r) => r.itemName);
-      if (!rows.length) { toast?.("No valid rows found in Excel", "error"); return; }
+      const rows = raw
+        .map((r) => ({
+          itemName: String(
+            r["Item Name"] || r["item name"] || r["itemName"] || "",
+          ).trim(),
+          adjustmentType: String(
+            r["Adjustment Type"] ||
+              r["adjustment type"] ||
+              r["adjustmentType"] ||
+              "Inward",
+          ).trim(),
+          qty: Number(r["Sheets"] || r["sheets"] || r["Qty"] || r["qty"] || 0),
+          weight: Number(r["Weight"] || r["weight"] || 0),
+        }))
+        .filter((r) => r.itemName);
+      if (!rows.length) {
+        toast?.("No valid rows found in Excel", "error");
+        return;
+      }
       setImportRows(rows);
     };
     reader.readAsBinaryString(file);
@@ -129,7 +141,14 @@ export default function StockAdjustment({
     setImportLoading(true);
     try {
       const res = await stockAdjustmentAPI.importBulk(importRows, importDate);
-      toast?.(res.message, res.errors?.length && res.results?.length ? "warning" : res.errors?.length ? "error" : "success");
+      toast?.(
+        res.message,
+        res.errors?.length && res.results?.length
+          ? "warning"
+          : res.errors?.length
+            ? "error"
+            : "success",
+      );
       if (res.results?.length) {
         fetchAdjustments();
         setImportRows(null);
@@ -162,21 +181,32 @@ export default function StockAdjustment({
     const q = codeSearch.toLowerCase();
     // Item master items (FG, Consumable, RM that are in master)
     const masterItems = itemMasterFG
-      .filter((i) => ["Raw Material", "Finished Goods", "Consumable"].includes(i.type))
       .filter((i) =>
-        (i.code || "").toLowerCase().includes(q) ||
-        (i.name || "").toLowerCase().includes(q),
+        ["Raw Material", "Finished Goods", "Consumable"].includes(i.type),
+      )
+      .filter(
+        (i) =>
+          (i.code || "").toLowerCase().includes(q) ||
+          (i.name || "").toLowerCase().includes(q),
       );
 
     // RM stock records (includes items created by GRNs, not in item master)
-    const masterCodes = new Set(masterItems.map((i) => (i.code || "").toUpperCase()));
+    const masterCodes = new Set(
+      masterItems.map((i) => (i.code || "").toUpperCase()),
+    );
     const rmExtra = rmStockItems
       .filter((s) => s.code && !masterCodes.has((s.code || "").toUpperCase()))
-      .filter((s) =>
-        (s.code || "").toLowerCase().includes(q) ||
-        (s.name || "").toLowerCase().includes(q),
+      .filter(
+        (s) =>
+          (s.code || "").toLowerCase().includes(q) ||
+          (s.name || "").toLowerCase().includes(q),
       )
-      .map((s) => ({ code: s.code, name: s.name, type: "Raw Material", _id: s._id }));
+      .map((s) => ({
+        code: s.code,
+        name: s.name,
+        type: "Raw Material",
+        _id: s._id,
+      }));
 
     return [...masterItems, ...rmExtra];
   }, [itemMasterFG, rmStockItems, codeSearch]);
@@ -396,7 +426,12 @@ export default function StockAdjustment({
               }}
             >
               <i className="fa-solid fa-file-excel" /> Import Excel
-              <input type="file" accept=".xlsx,.xls" style={{ display: "none" }} onChange={handleExcelImport} />
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                style={{ display: "none" }}
+                onChange={handleExcelImport}
+              />
             </label>
           )}
         </div>
@@ -404,59 +439,200 @@ export default function StockAdjustment({
 
       {/* EXCEL IMPORT PREVIEW MODAL */}
       {importRows && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-          <div style={{ background: "#111113", border: "1px solid #2a2a2e", borderRadius: 12, width: "100%", maxWidth: 800, maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.85)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 20,
+          }}
+        >
+          <div
+            style={{
+              background: "#111113",
+              border: "1px solid #2a2a2e",
+              borderRadius: 12,
+              width: "100%",
+              maxWidth: 800,
+              maxHeight: "90vh",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+            }}
+          >
             {/* Modal header */}
-            <div style={{ padding: "20px 24px", borderBottom: "1px solid #2a2a2e", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div
+              style={{
+                padding: "20px 24px",
+                borderBottom: "1px solid #2a2a2e",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
               <div>
                 <div style={{ fontWeight: 700, fontSize: 16, color: C.text }}>
-                  <i className="fa-solid fa-file-excel" style={{ color: "#4ade80", marginRight: 8 }} />
-                  Import Preview — {importRows.length} row{importRows.length !== 1 ? "s" : ""}
+                  <i
+                    className="fa-solid fa-file-excel"
+                    style={{ color: "#4ade80", marginRight: 8 }}
+                  />
+                  Import Preview — {importRows.length} row
+                  {importRows.length !== 1 ? "s" : ""}
                 </div>
-                <div style={{ fontSize: 12, color: C.muted, marginTop: 3 }}>Review before saving. ADJ numbers are auto-generated.</div>
+                <div style={{ fontSize: 12, color: C.muted, marginTop: 3 }}>
+                  Review before saving. ADJ numbers are auto-generated.
+                </div>
               </div>
-              <button onClick={() => setImportRows(null)} style={{ background: "transparent", border: "none", color: C.muted, fontSize: 20, cursor: "pointer" }}>✕</button>
+              <button
+                onClick={() => setImportRows(null)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: C.muted,
+                  fontSize: 20,
+                  cursor: "pointer",
+                }}
+              >
+                ✕
+              </button>
             </div>
 
             {/* Date picker */}
-            <div style={{ padding: "12px 24px", borderBottom: "1px solid #2a2a2e", display: "flex", alignItems: "center", gap: 12 }}>
-              <span style={{ fontSize: 12, color: C.muted, fontWeight: 600 }}>Adjustment Date</span>
+            <div
+              style={{
+                padding: "12px 24px",
+                borderBottom: "1px solid #2a2a2e",
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+              }}
+            >
+              <span style={{ fontSize: 12, color: C.muted, fontWeight: 600 }}>
+                Adjustment Date
+              </span>
               <input
                 type="date"
                 value={importDate}
                 onChange={(e) => setImportDate(e.target.value)}
-                style={{ padding: "6px 10px", background: "#0c0c0e", border: "1px solid #2a2a2e", borderRadius: 6, color: C.text, fontSize: 13 }}
+                style={{
+                  padding: "6px 10px",
+                  background: "#0c0c0e",
+                  border: "1px solid #2a2a2e",
+                  borderRadius: 6,
+                  color: C.text,
+                  fontSize: 13,
+                }}
               />
             </div>
 
             {/* Table */}
             <div style={{ overflowY: "auto", flex: 1 }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <table
+                style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  fontSize: 13,
+                }}
+              >
                 <thead>
-                  <tr style={{ background: "rgba(255,255,255,0.04)", position: "sticky", top: 0 }}>
-                    {["#", "Item Name", "Adjustment Type", "Sheets (Qty)", "Weight (kg)"].map((h) => (
-                      <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 11, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", borderBottom: "1px solid #2a2a2e" }}>{h}</th>
+                  <tr
+                    style={{
+                      background: "rgba(255,255,255,0.04)",
+                      position: "sticky",
+                      top: 0,
+                    }}
+                  >
+                    {[
+                      "#",
+                      "Item Name",
+                      "Adjustment Type",
+                      "Sheets (Qty)",
+                      "Weight (kg)",
+                    ].map((h) => (
+                      <th
+                        key={h}
+                        style={{
+                          padding: "10px 14px",
+                          textAlign: "left",
+                          fontSize: 11,
+                          color: C.muted,
+                          fontWeight: 700,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.04em",
+                          borderBottom: "1px solid #2a2a2e",
+                        }}
+                      >
+                        {h}
+                      </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {importRows.map((r, i) => {
-                    const typeColor = r.adjustmentType === "Outward" ? "#f87171" : "#4ade80";
-                    const valid = r.itemName && ["Inward","Outward","Production"].includes(r.adjustmentType);
+                    const typeColor =
+                      r.adjustmentType === "Outward" ? "#f87171" : "#4ade80";
+                    const valid =
+                      r.itemName &&
+                      ["Inward", "Outward", "Production"].includes(
+                        r.adjustmentType,
+                      );
                     return (
-                      <tr key={i} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", background: valid ? "transparent" : "rgba(239,68,68,0.06)" }}>
-                        <td style={{ padding: "9px 14px", color: C.muted }}>{i + 2}</td>
-                        <td style={{ padding: "9px 14px", color: C.text, fontWeight: 500 }}>
-                          {!valid && <i className="fa-solid fa-triangle-exclamation" style={{ color: "#f87171", marginRight: 6 }} />}
-                          {r.itemName || <span style={{ color: "#f87171" }}>Missing</span>}
+                      <tr
+                        key={i}
+                        style={{
+                          borderBottom: "1px solid rgba(255,255,255,0.04)",
+                          background: valid
+                            ? "transparent"
+                            : "rgba(239,68,68,0.06)",
+                        }}
+                      >
+                        <td style={{ padding: "9px 14px", color: C.muted }}>
+                          {i + 2}
+                        </td>
+                        <td
+                          style={{
+                            padding: "9px 14px",
+                            color: C.text,
+                            fontWeight: 500,
+                          }}
+                        >
+                          {!valid && (
+                            <i
+                              className="fa-solid fa-triangle-exclamation"
+                              style={{ color: "#f87171", marginRight: 6 }}
+                            />
+                          )}
+                          {r.itemName || (
+                            <span style={{ color: "#f87171" }}>Missing</span>
+                          )}
                         </td>
                         <td style={{ padding: "9px 14px" }}>
-                          <span style={{ background: `${typeColor}18`, color: typeColor, border: `1px solid ${typeColor}44`, borderRadius: 5, padding: "2px 8px", fontWeight: 600, fontSize: 11 }}>
-                            {r.adjustmentType || <span style={{ color: "#f87171" }}>Invalid</span>}
+                          <span
+                            style={{
+                              background: `${typeColor}18`,
+                              color: typeColor,
+                              border: `1px solid ${typeColor}44`,
+                              borderRadius: 5,
+                              padding: "2px 8px",
+                              fontWeight: 600,
+                              fontSize: 11,
+                            }}
+                          >
+                            {r.adjustmentType || (
+                              <span style={{ color: "#f87171" }}>Invalid</span>
+                            )}
                           </span>
                         </td>
-                        <td style={{ padding: "9px 14px", color: C.text }}>{r.qty || "—"}</td>
-                        <td style={{ padding: "9px 14px", color: C.text }}>{r.weight || "—"}</td>
+                        <td style={{ padding: "9px 14px", color: C.text }}>
+                          {r.qty || "—"}
+                        </td>
+                        <td style={{ padding: "9px 14px", color: C.text }}>
+                          {r.weight || "—"}
+                        </td>
                       </tr>
                     );
                   })}
@@ -465,16 +641,47 @@ export default function StockAdjustment({
             </div>
 
             {/* Footer */}
-            <div style={{ padding: "16px 24px", borderTop: "1px solid #2a2a2e", display: "flex", gap: 10, justifyContent: "flex-end" }}>
-              <button onClick={() => setImportRows(null)} style={{ padding: "8px 20px", borderRadius: 8, border: "1px solid #2a2a2e", background: "transparent", color: C.muted, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+            <div
+              style={{
+                padding: "16px 24px",
+                borderTop: "1px solid #2a2a2e",
+                display: "flex",
+                gap: 10,
+                justifyContent: "flex-end",
+              }}
+            >
+              <button
+                onClick={() => setImportRows(null)}
+                style={{
+                  padding: "8px 20px",
+                  borderRadius: 8,
+                  border: "1px solid #2a2a2e",
+                  background: "transparent",
+                  color: C.muted,
+                  fontWeight: 600,
+                  fontSize: 13,
+                  cursor: "pointer",
+                }}
+              >
                 Cancel
               </button>
               <button
                 onClick={handleImportSubmit}
                 disabled={importLoading}
-                style={{ padding: "8px 24px", borderRadius: 8, border: "none", background: importLoading ? "#2a2a2e" : "#4ade80", color: importLoading ? C.muted : "#000", fontWeight: 700, fontSize: 13, cursor: importLoading ? "not-allowed" : "pointer" }}
+                style={{
+                  padding: "8px 24px",
+                  borderRadius: 8,
+                  border: "none",
+                  background: importLoading ? "#2a2a2e" : "#4ade80",
+                  color: importLoading ? C.muted : "#000",
+                  fontWeight: 700,
+                  fontSize: 13,
+                  cursor: importLoading ? "not-allowed" : "pointer",
+                }}
               >
-                {importLoading ? "Saving…" : `Save ${importRows.length} Adjustment${importRows.length !== 1 ? "s" : ""}`}
+                {importLoading
+                  ? "Saving…"
+                  : `Save ${importRows.length} Adjustment${importRows.length !== 1 ? "s" : ""}`}
               </button>
             </div>
           </div>
@@ -614,25 +821,71 @@ export default function StockAdjustment({
             {form.productCode && (
               <>
                 <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
-                  <div style={{ background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.3)", borderRadius: 6, padding: "4px 10px", fontSize: 12, color: "#818cf8", fontWeight: 600 }}>
+                  <div
+                    style={{
+                      background: "rgba(99,102,241,0.12)",
+                      border: "1px solid rgba(99,102,241,0.3)",
+                      borderRadius: 6,
+                      padding: "4px 10px",
+                      fontSize: 12,
+                      color: "#818cf8",
+                      fontWeight: 600,
+                    }}
+                  >
                     {form.productCode}
                   </div>
-                  <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "4px 10px", fontSize: 12, color: C.muted }}>
+                  <div
+                    style={{
+                      background: "rgba(255,255,255,0.05)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      borderRadius: 6,
+                      padding: "4px 10px",
+                      fontSize: 12,
+                      color: C.muted,
+                    }}
+                  >
                     {form.itemName}
                   </div>
                 </div>
 
                 {/* Current stock — shown for RM items so user knows what they're adjusting */}
                 {isRM && currentStock && (
-                  <div style={{ background: "rgba(234,179,8,0.08)", border: "1px solid rgba(234,179,8,0.25)", borderRadius: 8, padding: "10px 16px", marginBottom: 16, display: "flex", gap: 32, alignItems: "center" }}>
-                    <span style={{ fontSize: 11, color: "#eab308", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em" }}>Current Stock</span>
+                  <div
+                    style={{
+                      background: "rgba(234,179,8,0.08)",
+                      border: "1px solid rgba(234,179,8,0.25)",
+                      borderRadius: 8,
+                      padding: "10px 16px",
+                      marginBottom: 16,
+                      display: "flex",
+                      gap: 32,
+                      alignItems: "center",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: 11,
+                        color: "#eab308",
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.04em",
+                      }}
+                    >
+                      Current Stock
+                    </span>
                     <div>
                       <span style={{ fontSize: 11, color: C.muted }}>Qty </span>
-                      <span style={{ fontWeight: 700, color: "#fbbf24" }}>{(currentStock.qty || 0).toLocaleString("en-IN")} sheets</span>
+                      <span style={{ fontWeight: 700, color: "#fbbf24" }}>
+                        {(currentStock.qty || 0).toLocaleString("en-IN")} sheets
+                      </span>
                     </div>
                     <div>
-                      <span style={{ fontSize: 11, color: C.muted }}>Weight </span>
-                      <span style={{ fontWeight: 700, color: "#fbbf24" }}>{(currentStock.weight || 0).toLocaleString("en-IN")} kg</span>
+                      <span style={{ fontSize: 11, color: C.muted }}>
+                        Weight{" "}
+                      </span>
+                      <span style={{ fontWeight: 700, color: "#fbbf24" }}>
+                        {(currentStock.weight || 0).toLocaleString("en-IN")} kg
+                      </span>
                     </div>
                   </div>
                 )}
@@ -648,7 +901,9 @@ export default function StockAdjustment({
               }}
             >
               <div>
-                <label style={labelStyle}>Qty {isRM ? "(Sheets/Reels)" : "(Units)"}</label>
+                <label style={labelStyle}>
+                  Qty {isRM ? "(Sheets/Reels)" : "(Units)"}
+                </label>
                 <input
                   type="number"
                   min="0"
@@ -656,7 +911,9 @@ export default function StockAdjustment({
                   style={inputStyle}
                   placeholder="Enter quantity"
                   value={form.qty}
-                  onChange={(e) => setForm((f) => ({ ...f, qty: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, qty: e.target.value }))
+                  }
                   required
                 />
               </div>
@@ -670,7 +927,9 @@ export default function StockAdjustment({
                     style={inputStyle}
                     placeholder="Enter weight in kg"
                     value={form.weight}
-                    onChange={(e) => setForm((f) => ({ ...f, weight: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, weight: e.target.value }))
+                    }
                   />
                 </div>
               )}

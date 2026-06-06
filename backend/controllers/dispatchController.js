@@ -7,7 +7,12 @@ const CompanyMaster = require("../models/CompanyMaster");
 
 const adjustFGStock = async (items, direction = -1, dispatchMeta = {}) => {
   const { dispatchNo, dispatchDate, dispatchType, createdBy } = dispatchMeta;
-  const histType = dispatchType === "Return" ? "return" : direction === -1 ? "dispatch" : "return";
+  const histType =
+    dispatchType === "Return"
+      ? "return"
+      : direction === -1
+        ? "dispatch"
+        : "return";
   const histDate = dispatchDate ? new Date(dispatchDate) : new Date();
 
   for (const item of items) {
@@ -91,8 +96,14 @@ exports.getAll = async (req, res) => {
       const allowedNames = companies.map((c) => c.name);
       filter.$or = [
         { clientCategory: { $regex: new RegExp(`^${tag}$`, "i") } },
-        { clientCategory: { $in: [null, ""] }, companyName: { $in: allowedNames } },
-        { clientCategory: { $exists: false }, companyName: { $in: allowedNames } },
+        {
+          clientCategory: { $in: [null, ""] },
+          companyName: { $in: allowedNames },
+        },
+        {
+          clientCategory: { $exists: false },
+          companyName: { $in: allowedNames },
+        },
       ];
     }
 
@@ -173,7 +184,13 @@ exports.create = async (req, res) => {
     const stockDirection = recordType === "Return" ? 1 : -1;
     if (materialType === "RM") await adjustRMStock(items, stockDirection);
     else if (materialType === "CG") await adjustCGStock(items, stockDirection);
-    else await adjustFGStock(items, stockDirection, { dispatchNo, dispatchDate: date, dispatchType: recordType, createdBy: req.user?._id });
+    else
+      await adjustFGStock(items, stockDirection, {
+        dispatchNo,
+        dispatchDate: date,
+        dispatchType: recordType,
+        createdBy: req.user?._id,
+      });
 
     res.status(201).json({
       message: "Dispatch created successfully",
@@ -212,11 +229,17 @@ exports.update = async (req, res) => {
     if (vehicleNo !== undefined) dispatch.vehicleNo = vehicleNo?.trim();
     if (driverName !== undefined) dispatch.driverName = driverName?.trim();
     if (lrNo !== undefined) dispatch.lrNo = lrNo?.trim();
-    if (req.body.clientCategory !== undefined) dispatch.clientCategory = req.body.clientCategory?.trim() || "";
+    if (req.body.clientCategory !== undefined)
+      dispatch.clientCategory = req.body.clientCategory?.trim() || "";
 
     if (items) {
       const mt = dispatch.materialType || "FG";
-      const meta = { dispatchNo: dispatch.dispatchNo, dispatchDate: dispatch.date, dispatchType: dispatch.type, createdBy: req.user?._id };
+      const meta = {
+        dispatchNo: dispatch.dispatchNo,
+        dispatchDate: dispatch.date,
+        dispatchType: dispatch.type,
+        createdBy: req.user?._id,
+      };
       if (mt === "RM") {
         await adjustRMStock(dispatch.items, 1);
         dispatch.items = items;
@@ -226,7 +249,10 @@ exports.update = async (req, res) => {
         dispatch.items = items;
         await adjustCGStock(items, -1);
       } else {
-        await adjustFGStock(dispatch.items, 1, { ...meta, dispatchType: "Return" });
+        await adjustFGStock(dispatch.items, 1, {
+          ...meta,
+          dispatchType: "Return",
+        });
         dispatch.items = items;
         await adjustFGStock(items, -1, meta);
       }
@@ -257,7 +283,13 @@ exports.delete = async (req, res) => {
     const mt = dispatch.materialType || "FG";
     if (mt === "RM") await adjustRMStock(dispatch.items, 1);
     else if (mt === "CG") await adjustCGStock(dispatch.items, 1);
-    else await adjustFGStock(dispatch.items, 1, { dispatchNo: dispatch.dispatchNo, dispatchDate: dispatch.date, dispatchType: "Return", createdBy: req.user?._id });
+    else
+      await adjustFGStock(dispatch.items, 1, {
+        dispatchNo: dispatch.dispatchNo,
+        dispatchDate: dispatch.date,
+        dispatchType: "Return",
+        createdBy: req.user?._id,
+      });
 
     await Dispatch.findByIdAndDelete(id);
 

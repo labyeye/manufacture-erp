@@ -448,7 +448,9 @@ export default function MaterialInward({
 
       if (k === "itemName" && it.materialType === "Finished Goods") {
         const masterItem = itemMasterItems.find(
-          (x) => (x.name || "").trim().toLowerCase() === (v || "").trim().toLowerCase(),
+          (x) =>
+            (x.name || "").trim().toLowerCase() ===
+            (v || "").trim().toLowerCase(),
         );
         if (masterItem) {
           it.productCode = masterItem.code || "";
@@ -944,7 +946,11 @@ export default function MaterialInward({
   };
 
   const generateGRNPDF = (r) => {
-    const rfmt = (n) => (+n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const rfmt = (n) =>
+      (+n || 0).toLocaleString("en-IN", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
     const itemsArr = (r.items || []).map((it) => {
       const amt = Number(it.amount || 0);
       const gst = Number(
@@ -1116,16 +1122,27 @@ export default function MaterialInward({
         >
           <button
             onClick={async () => {
-              if (!window.confirm("This will recalculate ALL RM/Consumable/FG stock from every saved GRN. Continue?")) return;
+              if (
+                !window.confirm(
+                  "This will recalculate ALL RM/Consumable/FG stock from every saved GRN. Continue?",
+                )
+              )
+                return;
               try {
                 setLoading(true);
                 const result = await materialInwardAPI.recalculateStock();
-                toast(result.message, result.errors?.length ? "warning" : "success");
+                toast(
+                  result.message,
+                  result.errors?.length ? "warning" : "success",
+                );
                 if (result.errors?.length) {
                   console.error("Recalculate errors:", result.errors);
                 }
               } catch (e) {
-                toast(e.response?.data?.message || "Recalculate failed", "error");
+                toast(
+                  e.response?.data?.message || "Recalculate failed",
+                  "error",
+                );
               } finally {
                 setLoading(false);
               }
@@ -1606,7 +1623,9 @@ export default function MaterialInward({
                           >
                             <option value="">-- Select Category --</option>
                             {fgCategoryList.map((c) => (
-                              <option key={c} value={c}>{c}</option>
+                              <option key={c} value={c}>
+                                {c}
+                              </option>
                             ))}
                           </select>
                         </Field>
@@ -1617,8 +1636,12 @@ export default function MaterialInward({
                             suggestions={sortedItemMasterItems
                               .filter(
                                 (i) =>
-                                  (i.type || "").toLowerCase().includes("finished") &&
-                                  (!it.category || (i.category || "").toLowerCase() === it.category.toLowerCase()),
+                                  (i.type || "")
+                                    .toLowerCase()
+                                    .includes("finished") &&
+                                  (!it.category ||
+                                    (i.category || "").toLowerCase() ===
+                                      it.category.toLowerCase()),
                               )
                               .map((i) => i.name)}
                             placeholder="Search FG item..."
@@ -1638,7 +1661,9 @@ export default function MaterialInward({
                         <Field label="Unit">
                           <select
                             value={it.unit || "nos"}
-                            onChange={(e) => setItem(idx, "unit", e.target.value)}
+                            onChange={(e) =>
+                              setItem(idx, "unit", e.target.value)
+                            }
                           >
                             <option value="nos">nos</option>
                             <option value="pcs">pcs</option>
@@ -1651,14 +1676,20 @@ export default function MaterialInward({
                             type="number"
                             placeholder="Rate per unit"
                             value={it.rate}
-                            onChange={(e) => setItem(idx, "rate", e.target.value)}
+                            onChange={(e) =>
+                              setItem(idx, "rate", e.target.value)
+                            }
                             style={EI(idx, "rate")}
                           />
                         </Field>
                         <Field label="Amount (₹)">
                           <input
                             readOnly
-                            value={it.amount ? `₹${fmt(+it.amount)}` : "— Qty × Rate —"}
+                            value={
+                              it.amount
+                                ? `₹${fmt(+it.amount)}`
+                                : "— Qty × Rate —"
+                            }
                             style={{
                               background: C.border + "22",
                               color: it.amount ? C.green : C.muted,

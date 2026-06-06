@@ -163,7 +163,11 @@ const adjustStock = async (items, direction, location) => {
       try {
         const itemCode = (item.productCode || "").trim() || null;
         const itemCategory = (item.category || item.rmItem || "General").trim();
-        const itemSubCategory = (item.subCategory || item.paperType || "Standard").trim();
+        const itemSubCategory = (
+          item.subCategory ||
+          item.paperType ||
+          "Standard"
+        ).trim();
         const itemName = (
           item.itemName ||
           `${itemCategory} | ${itemSubCategory}${item.gsm ? ` | ${item.gsm}gsm` : ""}${item.widthMm ? ` | ${item.widthMm}mm` : ""}`
@@ -179,8 +183,10 @@ const adjustStock = async (items, direction, location) => {
         // Always look up by code first, then by name to avoid inserting a
         // duplicate that conflicts with the unique name index.
         let existingDoc = null;
-        if (itemCode) existingDoc = await RawMaterialStock.findOne({ code: itemCode });
-        if (!existingDoc && itemName) existingDoc = await RawMaterialStock.findOne({ name: itemName });
+        if (itemCode)
+          existingDoc = await RawMaterialStock.findOne({ code: itemCode });
+        if (!existingDoc && itemName)
+          existingDoc = await RawMaterialStock.findOne({ name: itemName });
 
         const query = existingDoc
           ? { _id: existingDoc._id }

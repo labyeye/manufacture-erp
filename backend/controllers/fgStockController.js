@@ -165,7 +165,9 @@ exports.updateStock = async (req, res) => {
       stock.qty = newQty;
       if (delta !== 0 && req.body.historyType) {
         stock.stockHistory.push({
-          date: req.body.historyDate ? new Date(req.body.historyDate) : new Date(),
+          date: req.body.historyDate
+            ? new Date(req.body.historyDate)
+            : new Date(),
           qty: delta,
           type: req.body.historyType,
           ref: req.body.historyRef || joNo || "",

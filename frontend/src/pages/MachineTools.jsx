@@ -1178,7 +1178,12 @@ export default function MachineTools({
       {(activeTab === "cylinders" ||
         activeTab === "dies" ||
         activeTab === "plates") && (
-        <ToolTypeSection key={activeTab} tabId={activeTab} toast={toast} canExportImport={canExportImport} />
+        <ToolTypeSection
+          key={activeTab}
+          tabId={activeTab}
+          toast={toast}
+          canExportImport={canExportImport}
+        />
       )}
       {activeTab === "calendar" && <CalendarSection toast={toast} />}
       {activeTab === "maintenance" && <MaintenanceSection toast={toast} />}

@@ -192,7 +192,9 @@ export default function Dispatch({
     if (materialType === "RM")
       return (rawStock || []).map((s) => s.name).filter(Boolean);
     if (materialType === "CG")
-      return (consumableStock || []).map((s) => s.name || s.itemName).filter(Boolean);
+      return (consumableStock || [])
+        .map((s) => s.name || s.itemName)
+        .filter(Boolean);
     return fgStockOptions;
   }, [materialType, fgStockOptions, rawStock, consumableStock]);
 
@@ -277,7 +279,10 @@ export default function Dispatch({
           (c) => (c.name || "").toLowerCase() === (v || "").toLowerCase(),
         );
         if (selectedCompany?.category) {
-          setHeader((f) => ({ ...f, clientCategory: selectedCompany.category }));
+          setHeader((f) => ({
+            ...f,
+            clientCategory: selectedCompany.category,
+          }));
         }
         setItems((prev) =>
           prev.map((it) => {
@@ -408,10 +413,14 @@ export default function Dispatch({
         let stockItem;
         let stockLabel;
         if (materialType === "RM") {
-          stockItem = (rawStock || []).find((s) => (s.name || s.itemName || "") === it.itemName);
+          stockItem = (rawStock || []).find(
+            (s) => (s.name || s.itemName || "") === it.itemName,
+          );
           stockLabel = "Raw Material Stock";
         } else if (materialType === "CG") {
-          stockItem = (consumableStock || []).find((s) => (s.name || s.itemName || "") === it.itemName);
+          stockItem = (consumableStock || []).find(
+            (s) => (s.name || s.itemName || "") === it.itemName,
+          );
           stockLabel = "Consumable Stock";
         } else {
           stockItem = (fgStock || []).find((s) => s.itemName === it.itemName);
@@ -420,7 +429,9 @@ export default function Dispatch({
         if (!stockItem) {
           e.itemName = true;
           toast(`Item "${it.itemName}" not found in ${stockLabel}`, "error");
-        } else if (Number(it.qty) > ((stockItem.qty || stockItem.currentStock || 0))) {
+        } else if (
+          Number(it.qty) > (stockItem.qty || stockItem.currentStock || 0)
+        ) {
           e.qty = true;
           toast(
             `Insufficient stock for "${it.itemName}". Available: ${stockItem.qty || stockItem.currentStock || 0}`,
@@ -756,12 +767,16 @@ export default function Dispatch({
                 ].map((t) => (
                   <button
                     key={t.id}
-                    onClick={() => { setMaterialType(t.id); setItems([blankItem()]); }}
+                    onClick={() => {
+                      setMaterialType(t.id);
+                      setItems([blankItem()]);
+                    }}
                     style={{
                       padding: "7px 18px",
                       borderRadius: 8,
                       border: `1.5px solid ${materialType === t.id ? t.color : "rgba(255,255,255,0.1)"}`,
-                      background: materialType === t.id ? t.color + "18" : "transparent",
+                      background:
+                        materialType === t.id ? t.color + "18" : "transparent",
                       color: materialType === t.id ? t.color : "#888",
                       fontWeight: materialType === t.id ? 700 : 500,
                       fontSize: 12,
@@ -825,7 +840,9 @@ export default function Dispatch({
                   >
                     <option value="">-- Select Category --</option>
                     {clientCategories.map((cat) => (
-                      <option key={cat} value={cat}>{cat}</option>
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
                     ))}
                   </select>
                 </Field>
@@ -956,18 +973,30 @@ export default function Dispatch({
                       value={it.itemName}
                       onChange={(v) => setItem(idx, "itemName", v)}
                       suggestions={itemNameOptions}
-                      placeholder={materialType === "RM" ? "Type to search RM item..." : materialType === "CG" ? "Type to search consumable..." : "Type to search FG item..."}
+                      placeholder={
+                        materialType === "RM"
+                          ? "Type to search RM item..."
+                          : materialType === "CG"
+                            ? "Type to search consumable..."
+                            : "Type to search FG item..."
+                      }
                       inputStyle={EI(idx, "itemName")}
                     />
                     {EIMsg(idx, "itemName")}
                     {(() => {
                       let st;
                       if (materialType === "RM") {
-                        st = (rawStock || []).find((s) => (s.name || s.itemName || "") === it.itemName);
+                        st = (rawStock || []).find(
+                          (s) => (s.name || s.itemName || "") === it.itemName,
+                        );
                       } else if (materialType === "CG") {
-                        st = (consumableStock || []).find((s) => (s.name || s.itemName || "") === it.itemName);
+                        st = (consumableStock || []).find(
+                          (s) => (s.name || s.itemName || "") === it.itemName,
+                        );
                       } else {
-                        st = (fgStock || []).find((s) => s.itemName === it.itemName);
+                        st = (fgStock || []).find(
+                          (s) => s.itemName === it.itemName,
+                        );
                       }
                       if (!it.itemName || !st) return null;
                       const avail = st.qty ?? st.currentStock ?? 0;

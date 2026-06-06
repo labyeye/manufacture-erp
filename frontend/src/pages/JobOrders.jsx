@@ -202,7 +202,8 @@ export default function JobOrders(props) {
 
     const matchFn1 = (s) => {
       const sCat = (s.category || s.paperCategory || "")
-        .trim().toLowerCase()
+        .trim()
+        .toLowerCase()
         .replace(/s$/, "");
       const sType = (s.paperType || s.name || "").trim().toLowerCase();
       const sNameLower = (s.name || "").toLowerCase();
@@ -217,14 +218,14 @@ export default function JobOrders(props) {
       // If category is wrong/missing on old records, fall back to name check
       const blankCats = new Set(["", "general", "standard"]);
       const catMatch =
-        sCat === hCat ||
-        (blankCats.has(sCat) && sNameLower.includes(hCat));
-      // sType may be just paperType with no GSM; also try name for type check
-      const typeMatch =
-        sType.includes(hType) ||
-        (sNameLower.includes(hType));
-      const basicMatch =
-        catMatch && typeMatch && sGsm === hGsm;
+        sCat === hCat || (blankCats.has(sCat) && sNameLower.includes(hCat));
+      // Strict: if paperType field exists, require exact/contains match on that field only
+      // If no paperType field, fall back to searching the name
+      const hasPaperTypeField = (s.paperType || "").trim() !== "";
+      const typeMatch = hasPaperTypeField
+        ? sType === hType || sType.includes(hType)
+        : sNameLower.includes(hType);
+      const basicMatch = catMatch && typeMatch && sGsm === hGsm;
 
       if (!basicMatch) return false;
 
@@ -278,7 +279,8 @@ export default function JobOrders(props) {
 
     const matchFn2 = (s) => {
       const sCat = (s.category || s.paperCategory || "")
-        .trim().toLowerCase()
+        .trim()
+        .toLowerCase()
         .replace(/s$/, "");
       const sType = (s.paperType || s.name || "").trim().toLowerCase();
       const sNameLower = (s.name || "").toLowerCase();
@@ -291,13 +293,12 @@ export default function JobOrders(props) {
 
       const blankCats2 = new Set(["", "general", "standard"]);
       const catMatch =
-        sCat === hCat ||
-        (blankCats2.has(sCat) && sNameLower.includes(hCat));
-      const typeMatch =
-        sType.includes(hType) ||
-        sNameLower.includes(hType);
-      const basicMatch =
-        catMatch && typeMatch && sGsm === hGsm;
+        sCat === hCat || (blankCats2.has(sCat) && sNameLower.includes(hCat));
+      const hasPaperTypeField2 = (s.paperType || "").trim() !== "";
+      const typeMatch = hasPaperTypeField2
+        ? sType === hType || sType.includes(hType)
+        : sNameLower.includes(hType);
+      const basicMatch = catMatch && typeMatch && sGsm === hGsm;
       if (!basicMatch) return false;
 
       const isSheet = hCat === "paper sheet";
@@ -451,9 +452,10 @@ export default function JobOrders(props) {
       sheetUom: jo.sheetUom || "mm",
       sheetW: jo.sheetW || "",
       sheetL: jo.sheetL || "",
-      sheetSize: jo.sheetW && jo.sheetL
-        ? `${jo.sheetW}x${jo.sheetL}${jo.sheetUom || "mm"}`
-        : jo.sheetSize || "",
+      sheetSize:
+        jo.sheetW && jo.sheetL
+          ? `${jo.sheetW}x${jo.sheetL}${jo.sheetUom || "mm"}`
+          : jo.sheetSize || "",
       hasSecondPaper: jo.hasSecondPaper || false,
       paperCategory2: jo.paperCategory2 || "",
       paperType2: jo.paperType2 || "",
@@ -463,9 +465,10 @@ export default function JobOrders(props) {
       sheetUom2: jo.sheetUom2 || "mm",
       sheetW2: jo.sheetW2 || "",
       sheetL2: jo.sheetL2 || "",
-      sheetSize2: jo.sheetW2 && jo.sheetL2
-        ? `${jo.sheetW2}x${jo.sheetL2}${jo.sheetUom2 || "mm"}`
-        : jo.sheetSize2 || "",
+      sheetSize2:
+        jo.sheetW2 && jo.sheetL2
+          ? `${jo.sheetW2}x${jo.sheetL2}${jo.sheetUom2 || "mm"}`
+          : jo.sheetSize2 || "",
       reelWidthMm2: jo.reelWidthMm2 || "",
       reelWeightKg2: jo.reelWeightKg2 || "",
       cuttingLengthMm2: jo.cuttingLengthMm2 || "",
@@ -1989,22 +1992,21 @@ export default function JobOrders(props) {
                   <input
                     readOnly
                     placeholder="Auto-matched item"
-                    value={
-                      matchedStock?.name ||
-                      (header.paperCategory &&
-                      header.paperType &&
-                      header.paperGsm &&
-                      header.paperType !== "Polycoated Blanks" &&
-                      (header.paperCategory === "Paper Reel"
-                        ? !!header.reelWidthMm
-                        : !!(header.sheetW && header.sheetL))
-                        ? `${header.paperType} ${header.paperCategory} ${header.paperGsm}gsm ${
-                            header.paperCategory === "Paper Reel"
-                              ? (header.reelWidthMm || 0) + "mm"
-                              : header.sheetSize
-                          }`
-                        : "")
-                    }
+                    value={(() => {
+                      if (
+                        !header.paperCategory ||
+                        !header.paperType ||
+                        !header.paperGsm
+                      )
+                        return "";
+                      if (header.paperType === "Polycoated Blanks") return "";
+                      if (header.paperCategory === "Paper Reel") {
+                        if (!header.reelWidthMm) return "";
+                        return `${header.paperType} ${header.paperCategory} ${header.paperGsm}gsm ${header.reelWidthMm}mm`;
+                      }
+                      if (!header.sheetW || !header.sheetL) return "";
+                      return `${header.paperType} ${header.paperCategory} ${header.paperGsm}gsm ${header.sheetW}x${header.sheetL}${header.sheetUom || "mm"}`;
+                    })()}
                     style={{
                       background: "transparent",
                       color: matchedStock ? C.green : C.text,
@@ -2354,18 +2356,15 @@ export default function JobOrders(props) {
                       <input
                         readOnly
                         placeholder="Auto-matched item"
-                        value={
-                          matchedStock2?.name ||
-                          (header.paperCategory2 &&
-                          header.paperType2 &&
-                          header.paperGsm2
-                            ? `${header.paperType2} ${header.paperCategory2} ${header.paperGsm2}gsm ${
-                                header.paperCategory2 === "Paper Reel"
-                                  ? (header.reelWidthMm2 || "") + "mm"
-                                  : header.sheetSize2 || ""
-                              }`.trim()
-                            : "")
-                        }
+                        value={(() => {
+                          if (!header.paperCategory2 || !header.paperType2 || !header.paperGsm2) return "";
+                          if (header.paperCategory2 === "Paper Reel") {
+                            if (!header.reelWidthMm2) return "";
+                            return `${header.paperType2} ${header.paperCategory2} ${header.paperGsm2}gsm ${header.reelWidthMm2}mm`;
+                          }
+                          if (!header.sheetW2 || !header.sheetL2) return "";
+                          return `${header.paperType2} ${header.paperCategory2} ${header.paperGsm2}gsm ${header.sheetW2}x${header.sheetL2}${header.sheetUom2 || "mm"}`;
+                        })()}
                         style={{
                           background: "transparent",
                           color: matchedStock2 ? C.green : C.text,

@@ -1,4 +1,10 @@
-import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import React, {
+  useState,
+  useMemo,
+  useEffect,
+  useCallback,
+  useRef,
+} from "react";
 import * as XLSX from "xlsx";
 import { C } from "../constants/colors";
 import { machineMaintenanceAPI, spareIssueLogAPI } from "../api/auth";
@@ -612,7 +618,12 @@ function SparePartsTab({
 
   // Issue spare part state
   const [issuingPart, setIssuingPart] = useState(null);
-  const [issueForm, setIssueForm] = useState({ qty: "", machineId: "", issuedBy: "", remarks: "" });
+  const [issueForm, setIssueForm] = useState({
+    qty: "",
+    machineId: "",
+    issuedBy: "",
+    remarks: "",
+  });
   const [issuing, setIssuing] = useState(false);
 
   // Edit usage log state
@@ -693,7 +704,12 @@ function SparePartsTab({
   const openIssue = (p) => {
     setIssuingPart(p);
     const defaultMachine = p.compatibleMachines?.[0] || p.machineId || "";
-    setIssueForm({ qty: "", machineId: defaultMachine, issuedBy: "", remarks: "" });
+    setIssueForm({
+      qty: "",
+      machineId: defaultMachine,
+      issuedBy: "",
+      remarks: "",
+    });
   };
 
   const closeIssue = () => {
@@ -703,12 +719,27 @@ function SparePartsTab({
 
   const handleIssue = async () => {
     const qty = Number(issueForm.qty);
-    if (!qty || qty <= 0) { toast?.("Quantity is required", "error"); return; }
+    if (!qty || qty <= 0) {
+      toast?.("Quantity is required", "error");
+      return;
+    }
     const avail = Number(issuingPart.qty);
-    if (qty > avail) { toast?.(`Insufficient stock. Available: ${avail}`, "error"); return; }
-    if (!issueForm.machineId) { toast?.("Machine is required", "error"); return; }
-    if (!issueForm.issuedBy.trim()) { toast?.("Issued By is required", "error"); return; }
-    if (!issueForm.remarks.trim()) { toast?.("Remarks is required", "error"); return; }
+    if (qty > avail) {
+      toast?.(`Insufficient stock. Available: ${avail}`, "error");
+      return;
+    }
+    if (!issueForm.machineId) {
+      toast?.("Machine is required", "error");
+      return;
+    }
+    if (!issueForm.issuedBy.trim()) {
+      toast?.("Issued By is required", "error");
+      return;
+    }
+    if (!issueForm.remarks.trim()) {
+      toast?.("Remarks is required", "error");
+      return;
+    }
     setIssuing(true);
     try {
       await spareIssueLogAPI.create({
@@ -722,7 +753,11 @@ function SparePartsTab({
         remarks: issueForm.remarks.trim(),
         skipStockDeduction: true,
       });
-      persist(parts.map((p) => p.id === issuingPart.id ? { ...p, qty: avail - qty } : p));
+      persist(
+        parts.map((p) =>
+          p.id === issuingPart.id ? { ...p, qty: avail - qty } : p,
+        ),
+      );
       toast?.(`Issued ${qty} × ${issuingPart.partName}`, "success");
       closeIssue();
     } catch (err) {
@@ -814,18 +849,27 @@ function SparePartsTab({
       unit: log.unit || "nos",
       issuedBy: log.issuedBy || "",
       remarks: log.remarks || "",
-      issuedAt: log.issuedAt ? new Date(log.issuedAt).toISOString().slice(0, 10) : "",
+      issuedAt: log.issuedAt
+        ? new Date(log.issuedAt).toISOString().slice(0, 10)
+        : "",
     });
   };
 
   const handleSaveLog = async () => {
-    if (!editLogForm.itemName || !editLogForm.qty || Number(editLogForm.qty) <= 0) {
-      toast?.("Part name and quantity are required", "error"); return;
+    if (
+      !editLogForm.itemName ||
+      !editLogForm.qty ||
+      Number(editLogForm.qty) <= 0
+    ) {
+      toast?.("Part name and quantity are required", "error");
+      return;
     }
     setSavingLog(true);
     try {
       const res = await spareIssueLogAPI.update(editingLog._id, editLogForm);
-      setUsageLogs((prev) => prev.map((l) => l._id === editingLog._id ? res.log : l));
+      setUsageLogs((prev) =>
+        prev.map((l) => (l._id === editingLog._id ? res.log : l)),
+      );
       toast?.("Record updated", "success");
       setEditingLog(null);
     } catch {
@@ -836,8 +880,21 @@ function SparePartsTab({
   };
 
   const handleExportLogs = () => {
-    if (!filteredUsageLogs.length) { toast?.("No records to export", "error"); return; }
-    const headers = ["Date", "Part Name", "Part Code", "Category", "Qty", "Unit", "Machine", "Issued By", "Remarks"];
+    if (!filteredUsageLogs.length) {
+      toast?.("No records to export", "error");
+      return;
+    }
+    const headers = [
+      "Date",
+      "Part Name",
+      "Part Code",
+      "Category",
+      "Qty",
+      "Unit",
+      "Machine",
+      "Issued By",
+      "Remarks",
+    ];
     const rows = filteredUsageLogs.map((l) => [
       l.issuedAt ? new Date(l.issuedAt).toLocaleDateString("en-GB") : "",
       l.itemName || "",
@@ -853,7 +910,10 @@ function SparePartsTab({
     ws["!cols"] = headers.map(() => ({ wch: 20 }));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Spare Issue Logs");
-    XLSX.writeFile(wb, `spare_issue_logs_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    XLSX.writeFile(
+      wb,
+      `spare_issue_logs_${new Date().toISOString().slice(0, 10)}.xlsx`,
+    );
     toast?.("Exported successfully", "success");
   };
 
@@ -865,13 +925,33 @@ function SparePartsTab({
       const wb = XLSX.read(buf, { type: "array" });
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
-      if (rows.length < 2) { toast?.("No data rows found", "error"); return; }
+      if (rows.length < 2) {
+        toast?.("No data rows found", "error");
+        return;
+      }
       const [, ...dataRows] = rows;
-      let success = 0, failed = 0;
+      let success = 0,
+        failed = 0;
       for (const row of dataRows) {
-        if (!row || !row[1]) { failed++; continue; }
-        const [, itemName, itemCode, category, qty, unit, machineName, issuedBy, remarks] = row;
-        if (!itemName || !qty) { failed++; continue; }
+        if (!row || !row[1]) {
+          failed++;
+          continue;
+        }
+        const [
+          ,
+          itemName,
+          itemCode,
+          category,
+          qty,
+          unit,
+          machineName,
+          issuedBy,
+          remarks,
+        ] = row;
+        if (!itemName || !qty) {
+          failed++;
+          continue;
+        }
         try {
           await spareIssueLogAPI.create({
             itemName: String(itemName).trim(),
@@ -885,9 +965,14 @@ function SparePartsTab({
             skipStockDeduction: true,
           });
           success++;
-        } catch { failed++; }
+        } catch {
+          failed++;
+        }
       }
-      toast?.(`Imported ${success} records${failed ? `, ${failed} skipped` : ""}`, "success");
+      toast?.(
+        `Imported ${success} records${failed ? `, ${failed} skipped` : ""}`,
+        "success",
+      );
       fetchUsageLogs();
     } catch {
       toast?.("Failed to parse file", "error");
@@ -897,7 +982,10 @@ function SparePartsTab({
   };
 
   const handlePrintReport = () => {
-    if (!filteredUsageLogs.length) { toast?.("No records to report", "error"); return; }
+    if (!filteredUsageLogs.length) {
+      toast?.("No records to report", "error");
+      return;
+    }
     const totalQty = filteredUsageLogs.reduce((s, l) => s + (l.qty || 0), 0);
     const byMachine = {};
     const byPart = {};
@@ -907,11 +995,17 @@ function SparePartsTab({
       const p = l.itemName || "Unknown";
       byPart[p] = (byPart[p] || 0) + (l.qty || 0);
     });
-    const machineRows = Object.entries(byMachine).sort((a, b) => b[1] - a[1])
-      .map(([m, q]) => `<tr><td>${m}</td><td class="num">${q}</td></tr>`).join("");
-    const partRows = Object.entries(byPart).sort((a, b) => b[1] - a[1])
-      .map(([p, q]) => `<tr><td>${p}</td><td class="num">${q}</td></tr>`).join("");
-    const detailRows = filteredUsageLogs.map((l) => `
+    const machineRows = Object.entries(byMachine)
+      .sort((a, b) => b[1] - a[1])
+      .map(([m, q]) => `<tr><td>${m}</td><td class="num">${q}</td></tr>`)
+      .join("");
+    const partRows = Object.entries(byPart)
+      .sort((a, b) => b[1] - a[1])
+      .map(([p, q]) => `<tr><td>${p}</td><td class="num">${q}</td></tr>`)
+      .join("");
+    const detailRows = filteredUsageLogs
+      .map(
+        (l) => `
       <tr>
         <td>${l.issuedAt ? new Date(l.issuedAt).toLocaleDateString("en-GB") : "—"}</td>
         <td>${l.itemName || ""}${l.itemCode ? ` <span class="code">[${l.itemCode}]</span>` : ""}</td>
@@ -920,10 +1014,13 @@ function SparePartsTab({
         <td>${l.machineName || "—"}</td>
         <td>${l.issuedBy || "—"}</td>
         <td>${l.remarks || "—"}</td>
-      </tr>`).join("");
-    const dateRange = usageDateFrom || usageDateTo
-      ? `${usageDateFrom || "—"} to ${usageDateTo || "—"}`
-      : "All dates";
+      </tr>`,
+      )
+      .join("");
+    const dateRange =
+      usageDateFrom || usageDateTo
+        ? `${usageDateFrom || "—"} to ${usageDateTo || "—"}`
+        : "All dates";
     const html = `<html><head><title>Spare Parts Usage Report</title><style>
       body{font-family:Arial,sans-serif;padding:20px 30px;color:#1a1a1a;}
       .header{text-align:center;border-bottom:2px solid #ff7800;padding-bottom:10px;margin-bottom:16px;}
@@ -967,12 +1064,19 @@ function SparePartsTab({
       <tbody>${detailRows}</tbody></table>
     </body></html>`;
     const iframe = document.createElement("iframe");
-    iframe.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0";
+    iframe.style.cssText =
+      "position:fixed;right:0;bottom:0;width:0;height:0;border:0";
     document.body.appendChild(iframe);
     iframe.contentWindow.document.open();
     iframe.contentWindow.document.write(html);
     iframe.contentWindow.document.close();
-    iframe.onload = () => { setTimeout(() => { iframe.contentWindow.focus(); iframe.contentWindow.print(); setTimeout(() => document.body.removeChild(iframe), 1000); }, 400); };
+    iframe.onload = () => {
+      setTimeout(() => {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        setTimeout(() => document.body.removeChild(iframe), 1000);
+      }, 400);
+    };
   };
 
   const filteredUsageLogs = useMemo(() => {
@@ -1185,17 +1289,35 @@ function SparePartsTab({
                 <label style={lbl}>
                   Compatible Machines
                   {(form.compatibleMachines || []).length > 0 && (
-                    <span style={{ marginLeft: 8, color: "#ff7800", textTransform: "none", fontWeight: 600 }}>
+                    <span
+                      style={{
+                        marginLeft: 8,
+                        color: "#ff7800",
+                        textTransform: "none",
+                        fontWeight: 600,
+                      }}
+                    >
                       ({form.compatibleMachines.length} selected)
                     </span>
                   )}
                 </label>
                 {machines.length === 0 ? (
-                  <div style={{ ...inp, color: "#555", fontSize: 12 }}>No machines found</div>
+                  <div style={{ ...inp, color: "#555", fontSize: 12 }}>
+                    No machines found
+                  </div>
                 ) : (
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: "6px 0" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: 6,
+                      padding: "6px 0",
+                    }}
+                  >
                     {machines.map((m) => {
-                      const selected = (form.compatibleMachines || []).includes(m.name);
+                      const selected = (form.compatibleMachines || []).includes(
+                        m.name,
+                      );
                       return (
                         <button
                           key={m._id || m.id}
@@ -1252,7 +1374,9 @@ function SparePartsTab({
                   >
                     <option value="">— Select Vendor —</option>
                     {vendorMaster.map((v) => (
-                      <option key={v._id || v.id} value={v.name}>{v.name}</option>
+                      <option key={v._id || v.id} value={v.name}>
+                        {v.name}
+                      </option>
                     ))}
                   </select>
                 ) : (
@@ -1361,14 +1485,24 @@ function SparePartsTab({
       )}
 
       {issuingPart && (
-        <Modal
-          title={`Issue — ${issuingPart.partName}`}
-          onClose={closeIssue}
-        >
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
+        <Modal title={`Issue — ${issuingPart.partName}`} onClose={closeIssue}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 14,
+              marginBottom: 16,
+            }}
+          >
             <div>
               <label style={lbl}>Available Stock</label>
-              <div style={{ ...inp, fontWeight: 700, color: Number(issuingPart.qty) === 0 ? "#ef4444" : "#e0e0e0" }}>
+              <div
+                style={{
+                  ...inp,
+                  fontWeight: 700,
+                  color: Number(issuingPart.qty) === 0 ? "#ef4444" : "#e0e0e0",
+                }}
+              >
                 {issuingPart.qty} nos
               </div>
             </div>
@@ -1379,7 +1513,9 @@ function SparePartsTab({
                 min={1}
                 max={issuingPart.qty}
                 value={issueForm.qty}
-                onChange={(e) => setIssueForm((f) => ({ ...f, qty: e.target.value }))}
+                onChange={(e) =>
+                  setIssueForm((f) => ({ ...f, qty: e.target.value }))
+                }
                 placeholder="Enter qty"
                 style={inp}
                 autoFocus
@@ -1389,20 +1525,27 @@ function SparePartsTab({
               <label style={lbl}>Issue to Machine *</label>
               <select
                 value={issueForm.machineId}
-                onChange={(e) => setIssueForm((f) => ({ ...f, machineId: e.target.value }))}
+                onChange={(e) =>
+                  setIssueForm((f) => ({ ...f, machineId: e.target.value }))
+                }
                 style={inp}
               >
                 <option value="">— Select Machine —</option>
                 {(issuingPart?.compatibleMachines?.length
-                  ? machines.filter((m) => issuingPart.compatibleMachines.includes(m.name))
+                  ? machines.filter((m) =>
+                      issuingPart.compatibleMachines.includes(m.name),
+                    )
                   : machines
                 ).map((m) => (
-                  <option key={m._id || m.id} value={m.name}>{m.name}</option>
+                  <option key={m._id || m.id} value={m.name}>
+                    {m.name}
+                  </option>
                 ))}
               </select>
               {issuingPart?.compatibleMachines?.length > 0 && (
                 <div style={{ fontSize: 10, color: "#555", marginTop: 3 }}>
-                  Showing {issuingPart.compatibleMachines.length} compatible machine{issuingPart.compatibleMachines.length > 1 ? "s" : ""}
+                  Showing {issuingPart.compatibleMachines.length} compatible
+                  machine{issuingPart.compatibleMachines.length > 1 ? "s" : ""}
                 </div>
               )}
             </div>
@@ -1410,7 +1553,9 @@ function SparePartsTab({
               <label style={lbl}>Issued By *</label>
               <input
                 value={issueForm.issuedBy}
-                onChange={(e) => setIssueForm((f) => ({ ...f, issuedBy: e.target.value }))}
+                onChange={(e) =>
+                  setIssueForm((f) => ({ ...f, issuedBy: e.target.value }))
+                }
                 placeholder="Enter name"
                 style={inp}
               />
@@ -1419,29 +1564,70 @@ function SparePartsTab({
               <label style={lbl}>Remarks *</label>
               <input
                 value={issueForm.remarks}
-                onChange={(e) => setIssueForm((f) => ({ ...f, remarks: e.target.value }))}
+                onChange={(e) =>
+                  setIssueForm((f) => ({ ...f, remarks: e.target.value }))
+                }
                 placeholder="Purpose / reason for issue"
                 style={inp}
               />
             </div>
           </div>
           {issueForm.qty && Number(issueForm.qty) > 0 && (
-            <div style={{ padding: "10px 14px", background: "#f97316" + "11", border: "1px solid " + "#f97316" + "44", borderRadius: 6, marginBottom: 14, fontSize: 13 }}>
-              Issue <strong style={{ color: "#f97316" }}>{issueForm.qty} nos</strong> of <strong>{issuingPart.partName}</strong>
-              {issueForm.machineId ? <> → <strong style={{ color: "#3b82f6" }}>{issueForm.machineId}</strong></> : null}
+            <div
+              style={{
+                padding: "10px 14px",
+                background: "#f97316" + "11",
+                border: "1px solid " + "#f97316" + "44",
+                borderRadius: 6,
+                marginBottom: 14,
+                fontSize: 13,
+              }}
+            >
+              Issue{" "}
+              <strong style={{ color: "#f97316" }}>{issueForm.qty} nos</strong>{" "}
+              of <strong>{issuingPart.partName}</strong>
+              {issueForm.machineId ? (
+                <>
+                  {" "}
+                  →{" "}
+                  <strong style={{ color: "#3b82f6" }}>
+                    {issueForm.machineId}
+                  </strong>
+                </>
+              ) : null}
             </div>
           )}
           <div style={{ display: "flex", gap: 10 }}>
             <button
               onClick={handleIssue}
               disabled={issuing}
-              style={{ padding: "9px 22px", background: issuing ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 600, cursor: issuing ? "not-allowed" : "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}
+              style={{
+                padding: "9px 22px",
+                background: issuing
+                  ? "rgba(255,255,255,0.04)"
+                  : "rgba(255,255,255,0.08)",
+                border: "1px solid rgba(255,255,255,0.18)",
+                borderRadius: 6,
+                color: "#fff",
+                fontWeight: 600,
+                cursor: issuing ? "not-allowed" : "pointer",
+                boxShadow:
+                  "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+              }}
             >
               {issuing ? "Issuing…" : "Confirm Issue"}
             </button>
             <button
               onClick={closeIssue}
-              style={{ background: "transparent", color: "#aaa", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, cursor: "pointer" }}
+              style={{
+                background: "transparent",
+                color: "#aaa",
+                border: "1px solid rgba(255,255,255,0.2)",
+                borderRadius: 6,
+                padding: "6px 14px",
+                fontSize: 12,
+                cursor: "pointer",
+              }}
             >
               Cancel
             </button>
@@ -1589,12 +1775,20 @@ function SparePartsTab({
                           const names = p.compatibleMachines?.length
                             ? p.compatibleMachines
                             : p.machineId
-                            ? [p.machineId]
-                            : [];
+                              ? [p.machineId]
+                              : [];
                           return names.length === 0 ? (
-                            <span style={{ color: "#555", fontSize: 11 }}>Any</span>
+                            <span style={{ color: "#555", fontSize: 11 }}>
+                              Any
+                            </span>
                           ) : (
-                            <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                            <div
+                              style={{
+                                display: "flex",
+                                flexWrap: "wrap",
+                                gap: 4,
+                              }}
+                            >
                               {names.map((n) => (
                                 <span
                                   key={n}
@@ -1681,8 +1875,8 @@ function SparePartsTab({
                                 compatibleMachines: p.compatibleMachines?.length
                                   ? p.compatibleMachines
                                   : p.machineId
-                                  ? [p.machineId]
-                                  : [],
+                                    ? [p.machineId]
+                                    : [],
                               });
                               setEditId(p.id);
                               setShowModal(true);
@@ -1740,7 +1934,8 @@ function SparePartsTab({
                               gap: 6,
                             }}
                           >
-                            <i className="fa-solid fa-arrow-right-from-bracket" /> Issue
+                            <i className="fa-solid fa-arrow-right-from-bracket" />{" "}
+                            Issue
                           </button>
                         </div>
                       </td>
@@ -1776,52 +1971,153 @@ function SparePartsTab({
 
       {editingLog && (
         <Modal title="Edit Issue Record" onClose={() => setEditingLog(null)}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 14,
+              marginBottom: 16,
+            }}
+          >
             <div>
               <label style={lbl}>Part Name *</label>
-              <input value={editLogForm.itemName} onChange={(e) => setEditLogForm((f) => ({ ...f, itemName: e.target.value }))} style={inp} placeholder="Part name" />
+              <input
+                value={editLogForm.itemName}
+                onChange={(e) =>
+                  setEditLogForm((f) => ({ ...f, itemName: e.target.value }))
+                }
+                style={inp}
+                placeholder="Part name"
+              />
             </div>
             <div>
               <label style={lbl}>Part Code</label>
-              <input value={editLogForm.itemCode} onChange={(e) => setEditLogForm((f) => ({ ...f, itemCode: e.target.value }))} style={inp} placeholder="Code" />
+              <input
+                value={editLogForm.itemCode}
+                onChange={(e) =>
+                  setEditLogForm((f) => ({ ...f, itemCode: e.target.value }))
+                }
+                style={inp}
+                placeholder="Code"
+              />
             </div>
             <div>
               <label style={lbl}>Category</label>
-              <input value={editLogForm.category} onChange={(e) => setEditLogForm((f) => ({ ...f, category: e.target.value }))} style={inp} placeholder="Category" />
+              <input
+                value={editLogForm.category}
+                onChange={(e) =>
+                  setEditLogForm((f) => ({ ...f, category: e.target.value }))
+                }
+                style={inp}
+                placeholder="Category"
+              />
             </div>
             <div>
               <label style={lbl}>Machine</label>
-              <select value={editLogForm.machineName} onChange={(e) => setEditLogForm((f) => ({ ...f, machineName: e.target.value }))} style={inp}>
+              <select
+                value={editLogForm.machineName}
+                onChange={(e) =>
+                  setEditLogForm((f) => ({ ...f, machineName: e.target.value }))
+                }
+                style={inp}
+              >
                 <option value="">— Select Machine —</option>
-                {machines.map((m) => <option key={m._id || m.id} value={m.name}>{m.name}</option>)}
+                {machines.map((m) => (
+                  <option key={m._id || m.id} value={m.name}>
+                    {m.name}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
               <label style={lbl}>Qty *</label>
-              <input type="number" min={1} value={editLogForm.qty} onChange={(e) => setEditLogForm((f) => ({ ...f, qty: e.target.value }))} style={inp} />
+              <input
+                type="number"
+                min={1}
+                value={editLogForm.qty}
+                onChange={(e) =>
+                  setEditLogForm((f) => ({ ...f, qty: e.target.value }))
+                }
+                style={inp}
+              />
             </div>
             <div>
               <label style={lbl}>Unit</label>
-              <input value={editLogForm.unit} onChange={(e) => setEditLogForm((f) => ({ ...f, unit: e.target.value }))} style={inp} placeholder="nos" />
+              <input
+                value={editLogForm.unit}
+                onChange={(e) =>
+                  setEditLogForm((f) => ({ ...f, unit: e.target.value }))
+                }
+                style={inp}
+                placeholder="nos"
+              />
             </div>
             <div>
               <label style={lbl}>Issued By</label>
-              <input value={editLogForm.issuedBy} onChange={(e) => setEditLogForm((f) => ({ ...f, issuedBy: e.target.value }))} style={inp} placeholder="Name" />
+              <input
+                value={editLogForm.issuedBy}
+                onChange={(e) =>
+                  setEditLogForm((f) => ({ ...f, issuedBy: e.target.value }))
+                }
+                style={inp}
+                placeholder="Name"
+              />
             </div>
             <div>
               <label style={lbl}>Date</label>
-              <input type="date" value={editLogForm.issuedAt} onChange={(e) => setEditLogForm((f) => ({ ...f, issuedAt: e.target.value }))} style={inp} />
+              <input
+                type="date"
+                value={editLogForm.issuedAt}
+                onChange={(e) =>
+                  setEditLogForm((f) => ({ ...f, issuedAt: e.target.value }))
+                }
+                style={inp}
+              />
             </div>
             <div style={{ gridColumn: "1 / -1" }}>
               <label style={lbl}>Remarks</label>
-              <input value={editLogForm.remarks} onChange={(e) => setEditLogForm((f) => ({ ...f, remarks: e.target.value }))} style={inp} placeholder="Purpose / notes" />
+              <input
+                value={editLogForm.remarks}
+                onChange={(e) =>
+                  setEditLogForm((f) => ({ ...f, remarks: e.target.value }))
+                }
+                style={inp}
+                placeholder="Purpose / notes"
+              />
             </div>
           </div>
           <div style={{ display: "flex", gap: 10 }}>
-            <button onClick={handleSaveLog} disabled={savingLog} style={{ padding: "9px 22px", background: savingLog ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 6, color: "#fff", fontWeight: 600, cursor: savingLog ? "not-allowed" : "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)" }}>
+            <button
+              onClick={handleSaveLog}
+              disabled={savingLog}
+              style={{
+                padding: "9px 22px",
+                background: savingLog
+                  ? "rgba(255,255,255,0.04)"
+                  : "rgba(255,255,255,0.08)",
+                border: "1px solid rgba(255,255,255,0.18)",
+                borderRadius: 6,
+                color: "#fff",
+                fontWeight: 600,
+                cursor: savingLog ? "not-allowed" : "pointer",
+                boxShadow:
+                  "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+              }}
+            >
               {savingLog ? "Saving…" : "Save Changes"}
             </button>
-            <button onClick={() => setEditingLog(null)} style={{ background: "transparent", color: "#aaa", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 6, padding: "6px 14px", fontSize: 12, cursor: "pointer" }}>
+            <button
+              onClick={() => setEditingLog(null)}
+              style={{
+                background: "transparent",
+                color: "#aaa",
+                border: "1px solid rgba(255,255,255,0.2)",
+                borderRadius: 6,
+                padding: "6px 14px",
+                fontSize: 12,
+                cursor: "pointer",
+              }}
+            >
               Cancel
             </button>
           </div>
@@ -1842,9 +2138,20 @@ function SparePartsTab({
             <div style={{ fontSize: 14, fontWeight: 500, color: "#888" }}>
               Spare Part Usage History
             </div>
-            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+            <div
+              style={{
+                display: "flex",
+                gap: 8,
+                alignItems: "center",
+                flexWrap: "wrap",
+              }}
+            >
               <div>
-                <label style={{ ...lbl, display: "inline-block", marginRight: 6 }}>From</label>
+                <label
+                  style={{ ...lbl, display: "inline-block", marginRight: 6 }}
+                >
+                  From
+                </label>
                 <input
                   type="date"
                   value={usageDateFrom}
@@ -1853,7 +2160,11 @@ function SparePartsTab({
                 />
               </div>
               <div>
-                <label style={{ ...lbl, display: "inline-block", marginRight: 6 }}>To</label>
+                <label
+                  style={{ ...lbl, display: "inline-block", marginRight: 6 }}
+                >
+                  To
+                </label>
                 <input
                   type="date"
                   value={usageDateTo}
@@ -1868,16 +2179,58 @@ function SparePartsTab({
                 style={{ ...inp, width: "auto", padding: "6px 10px" }}
               />
               {[
-                { label: logsLoading ? "Loading…" : "Refresh", onClick: fetchUsageLogs, color: "rgba(255,255,255,0.08)", border: "rgba(255,255,255,0.18)" },
-                { label: "⬆ Import", onClick: () => importRef.current?.click(), color: "rgba(255,255,255,0.08)", border: "rgba(255,255,255,0.18)" },
-                { label: "⬇ Export", onClick: handleExportLogs, color: "rgba(255,255,255,0.08)", border: "rgba(255,255,255,0.18)" },
-                { label: "🖨 Report", onClick: handlePrintReport, color: "rgba(255,120,0,0.15)", border: "#ff780055" },
+                {
+                  label: logsLoading ? "Loading…" : "Refresh",
+                  onClick: fetchUsageLogs,
+                  color: "rgba(255,255,255,0.08)",
+                  border: "rgba(255,255,255,0.18)",
+                },
+                {
+                  label: "⬆ Import",
+                  onClick: () => importRef.current?.click(),
+                  color: "rgba(255,255,255,0.08)",
+                  border: "rgba(255,255,255,0.18)",
+                },
+                {
+                  label: "⬇ Export",
+                  onClick: handleExportLogs,
+                  color: "rgba(255,255,255,0.08)",
+                  border: "rgba(255,255,255,0.18)",
+                },
+                {
+                  label: "🖨 Report",
+                  onClick: handlePrintReport,
+                  color: "rgba(255,120,0,0.15)",
+                  border: "#ff780055",
+                },
               ].map(({ label, onClick, color, border }) => (
-                <button key={label} onClick={onClick} style={{ padding: "6px 14px", background: color, border: `1px solid ${border}`, borderRadius: 6, color: "#fff", fontSize: 12, fontWeight: 500, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)", whiteSpace: "nowrap" }}>
+                <button
+                  key={label}
+                  onClick={onClick}
+                  style={{
+                    padding: "6px 14px",
+                    background: color,
+                    border: `1px solid ${border}`,
+                    borderRadius: 6,
+                    color: "#fff",
+                    fontSize: 12,
+                    fontWeight: 500,
+                    cursor: "pointer",
+                    boxShadow:
+                      "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                    whiteSpace: "nowrap",
+                  }}
+                >
                   {label}
                 </button>
               ))}
-              <input ref={importRef} type="file" accept=".xlsx,.xls" style={{ display: "none" }} onChange={handleImportLogs} />
+              <input
+                ref={importRef}
+                type="file"
+                accept=".xlsx,.xls"
+                style={{ display: "none" }}
+                onChange={handleImportLogs}
+              />
             </div>
           </div>
           {logsLoading ? (
@@ -2014,20 +2367,50 @@ function SparePartsTab({
                       >
                         {log.issuedBy || "—"}
                       </td>
-                      <td style={{ padding: "10px 12px", fontSize: 12, color: "#888" }}>
+                      <td
+                        style={{
+                          padding: "10px 12px",
+                          fontSize: 12,
+                          color: "#888",
+                        }}
+                      >
                         {log.remarks || "—"}
                       </td>
                       <td style={{ padding: "10px 12px" }}>
                         <div style={{ display: "flex", gap: 6 }}>
                           <button
                             onClick={() => openEditLog(log)}
-                            style={{ background: "transparent", color: "#8082ff", border: "1px solid #8082ff98", borderRadius: 6, padding: "5px 10px", fontSize: 11, fontWeight: 500, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5 }}
+                            style={{
+                              background: "transparent",
+                              color: "#8082ff",
+                              border: "1px solid #8082ff98",
+                              borderRadius: 6,
+                              padding: "5px 10px",
+                              fontSize: 11,
+                              fontWeight: 500,
+                              cursor: "pointer",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 5,
+                            }}
                           >
                             <i className="fa-solid fa-pen-to-square" /> Edit
                           </button>
                           <button
                             onClick={() => handleDeleteLog(log._id)}
-                            style={{ background: "transparent", color: "#ef4444", border: "1px solid #ef444460", borderRadius: 6, padding: "5px 10px", fontSize: 11, fontWeight: 500, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5 }}
+                            style={{
+                              background: "transparent",
+                              color: "#ef4444",
+                              border: "1px solid #ef444460",
+                              borderRadius: 6,
+                              padding: "5px 10px",
+                              fontSize: 11,
+                              fontWeight: 500,
+                              cursor: "pointer",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 5,
+                            }}
                           >
                             <i className="fa-solid fa-trash" /> Delete
                           </button>
