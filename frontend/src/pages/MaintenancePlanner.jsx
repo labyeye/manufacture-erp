@@ -8,7 +8,7 @@ import React, {
 import * as XLSX from "xlsx";
 import { C } from "../constants/colors";
 import { machineMaintenanceAPI, spareIssueLogAPI } from "../api/auth";
-import { Modal } from "../components/ui/BasicComponents";
+import { Modal, AutocompleteInput } from "../components/ui/BasicComponents";
 
 const today = () => new Date().toISOString().slice(0, 10);
 const uid = () =>
@@ -1366,27 +1366,14 @@ function SparePartsTab({
               </div>
               <div>
                 <label style={lbl}>Supplier / Vendor</label>
-                {vendorMaster.length > 0 ? (
-                  <select
-                    value={form.vendor}
-                    onChange={(e) => setF("vendor", e.target.value)}
-                    style={inp}
-                  >
-                    <option value="">— Select Vendor —</option>
-                    {vendorMaster.map((v) => (
-                      <option key={v._id || v.id} value={v.name}>
-                        {v.name}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    value={form.vendor}
-                    onChange={(e) => setF("vendor", e.target.value)}
-                    placeholder="Vendor name"
-                    style={inp}
-                  />
-                )}
+                <AutocompleteInput
+                  value={form.vendor}
+                  onChange={(v) => setF("vendor", v)}
+                  suggestions={vendorMaster.map((v) => v.name).filter(Boolean)}
+                  placeholder="Search vendor…"
+                  showAllOnFocus
+                  inputStyle={inp}
+                />
               </div>
               <div>
                 <label style={lbl}>Storage Location</label>
