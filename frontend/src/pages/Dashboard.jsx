@@ -44,6 +44,12 @@ const ALL_REPORT_TABS = [
     roles: ["Admin", "Manager", "Sales", "Client"],
   },
   {
+    id: "jo_coverage",
+    label: "JO Coverage",
+    icon: "fa-solid fa-circle-check",
+    roles: ["Admin", "Manager", "Sales", "Production"],
+  },
+  {
     id: "so_ageing",
     label: "SO Ageing",
     icon: "⏳",
@@ -679,6 +685,45 @@ export function Dashboard({ data, session, toast, onNavigate }) {
   });
   const [poReconStatus, setPoReconStatus] = useState("All");
   const [soReconStatus, setSoReconStatus] = useState("All");
+  const [joCoverageFilter, setJoCoverageFilter] = useState("All");
+
+  const joCoverageRows = useMemo(() => {
+    const rows = [];
+    salesOrders.forEach((so) => {
+      if (dateFrom || dateTo) {
+        const d = (so.orderDate || so.createdAt || "").slice(0, 10);
+        if (dateFrom && d < dateFrom) return;
+        if (dateTo && d > dateTo) return;
+      }
+      (so.items || []).forEach((item) => {
+        const itemName = item.itemName || item.name || "";
+        const soKey = so.soNo || so._id || "";
+        const matchingJO = jobOrders.find(
+          (jo) =>
+            (jo.soRef === soKey || jo.soNo === soKey) &&
+            (jo.itemName || "").trim().toLowerCase() ===
+              itemName.trim().toLowerCase(),
+        );
+        rows.push({
+          soNo: soKey,
+          soId: so._id,
+          client: so.companyName || "—",
+          orderDate: so.orderDate || so.createdAt,
+          deliveryDate: so.deliveryDate,
+          itemName: itemName || "—",
+          orderQty: +(item.orderQty || item.qty || 0),
+          joNo: matchingJO?.joNo || "",
+          joId: matchingJO?._id || "",
+          joStatus: matchingJO?.status || "",
+          hasJO: !!matchingJO,
+        });
+      });
+    });
+
+    if (joCoverageFilter === "JO Created") return rows.filter((r) => r.hasJO);
+    if (joCoverageFilter === "JO Pending") return rows.filter((r) => !r.hasJO);
+    return rows;
+  }, [salesOrders, jobOrders, dateFrom, dateTo, joCoverageFilter]);
 
   const allEntries = useMemo(() => {
     const list = [];
@@ -2992,6 +3037,324 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 >
                                   Close SO
                                 </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
+        {}
+        {reportTab === "jo_coverage" &&
+          (() => {
+            const rows = joCoverageRows;
+            const totalItems = rows.length;
+            const withJO = rows.filter((r) => r.hasJO).length;
+            const withoutJO = rows.filter((r) => !r.hasJO).length;
+            const coveragePct =
+              totalItems > 0 ? Math.round((withJO / totalItems) * 100) : 0;
+
+            const STATUS_COLOR = {
+              Draft: "#888",
+              Scheduled: C.blue,
+              "In Progress": C.yellow,
+              Completed: C.green,
+              "On Hold": "#f97316",
+              Cancelled: C.red,
+            };
+
+            return (
+              <div>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 16,
+                    marginBottom: 20,
+                    alignItems: "flex-end",
+                    padding: 16,
+                    borderRadius: 8,
+                    border: "1px solid #2a2a2e",
+                  }}
+                >
+                  <div style={{ flex: 1 }}>
+                    <div
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 500,
+                        color: "#888",
+                        marginBottom: 6,
+                      }}
+                    >
+                      DATE FROM
+                    </div>
+                    <DatePicker
+                      value={dateFrom}
+                      onChange={(v) => setDateFrom(v)}
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 500,
+                        color: "#888",
+                        marginBottom: 6,
+                      }}
+                    >
+                      DATE TO
+                    </div>
+                    <DatePicker value={dateTo} onChange={(v) => setDateTo(v)} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 500,
+                        color: "#888",
+                        marginBottom: 6,
+                      }}
+                    >
+                      FILTER
+                    </div>
+                    <select
+                      value={joCoverageFilter}
+                      onChange={(e) => setJoCoverageFilter(e.target.value)}
+                      style={{
+                        width: "100%",
+                        padding: "8px 10px",
+                        background: "#0c0c0e",
+                        border: "1px solid #3a3a3e",
+                        color: "#e0e0e0",
+                        borderRadius: 6,
+                        fontSize: 13,
+                      }}
+                    >
+                      <option value="All">All Items</option>
+                      <option value="JO Created">JO Created</option>
+                      <option value="JO Pending">JO Pending</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(4, 1fr)",
+                    gap: 12,
+                    marginBottom: 20,
+                  }}
+                >
+                  {[
+                    {
+                      label: "Total SO Items",
+                      val: totalItems,
+                      color: C.blue,
+                    },
+                    {
+                      label: "JO Created",
+                      val: withJO,
+                      color: C.green,
+                    },
+                    {
+                      label: "JO Pending",
+                      val: withoutJO,
+                      color: C.red,
+                    },
+                    {
+                      label: "Coverage",
+                      val: `${coveragePct}%`,
+                      color: coveragePct >= 90 ? C.green : coveragePct >= 50 ? C.yellow : C.red,
+                    },
+                  ].map((s) => (
+                    <div
+                      key={s.label}
+                      style={{
+                        background: "transparent",
+                        border: `1px solid ${s.color}44`,
+                        borderRadius: 8,
+                        padding: 16,
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: 26,
+                          fontWeight: 900,
+                          color: s.color,
+                        }}
+                      >
+                        {s.val}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 600,
+                          marginTop: 4,
+                          color: "#bbb",
+                        }}
+                      >
+                        {s.label}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {rows.length === 0 ? (
+                  <div
+                    style={{ textAlign: "center", padding: 60, color: "#555" }}
+                  >
+                    No items found.
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      borderRadius: 8,
+                      overflowX: "auto",
+                      WebkitOverflowScrolling: "touch",
+                      border: "1px solid #2a2a2e",
+                    }}
+                  >
+                    <table style={TABLE}>
+                      <colgroup>
+                        <col style={{ width: 110 }} />
+                        <col style={{ width: 150 }} />
+                        <col style={{ width: "25%" }} />
+                        <col style={{ width: 90 }} />
+                        <col style={{ width: 100 }} />
+                        <col style={{ width: 110 }} />
+                        <col style={{ width: 120 }} />
+                        <col style={{ width: 110 }} />
+                      </colgroup>
+                      <thead>
+                        <tr>
+                          {[
+                            "SO #",
+                            "Client",
+                            "Item",
+                            "Ordered Qty",
+                            "Delivery Date",
+                            "JO #",
+                            "JO Status",
+                            "JO Created?",
+                          ].map((h) => (
+                            <th key={h} style={TH}>
+                              {h}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rows.map((r, i) => (
+                          <tr
+                            key={r.soNo + r.itemName + i}
+                            style={{
+                              background: i % 2 === 0 ? "#0e0e12" : "#121216",
+                            }}
+                          >
+                            <td style={TD}>
+                              <span
+                                style={{
+                                  color: C.green,
+                                  fontWeight: 700,
+                                  cursor: "pointer",
+                                }}
+                                onClick={() =>
+                                  onNavigate &&
+                                  onNavigate("sales", r.soId)
+                                }
+                              >
+                                {r.soNo}
+                              </span>
+                            </td>
+                            <td style={{ ...TD, fontWeight: 600 }}>
+                              {r.client}
+                            </td>
+                            <td
+                              style={{
+                                ...TD,
+                                color: "#ccc",
+                                whiteSpace: "normal",
+                              }}
+                            >
+                              {r.itemName}
+                            </td>
+                            <td style={{ ...TD, textAlign: "right" }}>
+                              {r.orderQty.toLocaleString("en-IN")}
+                            </td>
+                            <td style={{ ...TD, color: "#888" }}>
+                              {fmtDate(r.deliveryDate)}
+                            </td>
+                            <td style={TD}>
+                              {r.joNo ? (
+                                <span
+                                  style={{
+                                    color: C.blue,
+                                    fontWeight: 700,
+                                    cursor: "pointer",
+                                  }}
+                                  onClick={() =>
+                                    onNavigate &&
+                                    onNavigate("jobs", r.joId)
+                                  }
+                                >
+                                  {r.joNo}
+                                </span>
+                              ) : (
+                                <span style={{ color: "#444" }}>—</span>
+                              )}
+                            </td>
+                            <td style={TD}>
+                              {r.joStatus ? (
+                                <span
+                                  style={{
+                                    padding: "2px 8px",
+                                    borderRadius: 4,
+                                    fontSize: 11,
+                                    fontWeight: 600,
+                                    background: `${STATUS_COLOR[r.joStatus] || "#888"}22`,
+                                    color: STATUS_COLOR[r.joStatus] || "#888",
+                                    border: `1px solid ${STATUS_COLOR[r.joStatus] || "#888"}44`,
+                                  }}
+                                >
+                                  {r.joStatus}
+                                </span>
+                              ) : (
+                                <span style={{ color: "#444" }}>—</span>
+                              )}
+                            </td>
+                            <td style={TD}>
+                              {r.hasJO ? (
+                                <span
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 5,
+                                    color: C.green,
+                                    fontWeight: 700,
+                                    fontSize: 12,
+                                  }}
+                                >
+                                  <i className="fa-solid fa-circle-check" />
+                                  Yes
+                                </span>
+                              ) : (
+                                <span
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 5,
+                                    color: C.red,
+                                    fontWeight: 700,
+                                    fontSize: 12,
+                                  }}
+                                >
+                                  <i className="fa-solid fa-circle-xmark" />
+                                  No
+                                </span>
                               )}
                             </td>
                           </tr>
