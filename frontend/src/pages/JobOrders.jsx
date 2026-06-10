@@ -735,7 +735,7 @@ export default function JobOrders(props) {
       if (
         !matchedStock ||
         (Number(matchedStock.qty || 0) <= 0 &&
-          Number(matchedStock.weight || 0) <= 0)
+          Number(matchedStock.weight || matchedStock.weightKg || 0) <= 0)
       ) {
         const stockName = `${header.paperCategory} | ${header.paperType} | ${header.paperGsm}gsm`;
         toast(`Insufficient RM stock: ${stockName}`, "error");
@@ -752,7 +752,7 @@ export default function JobOrders(props) {
       if (
         !matchedStock2 ||
         (Number(matchedStock2.qty || 0) <= 0 &&
-          Number(matchedStock2.weight || 0) <= 0)
+          Number(matchedStock2.weight || matchedStock2.weightKg || 0) <= 0)
       ) {
         const stockName = `${header.paperCategory2} | ${header.paperType2} | ${header.paperGsm2}gsm`;
         toast(`Insufficient RM stock (Second Paper): ${stockName}`, "error");
@@ -1690,13 +1690,13 @@ export default function JobOrders(props) {
                         <div
                           style={{
                             fontSize: 10,
-                            color: (matchedStock?.weight > 0 || matchedStock?.qty > 0) ? C.green : C.red,
+                            color: ((matchedStock?.weight || matchedStock?.weightKg || 0) > 0 || matchedStock?.qty > 0) ? C.green : C.red,
                             marginTop: 4,
                             fontWeight: 500,
                           }}
                         >
-                          {(matchedStock?.weight > 0 || matchedStock?.qty > 0)
-                            ? `${fmt(Math.round(matchedStock.weight || matchedStock.qty || 0))} kg available`
+                          {((matchedStock?.weight || matchedStock?.weightKg || 0) > 0 || matchedStock?.qty > 0)
+                            ? `${fmt(Math.round(matchedStock.weight || matchedStock.weightKg || matchedStock.qty || 0))} kg available`
                             : `0 kg available`}
                         </div>
                       )}
@@ -2202,15 +2202,15 @@ export default function JobOrders(props) {
                             style={{
                               fontSize: 10,
                               color:
-                                (matchedStock2.weight || 0) > 0
+                                (matchedStock2.weight || matchedStock2.weightKg || matchedStock2.qty || 0) > 0
                                   ? C.green
                                   : C.red,
                               marginTop: 4,
                               fontWeight: 500,
                             }}
                           >
-                            {(matchedStock2.weight || 0) > 0
-                              ? `${fmt(Math.round(matchedStock2.weight))} kg available`
+                            {(matchedStock2.weight || matchedStock2.weightKg || matchedStock2.qty || 0) > 0
+                              ? `${fmt(Math.round(matchedStock2.weight || matchedStock2.weightKg || matchedStock2.qty || 0))} kg available`
                               : "0 kg available"}
                           </div>
                         )}
