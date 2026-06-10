@@ -1690,12 +1690,19 @@ export default function JobOrders(props) {
                         <div
                           style={{
                             fontSize: 10,
-                            color: ((matchedStock?.weight || matchedStock?.weightKg || 0) > 0 || matchedStock?.qty > 0) ? C.green : C.red,
+                            color:
+                              (matchedStock?.weight ||
+                                matchedStock?.weightKg ||
+                                0) > 0 || matchedStock?.qty > 0
+                                ? C.green
+                                : C.red,
                             marginTop: 4,
                             fontWeight: 500,
                           }}
                         >
-                          {((matchedStock?.weight || matchedStock?.weightKg || 0) > 0 || matchedStock?.qty > 0)
+                          {(matchedStock?.weight ||
+                            matchedStock?.weightKg ||
+                            0) > 0 || matchedStock?.qty > 0
                             ? `${fmt(Math.round(matchedStock.weight || matchedStock.weightKg || matchedStock.qty || 0))} kg available`
                             : `0 kg available`}
                         </div>
@@ -2202,14 +2209,20 @@ export default function JobOrders(props) {
                             style={{
                               fontSize: 10,
                               color:
-                                (matchedStock2.weight || matchedStock2.weightKg || matchedStock2.qty || 0) > 0
+                                (matchedStock2.weight ||
+                                  matchedStock2.weightKg ||
+                                  matchedStock2.qty ||
+                                  0) > 0
                                   ? C.green
                                   : C.red,
                               marginTop: 4,
                               fontWeight: 500,
                             }}
                           >
-                            {(matchedStock2.weight || matchedStock2.weightKg || matchedStock2.qty || 0) > 0
+                            {(matchedStock2.weight ||
+                              matchedStock2.weightKg ||
+                              matchedStock2.qty ||
+                              0) > 0
                               ? `${fmt(Math.round(matchedStock2.weight || matchedStock2.weightKg || matchedStock2.qty || 0))} kg available`
                               : "0 kg available"}
                           </div>
@@ -2330,7 +2343,12 @@ export default function JobOrders(props) {
                         readOnly
                         placeholder="Auto-matched item"
                         value={(() => {
-                          if (!header.paperCategory2 || !header.paperType2 || !header.paperGsm2) return "";
+                          if (
+                            !header.paperCategory2 ||
+                            !header.paperType2 ||
+                            !header.paperGsm2
+                          )
+                            return "";
                           if (header.paperCategory2 === "Paper Reel") {
                             if (!header.reelWidthMm2) return "";
                             return `${header.paperType2} ${header.paperCategory2} ${header.paperGsm2}gsm ${header.reelWidthMm2}mm`;
