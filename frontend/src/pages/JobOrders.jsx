@@ -1690,13 +1690,13 @@ export default function JobOrders(props) {
                         <div
                           style={{
                             fontSize: 10,
-                            color: matchedStock?.weight > 0 ? C.green : C.red,
+                            color: (matchedStock?.weight > 0 || matchedStock?.qty > 0) ? C.green : C.red,
                             marginTop: 4,
                             fontWeight: 500,
                           }}
                         >
-                          {matchedStock?.weight > 0
-                            ? `${fmt(Math.round(matchedStock.weight))} kg available`
+                          {(matchedStock?.weight > 0 || matchedStock?.qty > 0)
+                            ? `${fmt(Math.round(matchedStock.weight || matchedStock.qty || 0))} kg available`
                             : `0 kg available`}
                         </div>
                       )}
@@ -1860,33 +1860,6 @@ export default function JobOrders(props) {
                             }}
                           >
                             {fmt(header.orderQty)} bags
-                          </div>
-                        </div>
-                      )}
-                      {matchedStock && (
-                        <div>
-                          <div
-                            style={{
-                              fontSize: 10,
-                              color: "#94a3b8",
-                              marginBottom: 2,
-                              textTransform: "uppercase",
-                            }}
-                          >
-                            Stock Available
-                          </div>
-                          <div
-                            style={{
-                              fontSize: 15,
-                              fontWeight: 700,
-                              color:
-                                bagRmData.totalKg !== null &&
-                                (matchedStock.weight || 0) >= bagRmData.totalKg
-                                  ? "#10b981"
-                                  : "#ef4444",
-                            }}
-                          >
-                            {fmt(Math.round(matchedStock.weight || 0))} kg
                           </div>
                         </div>
                       )}
