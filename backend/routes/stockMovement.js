@@ -368,9 +368,20 @@ router.get("/", async (req, res) => {
       const stock = await FGStock.findOne({ itemName: nameRegex });
       const currentQty = stock ? stock.qty || 0 : 0;
 
-      // Inward: Material Inward (consumable/FG type) + JO production
+      const FG_STAGES_ORDER = [
+        "Printing", "Flexo Printing", "Varnish", "Lamination",
+        "Die Cutting", "Formation", "Manual Formation", "Bag Making", "Sheet Cutting",
+      ];
+      const getLastStage = (process) => {
+        const ordered = [...(process || [])].sort(
+          (a, b) => FG_STAGES_ORDER.indexOf(a) - FG_STAGES_ORDER.indexOf(b),
+        );
+        return ordered[ordered.length - 1] || null;
+      };
+
+      // Inward: Material Inward (FG type)
       const inwards = await MaterialInward.find({
-        $or: [{ "items.itemName": nameRegex }],
+        "items.itemName": nameRegex,
         ...(fromDate || toDate ? { inwardDate: dRange(fromDate, toDate) } : {}),
       }).select("inwardNo inwardDate vendorName items");
 
@@ -389,23 +400,31 @@ router.get("/", async (req, res) => {
         }
       }
 
-      // Inward: JO production — only Completed JOs (FG is produced when JO completes)
-      const jos = await JobOrder.find({
+      // Inward: JO production — each stage history entry on the LAST stage
+      const allJos = await JobOrder.find({
         $or: [{ itemName: nameRegex }, { product: nameRegex }],
-        status: "Completed",
-        ...(fromDate || toDate ? { updatedAt: dRange(fromDate, toDate) } : {}),
-      }).select("joNo jobcardDate updatedAt itemName orderQty status");
+      }).select("joNo jobcardDate itemName companyName status process stageHistory");
 
-      for (const jo of jos) {
-        txns.push({
-          date: jo.updatedAt || jo.jobcardDate,
-          txnType: "Production",
-          ref: jo.joNo,
-          description: `Produced via Job Order (${jo.status})`,
-          inward: jo.orderQty || 0,
-          outward: 0,
-          weight: 0,
-        });
+      for (const jo of allJos) {
+        const lastStage = getLastStage(jo.process);
+        if (!lastStage) continue;
+        for (const sh of jo.stageHistory || []) {
+          if (sh.stage !== lastStage) continue;
+          const entryDate = new Date(sh.date || sh.enteredAt || jo.jobcardDate);
+          if (fromDate && entryDate < fromDate) continue;
+          if (toDate && entryDate > toDate) continue;
+          const qty = Number(sh.qtyCompleted || 0);
+          if (qty <= 0) continue;
+          txns.push({
+            date: entryDate,
+            txnType: "Production",
+            ref: jo.joNo,
+            description: `Produced via ${lastStage} for ${jo.companyName || jo.itemName}`,
+            inward: qty,
+            outward: 0,
+            weight: 0,
+          });
+        }
       }
 
       // Outward: Dispatch
@@ -451,9 +470,55 @@ router.get("/", async (req, res) => {
       }
 
       txns.sort((a, b) => new Date(a.date) - new Date(b.date));
-      const totalIn = txns.reduce((s, t) => s + t.inward, 0);
-      const totalOut = txns.reduce((s, t) => s + t.outward, 0);
-      const openingQty = Math.max(0, currentQty - totalIn + totalOut);
+
+      // Opening balance: replay all transactions before fromDate
+      let openingQty = 0;
+      if (fromDate) {
+        const prevInwards = await MaterialInward.find({
+          "items.itemName": nameRegex,
+          inwardDate: { $lt: fromDate },
+        }).select("items");
+        for (const inw of prevInwards) {
+          for (const item of inw.items) {
+            if (!nameRegex.test(item.itemName || "")) continue;
+            openingQty += Number(item.qty || 0);
+          }
+        }
+
+        for (const jo of allJos) {
+          const lastStage = getLastStage(jo.process);
+          if (!lastStage) continue;
+          for (const sh of jo.stageHistory || []) {
+            if (sh.stage !== lastStage) continue;
+            const d = new Date(sh.date || sh.enteredAt || 0);
+            if (d < fromDate) openingQty += Number(sh.qtyCompleted || 0);
+          }
+        }
+
+        const prevDispatches = await Dispatch.find({
+          "items.itemName": nameRegex,
+          type: { $ne: "Return" },
+          date: { $lt: fromDate },
+        }).select("items");
+        for (const d of prevDispatches) {
+          for (const item of d.items || []) {
+            if (!nameRegex.test(item.itemName || "")) continue;
+            openingQty -= Number(item.qty || 0);
+          }
+        }
+
+        const prevAdjs = await StockAdjustment.find({
+          itemName: nameRegex,
+          stockType: "Finished Goods",
+          date: { $lt: fromDate },
+        }).select("adjustmentType qty");
+        for (const adj of prevAdjs) {
+          const dir = adj.adjustmentType === "Outward" ? -1 : 1;
+          openingQty += dir * (Number(adj.qty) || 0);
+        }
+
+        openingQty = Math.max(0, openingQty);
+      }
 
       return res.json({
         ledger: txns,
