@@ -481,7 +481,12 @@ export default function SalesOrders(props) {
         }
       }
 
-      it.itemName = generateItemName(it);
+      if (it.productCode) {
+        const dbItem = fgItems.find((f) => f.code === it.productCode);
+        it.itemName = dbItem ? dbItem.name : generateItemName(it);
+      } else {
+        it.itemName = generateItemName(it);
+      }
       updated[idx] = it;
       return updated;
     });
@@ -1251,7 +1256,17 @@ export default function SalesOrders(props) {
 
                   {}
                   {(() => {
-                    const categorySizes = subTypeMap[it.itemCategory] || [];
+                    const rawCategorySizes = subTypeMap[it.itemCategory] || [];
+                    const categorySizes = rawCategorySizes.length > 0
+                      ? rawCategorySizes
+                      : [
+                          ...new Set(
+                            fgItems
+                              .filter((f) => f.category === it.itemCategory)
+                              .map((f) => f.subCategory)
+                              .filter(Boolean),
+                          ),
+                        ];
                     const config = CATEGORY_CONFIG[it.itemCategory];
 
                     const isLiquid = categorySizes.some((s) =>

@@ -830,18 +830,17 @@ async function recalculateProductionStats(jobOrder) {
   }
 
   jobOrder.status =
-    allCompleted && started ? "Completed" : started ? "In Progress" : "Open";
+    allCompleted && started
+      ? "Completed"
+      : started
+        ? "In Progress"
+        : jobOrder.status || "Draft";
 
-  const formationStages = jobOrder.stageHistory.filter((h) =>
-    h.stage.includes("Formation"),
-  );
-  if (formationStages.length > 0 || jobOrder.status === "Completed") {
-    const formationQty = Array.from(stageQtyMap.entries())
-      .filter(([s]) => s.includes("Formation"))
-      .reduce((sum, [_, q]) => sum + q, 0);
+  const lastOrderedStage = orderedProcesses[orderedProcesses.length - 1];
+  const lastStageQty = lastOrderedStage ? (stageQtyMap.get(lastOrderedStage) || 0) : 0;
 
-    const lastOrderedStage = orderedProcesses[orderedProcesses.length - 1];
-    const finalQty = formationQty || stageQtyMap.get(lastOrderedStage) || 0;
+  if (lastStageQty > 0 || jobOrder.status === "Completed") {
+    const finalQty = lastStageQty;
 
     let price = 0;
     let itemCategory = "";
@@ -872,29 +871,22 @@ async function recalculateProductionStats(jobOrder) {
       if (im.code) itemCode = im.code;
     }
 
-    if (finalQty > 0 || jobOrder.status === "Completed") {
-      await FGStock.findOneAndUpdate(
-        { itemName: jobOrder.itemName, joNo: jobOrder.joNo },
-        {
-          itemName: jobOrder.itemName,
-          itemCode,
-          joNo: jobOrder.joNo,
-          soRef: jobOrder.soRef,
-          companyName: jobOrder.companyName,
-          companyCat: jobOrder.companyCategory,
-          category: itemCategory,
-          qty: finalQty,
-          price,
-          lastUpdated: new Date(),
-        },
-        { upsert: true },
-      );
-    } else {
-      await FGStock.updateOne(
-        { itemName: jobOrder.itemName, joNo: jobOrder.joNo },
-        { qty: 0 },
-      );
-    }
+    await FGStock.findOneAndUpdate(
+      { itemName: jobOrder.itemName, joNo: jobOrder.joNo },
+      {
+        itemName: jobOrder.itemName,
+        itemCode,
+        joNo: jobOrder.joNo,
+        soRef: jobOrder.soRef,
+        companyName: jobOrder.companyName,
+        companyCat: jobOrder.companyCategory,
+        category: itemCategory,
+        qty: finalQty,
+        price,
+        lastUpdated: new Date(),
+      },
+      { upsert: true },
+    );
   } else {
     await FGStock.deleteOne({ joNo: jobOrder.joNo });
   }
