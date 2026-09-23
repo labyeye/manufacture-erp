@@ -12,7 +12,7 @@ const authRoutes = require("./routes/auth");
 const app = express();
 
 const allowedOrigins =
-  "https://www.packbetter.in,http://packbetter.in,http://localhost:3000"
+  "https://www.packbetter.in,http://packbetter.in,https://backend.packbetter.in,http://localhost:3000"
     .split(",")
     .map((o) => o.trim())
     .filter(Boolean);
