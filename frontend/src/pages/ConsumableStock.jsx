@@ -8,18 +8,23 @@ import React, {
 import * as XLSX from "xlsx";
 import { C } from "../constants/colors";
 import {
+  ListToolbar,
+  FilterModal,
+  SortSelect,
   Card,
   SectionTitle,
   Badge,
   Field,
   SubmitBtn,
   DateRangeFilter,
-  ImportBtn,
-  ExportBtn,
-  TemplateBtn,
   ImportModal,
+  NameWithAvatar,
 } from "../components/ui/BasicComponents";
 import { consumableStockAPI, spareIssueLogAPI } from "../api/auth";
+import { IconBtn } from "../components/ui/IconBtn";
+import { StatCard } from "../components/ui/StatCard";
+
+import { fmtLakh } from "../utils/formatINR";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 const today = () => new Date().toISOString().slice(0, 10);
@@ -56,6 +61,7 @@ export default function ConsumableStock({
   const [drDateFrom, setDrDateFrom] = useState("");
   const [drDateTo, setDrDateTo] = useState("");
   const [showZeroStock, setShowZeroStock] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
   const [importProgress, setImportProgress] = useState({
     show: false,
     current: 0,
@@ -78,6 +84,17 @@ export default function ConsumableStock({
       toast?.(`${selectedIds.length} item(s) deleted`, "success");
     } catch {
       toast?.("Failed to delete some items", "error");
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!id || !window.confirm("Delete this item?")) return;
+    try {
+      await consumableStockAPI.delete(id);
+      if (refreshData) await refreshData();
+      toast?.("Item deleted", "success");
+    } catch {
+      toast?.("Failed to delete item", "error");
     }
   };
 
@@ -286,13 +303,13 @@ export default function ConsumableStock({
             body { font-family: 'Inter', Arial, sans-serif; padding: 20px 30px; color: #1a1a1a; }
             .header { text-align: center; border-bottom: 2px solid #1e40af; padding-bottom: 10px; margin-bottom: 16px; }
             .header h1 { color: #1e3a8a; margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 1px; }
-            .header p { margin: 2px 0; font-size: 11px; color: #475569; }
+            .header p { margin: 2px 0; font-size: 11px; color: #6b6b6b; }
             .doc-title { display: flex; justify-content: space-between; margin-bottom: 8px; }
             .doc-title h2 { margin: 0; font-size: 16px; font-weight: 700; }
-            .meta { font-size: 10px; color: #64748b; }
+            .meta { font-size: 10px; color: #8a8a8a; }
             table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-            th { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; font-size: 10px; text-transform: uppercase; color: #334155; }
-            td { border: 1px solid #e2e8f0; padding: 5px 8px; font-size: 10px; }
+            th { background: #f1f5f9; border: 1px solid #c7c7c7; padding: 6px 8px; text-align: left; font-size: 10px; text-transform: uppercase; color: #3a3a3a; }
+            td { border: 1px solid #ededed; padding: 5px 8px; font-size: 10px; }
             .num { text-align: right; font-family: 'JetBrains Mono', monospace; }
             tfoot td { font-weight: 800; background: #f8fafc; }
             @media print { @page { margin: 1cm; size: A4 landscape; } }
@@ -443,61 +460,28 @@ export default function ConsumableStock({
         status={importProgress.status}
         title="Importing Consumable Stock"
       />
-      <div style={{ display: "flex", alignItems: "center", marginBottom: 20 }}>
-        <SectionTitle
-          icon="📦"
-          title="Consumable Stock"
-          sub="Consumables and other non-RM inventory (Machine Spares tracked in Machine &amp; Tooling)"
-        />
-        <button
-          onClick={() => setShowZeroStock(!showZeroStock)}
-          style={{
-            marginLeft: "auto",
-            padding: "8px 16px",
-            borderRadius: 6,
-            fontSize: 13,
-            fontWeight: 500,
-            background: showZeroStock
-              ? "rgba(255,255,255,0.12)"
-              : "rgba(255,255,255,0.05)",
-            color: "#fff",
-            border: `1px solid ${showZeroStock ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.18)"}`,
-            boxShadow: showZeroStock
-              ? "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)"
-              : "none",
-            cursor: "pointer",
-          }}
-        >
-          {showZeroStock ? "Hide Zero Stock" : "Show Zero Stock"}
-        </button>
-      </div>
-
       {}
       <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
         {[
-          ["stock", "📦 Stock"],
-          ["issue", "➡️ Issue Item"],
-          ["log", `📋 Records (${fetchedLogs.length})`],
+          ["stock", "Stock"],
+          ["issue", "Issue item"],
+          ["log", `Records (${fetchedLogs.length})`],
         ].map(([v, l]) => (
           <button
             key={v}
+            type="button"
             onClick={() => setView(v)}
             style={{
-              padding: "8px 20px",
-              borderRadius: 6,
-              border: `1px solid ${view === v ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.18)"}`,
-              background:
-                view === v
-                  ? "rgba(255,255,255,0.12)"
-                  : "rgba(255,255,255,0.05)",
-              color: "#fff",
-              boxShadow:
-                view === v
-                  ? "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)"
-                  : "none",
+              height: 32,
+              padding: "0 16px",
+              borderRadius: 8,
+              border: `1px solid ${view === v ? "rgba(255,255,255,0.16)" : "rgba(255,255,255,0.08)"}`,
+              background: view === v ? "#242424" : "transparent",
+              color: view === v ? "#ededed" : "#a3a3a3",
               fontWeight: 500,
               fontSize: 13,
               cursor: "pointer",
+              transition: "background-color .15s, color .15s",
             }}
           >
             {l}
@@ -512,7 +496,7 @@ export default function ConsumableStock({
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(5, 1fr)",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
               gap: 12,
               marginBottom: 18,
             }}
@@ -540,192 +524,133 @@ export default function ConsumableStock({
               },
               {
                 label: "Total Value",
-                value: `₹${fmt(Math.round(totalValueSum))}`,
+                value: fmtLakh(totalValueSum),
                 icon: "fa-solid fa-indian-rupee-sign",
               },
             ].map(({ label, value, icon }) => (
-              <div
-                key={label}
-                style={{
-                  padding: "16px 20px",
-                  background: "transparent",
-                  border: "1px solid rgba(255,255,255,0.07)",
-                  borderRadius: 12,
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: 8,
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: 19,
-                      color: "#ffffff",
-                      fontWeight: 600,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
-                    }}
-                  >
-                    {label}
-                  </span>
-                  <i
-                    className={icon}
-                    style={{
-                      color: C.muted,
-                      fontSize: 20,
-                      opacity: 0.9,
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      height: 28,
-                      width: 28,
-                      lineHeight: 1,
-                    }}
-                  />
-                </div>
-                <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>
-                  {value}
-                </div>
-              </div>
+              <StatCard key={label} label={label} value={value} icon={icon} />
             ))}
           </div>
 
-          {}
-          <div
-            style={{
-              display: "flex",
-              gap: 10,
-              alignItems: "center",
-              flexWrap: "wrap",
-              marginBottom: 12,
+          <ListToolbar
+            onSelectModeChange={(on) => {
+              if (!on) setSelectedIds([]);
             }}
-          >
-            <div style={{ position: "relative", flex: 1, minWidth: 180 }}>
-              <input
-                placeholder="Search item..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "9px 12px 9px 30px",
-                  border: `1px solid ${C.border}`,
-                  borderRadius: 6,
-                  fontSize: 13,
-                  background: C.inputBg,
-                  color: C.text || "#e5e7eb",
-                  boxSizing: "border-box",
-                }}
-              />
-            </div>
-            <TemplateBtn
-              onClick={() => {
-                const headers = [
-                  "Code",
-                  "Name",
-                  "Category",
-                  "Type",
-                  "Qty",
-                  "Unit",
-                  "Reorder Level",
-                  "Rate (₹)",
-                ];
-                const example = [
-                  "CS001",
-                  "Example Item",
-                  "General",
-                  "Consumable",
-                  "0",
-                  "nos",
-                  "10",
-                  "100",
-                ];
-                const worksheet = XLSX.utils.aoa_to_sheet([headers, example]);
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Template");
-                XLSX.writeFile(workbook, "consumable_template.xlsx");
-              }}
-            />
-            {canExportImport && !isClient && (
-              <ImportBtn onClick={() => fileInputRef.current?.click()} />
-            )}
-            {canExportImport && <ExportBtn onClick={handleExport} />}
-            {canExportImport && (
-              <ExportBtn onClick={handleExportPDF} label="Export PDF" />
-            )}
-            {!isClient && canDelete && selectedIds.length > 0 && (
+            search={search}
+            setSearch={setSearch}
+            placeholder="Search item..."
+            count={filtered.length}
+            filterCount={typeFilter !== "All" ? 1 : 0}
+            onFilter={() => setShowFilterModal(true)}
+            actions={
               <button
-                onClick={handleBulkDelete}
-                style={{
-                  padding: "7px 14px",
-                  borderRadius: 6,
-                  border: "1px solid rgba(239,68,68,0.4)",
-                  background: "rgba(239,68,68,0.15)",
-                  color: "#ef4444",
-                  fontSize: 12,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
-                }}
+                type="button"
+                className="lg-btn"
+                aria-pressed={showZeroStock}
+                onClick={() => setShowZeroStock(!showZeroStock)}
+                style={showZeroStock ? { background: "#242424" } : undefined}
               >
-                <i className="fa-solid fa-trash" style={{ marginRight: 6 }} />
-                Delete Selected ({selectedIds.length})
+                {showZeroStock ? "Hide zero stock" : "Show zero stock"}
               </button>
-            )}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".xlsx"
-              style={{ display: "none" }}
-              onChange={handleImport}
-            />
+            }
+            exportOptions={
+              canExportImport
+                ? [
+                    {
+                      label: "Excel",
+                      icon: "fa-solid fa-file-excel",
+                      onClick: handleExport,
+                    },
+                    {
+                      label: "PDF",
+                      icon: "fa-solid fa-file-pdf",
+                      onClick: handleExportPDF,
+                    },
+                  ]
+                : []
+            }
+            onImport={
+              canExportImport && !isClient
+                ? () => fileInputRef.current?.click()
+                : undefined
+            }
+            onTemplate={() => {
+              const headers = [
+                "Code",
+                "Name",
+                "Category",
+                "Type",
+                "Qty",
+                "Unit",
+                "Reorder Level",
+                "Rate (₹)",
+              ];
+              const example = [
+                "CS001",
+                "Example Item",
+                "General",
+                "Consumable",
+                "0",
+                "nos",
+                "10",
+                "100",
+              ];
+              const worksheet = XLSX.utils.aoa_to_sheet([headers, example]);
+              const workbook = XLSX.utils.book_new();
+              XLSX.utils.book_append_sheet(workbook, worksheet, "Template");
+              XLSX.writeFile(workbook, "consumable_template.xlsx");
+            }}
+          />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx"
+            style={{ display: "none" }}
+            onChange={handleImport}
+          />
 
-            {}
+          {showFilterModal && (
+            <FilterModal
+              onClose={() => setShowFilterModal(false)}
+              onReset={() => setTypeFilter("All")}
+            >
+              <Field label="Type">
+                <SortSelect
+                  value={typeFilter}
+                  onChange={setTypeFilter}
+                  options={TYPE_FILTERS.map((t) => [t, t])}
+                />
+              </Field>
+            </FilterModal>
+          )}
+
+          {!isClient && canDelete && selectedIds.length > 0 && (
             <div
               style={{
                 display: "flex",
-                gap: 0,
-                borderRadius: 6,
-                overflow: "hidden",
-                border: `1px solid ${C.border}`,
-                marginLeft: 4,
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "8px 16px",
+                margin: "12px 0",
+                background: "#1a1a1a",
+                border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: 10,
+                fontSize: 13,
+                color: "#a3a3a3",
               }}
             >
-              {TYPE_FILTERS.map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setTypeFilter(t)}
-                  style={{
-                    padding: "7px 14px",
-                    background:
-                      typeFilter === t
-                        ? "rgba(255,255,255,0.12)"
-                        : "rgba(255,255,255,0.05)",
-                    color: "#fff",
-                    fontWeight: typeFilter === t ? 700 : 400,
-                    fontSize: 12,
-                    border: "none",
-                    cursor: "pointer",
-                    borderRight:
-                      t !== TYPE_FILTERS[TYPE_FILTERS.length - 1]
-                        ? `1px solid ${C.border}`
-                        : "none",
-                  }}
-                >
-                  {t}
-                </button>
-              ))}
+              {selectedIds.length} selected
+              <button
+                type="button"
+                className="lg-btn lg-btn-danger"
+                onClick={handleBulkDelete}
+              >
+                <i className="fa-solid fa-trash" /> Delete selected
+              </button>
             </div>
+          )}
 
-            <span
-              style={{ fontSize: 12, color: C.muted, whiteSpace: "nowrap" }}
-            >
-              {filtered.length} items
-            </span>
-          </div>
+          <div style={{ height: 12 }} />
 
           {}
           <div
@@ -744,7 +669,10 @@ export default function ConsumableStock({
                   color: C.muted,
                 }}
               >
-                <div style={{ fontSize: 48, marginBottom: 12 }}>📦</div>
+                <i
+                  className="fa-solid fa-box"
+                  style={{ fontSize: 32, marginBottom: 12, color: "#6b6b6b" }}
+                />
                 <div
                   style={{
                     fontSize: 14,
@@ -783,10 +711,8 @@ export default function ConsumableStock({
                           padding: "10px 14px",
                           textAlign: "left",
                           fontSize: 11,
-                          fontWeight: 700,
+                          fontWeight: 600,
                           color: C.muted,
-                          textTransform: "uppercase",
-                          letterSpacing: "0.05em",
                           whiteSpace: "nowrap",
                           width: 40,
                         }}
@@ -809,29 +735,35 @@ export default function ConsumableStock({
                         />
                       </th>
                       {[
-                        "CODE",
-                        "NAME",
-                        "CATEGORY",
-                        "TYPE",
-                        "QTY",
-                        "UNIT",
-                        "REORDER",
-                        "RATE (₹)",
-                        "VALUE (₹)",
-                        "STATUS",
-                        "",
+                        "Code",
+                        "Item name",
+                        "Category",
+                        "Type",
+                        "Qty",
+                        "Unit",
+                        "Reorder",
+                        "Rate (₹)",
+                        "Value (₹)",
+                        "Status",
+                        "Actions",
                       ].map((h) => (
                         <th
                           key={h}
                           style={{
                             padding: "10px 14px",
-                            textAlign: "left",
+                            textAlign: [
+                              "Qty",
+                              "Reorder",
+                              "Rate (₹)",
+                              "Value (₹)",
+                            ].includes(h)
+                              ? "right"
+                              : "left",
                             fontSize: 11,
-                            fontWeight: 700,
+                            fontWeight: 600,
                             color: C.muted,
-                            textTransform: "uppercase",
-                            letterSpacing: "0.05em",
                             whiteSpace: "nowrap",
+                            width: h === "Actions" ? "1%" : undefined,
                           }}
                         >
                           {h}
@@ -846,10 +778,10 @@ export default function ConsumableStock({
                         (s.qty || 0) <= (s.reorderLevel || 0);
                       const out = (s.qty || 0) <= 0;
                       const statusColor = out
-                        ? C.red || "#ef4444"
+                        ? "#e0705f"
                         : low
-                          ? C.orange || "#f97316"
-                          : C.green || "#22c55e";
+                          ? "#c8955a"
+                          : "#86b894";
                       const statusLabel = out
                         ? "Out of Stock"
                         : low
@@ -861,7 +793,7 @@ export default function ConsumableStock({
                           style={{
                             borderBottom: "1px solid rgba(255,255,255,0.04)",
                             background: selectedIds.includes(s._id || s.id)
-                              ? (C.blue || "#3b82f6") + "11"
+                              ? "rgba(200, 149, 90, 0.06)"
                               : i % 2 === 0
                                 ? "transparent"
                                 : "rgba(255,255,255,0.01)",
@@ -888,14 +820,15 @@ export default function ConsumableStock({
                           <td
                             style={{
                               padding: "10px 14px",
-                              color: C.muted,
-                              fontSize: 11,
+                              color: "#c8955a",
+                              fontSize: 12,
+                              fontWeight: 500,
                             }}
                           >
                             {s.code || "—"}
                           </td>
-                          <td style={{ padding: "10px 14px", fontWeight: 600 }}>
-                            {s.name}
+                          <td style={{ padding: "10px 14px", fontWeight: 500 }}>
+                            <NameWithAvatar name={s.name} />
                           </td>
                           <td
                             style={{
@@ -910,9 +843,10 @@ export default function ConsumableStock({
                             <span
                               style={{
                                 padding: "2px 8px",
-                                borderRadius: 4,
-                                background: (C.blue || "#3b82f6") + "22",
-                                color: C.blue || "#3b82f6",
+                                borderRadius: 6,
+                                border: "1px solid rgba(255,255,255,0.08)",
+                                background: "rgba(255,255,255,0.06)",
+                                color: "#a3a3a3",
                                 fontSize: 11,
                                 fontWeight: 600,
                               }}
@@ -923,8 +857,9 @@ export default function ConsumableStock({
                           <td
                             style={{
                               padding: "10px 14px",
-                              fontWeight: 600,
-                              color: out ? C.red : C.text || "#e5e7eb",
+                              fontWeight: 500,
+                              textAlign: "right",
+                              color: out ? "#e0705f" : "#ededed",
                             }}
                           >
                             {fmt(s.qty || 0)}
@@ -943,18 +878,26 @@ export default function ConsumableStock({
                               padding: "10px 14px",
                               color: C.muted,
                               fontSize: 12,
+                              textAlign: "right",
                             }}
                           >
                             {s.reorderLevel ? fmt(s.reorderLevel) : "—"}
                           </td>
-                          <td style={{ padding: "10px 14px", color: C.muted }}>
+                          <td
+                            style={{
+                              padding: "10px 14px",
+                              color: C.muted,
+                              textAlign: "right",
+                            }}
+                          >
                             {s.rate ? `₹${fmt(s.rate)}` : "—"}
                           </td>
                           <td
                             style={{
                               padding: "10px 14px",
-                              fontWeight: 600,
-                              color: C.green || "#22c55e",
+                              fontWeight: 500,
+                              textAlign: "right",
+                              color: "#86b894",
                             }}
                           >
                             {s.rate && s.qty
@@ -966,10 +909,10 @@ export default function ConsumableStock({
                               style={{
                                 fontSize: 11,
                                 padding: "2px 8px",
-                                borderRadius: 4,
+                                borderRadius: 6,
                                 background: statusColor + "22",
                                 color: statusColor,
-                                fontWeight: 600,
+                                fontWeight: 500,
                               }}
                             >
                               {statusLabel}
@@ -977,75 +920,23 @@ export default function ConsumableStock({
                           </td>
                           <td style={{ padding: "12px 14px" }}>
                             <div style={{ display: "flex", gap: 6 }}>
-                              {!isClient && canEdit && (
-                                <button
-                                  onClick={() => {
-                                    setSelectedStock(s);
-                                    setView("form");
-                                    setEditId(s._id || s.id);
-                                    setEditData(s);
-                                  }}
-                                  style={{
-                                    background: "transparent",
-                                    color: "#8082ff",
-                                    border: "1px solid #8082ff98",
-                                    borderRadius: 6,
-                                    padding: "6px 12px",
-                                    fontSize: 11,
-                                    fontWeight: 500,
-                                    cursor: "pointer",
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    gap: 6,
-                                  }}
-                                >
-                                  <i className="fa-solid fa-pen-to-square" />{" "}
-                                  Edit
-                                </button>
-                              )}
                               {!isClient && canDelete && (
-                                <button
+                                <IconBtn
+                                  icon="fa-trash"
+                                  label="Delete"
+                                  danger
                                   onClick={() => handleDelete(s._id || s.id)}
-                                  style={{
-                                    background: "transparent",
-                                    color: "#8082ff",
-                                    border: "1px solid #8082ff98",
-                                    borderRadius: 6,
-                                    padding: "6px 12px",
-                                    fontSize: 11,
-                                    fontWeight: 500,
-                                    cursor: "pointer",
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    gap: 6,
-                                  }}
-                                >
-                                  <i className="fa-solid fa-trash" /> Delete
-                                </button>
+                                />
                               )}
                               {!isClient && (
-                                <button
+                                <IconBtn
+                                  icon="fa-arrow-right-from-bracket"
+                                  label="Issue item"
                                   onClick={() => {
                                     setSelectedStock(s);
                                     setView("issue");
                                   }}
-                                  style={{
-                                    background: "transparent",
-                                    color: "#8082ff",
-                                    border: "1px solid #8082ff98",
-                                    borderRadius: 6,
-                                    padding: "6px 12px",
-                                    fontSize: 11,
-                                    fontWeight: 500,
-                                    cursor: "pointer",
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    gap: 6,
-                                  }}
-                                >
-                                  <i className="fa-solid fa-arrow-right-from-bracket" />{" "}
-                                  Issue
-                                </button>
+                                />
                               )}
                             </div>
                           </td>
@@ -1067,7 +958,7 @@ export default function ConsumableStock({
             style={{
               fontSize: 14,
               fontWeight: 500,
-              color: C.orange || "#f97316",
+              color: C.accent,
               marginBottom: 16,
             }}
           >
@@ -1185,24 +1076,22 @@ export default function ConsumableStock({
             <div
               style={{
                 padding: "12px 16px",
-                background: (C.orange || "#f97316") + "11",
-                border: `1px solid ${C.orange || "#f97316"}44`,
+                background: "#c8955a" + "11",
+                border: `1px solid ${"#c8955a"}44`,
                 borderRadius: 6,
                 marginBottom: 16,
                 fontSize: 13,
               }}
             >
               Issue{" "}
-              <strong style={{ color: C.orange || "#f97316" }}>
-                {fmt(+issueQty)}
-              </strong>{" "}
+              <strong style={{ color: "#c8955a" }}>{fmt(+issueQty)}</strong>{" "}
               {selectedStock.unit || "nos"} of{" "}
               <strong>{selectedStock.name}</strong>
               {issueMachine && (
                 <>
                   {" "}
                   → Machine:{" "}
-                  <strong style={{ color: C.blue || "#3b82f6" }}>
+                  <strong style={{ color: "#c8955a" || "#c8955a" }}>
                     {issueMachine.name}
                   </strong>
                 </>
@@ -1212,7 +1101,7 @@ export default function ConsumableStock({
           <div style={{ display: "flex", gap: 10 }}>
             <SubmitBtn
               label="Issue Item"
-              color={C.green}
+              color={"#86b894"}
               onClick={handleIssue}
             />
             <button
@@ -1344,10 +1233,8 @@ export default function ConsumableStock({
                           padding: "10px 14px",
                           textAlign: "left",
                           fontSize: 11,
-                          fontWeight: 700,
+                          fontWeight: 600,
                           color: C.muted,
-                          textTransform: "uppercase",
-                          letterSpacing: "0.05em",
                           whiteSpace: "nowrap",
                         }}
                       >
@@ -1405,7 +1292,7 @@ export default function ConsumableStock({
                         style={{
                           padding: "9px 12px",
                           fontWeight: 500,
-                          color: C.orange || "#f97316",
+                          color: "#c8955a",
                           whiteSpace: "nowrap",
                         }}
                       >
@@ -1417,8 +1304,8 @@ export default function ConsumableStock({
                             style={{
                               padding: "2px 8px",
                               borderRadius: 4,
-                              background: (C.blue || "#3b82f6") + "22",
-                              color: C.blue || "#3b82f6",
+                              background: ("#c8955a" || "#c8955a") + "22",
+                              color: "#a3a3a3",
                               fontSize: 11,
                               fontWeight: 600,
                             }}
@@ -1461,24 +1348,6 @@ export default function ConsumableStock({
   );
 }
 
-function StatCard({ value, label, color }) {
-  return (
-    <div
-      style={{
-        padding: "16px 18px",
-        border: `1px solid ${color}44`,
-        borderRadius: 8,
-        background: color + "08",
-      }}
-    >
-      <div style={{ fontSize: 22, fontWeight: 900, color }}>{value}</div>
-      <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 4 }}>
-        {label}
-      </div>
-    </div>
-  );
-}
-
 function ActionBtn({ label, color, onClick }) {
   return (
     <button
@@ -1493,8 +1362,7 @@ function ActionBtn({ label, color, onClick }) {
         fontSize: 12,
         cursor: "pointer",
         whiteSpace: "nowrap",
-        boxShadow:
-          "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+        boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
       }}
     >
       {label}

@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { C } from "../constants/colors";
 import {
+  ListToolbar,
+  FilterModal,
+  Field as FilterField,
+  SortSelect,
   Card,
   SectionTitle,
   Badge,
   Field,
   SubmitBtn,
-  ImportBtn,
-  ExportBtn,
-  TemplateBtn,
   Modal,
   AutocompleteInput,
 } from "../components/ui/BasicComponents";
@@ -19,6 +20,7 @@ import {
   itemMasterAPI,
 } from "../api/auth";
 import * as XLSX from "xlsx";
+import { IconBtn } from "../components/ui/IconBtn";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 
@@ -29,6 +31,7 @@ export default function PrintingDetailMaster({
   const [printingMaster, setPrintingMaster] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showFilterModal, setShowFilterModal] = useState(false);
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [companyMaster, setCompanyMaster] = useState([]);
   const [plateTools, setPlateTools] = useState([]);
@@ -358,118 +361,83 @@ export default function PrintingDetailMaster({
     padding: "10px 14px",
     textAlign: "left",
     fontSize: 11,
-    fontWeight: 700,
+    fontWeight: 600,
     color: C.muted,
-    textTransform: "uppercase",
-    letterSpacing: "0.05em",
     whiteSpace: "nowrap",
   };
 
   const CELL_STYLE = {
     padding: "16px",
     fontSize: 13,
-    color: "#e2e8f0",
+    color: "#ededed",
     borderBottom: `1px solid ${C.border}22`,
   };
 
   return (
-    <div className="fade" style={{ color: "#e2e8f0" }}>
+    <div className="fade" style={{ color: "#ededed" }}>
       <SectionTitle
-        icon="🖨️"
+        icon="fa-solid fa-print"
         title="Printing Detail Master"
         sub="Saved printing specs per item — auto-populates new Job Orders"
       />
 
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 24,
-          gap: 16,
+      <ListToolbar
+        onSelectModeChange={(on) => {
+          if (!on) setSelectedIds(new Set());
         }}
-      >
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          <div style={{ position: "relative", width: 280 }}>
-            <input
-              placeholder="Search items, clients or sizes..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "10px 14px 10px 38px",
-                background: "#1e293b",
-                border: `1px solid ${C.border}`,
-                borderRadius: 8,
-                fontSize: 13,
-                color: "#e2e8f0",
-                outline: "none",
-              }}
+        search={searchTerm}
+        setSearch={setSearchTerm}
+        placeholder="Search items, clients or sizes..."
+        count={filteredData.length}
+        filterCount={catFilter !== "All" ? 1 : 0}
+        onFilter={() => setShowFilterModal(true)}
+        exportOptions={
+          canExportImport
+            ? [
+                {
+                  label: "Excel",
+                  icon: "fa-solid fa-file-excel",
+                  onClick: exportToExcel,
+                },
+              ]
+            : []
+        }
+        onAdd={() => {
+          setEditingId(null);
+          setEntry(blankEntry);
+          setShowModal(true);
+        }}
+        addLabel="Add spec"
+        onImport={
+          canExportImport ? () => fileInputRef.current?.click() : undefined
+        }
+        onTemplate={downloadTemplate}
+      />
+      <input
+        ref={fileInputRef}
+        type="file"
+        hidden
+        accept=".xlsx, .xls"
+        onChange={handleImport}
+      />
+      {showFilterModal && (
+        <FilterModal
+          onClose={() => setShowFilterModal(false)}
+          onReset={() => setCatFilter("All")}
+        >
+          <FilterField label="Category">
+            <SortSelect
+              value={catFilter}
+              onChange={setCatFilter}
+              options={uniqueCategories.map((c) => [
+                c,
+                c === "All" ? "All categories" : c,
+              ])}
             />
-          </div>
-
-          <select
-            value={catFilter}
-            onChange={(e) => setCatFilter(e.target.value)}
-            style={{
-              padding: "9px 12px",
-              background: "#1e293b",
-              border: `1px solid ${C.border}`,
-              borderRadius: 8,
-              fontSize: 13,
-              color: "#e2e8f0",
-              outline: "none",
-              cursor: "pointer",
-              minWidth: 150,
-            }}
-          >
-            {uniqueCategories.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat === "All" ? "All Categories" : cat}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div style={{ display: "flex", gap: 10 }}>
-          <TemplateBtn onClick={downloadTemplate} />
-
-          {canExportImport && (
-            <ImportBtn onClick={() => fileInputRef.current?.click()} />
-          )}
-          <input
-            ref={fileInputRef}
-            type="file"
-            hidden
-            accept=".xlsx, .xls"
-            onChange={handleImport}
-          />
-
-          {canExportImport && <ExportBtn onClick={exportToExcel} />}
-
-          <button
-            onClick={() => {
-              setEditingId(null);
-              setEntry(blankEntry);
-              setShowModal(true);
-            }}
-            style={{
-              background: "rgba(255,255,255,0.08)",
-              border: "1px solid rgba(255,255,255,0.18)",
-              color: "#fff",
-              padding: "9px 18px",
-              borderRadius: 10,
-              fontWeight: 600,
-              fontSize: 13,
-              cursor: "pointer",
-              boxShadow:
-                "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
-            }}
-          >
-            ➕ Add Spec
-          </button>
-        </div>
-      </div>
+          </FilterField>
+        </FilterModal>
+      )}
+      <div style={{ height: 12 }} />
 
       {showModal && (
         <Modal
@@ -726,10 +694,10 @@ export default function PrintingDetailMaster({
                         cursor: "pointer",
                         background: entry.process.includes(proc)
                           ? "#FF7F1122"
-                          : "#1e293b",
+                          : "#1f1f1f",
                         padding: "6px 12px",
-                        borderRadius: 20,
-                        border: `1px solid ${entry.process.includes(proc) ? "#FF7F11" : "#334155"}`,
+                        borderRadius: 6,
+                        border: `1px solid ${entry.process.includes(proc) ? "#FF7F11" : "#3a3a3a"}`,
                         fontSize: 12,
                       }}
                     >
@@ -743,7 +711,7 @@ export default function PrintingDetailMaster({
                         style={{
                           color: entry.process.includes(proc)
                             ? "#FF7F11"
-                            : "#94a3b8",
+                            : "#a3a3a3",
                         }}
                       >
                         {entry.process.includes(proc) ? "✓" : "+"} {proc}
@@ -799,48 +767,30 @@ export default function PrintingDetailMaster({
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  padding: "10px 14px",
-                  marginBottom: 10,
-                  background: "rgba(239,68,68,0.08)",
-                  border: "1px solid rgba(239,68,68,0.3)",
-                  borderRadius: 8,
+                  padding: "8px 16px",
+                  marginBottom: 12,
+                  background: "#1a1a1a",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: 10,
+                  fontSize: 13,
+                  color: "#a3a3a3",
                 }}
               >
-                <span
-                  style={{ fontSize: 13, fontWeight: 600, color: "#fecaca" }}
-                >
-                  {selectedIds.size} selected
-                </span>
+                {selectedIds.size} selected
                 <div style={{ display: "flex", gap: 8 }}>
                   <button
+                    type="button"
+                    className="lg-btn"
                     onClick={() => setSelectedIds(new Set())}
-                    style={{
-                      padding: "5px 12px",
-                      borderRadius: 5,
-                      border: "1px solid rgba(255,255,255,0.15)",
-                      background: "rgba(255,255,255,0.06)",
-                      color: "#fff",
-                      fontSize: 12,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                    }}
                   >
                     Clear
                   </button>
                   <button
+                    type="button"
+                    className="lg-btn lg-btn-danger"
                     onClick={handleBulkDelete}
-                    style={{
-                      padding: "5px 12px",
-                      borderRadius: 5,
-                      border: "1px solid rgba(239,68,68,0.4)",
-                      background: "rgba(239,68,68,0.15)",
-                      color: "#ef4444",
-                      fontSize: 12,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                    }}
                   >
-                    Delete Selected
+                    <i className="fa-solid fa-trash" /> Delete selected
                   </button>
                 </div>
               </div>
@@ -930,7 +880,7 @@ export default function PrintingDetailMaster({
                           />
                         </td>
                         <td style={CELL_STYLE}>
-                          <div style={{ fontWeight: 800, fontSize: 14 }}>
+                          <div style={{ fontWeight: 600, fontSize: 14 }}>
                             {item.itemName}
                           </div>
                           <div
@@ -941,49 +891,24 @@ export default function PrintingDetailMaster({
                               marginTop: 4,
                             }}
                           >
-                            <span style={{ fontSize: 11, color: "#94a3b8" }}>
+                            <span style={{ fontSize: 11, color: "#a3a3a3" }}>
                               {item.companyName}
                             </span>
                           </div>
                           <div
                             style={{ display: "flex", gap: 6, marginTop: 12 }}
                           >
-                            <button
+                            <IconBtn
+                              icon="fa-pen-to-square"
+                              label="Edit"
                               onClick={() => handleEdit(item)}
-                              style={{
-                                background: "transparent",
-                                color: "#8082ff",
-                                border: "1px solid #8082ff98",
-                                borderRadius: 6,
-                                padding: "6px 12px",
-                                fontSize: 11,
-                                fontWeight: 500,
-                                cursor: "pointer",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 6,
-                              }}
-                            >
-                              <i className="fa-solid fa-pen-to-square" /> Edit
-                            </button>
-                            <button
+                            />
+                            <IconBtn
+                              icon="fa-trash"
+                              label="Delete"
+                              danger
                               onClick={() => handleDelete(item._id)}
-                              style={{
-                                background: "transparent",
-                                color: "#8082ff",
-                                border: "1px solid #8082ff98",
-                                borderRadius: 6,
-                                padding: "6px 12px",
-                                fontSize: 11,
-                                fontWeight: 500,
-                                cursor: "pointer",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 6,
-                              }}
-                            >
-                              <i className="fa-solid fa-trash" /> Delete
-                            </button>
+                            />
                           </div>
                         </td>
                         <td style={CELL_STYLE}>
@@ -997,7 +922,7 @@ export default function PrintingDetailMaster({
                           {item.companyCategory ? (
                             <Badge
                               text={item.companyCategory}
-                              color="#3b82f6"
+                              color="#c8955a"
                             />
                           ) : (
                             "—"
@@ -1012,9 +937,9 @@ export default function PrintingDetailMaster({
                             }}
                           >
                             {item.plate && (
-                              <Badge text={item.plate} color="#3b82f6" />
+                              <Badge text={item.plate} color="#c8955a" />
                             )}
-                            <span style={{ fontWeight: 700 }}>
+                            <span style={{ fontWeight: 600 }}>
                               {item.printing || "0"}
                             </span>
                           </div>
@@ -1023,11 +948,11 @@ export default function PrintingDetailMaster({
                               style={{
                                 marginTop: 4,
                                 fontSize: 10,
-                                color: "#a78bfa",
-                                fontWeight: 700,
+                                color: "#c8955a",
+                                fontWeight: 600,
                               }}
                             >
-                              🪨 {item.linkedPlateCode}
+                              {item.linkedPlateCode}
                             </div>
                           )}
                           {item.linkedDieCode && (
@@ -1036,10 +961,10 @@ export default function PrintingDetailMaster({
                                 marginTop: 2,
                                 fontSize: 10,
                                 color: "#fb923c",
-                                fontWeight: 700,
+                                fontWeight: 600,
                               }}
                             >
-                              ✂️ {item.linkedDieCode}
+                              {item.linkedDieCode}
                             </div>
                           )}
                           {item.linkedFGCode && (
@@ -1048,10 +973,10 @@ export default function PrintingDetailMaster({
                                 marginTop: 2,
                                 fontSize: 10,
                                 color: "#ff7800",
-                                fontWeight: 700,
+                                fontWeight: 600,
                               }}
                             >
-                              📦 {item.linkedFGCode}
+                              {item.linkedFGCode}
                             </div>
                           )}
                         </td>
@@ -1073,7 +998,7 @@ export default function PrintingDetailMaster({
                                   borderRadius: 4,
                                   background: "#FF7F1115",
                                   color: "#FF7F11",
-                                  fontWeight: 800,
+                                  fontWeight: 600,
                                   border: "1px solid #FF7F1133",
                                 }}
                               >
@@ -1084,19 +1009,19 @@ export default function PrintingDetailMaster({
                         </td>
                         <td style={CELL_STYLE}>{item.paperType || "—"}</td>
                         <td style={CELL_STYLE}>
-                          <span style={{ color: "#3b82f6", fontWeight: 700 }}>
+                          <span style={{ color: "#c8955a", fontWeight: 600 }}>
                             {item.paperGsm}g
                           </span>
                         </td>
                         <td style={CELL_STYLE}>
-                          <div style={{ fontWeight: 700 }}>
+                          <div style={{ fontWeight: 600 }}>
                             {item.paperCategory === "Paper Sheets"
                               ? item.noOfUps || "—"
                               : "—"}
                           </div>
                         </td>
                         <td style={CELL_STYLE}>
-                          <span style={{ color: "#22c55e", fontWeight: 700 }}>
+                          <span style={{ color: "#86b894", fontWeight: 600 }}>
                             {item.paperCategory === "Paper Reel"
                               ? `${item.reelWidthMm || "—"}mm`
                               : item.sheetW && item.sheetL
@@ -1115,13 +1040,13 @@ export default function PrintingDetailMaster({
       })()}
 
       <style>{`
-        .row-hover:hover { background: #1e293b44; }
+        .row-hover:hover { background: #1f1f1f44; }
         .row-hover { transition: background 0.2s; }
         input, select { 
           width: 100%; 
           padding: 10px 12px; 
-          background: #1e293b; 
-          border: 1px solid #334155; 
+          background: #1f1f1f; 
+          border: 1px solid #3a3a3a; 
           border-radius: 8px; 
           color: #fff; 
           font-size: 13px;

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import * as XLSX from "xlsx";
 import ConfirmModal from "../components/ConfirmModal";
 import { C, PROCESS_COLORS } from "../constants/colors";
 import {
@@ -7,12 +8,15 @@ import {
 } from "../constants/seedData";
 import {
   Card,
-  SectionTitle,
   Field,
   SubmitBtn,
   AutocompleteInput,
   DateRangeFilter,
   Modal,
+  SelectToggle,
+  ListToolbar,
+  FilterModal,
+  SortSelect,
 } from "../components/ui/BasicComponents";
 import { DatePicker } from "../components/ui/DatePicker";
 import {
@@ -23,6 +27,9 @@ import {
   categoryMasterAPI,
   itemMasterAPI,
 } from "../api/auth";
+import { IconBtn } from "../components/ui/IconBtn";
+import { StatCard } from "../components/ui/StatCard";
+import { fmtCompact } from "../utils/formatINR";
 
 const today = () => new Date().toISOString().slice(0, 10);
 const fmt = (n) => (n ?? 0).toLocaleString("en-IN");
@@ -92,7 +99,6 @@ const SubLabel = ({ text }) => (
       fontWeight: 500,
       letterSpacing: "normal",
       color: C.yellow || "#facc15",
-      textTransform: "uppercase",
       marginBottom: 14,
       marginTop: 4,
     }}
@@ -623,6 +629,9 @@ export default function JobOrders(props) {
   const [filterClient, setFilterClient] = useState("");
   const [filterItem, setFilterItem] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
+  const [showFilterModal, setShowFilterModal] = useState(false);
 
   const soOptions = useMemo(
     () =>
@@ -891,29 +900,29 @@ export default function JobOrders(props) {
             body { font-family: 'Inter', sans-serif; padding: 20px 30px; color: #1a1a1a; line-height: 1.4; }
             .header { text-align: center; border-bottom: 2px solid #1e40af; padding-bottom: 10px; margin-bottom: 20px; }
             .header h1 { color: #1e3a8a; margin: 0; font-size: 24px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
-            .header p { margin: 2px 0; font-size: 11px; color: #475569; font-weight: 500; }
+            .header p { margin: 2px 0; font-size: 11px; color: #6b6b6b; font-weight: 500; }
             
             .doc-title { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px; }
-            .doc-title h2 { margin: 0; font-size: 20px; font-weight: 700; color: #1e293b; }
+            .doc-title h2 { margin: 0; font-size: 20px; font-weight: 700; color: #1f1f1f; }
             .status { color: #1e40af; font-weight: 700; font-size: 12px; }
             
-            .hr { height: 1px; background: #e2e8f0; margin: 10px 0; border: none; }
+            .hr { height: 1px; background: #ededed; margin: 10px 0; border: none; }
             .jo-no { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 800; color: #1e40af; margin: 5px 0; }
             
-            .section-label { font-size: 10px; color: #64748b; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 15px; margin-top: 25px; background: #f8fafc; padding: 4px 8px; border-radius: 4px; }
+            .section-label { font-size: 10px; color: #8a8a8a; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 15px; margin-top: 25px; background: #f8fafc; padding: 4px 8px; border-radius: 4px; }
             
             .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 15px; }
-            .info-item label { display: block; font-size: 9px; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
-            .info-item span { font-size: 12px; font-weight: 600; color: #1e293b; }
+            .info-item label { display: block; font-size: 9px; color: #a3a3a3; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
+            .info-item span { font-size: 12px; font-weight: 600; color: #1f1f1f; }
             
             table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-            th { background: #f8fafc; border: 1px solid #e2e8f0; padding: 6px; text-align: left; font-size: 9px; font-weight: 800; text-transform: uppercase; color: #475569; }
-            td { border: 1px solid #e2e8f0; padding: 6px; font-size: 11px; color: #1e293b; }
+            th { background: #f8fafc; border: 1px solid #ededed; padding: 6px; text-align: left; font-size: 9px; font-weight: 800; text-transform: uppercase; color: #6b6b6b; }
+            td { border: 1px solid #ededed; padding: 6px; font-size: 11px; color: #1f1f1f; }
             
             .process-tag { display: inline-block; background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; margin-right: 5px; margin-bottom: 5px; border: 1px solid #bfdbfe; }
             
             .footer { margin-top: 50px; display: flex; justify-content: space-between; }
-            .signature { border-top: 1px solid #cbd5e1; width: 180px; text-align: center; padding-top: 8px; font-size: 11px; color: #64748b; font-weight: 600; }
+            .signature { border-top: 1px solid #c7c7c7; width: 180px; text-align: center; padding-top: 8px; font-size: 11px; color: #8a8a8a; font-weight: 600; }
             
             @media print {
               body { padding: 0; }
@@ -1025,8 +1034,8 @@ export default function JobOrders(props) {
           ${
             r.hasSecondPaper
               ? `
-          <div style="margin-top: 10px; padding: 10px; border: 1px dashed #cbd5e1; border-radius: 6px;">
-            <label style="display: block; font-size: 8px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 5px;">Second Paper Details</label>
+          <div style="margin-top: 10px; padding: 10px; border: 1px dashed #c7c7c7; border-radius: 6px;">
+            <label style="display: block; font-size: 8px; font-weight: 800; color: #8a8a8a; text-transform: uppercase; margin-bottom: 5px;">Second Paper Details</label>
             <div class="info-grid">
                <div class="info-item">
                 <label>Type</label>
@@ -1088,7 +1097,7 @@ export default function JobOrders(props) {
           </table>
 
           <div class="section-label">Special Remarks / Instructions</div>
-          <div style="min-height: 40px; font-size: 11px; font-style: italic; color: #475569;">
+          <div style="min-height: 40px; font-size: 11px; font-style: italic; color: #6b6b6b;">
             ${r.remarks || "No special instructions provided."}
           </div>
 
@@ -1130,39 +1139,6 @@ export default function JobOrders(props) {
   return (
     <>
       <div className="fade">
-        <SectionTitle
-          icon="fa-solid fa-gears"
-          title="Job Orders"
-          sub="Create production job orders linked to sales orders"
-        />
-
-        <div style={{ marginBottom: 20 }}>
-          {canCreate && (
-            <button
-              onClick={() => {
-                setEditId(null);
-                setHeader(blankHeader);
-                setHeaderErrors({});
-                setShowModal(true);
-              }}
-              style={{
-                background: "rgba(255,255,255,0.08)",
-                border: "1px solid rgba(255,255,255,0.18)",
-                color: "#fff",
-                padding: "9px 18px",
-                borderRadius: 10,
-                fontWeight: 600,
-                fontSize: 13,
-                cursor: "pointer",
-                boxShadow:
-                  "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
-              }}
-            >
-              + New Job Order
-            </button>
-          )}
-        </div>
-
         {}
         {showModal && (
           <Modal
@@ -1179,7 +1155,7 @@ export default function JobOrders(props) {
                 style={{
                   fontSize: 15,
                   fontWeight: 500,
-                  color: C.yellow || "#facc15",
+                  color: C.accent,
                   marginBottom: 24,
                 }}
               >
@@ -1458,7 +1434,8 @@ export default function JobOrders(props) {
                             fontWeight: active ? 700 : 400,
                             fontSize: 12,
                             cursor: "pointer",
-                            transition: "all 0.15s",
+                            transition:
+                              "background-color .15s, border-color .15s, color .15s, opacity .15s, transform .15s",
                           }}
                         >
                           {proc}
@@ -1523,11 +1500,9 @@ export default function JobOrders(props) {
                           <div
                             style={{
                               fontSize: 12,
-                              fontWeight: 800,
+                              fontWeight: 600,
                               color: accentColor,
                               marginBottom: 12,
-                              textTransform: "uppercase",
-                              letterSpacing: "0.05em",
                             }}
                           >
                             {proc}
@@ -1725,17 +1700,15 @@ export default function JobOrders(props) {
                   <div
                     style={{
                       fontSize: 11,
-                      fontWeight: 700,
-                      color: "#facc15",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.06em",
+                      fontWeight: 600,
+                      color: "#c8955a",
                       marginBottom: 12,
                     }}
                   >
                     Paper Bag — RM Calculation
                   </div>
                   {!bagRmData.w ? (
-                    <div style={{ fontSize: 12, color: "#94a3b8" }}>
+                    <div style={{ fontSize: 12, color: "#a3a3a3" }}>
                       Enter bag size as W×G×H (e.g. 21×12×33 cm) to calculate RM
                       required
                     </div>
@@ -1752,9 +1725,8 @@ export default function JobOrders(props) {
                         <div
                           style={{
                             fontSize: 10,
-                            color: "#94a3b8",
+                            color: "#a3a3a3",
                             marginBottom: 2,
-                            textTransform: "uppercase",
                           }}
                         >
                           Reel Width (RW)
@@ -1762,8 +1734,8 @@ export default function JobOrders(props) {
                         <div
                           style={{
                             fontSize: 15,
-                            fontWeight: 700,
-                            color: "#e2e8f0",
+                            fontWeight: 600,
+                            color: "#ededed",
                           }}
                         >
                           {bagRmData.rw} mm
@@ -1771,7 +1743,7 @@ export default function JobOrders(props) {
                         <div
                           style={{
                             fontSize: 10,
-                            color: "#64748b",
+                            color: "#8a8a8a",
                             marginTop: 2,
                           }}
                         >
@@ -1782,9 +1754,8 @@ export default function JobOrders(props) {
                         <div
                           style={{
                             fontSize: 10,
-                            color: "#94a3b8",
+                            color: "#a3a3a3",
                             marginBottom: 2,
-                            textTransform: "uppercase",
                           }}
                         >
                           Cut Length (CL)
@@ -1792,8 +1763,8 @@ export default function JobOrders(props) {
                         <div
                           style={{
                             fontSize: 15,
-                            fontWeight: 700,
-                            color: "#e2e8f0",
+                            fontWeight: 600,
+                            color: "#ededed",
                           }}
                         >
                           {bagRmData.cl} mm
@@ -1801,7 +1772,7 @@ export default function JobOrders(props) {
                         <div
                           style={{
                             fontSize: 10,
-                            color: "#64748b",
+                            color: "#8a8a8a",
                             marginTop: 2,
                           }}
                         >
@@ -1812,9 +1783,8 @@ export default function JobOrders(props) {
                         <div
                           style={{
                             fontSize: 10,
-                            color: "#94a3b8",
+                            color: "#a3a3a3",
                             marginBottom: 2,
-                            textTransform: "uppercase",
                           }}
                         >
                           Bag Weight
@@ -1822,8 +1792,8 @@ export default function JobOrders(props) {
                         <div
                           style={{
                             fontSize: 15,
-                            fontWeight: 700,
-                            color: "#e2e8f0",
+                            fontWeight: 600,
+                            color: "#ededed",
                           }}
                         >
                           {bagRmData.bagWeightG.toFixed(2)} g/bag
@@ -1831,7 +1801,7 @@ export default function JobOrders(props) {
                         <div
                           style={{
                             fontSize: 10,
-                            color: "#64748b",
+                            color: "#8a8a8a",
                             marginTop: 2,
                           }}
                         >
@@ -1843,9 +1813,8 @@ export default function JobOrders(props) {
                           <div
                             style={{
                               fontSize: 10,
-                              color: "#94a3b8",
+                              color: "#a3a3a3",
                               marginBottom: 2,
-                              textTransform: "uppercase",
                             }}
                           >
                             Total RM Required
@@ -1853,8 +1822,8 @@ export default function JobOrders(props) {
                           <div
                             style={{
                               fontSize: 17,
-                              fontWeight: 800,
-                              color: "#facc15",
+                              fontWeight: 600,
+                              color: "#c8955a",
                             }}
                           >
                             ~{bagRmData.totalKg.toFixed(1)} kg
@@ -1862,7 +1831,7 @@ export default function JobOrders(props) {
                           <div
                             style={{
                               fontSize: 10,
-                              color: "#64748b",
+                              color: "#8a8a8a",
                               marginTop: 2,
                             }}
                           >
@@ -2008,7 +1977,6 @@ export default function JobOrders(props) {
                       fontWeight: 500,
                       letterSpacing: "normal",
                       color: C.muted,
-                      textTransform: "uppercase",
                       marginBottom: 6,
                     }}
                   >
@@ -2130,10 +2098,8 @@ export default function JobOrders(props) {
                   <div
                     style={{
                       fontSize: 11,
-                      fontWeight: 700,
-                      color: C.yellow || "#facc15",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
+                      fontWeight: 600,
+                      color: C.accent,
                       marginBottom: 14,
                     }}
                   >
@@ -2400,93 +2366,7 @@ export default function JobOrders(props) {
         )}
 
         {}
-        <Card>
-          <div
-            style={{
-              display: "flex",
-              gap: 12,
-              alignItems: "center",
-              flexWrap: "wrap",
-              marginBottom: 14,
-            }}
-          >
-            <h3
-              style={{
-                fontSize: 14,
-                fontWeight: 500,
-                color: C.muted,
-                margin: 0,
-              }}
-            >
-              Job Orders
-            </h3>
-            <DateRangeFilter
-              dateFrom={drDateFrom}
-              setDateFrom={setDrDateFrom}
-              dateTo={drDateTo}
-              setDateTo={setDrDateTo}
-            />
-            <AutocompleteInput
-              value={filterClient}
-              onChange={(v) => setFilterClient(v)}
-              suggestions={[
-                ...new Set(
-                  (jobOrders || []).map((r) => r.companyName).filter(Boolean),
-                ),
-              ].sort()}
-              placeholder="Filter by client..."
-              showAllOnFocus={true}
-              inputStyle={{
-                padding: "6px 10px",
-                background: "#0c0c0e",
-                border: `1px solid ${C.border}`,
-                borderRadius: 6,
-                color: "#fff",
-                fontSize: 12,
-                width: 180,
-              }}
-            />
-            <AutocompleteInput
-              value={filterItem}
-              onChange={(v) => setFilterItem(v)}
-              suggestions={[
-                ...new Set(
-                  (jobOrders || []).map((r) => r.itemName).filter(Boolean),
-                ),
-              ].sort()}
-              placeholder="Filter by item..."
-              showAllOnFocus={true}
-              inputStyle={{
-                padding: "6px 10px",
-                background: "#0c0c0e",
-                border: `1px solid ${C.border}`,
-                borderRadius: 6,
-                color: "#fff",
-                fontSize: 12,
-                width: 180,
-              }}
-            />
-            <AutocompleteInput
-              value={filterStatus}
-              onChange={(v) => setFilterStatus(v)}
-              suggestions={["Open", "In Progress", "Completed", "Cancelled"]}
-              placeholder="Filter by status..."
-              showAllOnFocus={true}
-              inputStyle={{
-                padding: "6px 10px",
-                background: "#0c0c0e",
-                border: `1px solid ${C.border}`,
-                borderRadius: 6,
-                color: "#fff",
-                fontSize: 12,
-                width: 150,
-              }}
-            />
-            <span style={{ fontSize: 12, color: C.muted, marginLeft: "auto" }}>
-              {jobOrders.length} jobs
-            </span>
-          </div>
-
+        <>
           {(() => {
             const filteredJOs = (jobOrders || [])
               .slice()
@@ -2508,8 +2388,64 @@ export default function JobOrders(props) {
                 if (filterItem && (r.itemName || "") !== filterItem)
                   return false;
                 if (filterStatus && r.status !== filterStatus) return false;
+                if (searchQuery) {
+                  const q = searchQuery.toLowerCase();
+                  const hay =
+                    `${r.joNo || ""} ${r.companyName || ""} ${r.itemName || ""}`.toLowerCase();
+                  if (!hay.includes(q)) return false;
+                }
                 return true;
               });
+            const joTime = (r) => new Date(r.createdAt || r.jobcardDate || 0);
+            const joSort = {
+              newest: null,
+              oldest: (a, b) => joTime(a) - joTime(b),
+              jo_asc: (a, b) =>
+                String(a.joNo || "").localeCompare(
+                  String(b.joNo || ""),
+                  undefined,
+                  { numeric: true },
+                ),
+              client_asc: (a, b) =>
+                String(a.companyName || "").localeCompare(
+                  String(b.companyName || ""),
+                ),
+              qty_desc: (a, b) => +(b.orderQty || 0) - +(a.orderQty || 0),
+              qty_asc: (a, b) => +(a.orderQty || 0) - +(b.orderQty || 0),
+            }[sortBy];
+            if (joSort) filteredJOs.sort(joSort);
+            const JO_SORT = [
+              ["newest", "Newest first"],
+              ["oldest", "Oldest first"],
+              ["jo_asc", "JO No (A → Z)"],
+              ["client_asc", "Client (A → Z)"],
+              ["qty_desc", "Qty (high → low)"],
+              ["qty_asc", "Qty (low → high)"],
+            ];
+            const activeFilterCount =
+              (filterClient ? 1 : 0) +
+              (filterItem ? 1 : 0) +
+              (filterStatus ? 1 : 0) +
+              (drDateFrom || drDateTo ? 1 : 0) +
+              (sortBy !== "newest" ? 1 : 0);
+            const exportJOExcel = () => {
+              const rows = filteredJOs.map((r) => [
+                r.joNo,
+                (r.jobcardDate || "").slice(0, 10),
+                r.companyName || "",
+                r.itemName || "",
+                r.orderQty || "",
+                (r.process || []).join(", "),
+                r.status || "",
+              ]);
+              const ws = XLSX.utils.aoa_to_sheet([
+                ["JO No", "Date", "Client", "Item", "Qty", "Process", "Status"],
+                ...rows,
+              ]);
+              const wb = XLSX.utils.book_new();
+              XLSX.utils.book_append_sheet(wb, ws, "Job Orders");
+              XLSX.writeFile(wb, `job-orders-${today()}.xlsx`);
+            };
             const filteredIds = filteredJOs.map((r) => r._id || r.id);
             const allSelected =
               filteredIds.length > 0 &&
@@ -2543,7 +2479,7 @@ export default function JobOrders(props) {
               },
               {
                 label: "Total Qty",
-                value: fmt(totalQty) + " pcs",
+                value: fmtCompact(totalQty) + " pcs",
                 icon: "fa-solid fa-boxes-stacked",
               },
             ];
@@ -2552,67 +2488,127 @@ export default function JobOrders(props) {
                 <div
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "repeat(4, 1fr)",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
                     gap: 12,
                     marginBottom: 16,
                   }}
                 >
                   {statCards.map(({ label, value, icon }) => (
-                    <div
+                    <StatCard
                       key={label}
-                      style={{
-                        padding: "16px 20px",
-                        background: "transparent",
-                        border: "1px solid rgba(255,255,255,0.07)",
-                        borderRadius: 12,
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          marginBottom: 8,
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: 19,
-                            color: "#ffffff",
-                            fontWeight: 600,
-                            textTransform: "uppercase",
-                            letterSpacing: "0.05em",
-                          }}
-                        >
-                          {label}
-                        </span>
-                        <i
-                          className={icon}
-                          style={{
-                            color: C.muted,
-                            fontSize: 20,
-                            opacity: 0.9,
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            height: 28,
-                            width: 28,
-                            lineHeight: 1,
-                          }}
-                        />
-                      </div>
-                      <div
-                        style={{
-                          fontSize: 20,
-                          fontWeight: 800,
-                          color: "#fff",
-                        }}
-                      >
-                        {value}
-                      </div>
-                    </div>
+                      label={label}
+                      value={value}
+                      icon={icon}
+                    />
                   ))}
                 </div>
+
+                <ListToolbar
+                  search={searchQuery}
+                  setSearch={setSearchQuery}
+                  placeholder="Search JO, client, item..."
+                  count={filteredJOs.length}
+                  filterCount={activeFilterCount}
+                  onFilter={() => setShowFilterModal(true)}
+                  actions={
+                    <SelectToggle
+                      onChange={(on) => {
+                        if (!on) setSelectedIds(new Set());
+                      }}
+                    />
+                  }
+                  exportOptions={[
+                    {
+                      label: "Excel",
+                      icon: "fa-solid fa-file-excel",
+                      onClick: exportJOExcel,
+                    },
+                  ]}
+                  onAdd={
+                    canCreate
+                      ? () => {
+                          setEditId(null);
+                          setHeader(blankHeader);
+                          setHeaderErrors({});
+                          setShowModal(true);
+                        }
+                      : undefined
+                  }
+                />
+
+                {showFilterModal && (
+                  <FilterModal
+                    onClose={() => setShowFilterModal(false)}
+                    onReset={() => {
+                      setFilterClient("");
+                      setFilterItem("");
+                      setFilterStatus("");
+                      setDrDateFrom("");
+                      setDrDateTo("");
+                      setSortBy("newest");
+                    }}
+                  >
+                    <Field label="Client">
+                      <AutocompleteInput
+                        value={filterClient}
+                        onChange={(v) => setFilterClient(v)}
+                        suggestions={[
+                          ...new Set(
+                            (jobOrders || [])
+                              .map((r) => r.companyName)
+                              .filter(Boolean),
+                          ),
+                        ].sort()}
+                        placeholder="All clients"
+                        showAllOnFocus={true}
+                      />
+                    </Field>
+                    <Field label="Item">
+                      <AutocompleteInput
+                        value={filterItem}
+                        onChange={(v) => setFilterItem(v)}
+                        suggestions={[
+                          ...new Set(
+                            (jobOrders || [])
+                              .map((r) => r.itemName)
+                              .filter(Boolean),
+                          ),
+                        ].sort()}
+                        placeholder="All items"
+                        showAllOnFocus={true}
+                      />
+                    </Field>
+                    <Field label="Status">
+                      <AutocompleteInput
+                        value={filterStatus}
+                        onChange={(v) => setFilterStatus(v)}
+                        suggestions={[
+                          "Open",
+                          "In Progress",
+                          "Completed",
+                          "Cancelled",
+                        ]}
+                        placeholder="All statuses"
+                        showAllOnFocus={true}
+                      />
+                    </Field>
+                    <Field label="Job Card Date">
+                      <DateRangeFilter
+                        dateFrom={drDateFrom}
+                        setDateFrom={setDrDateFrom}
+                        dateTo={drDateTo}
+                        setDateTo={setDrDateTo}
+                      />
+                    </Field>
+                    <Field label="Sort by">
+                      <SortSelect
+                        value={sortBy}
+                        onChange={setSortBy}
+                        options={JO_SORT}
+                      />
+                    </Field>
+                  </FilterModal>
+                )}
 
                 {selectedIds.size > 0 && (
                   <div
@@ -2746,10 +2742,8 @@ export default function JobOrders(props) {
                                 padding: "10px 14px",
                                 textAlign: "left",
                                 fontSize: 11,
-                                fontWeight: 700,
+                                fontWeight: 600,
                                 color: C.muted,
-                                textTransform: "uppercase",
-                                letterSpacing: "0.05em",
                                 whiteSpace: "nowrap",
                               }}
                             >
@@ -2783,7 +2777,8 @@ export default function JobOrders(props) {
                                     : i % 2 === 0
                                       ? "transparent"
                                       : "rgba(255,255,255,0.01)",
-                                transition: "all 0.4s ease",
+                                transition:
+                                  "background-color .15s, border-color .15s, color .15s, opacity .15s, transform .15s",
                               }}
                             >
                               <td style={{ padding: "11px 14px", width: 36 }}>
@@ -2800,8 +2795,8 @@ export default function JobOrders(props) {
                               <td
                                 style={{
                                   padding: "11px 14px",
-                                  fontWeight: 700,
-                                  color: "#facc15",
+                                  fontWeight: 600,
+                                  color: "#c8955a",
                                   whiteSpace: "nowrap",
                                 }}
                               >
@@ -2832,7 +2827,7 @@ export default function JobOrders(props) {
                               <td
                                 style={{
                                   padding: "11px 14px",
-                                  color: "#94a3b8",
+                                  color: "#a3a3a3",
                                   maxWidth: 220,
                                 }}
                               >
@@ -2852,7 +2847,7 @@ export default function JobOrders(props) {
                               <td
                                 style={{
                                   padding: "11px 14px",
-                                  color: "#e2e8f0",
+                                  color: "#ededed",
                                 }}
                               >
                                 {fmt(r.orderQty)}
@@ -2874,7 +2869,7 @@ export default function JobOrders(props) {
                                       padding: "2px 8px",
                                       borderRadius: 4,
                                       fontSize: 10,
-                                      fontWeight: 800,
+                                      fontWeight: 600,
                                       background: priorityColor + "22",
                                       color: priorityColor,
                                       border: `1px solid ${priorityColor}44`,
@@ -2914,65 +2909,26 @@ export default function JobOrders(props) {
                               <td style={{ padding: "11px 14px" }}>
                                 <div style={{ display: "flex", gap: 6 }}>
                                   {canEdit && (
-                                    <button
+                                    <IconBtn
+                                      icon="fa-pen-to-square"
+                                      label="Edit"
                                       onClick={() => handleEditJO(r)}
-                                      style={{
-                                        background: "transparent",
-                                        color: "#8082ff",
-                                        border: "1px solid #8082ff98",
-                                        borderRadius: 6,
-                                        padding: "6px 12px",
-                                        fontSize: 11,
-                                        fontWeight: 500,
-                                        cursor: "pointer",
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        gap: 6,
-                                      }}
-                                    >
-                                      <i className="fa-solid fa-pen-to-square" />{" "}
-                                      Edit
-                                    </button>
+                                    />
                                   )}
-                                  <button
+                                  <IconBtn
+                                    icon="fa-file-pdf"
+                                    label="Download PDF"
                                     onClick={() => generateJobCardPDF(r)}
-                                    style={{
-                                      background: "transparent",
-                                      color: "#8082ff",
-                                      border: "1px solid #8082ff98",
-                                      borderRadius: 6,
-                                      padding: "6px 12px",
-                                      fontSize: 11,
-                                      fontWeight: 500,
-                                      cursor: "pointer",
-                                      display: "inline-flex",
-                                      alignItems: "center",
-                                      gap: 6,
-                                    }}
-                                  >
-                                    <i className="fa-solid fa-file-pdf" /> PDF
-                                  </button>
+                                  />
                                   {canDelete && (
-                                    <button
+                                    <IconBtn
+                                      icon="fa-trash"
+                                      label="Delete"
+                                      danger
                                       onClick={() =>
                                         setDeleteTarget(r._id || r.id)
                                       }
-                                      style={{
-                                        background: "transparent",
-                                        color: "#8082ff",
-                                        border: "1px solid #8082ff98",
-                                        borderRadius: 6,
-                                        padding: "6px 12px",
-                                        fontSize: 11,
-                                        fontWeight: 500,
-                                        cursor: "pointer",
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        gap: 6,
-                                      }}
-                                    >
-                                      <i className="fa-solid fa-trash" /> Delete
-                                    </button>
+                                    />
                                   )}
                                 </div>
                               </td>
@@ -2986,7 +2942,7 @@ export default function JobOrders(props) {
               </>
             );
           })()}
-        </Card>
+        </>
       </div>
 
       <ConfirmModal

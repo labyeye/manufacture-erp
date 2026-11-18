@@ -3,12 +3,19 @@ import * as XLSX from "xlsx";
 import { fgStockAPI } from "../api/auth";
 import { C } from "../constants/colors";
 import {
-  ImportBtn,
-  ExportBtn,
-  TemplateBtn,
+  ListToolbar,
+  FilterModal,
+  Field,
+  SortSelect,
+  SectionTitle,
   ImportModal,
   AutocompleteInput,
+  NameWithAvatar,
 } from "../components/ui/BasicComponents";
+import { IconBtn } from "../components/ui/IconBtn";
+import { StatCard } from "../components/ui/StatCard";
+
+import { fmtLakh } from "../utils/formatINR";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 const today = () => new Date().toISOString().slice(0, 10);
@@ -19,7 +26,7 @@ const inputStyle = {
   borderRadius: 8,
   fontSize: 13,
   background: "transparent",
-  color: "#e0e0e0",
+  color: "#ededed",
   outline: "none",
 };
 
@@ -39,6 +46,7 @@ export default function FGStock({
 }) {
   const isClient = session?.role === "Client";
   const [search, setSearch] = useState("");
+  const [showFilterModal, setShowFilterModal] = useState(false);
   const [filterCat, setFilterCat] = useState("All");
   const [stockStatusFilter, setStockStatusFilter] = useState("All");
   const [editingItem, setEditingItem] = useState(null);
@@ -139,8 +147,8 @@ export default function FGStock({
           style={{
             width: 65,
             padding: "5px 8px",
-            background: "#0c0c0e",
-            border: `1px solid ${hasChanged && !isClient ? "#FF9800" : "#2a2a2e"}`,
+            background: "#141414",
+            border: `1px solid ${hasChanged && !isClient ? "#FF9800" : "rgba(255,255,255,0.08)"}`,
             borderRadius: 4,
             color: "#fff",
             fontSize: 12,
@@ -165,8 +173,7 @@ export default function FGStock({
               padding: "4px 8px",
               fontSize: 10,
               cursor: "pointer",
-              boxShadow:
-                "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
             }}
           >
             {saving ? "..." : "✓"}
@@ -178,7 +185,7 @@ export default function FGStock({
 
   const PriceEdit = ({ item }) => {
     return (
-      <span style={{ color: "#2196F3", fontSize: 12, fontWeight: 500 }}>
+      <span style={{ color: "#c8955a", fontSize: 12, fontWeight: 500 }}>
         {item.price ? `₹${Number(item.price).toLocaleString("en-IN")}` : "—"}
       </span>
     );
@@ -186,7 +193,7 @@ export default function FGStock({
 
   const QtyEdit = ({ item }) => {
     return (
-      <span style={{ color: "#e0e0e0", fontSize: 12, fontWeight: 500 }}>
+      <span style={{ color: "#ededed", fontSize: 12, fontWeight: 500 }}>
         {(item.qty || 0).toLocaleString("en-IN")}
       </span>
     );
@@ -214,10 +221,10 @@ export default function FGStock({
           style={{
             width: 80,
             padding: "5px 8px",
-            background: "#0c0c0e",
-            border: `1px solid ${hasChanged && !isClient ? "#4CAF50" : "#2a2a2e"}`,
+            background: "#141414",
+            border: `1px solid ${hasChanged && !isClient ? "#4CAF50" : "rgba(255,255,255,0.08)"}`,
             borderRadius: 4,
-            color: hasChanged && !isClient ? "#4CAF50" : "#e0e0e0",
+            color: hasChanged && !isClient ? "#4CAF50" : "#ededed",
             fontSize: 12,
             fontWeight: 500,
             outline: "none",
@@ -258,8 +265,7 @@ export default function FGStock({
               padding: "4px 8px",
               fontSize: 10,
               cursor: "pointer",
-              boxShadow:
-                "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
             }}
           >
             {saving ? "..." : "✓"}
@@ -384,28 +390,28 @@ export default function FGStock({
     const map = new Map();
 
     const BUCKETS = [
-      { key: "0-7d", label: "0–7 days", min: 0, max: 7, color: "#10b981" },
-      { key: "8-15d", label: "8–15 days", min: 8, max: 15, color: "#60a5fa" },
+      { key: "0-7d", label: "0–7 days", min: 0, max: 7, color: "#86b894" },
+      { key: "8-15d", label: "8–15 days", min: 8, max: 15, color: "#a3a3a3" },
       {
         key: "16-30d",
         label: "16–30 days",
         min: 16,
         max: 30,
-        color: "#f59e0b",
+        color: "#c8955a",
       },
       {
         key: "31-60d",
         label: "31–60 days",
         min: 31,
         max: 60,
-        color: "#f97316",
+        color: "#c8955a",
       },
       {
         key: "60+d",
         label: "60+ days",
         min: 61,
         max: Infinity,
-        color: "#ef4444",
+        color: "#e0705f",
       },
     ];
 
@@ -691,7 +697,7 @@ export default function FGStock({
                     : "60+d";
         const ageColor =
           ageDays === null
-            ? "#94a3b8"
+            ? "#a3a3a3"
             : ageDays <= 7
               ? "#16a34a"
               : ageDays <= 15
@@ -733,13 +739,13 @@ export default function FGStock({
             body { font-family: 'Inter', Arial, sans-serif; padding: 20px 30px; color: #1a1a1a; }
             .header { text-align: center; border-bottom: 2px solid #1e40af; padding-bottom: 10px; margin-bottom: 16px; }
             .header h1 { color: #1e3a8a; margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 1px; }
-            .header p { margin: 2px 0; font-size: 11px; color: #475569; }
+            .header p { margin: 2px 0; font-size: 11px; color: #6b6b6b; }
             .doc-title { display: flex; justify-content: space-between; margin-bottom: 8px; }
             .doc-title h2 { margin: 0; font-size: 16px; font-weight: 700; }
-            .meta { font-size: 10px; color: #64748b; }
+            .meta { font-size: 10px; color: #8a8a8a; }
             table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-            th { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; font-size: 10px; text-transform: uppercase; color: #334155; }
-            td { border: 1px solid #e2e8f0; padding: 5px 8px; font-size: 10px; }
+            th { background: #f1f5f9; border: 1px solid #c7c7c7; padding: 6px 8px; text-align: left; font-size: 10px; text-transform: uppercase; color: #3a3a3a; }
+            td { border: 1px solid #ededed; padding: 5px 8px; font-size: 10px; }
             .num { text-align: right; font-family: 'JetBrains Mono', monospace; }
             tfoot td { font-weight: 800; background: #f8fafc; }
             @media print { @page { margin: 1cm; size: A4 landscape; } }
@@ -960,7 +966,7 @@ export default function FGStock({
     },
     {
       label: "Total Value",
-      value: `₹${totalValue.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`,
+      value: fmtLakh(totalValue),
       icon: "fa-solid fa-indian-rupee-sign",
     },
   ];
@@ -974,174 +980,137 @@ export default function FGStock({
         status={importProgress.status}
         title="Importing Finished Goods Stock"
       />
-      <div style={{ display: "flex", alignItems: "center" }}>
-        <div>
-          <h2
-            style={{
-              fontSize: 22,
-              fontWeight: 500,
-              color: "#e0e0e0",
-              margin: 0,
-            }}
-          >
-            🎪 FG Stock
-          </h2>
-          <p style={{ fontSize: 13, color: "#777", margin: "4px 0 0" }}>
-            Finished goods inventory — all items from Item Master
-          </p>
-        </div>
-        <button
-          onClick={() => setShowZeroStock(!showZeroStock)}
-          style={{
-            marginLeft: "auto",
-            padding: "8px 16px",
-            borderRadius: 8,
-            fontSize: 13,
-            fontWeight: 500,
-            background: showZeroStock
-              ? "rgba(255,255,255,0.12)"
-              : "rgba(255,255,255,0.04)",
-            color: showZeroStock ? "#fff" : "rgba(255,255,255,0.45)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            cursor: "pointer",
-            transition: "all 0.2s",
-          }}
-        >
-          {showZeroStock ? "Hide Zero Stock" : "Show Zero Stock"}
-        </button>
-      </div>
-
       {}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
           gap: 12,
           marginBottom: 16,
         }}
       >
         {statCards.map(({ label, value, icon }) => (
-          <div
-            key={label}
-            style={{
-              padding: "16px 20px",
-              background: "transparent",
-              border: "1px solid rgba(255,255,255,0.07)",
-              borderRadius: 12,
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 8,
-              }}
-            >
-              <span
-                style={{
-                  fontSize: 19,
-                  color: "#ffffff",
-                  fontWeight: 600,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                }}
-              >
-                {label}
-              </span>
-              <i
-                className={icon}
-                style={{
-                  color: C.muted,
-                  fontSize: 20,
-                  opacity: 0.9,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  height: 28,
-                  width: 28,
-                  lineHeight: 1,
-                }}
-              />
-            </div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>
-              {value}
-            </div>
-          </div>
+          <StatCard key={label} label={label} value={value} icon={icon} />
         ))}
       </div>
 
-      {}
-      <div
-        style={{
-          display: "flex",
-          gap: 10,
-          marginBottom: 10,
-          alignItems: "center",
-          flexWrap: "wrap",
+      <ListToolbar
+        onSelectModeChange={(on) => {
+          if (!on) setSelectedIds([]);
         }}
-      >
-        <input
-          style={{ ...inputStyle, width: 200 }}
-          placeholder="Search item..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <TemplateBtn onClick={handleTemplate} />
-        {canExportImport && !isClient && (
-          <ImportBtn onClick={() => fileInputRef.current?.click()} />
-        )}
-        {canExportImport && <ExportBtn onClick={handleExport} />}
-        {canExportImport && (
-          <ExportBtn onClick={handleExportPDF} label="Export PDF" />
-        )}
-        <button
-          onClick={() => setShowAgeing((v) => !v)}
-          style={{
-            padding: "7px 14px",
-            borderRadius: 6,
-            border: `1px solid ${showAgeing ? "#f59e0b" : "#2a2a2a"}`,
-            background: showAgeing ? "rgba(245,158,11,0.15)" : "transparent",
-            color: showAgeing ? "#f59e0b" : "#888",
-            fontSize: 12,
-            fontWeight: 600,
-            cursor: "pointer",
-            whiteSpace: "nowrap",
+        search={search}
+        setSearch={setSearch}
+        placeholder="Search item..."
+        count={filtered.length}
+        filterCount={
+          (filterCat !== "All" ? 1 : 0) + (stockStatusFilter !== "All" ? 1 : 0)
+        }
+        onFilter={() => setShowFilterModal(true)}
+        actions={
+          <>
+            <button
+              type="button"
+              className="lg-btn"
+              aria-pressed={showZeroStock}
+              onClick={() => setShowZeroStock(!showZeroStock)}
+              style={showZeroStock ? { background: "#242424" } : undefined}
+            >
+              {showZeroStock ? "Hide zero stock" : "Show zero stock"}
+            </button>
+            <button
+              type="button"
+              className="lg-btn"
+              aria-pressed={showAgeing}
+              onClick={() => setShowAgeing((v) => !v)}
+              style={showAgeing ? { background: "#242424" } : undefined}
+            >
+              <i className="fa-solid fa-clock-rotate-left" /> Stock ageing
+            </button>
+          </>
+        }
+        exportOptions={
+          canExportImport
+            ? [
+                {
+                  label: "Excel",
+                  icon: "fa-solid fa-file-excel",
+                  onClick: handleExport,
+                },
+                {
+                  label: "PDF",
+                  icon: "fa-solid fa-file-pdf",
+                  onClick: handleExportPDF,
+                },
+              ]
+            : []
+        }
+        onImport={
+          canExportImport && !isClient
+            ? () => fileInputRef.current?.click()
+            : undefined
+        }
+        onTemplate={handleTemplate}
+      />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".xlsx, .xls"
+        style={{ display: "none" }}
+        onChange={handleImport}
+      />
+
+      {showFilterModal && (
+        <FilterModal
+          onClose={() => setShowFilterModal(false)}
+          onReset={() => {
+            setFilterCat("All");
+            setStockStatusFilter("All");
           }}
         >
-          <i
-            className="fa-solid fa-clock-rotate-left"
-            style={{ marginRight: 6 }}
-          />
-          Stock Ageing
-        </button>
-        {!isClient && canDelete && selectedIds.length > 0 && (
+          <Field label="Category">
+            <SortSelect
+              value={filterCat}
+              onChange={setFilterCat}
+              options={["All", ...categories].map((c) => [c, c])}
+            />
+          </Field>
+          <Field label="Stock status">
+            <SortSelect
+              value={stockStatusFilter}
+              onChange={setStockStatusFilter}
+              options={["All", "In Stock", "Low Stock", "Out of Stock"].map(
+                (v) => [v, v],
+              )}
+            />
+          </Field>
+        </FilterModal>
+      )}
+
+      {!isClient && canDelete && selectedIds.length > 0 && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "8px 16px",
+            margin: "12px 0",
+            background: "#1a1a1a",
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: 10,
+            fontSize: 13,
+            color: "#a3a3a3",
+          }}
+        >
+          {selectedIds.length} selected
           <button
+            type="button"
+            className="lg-btn lg-btn-danger"
             onClick={handleBulkDelete}
-            style={{
-              padding: "7px 14px",
-              borderRadius: 6,
-              border: "1px solid rgba(239,68,68,0.4)",
-              background: "rgba(239,68,68,0.15)",
-              color: "#ef4444",
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: "pointer",
-              whiteSpace: "nowrap",
-            }}
           >
-            <i className="fa-solid fa-trash" style={{ marginRight: 6 }} />
-            Delete Selected ({selectedIds.length})
+            <i className="fa-solid fa-trash" /> Delete selected
           </button>
-        )}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".xlsx, .xls"
-          style={{ display: "none" }}
-          onChange={handleImport}
-        />
-      </div>
+        </div>
+      )}
 
       {showAgeing && (
         <div
@@ -1165,12 +1134,12 @@ export default function FGStock({
           >
             <i
               className="fa-solid fa-clock-rotate-left"
-              style={{ color: "#f59e0b" }}
+              style={{ color: "#c8955a" }}
             />
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>
               FG Stock Ageing Analysis
             </span>
-            <span style={{ fontSize: 11, color: "#666" }}>
+            <span style={{ fontSize: 11, color: "#737373" }}>
               — FIFO basis: production lots consumed by dispatches oldest-first
               · click ageing cell for item detail
             </span>
@@ -1183,7 +1152,7 @@ export default function FGStock({
             }}
           >
             {ageingData.map((bucket, bi) => {
-              const colors = ["#10b981", "#60a5fa", "#f59e0b", "#ef4444"];
+              const colors = ["#86b894", "#a3a3a3", "#c8955a", "#e0705f"];
               const col = colors[bi];
               const isExpanded = expandedBucket === bi;
               const totalQtyBucket = bucket.items.reduce(
@@ -1210,10 +1179,8 @@ export default function FGStock({
                   <div
                     style={{
                       fontSize: 11,
-                      fontWeight: 700,
+                      fontWeight: 600,
                       color: col,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.4px",
                       marginBottom: 8,
                     }}
                   >
@@ -1222,7 +1189,7 @@ export default function FGStock({
                   <div
                     style={{
                       fontSize: 26,
-                      fontWeight: 800,
+                      fontWeight: 600,
                       color: col,
                       marginBottom: 2,
                     }}
@@ -1331,81 +1298,7 @@ export default function FGStock({
         </div>
       )}
 
-      <div
-        style={{
-          marginBottom: 12,
-          display: "flex",
-          gap: 8,
-          alignItems: "center",
-          flexWrap: "wrap",
-        }}
-      >
-        {["All", ...categories].map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setFilterCat(cat)}
-            style={{
-              padding: "6px 16px",
-              borderRadius: 6,
-              fontSize: 12,
-              fontWeight: 500,
-              cursor: "pointer",
-              background:
-                filterCat === cat ? "rgba(128,130,255,0.12)" : "transparent",
-              color: filterCat === cat ? "#8082ff" : "#888",
-              border: `1px solid ${filterCat === cat ? "#8082ff98" : "#2a2a2e"}`,
-            }}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
-
-      <div
-        style={{
-          marginBottom: 14,
-          display: "flex",
-          gap: 8,
-          alignItems: "center",
-          flexWrap: "wrap",
-        }}
-      >
-        {["All", "In Stock", "Low Stock", "Out of Stock"].map((s) => (
-          <button
-            key={s}
-            onClick={() => setStockStatusFilter(s)}
-            style={{
-              padding: "6px 16px",
-              borderRadius: 6,
-              fontSize: 12,
-              fontWeight: 500,
-              cursor: "pointer",
-              background:
-                stockStatusFilter === s
-                  ? "rgba(128,130,255,0.12)"
-                  : "transparent",
-              color: stockStatusFilter === s ? "#8082ff" : "#888",
-              border: `1px solid ${stockStatusFilter === s ? "#8082ff98" : "#2a2a2e"}`,
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-            }}
-          >
-            <i
-              className={
-                s === "In Stock"
-                  ? "fa-solid fa-warehouse"
-                  : s === "Low Stock"
-                    ? "fa-solid fa-triangle-exclamation"
-                    : s === "Out of Stock"
-                      ? "fa-solid fa-circle-exclamation"
-                      : "fa-solid fa-layer-group"
-              }
-            />
-            {s}
-          </button>
-        ))}
-      </div>
+      <div style={{ height: 12 }} />
 
       {}
       <div
@@ -1432,10 +1325,8 @@ export default function FGStock({
                     padding: "10px 14px",
                     textAlign: "left",
                     fontSize: 11,
-                    fontWeight: 700,
+                    fontWeight: 600,
                     color: C.muted,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em",
                     whiteSpace: "nowrap",
                     width: 40,
                   }}
@@ -1456,36 +1347,34 @@ export default function FGStock({
                   />
                 </th>
                 {[
-                  "CODE",
-                  "ITEM NAME",
-                  "CATEGORY",
-                  "COMPANY CAT.",
-                  "IN STOCK",
-                  "QTY",
-                  "REORDER",
-                  "PRICE (₹)",
-                  "VALUE (₹)",
-                  "AGEING",
-                  ...(!isClient ? ["ACTION"] : []),
+                  "Code",
+                  "Item name",
+                  "Category",
+                  "Segment",
+                  "AVL",
+                  "Qty",
+                  "Reorder",
+                  "Price (₹)",
+                  "Value (₹)",
+                  "Ageing",
+                  ...(!isClient ? ["Actions"] : []),
                 ].map((h) => (
                   <th
                     key={h}
                     style={{
                       padding: "10px 14px",
                       textAlign: [
-                        "QTY",
-                        "REORDER",
-                        "PRICE (₹)",
-                        "VALUE (₹)",
-                        "AGEING",
+                        "Qty",
+                        "Reorder",
+                        "Price (₹)",
+                        "Value (₹)",
+                        "Ageing",
                       ].includes(h)
                         ? "right"
                         : "left",
                       fontSize: 11,
-                      fontWeight: 700,
+                      fontWeight: 600,
                       color: C.muted,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
                       whiteSpace: "nowrap",
                     }}
                   >
@@ -1502,10 +1391,17 @@ export default function FGStock({
                     style={{
                       textAlign: "center",
                       padding: "60px 0",
-                      color: "#444",
+                      color: "#737373",
                     }}
                   >
-                    <div style={{ fontSize: 36, marginBottom: 12 }}>🎪</div>
+                    <i
+                      className="fa-solid fa-boxes-stacked"
+                      style={{
+                        fontSize: 32,
+                        marginBottom: 12,
+                        color: "#6b6b6b",
+                      }}
+                    />
                     <div style={{ fontSize: 13 }}>
                       No items yet. Add items to Item Master → Finished Goods.
                     </div>
@@ -1531,16 +1427,16 @@ export default function FGStock({
                       : null);
                   const ageColor =
                     ageDays === null
-                      ? "#555"
+                      ? "#737373"
                       : ageDays <= 7
-                        ? "#10b981"
+                        ? "#86b894"
                         : ageDays <= 15
-                          ? "#60a5fa"
+                          ? "#c8955a"
                           : ageDays <= 30
-                            ? "#f59e0b"
+                            ? "#c8955a"
                             : ageDays <= 60
-                              ? "#f97316"
-                              : "#ef4444";
+                              ? "#c8955a"
+                              : "#e0705f";
                   const ageLabel =
                     ageDays === null
                       ? "—"
@@ -1586,7 +1482,7 @@ export default function FGStock({
                       <td
                         style={{
                           padding: "10px 14px",
-                          color: "#666",
+                          color: "#737373",
                           fontSize: 11,
                         }}
                       >
@@ -1597,14 +1493,14 @@ export default function FGStock({
                         style={{
                           padding: "10px 14px",
                           fontWeight: 600,
-                          color: "#e0e0e0",
+                          color: "#ededed",
                           minWidth: 250,
                           whiteSpace: "normal",
                           wordBreak: "break-word",
                         }}
                         title={s.itemName}
                       >
-                        {s.itemName}
+                        <NameWithAvatar name={s.itemName} />
                       </td>
                       <td style={{ padding: "10px 14px" }}>
                         <span
@@ -1622,7 +1518,7 @@ export default function FGStock({
                       <td
                         style={{
                           padding: "10px 14px",
-                          color: "#777",
+                          color: "#a3a3a3",
                           fontSize: 11,
                         }}
                       >
@@ -1650,7 +1546,7 @@ export default function FGStock({
                           padding: "10px 14px",
                           textAlign: "right",
                           fontWeight: 500,
-                          color: isLow ? "#f44336" : "#e0e0e0",
+                          color: isLow ? "#f44336" : "#ededed",
                         }}
                       >
                         <QtyEdit item={s} />
@@ -1659,7 +1555,7 @@ export default function FGStock({
                         style={{
                           padding: "10px 14px",
                           textAlign: "right",
-                          color: "#555",
+                          color: "#737373",
                         }}
                       >
                         <ReorderEdit item={s} />
@@ -1668,7 +1564,7 @@ export default function FGStock({
                         style={{
                           padding: "10px 14px",
                           textAlign: "right",
-                          color: "#888",
+                          color: "#a3a3a3",
                         }}
                       >
                         <PriceEdit item={s} />
@@ -1734,7 +1630,7 @@ export default function FGStock({
                               <span
                                 style={{
                                   fontSize: 11,
-                                  fontWeight: 700,
+                                  fontWeight: 600,
                                   color: ageColor,
                                   background: `${ageColor}18`,
                                   padding: "2px 7px",
@@ -1745,39 +1641,31 @@ export default function FGStock({
                                 {ageLabel}
                               </span>
                             )}
-                            <span style={{ fontSize: 10, color: "#555" }}>
+                            <span style={{ fontSize: 10, color: "#737373" }}>
                               {ageDays}d
                             </span>
                           </span>
                         ) : (
-                          <span style={{ color: "#333", fontSize: 11 }}>—</span>
+                          <span style={{ color: "#737373", fontSize: 11 }}>
+                            —
+                          </span>
                         )}
                       </td>
                       {!isClient && (canEdit || canDelete) && (
                         <td style={{ padding: "10px 14px" }}>
                           <div style={{ display: "flex", gap: 6 }}>
                             {canEdit && (
-                              <button
+                              <IconBtn
+                                icon="fa-pen-to-square"
+                                label="Edit"
                                 onClick={() => setEditingItem(s)}
-                                style={{
-                                  background: "transparent",
-                                  color: "#8082ff",
-                                  border: "1px solid #8082ff98",
-                                  borderRadius: 6,
-                                  padding: "6px 12px",
-                                  fontSize: 11,
-                                  fontWeight: 500,
-                                  cursor: "pointer",
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: 6,
-                                }}
-                              >
-                                <i className="fa-solid fa-pen-to-square" /> Edit
-                              </button>
+                              />
                             )}
                             {canDelete && (
-                              <button
+                              <IconBtn
+                                icon="fa-trash"
+                                label="Delete"
+                                danger
                                 onClick={async () => {
                                   if (s.isFromMaster) {
                                     toast(
@@ -1802,22 +1690,7 @@ export default function FGStock({
                                     }
                                   }
                                 }}
-                                style={{
-                                  background: "transparent",
-                                  color: "#8082ff",
-                                  border: "1px solid #8082ff98",
-                                  borderRadius: 6,
-                                  padding: "6px 12px",
-                                  fontSize: 11,
-                                  fontWeight: 500,
-                                  cursor: "pointer",
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: 6,
-                                }}
-                              >
-                                <i className="fa-solid fa-trash" /> Delete
-                              </button>
+                              />
                             )}
                           </div>
                         </td>
@@ -1920,7 +1793,7 @@ function EditModal({ item, onClose, onSave, companyMaster = [] }) {
     borderRadius: 12,
     width: 500,
     maxWidth: "90%",
-    border: "1px solid #333",
+    border: "1px solid #737373",
     boxShadow: "0 20px 40px rgba(0,0,0,0.4)",
   };
 
@@ -1931,17 +1804,16 @@ function EditModal({ item, onClose, onSave, companyMaster = [] }) {
   const labelStyle = {
     display: "block",
     fontSize: 12,
-    color: "#888",
+    color: "#a3a3a3",
     marginBottom: 6,
     fontWeight: 600,
-    textTransform: "uppercase",
   };
 
   const inputStyle = {
     width: "100%",
     padding: "10px 14px",
-    background: "#0c0c0e",
-    border: "1px solid #2a2a2e",
+    background: "#141414",
+    border: "1px solid rgba(255,255,255,0.08)",
     borderRadius: 6,
     color: "#fff",
     fontSize: 14,
@@ -1951,7 +1823,7 @@ function EditModal({ item, onClose, onSave, companyMaster = [] }) {
   return (
     <div style={modalStyle} className="modal-backdrop">
       <div style={contentStyle} className="fade-in">
-        <h3 style={{ margin: "0 0 20px 0", color: "#2196F3", fontSize: 18 }}>
+        <h3 style={{ margin: "0 0 20px 0", color: "#c8955a", fontSize: 18 }}>
           Edit Stock Item
         </h3>
 
@@ -2085,8 +1957,7 @@ function EditModal({ item, onClose, onSave, companyMaster = [] }) {
               borderRadius: 6,
               cursor: "pointer",
               fontWeight: 500,
-              boxShadow:
-                "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
             }}
           >
             Save Changes
@@ -2129,7 +2000,7 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
     >
       <div
         style={{
-          background: "#141418",
+          background: "#1a1a1a",
           border: "1px solid rgba(255,255,255,0.1)",
           borderRadius: 14,
           width: 680,
@@ -2157,10 +2028,8 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
               <div
                 style={{
                   fontSize: 11,
-                  color: "#f59e0b",
-                  fontWeight: 700,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.4px",
+                  color: "#c8955a",
+                  fontWeight: 600,
                   marginBottom: 4,
                 }}
               >
@@ -2173,14 +2042,14 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
               <div
                 style={{
                   fontSize: 16,
-                  fontWeight: 700,
+                  fontWeight: 600,
                   color: "#fff",
                   marginBottom: 2,
                 }}
               >
                 {item.itemName}
               </div>
-              <div style={{ fontSize: 12, color: "#666" }}>
+              <div style={{ fontSize: 12, color: "#737373" }}>
                 {item.itemCode && (
                   <span style={{ marginRight: 12 }}>{item.itemCode}</span>
                 )}
@@ -2192,7 +2061,7 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
               style={{
                 background: "transparent",
                 border: "none",
-                color: "#555",
+                color: "#737373",
                 fontSize: 20,
                 cursor: "pointer",
                 padding: "4px 8px",
@@ -2208,14 +2077,13 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
               <div
                 style={{
                   fontSize: 10,
-                  color: "#666",
-                  textTransform: "uppercase",
+                  color: "#737373",
                   marginBottom: 2,
                 }}
               >
                 Stock in Hand
               </div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>
+              <div style={{ fontSize: 20, fontWeight: 600, color: "#fff" }}>
                 {fmtN(totalQty)}
               </div>
             </div>
@@ -2224,15 +2092,14 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
                 <div
                   style={{
                     fontSize: 10,
-                    color: "#666",
-                    textTransform: "uppercase",
+                    color: "#737373",
                     marginBottom: 2,
                   }}
                 >
                   Oldest Stock
                 </div>
                 <div
-                  style={{ fontSize: 20, fontWeight: 800, color: "#f59e0b" }}
+                  style={{ fontSize: 20, fontWeight: 600, color: "#c8955a" }}
                 >
                   {fifoData.lots[0].ageDays}d ago
                 </div>
@@ -2243,15 +2110,14 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
                 <div
                   style={{
                     fontSize: 10,
-                    color: "#666",
-                    textTransform: "uppercase",
+                    color: "#737373",
                     marginBottom: 2,
                   }}
                 >
                   Lots
                 </div>
                 <div
-                  style={{ fontSize: 20, fontWeight: 800, color: "#60a5fa" }}
+                  style={{ fontSize: 20, fontWeight: 600, color: "#c8955a" }}
                 >
                   {fifoData.lots.length}
                 </div>
@@ -2271,9 +2137,8 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
             <div
               style={{
                 fontSize: 11,
-                color: "#888",
-                fontWeight: 700,
-                textTransform: "uppercase",
+                color: "#a3a3a3",
+                fontWeight: 600,
                 marginBottom: 10,
               }}
             >
@@ -2300,18 +2165,20 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
                       style={{
                         fontSize: 10,
                         color: b.color,
-                        fontWeight: 700,
+                        fontWeight: 600,
                         marginBottom: 3,
                       }}
                     >
                       {b.label}
                     </div>
                     <div
-                      style={{ fontSize: 16, fontWeight: 800, color: b.color }}
+                      style={{ fontSize: 16, fontWeight: 600, color: b.color }}
                     >
                       {fmtN(b.qty)}
                     </div>
-                    <div style={{ fontSize: 10, color: "#555", marginTop: 1 }}>
+                    <div
+                      style={{ fontSize: 10, color: "#737373", marginTop: 1 }}
+                    >
                       {pct}% of stock
                     </div>
                   </div>
@@ -2359,9 +2226,8 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
             <div
               style={{
                 fontSize: 11,
-                color: "#888",
-                fontWeight: 700,
-                textTransform: "uppercase",
+                color: "#a3a3a3",
+                fontWeight: 600,
                 marginBottom: 10,
               }}
             >
@@ -2371,14 +2237,14 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
               {fifoData.lots.map((lot, i) => {
                 const bc =
                   lot.ageDays <= 7
-                    ? "#10b981"
+                    ? "#86b894"
                     : lot.ageDays <= 15
-                      ? "#60a5fa"
+                      ? "#c8955a"
                       : lot.ageDays <= 30
-                        ? "#f59e0b"
+                        ? "#c8955a"
                         : lot.ageDays <= 60
-                          ? "#f97316"
-                          : "#ef4444";
+                          ? "#c8955a"
+                          : "#e0705f";
                 return (
                   <div
                     key={i}
@@ -2402,13 +2268,13 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
                       }}
                     />
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 12, color: "#aaa" }}>
+                      <div style={{ fontSize: 12, color: "#a3a3a3" }}>
                         {lot.ref === "Opening Balance"
                           ? "Opening Balance"
                           : `Production: ${lot.ref}`}
                       </div>
                       <div
-                        style={{ fontSize: 11, color: "#555", marginTop: 2 }}
+                        style={{ fontSize: 11, color: "#737373", marginTop: 2 }}
                       >
                         {fmtDate(lot.date)}
                       </div>
@@ -2417,8 +2283,8 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
                       <div
                         style={{
                           fontSize: 13,
-                          fontWeight: 700,
-                          color: "#e0e0e0",
+                          fontWeight: 600,
+                          color: "#ededed",
                         }}
                       >
                         {fmtN(lot.qty)}
@@ -2440,9 +2306,8 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
             <div
               style={{
                 fontSize: 11,
-                color: "#888",
-                fontWeight: 700,
-                textTransform: "uppercase",
+                color: "#a3a3a3",
+                fontWeight: 600,
                 marginBottom: 10,
               }}
             >
@@ -2454,10 +2319,10 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
                   tx.txType === "production" || tx.txType === "opening";
                 const color =
                   tx.txType === "opening"
-                    ? "#a78bfa"
+                    ? "#c8955a"
                     : isIn
-                      ? "#10b981"
-                      : "#ef4444";
+                      ? "#86b894"
+                      : "#e0705f";
                 const icon =
                   tx.txType === "opening"
                     ? "fa-solid fa-database"
@@ -2492,13 +2357,17 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
                       </span>
                       {tx.txType !== "opening" && (
                         <span
-                          style={{ fontSize: 11, color: "#555", marginLeft: 8 }}
+                          style={{
+                            fontSize: 11,
+                            color: "#737373",
+                            marginLeft: 8,
+                          }}
                         >
                           {tx.ref}
                         </span>
                       )}
                     </div>
-                    <div style={{ fontSize: 11, color: "#666" }}>
+                    <div style={{ fontSize: 11, color: "#737373" }}>
                       {fmtDate(tx.date)}
                     </div>
                     <div
@@ -2521,7 +2390,7 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
         )}
 
         {!fifoData && (
-          <div style={{ padding: 32, textAlign: "center", color: "#555" }}>
+          <div style={{ padding: 32, textAlign: "center", color: "#737373" }}>
             <i
               className="fa-solid fa-circle-info"
               style={{ fontSize: 28, marginBottom: 10, display: "block" }}

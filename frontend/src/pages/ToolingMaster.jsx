@@ -8,9 +8,14 @@ import {
   Select,
   Modal,
   Table,
+  ListToolbar,
+  FilterModal,
+  SortSelect,
+  Field,
 } from "../components/ui/BasicComponents";
 import { C } from "../constants/colors";
 import { toolingMasterAPI, machineMasterAPI } from "../api/auth";
+import { IconBtn } from "../components/ui/IconBtn";
 
 export default function ToolingMaster({ toast }) {
   useEffect(() => {
@@ -20,6 +25,10 @@ export default function ToolingMaster({ toast }) {
   const [machines, setMachines] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({
     toolType: "Cylinder",
@@ -113,109 +122,119 @@ export default function ToolingMaster({ toast }) {
     }
   };
 
+  const visibleTools = [...tools]
+    .filter((t) => !typeFilter || t.toolType === typeFilter)
+    .filter((t) => !statusFilter || t.status === statusFilter)
+    .filter((t) => {
+      const q = search.trim().toLowerCase();
+      return (
+        !q ||
+        [t.designCode, t.linkedSKU, t.location, t.toolType]
+          .filter(Boolean)
+          .some((v) => String(v).toLowerCase().includes(q))
+      );
+    })
+    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
   return (
     <div className="fade">
-      <SectionTitle
-        icon="🛠️"
-        title="Tooling Master"
-        sub="Manage Cylinders, Dies, and Plates"
-      >
-        <Button
-          onClick={() => {
-            resetForm();
-            setShowModal(true);
+      <ListToolbar
+        search={search}
+        setSearch={setSearch}
+        placeholder="Search design code, SKU, location..."
+        count={visibleTools.length}
+        filterCount={(typeFilter ? 1 : 0) + (statusFilter ? 1 : 0)}
+        onFilter={() => setShowFilterModal(true)}
+        onAdd={() => {
+          resetForm();
+          setShowModal(true);
+        }}
+        addLabel="Add tool"
+      />
+      {showFilterModal && (
+        <FilterModal
+          onClose={() => setShowFilterModal(false)}
+          onReset={() => {
+            setTypeFilter("");
+            setStatusFilter("");
           }}
-          text="+ Add New Tool"
-          color={C.blue}
-        />
-      </SectionTitle>
+        >
+          <Field label="Tool type">
+            <SortSelect
+              value={typeFilter}
+              onChange={setTypeFilter}
+              options={[
+                ["", "All"],
+                ...["Cylinder", "Die", "Plate"].map((v) => [v, v]),
+              ]}
+            />
+          </Field>
+          <Field label="Status">
+            <SortSelect
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={[
+                ["", "All"],
+                ...["Available", "In Use", "Under Recondition", "Scrapped"].map(
+                  (v) => [v, v],
+                ),
+              ]}
+            />
+          </Field>
+        </FilterModal>
+      )}
+      <div style={{ height: 12 }} />
 
       <Card>
         <Table
           loading={loading}
           headers={[
-            "TYPE",
-            "DESIGN CODE",
-            "LINKED SKU",
-            "STATUS",
-            "IMPRESSIONS",
-            "LOCATION",
-            "ACTIONS",
+            "Type",
+            "Design code",
+            "Linked SKU",
+            "Status",
+            "Impressions",
+            "Location",
+            "Actions",
           ]}
-          data={[...tools]
-            .sort(
-              (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
-            )
-            .map((tool) => [
-              <Badge
-                text={tool.toolType}
-                color={
-                  tool.toolType === "Cylinder"
-                    ? C.blue
-                    : tool.toolType === "Die"
-                      ? C.orange
-                      : C.purple
-                }
-              />,
-              <span style={{ fontWeight: 700 }}>{tool.designCode}</span>,
-              tool.linkedSKU,
-              <Badge
-                text={tool.status}
-                color={
-                  tool.status === "Available"
-                    ? C.green
-                    : tool.status === "In Use"
-                      ? C.blue
-                      : C.red
-                }
-              />,
-              `${(tool.impressionsDone || 0).toLocaleString()} / ${(tool.maxImpressionsBeforeRecondition || 0).toLocaleString()}`,
-              tool.location || "-",
-              <div style={{ display: "flex", gap: 6 }}>
-                <button
-                  onClick={() => handleEdit(tool)}
-                  style={{
-                    background: "transparent",
-                    color: "#8082ff",
-                    border: "1px solid #8082ff98",
-                    borderRadius: 6,
-                    padding: "6px 12px",
-                    fontSize: 11,
-                    fontWeight: 500,
-                    cursor: "pointer",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 6,
-                  }}
-                >
-                  <i className="fa-solid fa-pen-to-square" /> Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(tool._id)}
-                  style={{
-                    background: "transparent",
-                    color: "#8082ff",
-                    border: "1px solid #8082ff98",
-                    borderRadius: 6,
-                    padding: "6px 12px",
-                    fontSize: 11,
-                    fontWeight: 500,
-                    cursor: "pointer",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 6,
-                  }}
-                >
-                  <i className="fa-solid fa-trash" /> Delete
-                </button>
-              </div>,
-            ])}
+          data={visibleTools.map((tool) => [
+            <Badge text={tool.toolType} color="#a3a3a3" />,
+            <span style={{ fontWeight: 500, color: "#c8955a" }}>
+              {tool.designCode}
+            </span>,
+            tool.linkedSKU,
+            <Badge
+              text={tool.status}
+              color={
+                tool.status === "Available"
+                  ? "#86b894"
+                  : tool.status === "In Use"
+                    ? "#c8955a"
+                    : "#e0705f"
+              }
+            />,
+            `${(tool.impressionsDone || 0).toLocaleString()} / ${(tool.maxImpressionsBeforeRecondition || 0).toLocaleString()}`,
+            tool.location || "-",
+            <div style={{ display: "flex", gap: 6 }}>
+              <IconBtn
+                icon="fa-pen-to-square"
+                label="Edit"
+                onClick={() => handleEdit(tool)}
+              />
+              <IconBtn
+                icon="fa-trash"
+                label="Delete"
+                danger
+                onClick={() => handleDelete(tool._id)}
+              />
+            </div>,
+          ])}
         />
       </Card>
 
       {showModal && (
         <Modal
-          title={editingId ? "Edit Tool" : "Add New Tool"}
+          title={editingId ? "Edit tool" : "New tool"}
           onClose={() => setShowModal(false)}
         >
           <form onSubmit={handleSubmit}>
@@ -292,17 +311,20 @@ export default function ToolingMaster({ toast }) {
                 gap: 12,
               }}
             >
-              <Button
-                text="Cancel"
-                color="#666"
+              <button
+                type="button"
+                className="lg-btn"
                 onClick={() => setShowModal(false)}
-              />
-              <Button
+              >
+                Cancel
+              </button>
+              <button
                 type="submit"
-                text={editingId ? "Update Tool" : "Create Tool"}
-                color={C.blue}
-                loading={loading}
-              />
+                className="lg-btn lg-btn-primary"
+                disabled={loading}
+              >
+                {loading ? "Saving…" : editingId ? "Update tool" : "Add tool"}
+              </button>
             </div>
           </form>
         </Modal>

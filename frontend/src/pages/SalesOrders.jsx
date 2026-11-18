@@ -1,15 +1,20 @@
 import React, { useState, useEffect, useMemo } from "react";
+import * as XLSX from "xlsx";
 import ConfirmModal from "../components/ConfirmModal";
 import { C } from "../constants/colors";
 import {
   Card,
-  SectionTitle,
   Badge,
   Field,
   SubmitBtn,
   AutocompleteInput,
   DateRangeFilter,
   Modal,
+  SelectToggle,
+  ListToolbar,
+  FilterModal,
+  SortSelect,
+  NameWithAvatar,
 } from "../components/ui/BasicComponents";
 import { DatePicker } from "../components/ui/DatePicker";
 import {
@@ -20,6 +25,10 @@ import {
   brandMasterAPI,
   priceListAPI,
 } from "../api/auth";
+import { IconBtn } from "../components/ui/IconBtn";
+import { StatCard } from "../components/ui/StatCard";
+
+import { fmtLakh } from "../utils/formatINR";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 const today = () => new Date().toISOString().slice(0, 10);
@@ -29,8 +38,7 @@ const sectionLabelStyle = {
   fontSize: 11,
   fontWeight: 500,
   letterSpacing: "normal",
-  color: C.green || "#4ade80",
-  textTransform: "uppercase",
+  color: C.accent,
   marginBottom: 14,
 };
 
@@ -38,7 +46,7 @@ export default function SalesOrders(props) {
   const {
     sizeMaster = {},
     toast,
-    categoryMaster = {},
+    categoryMaster = [],
     itemMasterFG = [],
     refreshData,
     companyMaster = [],
@@ -75,7 +83,7 @@ export default function SalesOrders(props) {
   }, [fgItems]);
 
   const fgCategories = useMemo(() => {
-    const fgDoc = (categoryMaster || []).find(
+    const fgDoc = (Array.isArray(categoryMaster) ? categoryMaster : []).find(
       (c) =>
         c.type === "Finished Good" ||
         c.type === "Finished Goods" ||
@@ -86,7 +94,7 @@ export default function SalesOrders(props) {
 
   const subTypeMap = useMemo(() => {
     const res = {};
-    (categoryMaster || []).forEach((c) => {
+    (Array.isArray(categoryMaster) ? categoryMaster : []).forEach((c) => {
       if (c.subTypes) Object.assign(res, c.subTypes);
     });
     return res;
@@ -168,7 +176,9 @@ export default function SalesOrders(props) {
   const [header, setHeader] = useState(blankHeader);
   const [items, setItems] = useState([blankItem()]);
   const uniqueClientCategories = useMemo(() => {
-    const clientDoc = (categoryMaster || []).find((c) => c.type === "Client");
+    const clientDoc = (
+      Array.isArray(categoryMaster) ? categoryMaster : []
+    ).find((c) => c.type === "Client");
     return Object.keys(clientDoc?.subTypes || {});
   }, [categoryMaster]);
 
@@ -179,6 +189,9 @@ export default function SalesOrders(props) {
   const [drDateTo, setDrDateTo] = useState("");
   const [filterClient, setFilterClient] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
+  const [showFilterModal, setShowFilterModal] = useState(false);
   const [editId, setEditId] = useState(null);
   const [highlightId, setHighlightId] = useState(null);
 
@@ -775,33 +788,33 @@ export default function SalesOrders(props) {
             body { font-family: 'Inter', sans-serif; padding: 20px 30px; color: #1a1a1a; line-height: 1.4; }
             .header { text-align: center; border-bottom: 2px solid #1e40af; padding-bottom: 10px; margin-bottom: 20px; }
             .header h1 { color: #1e3a8a; margin: 0; font-size: 24px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
-            .header p { margin: 2px 0; font-size: 11px; color: #475569; font-weight: 500; }
+            .header p { margin: 2px 0; font-size: 11px; color: #6b6b6b; font-weight: 500; }
             
             .doc-title { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px; }
-            .doc-title h2 { margin: 0; font-size: 20px; font-weight: 700; color: #1e293b; }
+            .doc-title h2 { margin: 0; font-size: 20px; font-weight: 700; color: #1f1f1f; }
             .status { color: #1e40af; font-weight: 700; font-size: 12px; }
             
-            .hr { height: 1px; background: #e2e8f0; margin: 10px 0; border: none; }
+            .hr { height: 1px; background: #ededed; margin: 10px 0; border: none; }
             .so-no { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 800; color: #1e40af; margin: 5px 0; }
             
-            .section-label { font-size: 10px; color: #64748b; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 15px; margin-top: 25px; background: #f8fafc; padding: 4px 8px; border-radius: 4px; }
+            .section-label { font-size: 10px; color: #8a8a8a; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 15px; margin-top: 25px; background: #f8fafc; padding: 4px 8px; border-radius: 4px; }
             
             .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 15px; }
-            .info-item label { display: block; font-size: 9px; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
-            .info-item span { font-size: 12px; font-weight: 600; color: #1e293b; }
+            .info-item label { display: block; font-size: 9px; color: #a3a3a3; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
+            .info-item span { font-size: 12px; font-weight: 600; color: #1f1f1f; }
             
             table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-            th { background: #f8fafc; border: 1px solid #e2e8f0; padding: 6px; text-align: left; font-size: 9px; font-weight: 800; text-transform: uppercase; color: #475569; }
-            td { border: 1px solid #e2e8f0; padding: 6px; font-size: 11px; color: #1e293b; }
+            th { background: #f8fafc; border: 1px solid #ededed; padding: 6px; text-align: left; font-size: 9px; font-weight: 800; text-transform: uppercase; color: #6b6b6b; }
+            td { border: 1px solid #ededed; padding: 6px; font-size: 11px; color: #1f1f1f; }
             .col-qty { text-align: center; }
             .col-amt { text-align: right; font-weight: 700; }
             
             .total-row { display: flex; justify-content: flex-end; margin-top: 25px; }
-            .total-box { display: flex; align-items: center; justify-content: space-between; font-size: 18px; font-weight: 800; color: #1e3a8a; background: #f8fafc; padding: 10px 15px; border-radius: 8px; border: 1px solid #e2e8f0; }
-            .total-box label { font-size: 14px; color: #64748b; font-weight: 700; margin-right: 20px; }
+            .total-box { display: flex; align-items: center; justify-content: space-between; font-size: 18px; font-weight: 800; color: #1e3a8a; background: #f8fafc; padding: 10px 15px; border-radius: 8px; border: 1px solid #ededed; }
+            .total-box label { font-size: 14px; color: #8a8a8a; font-weight: 700; margin-right: 20px; }
             
             .footer { margin-top: 60px; display: flex; justify-content: space-between; }
-            .signature { border-top: 1px solid #cbd5e1; width: 180px; text-align: center; padding-top: 8px; font-size: 11px; color: #64748b; font-weight: 600; }
+            .signature { border-top: 1px solid #c7c7c7; width: 180px; text-align: center; padding-top: 8px; font-size: 11px; color: #8a8a8a; font-weight: 600; }
             
             @media print {
               body { padding: 0; }
@@ -864,7 +877,7 @@ export default function SalesOrders(props) {
                   <td class="col-qty">
                     <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
                       <span>${qfmt(it.orderQty)}</span>
-                      <span style="font-size: 9px; color: #64748b;">${it.qtyUnit || "pcs"}</span>
+                      <span style="font-size: 9px; color: #8a8a8a;">${it.qtyUnit || "pcs"}</span>
                     </div>
                   </td>
                   <td style="text-align: right;">₹${afmt(it.price)}</td>
@@ -880,11 +893,11 @@ export default function SalesOrders(props) {
           <div class="total-row">
             <div style="width: 250px;">
               <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; padding: 0 5px;">
-                <label style="color: #64748b; font-weight: 600;">Subtotal:</label>
+                <label style="color: #8a8a8a; font-weight: 600;">Subtotal:</label>
                 <span style="font-weight: 700;">₹${afmt(subtotal)}</span>
               </div>
               <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; padding: 0 5px;">
-                <label style="color: #64748b; font-weight: 600;">GST Total:</label>
+                <label style="color: #8a8a8a; font-weight: 600;">GST Total:</label>
                 <span style="font-weight: 700;">₹${afmt(totalTax)}</span>
               </div>
               <div class="hr"></div>
@@ -932,47 +945,6 @@ export default function SalesOrders(props) {
   return (
     <>
       <div className="fade">
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            marginBottom: 4,
-          }}
-        >
-          <SectionTitle
-            icon="fa-solid fa-file-invoice-dollar"
-            title="Sales Orders"
-            sub="Create and track customer sales orders"
-          />
-          {!isClient && canCreate && (
-            <button
-              onClick={() => {
-                setHeader(blankHeader);
-                setItems([blankItem()]);
-                setHeaderErrors({});
-                setItemErrors([{}]);
-                setEditId(null);
-                setShowModal(true);
-              }}
-              style={{
-                background: "rgba(255,255,255,0.08)",
-                border: "1px solid rgba(255,255,255,0.18)",
-                color: "#fff",
-                padding: "9px 18px",
-                borderRadius: 10,
-                fontWeight: 600,
-                fontSize: 13,
-                cursor: "pointer",
-                boxShadow:
-                  "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
-              }}
-            >
-              + New SO
-            </button>
-          )}
-        </div>
-
         {}
         {showModal && (
           <Modal
@@ -993,7 +965,7 @@ export default function SalesOrders(props) {
                   style={{
                     fontSize: 15,
                     fontWeight: 500,
-                    color: C.green || "#4ade80",
+                    color: C.accent,
                     marginBottom: 20,
                   }}
                 >
@@ -1046,7 +1018,7 @@ export default function SalesOrders(props) {
                 <div
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "1fr 1.2fr 1fr 1.8fr",
+                    gridTemplateColumns: "1fr 1.2fr 1fr 1.2fr 1fr",
                     gap: 14,
                   }}
                 >
@@ -1138,7 +1110,7 @@ export default function SalesOrders(props) {
                   style={{
                     fontSize: 14,
                     fontWeight: 500,
-                    color: C.green || "#4ade80",
+                    color: C.accent,
                   }}
                 >
                   Order Items ({items.length})
@@ -1154,8 +1126,7 @@ export default function SalesOrders(props) {
                     fontWeight: 500,
                     fontSize: 13,
                     cursor: "pointer",
-                    boxShadow:
-                      "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
                   }}
                 >
                   + Add Item
@@ -1182,31 +1153,19 @@ export default function SalesOrders(props) {
                     <span
                       style={{
                         fontWeight: 500,
-                        color: C.green || "#4ade80",
+                        color: C.accent,
                         fontSize: 13,
                       }}
                     >
                       Item {idx + 1}
                     </span>
                     {items.length > 1 && (
-                      <button
+                      <IconBtn
+                        icon="fa-trash"
+                        label="Delete"
+                        danger
                         onClick={() => removeItem(idx)}
-                        style={{
-                          background: "transparent",
-                          color: "#ffffff",
-                          border: "1px solid rgba(255,255,255,0.2)",
-                          borderRadius: 6,
-                          padding: "6px 12px",
-                          fontSize: 11,
-                          fontWeight: 500,
-                          cursor: "pointer",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 6,
-                        }}
-                      >
-                        <i className="fa-solid fa-trash" /> Delete
-                      </button>
+                      />
                     )}
                   </div>
 
@@ -1214,7 +1173,7 @@ export default function SalesOrders(props) {
                   <div
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "1fr 1fr 1fr 0.8fr",
+                      gridTemplateColumns: "repeat(4, 1fr)",
                       gap: 12,
                       marginBottom: 12,
                     }}
@@ -1252,21 +1211,31 @@ export default function SalesOrders(props) {
                         onChange={(e) => setItem(idx, "gsm", e.target.value)}
                       />
                     </Field>
+                    <Field label="HSN">
+                      <input
+                        placeholder="HSN"
+                        value={it.hsnCode || ""}
+                        onChange={(e) =>
+                          setItem(idx, "hsnCode", e.target.value)
+                        }
+                      />
+                    </Field>
                   </div>
 
                   {}
                   {(() => {
                     const rawCategorySizes = subTypeMap[it.itemCategory] || [];
-                    const categorySizes = rawCategorySizes.length > 0
-                      ? rawCategorySizes
-                      : [
-                          ...new Set(
-                            fgItems
-                              .filter((f) => f.category === it.itemCategory)
-                              .map((f) => f.subCategory)
-                              .filter(Boolean),
-                          ),
-                        ];
+                    const categorySizes =
+                      rawCategorySizes.length > 0
+                        ? rawCategorySizes
+                        : [
+                            ...new Set(
+                              fgItems
+                                .filter((f) => f.category === it.itemCategory)
+                                .map((f) => f.subCategory)
+                                .filter(Boolean),
+                            ),
+                          ];
                     const config = CATEGORY_CONFIG[it.itemCategory];
 
                     const isLiquid = categorySizes.some((s) =>
@@ -1297,6 +1266,34 @@ export default function SalesOrders(props) {
                         f2 = "LENGTH";
                       }
                     }
+
+                    const amountField = (
+                      <Field label="AMOUNT (₹)">
+                        <div
+                          style={{
+                            height: 38,
+                            display: "flex",
+                            alignItems: "center",
+                            boxSizing: "border-box",
+                            padding: "0 12px",
+                            background: C.inputBg,
+                            border: `1px solid ${C.border}`,
+                            borderRadius: 6,
+                            fontSize: 13,
+                            color: it.amount ? C.accent : C.muted,
+                            fontWeight: it.amount ? 700 : 400,
+                          }}
+                        >
+                          {it.amount ? (
+                            `₹${fmt(+it.amount)}`
+                          ) : (
+                            <span style={{ fontSize: 11, color: C.muted }}>
+                              — Qty × Price —
+                            </span>
+                          )}
+                        </div>
+                      </Field>
+                    );
 
                     const showInputs = layout === "3D" || layout === "2D";
 
@@ -1378,7 +1375,7 @@ export default function SalesOrders(props) {
                           <div
                             style={{
                               display: "grid",
-                              gridTemplateColumns: "1fr 1fr 1fr",
+                              gridTemplateColumns: "repeat(4, 1fr)",
                               gap: 12,
                               marginBottom: 12,
                             }}
@@ -1439,6 +1436,7 @@ export default function SalesOrders(props) {
                               />
                               {EIMsg(idx, "price")}
                             </Field>
+                            {amountField}
                           </div>
                         </>
                       );
@@ -1448,7 +1446,7 @@ export default function SalesOrders(props) {
                       <div
                         style={{
                           display: "grid",
-                          gridTemplateColumns: "1fr 1fr 1fr",
+                          gridTemplateColumns: "repeat(4, 1fr)",
                           gap: 12,
                           marginBottom: 12,
                         }}
@@ -1513,6 +1511,7 @@ export default function SalesOrders(props) {
                           />
                           {EIMsg(idx, "price")}
                         </Field>
+                        {amountField}
                       </div>
                     );
                   })()}
@@ -1521,34 +1520,11 @@ export default function SalesOrders(props) {
                   <div
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "1fr 1fr 1fr",
+                      gridTemplateColumns: "repeat(4, 1fr)",
                       gap: 12,
                       marginBottom: 12,
                     }}
                   >
-                    <Field label="AMOUNT (₹)">
-                      <div
-                        style={{
-                          padding: "9px 12px",
-                          background: C.inputBg,
-                          border: `1px solid ${C.border}`,
-                          borderRadius: 6,
-                          fontSize: 13,
-                          color: it.amount ? C.green || "#4ade80" : C.muted,
-                          fontWeight: it.amount ? 700 : 400,
-                          height: "100%",
-                          boxSizing: "border-box",
-                        }}
-                      >
-                        {it.amount ? (
-                          `₹${fmt(+it.amount)}`
-                        ) : (
-                          <span style={{ fontSize: 11, color: C.muted }}>
-                            — Qty × Price —
-                          </span>
-                        )}
-                      </div>
-                    </Field>
                     <Field label="GST (%)">
                       <input
                         type="number"
@@ -1562,49 +1538,35 @@ export default function SalesOrders(props) {
                     <Field label="TOTAL (INCL TAX)">
                       <div
                         style={{
-                          padding: "9px 12px",
+                          height: 38,
+                          display: "flex",
+                          alignItems: "center",
+                          boxSizing: "border-box",
+                          padding: "0 12px",
                           background: C.inputBg,
                           border: `1px solid ${C.border}`,
                           borderRadius: 6,
                           fontSize: 13,
-                          color: it.totalWithTax
-                            ? C.green || "#4ade80"
-                            : C.muted,
+                          color: it.totalWithTax ? C.accent : C.muted,
                           fontWeight: it.totalWithTax ? 700 : 400,
                         }}
                       >
                         {it.totalWithTax ? `₹${fmt(+it.totalWithTax)}` : "—"}
                       </div>
                     </Field>
-                  </div>
-
-                  {}
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr 2fr",
-                      gap: 12,
-                      marginBottom: 12,
-                    }}
-                  >
-                    <Field label="HSN">
-                      <input
-                        placeholder="HSN"
-                        value={it.hsnCode || ""}
-                        onChange={(e) =>
-                          setItem(idx, "hsnCode", e.target.value)
-                        }
-                      />
-                    </Field>
-                    <Field label="ITEM NAME">
+                    <Field label="ITEM NAME" span={2}>
                       <div
                         style={{
-                          padding: "9px 12px",
+                          height: 38,
+                          display: "flex",
+                          alignItems: "center",
+                          boxSizing: "border-box",
+                          padding: "0 12px",
                           background: C.inputBg,
                           border: `1px solid ${C.border}`,
                           borderRadius: 6,
                           fontSize: 13,
-                          color: C.green || "#4ade80",
+                          color: C.accent,
                           fontWeight: 500,
                         }}
                       >
@@ -1641,9 +1603,9 @@ export default function SalesOrders(props) {
                 <button
                   onClick={addItem}
                   style={{
-                    background: (C.green || "#4ade80") + "22",
-                    color: C.green || "#4ade80",
-                    border: `1px solid ${C.green || "#4ade80"}44`,
+                    background: C.accent + "22",
+                    color: C.accent,
+                    border: `1px solid ${C.accent}44`,
                     borderRadius: 6,
                     padding: "9px 20px",
                     fontWeight: 500,
@@ -1659,7 +1621,7 @@ export default function SalesOrders(props) {
                       ? `Update Sales Order (${items.length} item${items.length > 1 ? "s" : ""})`
                       : `Create Sales Order (${items.length} item${items.length > 1 ? "s" : ""})`
                   }
-                  color={C.green || "#4ade80"}
+                  color={C.accent}
                   onClick={submit}
                   disabled={loading}
                 />
@@ -1693,8 +1655,8 @@ export default function SalesOrders(props) {
                     style={{
                       marginLeft: "auto",
                       padding: "12px 20px",
-                      background: (C.green || "#4ade80") + "11",
-                      border: `1px solid ${C.green || "#4ade80"}33`,
+                      background: C.accent + "11",
+                      border: `1px solid ${C.accent}33`,
                       borderRadius: 10,
                       display: "flex",
                       flexDirection: "column",
@@ -1740,7 +1702,7 @@ export default function SalesOrders(props) {
                     <div
                       style={{
                         height: 1,
-                        background: (C.green || "#4ade80") + "22",
+                        background: C.accent + "22",
                         margin: "4px 0",
                       }}
                     />
@@ -1748,8 +1710,8 @@ export default function SalesOrders(props) {
                       style={{
                         display: "flex",
                         justifyContent: "space-between",
-                        fontWeight: 800,
-                        color: C.green || "#4ade80",
+                        fontWeight: 600,
+                        color: C.accent,
                         fontSize: 15,
                       }}
                     >
@@ -1773,84 +1735,6 @@ export default function SalesOrders(props) {
 
         {}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <Card style={{ padding: "12px 20px" }}>
-            <div
-              style={{
-                display: "flex",
-                gap: 12,
-                alignItems: "center",
-                flexWrap: "wrap",
-              }}
-            >
-              <h3
-                style={{
-                  fontSize: 14,
-                  fontWeight: 500,
-                  color: C.muted,
-                  margin: 0,
-                }}
-              >
-                Sales Order History
-              </h3>
-              <DateRangeFilter
-                dateFrom={drDateFrom}
-                setDateFrom={setDrDateFrom}
-                dateTo={drDateTo}
-                setDateTo={setDrDateTo}
-              />
-              <AutocompleteInput
-                value={filterClient}
-                onChange={(v) => setFilterClient(v)}
-                suggestions={[
-                  ...new Set(
-                    (salesOrders || [])
-                      .map((r) => r.companyName || r.clientName)
-                      .filter(Boolean),
-                  ),
-                ].sort()}
-                placeholder="Filter by client..."
-                showAllOnFocus={true}
-                inputStyle={{
-                  padding: "6px 10px",
-                  background: "#0c0c0e",
-                  border: `1px solid ${C.border}`,
-                  borderRadius: 6,
-                  color: "#fff",
-                  fontSize: 12,
-                  width: 180,
-                }}
-              />
-              <AutocompleteInput
-                value={filterStatus}
-                onChange={(v) => setFilterStatus(v)}
-                suggestions={[
-                  "Open",
-                  "In Production",
-                  "Completed",
-                  "Closed",
-                  "Cancelled",
-                  "Partial",
-                ]}
-                placeholder="Filter by status..."
-                showAllOnFocus={true}
-                inputStyle={{
-                  padding: "6px 10px",
-                  background: "#0c0c0e",
-                  border: `1px solid ${C.border}`,
-                  borderRadius: 6,
-                  color: "#fff",
-                  fontSize: 12,
-                  width: 150,
-                }}
-              />
-              <span
-                style={{ fontSize: 12, color: C.muted, marginLeft: "auto" }}
-              >
-                {salesOrders.length} orders total
-              </span>
-            </div>
-          </Card>
-
           {(() => {
             const filteredSOs = (salesOrders || [])
               .slice()
@@ -1873,8 +1757,64 @@ export default function SalesOrders(props) {
                 )
                   return false;
                 if (filterStatus && r.status !== filterStatus) return false;
+                if (searchQuery) {
+                  const q = searchQuery.toLowerCase();
+                  const hay =
+                    `${r.soNo || ""} ${r.companyName || r.clientName || ""} ${r.poNo || ""}`.toLowerCase();
+                  if (!hay.includes(q)) return false;
+                }
                 return true;
               });
+            const soTotal = (r) =>
+              (r.items || []).reduce((ss, it) => ss + +(it.amount || 0), 0);
+            const soTime = (r) => new Date(r.createdAt || r.orderDate || 0);
+            const soSort = {
+              newest: null,
+              oldest: (a, b) => soTime(a) - soTime(b),
+              so_asc: (a, b) =>
+                String(a.soNo || "").localeCompare(
+                  String(b.soNo || ""),
+                  undefined,
+                  { numeric: true },
+                ),
+              client_asc: (a, b) =>
+                String(a.companyName || a.clientName || "").localeCompare(
+                  String(b.companyName || b.clientName || ""),
+                ),
+              value_desc: (a, b) => soTotal(b) - soTotal(a),
+              value_asc: (a, b) => soTotal(a) - soTotal(b),
+            }[sortBy];
+            if (soSort) filteredSOs.sort(soSort);
+            const SO_SORT = [
+              ["newest", "Newest first"],
+              ["oldest", "Oldest first"],
+              ["so_asc", "SO No (A → Z)"],
+              ["client_asc", "Client (A → Z)"],
+              ["value_desc", "Value (high → low)"],
+              ["value_asc", "Value (low → high)"],
+            ];
+            const activeFilterCount =
+              (filterClient ? 1 : 0) +
+              (filterStatus ? 1 : 0) +
+              (drDateFrom || drDateTo ? 1 : 0) +
+              (sortBy !== "newest" ? 1 : 0);
+            const exportSOExcel = () => {
+              const rows = filteredSOs.map((r) => [
+                r.soNo,
+                (r.orderDate || "").slice(0, 10),
+                r.companyName || r.clientName || "",
+                (r.items || []).length,
+                soTotal(r),
+                r.status || "Open",
+              ]);
+              const ws = XLSX.utils.aoa_to_sheet([
+                ["SO No", "Date", "Client", "Items", "Total", "Status"],
+                ...rows,
+              ]);
+              const wb = XLSX.utils.book_new();
+              XLSX.utils.book_append_sheet(wb, ws, "Sales Orders");
+              XLSX.writeFile(wb, `sales-orders-${today()}.xlsx`);
+            };
             const filteredIds = filteredSOs.map((r) => r._id);
             const allSelected =
               filteredIds.length > 0 &&
@@ -1908,8 +1848,8 @@ export default function SalesOrders(props) {
                 icon: "fa-solid fa-circle-check",
               },
               {
-                label: "Total Value",
-                value: `₹${fmt(totalValue)}`,
+                label: "Total Amount",
+                value: fmtLakh(totalValue),
                 icon: "fa-solid fa-indian-rupee-sign",
               },
             ];
@@ -1918,63 +1858,115 @@ export default function SalesOrders(props) {
                 <div
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "repeat(4, 1fr)",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
                     gap: 12,
                     marginBottom: 16,
                   }}
                 >
                   {statCards.map(({ label, value, icon }) => (
-                    <div
+                    <StatCard
                       key={label}
-                      style={{
-                        padding: "16px 20px",
-                        background: "transparent",
-                        border: "1px solid rgba(255,255,255,0.07)",
-                        borderRadius: 12,
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          marginBottom: 8,
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: 19,
-                            color: "#ffffff",
-                            fontWeight: 600,
-                            textTransform: "uppercase",
-                            letterSpacing: "0.05em",
-                          }}
-                        >
-                          {label}
-                        </span>
-                        <i
-                          className={icon}
-                          style={{
-                            color: C.muted,
-                            fontSize: 20,
-                            opacity: 0.9,
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            height: 28,
-                            width: 28,
-                            lineHeight: 1,
-                          }}
-                        />
-                      </div>
-                      <div
-                        style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}
-                      >
-                        {value}
-                      </div>
-                    </div>
+                      label={label}
+                      value={value}
+                      icon={icon}
+                    />
                   ))}
                 </div>
+
+                <ListToolbar
+                  search={searchQuery}
+                  setSearch={setSearchQuery}
+                  placeholder="Search SO, client..."
+                  count={filteredSOs.length}
+                  filterCount={activeFilterCount}
+                  onFilter={() => setShowFilterModal(true)}
+                  actions={
+                    <SelectToggle
+                      onChange={(on) => {
+                        if (!on) setSelectedIds(new Set());
+                      }}
+                    />
+                  }
+                  exportOptions={[
+                    {
+                      label: "Excel",
+                      icon: "fa-solid fa-file-excel",
+                      onClick: exportSOExcel,
+                    },
+                  ]}
+                  onAdd={
+                    !isClient && canCreate
+                      ? () => {
+                          setHeader(blankHeader);
+                          setItems([blankItem()]);
+                          setHeaderErrors({});
+                          setItemErrors([{}]);
+                          setEditId(null);
+                          setShowModal(true);
+                        }
+                      : undefined
+                  }
+                />
+
+                {showFilterModal && (
+                  <FilterModal
+                    onClose={() => setShowFilterModal(false)}
+                    onReset={() => {
+                      setFilterClient("");
+                      setFilterStatus("");
+                      setDrDateFrom("");
+                      setDrDateTo("");
+                      setSortBy("newest");
+                    }}
+                  >
+                    <Field label="Client">
+                      <AutocompleteInput
+                        value={filterClient}
+                        onChange={(v) => setFilterClient(v)}
+                        suggestions={[
+                          ...new Set(
+                            (salesOrders || [])
+                              .map((r) => r.companyName || r.clientName)
+                              .filter(Boolean),
+                          ),
+                        ].sort()}
+                        placeholder="All clients"
+                        showAllOnFocus={true}
+                      />
+                    </Field>
+                    <Field label="Status">
+                      <AutocompleteInput
+                        value={filterStatus}
+                        onChange={(v) => setFilterStatus(v)}
+                        suggestions={[
+                          "Open",
+                          "In Production",
+                          "Completed",
+                          "Closed",
+                          "Cancelled",
+                          "Partial",
+                        ]}
+                        placeholder="All statuses"
+                        showAllOnFocus={true}
+                      />
+                    </Field>
+                    <Field label="Order Date">
+                      <DateRangeFilter
+                        dateFrom={drDateFrom}
+                        setDateFrom={setDrDateFrom}
+                        dateTo={drDateTo}
+                        setDateTo={setDrDateTo}
+                      />
+                    </Field>
+                    <Field label="Sort by">
+                      <SortSelect
+                        value={sortBy}
+                        onChange={setSortBy}
+                        options={SO_SORT}
+                      />
+                    </Field>
+                  </FilterModal>
+                )}
 
                 {filteredSOs.length === 0 && (
                   <div
@@ -2114,10 +2106,8 @@ export default function SalesOrders(props) {
                                 padding: "10px 14px",
                                 textAlign: "left",
                                 fontSize: 11,
-                                fontWeight: 700,
+                                fontWeight: 600,
                                 color: C.muted,
-                                textTransform: "uppercase",
-                                letterSpacing: "0.05em",
                                 whiteSpace: "nowrap",
                               }}
                             >
@@ -2147,7 +2137,8 @@ export default function SalesOrders(props) {
                                     : i % 2 === 0
                                       ? "transparent"
                                       : "rgba(255,255,255,0.01)",
-                                transition: "all 0.4s ease",
+                                transition:
+                                  "background-color .15s, border-color .15s, color .15s, opacity .15s, transform .15s",
                               }}
                             >
                               {!isClient && (
@@ -2166,8 +2157,8 @@ export default function SalesOrders(props) {
                               <td
                                 style={{
                                   padding: "12px 14px",
-                                  fontWeight: 700,
-                                  color: "#4ade80",
+                                  fontWeight: 600,
+                                  color: "#c8955a",
                                   whiteSpace: "nowrap",
                                 }}
                               >
@@ -2193,7 +2184,7 @@ export default function SalesOrders(props) {
                                   fontWeight: 500,
                                 }}
                               >
-                                {r.companyName}
+                                <NameWithAvatar name={r.companyName} />
                               </td>
                               <td
                                 style={{ padding: "12px 14px", color: C.muted }}
@@ -2227,7 +2218,7 @@ export default function SalesOrders(props) {
                               <td
                                 style={{
                                   padding: "12px 14px",
-                                  fontWeight: 700,
+                                  fontWeight: 600,
                                   color: "#4ade80",
                                   whiteSpace: "nowrap",
                                 }}
@@ -2262,63 +2253,24 @@ export default function SalesOrders(props) {
                               <td style={{ padding: "12px 14px" }}>
                                 <div style={{ display: "flex", gap: 6 }}>
                                   {!isClient && canEdit && (
-                                    <button
+                                    <IconBtn
+                                      icon="fa-pen-to-square"
+                                      label="Edit"
                                       onClick={() => handleEdit(r)}
-                                      style={{
-                                        background: "transparent",
-                                        color: "#8082ff",
-                                        border: "1px solid #8082ff98",
-                                        borderRadius: 6,
-                                        padding: "6px 12px",
-                                        fontSize: 11,
-                                        fontWeight: 500,
-                                        cursor: "pointer",
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        gap: 6,
-                                      }}
-                                    >
-                                      <i className="fa-solid fa-pen-to-square" />{" "}
-                                      Edit
-                                    </button>
+                                    />
                                   )}
-                                  <button
+                                  <IconBtn
+                                    icon="fa-file-pdf"
+                                    label="Download PDF"
                                     onClick={() => generateSOPDF(r)}
-                                    style={{
-                                      background: "transparent",
-                                      color: "#8082ff",
-                                      border: "1px solid #8082ff98",
-                                      borderRadius: 6,
-                                      padding: "6px 12px",
-                                      fontSize: 11,
-                                      fontWeight: 500,
-                                      cursor: "pointer",
-                                      display: "inline-flex",
-                                      alignItems: "center",
-                                      gap: 6,
-                                    }}
-                                  >
-                                    <i className="fa-solid fa-file-pdf" /> PDF
-                                  </button>
+                                  />
                                   {!isClient && canDelete && (
-                                    <button
+                                    <IconBtn
+                                      icon="fa-trash"
+                                      label="Delete"
+                                      danger
                                       onClick={() => setDeleteTarget(r._id)}
-                                      style={{
-                                        background: "transparent",
-                                        color: "#8082ff",
-                                        border: "1px solid #8082ff98",
-                                        borderRadius: 6,
-                                        padding: "6px 12px",
-                                        fontSize: 11,
-                                        fontWeight: 500,
-                                        cursor: "pointer",
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        gap: 6,
-                                      }}
-                                    >
-                                      <i className="fa-solid fa-trash" /> Delete
-                                    </button>
+                                    />
                                   )}
                                 </div>
                               </td>

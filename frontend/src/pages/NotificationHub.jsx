@@ -43,8 +43,6 @@ const lbl = {
   color: "#666",
   display: "block",
   marginBottom: 5,
-  textTransform: "uppercase",
-  letterSpacing: "0.04em",
 };
 
 const TABS = [
@@ -331,7 +329,7 @@ To configure: go to Notification Hub in your ERP.
 
   return (
     <div>
-      <div style={{ fontSize: 17, fontWeight: 800, marginBottom: 4 }}>
+      <div style={{ fontSize: 17, fontWeight: 600, marginBottom: 4 }}>
         Executive Morning Email
       </div>
       <div style={{ fontSize: 12, color: "#888", marginBottom: 20 }}>
@@ -399,8 +397,7 @@ To configure: go to Notification Hub in your ERP.
               fontWeight: 500,
               fontSize: 12,
               cursor: "pointer",
-              boxShadow:
-                "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
             }}
           >
             Save Config
@@ -463,7 +460,6 @@ To configure: go to Notification Hub in your ERP.
             color: "#888",
             marginBottom: 14,
             fontSize: 12,
-            textTransform: "uppercase",
           }}
         >
           Email Preview
@@ -653,7 +649,7 @@ Have a productive day!
 
   return (
     <div>
-      <div style={{ fontSize: 17, fontWeight: 800, marginBottom: 4 }}>
+      <div style={{ fontSize: 17, fontWeight: 600, marginBottom: 4 }}>
         WhatsApp Integration
       </div>
       <div style={{ fontSize: 12, color: "#888", marginBottom: 20 }}>
@@ -736,7 +732,8 @@ Have a productive day!
               borderRadius: 10,
               cursor: "pointer",
               textAlign: "left",
-              transition: "all 0.15s",
+              transition:
+                "background-color .15s, border-color .15s, color .15s, opacity .15s, transform .15s",
             }}
           >
             <i
@@ -814,8 +811,7 @@ Have a productive day!
                   color: "#fff",
                   fontWeight: 500,
                   cursor: "pointer",
-                  boxShadow:
-                    "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
                 }}
               >
                 Generate
@@ -875,8 +871,7 @@ Have a productive day!
                   color: "#fff",
                   fontWeight: 500,
                   cursor: "pointer",
-                  boxShadow:
-                    "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
                 }}
               >
                 Generate
@@ -915,8 +910,7 @@ Have a productive day!
                   color: "#fff",
                   fontWeight: 500,
                   cursor: "pointer",
-                  boxShadow:
-                    "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
                 }}
               >
                 Generate
@@ -933,7 +927,6 @@ Have a productive day!
                 fontSize: 11,
                 color: "#888",
                 fontWeight: 500,
-                textTransform: "uppercase",
                 marginBottom: 8,
               }}
             >
@@ -973,14 +966,13 @@ Have a productive day!
                     border: "1px solid rgba(255,255,255,0.18)",
                     borderRadius: 6,
                     color: "#fff",
-                    fontWeight: 800,
+                    fontWeight: 600,
                     cursor: "pointer",
                     textDecoration: "none",
                     display: "flex",
                     alignItems: "center",
                     gap: 6,
-                    boxShadow:
-                      "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
                   }}
                 >
                   Send via WhatsApp Web

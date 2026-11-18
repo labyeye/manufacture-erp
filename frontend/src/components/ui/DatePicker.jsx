@@ -109,6 +109,7 @@ export function DatePicker({ value, onChange, style = {} }) {
   const calendar = open ? (
     <div
       ref={calRef}
+      className="anim-drop"
       style={{
         position: "fixed",
         top: calPos.top,
@@ -289,7 +290,10 @@ export function DatePicker({ value, onChange, style = {} }) {
         }}
       >
         <span>{display || "DD/MM/YYYY"}</span>
-        <span style={{ fontSize: 14, color: COLORS.muted }}>📅</span>
+        <i
+          className="fa-regular fa-calendar"
+          style={{ fontSize: 14, color: COLORS.muted }}
+        />
       </div>
       {ReactDOM.createPortal(calendar, document.body)}
     </div>

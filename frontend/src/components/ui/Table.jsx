@@ -32,7 +32,6 @@ export function Table({ cols, rows, emptyMsg = "No records yet." }) {
                   fontWeight: 600,
                   textAlign: "left",
                   fontSize: 11,
-                  textTransform: "uppercase",
                   letterSpacing: 1,
                   whiteSpace: "nowrap",
                 }}

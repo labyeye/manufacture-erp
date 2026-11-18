@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import * as XLSX from "xlsx";
 import ConfirmModal from "../components/ConfirmModal";
-import { C } from "../constants/colors";
+import { C, avatarColor } from "../constants/colors";
 import { purchaseOrdersAPI, itemMasterAPI, priceListAPI } from "../api/auth";
 import {
   Card,
@@ -12,8 +12,13 @@ import {
   AutocompleteInput,
   DateRangeFilter,
   Modal,
+  ListToolbar,
+  FilterModal,
+  SortSelect,
 } from "../components/ui/BasicComponents";
 import { DatePicker } from "../components/ui/DatePicker";
+import { IconBtn } from "../components/ui/IconBtn";
+import { StatCard } from "../components/ui/StatCard";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 const today = () => new Date().toISOString().slice(0, 10);
@@ -36,20 +41,7 @@ const getInitials = (name = "") => {
 };
 
 // 6-color palette → deterministic per vendor name
-const AVATAR_PALETTE = [
-  "#ffffff",
-  "#34d399",
-  "#f59e0b",
-  "#a78bfa",
-  "#f472b6",
-  "#22d3ee",
-];
-const vendorColor = (name = "") => {
-  if (!name) return AVATAR_PALETTE[0];
-  let h = 0;
-  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) | 0;
-  return AVATAR_PALETTE[Math.abs(h) % AVATAR_PALETTE.length];
-};
+const vendorColor = avatarColor;
 
 const isOverdue = (deliveryDate, status) => {
   if (!deliveryDate) return false;
@@ -90,6 +82,16 @@ const computeRMItemName = (it) => {
   }
   return it.itemName || "";
 };
+
+const SORT_OPTIONS = [
+  ["newest", "Newest first"],
+  ["oldest", "Oldest first"],
+  ["po_asc", "PO No (A → Z)"],
+  ["po_desc", "PO No (Z → A)"],
+  ["delivery", "Delivery date (soonest)"],
+  ["value_desc", "Value (high → low)"],
+  ["value_asc", "Value (low → high)"],
+];
 
 export default function PurchaseOrders({
   purchaseOrders = [],
@@ -158,6 +160,8 @@ export default function PurchaseOrders({
   const [searchQuery, setSearchQuery] = useState("");
   const [vendorFilter, setVendorFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
+  const [showFilterModal, setShowFilterModal] = useState(false);
   const importInputRef = useRef(null);
 
   useEffect(() => {
@@ -391,31 +395,31 @@ export default function PurchaseOrders({
             body { font-family: 'Inter', sans-serif; padding: 20px 30px; color: #1a1a1a; }
             .header { text-align: center; border-bottom: 2px solid #1e40af; padding-bottom: 10px; margin-bottom: 20px; }
             .header h1 { color: #1e3a8a; margin: 0; font-size: 24px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
-            .header p { margin: 2px 0; font-size: 11px; color: #475569; font-weight: 500; }
+            .header p { margin: 2px 0; font-size: 11px; color: #6b6b6b; font-weight: 500; }
             .header a { color: #1e40af; text-decoration: none; }
             
             .doc-title { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px; }
             .doc-title h2 { margin: 0; font-size: 18px; font-weight: 700; }
             .status { color: #1e40af; font-weight: 700; font-size: 12px; }
             
-            .hr { height: 1px; background: #e2e8f0; margin: 10px 0; border: none; }
+            .hr { height: 1px; background: #ededed; margin: 10px 0; border: none; }
             .po-no { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; color: #1a1a1a; margin: 5px 0; }
             
-            .section-label { font-size: 10px; color: #64748b; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 15px; margin-top: 20px; }
+            .section-label { font-size: 10px; color: #8a8a8a; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 15px; margin-top: 20px; }
             
             .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px; }
-            .info-item label { display: block; font-size: 9px; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
-            .info-item span { font-size: 11px; font-weight: 600; color: #1e293b; }
+            .info-item label { display: block; font-size: 9px; color: #a3a3a3; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
+            .info-item span { font-size: 11px; font-weight: 600; color: #1f1f1f; }
             
             table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-            th { background: #f8fafc; border: 1px solid #e2e8f0; padding: 4px 6px; text-align: left; font-size: 9px; font-weight: 800; text-transform: uppercase; color: #475569; white-space: nowrap; }
-            td { border: 1px solid #e2e8f0; padding: 4px 6px; font-size: 9px; color: #1e293b; line-height: 1.2; word-wrap: break-word; }
+            th { background: #f8fafc; border: 1px solid #ededed; padding: 4px 6px; text-align: left; font-size: 9px; font-weight: 800; text-transform: uppercase; color: #6b6b6b; white-space: nowrap; }
+            td { border: 1px solid #ededed; padding: 4px 6px; font-size: 9px; color: #1f1f1f; line-height: 1.2; word-wrap: break-word; }
             .col-qty { text-align: center; }
             .col-amt { text-align: right; font-weight: 700; }
             
             .total-row { display: flex; justify-content: flex-end; margin-top: 15px; }
             .total-box { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 800; color: #1a1a1a; }
-            .total-box label { font-size: 14px; color: #64748b; font-weight: 700; }
+            .total-box label { font-size: 14px; color: #8a8a8a; font-weight: 700; }
             
             @media print {
               body { padding: 0; }
@@ -489,7 +493,7 @@ export default function PurchaseOrders({
                 <tr>
                   <td>
                     <div style="font-weight: 700;">${it.itemName}</div>
-                    <div style="font-size: 8px; color: #64748b;">${it.productCode || ""}</div>
+                    <div style="font-size: 8px; color: #8a8a8a;">${it.productCode || ""}</div>
                     ${it.remarks ? `<div style="font-size: 8px; color: #1e40af; font-style: italic; margin-top: 2px;">Note: ${it.remarks}</div>` : ""}
                   </td>
                   <td style="white-space: nowrap;">${it.category || "—"}</td>
@@ -1049,12 +1053,6 @@ export default function PurchaseOrders({
   return (
     <>
       <div className="fade">
-        <SectionTitle
-          icon="fa-solid fa-file-invoice"
-          title="Purchase Orders"
-          sub="Create POs for raw materials and consumables"
-        />
-
         {showModal && (
           <Modal
             title={editingId ? "Edit Purchase Order" : "New Purchase Order"}
@@ -1197,7 +1195,7 @@ export default function PurchaseOrders({
                     style={{
                       background: "transparent",
                       color: "#ffffff",
-                      border: "1px solid #8082ff",
+                      border: "1px solid #c8955a",
                       borderRadius: 6,
                       padding: "6px 14px",
                       fontWeight: 500,
@@ -1231,7 +1229,7 @@ export default function PurchaseOrders({
                         style={{
                           background: "transparent",
                           color: "#ffffff",
-                          border: "1px solid #8082ff",
+                          border: "1px solid #c8955a",
                           borderRadius: 6,
                           padding: "6px 14px",
                           fontSize: 11,
@@ -1742,7 +1740,7 @@ export default function PurchaseOrders({
                   style={{
                     background: "transparent",
                     color: "#ffffff",
-                    border: "1px solid #8082ff",
+                    border: "1px solid #c8955a",
                     borderRadius: 6,
                     padding: "9px 20px",
                     fontWeight: 500,
@@ -1772,7 +1770,7 @@ export default function PurchaseOrders({
                   style={{
                     background: "transparent",
                     color: "#ffffff",
-                    border: "1px solid #8082ff",
+                    border: "1px solid #c8955a",
                     borderRadius: 6,
                     padding: "9px 20px",
                     fontWeight: 500,
@@ -1842,7 +1840,7 @@ export default function PurchaseOrders({
                       style={{
                         display: "flex",
                         justifyContent: "space-between",
-                        fontWeight: 800,
+                        fontWeight: 600,
                         color: C.green,
                         fontSize: 15,
                       }}
@@ -1898,7 +1896,40 @@ export default function PurchaseOrders({
               }
               return true;
             });
-          const filteredPOs = baseFiltered;
+          const poTotal = (r) =>
+            (r.items || []).reduce((ss, it) => ss + +(it.amount || 0), 0);
+          const sorters = {
+            newest: null,
+            oldest: (a, b) =>
+              new Date(a.createdAt || a.poDate || 0) -
+              new Date(b.createdAt || b.poDate || 0),
+            po_asc: (a, b) =>
+              String(a.poNo || "").localeCompare(
+                String(b.poNo || ""),
+                undefined,
+                { numeric: true },
+              ),
+            po_desc: (a, b) =>
+              String(b.poNo || "").localeCompare(
+                String(a.poNo || ""),
+                undefined,
+                { numeric: true },
+              ),
+            delivery: (a, b) =>
+              (a.deliveryDate || "9999").localeCompare(
+                b.deliveryDate || "9999",
+              ),
+            value_desc: (a, b) => poTotal(b) - poTotal(a),
+            value_asc: (a, b) => poTotal(a) - poTotal(b),
+          };
+          const filteredPOs = sorters[sortBy]
+            ? baseFiltered.slice().sort(sorters[sortBy])
+            : baseFiltered;
+          const activeFilterCount =
+            (vendorFilter ? 1 : 0) +
+            (statusFilter ? 1 : 0) +
+            (drDateFrom || drDateTo ? 1 : 0) +
+            (sortBy !== "newest" ? 1 : 0);
           const filteredIds = filteredPOs.map((r) => r._id);
           const allSelected =
             filteredIds.length > 0 &&
@@ -1976,7 +2007,7 @@ export default function PurchaseOrders({
                   : { type: "muted", text: "—" },
             },
             {
-              label: "Total Value",
+              label: "Total Amount",
               value: fmtLakh(totalValue),
               icon: "fa-solid fa-indian-rupee-sign",
               accent: "purple",
@@ -2020,6 +2051,42 @@ export default function PurchaseOrders({
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Purchase Orders");
             XLSX.writeFile(wb, `purchase-orders-${todayStr}.xlsx`);
+          };
+
+          const exportListPDF = (rows) => {
+            const esc = (x) =>
+              String(x ?? "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;");
+            const body = rows
+              .map((r) => {
+                const v =
+                  typeof r.vendor === "object"
+                    ? r.vendor?.name
+                    : r.vendor || r.vendorName || "";
+                return `<tr><td>${esc(r.poNo)}</td><td>${(r.poDate || "").slice(0, 10)}</td><td>${esc(v)}</td><td style="text-align:right">${(r.items || []).length}</td><td>${(r.deliveryDate || "").slice(0, 10)}</td><td style="text-align:right">${poTotal(r).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td><td>${esc(r.status || "Open")}</td></tr>`;
+              })
+              .join("");
+            const html = `<html><head><title>Purchase Orders</title><style>
+              body{font-family:Arial,sans-serif;font-size:11px;color:#161616;padding:20px}
+              h2{margin:0 0 4px} p{margin:0 0 12px;color:#6b6b6b}
+              table{width:100%;border-collapse:collapse}
+              th{background:#f1f1f1;text-align:left;padding:6px;border-bottom:1px solid #ccc}
+              td{padding:6px;border-bottom:1px solid #eee}
+            </style></head><body><h2>Purchase Orders</h2><p>${rows.length} records · ${todayStr}</p>
+            <table><thead><tr><th>PO No</th><th>Date</th><th>Vendor</th><th>Items</th><th>Delivery</th><th>Total</th><th>Status</th></tr></thead><tbody>${body}</tbody></table></body></html>`;
+            const iframe = document.createElement("iframe");
+            iframe.style.cssText =
+              "position:fixed;right:0;bottom:0;width:0;height:0;border:0";
+            document.body.appendChild(iframe);
+            iframe.contentWindow.document.open();
+            iframe.contentWindow.document.write(html);
+            iframe.contentWindow.document.close();
+            setTimeout(() => {
+              iframe.contentWindow.focus();
+              iframe.contentWindow.print();
+              setTimeout(() => document.body.removeChild(iframe), 1000);
+            }, 400);
           };
 
           const bulkMarkReceived = async () => {
@@ -2086,277 +2153,169 @@ export default function PurchaseOrders({
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(4, 1fr)",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
                   gap: 12,
                 }}
               >
                 {statCards.map(({ label, value, icon }) => (
-                  <div
+                  <StatCard
                     key={label}
-                    style={{
-                      padding: "16px 20px",
-                      background: "transparent",
-                      border: "1px solid rgba(255,255,255,0.07)",
-                      borderRadius: 12,
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: 8,
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: 19,
-                          color: "#ffffff",
-                          fontWeight: 600,
-                          textTransform: "uppercase",
-                          letterSpacing: "0.05em",
-                        }}
-                      >
-                        {label}
-                      </span>
-                      <i
-                        className={icon}
-                        style={{
-                          color: C.muted,
-                          fontSize: 20,
-                          opacity: 0.9,
-                          display: "inline-flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          height: 28,
-                          width: 28,
-                          lineHeight: 1,
-                        }}
-                      />
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 20,
-                        fontWeight: 800,
-                        color: "#fff",
-                      }}
-                    >
-                      {value}
-                    </div>
-                  </div>
+                    label={label}
+                    value={value}
+                    icon={icon}
+                  />
                 ))}
               </div>
 
-              {/* Toolbar: search + filters + actions */}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  gap: 12,
-                  flexWrap: "wrap",
+              {/* Toolbar: search + filter + export + add */}
+              <ListToolbar
+                onSelectModeChange={(on) => {
+                  if (!on) setSelectedIds(new Set());
                 }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    gap: 12,
-                    flex: 1,
-                    alignItems: "center",
-                    flexWrap: "nowrap",
-                  }}
-                >
-                  <div style={{ position: "relative", width: 300 }}>
-                    <span
-                      style={{
-                        position: "absolute",
-                        left: 12,
-                        top: "50%",
-                        transform: "translateY(-50%)",
-                        color: "#555",
-                      }}
-                    >
-                      <i className="fa-solid fa-magnifying-glass" />
-                    </span>
-                    <input
-                      placeholder="Search PO, vendor..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      style={{
-                        width: "100%",
-                        padding: "9px 12px 9px 36px",
-                        background: "transparent",
-                        border: "1px solid #2a2a2e",
-                        borderRadius: 6,
-                        color: "#fff",
-                        fontSize: 13,
-                      }}
-                    />
-                  </div>
-                  <AutocompleteInput
-                    value={vendorFilter}
-                    onChange={(v) => setVendorFilter(v)}
-                    suggestions={vendorOptions}
-                    placeholder="Filter by vendor..."
-                    showAllOnFocus={true}
-                    inputStyle={{
-                      minWidth: 140,
-                      padding: "9px 12px",
-                      background: "transparent",
-                      border: "1px solid #2a2a2e",
-                      borderRadius: 6,
-                      color: "#fff",
-                      fontSize: 13,
-                    }}
-                  />
-                  <AutocompleteInput
-                    value={statusFilter}
-                    onChange={(v) => setStatusFilter(v)}
-                    suggestions={["Open", "Pending", "Received", "Cancelled"]}
-                    placeholder="Filter by status..."
-                    showAllOnFocus={true}
-                    inputStyle={{
-                      minWidth: 120,
-                      padding: "9px 12px",
-                      background: "transparent",
-                      border: "1px solid #2a2a2e",
-                      borderRadius: 6,
-                      color: "#fff",
-                      fontSize: 13,
-                    }}
-                  />
-                  <DateRangeFilter
-                    dateFrom={drDateFrom}
-                    setDateFrom={setDrDateFrom}
-                    dateTo={drDateTo}
-                    setDateTo={setDrDateTo}
-                  />
-                </div>
-                <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                  <span style={{ fontSize: 12, color: C.muted }}>
-                    {filteredPOs.length} records found
-                  </span>
-                  <button
-                    onClick={() => exportExcel(filteredPOs)}
-                    style={{
-                      background: "transparent",
-                      color: "#ffffff",
-                      border: "1px solid #8082ff",
-                      borderRadius: 6,
-                      padding: "8px 16px",
-                      fontSize: 12,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                    }}
-                  >
-                    <i className="fa-solid fa-file-excel" /> Export Excel
-                  </button>
-                  {canEdit && (
-                    <button
-                      onClick={() => importInputRef.current?.click()}
-                      style={{
-                        background: "transparent",
-                        color: "#ffffff",
-                        border: "1px solid #8082ff",
-                        borderRadius: 6,
-                        padding: "8px 16px",
-                        fontSize: 12,
-                        fontWeight: 500,
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                      }}
-                    >
-                      <i className="fa-solid fa-file-import" /> Import Excel
-                    </button>
-                  )}
-                  <input
-                    ref={importInputRef}
-                    type="file"
-                    accept=".xlsx,.xls"
-                    style={{ display: "none" }}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      const reader = new FileReader();
-                      reader.onload = async (ev) => {
-                        try {
-                          const wb = XLSX.read(ev.target.result, {
-                            type: "binary",
-                          });
-                          const ws = wb.Sheets[wb.SheetNames[0]];
-                          const rows = XLSX.utils.sheet_to_json(ws, {
-                            defval: "",
-                          });
-                          if (!rows.length) {
-                            toast("No rows found in Excel file", "error");
-                            return;
-                          }
-                          let ok = 0;
-                          let failed = 0;
-                          for (const row of rows) {
-                            try {
-                              await purchaseOrdersAPI.create({
-                                poNo: row["PO No"] || row.poNo || "",
-                                poDate: row["Date"] || row.poDate || todayStr,
-                                vendor: row["Vendor"] || row.vendor || "",
-                                deliveryDate:
-                                  row["Delivery"] || row.deliveryDate || "",
-                                remarks: row["Remarks"] || row.remarks || "",
-                                items: [],
-                              });
-                              ok++;
-                            } catch {
-                              failed++;
-                            }
-                          }
-                          toast(
-                            `Imported ${ok} PO(s)${failed ? `, ${failed} failed` : ""}`,
-                            failed ? "warning" : "success",
-                          );
-                          fetchPOs();
-                        } catch (err) {
-                          toast("Failed to read Excel file", "error");
-                        } finally {
-                          if (e.target) e.target.value = "";
-                        }
-                      };
-                      reader.readAsBinaryString(file);
-                    }}
-                  />
-                  {canCreate && (
-                    <button
-                      onClick={() => {
+                search={searchQuery}
+                setSearch={setSearchQuery}
+                placeholder="Search PO, vendor..."
+                count={filteredPOs.length}
+                filterCount={activeFilterCount}
+                onFilter={() => setShowFilterModal(true)}
+                exportOptions={[
+                  {
+                    label: "Excel",
+                    icon: "fa-solid fa-file-excel",
+                    onClick: () => exportExcel(filteredPOs),
+                  },
+                  {
+                    label: "PDF",
+                    icon: "fa-solid fa-file-pdf",
+                    onClick: () => exportListPDF(filteredPOs),
+                  },
+                ]}
+                onAdd={
+                  canCreate
+                    ? () => {
                         setHeader(blankHeader);
                         setItems([blankItem()]);
                         setHeaderErrors({});
                         setItemErrors([{}]);
                         setEditingId(null);
                         setShowModal(true);
-                      }}
-                      style={{
-                        background: "transparent",
-                        color: "#ffffff",
-                        border: "1px solid #8082ff",
-                        borderRadius: 6,
-                        padding: "8px 16px",
-                        fontSize: 12,
-                        fontWeight: 500,
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                      }}
-                    >
-                      <i className="fa-solid fa-plus" /> New PO
-                    </button>
-                  )}
-                </div>
-              </div>
+                      }
+                    : undefined
+                }
+                onImport={
+                  canEdit ? () => importInputRef.current?.click() : undefined
+                }
+                onTemplate={() => {
+                  const ws = XLSX.utils.aoa_to_sheet([
+                    ["PO No", "Date", "Vendor", "Delivery", "Remarks"],
+                    ["PO-2026001", todayStr, "Vendor Name", todayStr, ""],
+                  ]);
+                  const wb = XLSX.utils.book_new();
+                  XLSX.utils.book_append_sheet(wb, ws, "Template");
+                  XLSX.writeFile(wb, "purchase_orders_template.xlsx");
+                }}
+              />
+              <input
+                ref={importInputRef}
+                type="file"
+                accept=".xlsx,.xls"
+                style={{ display: "none" }}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const reader = new FileReader();
+                  reader.onload = async (ev) => {
+                    try {
+                      const wb = XLSX.read(ev.target.result, {
+                        type: "binary",
+                      });
+                      const ws = wb.Sheets[wb.SheetNames[0]];
+                      const rows = XLSX.utils.sheet_to_json(ws, {
+                        defval: "",
+                      });
+                      if (!rows.length) {
+                        toast("No rows found in Excel file", "error");
+                        return;
+                      }
+                      let ok = 0;
+                      let failed = 0;
+                      for (const row of rows) {
+                        try {
+                          await purchaseOrdersAPI.create({
+                            poNo: row["PO No"] || row.poNo || "",
+                            poDate: row["Date"] || row.poDate || todayStr,
+                            vendor: row["Vendor"] || row.vendor || "",
+                            deliveryDate:
+                              row["Delivery"] || row.deliveryDate || "",
+                            remarks: row["Remarks"] || row.remarks || "",
+                            items: [],
+                          });
+                          ok++;
+                        } catch {
+                          failed++;
+                        }
+                      }
+                      toast(
+                        `Imported ${ok} PO(s)${failed ? `, ${failed} failed` : ""}`,
+                        failed ? "warning" : "success",
+                      );
+                      fetchPOs();
+                    } catch (err) {
+                      toast("Failed to read Excel file", "error");
+                    } finally {
+                      if (e.target) e.target.value = "";
+                    }
+                  };
+                  reader.readAsBinaryString(file);
+                }}
+              />
+
+              {showFilterModal && (
+                <FilterModal
+                  onClose={() => setShowFilterModal(false)}
+                  onReset={() => {
+                    setVendorFilter("");
+                    setStatusFilter("");
+                    setDrDateFrom("");
+                    setDrDateTo("");
+                    setSortBy("newest");
+                  }}
+                >
+                  <Field label="Vendor">
+                    <AutocompleteInput
+                      value={vendorFilter}
+                      onChange={(v) => setVendorFilter(v)}
+                      suggestions={vendorOptions}
+                      placeholder="All vendors"
+                      showAllOnFocus={true}
+                    />
+                  </Field>
+                  <Field label="Status">
+                    <AutocompleteInput
+                      value={statusFilter}
+                      onChange={(v) => setStatusFilter(v)}
+                      suggestions={["Open", "Pending", "Received", "Cancelled"]}
+                      placeholder="All statuses"
+                      showAllOnFocus={true}
+                    />
+                  </Field>
+                  <Field label="PO Date">
+                    <DateRangeFilter
+                      dateFrom={drDateFrom}
+                      setDateFrom={setDrDateFrom}
+                      dateTo={drDateTo}
+                      setDateTo={setDrDateTo}
+                    />
+                  </Field>
+                  <Field label="Sort by">
+                    <SortSelect
+                      value={sortBy}
+                      onChange={setSortBy}
+                      options={SORT_OPTIONS}
+                    />
+                  </Field>
+                </FilterModal>
+              )}
 
               {/* Bulk action bar */}
               {canDelete && selectedIds.size > 0 && (
@@ -2382,7 +2341,7 @@ export default function PurchaseOrders({
                       style={{
                         padding: "5px 12px",
                         borderRadius: 5,
-                        border: "1px solid #8082ff",
+                        border: "1px solid #c8955a",
                         background: "transparent",
                         color: "#ffffff",
                         fontSize: 12,
@@ -2431,7 +2390,7 @@ export default function PurchaseOrders({
                       style={{
                         padding: "5px 12px",
                         borderRadius: 5,
-                        border: "1px solid #8082ff",
+                        border: "1px solid #c8955a",
                         background: "transparent",
                         color: "#ffffff",
                         fontSize: 12,
@@ -2534,10 +2493,8 @@ export default function PurchaseOrders({
                               padding: "10px 14px",
                               textAlign: h === "Total" ? "right" : "left",
                               fontSize: 11,
-                              fontWeight: 700,
+                              fontWeight: 600,
                               color: C.muted,
-                              textTransform: "uppercase",
-                              letterSpacing: "0.05em",
                               whiteSpace: "nowrap",
                             }}
                           >
@@ -2574,7 +2531,8 @@ export default function PurchaseOrders({
                                   : i % 2 === 0
                                     ? "transparent"
                                     : "rgba(255,255,255,0.01)",
-                              transition: "all 0.4s ease",
+                              transition:
+                                "background-color .15s, border-color .15s, color .15s, opacity .15s, transform .15s",
                             }}
                           >
                             {canEdit && (
@@ -2593,8 +2551,8 @@ export default function PurchaseOrders({
                             <td
                               style={{
                                 padding: "12px 14px",
-                                fontWeight: 700,
-                                color: "#8082ff",
+                                fontWeight: 600,
+                                color: "#c8955a",
                                 whiteSpace: "nowrap",
                                 cursor: "pointer",
                               }}
@@ -2636,7 +2594,7 @@ export default function PurchaseOrders({
                                     background: vendorColor(vendorDisplayName),
                                     color: "#0b0b14",
                                     fontSize: 11,
-                                    fontWeight: 700,
+                                    fontWeight: 600,
                                   }}
                                 >
                                   {getInitials(vendorDisplayName)}
@@ -2679,7 +2637,7 @@ export default function PurchaseOrders({
                             <td
                               style={{
                                 padding: "12px 14px",
-                                fontWeight: 700,
+                                fontWeight: 600,
                                 color: "#10b981",
                                 whiteSpace: "nowrap",
                                 textAlign: "right",
@@ -2712,65 +2670,26 @@ export default function PurchaseOrders({
                                 : "—"}
                             </td>
                             <td style={{ padding: "12px 14px" }}>
-                              <div style={{ display: "flex", gap: 6 }}>
+                              <div style={{ display: "flex", gap: 4 }}>
                                 {canEdit && (
-                                  <button
+                                  <IconBtn
+                                    icon="fa-pen-to-square"
+                                    label="Edit"
                                     onClick={() => handleEdit(r)}
-                                    style={{
-                                      background: "transparent",
-                                      color: "#8082ff",
-                                      border: "1px solid #8082ff98",
-                                      borderRadius: 6,
-                                      padding: "6px 12px",
-                                      fontSize: 11,
-                                      fontWeight: 500,
-                                      cursor: "pointer",
-                                      display: "inline-flex",
-                                      alignItems: "center",
-                                      gap: 6,
-                                    }}
-                                  >
-                                    <i className="fa-solid fa-pen-to-square" />{" "}
-                                    Edit
-                                  </button>
+                                  />
                                 )}
-                                <button
+                                <IconBtn
+                                  icon="fa-file-pdf"
+                                  label="Download PDF"
                                   onClick={() => generatePOPDF(r)}
-                                  style={{
-                                    background: "transparent",
-                                    color: "#8082ff",
-                                    border: "1px solid #8082ff98",
-                                    borderRadius: 6,
-                                    padding: "6px 12px",
-                                    fontSize: 11,
-                                    fontWeight: 500,
-                                    cursor: "pointer",
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    gap: 6,
-                                  }}
-                                >
-                                  <i className="fa-solid fa-file-pdf" /> PDF
-                                </button>
+                                />
                                 {canDelete && (
-                                  <button
+                                  <IconBtn
+                                    icon="fa-trash"
+                                    label="Delete"
+                                    danger
                                     onClick={() => setDeleteTarget(r._id)}
-                                    style={{
-                                      background: "transparent",
-                                      color: "#8082ff",
-                                      border: "1px solid #8082ff98",
-                                      borderRadius: 6,
-                                      padding: "6px 12px",
-                                      fontSize: 11,
-                                      fontWeight: 500,
-                                      cursor: "pointer",
-                                      display: "inline-flex",
-                                      alignItems: "center",
-                                      gap: 6,
-                                    }}
-                                  >
-                                    <i className="fa-solid fa-trash" /> Delete
-                                  </button>
+                                  />
                                 )}
                               </div>
                             </td>

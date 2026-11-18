@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from "react";
-import { C } from "../constants/colors";
+import React, { useState, useEffect, useMemo } from "react";
 import {
-  Card,
-  SectionTitle,
+  ListToolbar,
+  Modal,
+  FormGrid,
   Field,
-  SubmitBtn,
 } from "../components/ui/BasicComponents";
 import { sizeMasterAPI } from "../api/auth";
+import { IconBtn } from "../components/ui/IconBtn";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 
@@ -35,11 +35,11 @@ const SIZE_CATEGORIES = [
 export default function SizeMaster({ toast }) {
   const [sizeMaster, setSizeMaster] = useState({});
   const [loading, setLoading] = useState(false);
-  const [tab, setTab] = useState("list");
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [search, setSearch] = useState("");
+  const [filterCategory, setFilterCategory] = useState("");
+  const [formCategory, setFormCategory] = useState("");
   const [newSize, setNewSize] = useState("");
-  const [editingId, setEditingId] = useState(null);
-  const [editingValue, setEditingValue] = useState("");
 
   useEffect(() => {
     fetchSizes();
@@ -54,12 +54,29 @@ export default function SizeMaster({ toast }) {
     }
   };
 
-  const currentSizes = selectedCategory
-    ? sizeMaster[selectedCategory] || []
-    : [];
+  // One flat list: every size with its category
+  const rows = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return Object.entries(sizeMaster)
+      .filter(([cat]) => !filterCategory || cat === filterCategory)
+      .flatMap(([cat, sizes]) => (sizes || []).map((size) => ({ cat, size })))
+      .filter(
+        (r) =>
+          !q ||
+          r.size.toLowerCase().includes(q) ||
+          r.cat.toLowerCase().includes(q),
+      )
+      .sort((a, b) => a.cat.localeCompare(b.cat));
+  }, [sizeMaster, search, filterCategory]);
+
+  const closeModal = () => {
+    setShowModal(false);
+    setFormCategory("");
+    setNewSize("");
+  };
 
   const handleAddSize = async () => {
-    if (!selectedCategory) {
+    if (!formCategory) {
       toast("Please select a category", "error");
       return;
     }
@@ -70,9 +87,9 @@ export default function SizeMaster({ toast }) {
 
     setLoading(true);
     try {
-      await sizeMasterAPI.addSize(selectedCategory, newSize.trim());
-      toast(`Size "${newSize}" added to ${selectedCategory}`, "success");
-      setNewSize("");
+      await sizeMasterAPI.addSize(formCategory, newSize.trim());
+      toast(`Size "${newSize}" added to ${formCategory}`, "success");
+      closeModal();
       fetchSizes();
     } catch (error) {
       toast(error.response?.data?.error || "Failed to add size", "error");
@@ -81,9 +98,10 @@ export default function SizeMaster({ toast }) {
     }
   };
 
-  const handleDeleteSize = async (size) => {
+  const handleDeleteSize = async (category, size) => {
+    if (!window.confirm(`Delete "${size}" from ${category}?`)) return;
     try {
-      await sizeMasterAPI.deleteSize(selectedCategory, size);
+      await sizeMasterAPI.deleteSize(category, size);
       toast("Size deleted", "success");
       fetchSizes();
     } catch (error) {
@@ -91,212 +109,27 @@ export default function SizeMaster({ toast }) {
     }
   };
 
-  const handleEditSize = async (oldSize, newValue) => {
-    if (!newValue.trim()) {
-      toast("Size cannot be empty", "error");
-      return;
-    }
-
-    try {
-      await sizeMasterAPI.updateSize(
-        selectedCategory,
-        oldSize,
-        newValue.trim(),
-      );
-      toast("Size updated", "success");
-      setEditingId(null);
-      setEditingValue("");
-      fetchSizes();
-    } catch (error) {
-      toast(error.response?.data?.error || "Failed to update size", "error");
-    }
+  const th = {
+    padding: "10px 14px",
+    textAlign: "left",
+    fontSize: 11,
+    fontWeight: 600,
+    color: "#8a8a8a",
+    whiteSpace: "nowrap",
   };
 
   return (
     <div className="fade">
-      <SectionTitle
-        icon="📏"
-        title="Size Master"
-        sub="Manage product sizes and dimensions for each category"
-      />
-
-      <div
-        style={{
-          display: "flex",
-          gap: 8,
-          marginBottom: 20,
-          borderBottom: `1px solid ${C.border}`,
-        }}
-      >
-        <button
-          onClick={() => setTab("list")}
-          style={{
-            padding: "9px 20px",
-            borderRadius: "6px 6px 0 0",
-            fontWeight: 500,
-            fontSize: 13,
-            border: `1px solid ${tab === "list" ? C.blue : C.border}`,
-            background: tab === "list" ? C.card : "transparent",
-            color: tab === "list" ? C.blue : C.muted,
-            marginBottom: -1,
-            cursor: "pointer",
-          }}
-        >
-          📋 View Sizes
-        </button>
-        <button
-          onClick={() => setTab("new")}
-          style={{
-            padding: "9px 20px",
-            borderRadius: "6px 6px 0 0",
-            fontWeight: 500,
-            fontSize: 13,
-            border: `1px solid ${tab === "new" ? C.blue : C.border}`,
-            background: tab === "new" ? C.card : "transparent",
-            color: tab === "new" ? C.blue : C.muted,
-            marginBottom: -1,
-            cursor: "pointer",
-          }}
-        >
-          ➕ Add Size
-        </button>
-      </div>
-
-      {tab === "list" && (
-        <Card>
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 13, fontWeight: 600, color: C.muted }}>
-              Select Category:
-            </label>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              style={{
-                width: "100%",
-                marginTop: 8,
-                padding: "9px 12px",
-                border: `1px solid ${C.border}`,
-                borderRadius: 6,
-                fontSize: 13,
-              }}
-            >
-              <option value="">-- Select Category --</option>
-              {SIZE_CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {selectedCategory ? (
-            currentSizes.length === 0 ? (
-              <div
-                style={{
-                  textAlign: "center",
-                  color: C.muted,
-                  padding: 32,
-                  fontSize: 13,
-                }}
-              >
-                No sizes configured for {selectedCategory}
-              </div>
-            ) : (
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
-                  gap: 12,
-                }}
-              >
-                {currentSizes.map((size, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      padding: "12px 16px",
-                      background: C.surface,
-                      border: `1px solid ${C.border}`,
-                      borderRadius: 6,
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      gap: 8,
-                    }}
-                  >
-                    <span style={{ fontWeight: 600, fontSize: 13 }}>
-                      {size}
-                    </span>
-                    <button
-                      onClick={() => handleDeleteSize(size)}
-                      style={{
-                        background: "transparent",
-                        color: "#8082ff",
-                        border: "1px solid #8082ff98",
-                        borderRadius: 6,
-                        padding: "6px 12px",
-                        fontSize: 11,
-                        fontWeight: 500,
-                        cursor: "pointer",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 6,
-                      }}
-                    >
-                      <i className="fa-solid fa-trash" /> Delete
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )
-          ) : (
-            <div
-              style={{
-                textAlign: "center",
-                color: C.muted,
-                padding: 32,
-                fontSize: 13,
-              }}
-            >
-              Select a category to view its sizes
-            </div>
-          )}
-        </Card>
-      )}
-
-      {tab === "new" && (
-        <Card>
-          <h3
-            style={{
-              fontSize: 14,
-              fontWeight: 500,
-              color: C.blue,
-              marginBottom: 16,
-            }}
-          >
-            Add New Size
-          </h3>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-              gap: 14,
-              marginBottom: 20,
-            }}
-          >
+      {showModal && (
+        <Modal title="New size" maxWidth={520} onClose={closeModal}>
+          <FormGrid>
             <Field label="Category *">
               <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "9px 12px",
-                  border: `1px solid ${C.border}`,
-                  borderRadius: 6,
-                  fontSize: 13,
-                }}
+                className="lg-input"
+                value={formCategory}
+                onChange={(e) => setFormCategory(e.target.value)}
               >
-                <option value="">-- Select Category --</option>
+                <option value="">Select category</option>
                 {SIZE_CATEGORIES.map((cat) => (
                   <option key={cat} value={cat}>
                     {cat}
@@ -304,67 +137,143 @@ export default function SizeMaster({ toast }) {
                 ))}
               </select>
             </Field>
-
-            <Field label="Size Description *">
+            <Field label="Size *">
               <input
+                className="lg-input"
                 type="text"
-                placeholder="e.g. Small, Medium, Large, 10inch, etc."
+                placeholder="e.g. Small, Medium, 10 inch"
                 value={newSize}
                 onChange={(e) => setNewSize(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "9px 12px",
-                  border: `1px solid ${C.border}`,
-                  borderRadius: 6,
-                  fontSize: 13,
-                }}
+                onKeyDown={(e) => e.key === "Enter" && handleAddSize()}
               />
             </Field>
-          </div>
-
-          <div style={{ display: "flex", gap: 10 }}>
-            <SubmitBtn
-              label="Add Size"
-              color={C.blue}
-              onClick={handleAddSize}
-            />
-            <button
-              onClick={() => {
-                setSelectedCategory("");
-                setNewSize("");
-              }}
-              style={{
-                padding: "9px 20px",
-                borderRadius: 6,
-                border: `1px solid ${C.border}`,
-                background: C.inputBg,
-                color: C.text,
-                fontWeight: 500,
-                fontSize: 13,
-                cursor: "pointer",
-              }}
-            >
-              Clear
-            </button>
-          </div>
-
-          {selectedCategory && (
+          </FormGrid>
+          {formCategory && (
             <div
               style={{
-                marginTop: 20,
-                padding: "12px 16px",
-                background: C.blue + "11",
-                border: `1px solid ${C.blue}44`,
-                borderRadius: 6,
+                marginTop: 16,
                 fontSize: 12,
+                color: "#a3a3a3",
               }}
             >
-              <strong>Current Sizes in {selectedCategory}:</strong>{" "}
-              {currentSizes.length === 0 ? "None" : currentSizes.join(", ")}
+              Current sizes in {formCategory}:{" "}
+              {(sizeMaster[formCategory] || []).join(", ") || "none"}
             </div>
           )}
-        </Card>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: 8,
+              marginTop: 20,
+            }}
+          >
+            <button type="button" className="lg-btn" onClick={closeModal}>
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="lg-btn lg-btn-primary"
+              disabled={loading}
+              onClick={handleAddSize}
+            >
+              {loading ? "Saving…" : "Add size"}
+            </button>
+          </div>
+        </Modal>
       )}
+
+      <ListToolbar
+        search={search}
+        setSearch={setSearch}
+        placeholder="Search sizes..."
+        count={rows.length}
+        extra={
+          <select
+            className="lg-input"
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+            style={{ width: 200 }}
+            aria-label="Category"
+          >
+            <option value="">All categories</option>
+            {SIZE_CATEGORIES.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
+            ))}
+          </select>
+        }
+        onAdd={() => {
+          setFormCategory(filterCategory);
+          setNewSize("");
+          setShowModal(true);
+        }}
+        addLabel="Add size"
+      />
+      <div style={{ height: 12 }} />
+
+      <div
+        style={{
+          border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 12,
+          overflow: "hidden",
+        }}
+      >
+        {rows.length === 0 ? (
+          <div
+            style={{
+              textAlign: "center",
+              color: "#8a8a8a",
+              padding: 40,
+              fontSize: 13,
+            }}
+          >
+            {search || filterCategory ? "No sizes found" : "No sizes yet"}
+          </div>
+        ) : (
+          <table
+            style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}
+          >
+            <thead>
+              <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                <th style={th}>Category</th>
+                <th style={th}>Size</th>
+                <th style={{ ...th, width: "1%" }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr
+                  key={`${r.cat}-${r.size}`}
+                  style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
+                >
+                  <td style={{ padding: "12px 14px", color: "#a3a3a3" }}>
+                    {r.cat}
+                  </td>
+                  <td
+                    style={{
+                      padding: "12px 14px",
+                      color: "#ededed",
+                      fontWeight: 500,
+                    }}
+                  >
+                    {r.size}
+                  </td>
+                  <td style={{ padding: "12px 14px" }}>
+                    <IconBtn
+                      icon="fa-trash"
+                      label="Delete"
+                      danger
+                      onClick={() => handleDeleteSize(r.cat, r.size)}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
     </div>
   );
 }

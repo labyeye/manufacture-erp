@@ -2,15 +2,21 @@ import React, { useState, useMemo, useRef } from "react";
 import * as XLSX from "xlsx";
 import { C } from "../constants/colors";
 import {
+  ListToolbar,
+  FilterModal,
+  Field,
+  SortSelect,
   Card,
   SectionTitle,
   Badge,
-  ImportBtn,
-  ExportBtn,
-  TemplateBtn,
   ImportModal,
+  InitialsAvatar,
 } from "../components/ui/BasicComponents";
 import { rawMaterialStockAPI } from "../api/auth";
+import { IconBtn } from "../components/ui/IconBtn";
+import { StatCard } from "../components/ui/StatCard";
+
+import { fmtLakh } from "../utils/formatINR";
 
 const fmt = (n) => (n ?? 0).toLocaleString("en-IN");
 
@@ -28,6 +34,7 @@ export default function RMStock({
 }) {
   const isClient = session?.role === "Client";
   const [search, setSearch] = useState("");
+  const [showFilterModal, setShowFilterModal] = useState(false);
   const [activeFilter, setActiveFilter] = useState("All");
   const [stockStatusFilter, setStockStatusFilter] = useState("All");
   const [editingItem, setEditingItem] = useState(null);
@@ -281,13 +288,13 @@ export default function RMStock({
             body { font-family: 'Inter', Arial, sans-serif; padding: 20px 30px; color: #1a1a1a; }
             .header { text-align: center; border-bottom: 2px solid #1e40af; padding-bottom: 10px; margin-bottom: 16px; }
             .header h1 { color: #1e3a8a; margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 1px; }
-            .header p { margin: 2px 0; font-size: 11px; color: #475569; }
+            .header p { margin: 2px 0; font-size: 11px; color: #6b6b6b; }
             .doc-title { display: flex; justify-content: space-between; margin-bottom: 8px; }
             .doc-title h2 { margin: 0; font-size: 16px; font-weight: 700; }
-            .meta { font-size: 10px; color: #64748b; }
+            .meta { font-size: 10px; color: #8a8a8a; }
             table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-            th { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; font-size: 10px; text-transform: uppercase; color: #334155; }
-            td { border: 1px solid #e2e8f0; padding: 5px 8px; font-size: 10px; }
+            th { background: #f1f5f9; border: 1px solid #c7c7c7; padding: 6px 8px; text-align: left; font-size: 10px; text-transform: uppercase; color: #3a3a3a; }
+            td { border: 1px solid #ededed; padding: 5px 8px; font-size: 10px; }
             .num { text-align: right; font-family: 'JetBrains Mono', monospace; }
             tfoot td { font-weight: 800; background: #f8fafc; }
             @media print { @page { margin: 1cm; size: A4 landscape; } }
@@ -447,8 +454,8 @@ export default function RMStock({
           style={{
             width: 65,
             padding: "6px 8px",
-            background: "#0c0c0e",
-            border: `1px solid ${hasChanged ? C.yellow : "#2a2a2e"}`,
+            background: "#141414",
+            border: `1px solid ${hasChanged ? "#c8955a" : "rgba(255,255,255,0.08)"}`,
             borderRadius: 4,
             color: "#fff",
             fontSize: 12,
@@ -472,8 +479,7 @@ export default function RMStock({
               padding: "4px 8px",
               fontSize: 10,
               cursor: "pointer",
-              boxShadow:
-                "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
             }}
           >
             {saving ? "..." : "✓"}
@@ -514,7 +520,7 @@ export default function RMStock({
             className="fade-in"
             style={{
               background: "transparent",
-              border: "1px solid #2a2a2e",
+              border: "1px solid rgba(255,255,255,0.08)",
               borderRadius: 12,
               width: "100%",
               maxWidth: 500,
@@ -526,9 +532,7 @@ export default function RMStock({
               style={{
                 margin: "0 0 20px 0",
                 fontSize: 18,
-                fontWeight: 800,
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
+                fontWeight: 600,
               }}
             >
               Edit Raw Material
@@ -555,8 +559,8 @@ export default function RMStock({
                   style={{
                     width: "100%",
                     padding: 10,
-                    background: "#0c0c0e",
-                    border: "1px solid #2a2a2e",
+                    background: "#141414",
+                    border: "1px solid rgba(255,255,255,0.08)",
                     borderRadius: 6,
                     color: "#fff",
                   }}
@@ -589,8 +593,8 @@ export default function RMStock({
                     style={{
                       width: "100%",
                       padding: 10,
-                      background: "#0c0c0e",
-                      border: "1px solid #2a2a2e",
+                      background: "#141414",
+                      border: "1px solid rgba(255,255,255,0.08)",
                       borderRadius: 6,
                       color: "#fff",
                     }}
@@ -621,8 +625,8 @@ export default function RMStock({
                     style={{
                       width: "100%",
                       padding: 10,
-                      background: "#0c0c0e",
-                      border: "1px solid #2a2a2e",
+                      background: "#141414",
+                      border: "1px solid rgba(255,255,255,0.08)",
                       borderRadius: 6,
                       color: "#fff",
                     }}
@@ -657,8 +661,8 @@ export default function RMStock({
                     style={{
                       width: "100%",
                       padding: 10,
-                      background: "#0c0c0e",
-                      border: "1px solid #2a2a2e",
+                      background: "#141414",
+                      border: "1px solid rgba(255,255,255,0.08)",
                       borderRadius: 6,
                       color: "#fff",
                     }}
@@ -689,8 +693,8 @@ export default function RMStock({
                     style={{
                       width: "100%",
                       padding: 10,
-                      background: "#0c0c0e",
-                      border: "1px solid #2a2a2e",
+                      background: "#141414",
+                      border: "1px solid rgba(255,255,255,0.08)",
                       borderRadius: 6,
                       color: "#fff",
                     }}
@@ -725,8 +729,8 @@ export default function RMStock({
                     style={{
                       width: "100%",
                       padding: 10,
-                      background: "#0c0c0e",
-                      border: "1px solid #2a2a2e",
+                      background: "#141414",
+                      border: "1px solid rgba(255,255,255,0.08)",
                       borderRadius: 6,
                       color: "#fff",
                     }}
@@ -756,8 +760,8 @@ export default function RMStock({
                     style={{
                       width: "100%",
                       padding: 10,
-                      background: "#0c0c0e",
-                      border: "1px solid #2a2a2e",
+                      background: "#141414",
+                      border: "1px solid rgba(255,255,255,0.08)",
                       borderRadius: 6,
                       color: "#fff",
                     }}
@@ -773,7 +777,7 @@ export default function RMStock({
                   flex: 1,
                   padding: 12,
                   borderRadius: 6,
-                  border: "1px solid #2a2a2e",
+                  border: "1px solid rgba(255,255,255,0.08)",
                   background: "transparent",
                   color: "#888",
                   fontWeight: 500,
@@ -793,8 +797,7 @@ export default function RMStock({
                   color: "#fff",
                   fontWeight: 500,
                   cursor: "pointer",
-                  boxShadow:
-                    "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
                 }}
               >
                 Save Changes
@@ -804,58 +807,11 @@ export default function RMStock({
         </div>
       )}
 
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          marginBottom: 8,
-        }}
-      >
-        <h1
-          style={{
-            fontSize: 22,
-            fontWeight: 900,
-            textTransform: "uppercase",
-            letterSpacing: "0.08em",
-            margin: 0,
-          }}
-        >
-          Raw Material Stock
-        </h1>
-        <button
-          onClick={() => setShowZeroStock(!showZeroStock)}
-          style={{
-            marginLeft: "auto",
-            padding: "6px 12px",
-            borderRadius: 6,
-            fontSize: 12,
-            fontWeight: 500,
-            background: showZeroStock ? C.blue : "transparent",
-            color: "#fff",
-            border: `1px solid ${showZeroStock ? C.blue : "#2a2a2e"}`,
-            cursor: "pointer",
-          }}
-        >
-          {showZeroStock ? "Hide Zero Stock" : "Show Zero Stock"}
-        </button>
-      </div>
-      <p
-        style={{
-          color: "#888",
-          fontSize: 13,
-          marginBottom: 24,
-          marginLeft: 36,
-        }}
-      >
-        Live inventory of all raw materials
-      </p>
-
       {}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
           gap: 12,
           marginBottom: 24,
         }}
@@ -873,211 +829,135 @@ export default function RMStock({
           },
           {
             label: "Total Value",
-            value: `₹${fmt(Math.round(totalValue))}`,
+            value: fmtLakh(totalValue),
             icon: "fa-solid fa-indian-rupee-sign",
           },
         ].map(({ label, value, icon }) => (
-          <div
-            key={label}
-            style={{
-              padding: "16px 20px",
-              background: "transparent",
-              border: "1px solid rgba(255,255,255,0.07)",
-              borderRadius: 12,
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 8,
-              }}
-            >
-              <span
-                style={{
-                  fontSize: 19,
-                  color: "#ffffff",
-                  fontWeight: 600,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                }}
-              >
-                {label}
-              </span>
-              <i
-                className={icon}
-                style={{
-                  color: C.muted,
-                  fontSize: 20,
-                  opacity: 0.9,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  height: 28,
-                  width: 28,
-                  lineHeight: 1,
-                }}
-              />
-            </div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>
-              {value}
-            </div>
-          </div>
+          <StatCard key={label} label={label} value={value} icon={icon} />
         ))}
       </div>
 
-      {}
-      <div
-        style={{
-          display: "flex",
-          gap: 12,
-          marginBottom: 20,
-          alignItems: "center",
+      <ListToolbar
+        onSelectModeChange={(on) => {
+          if (!on) setSelectedIds([]);
         }}
-      >
-        <div style={{ position: "relative", flex: 1 }}>
-          <input
-            placeholder="Search material..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "10px 10px 10px 36px",
-              background: "transparent",
-              border: "1px solid #2a2a2e",
-              borderRadius: 6,
-              color: "#fff",
-              fontSize: 13,
-            }}
-          />
-        </div>
-        <TemplateBtn
-          onClick={() => {
-            const headers = [
-              "Code",
-              "Material Name",
-              "Category",
-              "QtySheets",
-              "WeightKg",
-              "ReorderKg",
-              "Rate",
-            ];
-            const example = [
-              "RM001",
-              "Sample Paper",
-              "Paper Reel",
-              "1000",
-              "500",
-              "100",
-              "50",
-            ];
-            const worksheet = XLSX.utils.aoa_to_sheet([headers, example]);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Template");
-            XLSX.writeFile(workbook, "rm_template.xlsx");
+        search={search}
+        setSearch={setSearch}
+        placeholder="Search material..."
+        count={filtered.length}
+        filterCount={
+          (activeFilter !== "All" ? 1 : 0) +
+          (stockStatusFilter !== "All" ? 1 : 0)
+        }
+        onFilter={() => setShowFilterModal(true)}
+        exportOptions={
+          canExportImport
+            ? [
+                {
+                  label: "Excel",
+                  icon: "fa-solid fa-file-excel",
+                  onClick: handleExport,
+                },
+                {
+                  label: "PDF",
+                  icon: "fa-solid fa-file-pdf",
+                  onClick: handleExportPDF,
+                },
+              ]
+            : []
+        }
+        onImport={
+          canExportImport && !isClient
+            ? () => fileInputRef.current?.click()
+            : undefined
+        }
+        onTemplate={() => {
+          const headers = [
+            "Code",
+            "Material Name",
+            "Category",
+            "QtySheets",
+            "WeightKg",
+            "ReorderKg",
+            "Rate",
+          ];
+          const example = [
+            "RM001",
+            "Sample Paper",
+            "Paper Reel",
+            "1000",
+            "500",
+            "100",
+            "50",
+          ];
+          const worksheet = XLSX.utils.aoa_to_sheet([headers, example]);
+          const workbook = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(workbook, worksheet, "Template");
+          XLSX.writeFile(workbook, "rm_template.xlsx");
+        }}
+      />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".xlsx"
+        style={{ display: "none" }}
+        onChange={handleImport}
+      />
+
+      {showFilterModal && (
+        <FilterModal
+          onClose={() => setShowFilterModal(false)}
+          onReset={() => {
+            setActiveFilter("All");
+            setStockStatusFilter("All");
           }}
-        />
-        {canExportImport && !isClient && (
-          <ImportBtn onClick={() => fileInputRef.current?.click()} />
-        )}
-        {canExportImport && <ExportBtn onClick={handleExport} />}
-        {canExportImport && (
-          <ExportBtn onClick={handleExportPDF} label="Export PDF" />
-        )}
-        {!isClient && selectedIds.length > 0 && (
-          <button
-            onClick={handleBulkDelete}
-            style={{
-              padding: "7px 14px",
-              borderRadius: 6,
-              border: "1px solid rgba(239,68,68,0.4)",
-              background: "rgba(239,68,68,0.15)",
-              color: "#ef4444",
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: "pointer",
-              whiteSpace: "nowrap",
-            }}
-          >
-            <i className="fa-solid fa-trash" style={{ marginRight: 6 }} />
-            Delete Selected ({selectedIds.length})
-          </button>
-        )}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".xlsx"
-          style={{ display: "none" }}
-          onChange={handleImport}
-        />
-      </div>
-
-      {}
-      <div
-        style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}
-      >
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setActiveFilter(cat)}
-            style={{
-              padding: "6px 16px",
-              borderRadius: 6,
-              fontSize: 12,
-              fontWeight: 500,
-              cursor: "pointer",
-              background:
-                activeFilter === cat ? "rgba(128,130,255,0.12)" : "transparent",
-              color: activeFilter === cat ? "#8082ff" : "#888",
-              border: `1px solid ${activeFilter === cat ? "#8082ff98" : "#2a2a2e"}`,
-            }}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
-
-      {}
-      <div
-        style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}
-      >
-        {["All", "In Stock", "Low Stock", "Out of Stock"].map((s) => (
-          <button
-            key={s}
-            onClick={() => setStockStatusFilter(s)}
-            style={{
-              padding: "6px 16px",
-              borderRadius: 6,
-              fontSize: 12,
-              fontWeight: 500,
-              cursor: "pointer",
-              background:
-                stockStatusFilter === s
-                  ? "rgba(128,130,255,0.12)"
-                  : "transparent",
-              color: stockStatusFilter === s ? "#8082ff" : "#888",
-              border: `1px solid ${stockStatusFilter === s ? "#8082ff98" : "#2a2a2e"}`,
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-            }}
-          >
-            <i
-              className={
-                s === "In Stock"
-                  ? "fa-solid fa-warehouse"
-                  : s === "Low Stock"
-                    ? "fa-solid fa-triangle-exclamation"
-                    : s === "Out of Stock"
-                      ? "fa-solid fa-circle-exclamation"
-                      : "fa-solid fa-layer-group"
-              }
+        >
+          <Field label="Category">
+            <SortSelect
+              value={activeFilter}
+              onChange={setActiveFilter}
+              options={categories.map((c) => [c, c])}
             />
-            {s}
+          </Field>
+          <Field label="Stock status">
+            <SortSelect
+              value={stockStatusFilter}
+              onChange={setStockStatusFilter}
+              options={["All", "In Stock", "Low Stock", "Out of Stock"].map(
+                (v) => [v, v],
+              )}
+            />
+          </Field>
+        </FilterModal>
+      )}
+
+      {!isClient && selectedIds.length > 0 && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "8px 16px",
+            margin: "12px 0",
+            background: "#1a1a1a",
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: 10,
+            fontSize: 13,
+            color: "#a3a3a3",
+          }}
+        >
+          {selectedIds.length} selected
+          <button
+            type="button"
+            className="lg-btn lg-btn-danger"
+            onClick={handleBulkDelete}
+          >
+            <i className="fa-solid fa-trash" /> Delete selected
           </button>
-        ))}
-      </div>
+        </div>
+      )}
+
+      <div style={{ height: 12 }} />
 
       {}
       <div
@@ -1092,7 +972,6 @@ export default function RMStock({
           style={{
             width: "100%",
             borderCollapse: "collapse",
-            tableLayout: "fixed",
             fontSize: 13,
           }}
         >
@@ -1108,10 +987,8 @@ export default function RMStock({
                   padding: "10px 14px",
                   textAlign: "left",
                   fontSize: 11,
-                  fontWeight: 700,
+                  fontWeight: 600,
                   color: C.muted,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
                   whiteSpace: "nowrap",
                   width: 40,
                 }}
@@ -1132,27 +1009,26 @@ export default function RMStock({
                 />
               </th>
               {[
-                { label: "CODE", w: 90 },
-                { label: "MATERIAL NAME", w: 200 },
-                { label: "CATEGORY", w: 110 },
-                { label: "QTY (SHEETS)", w: 110 },
-                { label: "QTY (KG)", w: 110 },
-                { label: "REORDER (KG)", w: 110 },
-                { label: "RATE (₹/KG)", w: 110 },
-                { label: "VALUE (₹)", w: 120 },
-                { label: "ACTION", w: 200 },
+                { label: "Code", w: 100 },
+                { label: "Material name", w: 260, grow: true },
+                { label: "Category", w: 120 },
+                { label: "Qty (sheets)", w: 110 },
+                { label: "Qty (kg)", w: 100 },
+                { label: "Reorder (kg)", w: 120 },
+                { label: "Rate (₹/kg)", w: 110 },
+                { label: "Value (₹)", w: 120 },
+                { label: "Actions", w: 96, shrink: true },
               ].map((h) => (
                 <th
                   key={h.label}
                   style={{
-                    width: h.w,
+                    width: h.shrink ? "1%" : h.grow ? "auto" : undefined,
+                    minWidth: h.w,
                     padding: "10px 14px",
                     textAlign: "left",
                     fontSize: 11,
-                    fontWeight: 700,
+                    fontWeight: 600,
                     color: C.muted,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em",
                     whiteSpace: "nowrap",
                   }}
                 >
@@ -1174,7 +1050,7 @@ export default function RMStock({
                   style={{
                     borderBottom: "1px solid rgba(255,255,255,0.04)",
                     background: selectedIds.includes(s._id || s.id)
-                      ? "rgba(0, 122, 255, 0.05)"
+                      ? "rgba(200, 149, 90, 0.06)"
                       : idx % 2 === 0
                         ? "transparent"
                         : "rgba(255,255,255,0.01)",
@@ -1197,8 +1073,8 @@ export default function RMStock({
                   </td>
                   <td
                     style={{
-                      padding: "16px",
-                      color: C.blue,
+                      padding: "12px 14px",
+                      color: "#c8955a",
                       fontWeight: 500,
                       fontSize: 12,
                     }}
@@ -1208,39 +1084,52 @@ export default function RMStock({
                   <td style={{ padding: "12px 14px" }}>
                     <div
                       style={{
-                        fontWeight: 600,
-                        fontSize: 13,
-                        color: "#eee",
-                        display: "-webkit-box",
-                        WebkitLineClamp: 3,
-                        WebkitBoxOrient: "vertical",
-                        overflow: "hidden",
-                        wordBreak: "break-word",
-                        lineHeight: 1.4,
+                        display: "flex",
+                        gap: 8,
+                        alignItems: "flex-start",
                       }}
                     >
-                      {s.name || s.paperType}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 10,
-                        color: "#555",
-                        marginTop: 2,
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      {s.productCode || "—"}
+                      <InitialsAvatar name={s.name || s.paperType} />
+                      <div style={{ minWidth: 0 }}>
+                        <div
+                          style={{
+                            fontWeight: 500,
+                            fontSize: 13,
+                            color: "#ededed",
+                            display: "-webkit-box",
+                            WebkitLineClamp: 3,
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                            wordBreak: "break-word",
+                            lineHeight: 1.4,
+                          }}
+                        >
+                          {s.name || s.paperType}
+                        </div>
+                        {s.productCode && (
+                          <div
+                            style={{
+                              fontSize: 11,
+                              color: "#737373",
+                              marginTop: 2,
+                            }}
+                          >
+                            {s.productCode}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </td>
-                  <td style={{ padding: "16px" }}>
+                  <td style={{ padding: "12px 14px" }}>
                     <span
                       style={{
-                        padding: "3px 8px",
-                        borderRadius: 4,
-                        fontSize: 10,
+                        padding: "2px 8px",
+                        borderRadius: 6,
+                        fontSize: 11,
                         fontWeight: 500,
-                        background: C.blue + "22",
-                        color: C.blue,
+                        background: "rgba(255,255,255,0.06)",
+                        border: "1px solid rgba(255,255,255,0.08)",
+                        color: "#a3a3a3",
                       }}
                     >
                       {s.category || s.paperCategory || "—"}
@@ -1248,8 +1137,8 @@ export default function RMStock({
                   </td>
                   <td
                     style={{
-                      padding: "16px",
-                      color: qty > 0 ? C.green : "#333",
+                      padding: "12px 14px",
+                      color: qty > 0 ? "#ededed" : "#737373",
                       fontWeight: 500,
                       fontSize: 13,
                     }}
@@ -1258,21 +1147,21 @@ export default function RMStock({
                   </td>
                   <td
                     style={{
-                      padding: "16px",
-                      color: weight > 0 ? C.green : "#333",
+                      padding: "12px 14px",
+                      color: weight > 0 ? "#ededed" : "#737373",
                       fontWeight: 500,
                       fontSize: 13,
                     }}
                   >
                     {weight > 0 ? `${fmt(weight)} kg` : "—"}
                   </td>
-                  <td style={{ padding: "16px" }}>
+                  <td style={{ padding: "12px 14px" }}>
                     <ReorderEdit item={s} />
                   </td>
                   <td
                     style={{
-                      padding: "16px",
-                      color: "#888",
+                      padding: "12px 14px",
+                      color: "#a3a3a3",
                       fontSize: 12,
                     }}
                   >
@@ -1280,8 +1169,8 @@ export default function RMStock({
                   </td>
                   <td
                     style={{
-                      padding: "16px",
-                      color: C.green,
+                      padding: "12px 14px",
+                      color: "#86b894",
                       fontWeight: 500,
                       fontSize: 13,
                     }}
@@ -1291,44 +1180,19 @@ export default function RMStock({
                   <td style={{ padding: "10px 14px" }}>
                     <div style={{ display: "flex", gap: 6 }}>
                       {!isClient && canEdit && (
-                        <button
+                        <IconBtn
+                          icon="fa-pen-to-square"
+                          label="Edit"
                           onClick={() => setEditingItem(s)}
-                          style={{
-                            background: "transparent",
-                            color: "#8082ff",
-                            border: "1px solid #8082ff98",
-                            borderRadius: 6,
-                            padding: "6px 12px",
-                            fontSize: 11,
-                            fontWeight: 500,
-                            cursor: "pointer",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 6,
-                          }}
-                        >
-                          <i className="fa-solid fa-pen-to-square" /> Edit
-                        </button>
+                        />
                       )}
                       {!isClient && canDelete && (
-                        <button
+                        <IconBtn
+                          icon="fa-trash"
+                          label="Delete"
+                          danger
                           onClick={() => handleDelete(s._id || s.id)}
-                          style={{
-                            background: "transparent",
-                            color: "#8082ff",
-                            border: "1px solid #8082ff98",
-                            borderRadius: 6,
-                            padding: "6px 12px",
-                            fontSize: 11,
-                            fontWeight: 500,
-                            cursor: "pointer",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 6,
-                          }}
-                        >
-                          <i className="fa-solid fa-trash" /> Delete
-                        </button>
+                        />
                       )}
                     </div>
                   </td>
@@ -1342,20 +1206,20 @@ export default function RMStock({
         <div
           style={{
             padding: "12px 16px",
-            borderTop: "1px solid #2a2a2e",
+            borderTop: "1px solid rgba(255,255,255,0.08)",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
           }}
         >
-          <span style={{ fontSize: 11, color: "#666" }}>
+          <span style={{ fontSize: 11, color: "#737373" }}>
             {filtered.length} items
           </span>
           <div style={{ display: "flex", gap: 16 }}>
             {[
-              { c: C.red, l: "Low" },
-              { c: C.yellow, l: "Moderate" },
-              { c: C.green, l: "Adequate" },
+              { c: "#e0705f", l: "Low" },
+              { c: "#c8955a", l: "Moderate" },
+              { c: "#86b894", l: "Adequate" },
             ].map((x) => (
               <div
                 key={x.l}
@@ -1369,47 +1233,11 @@ export default function RMStock({
                     background: x.c,
                   }}
                 />
-                <span style={{ fontSize: 11, color: "#888" }}>{x.l}</span>
+                <span style={{ fontSize: 11, color: "#a3a3a3" }}>{x.l}</span>
               </div>
             ))}
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function StatCard({ label, val, color, prefix = "", suffix = "" }) {
-  return (
-    <div
-      style={{
-        background: "transparent",
-        border: `1px solid ${color}44`,
-        padding: "16px 20px",
-        borderRadius: 8,
-      }}
-    >
-      <div
-        style={{
-          fontSize: 24,
-          fontWeight: 900,
-          color,
-        }}
-      >
-        {prefix}
-        {val}
-        {suffix}
-      </div>
-      <div
-        style={{
-          fontSize: 11,
-          fontWeight: 600,
-          color: "#666",
-          marginTop: 4,
-          textTransform: "uppercase",
-        }}
-      >
-        {label}
       </div>
     </div>
   );

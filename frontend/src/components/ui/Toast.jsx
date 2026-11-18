@@ -40,12 +40,12 @@ export function Toast({ msg, onClose, type = "success" }) {
         <>
           <div
             style={{
-              fontWeight: 800,
+              fontWeight: 600,
               fontSize: 14,
               marginBottom: msgs.length > 1 ? 8 : 0,
             }}
           >
-            ⚠ Please fill in the required fields:
+            Please fill in the required fields:
           </div>
           {msgs.length > 1 ? (
             <ul

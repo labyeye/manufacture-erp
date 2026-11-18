@@ -4,7 +4,7 @@ export const GLOBAL_STYLE = `
   @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&family=Fira+Code:wght@400;500&display=swap');
   *{box-sizing:border-box;margin:0;padding:0}
   body{
-    background:linear-gradient(135deg,#07070f 0%,#0c0c1a 50%,#09090e 100%);
+    background:#131313;
     background-attachment:fixed;
     color:${C.text};
     font-family:'Poppins',sans-serif;
@@ -35,7 +35,7 @@ export const GLOBAL_STYLE = `
     box-shadow:0 0 0 3px rgba(99,102,241,0.15),inset 0 1px 0 rgba(255,255,255,0.3);
     background:rgba(255,255,255,0.08);
   }
-  select option{background:#0d0d1a;color:#e2e8f0}
+  select option{background:#1a1a1a;color:#ededed}
   button{cursor:pointer;font-family:'Poppins',sans-serif}
   @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}

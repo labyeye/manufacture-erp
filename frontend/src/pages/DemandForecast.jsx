@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { Card, SectionTitle, Input } from "../components/ui/BasicComponents";
 import { C } from "../constants/colors";
 import moment from "moment";
+import { StatCard } from "../components/ui/StatCard";
 
 function getMonthRange(n) {
   const out = [];
@@ -95,9 +96,9 @@ function getMoMPct(series) {
 
 const TREND_CFG = {
   up: { color: "#22c55e", label: "Trending ↑", bg: "#052e1688" },
-  down: { color: "#ef4444", label: "Declining ↓", bg: "#450a0a88" },
-  stable: { color: "#f59e0b", label: "Stable →", bg: "#451a0388" },
-  new: { color: "#3b82f6", label: "New ✦", bg: "#17254488" },
+  down: { color: "#ef4444", label: "Declining", bg: "#450a0a88" },
+  stable: { color: "#f59e0b", label: "Stable", bg: "#451a0388" },
+  new: { color: "#3b82f6", label: "New", bg: "#17254488" },
   nodata: { color: "#555", label: "No Data", bg: "#11111188" },
 };
 
@@ -119,7 +120,6 @@ function SortTh({ label, k, sortKey, sortDir, onSort, style = {} }) {
         fontSize: 10,
         fontWeight: 500,
         color: active ? ACCENT : C.muted,
-        letterSpacing: "0.05em",
         borderBottom: "1px solid rgba(255,255,255,0.08)",
         textAlign: "right",
         ...style,
@@ -289,7 +289,6 @@ export default function DemandForecast({
     fontSize: 10,
     fontWeight: 500,
     color: C.muted,
-    letterSpacing: "0.05em",
     borderBottom: "1px solid rgba(255,255,255,0.08)",
     whiteSpace: "nowrap",
     background: "rgba(255,255,255,0.04)",
@@ -303,7 +302,7 @@ export default function DemandForecast({
   return (
     <div className="fade">
       <SectionTitle
-        icon="📈"
+        icon="fa-solid fa-chart-line"
         title="Demand Forecast"
         sub="Rolling avg + trend detection · Next-month forecast per SKU from SO history"
       />
@@ -312,42 +311,33 @@ export default function DemandForecast({
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(5,1fr)",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
           gap: 12,
           marginBottom: 20,
         }}
       >
         {[
           { label: "Items Tracked", value: summary.tracked, color: ACCENT },
-          { label: "Trending Up ↑", value: summary.up, color: "#22c55e" },
-          { label: "Declining ↓", value: summary.down, color: "#ef4444" },
-          { label: "Stable →", value: summary.stable, color: "#f59e0b" },
-          { label: "New Items ✦", value: summary.newItem, color: "#3b82f6" },
+          { label: "Trending up", value: summary.up, color: "#22c55e" },
+          { label: "Declining", value: summary.down, color: "#ef4444" },
+          { label: "Stable", value: summary.stable, color: "#f59e0b" },
+          { label: "New items", value: summary.newItem, color: "#3b82f6" },
         ].map(({ label, value, color }) => (
-          <div
+          <StatCard
             key={label}
-            style={{
-              background: "transparent",
-              border: "1px solid rgba(255,255,255,0.1)",
-              boxShadow:
-                "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
-              borderRadius: 10,
-              padding: "14px 18px",
-            }}
-          >
-            <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>
-              {label}
-            </div>
-            <div
-              style={{
-                fontSize: 28,
-                fontWeight: 800,
-                color,
-              }}
-            >
-              {value}
-            </div>
-          </div>
+            label={label}
+            value={value}
+            dot={color}
+            icon={
+              {
+                "Items Tracked": "fa-solid fa-layer-group",
+                "Trending up": "fa-solid fa-arrow-trend-up",
+                Declining: "fa-solid fa-arrow-trend-down",
+                Stable: "fa-solid fa-minus",
+                "New items": "fa-solid fa-plus",
+              }[label]
+            }
+          />
         ))}
       </div>
 
@@ -615,7 +605,7 @@ export default function DemandForecast({
                       <td style={{ ...tdBase, textAlign: "right" }}>
                         <span
                           style={{
-                            fontWeight: 800,
+                            fontWeight: 600,
                             fontSize: 15,
                             color: r.forecast > 0 ? "#fff" : C.muted,
                           }}
@@ -676,8 +666,7 @@ export default function DemandForecast({
             background: "transparent",
             borderRadius: 8,
             border: "1px solid rgba(255,255,255,0.1)",
-            boxShadow:
-              "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
+            boxShadow: "0 4px 24px rgba(0,0,0,0.18)",
             fontSize: 11,
             color: C.muted,
           }}

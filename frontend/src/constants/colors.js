@@ -1,27 +1,28 @@
 export const C = {
-  bg: "#07070f",
-  surface: "#0d0d1a",
-  card: "rgba(255,255,255,0.23)",
-  border: "rgba(255,255,255,0.18)",
-  divider: "rgba(255,255,255,0.1)",
-  accent: "#6366f1",
-  accentBg: "rgba(99,102,241,0.15)",
-  badge: "rgba(255,255,255,0.15)",
+  bg: "#131313",
+  surface: "#1a1a1a",
+  card: "#1a1a1a",
+  border: "rgba(255,255,255,0.08)",
+  divider: "rgba(255,255,255,0.08)",
+  accent: "#c8955a",
+  accentBg: "rgba(200,149,90,0.14)",
+  badge: "rgba(255,255,255,0.06)",
   green: "#22c55e",
   blue: "#3b82f6",
   yellow: "#eab308",
   red: "#ef4444",
   purple: "#a78bfa",
-  text: "#ffffff",
-  muted: "#64748b",
-  placeholder: "#475569",
-  inputBg: "rgba(255,255,255,0.23)",
-  scrollbar: "rgba(255,255,255,0.18)",
+  mint: "#8fcfb4",
+  text: "#ededed",
+  muted: "#8a8a8a",
+  placeholder: "#6b6b6b",
+  inputBg: "#1a1a1a",
+  scrollbar: "rgba(255,255,255,0.16)",
 };
 
 export const GLASS = {
-  background: "rgba(255,255,255,0.23)",
-  border: "1px solid rgba(255,255,255,0.18)",
+  background: "#1a1a1a",
+  border: "1px solid rgba(255,255,255,0.08)",
 };
 
 export const PROCESS_COLORS = {
@@ -80,3 +81,20 @@ export const STAGES = [
   "Manual Formation",
 ];
 export const MACHINE_TYPES = Object.keys(MACHINE_TYPE_COLORS);
+
+// Muted avatar fills that sit well with the copper/neutral palette.
+export const AVATAR_COLORS = [
+  "#c8955a", // copper
+  "#8fcfb4", // mint
+  "#d9b98a", // sand
+  "#9fb3c8", // slate
+  "#d49a8a", // clay
+  "#b5c99a", // sage
+];
+
+export const avatarColor = (name = "") => {
+  if (!name) return AVATAR_COLORS[0];
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) | 0;
+  return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
+};

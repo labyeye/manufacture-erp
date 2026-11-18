@@ -10,6 +10,7 @@ import {
 import { C } from "../constants/colors";
 import { purchaseOrdersAPI } from "../api/auth";
 import moment from "moment";
+import { StatCard } from "../components/ui/StatCard";
 
 const mkey = (type, gsm) =>
   `${(type || "").toLowerCase().replace(/\s+/g, "")}|${Math.round(Number(gsm) || 0)}`;
@@ -79,11 +80,11 @@ const S = {
     color: "#ef4444",
     label: "Critical",
     bg: "#450a0a99",
-    icon: "🔴",
+    icon: "",
   },
-  warning: { color: "#f59e0b", label: "Warning", bg: "#451a0399", icon: "🟡" },
-  ok: { color: "#22c55e", label: "OK", bg: "#052e1699", icon: "🟢" },
-  dead: { color: "#818cf8", label: "Dead Stock", bg: "#1e1b4b99", icon: "⚫" },
+  warning: { color: "#f59e0b", label: "Warning", bg: "#451a0399", icon: "" },
+  ok: { color: "#22c55e", label: "OK", bg: "#052e1699", icon: "" },
+  dead: { color: "#c8955a", label: "Dead Stock", bg: "#1e1b4b99", icon: "⚫" },
   nodata: { color: "#555", label: "No Data", bg: "#11111199", icon: "—" },
 };
 
@@ -167,8 +168,7 @@ function DraftPOModal({
         style={{
           background: "transparent",
           border: "1px solid rgba(255,255,255,0.1)",
-          boxShadow:
-            "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
+          boxShadow: "0 4px 24px rgba(0,0,0,0.18)",
           borderRadius: 8,
           padding: "12px 16px",
           marginBottom: 16,
@@ -369,7 +369,6 @@ export default function RMForecast({
     padding: "10px 12px",
     fontSize: 10,
     fontWeight: 500,
-    letterSpacing: "0.05em",
     color: sortKey === k ? ACCENT : C.muted,
     borderBottom: "1px solid rgba(255,255,255,0.08)",
     background: "rgba(255,255,255,0.04)",
@@ -385,7 +384,7 @@ export default function RMForecast({
   return (
     <div className="fade">
       <SectionTitle
-        icon="📦"
+        icon="fa-solid fa-box"
         title="RM Forecasting & Reorder"
         sub="Consumption velocity from job orders · Days-of-cover · Dead stock detection"
       />
@@ -394,42 +393,33 @@ export default function RMForecast({
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(5,1fr)",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
           gap: 12,
           marginBottom: 20,
         }}
       >
         {[
           { label: "Items Tracked", value: summary.total, color: ACCENT },
-          { label: "🔴 Critical", value: summary.critical, color: "#ef4444" },
-          { label: "🟡 Warning", value: summary.warning, color: "#f59e0b" },
-          { label: "🟢 OK", value: summary.ok, color: "#22c55e" },
-          { label: "⚫ Dead Stock", value: summary.dead, color: "#818cf8" },
+          { label: "Critical", value: summary.critical, color: "#ef4444" },
+          { label: "Warning", value: summary.warning, color: "#f59e0b" },
+          { label: "OK", value: summary.ok, color: "#22c55e" },
+          { label: "Dead stock", value: summary.dead, color: "#c8955a" },
         ].map(({ label, value, color }) => (
-          <div
+          <StatCard
             key={label}
-            style={{
-              background: "transparent",
-              border: "1px solid rgba(255,255,255,0.1)",
-              boxShadow:
-                "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
-              borderRadius: 16,
-              padding: "14px 18px",
-            }}
-          >
-            <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>
-              {label}
-            </div>
-            <div
-              style={{
-                fontSize: 28,
-                fontWeight: 800,
-                color,
-              }}
-            >
-              {value}
-            </div>
-          </div>
+            label={label}
+            value={value}
+            dot={color}
+            icon={
+              {
+                "Items Tracked": "fa-solid fa-layer-group",
+                Critical: "fa-solid fa-circle-exclamation",
+                Warning: "fa-solid fa-triangle-exclamation",
+                OK: "fa-solid fa-circle-check",
+                "Dead stock": "fa-solid fa-box-archive",
+              }[label]
+            }
+          />
         ))}
       </div>
 
@@ -440,8 +430,7 @@ export default function RMForecast({
           padding: "12px 18px",
           background: "transparent",
           border: "1px solid rgba(255,255,255,0.1)",
-          boxShadow:
-            "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
+          boxShadow: "0 4px 24px rgba(0,0,0,0.18)",
         }}
       >
         <div
@@ -551,8 +540,7 @@ export default function RMForecast({
         style={{
           background: "transparent",
           border: "1px solid rgba(255,255,255,0.1)",
-          boxShadow:
-            "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
+          boxShadow: "0 4px 24px rgba(0,0,0,0.18)",
         }}
       >
         {filtered.length === 0 ? (
@@ -826,7 +814,7 @@ export default function RMForecast({
                             Draft PO
                           </button>
                         ) : r.status === "dead" ? (
-                          <span style={{ fontSize: 11, color: "#818cf8" }}>
+                          <span style={{ fontSize: 11, color: "#c8955a" }}>
                             Review
                           </span>
                         ) : (
@@ -854,14 +842,13 @@ export default function RMForecast({
               background: "rgba(129,140,248,0.1)",
               border: "1px solid rgba(129,140,248,0.3)",
               borderRadius: 12,
-              boxShadow:
-                "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
+              boxShadow: "0 4px 24px rgba(0,0,0,0.18)",
             }}
           >
             <div
               style={{
                 fontWeight: 500,
-                color: "#818cf8",
+                color: "#c8955a",
                 marginBottom: 6,
                 fontSize: 13,
               }}

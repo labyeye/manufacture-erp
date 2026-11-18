@@ -48,7 +48,7 @@ const ConfirmModal = ({
           width: "100%",
           maxWidth: 440,
           padding: 28,
-          background: "#000000",
+          background: "#1a1a1a",
           border: "1px solid rgba(255,255,255,0.12)",
           borderRadius: 12,
           color: "#ffffff",
@@ -65,7 +65,6 @@ const ConfirmModal = ({
               display: "flex",
               alignItems: "center",
               gap: 8,
-              letterSpacing: "-0.02em",
             }}
           >
             <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">

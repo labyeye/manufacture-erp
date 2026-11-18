@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { trashAPI } from "../api/auth";
 import { COLORS as C } from "../constants";
 import ConfirmModal from "../components/ConfirmModal";
+import { IconBtn } from "../components/ui/IconBtn";
 
 const LABEL_ICONS = {
   "Purchase Order": "fa-solid fa-cart-shopping",
@@ -11,7 +12,7 @@ const LABEL_ICONS = {
 };
 
 const LABEL_COLORS = {
-  "Purchase Order": "#6366f1",
+  "Purchase Order": "#c8955a",
   "Material Inward": "#22c55e",
   "Sales Order": "#f59e0b",
   "Job Order": "#3b82f6",
@@ -184,7 +185,8 @@ export default function Trash({ toast, session }) {
               fontSize: 12,
               fontWeight: 500,
               cursor: "pointer",
-              transition: "all .18s",
+              transition:
+                "background-color .15s, border-color .15s, color .15s, opacity .15s, transform .15s",
               background:
                 filter === l
                   ? LABEL_COLORS[l] || C.accent
@@ -322,7 +324,9 @@ export default function Trash({ toast, session }) {
 
                 {/* Actions */}
                 <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-                  <button
+                  <IconBtn
+                    icon="fa-rotate-left"
+                    label="Restore"
                     onClick={() =>
                       setConfirmState({
                         open: true,
@@ -330,24 +334,12 @@ export default function Trash({ toast, session }) {
                         mode: "restore",
                       })
                     }
-                    style={{
-                      background: "transparent",
-                      color: "#8082ff",
-                      border: "1px solid #8082ff98",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    <i className="fa-solid fa-rotate-left" /> Restore
-                  </button>
+                  />
                   {canAdmin && (
-                    <button
+                    <IconBtn
+                      icon="fa-trash"
+                      label="Delete"
+                      danger
                       onClick={() =>
                         setConfirmState({
                           open: true,
@@ -355,22 +347,7 @@ export default function Trash({ toast, session }) {
                           mode: "delete",
                         })
                       }
-                      style={{
-                        background: "transparent",
-                        color: "#8082ff",
-                        border: "1px solid #8082ff98",
-                        borderRadius: 6,
-                        padding: "6px 12px",
-                        fontSize: 11,
-                        fontWeight: 500,
-                        cursor: "pointer",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 6,
-                      }}
-                    >
-                      <i className="fa-solid fa-trash" /> Delete
-                    </button>
+                    />
                   )}
                 </div>
               </div>

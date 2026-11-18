@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { C } from "../constants/colors";
 import { Modal } from "../components/ui/BasicComponents";
+import { IconBtn } from "../components/ui/IconBtn";
 
 const today = () => new Date().toISOString().slice(0, 10);
 const uid = () =>
@@ -36,32 +37,30 @@ const lbl = {
   color: "#666",
   display: "block",
   marginBottom: 5,
-  textTransform: "uppercase",
-  letterSpacing: "0.04em",
 };
 
 const TABS = [
-  { id: "artwork", icon: "🎨", label: "Artwork Approval" },
-  { id: "dieline", icon: "✂️", label: "Dieline Library" },
+  { id: "artwork", icon: "", label: "Artwork Approval" },
+  { id: "dieline", icon: "", label: "Dieline Library" },
 ];
 
 const ART_STAGES = [
-  { id: "received", label: "Received", icon: "📥", color: "#6b7280" },
+  { id: "received", label: "Received", icon: "", color: "#6b7280" },
   {
     id: "internal_review",
     label: "Internal Review",
-    icon: "🔍",
+    icon: "",
     color: "#3b82f6",
   },
-  { id: "proof_sent", label: "Proof Sent", icon: "📤", color: "#8b5cf6" },
+  { id: "proof_sent", label: "Proof Sent", icon: "", color: "#8b5cf6" },
   {
     id: "client_approved",
     label: "Client Approved",
-    icon: "✅",
+    icon: "",
     color: "#22c55e",
   },
-  { id: "released", label: "Production Release", icon: "🚀", color: "#f97316" },
-  { id: "rejected", label: "Rejected", icon: "❌", color: "#ef4444" },
+  { id: "released", label: "Production Release", icon: "", color: "#f97316" },
+  { id: "rejected", label: "Rejected", icon: "", color: "#ef4444" },
 ];
 
 const stageOrder = ART_STAGES.filter((s) => s.id !== "rejected").map(
@@ -315,7 +314,7 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
         }}
       >
         <div>
-          <div style={{ fontSize: 17, fontWeight: 800 }}>
+          <div style={{ fontSize: 17, fontWeight: 600 }}>
             Artwork Approval Workflow
           </div>
           <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
@@ -338,8 +337,7 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
             fontWeight: 600,
             fontSize: 13,
             cursor: "pointer",
-            boxShadow:
-              "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
           }}
         >
           + New Artwork
@@ -458,7 +456,7 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
               />
               {form.fileName && (
                 <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>
-                  📎 {form.fileName}
+                  {form.fileName}
                 </div>
               )}
             </div>
@@ -474,8 +472,7 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
                 color: "#fff",
                 fontWeight: 500,
                 cursor: "pointer",
-                boxShadow:
-                  "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
               }}
             >
               {editId ? "Save Changes" : "Register Artwork"}
@@ -584,7 +581,7 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
                       borderRadius: 4,
                       fontSize: 11,
                       color: stage.color,
-                      fontWeight: 700,
+                      fontWeight: 600,
                     }}
                   >
                     {stage.icon} {stage.label}
@@ -621,11 +618,10 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
                         color: "#fff",
                         fontSize: 11,
                         cursor: "pointer",
-                        boxShadow:
-                          "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                        boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
                       }}
                     >
-                      📎 File
+                      File
                     </button>
                   )}
                   {rec.currentStage === "client_approved" && (
@@ -633,8 +629,8 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
                       onClick={() => versionUp(rec)}
                       style={{
                         background: "transparent",
-                        color: "#8082ff",
-                        border: "1px solid #8082ff98",
+                        color: "#c8955a",
+                        border: "1px solid #c8955a98",
                         borderRadius: 6,
                         padding: "6px 12px",
                         fontSize: 11,
@@ -648,49 +644,24 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
                       <i className="fa-solid fa-plus" /> New Version
                     </button>
                   )}
-                  <button
+                  <IconBtn
+                    icon="fa-pen-to-square"
+                    label="Edit"
                     onClick={() => {
                       setForm({ ...rec });
                       setEditId(rec.id);
                       setShowModal(true);
                     }}
-                    style={{
-                      background: "transparent",
-                      color: "#8082ff",
-                      border: "1px solid #8082ff98",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    <i className="fa-solid fa-pen-to-square" /> Edit
-                  </button>
-                  <button
+                  />
+                  <IconBtn
+                    icon="fa-trash"
+                    label="Delete"
+                    danger
                     onClick={() => {
                       if (confirm("Delete?"))
                         persist(records.filter((r) => r.id !== rec.id));
                     }}
-                    style={{
-                      background: "transparent",
-                      color: "#8082ff",
-                      border: "1px solid #8082ff98",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    <i className="fa-solid fa-trash" /> Delete
-                  </button>
+                  />
                 </div>
               </div>
 
@@ -758,7 +729,7 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
                       fontSize: 11,
                       color: "#888",
                       marginBottom: 10,
-                      fontWeight: 700,
+                      fontWeight: 600,
                     }}
                   >
                     ADVANCE TO:{" "}
@@ -971,7 +942,7 @@ function DielineTab({ jobOrders, toast }) {
         }}
       >
         <div>
-          <div style={{ fontSize: 17, fontWeight: 800 }}>Dieline Library</div>
+          <div style={{ fontSize: 17, fontWeight: 600 }}>Dieline Library</div>
           <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
             Cutting patterns as versioned assets · dimensions · compatible
             machines · client history
@@ -992,8 +963,7 @@ function DielineTab({ jobOrders, toast }) {
             fontWeight: 600,
             fontSize: 13,
             cursor: "pointer",
-            boxShadow:
-              "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
           }}
         >
           + Add Dieline
@@ -1090,7 +1060,7 @@ function DielineTab({ jobOrders, toast }) {
               />
               {form.previewFileName && (
                 <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>
-                  📎 {form.previewFileName}
+                  {form.previewFileName}
                 </div>
               )}
             </div>
@@ -1106,8 +1076,7 @@ function DielineTab({ jobOrders, toast }) {
                 color: "#fff",
                 fontWeight: 500,
                 cursor: "pointer",
-                boxShadow:
-                  "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
               }}
             >
               {editId ? "Save" : "Add Dieline"}
@@ -1206,12 +1175,12 @@ function DielineTab({ jobOrders, toast }) {
                       fontSize: 32,
                     }}
                   >
-                    ✂️
+                    <i className="fa-solid fa-scissors" />
                   </div>
                 )}
                 <div style={{ padding: 14 }}>
                   <div
-                    style={{ fontWeight: 800, fontSize: 14, marginBottom: 4 }}
+                    style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}
                   >
                     {d.dieCode}
                   </div>
@@ -1226,14 +1195,14 @@ function DielineTab({ jobOrders, toast }) {
                     <div
                       style={{ fontSize: 11, color: "#888", marginBottom: 4 }}
                     >
-                      📐 {d.dimensions}
+                      {d.dimensions}
                     </div>
                   )}
                   {d.machineCompatible && (
                     <div
                       style={{ fontSize: 11, color: "#888", marginBottom: 4 }}
                     >
-                      ⚙️ {d.machineCompatible}
+                      {d.machineCompatible}
                     </div>
                   )}
                   {d.clientTags && (
@@ -1277,49 +1246,24 @@ function DielineTab({ jobOrders, toast }) {
                       {usage !== 1 ? "s" : ""}
                     </div>
                     <div style={{ display: "flex", gap: 6 }}>
-                      <button
+                      <IconBtn
+                        icon="fa-pen-to-square"
+                        label="Edit"
                         onClick={() => {
                           setForm({ ...d });
                           setEditId(d.id);
                           setShowModal(true);
                         }}
-                        style={{
-                          background: "transparent",
-                          color: "#8082ff",
-                          border: "1px solid #8082ff98",
-                          borderRadius: 6,
-                          padding: "6px 12px",
-                          fontSize: 11,
-                          fontWeight: 500,
-                          cursor: "pointer",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 6,
-                        }}
-                      >
-                        <i className="fa-solid fa-pen-to-square" /> Edit
-                      </button>
-                      <button
+                      />
+                      <IconBtn
+                        icon="fa-trash"
+                        label="Delete"
+                        danger
                         onClick={() => {
                           if (confirm("Delete?"))
                             persist(dielines.filter((x) => x.id !== d.id));
                         }}
-                        style={{
-                          background: "transparent",
-                          color: "#8082ff",
-                          border: "1px solid #8082ff98",
-                          borderRadius: 6,
-                          padding: "6px 12px",
-                          fontSize: 11,
-                          fontWeight: 500,
-                          cursor: "pointer",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 6,
-                        }}
-                      >
-                        <i className="fa-solid fa-trash" /> Delete
-                      </button>
+                      />
                     </div>
                   </div>
                   {d.notes && (

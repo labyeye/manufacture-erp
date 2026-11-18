@@ -62,7 +62,7 @@ export default function MachineMaintenance({ toast }) {
   return (
     <div className="fade">
       <SectionTitle
-        icon="🔧"
+        icon="fa-solid fa-wrench"
         title="Machine Maintenance"
         sub="Planned Preventive Maintenance"
       >

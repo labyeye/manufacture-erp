@@ -1,16 +1,19 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import ConfirmModal from "../components/ConfirmModal";
 import * as XLSX from "xlsx";
-import { C } from "../constants/colors";
+import { C, avatarColor } from "../constants/colors";
 import {
   Card,
-  SectionTitle,
   Field,
   Badge,
   SubmitBtn,
   AutocompleteInput,
   DateRangeFilter,
   Modal,
+  ListToolbar,
+  toolbarBtn,
+  FilterModal,
+  SortSelect,
 } from "../components/ui/BasicComponents";
 import { DatePicker } from "../components/ui/DatePicker";
 import {
@@ -18,6 +21,8 @@ import {
   purchaseOrdersAPI,
   itemMasterAPI,
 } from "../api/auth";
+import { IconBtn } from "../components/ui/IconBtn";
+import { StatCard } from "../components/ui/StatCard";
 
 const formatDateForInput = (dateStr) => {
   if (!dateStr) return "";
@@ -82,29 +87,7 @@ export default function MaterialInward({
     if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
     return (parts[0][0] + parts[1][0]).toUpperCase();
   };
-  const AVATAR_PALETTE = [
-    "#60a5fa",
-    "#34d399",
-    "#f59e0b",
-    "#a78bfa",
-    "#f472b6",
-    "#22d3ee",
-  ];
-  const VENDOR_COLOR_MAP = {
-    MLJ: "#34d399",
-    PERMA: "#60a5fa",
-    BHARAT: "#f59e0b",
-  };
-  const vendorColor = (name = "") => {
-    if (!name) return AVATAR_PALETTE[0];
-    const upper = String(name).toUpperCase();
-    for (const key of Object.keys(VENDOR_COLOR_MAP)) {
-      if (upper.startsWith(key)) return VENDOR_COLOR_MAP[key];
-    }
-    let h = 0;
-    for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) | 0;
-    return AVATAR_PALETTE[Math.abs(h) % AVATAR_PALETTE.length];
-  };
+  const vendorColor = avatarColor;
   const locationPillStyle = (loc) => {
     const isTeal = (loc || "").toLowerCase().includes("vijay");
     return {
@@ -114,7 +97,7 @@ export default function MaterialInward({
       fontSize: 11,
       fontWeight: 600,
       background: isTeal ? "rgba(20,184,166,0.15)" : "rgba(255,255,255,0.06)",
-      color: isTeal ? "#5eead4" : "#cbd5e1",
+      color: isTeal ? "#5eead4" : "#c7c7c7",
       border: `1px solid ${isTeal ? "rgba(20,184,166,0.30)" : "rgba(255,255,255,0.12)"}`,
     };
   };
@@ -810,6 +793,8 @@ export default function MaterialInward({
   };
 
   const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
+  const [showFilterModal, setShowFilterModal] = useState(false);
 
   const filteredInwards = useMemo(() => {
     let list = [...(inward || [])];
@@ -837,13 +822,48 @@ export default function MaterialInward({
     if (filterLocation) {
       list = list.filter((r) => (r.location || "") === filterLocation);
     }
-    list.sort(
-      (a, b) =>
-        new Date(b.createdAt || b.inwardDate || 0) -
-        new Date(a.createdAt || a.inwardDate || 0),
-    );
+    const val = (r) =>
+      (r.items || []).reduce((ss, it) => ss + +(it.amount || 0), 0);
+    const t = (r) => new Date(r.createdAt || r.inwardDate || 0);
+    const cmp = {
+      newest: (a, b) => t(b) - t(a),
+      oldest: (a, b) => t(a) - t(b),
+      no_asc: (a, b) =>
+        String(a.inwardNo || "").localeCompare(
+          String(b.inwardNo || ""),
+          undefined,
+          { numeric: true },
+        ),
+      vendor_asc: (a, b) =>
+        String(a.vendorName || "").localeCompare(String(b.vendorName || "")),
+      value_desc: (a, b) => val(b) - val(a),
+      value_asc: (a, b) => val(a) - val(b),
+    }[sortBy];
+    list.sort(cmp);
     return list;
-  }, [inward, search, drDateFrom, drDateTo, filterVendor, filterLocation]);
+  }, [
+    inward,
+    search,
+    drDateFrom,
+    drDateTo,
+    filterVendor,
+    filterLocation,
+    sortBy,
+  ]);
+
+  const MI_SORT = [
+    ["newest", "Newest first"],
+    ["oldest", "Oldest first"],
+    ["no_asc", "GRN No (A → Z)"],
+    ["vendor_asc", "Vendor (A → Z)"],
+    ["value_desc", "Value (high → low)"],
+    ["value_asc", "Value (low → high)"],
+  ];
+  const miFilterCount =
+    (filterVendor ? 1 : 0) +
+    (filterLocation ? 1 : 0) +
+    (drDateFrom || drDateTo ? 1 : 0) +
+    (sortBy !== "newest" ? 1 : 0);
 
   const inwardSummary = useMemo(() => {
     const list = filteredInwards;
@@ -887,6 +907,162 @@ export default function MaterialInward({
       avgValue,
     };
   }, [filteredInwards]);
+
+  const handleSyncStock = async () => {
+    if (
+      !window.confirm(
+        "This will recalculate ALL RM/Consumable/FG stock from every saved GRN. Continue?",
+      )
+    )
+      return;
+    try {
+      setLoading(true);
+      const result = await materialInwardAPI.recalculateStock();
+      toast(result.message, result.errors?.length ? "warning" : "success");
+      if (result.errors?.length) {
+        console.error("Recalculate errors:", result.errors);
+      }
+    } catch (e) {
+      toast(e.response?.data?.message || "Recalculate failed", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const importInputRef = useRef(null);
+  const IMPORT_HEADERS = [
+    "GRN Ref",
+    "Date",
+    "Vendor",
+    "Invoice",
+    "Vehicle",
+    "Location",
+    "Received By",
+    "Material Type",
+    "Item Code",
+    "Item Name",
+    "Category",
+    "Sub Category",
+    "GSM",
+    "Width (mm)",
+    "Length (mm)",
+    "Sheets",
+    "Weight (kg)",
+    "Qty",
+    "Rate",
+  ];
+  const handleDownloadTemplate = () => {
+    const example = [
+      "G1",
+      today(),
+      "Vendor Name",
+      "INV-001",
+      "",
+      "",
+      "",
+      "Raw Material",
+      "RM001",
+      "Sample Paper",
+      "Paper Sheets",
+      "",
+      "250",
+      "700",
+      "1000",
+      "1000",
+      "500",
+      "",
+      "50",
+    ];
+    const ws = XLSX.utils.aoa_to_sheet([IMPORT_HEADERS, example]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Template");
+    XLSX.writeFile(wb, "material_inward_template.xlsx");
+  };
+  const handleImportExcel = (e) => {
+    const file = e.target.files?.[0];
+    const input = e.target;
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      try {
+        const wb = XLSX.read(ev.target.result, { type: "binary" });
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {
+          defval: "",
+        });
+        if (!rows.length) {
+          toast("No rows found in Excel file", "error");
+          return;
+        }
+        const groups = new Map();
+        rows.forEach((r) => {
+          const key =
+            r["GRN Ref"] || `${r["Vendor"]}|${r["Invoice"]}|${r["Date"]}`;
+          if (!groups.has(key)) groups.set(key, []);
+          groups.get(key).push(r);
+        });
+        let ok = 0;
+        let failed = 0;
+        for (const [, list] of groups) {
+          const h = list[0];
+          if (!h["Vendor"]) {
+            failed++;
+            continue;
+          }
+          const mapped = list.map((r) => {
+            const consumable =
+              String(r["Material Type"]).toLowerCase() === "consumable";
+            const weight = +r["Weight (kg)"] || 0;
+            const qty = +r["Qty"] || 0;
+            const rate = +r["Rate"] || 0;
+            return {
+              ...blankItem,
+              _id: uid(),
+              materialType: consumable ? "Consumable" : "Raw Material",
+              productCode: String(r["Item Code"] || ""),
+              itemName: String(r["Item Name"] || ""),
+              category: String(r["Category"] || ""),
+              subCategory: String(r["Sub Category"] || ""),
+              gsm: r["GSM"] || "",
+              widthMm: r["Width (mm)"] || "",
+              lengthMm: r["Length (mm)"] || "",
+              noOfSheets: r["Sheets"] || "",
+              weight: weight || "",
+              qty: qty || "",
+              rate: rate || "",
+              amount: (consumable ? qty : weight) * rate,
+            };
+          });
+          try {
+            await materialInwardAPI.create({
+              inwardDate: String(h["Date"] || today()).slice(0, 10),
+              vendorName: h["Vendor"],
+              invoiceNo: String(h["Invoice"] || ""),
+              vehicleNo: String(h["Vehicle"] || ""),
+              location: String(h["Location"] || ""),
+              receivedBy: String(h["Received By"] || ""),
+              remarks: "",
+              poRef: "",
+              items: mapped,
+              status: "Received",
+            });
+            ok++;
+          } catch {
+            failed++;
+          }
+        }
+        toast(
+          `Imported ${ok} GRN(s)${failed ? `, ${failed} failed` : ""}`,
+          failed ? "warning" : "success",
+        );
+        fetchInwards();
+      } catch {
+        toast("Failed to read Excel file", "error");
+      } finally {
+        input.value = "";
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
 
   const handleExportExcel = () => {
     const headers = [
@@ -973,24 +1149,24 @@ export default function MaterialInward({
             body { font-family: 'Inter', sans-serif; padding: 20px 30px; color: #1a1a1a; }
             .header { text-align: center; border-bottom: 2px solid #0891b2; padding-bottom: 10px; margin-bottom: 20px; }
             .header h1 { color: #0e7490; margin: 0; font-size: 24px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
-            .header p { margin: 2px 0; font-size: 11px; color: #475569; font-weight: 500; }
+            .header p { margin: 2px 0; font-size: 11px; color: #6b6b6b; font-weight: 500; }
             
             .doc-title { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px; }
             .doc-title h2 { margin: 0; font-size: 18px; font-weight: 700; }
             .status { color: #0891b2; font-weight: 700; font-size: 12px; }
             
-            .hr { height: 1px; background: #e2e8f0; margin: 10px 0; border: none; }
+            .hr { height: 1px; background: #ededed; margin: 10px 0; border: none; }
             .po-no { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; color: #1a1a1a; margin: 5px 0; }
             
-            .section-label { font-size: 10px; color: #64748b; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 15px; margin-top: 20px; }
+            .section-label { font-size: 10px; color: #8a8a8a; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 15px; margin-top: 20px; }
             
             .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px; }
-            .info-item label { display: block; font-size: 9px; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
-            .info-item span { font-size: 11px; font-weight: 600; color: #1e293b; }
+            .info-item label { display: block; font-size: 9px; color: #a3a3a3; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
+            .info-item span { font-size: 11px; font-weight: 600; color: #1f1f1f; }
             
             table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-            th { background: #f8fafc; border: 1px solid #e2e8f0; padding: 4px 6px; text-align: left; font-size: 9px; font-weight: 800; text-transform: uppercase; color: #475569; }
-            td { border: 1px solid #e2e8f0; padding: 4px 6px; font-size: 9px; color: #1e293b; }
+            th { background: #f8fafc; border: 1px solid #ededed; padding: 4px 6px; text-align: left; font-size: 9px; font-weight: 800; text-transform: uppercase; color: #6b6b6b; }
+            td { border: 1px solid #ededed; padding: 4px 6px; font-size: 9px; color: #1f1f1f; }
             .col-qty { text-align: center; }
             .col-amt { text-align: right; font-weight: 700; }
             
@@ -1115,83 +1291,6 @@ export default function MaterialInward({
   return (
     <>
       <div className="fade">
-        <SectionTitle
-          icon="fa-solid fa-truck-ramp-box"
-          title="Material Inward"
-          sub="Record incoming paper / board material receipts"
-        >
-          <button
-            onClick={async () => {
-              if (
-                !window.confirm(
-                  "This will recalculate ALL RM/Consumable/FG stock from every saved GRN. Continue?",
-                )
-              )
-                return;
-              try {
-                setLoading(true);
-                const result = await materialInwardAPI.recalculateStock();
-                toast(
-                  result.message,
-                  result.errors?.length ? "warning" : "success",
-                );
-                if (result.errors?.length) {
-                  console.error("Recalculate errors:", result.errors);
-                }
-              } catch (e) {
-                toast(
-                  e.response?.data?.message || "Recalculate failed",
-                  "error",
-                );
-              } finally {
-                setLoading(false);
-              }
-            }}
-            style={{
-              background: "rgba(234,179,8,0.12)",
-              color: "#eab308",
-              border: "1px solid rgba(234,179,8,0.3)",
-              padding: "9px 18px",
-              borderRadius: 6,
-              fontWeight: 500,
-              fontSize: 13,
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-            }}
-          >
-            <i className="fa-solid fa-rotate" /> Sync Stock
-          </button>
-          {canCreate && (
-            <button
-              onClick={() => {
-                setEditId(null);
-                setHeader(blankHeader);
-                setItems([{ ...blankItem, _id: uid() }]);
-                setHeaderErrors({});
-                setItemErrors([{}]);
-                setShowModal(true);
-              }}
-              style={{
-                background: C.accent + "22",
-                color: C.accent,
-                border: `1px solid ${C.accent}44`,
-                padding: "9px 18px",
-                borderRadius: 6,
-                fontWeight: 500,
-                fontSize: 13,
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-              }}
-            >
-              <i className="fa-solid fa-plus" /> New Material Inward
-            </button>
-          )}
-        </SectionTitle>
-
         {showModal && (
           <Modal
             title={editId ? "Edit Material Inward" : "New Material Inward"}
@@ -1219,7 +1318,7 @@ export default function MaterialInward({
                   }}
                 >
                   <span
-                    style={{ fontSize: 13, color: C.blue, fontWeight: 600 }}
+                    style={{ fontSize: 13, color: C.accent, fontWeight: 600 }}
                   >
                     Edit Mode
                   </span>
@@ -1234,8 +1333,8 @@ export default function MaterialInward({
                     }}
                     style={{
                       background: "transparent",
-                      color: C.blue,
-                      border: `1px solid ${C.blue}`,
+                      color: C.accent,
+                      border: `1px solid ${C.accent}`,
                       borderRadius: 5,
                       padding: "4px 12px",
                       fontWeight: 500,
@@ -1252,7 +1351,7 @@ export default function MaterialInward({
                   style={{
                     fontSize: 14,
                     fontWeight: 500,
-                    color: C.blue,
+                    color: C.accent,
                     marginBottom: 16,
                   }}
                 >
@@ -1398,8 +1497,7 @@ export default function MaterialInward({
                     padding: "8px 18px",
                     fontWeight: 500,
                     fontSize: 13,
-                    boxShadow:
-                      "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
                   }}
                 >
                   + Add Item
@@ -2148,7 +2246,7 @@ export default function MaterialInward({
                       style={{
                         display: "flex",
                         justifyContent: "space-between",
-                        fontWeight: 800,
+                        fontWeight: 600,
                         color: C.green,
                         fontSize: 15,
                       }}
@@ -2202,7 +2300,7 @@ export default function MaterialInward({
               icon: "fa-solid fa-weight-hanging",
             },
             {
-              label: "Total Value",
+              label: "Total Amount",
               value: fmtLakh(inwardSummary.totalValue),
               icon: "fa-solid fa-indian-rupee-sign",
             },
@@ -2214,181 +2312,143 @@ export default function MaterialInward({
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(4, 1fr)",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
                   gap: 12,
                   marginBottom: 20,
                 }}
               >
                 {statCards.map(({ label, value, icon }) => (
-                  <div
+                  <StatCard
                     key={label}
-                    style={{
-                      padding: "16px 20px",
-                      background: "transparent",
-                      border: "1px solid rgba(255,255,255,0.07)",
-                      borderRadius: 12,
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: 8,
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: 19,
-                          color: "#ffffff",
-                          fontWeight: 600,
-                          textTransform: "uppercase",
-                          letterSpacing: "0.05em",
-                        }}
-                      >
-                        {label}
-                      </span>
-                      <i
-                        className={icon}
-                        style={{
-                          color: C.muted,
-                          fontSize: 20,
-                          opacity: 0.9,
-                          display: "inline-flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          height: 28,
-                          width: 28,
-                          lineHeight: 1,
-                        }}
-                      />
-                    </div>
-                    <div
-                      style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}
-                    >
-                      {value}
-                    </div>
-                  </div>
+                    label={label}
+                    value={value}
+                    icon={icon}
+                  />
                 ))}
               </div>
 
-              {/* Toolbar + Table — connected with one rounded border */}
+              {/* Toolbar */}
+              <ListToolbar
+                onSelectModeChange={(on) => {
+                  if (!on) setSelectedIds(new Set());
+                }}
+                search={search}
+                setSearch={setSearch}
+                placeholder="Search records..."
+                count={listData.length}
+                filterCount={miFilterCount}
+                onFilter={() => setShowFilterModal(true)}
+                exportOptions={
+                  canExportImport
+                    ? [
+                        {
+                          label: "Excel",
+                          icon: "fa-solid fa-file-excel",
+                          onClick: handleExportExcel,
+                        },
+                      ]
+                    : []
+                }
+                onAdd={
+                  canCreate
+                    ? () => {
+                        setEditId(null);
+                        setHeader(blankHeader);
+                        setItems([{ ...blankItem, _id: uid() }]);
+                        setHeaderErrors({});
+                        setItemErrors([{}]);
+                        setShowModal(true);
+                      }
+                    : undefined
+                }
+                onImport={
+                  canExportImport || canCreate
+                    ? () => importInputRef.current?.click()
+                    : undefined
+                }
+                onTemplate={handleDownloadTemplate}
+                actions={
+                  <button
+                    type="button"
+                    className="po-tbtn"
+                    onClick={handleSyncStock}
+                    style={toolbarBtn}
+                  >
+                    <i className="fa-solid fa-rotate" /> Sync Stock
+                  </button>
+                }
+              />
+              <input
+                ref={importInputRef}
+                type="file"
+                accept=".xlsx,.xls"
+                style={{ display: "none" }}
+                onChange={handleImportExcel}
+              />
+
+              {showFilterModal && (
+                <FilterModal
+                  onClose={() => setShowFilterModal(false)}
+                  onReset={() => {
+                    setFilterVendor("");
+                    setFilterLocation("");
+                    setDrDateFrom("");
+                    setDrDateTo("");
+                    setSortBy("newest");
+                  }}
+                >
+                  <Field label="Vendor">
+                    <AutocompleteInput
+                      value={filterVendor}
+                      onChange={(v) => setFilterVendor(v)}
+                      suggestions={[
+                        ...new Set(
+                          (inward || [])
+                            .map((r) => r.vendorName)
+                            .filter(Boolean),
+                        ),
+                      ].sort()}
+                      placeholder="All vendors"
+                      showAllOnFocus={true}
+                    />
+                  </Field>
+                  <Field label="Location">
+                    <AutocompleteInput
+                      value={filterLocation}
+                      onChange={(v) => setFilterLocation(v)}
+                      suggestions={LOCATIONS}
+                      placeholder="All locations"
+                      showAllOnFocus={true}
+                    />
+                  </Field>
+                  <Field label="Inward Date">
+                    <DateRangeFilter
+                      dateFrom={drDateFrom}
+                      setDateFrom={setDrDateFrom}
+                      dateTo={drDateTo}
+                      setDateTo={setDrDateTo}
+                    />
+                  </Field>
+                  <Field label="Sort by">
+                    <SortSelect
+                      value={sortBy}
+                      onChange={setSortBy}
+                      options={MI_SORT}
+                    />
+                  </Field>
+                </FilterModal>
+              )}
+
+              {/* Table */}
               <div
                 style={{
                   border: "1px solid rgba(255,255,255,0.08)",
                   borderRadius: 8,
                   overflow: "hidden",
                   background: "transparent",
+                  marginTop: 12,
                 }}
               >
-                {/* Toolbar — 48px, bottom border separator */}
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 12,
-                    height: 48,
-                    padding: "0 14px",
-                    borderBottom: "1px solid rgba(255,255,255,0.08)",
-                  }}
-                >
-                  <div
-                    style={{ position: "relative", width: 280, flexShrink: 0 }}
-                  >
-                    <span
-                      style={{
-                        position: "absolute",
-                        left: 12,
-                        top: "50%",
-                        transform: "translateY(-50%)",
-                        color: "#555",
-                      }}
-                    >
-                      <i className="fa-solid fa-magnifying-glass" />
-                    </span>
-                    <input
-                      placeholder="Search records..."
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      style={{
-                        width: "100%",
-                        padding: "7px 12px 7px 36px",
-                        background: "transparent",
-                        border: "1px solid #2a2a2e",
-                        borderRadius: 6,
-                        color: "#fff",
-                        fontSize: 13,
-                      }}
-                    />
-                  </div>
-                  <DateRangeFilter
-                    dateFrom={drDateFrom}
-                    setDateFrom={setDrDateFrom}
-                    dateTo={drDateTo}
-                    setDateTo={setDrDateTo}
-                  />
-                  <AutocompleteInput
-                    value={filterVendor}
-                    onChange={(v) => setFilterVendor(v)}
-                    suggestions={[
-                      ...new Set(
-                        (inward || []).map((r) => r.vendorName).filter(Boolean),
-                      ),
-                    ].sort()}
-                    placeholder="Filter by vendor..."
-                    showAllOnFocus={true}
-                    inputStyle={{
-                      padding: "6px 10px",
-                      background: "#0c0c0e",
-                      border: "1px solid #2a2a2e",
-                      borderRadius: 6,
-                      color: "#fff",
-                      fontSize: 12,
-                      width: 160,
-                    }}
-                  />
-                  <AutocompleteInput
-                    value={filterLocation}
-                    onChange={(v) => setFilterLocation(v)}
-                    suggestions={LOCATIONS}
-                    placeholder="Filter by location..."
-                    showAllOnFocus={true}
-                    inputStyle={{
-                      padding: "6px 10px",
-                      background: "#0c0c0e",
-                      border: "1px solid #2a2a2e",
-                      borderRadius: 6,
-                      color: "#fff",
-                      fontSize: 12,
-                      width: 150,
-                    }}
-                  />
-                  <div style={{ flex: 1 }} />
-                  <span style={{ fontSize: 12, color: C.muted }}>
-                    {listData.length} records found
-                  </span>
-                  {canExportImport && (
-                    <button
-                      onClick={handleExportExcel}
-                      style={{
-                        background: "transparent",
-                        color: "#ffffff",
-                        border: "1px solid rgba(255,255,255,0.2)",
-                        borderRadius: 6,
-                        padding: "6px 14px",
-                        fontSize: 12,
-                        fontWeight: 500,
-                        cursor: "pointer",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 6,
-                      }}
-                    >
-                      <i className="fa-solid fa-file-export" /> Export Excel
-                    </button>
-                  )}
-                </div>
-
                 {/* Skeleton loader on initial load */}
                 {initialLoad ? (
                   <div style={{ padding: 0 }}>
@@ -2523,10 +2583,8 @@ export default function MaterialInward({
                               height: 40,
                               textAlign: ta,
                               fontSize: 11,
-                              fontWeight: 700,
+                              fontWeight: 600,
                               color: C.muted,
-                              textTransform: "uppercase",
-                              letterSpacing: "0.06em",
                               whiteSpace: "nowrap",
                               width: w || undefined,
                             }}
@@ -2585,8 +2643,8 @@ export default function MaterialInward({
                             <td
                               style={{
                                 padding: "0 14px",
-                                fontWeight: 700,
-                                color: "#60a5fa",
+                                fontWeight: 600,
+                                color: C.accent,
                                 whiteSpace: "nowrap",
                                 cursor: canEdit ? "pointer" : "default",
                                 textDecoration:
@@ -2602,7 +2660,7 @@ export default function MaterialInward({
                               style={{
                                 padding: "0 14px",
                                 fontSize: 12,
-                                color: "#94a3b8",
+                                color: "#a3a3a3",
                                 whiteSpace: "nowrap",
                               }}
                             >
@@ -2642,7 +2700,7 @@ export default function MaterialInward({
                                     background: vendorColor(r.vendorName),
                                     color: "#0b0b14",
                                     fontSize: 10,
-                                    fontWeight: 700,
+                                    fontWeight: 600,
                                     flexShrink: 0,
                                   }}
                                 >
@@ -2677,7 +2735,7 @@ export default function MaterialInward({
                             <td
                               style={{
                                 padding: "0 14px",
-                                fontWeight: 700,
+                                fontWeight: 600,
                                 color: "#10b981",
                                 whiteSpace: "nowrap",
                                 textAlign: "right",
@@ -2689,63 +2747,24 @@ export default function MaterialInward({
                             <td style={{ padding: "12px 14px" }}>
                               <div style={{ display: "flex", gap: 6 }}>
                                 {canEdit && (
-                                  <button
+                                  <IconBtn
+                                    icon="fa-pen-to-square"
+                                    label="Edit"
                                     onClick={() => handleEdit(r)}
-                                    style={{
-                                      background: "transparent",
-                                      color: "#8082ff",
-                                      border: "1px solid #8082ff98",
-                                      borderRadius: 6,
-                                      padding: "6px 12px",
-                                      fontSize: 11,
-                                      fontWeight: 500,
-                                      cursor: "pointer",
-                                      display: "inline-flex",
-                                      alignItems: "center",
-                                      gap: 6,
-                                    }}
-                                  >
-                                    <i className="fa-solid fa-pen-to-square" />{" "}
-                                    Edit
-                                  </button>
+                                  />
                                 )}
-                                <button
+                                <IconBtn
+                                  icon="fa-file-pdf"
+                                  label="Download PDF"
                                   onClick={() => generateGRNPDF(r)}
-                                  style={{
-                                    background: "transparent",
-                                    color: "#8082ff",
-                                    border: "1px solid #8082ff98",
-                                    borderRadius: 6,
-                                    padding: "6px 12px",
-                                    fontSize: 11,
-                                    fontWeight: 500,
-                                    cursor: "pointer",
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    gap: 6,
-                                  }}
-                                >
-                                  <i className="fa-solid fa-file-pdf" /> PDF
-                                </button>
+                                />
                                 {canDelete && (
-                                  <button
+                                  <IconBtn
+                                    icon="fa-trash"
+                                    label="Delete"
+                                    danger
                                     onClick={() => setDeleteTarget(rowId)}
-                                    style={{
-                                      background: "transparent",
-                                      color: "#8082ff",
-                                      border: "1px solid #8082ff98",
-                                      borderRadius: 6,
-                                      padding: "6px 12px",
-                                      fontSize: 11,
-                                      fontWeight: 500,
-                                      cursor: "pointer",
-                                      display: "inline-flex",
-                                      alignItems: "center",
-                                      gap: 6,
-                                    }}
-                                  >
-                                    <i className="fa-solid fa-trash" /> Delete
-                                  </button>
+                                  />
                                 )}
                               </div>
                             </td>
@@ -2769,7 +2788,7 @@ export default function MaterialInward({
                     alignItems: "center",
                     gap: 14,
                     padding: "10px 18px",
-                    background: "#15151c",
+                    background: "#1a1a1a",
                     border: "1px solid rgba(255,255,255,0.12)",
                     borderRadius: 999,
                     boxShadow:
@@ -2781,7 +2800,7 @@ export default function MaterialInward({
                     style={{
                       fontSize: 12,
                       fontWeight: 600,
-                      color: "#cbd5e1",
+                      color: "#c7c7c7",
                     }}
                   >
                     {selectedIds.size} row{selectedIds.size !== 1 ? "s" : ""}{" "}

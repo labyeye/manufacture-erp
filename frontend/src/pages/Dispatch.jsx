@@ -1,14 +1,18 @@
 import React, { useState, useEffect, useMemo } from "react";
+import * as XLSX from "xlsx";
 import { C } from "../constants/colors";
 import {
   Card,
-  SectionTitle,
   Badge,
   Field,
   SubmitBtn,
   AutocompleteInput,
   DateRangeFilter,
   Modal,
+  NameWithAvatar,
+  ListToolbar,
+  FilterModal,
+  SortSelect,
 } from "../components/ui/BasicComponents";
 import { DatePicker } from "../components/ui/DatePicker";
 import {
@@ -18,6 +22,9 @@ import {
   companyMasterAPI,
   categoryMasterAPI,
 } from "../api/auth";
+import { IconBtn } from "../components/ui/IconBtn";
+import { StatCard } from "../components/ui/StatCard";
+import { fmtCompact } from "../utils/formatINR";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 const today = () => new Date().toISOString().slice(0, 10);
@@ -84,6 +91,9 @@ export default function Dispatch({
   const [drDateTo, setDrDateTo] = useState("");
   const [filterCompany, setFilterCompany] = useState("");
   const [filterVehicle, setFilterVehicle] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
+  const [showFilterModal, setShowFilterModal] = useState(false);
   const [editId, setEditId] = useState(null);
 
   // Material Return state
@@ -521,27 +531,27 @@ export default function Dispatch({
             body { font-family: 'Inter', sans-serif; padding: 20px 30px; color: #1a1a1a; line-height: 1.4; }
             .header { text-align: center; border-bottom: 2px solid #1e40af; padding-bottom: 10px; margin-bottom: 20px; }
             .header h1 { color: #1e3a8a; margin: 0; font-size: 24px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
-            .header p { margin: 2px 0; font-size: 11px; color: #475569; font-weight: 500; }
+            .header p { margin: 2px 0; font-size: 11px; color: #6b6b6b; font-weight: 500; }
             
             .doc-title { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px; }
-            .doc-title h2 { margin: 0; font-size: 20px; font-weight: 700; color: #1e293b; }
+            .doc-title h2 { margin: 0; font-size: 20px; font-weight: 700; color: #1f1f1f; }
             .dc-no { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 800; color: #1e40af; margin: 5px 0; }
             
-            .hr { height: 1px; background: #e2e8f0; margin: 15px 0; border: none; }
+            .hr { height: 1px; background: #ededed; margin: 15px 0; border: none; }
             
-            .section-label { font-size: 10px; color: #64748b; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px; background: #f8fafc; padding: 4px 8px; border-radius: 4px; }
+            .section-label { font-size: 10px; color: #8a8a8a; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px; background: #f8fafc; padding: 4px 8px; border-radius: 4px; }
             
             .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 20px; }
-            .info-item label { display: block; font-size: 9px; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
-            .info-item span { font-size: 12px; font-weight: 600; color: #1e293b; }
+            .info-item label { display: block; font-size: 9px; color: #a3a3a3; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
+            .info-item span { font-size: 12px; font-weight: 600; color: #1f1f1f; }
             
             table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-            th { background: #f8fafc; border: 1px solid #e2e8f0; padding: 8px; text-align: left; font-size: 9px; font-weight: 800; text-transform: uppercase; color: #475569; }
-            td { border: 1px solid #e2e8f0; padding: 8px; font-size: 11px; color: #1e293b; }
+            th { background: #f8fafc; border: 1px solid #ededed; padding: 8px; text-align: left; font-size: 9px; font-weight: 800; text-transform: uppercase; color: #6b6b6b; }
+            td { border: 1px solid #ededed; padding: 8px; font-size: 11px; color: #1f1f1f; }
             .col-qty { text-align: center; font-weight: 700; }
             
             .footer { margin-top: 80px; display: flex; justify-content: space-between; }
-            .signature { border-top: 1px solid #cbd5e1; width: 200px; text-align: center; padding-top: 8px; font-size: 11px; color: #64748b; font-weight: 600; }
+            .signature { border-top: 1px solid #c7c7c7; width: 200px; text-align: center; padding-top: 8px; font-size: 11px; color: #8a8a8a; font-weight: 600; }
             
             @media print {
               body { padding: 0; }
@@ -559,7 +569,7 @@ export default function Dispatch({
 
           <div class="doc-title">
             <h2>DELIVERY CHALLAN</h2>
-            <div style="font-size: 12px; color: #64748b;">Date: <b>${fd(d.dispatchDate)}</b></div>
+            <div style="font-size: 12px; color: #8a8a8a;">Date: <b>${fd(d.dispatchDate)}</b></div>
           </div>
           <div class="dc-no">DC: ${d.dispatchNo || d._id?.slice(-6).toUpperCase() || "NEW"}</div>
           <div class="hr"></div>
@@ -632,7 +642,7 @@ export default function Dispatch({
             </tbody>
           </table>
 
-          <div style="margin-top: 40px; font-size: 10px; color: #64748b;">
+          <div style="margin-top: 40px; font-size: 10px; color: #8a8a8a;">
             <b>Declaration:</b> We declare that this challan shows the actual quantity of goods described and that all particulars are true and correct.
           </div>
 
@@ -672,66 +682,6 @@ export default function Dispatch({
 
   return (
     <div className="fade">
-      <SectionTitle
-        icon="fa-solid fa-truck-fast"
-        title="Dispatch"
-        sub="Record outgoing dispatches against sales orders"
-      />
-
-      <div
-        style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}
-      >
-        {canCreate && (
-          <button
-            onClick={() => {
-              setHeader(blankHeader);
-              setItems([blankItem()]);
-              setHeaderErrors({});
-              setItemErrors([{}]);
-              setEditId(null);
-              setShowModal(true);
-            }}
-            style={{
-              background: "rgba(255,255,255,0.08)",
-              border: "1px solid rgba(255,255,255,0.18)",
-              color: "#fff",
-              padding: "9px 18px",
-              borderRadius: 10,
-              fontWeight: 600,
-              fontSize: 13,
-              cursor: "pointer",
-              boxShadow:
-                "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
-            }}
-          >
-            + New Dispatch
-          </button>
-        )}
-        {canCreate && (
-          <button
-            onClick={() => {
-              setReturnHeader(blankReturnHeader);
-              setReturnItems([blankItem()]);
-              setShowReturnModal(true);
-            }}
-            style={{
-              background: "rgba(255,255,255,0.08)",
-              border: "1px solid rgba(255,255,255,0.18)",
-              color: "#fff",
-              padding: "9px 18px",
-              borderRadius: 10,
-              fontWeight: 600,
-              fontSize: 13,
-              cursor: "pointer",
-              boxShadow:
-                "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
-            }}
-          >
-            Material Return
-          </button>
-        )}
-      </div>
-
       {showModal && (
         <Modal
           title={editId ? "Edit Dispatch" : "New Dispatch"}
@@ -751,7 +701,7 @@ export default function Dispatch({
                 style={{
                   fontSize: 14,
                   fontWeight: 500,
-                  color: C.purple,
+                  color: C.accent,
                   marginBottom: 14,
                 }}
               >
@@ -792,7 +742,7 @@ export default function Dispatch({
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 1fr",
+                  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
                   gap: 14,
                   marginBottom: 14,
                 }}
@@ -898,7 +848,7 @@ export default function Dispatch({
                 marginBottom: 10,
               }}
             >
-              <h3 style={{ fontSize: 14, fontWeight: 500, color: C.purple }}>
+              <h3 style={{ fontSize: 14, fontWeight: 500, color: C.accent }}>
                 Items ({items.length})
               </h3>
               <button
@@ -912,8 +862,7 @@ export default function Dispatch({
                   fontWeight: 500,
                   fontSize: 13,
                   cursor: "pointer",
-                  boxShadow:
-                    "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
                 }}
               >
                 + Add Item
@@ -932,29 +881,17 @@ export default function Dispatch({
                   }}
                 >
                   <span
-                    style={{ fontWeight: 500, color: C.purple, fontSize: 13 }}
+                    style={{ fontWeight: 500, color: C.accent, fontSize: 13 }}
                   >
                     Item {idx + 1}
                   </span>
                   {items.length > 1 && (
-                    <button
+                    <IconBtn
+                      icon="fa-trash"
+                      label="Delete"
+                      danger
                       onClick={() => removeItem(idx)}
-                      style={{
-                        background: "transparent",
-                        color: "#ffffff",
-                        border: "1px solid rgba(255,255,255,0.2)",
-                        borderRadius: 6,
-                        padding: "6px 12px",
-                        fontSize: 11,
-                        fontWeight: 500,
-                        cursor: "pointer",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 6,
-                      }}
-                    >
-                      <i className="fa-solid fa-trash" /> Delete
-                    </button>
+                    />
                   )}
                 </div>
 
@@ -962,13 +899,13 @@ export default function Dispatch({
                 <div
                   style={{
                     display: "grid",
-                    gridTemplateColumns:
-                      "1.8fr 0.8fr 0.8fr 0.7fr 0.5fr 0.6fr 0.6fr 0.7fr 0.5fr 1fr",
-                    gap: 10,
+                    gridTemplateColumns: "repeat(12, minmax(0, 1fr))",
+                    gap: 14,
+                    alignItems: "start",
                     marginBottom: 12,
                   }}
                 >
-                  <Field label="Item Name *">
+                  <Field label="Item Name *" span={6}>
                     <AutocompleteInput
                       value={it.itemName}
                       onChange={(v) => setItem(idx, "itemName", v)}
@@ -1016,7 +953,7 @@ export default function Dispatch({
                       );
                     })()}
                   </Field>
-                  <Field label="Product Code">
+                  <Field label="Product Code" span={3}>
                     <input
                       placeholder="Auto-filled"
                       value={it.productCode}
@@ -1025,7 +962,7 @@ export default function Dispatch({
                       }
                     />
                   </Field>
-                  <Field label="Company Code">
+                  <Field label="Company Code" span={3}>
                     <input
                       placeholder="From Item Master"
                       value={it.companyCode}
@@ -1034,17 +971,17 @@ export default function Dispatch({
                       }
                     />
                   </Field>
-                  <Field label="Quantity *">
+                  <Field label="Quantity *" span={2}>
                     <input
                       type="number"
-                      placeholder="Qty to dispatch"
+                      placeholder="Qty"
                       value={it.qty}
                       onChange={(e) => setItem(idx, "qty", e.target.value)}
                       style={EI(idx, "qty")}
                     />
                     {EIMsg(idx, "qty")}
                   </Field>
-                  <Field label="Unit">
+                  <Field label="Unit" span={1}>
                     <select
                       value={it.unit}
                       onChange={(e) => setItem(idx, "unit", e.target.value)}
@@ -1054,7 +991,7 @@ export default function Dispatch({
                       ))}
                     </select>
                   </Field>
-                  <Field label="Pcs/Box">
+                  <Field label="Pcs/Box" span={2}>
                     <input
                       type="number"
                       placeholder="Pcs/Box"
@@ -1064,7 +1001,7 @@ export default function Dispatch({
                       }
                     />
                   </Field>
-                  <Field label="Boxes">
+                  <Field label="Boxes" span={2}>
                     <input
                       type="number"
                       placeholder="Boxes"
@@ -1072,24 +1009,28 @@ export default function Dispatch({
                       onChange={(e) => setItem(idx, "noOfBox", e.target.value)}
                     />
                   </Field>
-                  <Field label="Rate (₹)">
+                  <Field label="Rate (₹)" span={2}>
                     <input
                       type="number"
                       value={it.rate || ""}
                       onChange={(e) => setItem(idx, "rate", e.target.value)}
                     />
                   </Field>
-                  <Field label="GST (%)">
+                  <Field label="GST (%)" span={1}>
                     <input
                       type="number"
                       value={it.gstRate || 18}
                       onChange={(e) => setItem(idx, "gstRate", e.target.value)}
                     />
                   </Field>
-                  <Field label="Total (incl Tax)">
+                  <Field label="Total (incl Tax)" span={2}>
                     <div
                       style={{
-                        padding: "9px 12px",
+                        padding: "0 12px",
+                        height: 38,
+                        display: "flex",
+                        alignItems: "center",
+                        boxSizing: "border-box",
                         background: C.inputBg,
                         border: `1px solid ${C.border}`,
                         borderRadius: 6,
@@ -1117,9 +1058,9 @@ export default function Dispatch({
               <button
                 onClick={addItem}
                 style={{
-                  background: (C.purple || "#a855f7") + "22",
-                  color: C.purple || "#a855f7",
-                  border: `1px solid ${C.purple || "#a855f7"}44`,
+                  background: C.accent + "22",
+                  color: C.accent,
+                  border: `1px solid ${C.accent}44`,
                   borderRadius: 6,
                   padding: "9px 20px",
                   fontWeight: 500,
@@ -1154,7 +1095,7 @@ export default function Dispatch({
                 style={{
                   fontSize: 14,
                   fontWeight: 500,
-                  color: C.orange || "#f97316",
+                  color: C.accent,
                   marginBottom: 18,
                 }}
               >
@@ -1302,7 +1243,7 @@ export default function Dispatch({
                 style={{
                   fontSize: 14,
                   fontWeight: 500,
-                  color: C.orange || "#f97316",
+                  color: C.accent,
                 }}
               >
                 Return Items ({returnItems.length})
@@ -1318,8 +1259,7 @@ export default function Dispatch({
                   fontWeight: 500,
                   fontSize: 13,
                   cursor: "pointer",
-                  boxShadow:
-                    "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
                 }}
               >
                 + Add Item
@@ -1339,35 +1279,23 @@ export default function Dispatch({
                   <span
                     style={{
                       fontWeight: 500,
-                      color: C.orange || "#f97316",
+                      color: C.accent,
                       fontSize: 13,
                     }}
                   >
                     Item {idx + 1}
                   </span>
                   {returnItems.length > 1 && (
-                    <button
+                    <IconBtn
+                      icon="fa-trash"
+                      label="Delete"
+                      danger
                       onClick={() =>
                         setReturnItems((prev) =>
                           prev.filter((_, i) => i !== idx),
                         )
                       }
-                      style={{
-                        background: "transparent",
-                        color: "#ffffff",
-                        border: "1px solid rgba(255,255,255,0.2)",
-                        borderRadius: 6,
-                        padding: "6px 12px",
-                        fontSize: 11,
-                        fontWeight: 500,
-                        cursor: "pointer",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 6,
-                      }}
-                    >
-                      <i className="fa-solid fa-trash" /> Delete
-                    </button>
+                    />
                   )}
                 </div>
                 <div
@@ -1538,8 +1466,7 @@ export default function Dispatch({
                   borderRadius: 6,
                   padding: "10px 24px",
                   fontWeight: 500,
-                  boxShadow:
-                    "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
                   opacity: returnLoading ? 0.6 : 1,
                   fontSize: 13,
                   cursor: returnLoading ? "not-allowed" : "pointer",
@@ -1554,7 +1481,7 @@ export default function Dispatch({
         </Modal>
       )}
 
-      <Card>
+      <>
         {(() => {
           const dispatchRecords = (dispatch || [])
             .filter((d) => d.type !== "Return")
@@ -1572,7 +1499,15 @@ export default function Dispatch({
                 new Date(b.createdAt || b.date || 0) -
                 new Date(a.createdAt || a.date || 0),
             );
+          const matchSearch = (r) => {
+            if (!searchQuery) return true;
+            const q = searchQuery.toLowerCase();
+            return `${r.dispatchNo || ""} ${r.companyName || ""} ${r.vehicleNo || ""} ${r.poNumber || ""} ${r.soRef || ""}`
+              .toLowerCase()
+              .includes(q);
+          };
           const filteredDispatch = dispatchRecords.filter((r) => {
+            if (!matchSearch(r)) return false;
             if (filterCompany && r.companyName !== filterCompany) return false;
             if (filterVehicle && (r.vehicleNo || "") !== filterVehicle)
               return false;
@@ -1586,6 +1521,7 @@ export default function Dispatch({
             return true;
           });
           const filteredReturn = returnRecords.filter((r) => {
+            if (!matchSearch(r)) return false;
             if (filterCompany && r.companyName !== filterCompany) return false;
             if (filterVehicle && (r.vehicleNo || "") !== filterVehicle)
               return false;
@@ -1598,8 +1534,58 @@ export default function Dispatch({
             }
             return true;
           });
-          const activeRecords =
-            recordsTab === "return" ? filteredReturn : filteredDispatch;
+          const activeRecords = (
+            recordsTab === "return" ? filteredReturn : filteredDispatch
+          ).slice();
+          const dTime = (r) => new Date(r.createdAt || r.date || 0);
+          const dSort = {
+            newest: null,
+            oldest: (a, b) => dTime(a) - dTime(b),
+            no_asc: (a, b) =>
+              String(a.dispatchNo || "").localeCompare(
+                String(b.dispatchNo || ""),
+                undefined,
+                { numeric: true },
+              ),
+            company_asc: (a, b) =>
+              String(a.companyName || "").localeCompare(
+                String(b.companyName || ""),
+              ),
+          }[sortBy];
+          if (dSort) activeRecords.sort(dSort);
+          const D_SORT = [
+            ["newest", "Newest first"],
+            ["oldest", "Oldest first"],
+            ["no_asc", "DC No (A → Z)"],
+            ["company_asc", "Company (A → Z)"],
+          ];
+          const activeFilterCount =
+            (filterCompany ? 1 : 0) +
+            (filterVehicle ? 1 : 0) +
+            (drDateFrom || drDateTo ? 1 : 0) +
+            (sortBy !== "newest" ? 1 : 0);
+          const exportDispatchExcel = () => {
+            const rows = activeRecords.map((r) => [
+              r.dispatchNo,
+              (r.date || "").slice(0, 10),
+              r.companyName || "",
+              r.poNumber || "",
+              r.soRef || "",
+              (r.items || []).reduce((s, it) => s + (Number(it.qty) || 0), 0),
+              r.vehicleNo || "",
+            ]);
+            const ws = XLSX.utils.aoa_to_sheet([
+              ["DC No", "Date", "Company", "PO No", "SO Ref", "Qty", "Vehicle"],
+              ...rows,
+            ]);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(
+              wb,
+              ws,
+              recordsTab === "return" ? "Returns" : "Dispatch",
+            );
+            XLSX.writeFile(wb, `dispatch-${recordsTab}-${today()}.xlsx`);
+          };
           const now = new Date();
           const thisMonthCount = dispatchRecords.filter((d) => {
             const dt = new Date(d.date || d.createdAt || 0);
@@ -1641,7 +1627,7 @@ export default function Dispatch({
             },
             {
               label: "Total Qty",
-              value: fmt(totalQty) + " pcs",
+              value: fmtCompact(totalQty) + " pcs",
               icon: "fa-solid fa-boxes-stacked",
             },
             {
@@ -1656,9 +1642,9 @@ export default function Dispatch({
               onClick={() => setRecordsTab(id)}
               style={{
                 background:
-                  recordsTab === id ? "rgba(128,130,255,0.12)" : "transparent",
-                color: recordsTab === id ? "#8082ff" : C.muted,
-                border: `1px solid ${recordsTab === id ? "#8082ff98" : "#2a2a2e"}`,
+                  recordsTab === id ? "rgba(200, 149, 90,0.12)" : "transparent",
+                color: recordsTab === id ? "#c8955a" : C.muted,
+                border: `1px solid ${recordsTab === id ? "#c8955a98" : "#2a2a2e"}`,
                 borderRadius: 6,
                 padding: "8px 16px",
                 fontSize: 12,
@@ -1686,130 +1672,129 @@ export default function Dispatch({
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(4, 1fr)",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
                   gap: 12,
                   marginBottom: 20,
                 }}
               >
                 {statCards.map(({ label, value, icon }) => (
-                  <div
+                  <StatCard
                     key={label}
-                    style={{
-                      padding: "16px 20px",
-                      background: "transparent",
-                      border: "1px solid rgba(255,255,255,0.07)",
-                      borderRadius: 12,
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: 8,
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: 19,
-                          color: "#ffffff",
-                          fontWeight: 600,
-                          textTransform: "uppercase",
-                          letterSpacing: "0.05em",
-                        }}
-                      >
-                        {label}
-                      </span>
-                      <i
-                        className={icon}
-                        style={{
-                          color: C.muted,
-                          fontSize: 20,
-                          opacity: 0.9,
-                          display: "inline-flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          height: 28,
-                          width: 28,
-                          lineHeight: 1,
-                        }}
-                      />
-                    </div>
-                    <div
-                      style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}
-                    >
-                      {value}
-                    </div>
-                  </div>
+                    label={label}
+                    value={value}
+                    icon={icon}
+                  />
                 ))}
               </div>
-              <div
-                style={{
-                  display: "flex",
-                  gap: 12,
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                  marginBottom: 14,
-                }}
-              >
-                <div style={{ display: "flex", gap: 6 }}>
-                  {tabBtn("dispatch", "Dispatch", dispatchRecords.length)}
-                  {tabBtn("return", "Return", returnRecords.length)}
-                </div>
-                <DateRangeFilter
-                  dateFrom={drDateFrom}
-                  setDateFrom={setDrDateFrom}
-                  dateTo={drDateTo}
-                  setDateTo={setDrDateTo}
-                />
-                <AutocompleteInput
-                  value={filterCompany}
-                  onChange={(v) => setFilterCompany(v)}
-                  suggestions={[
-                    ...new Set(
-                      (dispatch || [])
-                        .map((r) => r.companyName)
-                        .filter(Boolean),
-                    ),
-                  ].sort()}
-                  placeholder="Filter by company..."
-                  showAllOnFocus={true}
-                  inputStyle={{
-                    padding: "6px 10px",
-                    background: "#0c0c0e",
-                    border: "1px solid #2a2a2e",
-                    borderRadius: 6,
-                    color: "#fff",
-                    fontSize: 12,
-                    width: 180,
+              <ListToolbar
+                search={searchQuery}
+                setSearch={setSearchQuery}
+                placeholder="Search DC, company, vehicle..."
+                count={activeRecords.length}
+                filterCount={activeFilterCount}
+                onFilter={() => setShowFilterModal(true)}
+                extra={
+                  <div style={{ display: "flex", gap: 6 }}>
+                    {tabBtn("dispatch", "Dispatch", dispatchRecords.length)}
+                    {tabBtn("return", "Return", returnRecords.length)}
+                  </div>
+                }
+                exportOptions={[
+                  {
+                    label: "Excel",
+                    icon: "fa-solid fa-file-excel",
+                    onClick: exportDispatchExcel,
+                  },
+                ]}
+                addLabel="New Dispatch"
+                onAdd={
+                  canCreate
+                    ? () => {
+                        setHeader(blankHeader);
+                        setItems([blankItem()]);
+                        setHeaderErrors({});
+                        setItemErrors([{}]);
+                        setEditId(null);
+                        setShowModal(true);
+                      }
+                    : undefined
+                }
+                addExtra={
+                  canCreate
+                    ? [
+                        {
+                          label: "Material Return",
+                          icon: "fa-solid fa-rotate-left",
+                          onClick: () => {
+                            setReturnHeader(blankReturnHeader);
+                            setReturnItems([blankItem()]);
+                            setShowReturnModal(true);
+                          },
+                        },
+                      ]
+                    : []
+                }
+              />
+
+              {showFilterModal && (
+                <FilterModal
+                  onClose={() => setShowFilterModal(false)}
+                  onReset={() => {
+                    setFilterCompany("");
+                    setFilterVehicle("");
+                    setDrDateFrom("");
+                    setDrDateTo("");
+                    setSortBy("newest");
                   }}
-                />
-                <AutocompleteInput
-                  value={filterVehicle}
-                  onChange={(v) => setFilterVehicle(v)}
-                  suggestions={[
-                    ...new Set(
-                      (dispatch || []).map((r) => r.vehicleNo).filter(Boolean),
-                    ),
-                  ].sort()}
-                  placeholder="Filter by vehicle..."
-                  showAllOnFocus={true}
-                  inputStyle={{
-                    padding: "6px 10px",
-                    background: "#0c0c0e",
-                    border: "1px solid #2a2a2e",
-                    borderRadius: 6,
-                    color: "#fff",
-                    fontSize: 12,
-                    width: 150,
-                  }}
-                />
-                <span
-                  style={{ fontSize: 12, color: C.muted, marginLeft: "auto" }}
                 >
-                  {activeRecords.length} records
-                </span>
-              </div>
+                  <Field label="Company">
+                    <AutocompleteInput
+                      value={filterCompany}
+                      onChange={(v) => setFilterCompany(v)}
+                      suggestions={[
+                        ...new Set(
+                          (dispatch || [])
+                            .map((r) => r.companyName)
+                            .filter(Boolean),
+                        ),
+                      ].sort()}
+                      placeholder="All companies"
+                      showAllOnFocus={true}
+                    />
+                  </Field>
+                  <Field label="Vehicle">
+                    <AutocompleteInput
+                      value={filterVehicle}
+                      onChange={(v) => setFilterVehicle(v)}
+                      suggestions={[
+                        ...new Set(
+                          (dispatch || [])
+                            .map((r) => r.vehicleNo)
+                            .filter(Boolean),
+                        ),
+                      ].sort()}
+                      placeholder="All vehicles"
+                      showAllOnFocus={true}
+                    />
+                  </Field>
+                  <Field label="Date">
+                    <DateRangeFilter
+                      dateFrom={drDateFrom}
+                      setDateFrom={setDrDateFrom}
+                      dateTo={drDateTo}
+                      setDateTo={setDrDateTo}
+                    />
+                  </Field>
+                  <Field label="Sort by">
+                    <SortSelect
+                      value={sortBy}
+                      onChange={setSortBy}
+                      options={D_SORT}
+                    />
+                  </Field>
+                </FilterModal>
+              )}
+              <div style={{ height: 14 }} />
               {activeRecords.length === 0 ? (
                 <div
                   style={{
@@ -1824,7 +1809,13 @@ export default function Dispatch({
                     : "No dispatch records yet."}
                 </div>
               ) : (
-                <div style={{ overflowX: "auto" }}>
+                <div
+                  style={{
+                    overflowX: "auto",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    borderRadius: 8,
+                  }}
+                >
                   <table
                     style={{
                       width: "100%",
@@ -1849,8 +1840,8 @@ export default function Dispatch({
                               "DC No",
                               "Date",
                               "Company",
-                              "PO No",
-                              "SO Ref",
+                              // "PO No",
+                              // "SO Ref",
                               "Qty",
                               "Vehicle",
                               "Status",
@@ -1862,7 +1853,7 @@ export default function Dispatch({
                             style={{
                               padding: "8px 10px",
                               textAlign: "left",
-                              fontWeight: 700,
+                              fontWeight: 600,
                               color: C.muted,
                               fontSize: 11,
                               whiteSpace: "nowrap",
@@ -1954,7 +1945,7 @@ export default function Dispatch({
                               style={{
                                 color: isReturn
                                   ? C.orange || "#f97316"
-                                  : C.purple,
+                                  : C.accent,
                                 fontWeight: 600,
                               }}
                             >
@@ -1975,7 +1966,7 @@ export default function Dispatch({
                         );
                         const companyCell = (
                           <td style={{ padding: "10px 10px", fontWeight: 600 }}>
-                            {r.companyName}
+                            <NameWithAvatar name={r.companyName} />
                           </td>
                         );
                         const qtyCell = (
@@ -2028,6 +2019,7 @@ export default function Dispatch({
                               </>
                             ) : (
                               <>
+                                {/* PO No / SO Ref columns hidden
                                 <td
                                   style={{
                                     padding: "10px 10px",
@@ -2044,6 +2036,7 @@ export default function Dispatch({
                                 >
                                   {r.soRef || "—"}
                                 </td>
+                                */}
                                 {qtyCell}
                                 {vehicleCell}
                                 <td style={{ padding: "10px 10px" }}>
@@ -2062,63 +2055,24 @@ export default function Dispatch({
                             >
                               <div style={{ display: "flex", gap: 6 }}>
                                 {canEdit && (
-                                  <button
+                                  <IconBtn
+                                    icon="fa-pen-to-square"
+                                    label="Edit"
                                     onClick={handleEdit}
-                                    style={{
-                                      background: "transparent",
-                                      color: "#8082ff",
-                                      border: "1px solid #8082ff98",
-                                      borderRadius: 6,
-                                      padding: "6px 12px",
-                                      fontSize: 11,
-                                      fontWeight: 500,
-                                      cursor: "pointer",
-                                      display: "inline-flex",
-                                      alignItems: "center",
-                                      gap: 6,
-                                    }}
-                                  >
-                                    <i className="fa-solid fa-pen-to-square" />{" "}
-                                    Edit
-                                  </button>
+                                  />
                                 )}
-                                <button
+                                <IconBtn
+                                  icon="fa-file-pdf"
+                                  label="Download PDF"
                                   onClick={() => generateDispatchPDF(r)}
-                                  style={{
-                                    background: "transparent",
-                                    color: "#8082ff",
-                                    border: "1px solid #8082ff98",
-                                    borderRadius: 6,
-                                    padding: "6px 12px",
-                                    fontSize: 11,
-                                    fontWeight: 500,
-                                    cursor: "pointer",
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    gap: 6,
-                                  }}
-                                >
-                                  <i className="fa-solid fa-file-pdf" /> PDF
-                                </button>
+                                />
                                 {canDelete && (
-                                  <button
+                                  <IconBtn
+                                    icon="fa-trash"
+                                    label="Delete"
+                                    danger
                                     onClick={handleDelete}
-                                    style={{
-                                      background: "transparent",
-                                      color: "#8082ff",
-                                      border: "1px solid #8082ff98",
-                                      borderRadius: 6,
-                                      padding: "6px 12px",
-                                      fontSize: 11,
-                                      fontWeight: 500,
-                                      cursor: "pointer",
-                                      display: "inline-flex",
-                                      alignItems: "center",
-                                      gap: 6,
-                                    }}
-                                  >
-                                    <i className="fa-solid fa-trash" /> Delete
-                                  </button>
+                                  />
                                 )}
                               </div>
                             </td>
@@ -2132,7 +2086,7 @@ export default function Dispatch({
             </>
           );
         })()}
-      </Card>
+      </>
     </div>
   );
 }

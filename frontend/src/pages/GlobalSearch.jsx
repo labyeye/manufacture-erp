@@ -470,7 +470,6 @@ export function GlobalSearch({
                     fontWeight: 500,
                     color,
                     letterSpacing: 1,
-                    textTransform: "uppercase",
                     marginBottom: 10,
                     paddingBottom: 8,
                     borderBottom: `1px solid ${C.border}`,

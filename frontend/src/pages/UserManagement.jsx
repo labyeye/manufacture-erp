@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { usersAPI } from "../api/auth";
-import { Modal } from "../components/ui/BasicComponents";
+import { Modal, ListToolbar } from "../components/ui/BasicComponents";
 import { TABS } from "../constants/seedData";
+import { IconBtn } from "../components/ui/IconBtn";
 
 const ROLE_COLORS = {
   Admin: "#FF9800",
@@ -262,52 +263,19 @@ export default function UserManagement({
 
   return (
     <div className="fade">
-      {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          marginBottom: 24,
+      <ListToolbar
+        search={searchTerm}
+        setSearch={setSearchTerm}
+        placeholder="Search users..."
+        count={filteredUsers.length}
+        onAdd={() => {
+          setShowModal(true);
+          setEditingId(null);
+          setForm(emptyForm);
         }}
-      >
-        <div>
-          <h2
-            style={{
-              fontSize: 22,
-              fontWeight: 500,
-              color: "#e0e0e0",
-              margin: 0,
-            }}
-          >
-            👥 User Management
-          </h2>
-          <p style={{ fontSize: 13, color: "#777", margin: "4px 0 0" }}>
-            Add users and assign exactly which pages they can access
-          </p>
-        </div>
-        <button
-          onClick={() => {
-            setShowModal(true);
-            setEditingId(null);
-            setForm(emptyForm);
-          }}
-          style={{
-            background: "rgba(255,255,255,0.08)",
-            border: "1px solid rgba(255,255,255,0.18)",
-            color: "#fff",
-            padding: "9px 18px",
-            borderRadius: 10,
-            fontWeight: 600,
-            fontSize: 13,
-            cursor: "pointer",
-            boxShadow:
-              "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
-          }}
-        >
-          + Add User
-        </button>
-      </div>
+        addLabel="Add User"
+      />
+      <div style={{ height: 14 }} />
 
       {/* Form Modal */}
       {showModal && (
@@ -326,7 +294,6 @@ export default function UserManagement({
               color: "#FF9800",
               letterSpacing: "1.5px",
               marginBottom: 18,
-              textTransform: "uppercase",
             }}
           >
             {editingId ? "Edit User" : "New User"}
@@ -370,7 +337,6 @@ export default function UserManagement({
                     color: "#666",
                     display: "block",
                     marginBottom: 6,
-                    letterSpacing: "0.5px",
                   }}
                 >
                   {label}
@@ -395,7 +361,6 @@ export default function UserManagement({
                   color: "#666",
                   display: "block",
                   marginBottom: 6,
-                  letterSpacing: "0.5px",
                 }}
               >
                 ROLE
@@ -426,7 +391,6 @@ export default function UserManagement({
                     color: "#666",
                     display: "block",
                     marginBottom: 6,
-                    letterSpacing: "0.5px",
                   }}
                 >
                   CLIENT TAG
@@ -574,7 +538,6 @@ export default function UserManagement({
                   fontSize: 11,
                   fontWeight: 500,
                   color: "#666",
-                  letterSpacing: "0.5px",
                 }}
               >
                 PAGE ACCESS — View:{form.allowedTabs?.length || 0} Create:
@@ -651,7 +614,8 @@ export default function UserManagement({
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        transition: "all 0.15s",
+                        transition:
+                          "background-color .15s, border-color .15s, color .15s, opacity .15s, transform .15s",
                       }}
                     >
                       {active && (
@@ -666,7 +630,6 @@ export default function UserManagement({
                         fontSize: 8,
                         color: active ? color : "#555",
                         fontWeight: 600,
-                        letterSpacing: "0.03em",
                       }}
                     >
                       {label}
@@ -687,7 +650,8 @@ export default function UserManagement({
                         : "transparent",
                       borderRadius: 8,
                       border: `1px solid ${hasView ? "rgba(255,255,255,0.13)" : "rgba(255,255,255,0.07)"}`,
-                      transition: "all 0.15s",
+                      transition:
+                        "background-color .15s, border-color .15s, color .15s, opacity .15s, transform .15s",
                     }}
                   >
                     <div
@@ -702,7 +666,7 @@ export default function UserManagement({
                         className={tab.icon}
                         style={{
                           fontSize: 13,
-                          color: hasView ? "#818cf8" : "#444",
+                          color: hasView ? "#c8955a" : "#444",
                           width: 16,
                           textAlign: "center",
                           flexShrink: 0,
@@ -774,11 +738,10 @@ export default function UserManagement({
                 fontWeight: 500,
                 fontSize: 13,
                 cursor: "pointer",
-                boxShadow:
-                  "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
               }}
             >
-              {editingId ? "✅ Update User" : "✓ Create User"}
+              {editingId ? "Update User" : "Create User"}
             </button>
             <button
               onClick={() => {
@@ -806,241 +769,159 @@ export default function UserManagement({
         </Modal>
       )}
 
-      {/* Search */}
-      <div style={{ marginBottom: 14 }}>
-        <input
-          style={{ ...inputStyle, maxWidth: 300 }}
-          placeholder="Search users..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </div>
-
-      {/* User list */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {loading && (
-          <div
-            style={{ color: "#666", textAlign: "center", padding: "20px 0" }}
+      {loading && (
+        <div style={{ color: "#666", textAlign: "center", padding: "20px 0" }}>
+          Loading...
+        </div>
+      )}
+      {filteredUsers.length > 0 && (
+        <div
+          style={{
+            border: "1px solid rgba(255,255,255,0.07)",
+            borderRadius: 12,
+            overflow: "hidden",
+          }}
+        >
+          <table
+            style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}
           >
-            Loading...
-          </div>
-        )}
-        {filteredUsers.map((user) => {
-          const roleColor = ROLE_COLORS[user.role] || "#888";
-          const initials = (user.name || user.username || "?")
-            .split(" ")
-            .map((w) => w[0])
-            .join("")
-            .slice(0, 2)
-            .toUpperCase();
-          const modCount = (user.allowedTabs || []).length;
-
-          return (
-            <div
-              key={user._id}
-              style={{
-                background: "transparent",
-                border: "1px solid rgba(255,255,255,0.1)",
-                borderRadius: 10,
-                padding: "16px 20px",
-                display: "flex",
-                alignItems: "center",
-                gap: 16,
-                flexWrap: "wrap",
-              }}
-            >
-              <div
-                style={{
-                  width: 42,
-                  height: 42,
-                  borderRadius: "50%",
-                  background: roleColor + "33",
-                  border: `2px solid ${roleColor}55`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 15,
-                  fontWeight: 500,
-                  color: roleColor,
-                  flexShrink: 0,
-                }}
-              >
-                {initials}
-              </div>
-
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <span
-                    style={{ fontWeight: 500, fontSize: 14, color: "#e0e0e0" }}
-                  >
-                    {user.name || user.username}
-                  </span>
-                  <span
+            <thead>
+              <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                {[
+                  "User",
+                  "Username",
+                  "Role",
+                  "Pages",
+                  "Permissions",
+                  "Import/Export",
+                  "Edit Stock",
+                  "Status",
+                  "Actions",
+                ].map((h) => (
+                  <th
+                    key={h}
                     style={{
-                      padding: "2px 10px",
-                      borderRadius: 20,
+                      padding: "10px 14px",
+                      textAlign: "left",
                       fontSize: 11,
-                      fontWeight: 500,
-                      background: roleColor + "22",
-                      color: roleColor,
+                      fontWeight: 600,
+                      color: "#8a8a8a",
+                      whiteSpace: "nowrap",
                     }}
                   >
-                    {user.role}
-                  </span>
-                  <span style={{ fontSize: 12, color: "#555" }}>
-                    {modCount} pages
-                  </span>
-                  {(user.createTabs?.length > 0 ||
-                    user.deleteTabs?.length > 0) && (
-                    <span
-                      style={{
-                        fontSize: 11,
-                        color: "#555",
-                        background: "rgba(255,255,255,0.05)",
-                        borderRadius: 20,
-                        padding: "2px 8px",
-                      }}
-                    >
-                      {[
-                        user.createTabs?.length > 0 &&
-                          `C:${user.createTabs.length}`,
-                        user.editableTabs?.length > 0 &&
-                          `E:${user.editableTabs.length}`,
-                        user.deleteTabs?.length > 0 &&
-                          `D:${user.deleteTabs.length}`,
-                      ]
-                        .filter(Boolean)
-                        .join(" ")}
-                    </span>
-                  )}
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filteredUsers.map((user) => {
+                const roleColor = ROLE_COLORS[user.role] || "#888";
+                const cell = { padding: "12px 14px" };
+                const pill = (ok, label) => (
                   <span
                     style={{
-                      padding: "2px 8px",
-                      borderRadius: 20,
+                      display: "inline-block",
+                      padding: "3px 10px",
+                      borderRadius: 999,
                       fontSize: 11,
-                      fontWeight: 500,
-                      background:
-                        user.allowExportImport !== false
-                          ? "#4CAF5011"
-                          : "#f4433611",
-                      color:
-                        user.allowExportImport !== false
-                          ? "#4CAF50"
-                          : "#f44336",
+                      fontWeight: 600,
+                      background: ok
+                        ? "rgba(16,185,129,0.18)"
+                        : "rgba(239,68,68,0.18)",
+                      color: ok ? "#6ee7b7" : "#fca5a5",
+                      border: `1px solid ${ok ? "rgba(16,185,129,0.30)" : "rgba(239,68,68,0.30)"}`,
                     }}
                   >
-                    {user.allowExportImport !== false
-                      ? "Import/Export ✓"
-                      : "Import/Export ✗"}
+                    {label}
                   </span>
-                  <span
-                    style={{
-                      padding: "2px 8px",
-                      borderRadius: 20,
-                      fontSize: 11,
-                      fontWeight: 500,
-                      background:
-                        user.allowEditStock !== false
-                          ? "#2196F311"
-                          : "#f4433611",
-                      color:
-                        user.allowEditStock !== false ? "#2196F3" : "#f44336",
-                    }}
+                );
+                const perms = [
+                  user.createTabs?.length > 0 && `C:${user.createTabs.length}`,
+                  user.editableTabs?.length > 0 &&
+                    `E:${user.editableTabs.length}`,
+                  user.deleteTabs?.length > 0 && `D:${user.deleteTabs.length}`,
+                ]
+                  .filter(Boolean)
+                  .join(" ");
+                return (
+                  <tr
+                    key={user._id}
+                    style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
                   >
-                    {user.allowEditStock !== false
-                      ? "Edit Stock ✓"
-                      : "Edit Stock ✗"}
-                  </span>
-                  {!user.isActive && (
-                    <span
-                      style={{
-                        padding: "2px 8px",
-                        borderRadius: 20,
-                        fontSize: 11,
-                        fontWeight: 500,
-                        background: "#f4433622",
-                        color: "#f44336",
-                      }}
-                    >
-                      Inactive
-                    </span>
-                  )}
-                </div>
-                <div style={{ fontSize: 12, color: "#555", marginTop: 3 }}>
-                  @{user.username}
-                </div>
-              </div>
-
-              <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-                <button
-                  onClick={() => handleEdit(user)}
-                  style={{
-                    background: "transparent",
-                    color: "#8082ff",
-                    border: "1px solid #8082ff98",
-                    borderRadius: 6,
-                    padding: "6px 12px",
-                    fontSize: 11,
-                    fontWeight: 500,
-                    cursor: "pointer",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 6,
-                  }}
-                >
-                  <i className="fa-solid fa-pen-to-square" /> Edit
-                </button>
-                <button
-                  onClick={() => handleToggleStatus(user._id, user.isActive)}
-                  style={{
-                    background: "transparent",
-                    color: "#8082ff",
-                    border: "1px solid #8082ff98",
-                    borderRadius: 6,
-                    padding: "6px 12px",
-                    fontSize: 11,
-                    fontWeight: 500,
-                    cursor: "pointer",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 6,
-                  }}
-                >
-                  <i
-                    className={`fa-solid ${user.isActive ? "fa-pause" : "fa-play"}`}
-                  />{" "}
-                  {user.isActive ? "Deactivate" : "Activate"}
-                </button>
-                <button
-                  onClick={() => handleDelete(user._id)}
-                  style={{
-                    background: "transparent",
-                    color: "#8082ff",
-                    border: "1px solid #8082ff98",
-                    borderRadius: 6,
-                    padding: "6px 12px",
-                    fontSize: 11,
-                    fontWeight: 500,
-                    cursor: "pointer",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 6,
-                  }}
-                >
-                  <i className="fa-solid fa-trash" /> Delete
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+                    <td style={{ ...cell, color: "#e0e0e0", fontWeight: 500 }}>
+                      {user.name || user.username}
+                    </td>
+                    <td style={{ ...cell, color: "#8a8a8a" }}>
+                      @{user.username}
+                    </td>
+                    <td style={cell}>
+                      <span
+                        style={{
+                          padding: "3px 10px",
+                          borderRadius: 999,
+                          fontSize: 11,
+                          fontWeight: 600,
+                          background: roleColor + "22",
+                          color: roleColor,
+                        }}
+                      >
+                        {user.role}
+                      </span>
+                    </td>
+                    <td style={{ ...cell, color: "#a3a3a3" }}>
+                      {(user.allowedTabs || []).length}
+                    </td>
+                    <td style={{ ...cell, color: "#a3a3a3" }}>
+                      {perms || "—"}
+                    </td>
+                    <td style={cell}>
+                      {pill(
+                        user.allowExportImport !== false,
+                        user.allowExportImport !== false ? "Yes" : "No",
+                      )}
+                    </td>
+                    <td style={cell}>
+                      {pill(
+                        user.allowEditStock !== false,
+                        user.allowEditStock !== false ? "Yes" : "No",
+                      )}
+                    </td>
+                    <td style={cell}>
+                      {pill(
+                        !!user.isActive,
+                        user.isActive ? "Active" : "Inactive",
+                      )}
+                    </td>
+                    <td style={cell}>
+                      <div style={{ display: "flex", gap: 4 }}>
+                        <IconBtn
+                          icon="fa-pen-to-square"
+                          label="Edit"
+                          onClick={() => handleEdit(user)}
+                        />
+                        <IconBtn
+                          icon={user.isActive ? "fa-pause" : "fa-play"}
+                          label={user.isActive ? "Deactivate" : "Activate"}
+                          onClick={() =>
+                            handleToggleStatus(user._id, user.isActive)
+                          }
+                        />
+                        <IconBtn
+                          icon="fa-trash"
+                          label="Delete"
+                          danger
+                          onClick={() => handleDelete(user._id)}
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {filteredUsers.length === 0 && !loading && (
         <div

@@ -12,7 +12,9 @@ import {
   breakdownLogAPI,
   factoryCalendarAPI,
   machineMaintenanceAPI,
+  machineMasterAPI,
 } from "../api/auth";
+import { StatCard } from "../components/ui/StatCard";
 
 const fmt = (n) => (n ?? 0).toLocaleString("en-IN");
 
@@ -540,7 +542,7 @@ export default function ProductionCalendar({
           style={{
             position: "fixed",
             inset: 0,
-            background: "#00000088",
+            background: "rgba(0,0,0,0.6)",
             zIndex: 1000,
           }}
         />
@@ -552,9 +554,9 @@ export default function ProductionCalendar({
             top: 0,
             width: 750,
             height: "100vh",
-            background: "#121212",
+            background: "#1a1a1a",
             zIndex: 1001,
-            boxShadow: "-20px 0 50px #000000aa",
+            borderLeft: "1px solid rgba(255,255,255,0.08)",
             padding: "24px",
             display: "flex",
             flexDirection: "column",
@@ -580,9 +582,14 @@ export default function ProductionCalendar({
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
               <div
                 style={{
-                  fontSize: 28,
-                  background: "#ffffff08",
-                  padding: 10,
+                  width: 48,
+                  height: 48,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 18,
+                  color: "#a3a3a3",
+                  background: "#242424",
                   borderRadius: 12,
                 }}
               >
@@ -594,8 +601,7 @@ export default function ProductionCalendar({
                     margin: 0,
                     fontSize: 22,
                     color: "#fff",
-                    fontWeight: 900,
-                    letterSpacing: "-0.01em",
+                    fontWeight: 600,
                   }}
                 >
                   {editData.name}
@@ -629,41 +635,26 @@ export default function ProductionCalendar({
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr 1fr 1fr",
-              gap: 16,
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gap: 12,
               marginBottom: 28,
             }}
           >
             {[
-              ["TOTAL CAPACITY", stats.totalCap, C.muted],
-              ["TOTAL PLANNED", stats.totalPlanned, C.yellow],
-              ["TOTAL ACTUAL", stats.totalActual, C.green],
+              ["Total capacity", stats.totalCap, "fa-solid fa-gauge-high"],
+              [
+                "Total planned",
+                stats.totalPlanned,
+                "fa-solid fa-calendar-check",
+              ],
+              ["Total actual", stats.totalActual, "fa-solid fa-circle-check"],
             ].map(([label, val, color]) => (
-              <div
+              <StatCard
                 key={label}
-                style={{
-                  background: "#1a1a1a",
-                  padding: "16px",
-                  borderRadius: 12,
-                  textAlign: "center",
-                  border: `1px solid ${C.border}44`,
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 10,
-                    fontWeight: 800,
-                    color: C.muted,
-                    marginBottom: 6,
-                    letterSpacing: "0.05em",
-                  }}
-                >
-                  {label}
-                </div>
-                <div style={{ fontSize: 24, fontWeight: 900, color: color }}>
-                  {val.toLocaleString()}
-                </div>
-              </div>
+                label={label}
+                value={val.toLocaleString()}
+                icon={color}
+              />
             ))}
           </div>
 
@@ -718,7 +709,9 @@ export default function ProductionCalendar({
                   return (
                     <tr
                       key={date}
-                      style={{ borderBottom: "1px solid #ffffff05" }}
+                      style={{
+                        borderBottom: "1px solid rgba(255,255,255,0.05)",
+                      }}
                     >
                       <td
                         style={{
@@ -731,7 +724,7 @@ export default function ProductionCalendar({
                               : "#fff",
                         }}
                       >
-                        <div style={{ fontWeight: 800, fontSize: 13 }}>
+                        <div style={{ fontWeight: 600, fontSize: 13 }}>
                           {dateFmt}
                         </div>
                         <div
@@ -879,7 +872,7 @@ export default function ProductionCalendar({
             <span>
               Capacity auto-filled - enter Planned and Actual manually
             </span>
-            <span style={{ fontWeight: 800 }}>
+            <span style={{ fontWeight: 600 }}>
               {displayStart} — {daysArray[daysArray.length - 1]}
             </span>
           </div>
@@ -890,19 +883,20 @@ export default function ProductionCalendar({
               style={{
                 flex: 1,
                 padding: "14px",
-                borderRadius: 10,
-                background: "#ffffff11",
+                borderRadius: 8,
+                background: "#242424",
                 border: "none",
-                color: "#fff",
+                color: "#ededed",
                 fontWeight: 500,
                 cursor: "pointer",
-                transition: "all 0.2s",
+                transition:
+                  "background-color .15s, border-color .15s, color .15s, opacity .15s, transform .15s",
               }}
               onMouseEnter={(e) =>
-                (e.currentTarget.style.background = "#ffffff18")
+                (e.currentTarget.style.background = "#2a2a2a")
               }
               onMouseLeave={(e) =>
-                (e.currentTarget.style.background = "#ffffff11")
+                (e.currentTarget.style.background = "#242424")
               }
             >
               Close
@@ -917,10 +911,8 @@ export default function ProductionCalendar({
                 background: "rgba(255,255,255,0.08)",
                 border: "1px solid rgba(255,255,255,0.18)",
                 color: "#fff",
-                fontWeight: 800,
+                fontWeight: 600,
                 cursor: "pointer",
-                boxShadow:
-                  "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
                 opacity: isSaving ? 0.7 : 1,
               }}
             >
@@ -1031,9 +1023,9 @@ export default function ProductionCalendar({
               }}
             >
               <span style={{ color: C.muted }}>Total Days Required:</span>{" "}
-              <span style={{ fontWeight: 700 }}>{totalDays} Days</span>
+              <span style={{ fontWeight: 600 }}>{totalDays} Days</span>
               <span style={{ color: C.muted }}>Planned End:</span>{" "}
-              <span style={{ fontWeight: 700 }}>
+              <span style={{ fontWeight: 600 }}>
                 {moment(entry.plannedEnd || entry.date).format("DD MMM YYYY")}
               </span>
               <span style={{ color: C.muted }}>Status Check:</span>
@@ -1067,7 +1059,7 @@ export default function ProductionCalendar({
                 style={{
                   padding: "10px 12px",
                   background: "#1e3a5f",
-                  borderRadius: 6,
+                  borderRadius: 8,
                   border: "1px solid #3b82f633",
                   textAlign: "center",
                 }}
@@ -1078,14 +1070,13 @@ export default function ProductionCalendar({
                     color: "#93c5fd",
                     marginBottom: 4,
                     fontWeight: 600,
-                    textTransform: "uppercase",
                     letterSpacing: 1,
                   }}
                 >
                   Total Setup
                 </div>
                 <div
-                  style={{ fontSize: 20, fontWeight: 800, color: "#93c5fd" }}
+                  style={{ fontSize: 20, fontWeight: 600, color: "#93c5fd" }}
                 >
                   {fmtHrs(totalSetupTime)}
                 </div>
@@ -1094,7 +1085,7 @@ export default function ProductionCalendar({
                 style={{
                   padding: "10px 12px",
                   background: "#14532d",
-                  borderRadius: 6,
+                  borderRadius: 8,
                   border: "1px solid #22c55e33",
                   textAlign: "center",
                 }}
@@ -1105,14 +1096,13 @@ export default function ProductionCalendar({
                     color: "#86efac",
                     marginBottom: 4,
                     fontWeight: 600,
-                    textTransform: "uppercase",
                     letterSpacing: 1,
                   }}
                 >
                   ▶ Total Run
                 </div>
                 <div
-                  style={{ fontSize: 20, fontWeight: 800, color: "#86efac" }}
+                  style={{ fontSize: 20, fontWeight: 600, color: "#86efac" }}
                 >
                   {fmtHrs(totalRunTime)}
                 </div>
@@ -1242,8 +1232,8 @@ export default function ProductionCalendar({
                 style={{
                   width: "100%",
                   padding: "8px 10px",
-                  borderRadius: 6,
-                  background: "#1c2128",
+                  borderRadius: 8,
+                  background: "#1a1a1a",
                   border: "1px solid #30363d",
                   color: "#e6edf3",
                   fontSize: 13,
@@ -1291,11 +1281,11 @@ export default function ProductionCalendar({
                 style={{
                   width: "100%",
                   padding: "10px",
-                  borderRadius: 6,
+                  borderRadius: 8,
                   background: shifting ? "#f9731688" : "#f97316",
                   border: "none",
                   color: "#fff",
-                  fontWeight: 800,
+                  fontWeight: 600,
                   fontSize: 13,
                   cursor: shifting ? "not-allowed" : "pointer",
                 }}
@@ -1366,11 +1356,11 @@ export default function ProductionCalendar({
             transform: "translate(-50%, -50%)",
             width: 460,
             maxWidth: "90vw",
-            background: "#1c2128",
+            background: "#1a1a1a",
             border: "1px solid #30363d",
             borderRadius: 12,
             zIndex: 2001,
-            boxShadow: "0 24px 60px #000000cc",
+            boxShadow: "0 16px 48px rgba(0,0,0,0.5)",
             overflow: "hidden",
           }}
         >
@@ -1387,7 +1377,7 @@ export default function ProductionCalendar({
           >
             <span style={{ fontSize: 24 }}>⏭️</span>
             <div>
-              <div style={{ fontWeight: 800, fontSize: 15, color: "#f97316" }}>
+              <div style={{ fontWeight: 600, fontSize: 15, color: "#f97316" }}>
                 Yesterday's Production Not Updated
               </div>
               <div style={{ fontSize: 12, color: "#8b949e", marginTop: 2 }}>
@@ -1486,7 +1476,7 @@ export default function ProductionCalendar({
                 background: shifting ? "#f9731688" : "#f97316",
                 border: "none",
                 color: "#fff",
-                fontWeight: 800,
+                fontWeight: 600,
                 fontSize: 13,
                 cursor: shifting ? "not-allowed" : "pointer",
               }}
@@ -1550,7 +1540,7 @@ export default function ProductionCalendar({
       padding: "8px 10px",
       background: "transparent",
       border: "1px solid #30363d",
-      borderRadius: 6,
+      borderRadius: 8,
       color: "#e6edf3",
       fontSize: 13,
       boxSizing: "border-box",
@@ -1575,11 +1565,11 @@ export default function ProductionCalendar({
             transform: "translate(-50%,-50%)",
             width: 420,
             maxWidth: "92vw",
-            background: "#1c2128",
+            background: "#1a1a1a",
             border: "1px solid #30363d",
             borderRadius: 12,
             zIndex: 3001,
-            boxShadow: "0 24px 60px #000000cc",
+            boxShadow: "0 16px 48px rgba(0,0,0,0.5)",
             overflow: "hidden",
           }}
         >
@@ -1603,7 +1593,7 @@ export default function ProductionCalendar({
               style={{ fontSize: 22 }}
             />
             <div>
-              <div style={{ fontWeight: 800, fontSize: 15, color: "#ef4444" }}>
+              <div style={{ fontWeight: 600, fontSize: 15, color: "#ef4444" }}>
                 {bdForm.reasonCode === "Operator Absent"
                   ? "Log Operator Absence"
                   : "Log Machine Breakdown"}
@@ -1642,8 +1632,6 @@ export default function ProductionCalendar({
                   fontSize: 11,
                   color: "#8b949e",
                   fontWeight: 500,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.06em",
                   display: "block",
                   marginBottom: 5,
                 }}
@@ -1681,8 +1669,6 @@ export default function ProductionCalendar({
                       fontSize: 11,
                       color: "#8b949e",
                       fontWeight: 500,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.06em",
                       display: "block",
                       marginBottom: 5,
                     }}
@@ -1730,8 +1716,6 @@ export default function ProductionCalendar({
                       fontSize: 11,
                       color: "#8b949e",
                       fontWeight: 500,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.06em",
                       display: "block",
                       marginBottom: 5,
                     }}
@@ -1782,8 +1766,6 @@ export default function ProductionCalendar({
                   fontSize: 11,
                   color: "#8b949e",
                   fontWeight: 500,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.06em",
                   display: "block",
                   marginBottom: 5,
                 }}
@@ -1813,8 +1795,6 @@ export default function ProductionCalendar({
                     fontSize: 11,
                     color: "#8b949e",
                     fontWeight: 500,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.06em",
                     display: "block",
                     marginBottom: 5,
                   }}
@@ -1838,8 +1818,6 @@ export default function ProductionCalendar({
                   fontSize: 11,
                   color: "#8b949e",
                   fontWeight: 500,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.06em",
                   display: "block",
                   marginBottom: 5,
                 }}
@@ -1879,7 +1857,7 @@ export default function ProductionCalendar({
                 background: "transparent",
                 color: "#ffffff",
                 border: "1px solid rgba(255,255,255,0.2)",
-                borderRadius: 6,
+                borderRadius: 8,
                 padding: "6px 12px",
                 fontSize: 11,
                 fontWeight: 500,
@@ -1901,7 +1879,7 @@ export default function ProductionCalendar({
                 background: isSavingBd ? "#ef444488" : "#ef4444",
                 border: "none",
                 color: "#fff",
-                fontWeight: 800,
+                fontWeight: 600,
                 fontSize: 13,
                 cursor: isSavingBd ? "not-allowed" : "pointer",
               }}
@@ -1925,7 +1903,7 @@ export default function ProductionCalendar({
       padding: "8px 10px",
       background: "transparent",
       border: "1px solid #30363d",
-      borderRadius: 6,
+      borderRadius: 8,
       color: "#e6edf3",
       fontSize: 13,
       boxSizing: "border-box",
@@ -1996,11 +1974,11 @@ export default function ProductionCalendar({
             transform: "translate(-50%,-50%)",
             width: 460,
             maxWidth: "92vw",
-            background: "#1c2128",
+            background: "#1a1a1a",
             border: "1px solid #30363d",
             borderRadius: 12,
             zIndex: 3001,
-            boxShadow: "0 24px 60px #000000cc",
+            boxShadow: "0 16px 48px rgba(0,0,0,0.5)",
             overflow: "hidden",
           }}
         >
@@ -2016,7 +1994,7 @@ export default function ProductionCalendar({
           >
             <i className="fa-solid fa-bolt" style={{ fontSize: 22 }} />
             <div>
-              <div style={{ fontWeight: 800, fontSize: 15, color: "#eab308" }}>
+              <div style={{ fontWeight: 600, fontSize: 15, color: "#eab308" }}>
                 Log Power Cut
               </div>
               <div style={{ fontSize: 12, color: "#8b949e", marginTop: 2 }}>
@@ -2051,8 +2029,6 @@ export default function ProductionCalendar({
                   fontSize: 11,
                   color: "#8b949e",
                   fontWeight: 500,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.06em",
                   display: "block",
                   marginBottom: 5,
                 }}
@@ -2074,8 +2050,6 @@ export default function ProductionCalendar({
                   fontSize: 11,
                   color: "#8b949e",
                   fontWeight: 500,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.06em",
                   display: "block",
                   marginBottom: 5,
                 }}
@@ -2098,8 +2072,6 @@ export default function ProductionCalendar({
                   fontSize: 11,
                   color: "#8b949e",
                   fontWeight: 500,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.06em",
                   display: "block",
                   marginBottom: 8,
                 }}
@@ -2124,11 +2096,13 @@ export default function ProductionCalendar({
                       onClick={() => toggleMachine(mId)}
                       style={{
                         padding: "5px 10px",
-                        borderRadius: 6,
+                        borderRadius: 8,
                         fontSize: 11,
                         fontWeight: 500,
                         cursor: "pointer",
-                        background: selected ? "#eab30833" : "#ffffff08",
+                        background: selected
+                          ? "#eab30833"
+                          : "rgba(255,255,255,0.05)",
                         border: `1px solid ${selected ? "#eab308" : "#30363d"}`,
                         color: selected ? "#eab308" : "#8b949e",
                       }}
@@ -2154,7 +2128,7 @@ export default function ProductionCalendar({
                 background: "transparent",
                 color: "#ffffff",
                 border: "1px solid rgba(255,255,255,0.2)",
-                borderRadius: 6,
+                borderRadius: 8,
                 padding: "6px 12px",
                 fontSize: 11,
                 fontWeight: 500,
@@ -2176,7 +2150,7 @@ export default function ProductionCalendar({
                 background: isSavingPc ? "#eab30888" : "#eab308",
                 border: "none",
                 color: "#000",
-                fontWeight: 800,
+                fontWeight: 600,
                 fontSize: 13,
                 cursor: isSavingPc ? "not-allowed" : "pointer",
               }}
@@ -2237,7 +2211,7 @@ export default function ProductionCalendar({
           className="fa-solid fa-circle-exclamation"
           style={{ fontSize: 16, color: "#ef4444" }}
         />
-        <span style={{ fontWeight: 800, fontSize: 13, color: "#ef4444" }}>
+        <span style={{ fontWeight: 600, fontSize: 13, color: "#ef4444" }}>
           Rush Orders Awaiting Approval
         </span>
         <div
@@ -2254,7 +2228,7 @@ export default function ProductionCalendar({
               style={{
                 background: "transparent",
                 border: "1px solid #ef444444",
-                borderRadius: 6,
+                borderRadius: 8,
                 padding: "6px 10px",
                 display: "flex",
                 alignItems: "center",
@@ -2264,7 +2238,7 @@ export default function ProductionCalendar({
               <span
                 style={{
                   fontSize: 12,
-                  fontWeight: 800,
+                  fontWeight: 600,
                   color:
                     jo.orderPriorityOverride === "Critical"
                       ? "#ef4444"
@@ -2299,7 +2273,7 @@ export default function ProductionCalendar({
                     border: "none",
                     color: "#fff",
                     fontSize: 10,
-                    fontWeight: 800,
+                    fontWeight: 600,
                     cursor: approvingId === jo._id ? "not-allowed" : "pointer",
                   }}
                 >
@@ -2325,32 +2299,6 @@ export default function ProductionCalendar({
 
   return (
     <div className="fade">
-      <SectionTitle
-        icon="fa-solid fa-calendar-days"
-        title="Production Calendar"
-        sub="Machine-wise schedule — click any job to log actual production"
-      >
-        <button
-          onClick={handleGenerate}
-          disabled={loading}
-          style={{
-            padding: "8px 16px",
-            background: "rgba(255,255,255,0.08)",
-            color: "#fff",
-            border: "1px solid rgba(255,255,255,0.18)",
-            borderRadius: 6,
-            fontWeight: 500,
-            fontSize: 12,
-            cursor: "pointer",
-            boxShadow:
-              "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
-            marginLeft: "auto",
-          }}
-        >
-          {loading ? "Planning..." : "Regenerate Rolling Plan"}
-        </button>
-      </SectionTitle>
-
       <MachineSidePanel />
       <JobInsightModal />
       <MissedModal />
@@ -2366,23 +2314,24 @@ export default function ProductionCalendar({
           alignItems: "center",
           flexWrap: "wrap",
           marginBottom: 16,
+          rowGap: 8,
         }}
       >
         <button
           onClick={() => setMainView("machine")}
-          style={tabBtn(mainView === "machine", C.blue)}
+          style={tabBtn(mainView === "machine")}
         >
           Machine View
         </button>
         <button
           onClick={() => setMainView("date")}
-          style={tabBtn(mainView === "date", C.blue)}
+          style={tabBtn(mainView === "date")}
         >
           Date View
         </button>
         <button
           onClick={() => setMainView("gantt")}
-          style={tabBtn(mainView === "gantt", "#8b5cf6")}
+          style={tabBtn(mainView === "gantt")}
         >
           Gantt
         </button>
@@ -2390,9 +2339,9 @@ export default function ProductionCalendar({
         <div
           style={{
             display: "flex",
-            borderRadius: 6,
+            borderRadius: 8,
             overflow: "hidden",
-            border: `1px solid ${C.border}`,
+            border: "1px solid rgba(255,255,255,0.08)",
             marginLeft: 4,
           }}
         >
@@ -2401,15 +2350,14 @@ export default function ProductionCalendar({
               key={rv}
               onClick={() => setRangeView(rv)}
               style={{
-                padding: "7px 16px",
-                background:
-                  rangeView === rv ? C.yellow || "#facc15" : "transparent",
-                color: rangeView === rv ? "#000" : C.muted,
+                height: 30,
+                padding: "0 16px",
+                background: rangeView === rv ? "#242424" : "transparent",
+                color: rangeView === rv ? "#ededed" : "#a3a3a3",
                 fontWeight: 500,
                 fontSize: 12,
                 border: "none",
                 cursor: "pointer",
-                textTransform: "capitalize",
               }}
             >
               {rv.charAt(0).toUpperCase() + rv.slice(1)}
@@ -2424,8 +2372,9 @@ export default function ProductionCalendar({
           style={{
             fontSize: 13,
             fontWeight: 500,
-            color: C.text || "#e5e7eb",
-            minWidth: 160,
+            color: "#ededed",
+            minWidth: 130,
+            fontVariantNumeric: "tabular-nums",
             textAlign: "center",
           }}
         >
@@ -2441,16 +2390,7 @@ export default function ProductionCalendar({
               rangeView === "week" ? getWeekStart(today) : getMonthStart(today),
             )
           }
-          style={{
-            padding: "7px 14px",
-            borderRadius: 6,
-            border: `1px solid ${C.orange || "#f97316"}`,
-            background: "transparent",
-            color: C.orange || "#f97316",
-            fontWeight: 500,
-            fontSize: 12,
-            cursor: "pointer",
-          }}
+          style={ghostBtn}
         >
           Today
         </button>
@@ -2460,18 +2400,9 @@ export default function ProductionCalendar({
             setPowerCutModal(true);
             setPcForm({ date: today, reason: "", machineIds: [] });
           }}
-          style={{
-            padding: "7px 12px",
-            borderRadius: 6,
-            border: "1px solid #eab30888",
-            background: "transparent",
-            color: "#eab308",
-            fontWeight: 500,
-            fontSize: 12,
-            cursor: "pointer",
-          }}
+          style={ghostBtn}
         >
-          Power Cut
+          Power cut
         </button>
 
         {canApproveRush && (
@@ -2493,16 +2424,7 @@ export default function ProductionCalendar({
               }
             }}
             disabled={isSettingUpPm}
-            style={{
-              padding: "7px 12px",
-              borderRadius: 6,
-              border: "1px solid rgba(255,255,255,0.15)",
-              background: "transparent",
-              color: "#aaa",
-              fontWeight: 500,
-              fontSize: 12,
-              cursor: "pointer",
-            }}
+            style={{ ...ghostBtn, opacity: isSettingUpPm ? 0.5 : 1 }}
           >
             {isSettingUpPm ? "..." : "Setup PM"}
           </button>
@@ -2517,17 +2439,20 @@ export default function ProductionCalendar({
           }}
         >
           <select
+            className="lg-select"
             value={machineTypeFilter}
             onChange={(e) => {
               setMachineTypeFilter(e.target.value);
               setMachineFilter("All Machines");
             }}
             style={{
-              padding: "7px 12px",
-              borderRadius: 6,
-              border: `1px solid ${C.border}`,
-              background: C.inputBg || C.surface,
-              color: C.text || "#e5e7eb",
+              width: 150,
+              height: 32,
+              padding: "0 10px",
+              borderRadius: 8,
+              border: "1px solid rgba(255,255,255,0.08)",
+              background: "#1a1a1a",
+              color: "#ededed",
               fontSize: 12,
               cursor: "pointer",
             }}
@@ -2537,23 +2462,20 @@ export default function ProductionCalendar({
             ))}
           </select>
           <select
+            className="lg-select"
             value={machineFilter}
             onChange={(e) => setMachineFilter(e.target.value)}
             style={{
-              padding: "7px 12px",
-              borderRadius: 6,
-              border: `1px solid ${machineFilter !== "All Machines" ? C.blue || "#3b82f6" : C.border}`,
-              background:
-                machineFilter !== "All Machines"
-                  ? (C.blue || "#3b82f6") + "22"
-                  : C.inputBg || C.surface,
-              color:
-                machineFilter !== "All Machines"
-                  ? C.blue || "#3b82f6"
-                  : C.text || "#e5e7eb",
+              width: 150,
+              height: 32,
+              padding: "0 10px",
+              borderRadius: 8,
+              border: "1px solid rgba(255,255,255,0.08)",
+              background: "#1a1a1a",
+              color: "#ededed",
               fontSize: 12,
               cursor: "pointer",
-              fontWeight: machineFilter !== "All Machines" ? 700 : 400,
+              fontWeight: 500,
             }}
           >
             <option value="All Machines">All Machines</option>
@@ -2566,6 +2488,20 @@ export default function ProductionCalendar({
               </option>
             ))}
           </select>
+          <button
+            onClick={handleGenerate}
+            disabled={loading}
+            style={{
+              ...tabBtn(true),
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+              opacity: loading ? 0.5 : 1,
+              cursor: loading ? "not-allowed" : "pointer",
+            }}
+          >
+            <i className="fa-solid fa-wand-magic-sparkles" />{" "}
+            {loading ? "Planning…" : "Regenerate"}
+          </button>
         </div>
       </div>
 
@@ -2575,22 +2511,20 @@ export default function ProductionCalendar({
           display: "flex",
           gap: 12,
           overflowX: "auto",
-          paddingBottom: 16,
-          marginBottom: 8,
-          scrollbarWidth: "none",
+          flexWrap: "wrap",
+          marginBottom: 16,
         }}
       >
         {processStats.map((stat) => (
           <div
             key={stat.category}
             style={{
-              minWidth: 240,
-              background: C.surface,
-              border: `1px solid ${C.border}`,
-              borderTop: `3px solid ${TYPE_COLOR[stat.category] || C.blue}`,
-              borderRadius: 8,
-              padding: 12,
-              boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
+              flex: "1 1 220px",
+              minWidth: 220,
+              background: "#1a1a1a",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: 12,
+              padding: 16,
             }}
           >
             <div
@@ -2603,19 +2537,21 @@ export default function ProductionCalendar({
             >
               <span
                 style={{
-                  fontSize: 12,
-                  fontWeight: 800,
-                  color: TYPE_COLOR[stat.category] || C.blue,
-                  textTransform: "uppercase",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: "#ededed",
                 }}
               >
                 <i
                   className={MACHINE_ICON[stat.category] || "fa-solid fa-gears"}
-                  style={{ marginRight: 4 }}
+                  style={{ marginRight: 6, color: "#a3a3a3" }}
                 />{" "}
                 {stat.category}
               </span>
-              <Badge text={`${stat.machineCount} Machines`} color="#ffffff11" />
+              <Badge
+                text={`${stat.machineCount} Machines`}
+                color="rgba(255,255,255,0.1)"
+              />
             </div>
 
             <div
@@ -2628,37 +2564,34 @@ export default function ProductionCalendar({
               <div>
                 <div
                   style={{
-                    fontSize: 9,
+                    fontSize: 11,
                     color: C.muted,
-                    textTransform: "uppercase",
                   }}
                 >
                   Daily Capacity
                 </div>
-                <div style={{ fontSize: 14, fontWeight: 900, color: "#fff" }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "#fff" }}>
                   {fmt(stat.totalCapPerDay)}
                 </div>
               </div>
               <div>
                 <div
                   style={{
-                    fontSize: 9,
+                    fontSize: 11,
                     color: C.muted,
-                    textTransform: "uppercase",
                   }}
                 >
                   Scheduled Qty
                 </div>
-                <div style={{ fontSize: 14, fontWeight: 900, color: C.blue }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "#fff" }}>
                   {fmt(stat.totalScheduled)}
                 </div>
               </div>
               <div>
                 <div
                   style={{
-                    fontSize: 9,
+                    fontSize: 11,
                     color: C.muted,
-                    textTransform: "uppercase",
                   }}
                 >
                   Est. Time
@@ -2666,8 +2599,8 @@ export default function ProductionCalendar({
                 <div
                   style={{
                     fontSize: 14,
-                    fontWeight: 900,
-                    color: stat.daysRequired > 7 ? C.yellow : C.green,
+                    fontWeight: 600,
+                    color: "#fff",
                   }}
                 >
                   {stat.daysRequired} Days
@@ -2676,9 +2609,8 @@ export default function ProductionCalendar({
               <div>
                 <div
                   style={{
-                    fontSize: 9,
+                    fontSize: 11,
                     color: C.muted,
-                    textTransform: "uppercase",
                   }}
                 >
                   OT Required
@@ -2686,8 +2618,8 @@ export default function ProductionCalendar({
                 <div
                   style={{
                     fontSize: 14,
-                    fontWeight: 900,
-                    color: stat.otHours > 0 ? C.red : C.muted,
+                    fontWeight: 600,
+                    color: stat.otHours > 0 ? "#fff" : C.muted,
                   }}
                 >
                   {stat.otHours.toFixed(1)} hrs
@@ -2706,7 +2638,7 @@ export default function ProductionCalendar({
                   }}
                 >
                   <span style={{ color: C.muted }}>Load Utilization</span>
-                  <span style={{ color: "#fff", fontWeight: 700 }}>
+                  <span style={{ color: "#fff", fontWeight: 600 }}>
                     {Math.round(
                       (stat.totalScheduled /
                         (stat.totalCapPerDay * stat.daysRequired || 1)) *
@@ -2718,7 +2650,7 @@ export default function ProductionCalendar({
                 <div
                   style={{
                     height: 4,
-                    background: "#ffffff08",
+                    background: "rgba(255,255,255,0.05)",
                     borderRadius: 2,
                     overflow: "hidden",
                   }}
@@ -2727,7 +2659,7 @@ export default function ProductionCalendar({
                     style={{
                       height: "100%",
                       width: `${Math.min(100, (stat.totalScheduled / (stat.totalCapPerDay * stat.daysRequired || 1)) * 100)}%`,
-                      background: TYPE_COLOR[stat.category] || C.blue,
+                      background: "#ededed",
                     }}
                   />
                 </div>
@@ -2778,7 +2710,7 @@ export default function ProductionCalendar({
           </span>
         ))}
         <span style={{ color: C.muted, marginLeft: 8 }}>
-          · Click any job to log actual production
+          · Click a job to log actual production
         </span>
       </div>
 
@@ -2801,7 +2733,6 @@ export default function ProductionCalendar({
                   textAlign: "left",
                   fontSize: 11,
                   fontWeight: 500,
-                  letterSpacing: "0.08em",
                   color: C.muted,
                   background: C.surface,
                   borderBottom: `1px solid ${C.border}`,
@@ -2858,7 +2789,7 @@ export default function ProductionCalendar({
                     <div
                       style={{
                         fontSize: rangeView === "week" ? 15 : 12,
-                        fontWeight: 900,
+                        fontWeight: 600,
                         marginTop: 2,
                       }}
                     >
@@ -2870,7 +2801,7 @@ export default function ProductionCalendar({
                           fontSize: 8,
                           color: "#8b5cf6",
                           marginTop: 1,
-                          fontWeight: 700,
+                          fontWeight: 600,
                         }}
                       >
                         {hDay.type === "Holiday"
@@ -2901,7 +2832,9 @@ export default function ProductionCalendar({
                   key={machine.id}
                   style={{
                     background:
-                      mi % 2 === 0 ? "transparent" : C.inputBg || "#ffffff08",
+                      mi % 2 === 0
+                        ? "transparent"
+                        : C.inputBg || "rgba(255,255,255,0.05)",
                   }}
                 >
                   <td
@@ -2922,7 +2855,8 @@ export default function ProductionCalendar({
                       transition: "background 0.2s",
                     }}
                     onMouseEnter={(e) =>
-                      (e.currentTarget.style.background = "#ffffff05")
+                      (e.currentTarget.style.background =
+                        "rgba(255,255,255,0.05)")
                     }
                     onMouseLeave={(e) =>
                       (e.currentTarget.style.background =
@@ -2982,7 +2916,7 @@ export default function ProductionCalendar({
                             borderRadius: 4,
                             color: "#ef4444",
                             fontSize: 9,
-                            fontWeight: 800,
+                            fontWeight: 600,
                             padding: "2px 5px",
                             cursor: "pointer",
                             lineHeight: 1.4,
@@ -3041,7 +2975,7 @@ export default function ProductionCalendar({
                               : isToday
                                 ? (C.orange || "#f97316") + "08"
                                 : isWeekend
-                                  ? "#ffffff04"
+                                  ? "rgba(255,255,255,0.05)"
                                   : "transparent",
                           minWidth: colW,
                         }}
@@ -3055,7 +2989,7 @@ export default function ProductionCalendar({
                               borderRadius: "4px 8px 8px 4px",
                               color: "#ef4444",
                               fontSize: 9,
-                              fontWeight: 800,
+                              fontWeight: 600,
                               padding: "6px 6px",
                               marginBottom: 6,
                               textAlign: "left",
@@ -3099,7 +3033,7 @@ export default function ProductionCalendar({
                               borderRadius: "4px 8px 8px 4px",
                               color: "#f97316",
                               fontSize: 9,
-                              fontWeight: 800,
+                              fontWeight: 600,
                               padding: "6px 6px",
                               marginBottom: 6,
                               textAlign: "left",
@@ -3145,7 +3079,7 @@ export default function ProductionCalendar({
                               borderRadius: "4px 8px 8px 4px",
                               color: "#9ca3af",
                               fontSize: 9,
-                              fontWeight: 800,
+                              fontWeight: 600,
                               padding: "6px 6px",
                               marginBottom: 6,
                               textAlign: "left",
@@ -3172,7 +3106,7 @@ export default function ProductionCalendar({
                               borderRadius: "4px 8px 8px 4px",
                               color: "#eab308",
                               fontSize: 9,
-                              fontWeight: 800,
+                              fontWeight: 600,
                               padding: "6px 6px",
                               marginBottom: 6,
                               textAlign: "left",
@@ -3290,8 +3224,7 @@ export default function ProductionCalendar({
                                   position: "relative",
                                 }}
                                 onMouseEnter={(e) =>
-                                  (e.currentTarget.style.transform =
-                                    "scale(1.02)")
+                                  (e.currentTarget.style.transform = "scale(1)")
                                 }
                                 onMouseLeave={(e) =>
                                   (e.currentTarget.style.transform = "scale(1)")
@@ -3308,7 +3241,7 @@ export default function ProductionCalendar({
                                   <span
                                     style={{
                                       fontSize: 11,
-                                      fontWeight: 800,
+                                      fontWeight: 600,
                                       color: statusColor,
                                     }}
                                   >
@@ -3322,7 +3255,7 @@ export default function ProductionCalendar({
                                         padding: "1px 4px",
                                         borderRadius: 3,
                                         fontSize: 8,
-                                        fontWeight: 900,
+                                        fontWeight: 600,
                                         border: `1px solid ${C.red}44`,
                                       }}
                                     >
@@ -3339,7 +3272,7 @@ export default function ProductionCalendar({
                                         padding: "1px 5px",
                                         borderRadius: 3,
                                         fontSize: 8,
-                                        fontWeight: 900,
+                                        fontWeight: 600,
                                         border: "1px solid #f9731644",
                                         cursor: "default",
                                       }}
@@ -3380,13 +3313,12 @@ export default function ProductionCalendar({
                                       style={{
                                         fontSize: 8,
                                         color: C.muted,
-                                        textTransform: "uppercase",
                                       }}
                                     >
                                       Daily Target
                                     </span>
                                     <span
-                                      style={{ fontSize: 11, fontWeight: 700 }}
+                                      style={{ fontSize: 11, fontWeight: 600 }}
                                     >
                                       {entry.dailyTarget?.toLocaleString() ||
                                         entry.scheduledQty?.toLocaleString()}{" "}
@@ -3462,7 +3394,7 @@ export default function ProductionCalendar({
                                     alignItems: "center",
                                     marginTop: 6,
                                     padding: "4px 0",
-                                    borderTop: `1px solid #ffffff11`,
+                                    borderTop: `1px solid rgba(255,255,255,0.1)`,
                                   }}
                                 >
                                   <span style={{ fontSize: 8, color: C.muted }}>
@@ -3513,7 +3445,6 @@ export default function ProductionCalendar({
                                       style={{
                                         fontSize: 8,
                                         color: C.muted,
-                                        textTransform: "uppercase",
                                       }}
                                     >
                                       Actual
@@ -3521,7 +3452,7 @@ export default function ProductionCalendar({
                                     <span
                                       style={{
                                         fontSize: 11,
-                                        fontWeight: 800,
+                                        fontWeight: 600,
                                         color:
                                           entry.actualQty >=
                                           (entry.scheduledQty || 0)
@@ -3566,7 +3497,7 @@ export default function ProductionCalendar({
                                   <div
                                     style={{
                                       height: 4,
-                                      background: "#ffffff11",
+                                      background: "rgba(255,255,255,0.1)",
                                       borderRadius: 2,
                                       overflow: "hidden",
                                     }}
@@ -3848,7 +3779,7 @@ export default function ProductionCalendar({
                   }}
                 >
                   <span
-                    style={{ color: "#ef4444", fontWeight: 800, fontSize: 12 }}
+                    style={{ color: "#ef4444", fontWeight: 600, fontSize: 12 }}
                   >
                     DELIVERY RISK
                   </span>
@@ -3861,7 +3792,7 @@ export default function ProductionCalendar({
                         borderRadius: 4,
                         fontSize: 11,
                         color: "#fca5a5",
-                        fontWeight: 700,
+                        fontWeight: 600,
                       }}
                     >
                       {jc}
@@ -4215,7 +4146,7 @@ export default function ProductionCalendar({
                                     style={{
                                       fontSize: 9,
                                       color: "#ef4444",
-                                      fontWeight: 800,
+                                      fontWeight: 600,
                                       textAlign: "center",
                                     }}
                                   >
@@ -4345,8 +4276,6 @@ const thS = {
   color: "#666",
   fontWeight: 500,
   fontSize: 10,
-  letterSpacing: "0.05em",
-  textTransform: "uppercase",
 };
 
 const tdS = {
@@ -4359,36 +4288,56 @@ const miniInp = {
   padding: "8px 10px",
   background: "#111",
   border: `1px solid ${C.border}44`,
-  borderRadius: 6,
+  borderRadius: 8,
   color: "#fff",
   fontSize: 12,
   outline: "none",
   textAlign: "center",
 };
 
-function tabBtn(active, color) {
+function tabBtn(active) {
   return {
-    padding: "8px 18px",
-    borderRadius: 6,
-    border: `1px solid ${active ? color : "#ffffff22"}`,
-    background: active ? color + "22" : "transparent",
-    color: active ? color : "#9ca3af",
+    height: 32,
+    padding: "0 16px",
+    borderRadius: 8,
+    border: `1px solid ${active ? "rgba(255,255,255,0.16)" : "rgba(255,255,255,0.08)"}`,
+    background: active ? "#242424" : "transparent",
+    color: active ? "#ededed" : "#a3a3a3",
     fontWeight: 500,
     fontSize: 13,
     cursor: "pointer",
+    transition: "background-color .15s, border-color .15s, color .15s",
   };
 }
 
 function navBtn() {
   return {
-    padding: "6px 12px",
-    borderRadius: 6,
-    border: "1px solid #ffffff22",
+    width: 32,
+    height: 32,
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 8,
+    border: "1px solid rgba(255,255,255,0.08)",
     background: "transparent",
-    color: "#9ca3af",
+    color: "#a3a3a3",
     fontWeight: 500,
     fontSize: 16,
     cursor: "pointer",
     lineHeight: 1,
+    transition: "background-color .15s, color .15s",
   };
 }
+
+const ghostBtn = {
+  height: 32,
+  padding: "0 12px",
+  borderRadius: 8,
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "transparent",
+  color: "#a3a3a3",
+  fontWeight: 500,
+  fontSize: 12,
+  cursor: "pointer",
+  transition: "background-color .15s, color .15s",
+};

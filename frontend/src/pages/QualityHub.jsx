@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from "react";
 import { C } from "../constants/colors";
 import { Modal } from "../components/ui/BasicComponents";
+import { IconBtn } from "../components/ui/IconBtn";
+import { StatCard } from "../components/ui/StatCard";
 
 const today = () => new Date().toISOString().slice(0, 10);
 const uid = () =>
@@ -37,8 +39,6 @@ const lbl = {
   color: "#666",
   display: "block",
   marginBottom: 5,
-  textTransform: "uppercase",
-  letterSpacing: "0.04em",
 };
 const card = (col) => ({
   background: "#111",
@@ -48,8 +48,8 @@ const card = (col) => ({
 });
 
 const TABS = [
-  { id: "fai", icon: "🔬", label: "First Article Inspection" },
-  { id: "supplier", icon: "⭐", label: "Supplier Scorecard" },
+  { id: "fai", icon: "", label: "First Article Inspection" },
+  { id: "supplier", icon: "", label: "Supplier Scorecard" },
 ];
 
 const FAI_STATUS = {
@@ -105,7 +105,8 @@ export default function QualityHub({
                 display: "flex",
                 alignItems: "center",
                 gap: 7,
-                transition: "all 0.15s",
+                transition:
+                  "background-color .15s, border-color .15s, color .15s, opacity .15s, transform .15s",
               }}
             >
               <span style={{ fontSize: 16 }}>{t.icon}</span>
@@ -235,7 +236,7 @@ function FAITab({ jobOrders, toast }) {
         }}
       >
         <div>
-          <div style={{ fontSize: 17, fontWeight: 800 }}>
+          <div style={{ fontSize: 17, fontWeight: 600 }}>
             First Article Inspection
           </div>
           <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
@@ -257,8 +258,7 @@ function FAITab({ jobOrders, toast }) {
             fontWeight: 600,
             fontSize: 13,
             cursor: "pointer",
-            boxShadow:
-              "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
           }}
         >
           + New Inspection
@@ -385,7 +385,7 @@ function FAITab({ jobOrders, toast }) {
                   style={{
                     ...inp,
                     color: FAI_STATUS[form.status]?.color || "#e0e0e0",
-                    fontWeight: 700,
+                    fontWeight: 600,
                   }}
                 >
                   {Object.entries(FAI_STATUS).map(([s, { label }]) => (
@@ -466,8 +466,7 @@ function FAITab({ jobOrders, toast }) {
                     color: "#fff",
                     fontSize: 11,
                     cursor: "pointer",
-                    boxShadow:
-                      "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
                   }}
                 >
                   + Add Parameter
@@ -547,8 +546,7 @@ function FAITab({ jobOrders, toast }) {
                   color: "#fff",
                   fontWeight: 500,
                   cursor: "pointer",
-                  boxShadow:
-                    "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
                 }}
               >
                 {editId ? "Save Changes" : "Submit Inspection"}
@@ -619,7 +617,7 @@ function FAITab({ jobOrders, toast }) {
                     flexWrap: "wrap",
                   }}
                 >
-                  <span style={{ color: "#facc15", fontWeight: 700 }}>
+                  <span style={{ color: "#facc15", fontWeight: 600 }}>
                     {r.joRef}
                   </span>
                   <span style={{ fontSize: 12, color: "#888" }}>
@@ -636,7 +634,7 @@ function FAITab({ jobOrders, toast }) {
                       borderRadius: 4,
                       fontSize: 11,
                       color,
-                      fontWeight: 700,
+                      fontWeight: 600,
                     }}
                   >
                     {r.status}
@@ -647,51 +645,26 @@ function FAITab({ jobOrders, toast }) {
                   </span>
                 </div>
                 <div style={{ display: "flex", gap: 6 }}>
-                  <button
+                  <IconBtn
+                    icon="fa-pen-to-square"
+                    label="Edit"
                     onClick={() => {
                       setForm({ ...r });
                       setEditId(r.id);
                       setShowModal(true);
                     }}
-                    style={{
-                      background: "transparent",
-                      color: "#8082ff",
-                      border: "1px solid #8082ff98",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    <i className="fa-solid fa-pen-to-square" /> Edit
-                  </button>
-                  <button
+                  />
+                  <IconBtn
+                    icon="fa-trash"
+                    label="Delete"
+                    danger
                     onClick={() => {
                       if (confirm("Delete?")) {
                         const recs = records.filter((x) => x.id !== r.id);
                         persist(recs);
                       }
                     }}
-                    style={{
-                      background: "transparent",
-                      color: "#8082ff",
-                      border: "1px solid #8082ff98",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    <i className="fa-solid fa-trash" /> Delete
-                  </button>
+                  />
                 </div>
               </div>
               {}
@@ -711,7 +684,7 @@ function FAITab({ jobOrders, toast }) {
               )}
               {r.defects && (
                 <div style={{ fontSize: 11, color: "#f59e0b" }}>
-                  ⚠ Defects: {r.defects}
+                  Defects: {r.defects}
                 </div>
               )}
               {r.remarks && (
@@ -751,7 +724,7 @@ function FAITab({ jobOrders, toast }) {
             marginBottom: 10,
           }}
         >
-          🔬 FAI Gate Status — Active Job Orders
+          FAI Gate Status — Active Job Orders
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {jobOrders
@@ -778,7 +751,7 @@ function FAITab({ jobOrders, toast }) {
                     fontSize: 11,
                   }}
                 >
-                  <span style={{ color: "#facc15", fontWeight: 700 }}>
+                  <span style={{ color: "#facc15", fontWeight: 600 }}>
                     {jo.joNo}
                   </span>
                   <span style={{ color: col, fontWeight: 600, marginLeft: 6 }}>
@@ -938,7 +911,7 @@ function SupplierTab({ purchaseOrders, inward, vendorMaster, toast }) {
 
   return (
     <div>
-      <div style={{ fontSize: 17, fontWeight: 800, marginBottom: 4 }}>
+      <div style={{ fontSize: 17, fontWeight: 600, marginBottom: 4 }}>
         Supplier Quality Scorecard
       </div>
       <div style={{ fontSize: 12, color: "#888", marginBottom: 20 }}>
@@ -950,7 +923,7 @@ function SupplierTab({ purchaseOrders, inward, vendorMaster, toast }) {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
           gap: 12,
           marginBottom: 20,
         }}
@@ -958,24 +931,20 @@ function SupplierTab({ purchaseOrders, inward, vendorMaster, toast }) {
         {["A", "B", "C"].map((g) => {
           const count = scores.filter((s) => s.grade === g).length;
           return (
-            <div
+            <StatCard
               key={g}
-              style={{ ...card(GRADE_COLORS[g]), textAlign: "center" }}
-            >
-              <div
-                style={{
-                  fontSize: 36,
-                  fontWeight: 900,
-                  color: GRADE_COLORS[g],
-                }}
-              >
-                {g}
-              </div>
-              <div style={{ fontSize: 22, fontWeight: 800 }}>{count}</div>
-              <div style={{ fontSize: 11, color: "#888" }}>
-                {g === "A" ? "Preferred" : g === "B" ? "Monitor" : "Replace"}
-              </div>
-            </div>
+              label={`Grade ${g}`}
+              value={count}
+              dot={GRADE_COLORS[g]}
+              note={g === "A" ? "Preferred" : g === "B" ? "Monitor" : "Replace"}
+              icon={
+                {
+                  A: "fa-solid fa-medal",
+                  B: "fa-solid fa-eye",
+                  C: "fa-solid fa-rotate",
+                }[g]
+              }
+            />
           );
         })}
       </div>
@@ -1093,10 +1062,8 @@ function SupplierTab({ purchaseOrders, inward, vendorMaster, toast }) {
                     padding: "10px 14px",
                     textAlign: "left",
                     fontSize: 11,
-                    fontWeight: 700,
+                    fontWeight: 600,
                     color: C.muted,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em",
                     whiteSpace: "nowrap",
                   }}
                 >
@@ -1151,7 +1118,7 @@ function SupplierTab({ purchaseOrders, inward, vendorMaster, toast }) {
                       background: s.gradeColor + "22",
                       border: `1px solid ${s.gradeColor}44`,
                       borderRadius: 4,
-                      fontWeight: 900,
+                      fontWeight: 600,
                       color: s.gradeColor,
                       fontSize: 13,
                     }}
@@ -1249,7 +1216,7 @@ function SupplierTab({ purchaseOrders, inward, vendorMaster, toast }) {
                     <span
                       style={{
                         fontSize: 16,
-                        fontWeight: 800,
+                        fontWeight: 600,
                         color: s.gradeColor,
                       }}
                     >

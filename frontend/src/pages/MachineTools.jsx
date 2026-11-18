@@ -21,16 +21,17 @@ import {
 import { PMSchedulerTab, SparePartsTab } from "./MaintenancePlanner";
 import moment from "moment";
 import * as XLSX from "xlsx";
+import { IconBtn } from "../components/ui/IconBtn";
 
 const SUBTABS = [
-  { id: "cylinders", icon: "🔩", label: "Cylinders" },
-  { id: "dies", icon: "✂️", label: "Dies" },
-  { id: "plates", icon: "🪨", label: "Plates" },
-  { id: "calendar", icon: "🗓️", label: "Factory Calendar" },
-  { id: "maintenance", icon: "🔧", label: "Machine Maintenance" },
-  { id: "breakdowns", icon: "⚠️", label: "Breakdown Log" },
-  { id: "pm", icon: "🗓️", label: "PM Scheduler" },
-  { id: "parts", icon: "🔩", label: "Spare Parts" },
+  { id: "cylinders", icon: "", label: "Cylinders" },
+  { id: "dies", icon: "", label: "Dies" },
+  { id: "plates", icon: "", label: "Plates" },
+  { id: "calendar", icon: "", label: "Factory Calendar" },
+  { id: "maintenance", icon: "", label: "Machine Maintenance" },
+  { id: "breakdowns", icon: "", label: "Breakdown Log" },
+  { id: "pm", icon: "", label: "PM Scheduler" },
+  { id: "parts", icon: "", label: "Spare Parts" },
 ];
 
 const ACCENT = "#ff7800";
@@ -63,7 +64,8 @@ function SubTabBar({ active, onChange }) {
             display: "flex",
             alignItems: "center",
             gap: 7,
-            transition: "all 0.15s",
+            transition:
+              "background-color .15s, border-color .15s, color .15s, opacity .15s, transform .15s",
             whiteSpace: "nowrap",
           }}
         >
@@ -76,9 +78,9 @@ function SubTabBar({ active, onChange }) {
 }
 
 const TOOL_CONFIG = {
-  cylinders: { type: "Cylinder", icon: "🔩", color: C.blue, label: "Cylinder" },
-  dies: { type: "Die", icon: "✂️", color: C.orange, label: "Die" },
-  plates: { type: "Plate", icon: "🪨", color: C.purple, label: "Plate" },
+  cylinders: { type: "Cylinder", icon: "", color: C.blue, label: "Cylinder" },
+  dies: { type: "Die", icon: "", color: C.orange, label: "Die" },
+  plates: { type: "Plate", icon: "", color: C.purple, label: "Plate" },
 };
 
 const TOOL_COLUMNS = [
@@ -326,14 +328,10 @@ function ToolTypeSection({ tabId, toast, canExportImport = true }) {
           flexWrap: "wrap",
         }}
       >
-        <Button
-          text="⬇ Template"
-          color="#555"
-          onClick={handleDownloadTemplate}
-        />
+        <Button text="Template" color="#555" onClick={handleDownloadTemplate} />
         {canExportImport && (
           <Button
-            text={importing ? "Importing…" : "⬆ Import"}
+            text={importing ? "Importing…" : "Import"}
             color="#555"
             onClick={() => importRef.current?.click()}
             loading={importing}
@@ -347,7 +345,7 @@ function ToolTypeSection({ tabId, toast, canExportImport = true }) {
           onChange={handleImport}
         />
         {canExportImport && (
-          <Button text="⬇ Export" color="#555" onClick={handleExport} />
+          <Button text="Export" color="#555" onClick={handleExport} />
         )}
         <Button
           onClick={() => {
@@ -383,7 +381,7 @@ function ToolTypeSection({ tabId, toast, canExportImport = true }) {
                 .filter((m) => linkedMachineIds.includes(m._id))
                 .map((m) => m.name);
               return [
-                <span style={{ fontWeight: 700 }}>{tool.designCode}</span>,
+                <span style={{ fontWeight: 600 }}>{tool.designCode}</span>,
                 tool.linkedSKU ? (
                   <div>
                     <div
@@ -440,42 +438,17 @@ function ToolTypeSection({ tabId, toast, canExportImport = true }) {
                 `${(tool.impressionsDone || 0).toLocaleString()} / ${(tool.maxImpressionsBeforeRecondition || 0).toLocaleString()}`,
                 tool.location || "-",
                 <div style={{ display: "flex", gap: 6 }}>
-                  <button
+                  <IconBtn
+                    icon="fa-pen-to-square"
+                    label="Edit"
                     onClick={() => handleEdit(tool)}
-                    style={{
-                      background: "transparent",
-                      color: "#8082ff",
-                      border: "1px solid #8082ff98",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    <i className="fa-solid fa-pen-to-square" /> Edit
-                  </button>
-                  <button
+                  />
+                  <IconBtn
+                    icon="fa-trash"
+                    label="Delete"
+                    danger
                     onClick={() => handleDelete(tool._id)}
-                    style={{
-                      background: "transparent",
-                      color: "#8082ff",
-                      border: "1px solid #8082ff98",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    <i className="fa-solid fa-trash" /> Delete
-                  </button>
+                  />
                 </div>,
               ];
             })}
@@ -574,7 +547,6 @@ function ToolTypeSection({ tabId, toast, canExportImport = true }) {
                     color: "#666",
                     fontWeight: 500,
                     marginBottom: 8,
-                    textTransform: "uppercase",
                   }}
                 >
                   Compatible Machines
@@ -603,7 +575,8 @@ function ToolTypeSection({ tabId, toast, canExportImport = true }) {
                           color: selected ? "#fff" : "#666",
                           border: `1px solid ${selected ? "#3b82f6" : "#333"}`,
                           cursor: "pointer",
-                          transition: "all 0.15s",
+                          transition:
+                            "background-color .15s, border-color .15s, color .15s, opacity .15s, transform .15s",
                         }}
                       >
                         {m.name}
@@ -1040,7 +1013,7 @@ function BreakdownSection({ toast }) {
       >
         <Button
           onClick={() => setShowModal(true)}
-          text="🚨 Report Breakdown"
+          text="Report Breakdown"
           color={C.red}
         />
       </div>
@@ -1170,7 +1143,7 @@ export default function MachineTools({
   return (
     <div className="fade">
       <SectionTitle
-        icon="⚙️"
+        icon="fa-solid fa-gear"
         title="Machine & Tooling"
         sub="Cylinders · Dies · Plates · Factory Calendar · Maintenance · Breakdowns · PM Scheduler · Spare Parts"
       />

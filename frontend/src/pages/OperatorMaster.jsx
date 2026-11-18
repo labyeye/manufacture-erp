@@ -1,24 +1,24 @@
 import React, { useState, useEffect, useRef } from "react";
 import { operatorMasterAPI } from "../api/auth";
 import {
+  ListToolbar,
   Modal,
   SectionTitle,
-  ImportBtn,
-  ExportBtn,
-  TemplateBtn,
   ImportModal,
+  NameWithAvatar,
 } from "../components/ui/BasicComponents";
 import { C } from "../constants/colors";
 import * as XLSX from "xlsx";
+import { IconBtn } from "../components/ui/IconBtn";
 
 const inputStyle = {
   width: "100%",
   padding: "9px 12px",
-  border: "1px solid rgba(255,255,255,0.13)",
-  borderRadius: 6,
+  border: "1px solid rgba(255,255,255,0.08)",
+  borderRadius: 8,
   fontSize: 13,
-  background: "rgba(255,255,255,0.07)",
-  color: "#e0e0e0",
+  background: "#141414",
+  color: "#ededed",
   outline: "none",
   boxSizing: "border-box",
 };
@@ -29,8 +29,6 @@ const labelStyle = {
   color: C.muted,
   marginBottom: 5,
   fontWeight: 600,
-  textTransform: "uppercase",
-  letterSpacing: "0.05em",
 };
 
 export default function OperatorMaster({ toast, canExportImport = true }) {
@@ -239,65 +237,42 @@ export default function OperatorMaster({ toast, canExportImport = true }) {
   return (
     <div className="fade">
       <SectionTitle
-        icon="👷"
+        icon="fa-solid fa-helmet-safety"
         title="Operator Master"
         sub="Manage operators and their login credentials"
       />
 
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 16,
-          gap: 12,
-          flexWrap: "wrap",
-        }}
-      >
-        <input
-          placeholder="Search by name, username, phone..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={{ ...inputStyle, maxWidth: 320 }}
-        />
-        <div
-          style={{
-            display: "flex",
-            gap: 8,
-            alignItems: "center",
-            flexWrap: "wrap",
-          }}
-        >
-          <TemplateBtn onClick={handleTemplate} />
-          {canExportImport && (
-            <ImportBtn onClick={() => fileInputRef.current?.click()} />
-          )}
-          {canExportImport && <ExportBtn onClick={handleExport} />}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".xlsx, .xls"
-            style={{ display: "none" }}
-            onChange={handleImport}
-          />
-          <button
-            onClick={openCreate}
-            style={{
-              padding: "9px 20px",
-              borderRadius: 8,
-              border: "none",
-              background: "#6366f1",
-              color: "#fff",
-              fontWeight: 600,
-              fontSize: 13,
-              cursor: "pointer",
-              whiteSpace: "nowrap",
-            }}
-          >
-            + Add Operator
-          </button>
-        </div>
-      </div>
+      <ListToolbar
+        search={searchTerm}
+        setSearch={setSearchTerm}
+        placeholder="Search by name, username, phone..."
+        count={filtered.length}
+        exportOptions={
+          canExportImport
+            ? [
+                {
+                  label: "Excel",
+                  icon: "fa-solid fa-file-excel",
+                  onClick: handleExport,
+                },
+              ]
+            : []
+        }
+        onAdd={openCreate}
+        addLabel="Add operator"
+        onImport={
+          canExportImport ? () => fileInputRef.current?.click() : undefined
+        }
+        onTemplate={handleTemplate}
+      />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".xlsx, .xls"
+        style={{ display: "none" }}
+        onChange={handleImport}
+      />
+      <div style={{ height: 12 }} />
 
       <ImportModal
         show={importProgress.show}
@@ -342,10 +317,8 @@ export default function OperatorMaster({ toast, canExportImport = true }) {
                       padding: "10px 14px",
                       textAlign: "left",
                       fontSize: 11,
-                      fontWeight: 700,
+                      fontWeight: 600,
                       color: C.muted,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
                       whiteSpace: "nowrap",
                     }}
                   >
@@ -385,7 +358,7 @@ export default function OperatorMaster({ toast, canExportImport = true }) {
                         fontWeight: 500,
                       }}
                     >
-                      {op.name}
+                      <NameWithAvatar name={op.name} />
                     </td>
                     <td style={{ padding: "10px 12px", color: C.muted }}>
                       {op.phone || "—"}
@@ -393,7 +366,7 @@ export default function OperatorMaster({ toast, canExportImport = true }) {
                     <td
                       style={{
                         padding: "10px 12px",
-                        color: "#6366f1",
+                        color: "#c8955a",
                         fontSize: 12,
                       }}
                     >
@@ -403,13 +376,13 @@ export default function OperatorMaster({ toast, canExportImport = true }) {
                       <span
                         style={{
                           padding: "2px 10px",
-                          borderRadius: 20,
+                          borderRadius: 6,
                           fontSize: 11,
                           fontWeight: 600,
                           background: op.isActive
                             ? "rgba(34,197,94,0.12)"
                             : "rgba(239,68,68,0.12)",
-                          color: op.isActive ? "#22c55e" : "#ef4444",
+                          color: op.isActive ? "#86b894" : "#e0705f",
                         }}
                       >
                         {op.isActive ? "Active" : "Inactive"}
@@ -428,30 +401,17 @@ export default function OperatorMaster({ toast, canExportImport = true }) {
                     </td>
                     <td style={{ padding: "10px 12px" }}>
                       <div style={{ display: "flex", gap: 6 }}>
-                        <button
+                        <IconBtn
+                          icon="fa-pen-to-square"
+                          label="Edit"
                           onClick={() => openEdit(op)}
-                          style={{
-                            background: "transparent",
-                            color: "#8082ff",
-                            border: "1px solid #8082ff98",
-                            borderRadius: 6,
-                            padding: "6px 12px",
-                            fontSize: 11,
-                            fontWeight: 500,
-                            cursor: "pointer",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 6,
-                          }}
-                        >
-                          <i className="fa-solid fa-pen-to-square" /> Edit
-                        </button>
+                        />
                         <button
                           onClick={() => handleToggleActive(op)}
                           style={{
                             background: "transparent",
-                            color: "#8082ff",
-                            border: "1px solid #8082ff98",
+                            color: "#c8955a",
+                            border: "1px solid #c8955a98",
                             borderRadius: 6,
                             padding: "6px 12px",
                             fontSize: 11,
@@ -467,24 +427,12 @@ export default function OperatorMaster({ toast, canExportImport = true }) {
                           />{" "}
                           {op.isActive ? "Deactivate" : "Activate"}
                         </button>
-                        <button
+                        <IconBtn
+                          icon="fa-trash"
+                          label="Delete"
+                          danger
                           onClick={() => handleDelete(op._id)}
-                          style={{
-                            background: "transparent",
-                            color: "#8082ff",
-                            border: "1px solid #8082ff98",
-                            borderRadius: 6,
-                            padding: "6px 12px",
-                            fontSize: 11,
-                            fontWeight: 500,
-                            cursor: "pointer",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 6,
-                          }}
-                        >
-                          <i className="fa-solid fa-trash" /> Delete
-                        </button>
+                        />
                       </div>
                     </td>
                   </tr>
@@ -582,8 +530,8 @@ export default function OperatorMaster({ toast, canExportImport = true }) {
                   padding: "9px 22px",
                   borderRadius: 6,
                   border: "none",
-                  background: "#6366f1",
-                  color: "#fff",
+                  background: "#c8955a",
+                  color: "#141414",
                   fontWeight: 600,
                   fontSize: 13,
                   cursor: "pointer",

@@ -1,8 +1,15 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import * as XLSX from "xlsx";
 import { C } from "../constants/colors";
 import { stockAdjustmentAPI, rawMaterialStockAPI } from "../api/auth";
-import { AutocompleteInput } from "../components/ui/BasicComponents";
+import {
+  AutocompleteInput,
+  ListToolbar,
+  FilterModal,
+  Field as FilterField,
+  SortSelect,
+} from "../components/ui/BasicComponents";
+import { StatCard } from "../components/ui/StatCard";
 
 const today = () => new Date().toISOString().slice(0, 10);
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("en-GB") : "—");
@@ -10,26 +17,33 @@ const fmt = (n) => (n ?? 0).toLocaleString("en-IN");
 
 const TYPE_COLORS = {
   Production: {
-    bg: "rgba(99,102,241,0.15)",
-    text: "#818cf8",
-    border: "rgba(99,102,241,0.3)",
+    bg: "rgba(200, 149, 90,0.15)",
+    text: "#c8955a",
+    border: "rgba(200, 149, 90,0.3)",
   },
   Inward: {
     bg: "rgba(34,197,94,0.12)",
-    text: "#4ade80",
+    text: "#86b894",
     border: "rgba(34,197,94,0.3)",
   },
   Outward: {
     bg: "rgba(239,68,68,0.12)",
-    text: "#f87171",
+    text: "#e0705f",
     border: "rgba(239,68,68,0.3)",
   },
 };
 
 const STOCK_TYPE_COLORS = {
-  "Raw Material": { bg: "rgba(245,158,11,0.12)", text: "#fbbf24" },
-  "Finished Goods": { bg: "rgba(59,130,246,0.12)", text: "#60a5fa" },
-  Consumable: { bg: "rgba(168,85,247,0.12)", text: "#c084fc" },
+  "Raw Material": { bg: "rgba(255,255,255,0.06)", text: "#c8955a" },
+  "Finished Goods": { bg: "rgba(255,255,255,0.06)", text: "#c8955a" },
+  Consumable: { bg: "rgba(255,255,255,0.06)", text: "#c8955a" },
+};
+
+// Short labels for the table: FG, RM, CS
+const STOCK_TYPE_ABBR = {
+  "Raw Material": "RM",
+  "Finished Goods": "FG",
+  Consumable: "CS",
 };
 
 const EMPTY_FORM = {
@@ -52,6 +66,8 @@ export default function StockAdjustment({
 }) {
   const isClient = session?.role === "Client";
   const [view, setView] = useState("list");
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const importInputRef = useRef(null);
   const [adjustments, setAdjustments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -353,7 +369,6 @@ export default function StockAdjustment({
     marginBottom: 4,
     display: "block",
     fontWeight: 500,
-    letterSpacing: "0.04em",
   };
 
   const tabBtn = (id, label) => (
@@ -361,15 +376,16 @@ export default function StockAdjustment({
       key={id}
       onClick={() => setView(id)}
       style={{
-        padding: "7px 18px",
+        height: 32,
+        padding: "0 16px",
         borderRadius: 8,
-        border: "none",
+        border: `1px solid ${view === id ? "rgba(255,255,255,0.16)" : "rgba(255,255,255,0.08)"}`,
         cursor: "pointer",
-        fontWeight: 600,
+        fontWeight: 500,
         fontSize: 13,
-        background: view === id ? "#6366f1" : "rgba(255,255,255,0.06)",
-        color: view === id ? "#fff" : C.muted,
-        transition: "all 0.15s",
+        background: view === id ? "#242424" : "transparent",
+        color: view === id ? "#ededed" : "#a3a3a3",
+        transition: "background-color .15s, color .15s",
       }}
     >
       {label}
@@ -377,64 +393,26 @@ export default function StockAdjustment({
   );
 
   return (
-    <div style={{ padding: "24px 28px", margin: "0 auto" }}>
-      {/* Header */}
+    <div className="fade">
+      {/* Tabs */}
       <div
         style={{
           display: "flex",
+          gap: 8,
           alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: 24,
-          flexWrap: "wrap",
-          gap: 12,
+          marginBottom: 16,
         }}
       >
-        <div>
-          <h2
-            style={{ color: C.text, fontSize: 22, fontWeight: 700, margin: 0 }}
-          >
-            <i
-              className="fa-solid fa-sliders"
-              style={{ marginRight: 10, color: "#6366f1" }}
-            />
-            Stock Adjustment
-          </h2>
-          <p style={{ color: C.muted, fontSize: 13, margin: "4px 0 0" }}>
-            Record discrepancies — adds stock for Production/Inward, subtracts
-            for Outward
-          </p>
-        </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          {tabBtn("list", "Adjustments")}
-          {canCreate && tabBtn("new", "New Adjustment")}
-          {tabBtn("report", "Report")}
-          {canCreate && (
-            <label
-              style={{
-                padding: "7px 18px",
-                borderRadius: 8,
-                border: "1px solid rgba(34,197,94,0.35)",
-                cursor: "pointer",
-                fontWeight: 600,
-                fontSize: 13,
-                background: "rgba(34,197,94,0.1)",
-                color: "#4ade80",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                userSelect: "none",
-              }}
-            >
-              <i className="fa-solid fa-file-excel" /> Import Excel
-              <input
-                type="file"
-                accept=".xlsx,.xls"
-                style={{ display: "none" }}
-                onChange={handleExcelImport}
-              />
-            </label>
-          )}
-        </div>
+        {tabBtn("list", "Adjustments")}
+        {canCreate && tabBtn("new", "New adjustment")}
+        {tabBtn("report", "Report")}
+        <input
+          ref={importInputRef}
+          type="file"
+          accept=".xlsx,.xls"
+          style={{ display: "none" }}
+          onChange={handleExcelImport}
+        />
       </div>
 
       {/* EXCEL IMPORT PREVIEW MODAL */}
@@ -453,8 +431,8 @@ export default function StockAdjustment({
         >
           <div
             style={{
-              background: "#111113",
-              border: "1px solid #2a2a2e",
+              background: "#1a1a1a",
+              border: "1px solid rgba(255,255,255,0.08)",
               borderRadius: 12,
               width: "100%",
               maxWidth: 800,
@@ -468,17 +446,17 @@ export default function StockAdjustment({
             <div
               style={{
                 padding: "20px 24px",
-                borderBottom: "1px solid #2a2a2e",
+                borderBottom: "1px solid rgba(255,255,255,0.08)",
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
               }}
             >
               <div>
-                <div style={{ fontWeight: 700, fontSize: 16, color: C.text }}>
+                <div style={{ fontWeight: 600, fontSize: 16, color: C.text }}>
                   <i
                     className="fa-solid fa-file-excel"
-                    style={{ color: "#4ade80", marginRight: 8 }}
+                    style={{ color: "#86b894", marginRight: 8 }}
                   />
                   Import Preview — {importRows.length} row
                   {importRows.length !== 1 ? "s" : ""}
@@ -505,7 +483,7 @@ export default function StockAdjustment({
             <div
               style={{
                 padding: "12px 24px",
-                borderBottom: "1px solid #2a2a2e",
+                borderBottom: "1px solid rgba(255,255,255,0.08)",
                 display: "flex",
                 alignItems: "center",
                 gap: 12,
@@ -520,8 +498,8 @@ export default function StockAdjustment({
                 onChange={(e) => setImportDate(e.target.value)}
                 style={{
                   padding: "6px 10px",
-                  background: "#0c0c0e",
-                  border: "1px solid #2a2a2e",
+                  background: "#141414",
+                  border: "1px solid rgba(255,255,255,0.08)",
                   borderRadius: 6,
                   color: C.text,
                   fontSize: 13,
@@ -560,10 +538,8 @@ export default function StockAdjustment({
                           textAlign: "left",
                           fontSize: 11,
                           color: C.muted,
-                          fontWeight: 700,
-                          textTransform: "uppercase",
-                          letterSpacing: "0.04em",
-                          borderBottom: "1px solid #2a2a2e",
+                          fontWeight: 600,
+                          borderBottom: "1px solid rgba(255,255,255,0.08)",
                         }}
                       >
                         {h}
@@ -574,7 +550,7 @@ export default function StockAdjustment({
                 <tbody>
                   {importRows.map((r, i) => {
                     const typeColor =
-                      r.adjustmentType === "Outward" ? "#f87171" : "#4ade80";
+                      r.adjustmentType === "Outward" ? "#e0705f" : "#86b894";
                     const valid =
                       r.itemName &&
                       ["Inward", "Outward", "Production"].includes(
@@ -603,11 +579,11 @@ export default function StockAdjustment({
                           {!valid && (
                             <i
                               className="fa-solid fa-triangle-exclamation"
-                              style={{ color: "#f87171", marginRight: 6 }}
+                              style={{ color: "#e0705f", marginRight: 6 }}
                             />
                           )}
                           {r.itemName || (
-                            <span style={{ color: "#f87171" }}>Missing</span>
+                            <span style={{ color: "#e0705f" }}>Missing</span>
                           )}
                         </td>
                         <td style={{ padding: "9px 14px" }}>
@@ -623,7 +599,7 @@ export default function StockAdjustment({
                             }}
                           >
                             {r.adjustmentType || (
-                              <span style={{ color: "#f87171" }}>Invalid</span>
+                              <span style={{ color: "#e0705f" }}>Invalid</span>
                             )}
                           </span>
                         </td>
@@ -644,7 +620,7 @@ export default function StockAdjustment({
             <div
               style={{
                 padding: "16px 24px",
-                borderTop: "1px solid #2a2a2e",
+                borderTop: "1px solid rgba(255,255,255,0.08)",
                 display: "flex",
                 gap: 10,
                 justifyContent: "flex-end",
@@ -655,7 +631,7 @@ export default function StockAdjustment({
                 style={{
                   padding: "8px 20px",
                   borderRadius: 8,
-                  border: "1px solid #2a2a2e",
+                  border: "1px solid rgba(255,255,255,0.08)",
                   background: "transparent",
                   color: C.muted,
                   fontWeight: 600,
@@ -672,9 +648,11 @@ export default function StockAdjustment({
                   padding: "8px 24px",
                   borderRadius: 8,
                   border: "none",
-                  background: importLoading ? "#2a2a2e" : "#4ade80",
+                  background: importLoading
+                    ? "rgba(255,255,255,0.08)"
+                    : "#86b894",
                   color: importLoading ? C.muted : "#000",
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: 13,
                   cursor: importLoading ? "not-allowed" : "pointer",
                 }}
@@ -772,7 +750,7 @@ export default function StockAdjustment({
                     top: "100%",
                     left: 0,
                     right: 0,
-                    background: "#1a1a2e",
+                    background: "#1a1a1a",
                     border: "1px solid rgba(255,255,255,0.12)",
                     borderRadius: 8,
                     zIndex: 100,
@@ -796,7 +774,7 @@ export default function StockAdjustment({
                       }}
                       onMouseEnter={(e) =>
                         (e.currentTarget.style.background =
-                          "rgba(99,102,241,0.15)")
+                          "rgba(200, 149, 90,0.15)")
                       }
                       onMouseLeave={(e) =>
                         (e.currentTarget.style.background = "transparent")
@@ -805,7 +783,7 @@ export default function StockAdjustment({
                       <span style={{ color: C.text }}>{item.name}</span>
                       <span
                         style={{
-                          color: "#6366f1",
+                          color: "#c8955a",
                           fontWeight: 600,
                           fontSize: 12,
                         }}
@@ -823,12 +801,12 @@ export default function StockAdjustment({
                 <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
                   <div
                     style={{
-                      background: "rgba(99,102,241,0.12)",
-                      border: "1px solid rgba(99,102,241,0.3)",
+                      background: "rgba(200, 149, 90,0.12)",
+                      border: "1px solid rgba(200, 149, 90,0.3)",
                       borderRadius: 6,
                       padding: "4px 10px",
                       fontSize: 12,
-                      color: "#818cf8",
+                      color: "#c8955a",
                       fontWeight: 600,
                     }}
                   >
@@ -865,17 +843,15 @@ export default function StockAdjustment({
                     <span
                       style={{
                         fontSize: 11,
-                        color: "#eab308",
-                        fontWeight: 700,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.04em",
+                        color: "#c8955a",
+                        fontWeight: 600,
                       }}
                     >
                       Current Stock
                     </span>
                     <div>
                       <span style={{ fontSize: 11, color: C.muted }}>Qty </span>
-                      <span style={{ fontWeight: 700, color: "#fbbf24" }}>
+                      <span style={{ fontWeight: 600, color: "#c8955a" }}>
                         {(currentStock.qty || 0).toLocaleString("en-IN")} sheets
                       </span>
                     </div>
@@ -883,7 +859,7 @@ export default function StockAdjustment({
                       <span style={{ fontSize: 11, color: C.muted }}>
                         Weight{" "}
                       </span>
-                      <span style={{ fontWeight: 700, color: "#fbbf24" }}>
+                      <span style={{ fontWeight: 600, color: "#c8955a" }}>
                         {(currentStock.weight || 0).toLocaleString("en-IN")} kg
                       </span>
                     </div>
@@ -950,13 +926,13 @@ export default function StockAdjustment({
             {/* Info banner */}
             <div
               style={{
-                background: "rgba(99,102,241,0.08)",
-                border: "1px solid rgba(99,102,241,0.2)",
+                background: "rgba(200, 149, 90,0.08)",
+                border: "1px solid rgba(200, 149, 90,0.2)",
                 borderRadius: 8,
                 padding: "10px 14px",
                 marginBottom: 20,
                 fontSize: 12,
-                color: "#a5b4fc",
+                color: "#c8955a",
               }}
             >
               <i
@@ -976,7 +952,7 @@ export default function StockAdjustment({
                 disabled={saving}
                 style={{
                   padding: "10px 24px",
-                  background: saving ? "#4b5563" : "#6366f1",
+                  background: saving ? "#4b5563" : "#c8955a",
                   color: "#fff",
                   border: "none",
                   borderRadius: 8,
@@ -1014,150 +990,146 @@ export default function StockAdjustment({
       {/* LIST VIEW */}
       {view === "list" && (
         <>
-          {/* Filters */}
-          <div
-            style={{
-              display: "flex",
-              gap: 10,
-              flexWrap: "wrap",
-              marginBottom: 16,
-              alignItems: "center",
-            }}
-          >
-            <input
-              type="text"
-              placeholder="Search code, name, adj no..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              style={{ ...inputStyle, width: 220, flex: "none" }}
-            />
-            <AutocompleteInput
-              value={typeFilter}
-              onChange={(v) => setTypeFilter(v)}
-              suggestions={["Production", "Inward", "Outward"]}
-              placeholder="Filter by type..."
-              showAllOnFocus={true}
-              inputStyle={{ ...inputStyle, width: 160, flex: "none" }}
-            />
-            <AutocompleteInput
-              value={stockTypeFilter}
-              onChange={(v) => setStockTypeFilter(v)}
-              suggestions={["Raw Material", "Finished Goods", "Consumable"]}
-              placeholder="Filter by stock type..."
-              showAllOnFocus={true}
-              inputStyle={{ ...inputStyle, width: 160, flex: "none" }}
-            />
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              style={{ ...inputStyle, width: 140, flex: "none" }}
-              title="From date"
-            />
-            <input
-              type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-              style={{ ...inputStyle, width: 140, flex: "none" }}
-              title="To date"
-            />
-            <button
-              onClick={handleExport}
-              style={{
-                padding: "9px 16px",
-                background: "rgba(99,102,241,0.12)",
-                color: "#818cf8",
-                border: "1px solid rgba(99,102,241,0.3)",
-                borderRadius: 8,
-                fontSize: 13,
-                cursor: "pointer",
-                fontWeight: 500,
-              }}
-            >
-              <i
-                className="fa-solid fa-file-excel"
-                style={{ marginRight: 6 }}
-              />
-              Export
-            </button>
-            {canCreate && (
-              <button
-                onClick={() => {
-                  setForm(EMPTY_FORM);
-                  setCodeSearch("");
-                  setView("new");
-                }}
-                style={{
-                  padding: "9px 16px",
-                  background: "#6366f1",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 8,
-                  fontSize: 13,
-                  cursor: "pointer",
-                  fontWeight: 600,
-                  marginLeft: "auto",
-                }}
-              >
-                <i className="fa-solid fa-plus" style={{ marginRight: 6 }} />
-                New Adjustment
-              </button>
-            )}
-          </div>
-
           {/* Stats row */}
           <div
             style={{
-              display: "flex",
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
               gap: 12,
               marginBottom: 20,
-              flexWrap: "wrap",
             }}
           >
             {[
               {
                 label: "Total Adjustments",
                 value: filtered.length,
-                color: "#818cf8",
+                color: "#c8955a",
               },
               {
                 label: "Production",
                 value: filtered.filter((a) => a.adjustmentType === "Production")
                   .length,
-                color: "#c084fc",
+                color: "#c8955a",
               },
               {
                 label: "Inward",
                 value: filtered.filter((a) => a.adjustmentType === "Inward")
                   .length,
-                color: "#4ade80",
+                color: "#86b894",
               },
               {
                 label: "Outward",
                 value: filtered.filter((a) => a.adjustmentType === "Outward")
                   .length,
-                color: "#f87171",
+                color: "#e0705f",
               },
             ].map((s) => (
-              <div
+              <StatCard
                 key={s.label}
-                style={{
-                  background: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  borderRadius: 10,
-                  padding: "12px 20px",
-                  minWidth: 130,
-                }}
-              >
-                <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>
-                  {s.label}
-                </div>
-                <div style={{ fontSize: 22, fontWeight: 700, color: s.color }}>
-                  {fmt(s.value)}
-                </div>
-              </div>
+                label={s.label}
+                value={fmt(s.value)}
+                icon={
+                  {
+                    "Total Adjustments": "fa-solid fa-sliders",
+                    Production: "fa-solid fa-industry",
+                    Inward: "fa-solid fa-arrow-down-to-line",
+                    Outward: "fa-solid fa-arrow-up-from-line",
+                    "Items Affected": "fa-solid fa-boxes-stacked",
+                    "Total Production": "fa-solid fa-industry",
+                    "Total Inward": "fa-solid fa-arrow-down-to-line",
+                    "Total Outward": "fa-solid fa-arrow-up-from-line",
+                  }[s.label]
+                }
+              />
             ))}
           </div>
+
+          <ListToolbar
+            search={search}
+            setSearch={setSearch}
+            placeholder="Search code, name, adj no..."
+            count={filtered.length}
+            filterCount={
+              (typeFilter ? 1 : 0) +
+              (stockTypeFilter ? 1 : 0) +
+              (dateFrom ? 1 : 0) +
+              (dateTo ? 1 : 0)
+            }
+            onFilter={() => setShowFilterModal(true)}
+            exportOptions={[
+              {
+                label: "Excel",
+                icon: "fa-solid fa-file-excel",
+                onClick: handleExport,
+              },
+            ]}
+            onAdd={
+              canCreate
+                ? () => {
+                    setForm(EMPTY_FORM);
+                    setCodeSearch("");
+                    setView("new");
+                  }
+                : undefined
+            }
+            addLabel="New adjustment"
+            onImport={
+              canCreate ? () => importInputRef.current?.click() : undefined
+            }
+          />
+
+          {showFilterModal && (
+            <FilterModal
+              onClose={() => setShowFilterModal(false)}
+              onReset={() => {
+                setTypeFilter("");
+                setStockTypeFilter("");
+                setDateFrom("");
+                setDateTo("");
+              }}
+            >
+              <FilterField label="Adjustment type">
+                <SortSelect
+                  value={typeFilter}
+                  onChange={setTypeFilter}
+                  options={[
+                    ["", "All"],
+                    ...["Production", "Inward", "Outward"].map((v) => [v, v]),
+                  ]}
+                />
+              </FilterField>
+              <FilterField label="Stock type">
+                <SortSelect
+                  value={stockTypeFilter}
+                  onChange={setStockTypeFilter}
+                  options={[
+                    ["", "All"],
+                    ...["Raw Material", "Finished Goods", "Consumable"].map(
+                      (v) => [v, v],
+                    ),
+                  ]}
+                />
+              </FilterField>
+              <FilterField label="From date">
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  style={{ ...inputStyle, width: "100%" }}
+                />
+              </FilterField>
+              <FilterField label="To date">
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  style={{ ...inputStyle, width: "100%" }}
+                />
+              </FilterField>
+            </FilterModal>
+          )}
+
+          <div style={{ height: 12 }} />
 
           {/* Table */}
           {loading ? (
@@ -1205,7 +1177,6 @@ export default function StockAdjustment({
                       "Weight",
                       "Before→After",
                       "Reason",
-                      "By",
                       "",
                     ].map((h) => (
                       <th
@@ -1216,7 +1187,6 @@ export default function StockAdjustment({
                           color: C.muted,
                           fontWeight: 600,
                           fontSize: 11,
-                          letterSpacing: "0.04em",
                           whiteSpace: "nowrap",
                         }}
                       >
@@ -1246,7 +1216,7 @@ export default function StockAdjustment({
                         <td
                           style={{
                             padding: "10px 12px",
-                            color: "#818cf8",
+                            color: "#c8955a",
                             fontWeight: 600,
                           }}
                         >
@@ -1264,7 +1234,7 @@ export default function StockAdjustment({
                         <td
                           style={{
                             padding: "10px 12px",
-                            color: "#6366f1",
+                            color: "#c8955a",
                             fontWeight: 600,
                           }}
                         >
@@ -1292,16 +1262,20 @@ export default function StockAdjustment({
                         </td>
                         <td style={{ padding: "10px 12px" }}>
                           <span
+                            title={a.stockType}
                             style={{
                               background: sc.bg,
+                              border: "1px solid rgba(255,255,255,0.08)",
                               color: sc.text,
-                              borderRadius: 5,
-                              padding: "3px 8px",
+                              borderRadius: 6,
+                              padding: "2px 8px",
                               fontSize: 11,
-                              fontWeight: 600,
+                              fontWeight: 500,
+                              whiteSpace: "nowrap",
+                              display: "inline-block",
                             }}
                           >
-                            {a.stockType}
+                            {STOCK_TYPE_ABBR[a.stockType] || a.stockType}
                           </span>
                         </td>
                         <td style={{ padding: "10px 12px" }}>
@@ -1325,8 +1299,8 @@ export default function StockAdjustment({
                             padding: "10px 12px",
                             color:
                               a.adjustmentType === "Outward"
-                                ? "#f87171"
-                                : "#4ade80",
+                                ? "#e0705f"
+                                : "#86b894",
                             fontWeight: 600,
                           }}
                         >
@@ -1350,7 +1324,7 @@ export default function StockAdjustment({
                           </span>
                           {a.stockType === "Raw Material" &&
                           (a.beforeWeight || a.afterWeight) ? (
-                            <div style={{ fontSize: 11, color: "#6b7280" }}>
+                            <div style={{ fontSize: 11, color: "#737373" }}>
                               {fmt(a.beforeWeight)} → {fmt(a.afterWeight)} kg
                             </div>
                           ) : null}
@@ -1375,15 +1349,6 @@ export default function StockAdjustment({
                             {a.reason || "—"}
                           </div>
                         </td>
-                        <td
-                          style={{
-                            padding: "10px 12px",
-                            color: C.muted,
-                            fontSize: 12,
-                          }}
-                        >
-                          {a.createdBy || "—"}
-                        </td>
                         <td style={{ padding: "10px 12px" }}>
                           {!isClient && canDelete && (
                             <button
@@ -1392,7 +1357,7 @@ export default function StockAdjustment({
                               style={{
                                 background: "rgba(239,68,68,0.1)",
                                 border: "1px solid rgba(239,68,68,0.25)",
-                                color: "#f87171",
+                                color: "#e0705f",
                                 borderRadius: 6,
                                 padding: "4px 10px",
                                 cursor: "pointer",
@@ -1470,8 +1435,8 @@ export default function StockAdjustment({
               disabled={reportLoading}
               style={{
                 padding: "9px 20px",
-                background: "#6366f1",
-                color: "#fff",
+                background: "#c8955a",
+                color: "#141414",
                 border: "none",
                 borderRadius: 8,
                 fontWeight: 600,
@@ -1486,9 +1451,9 @@ export default function StockAdjustment({
                 onClick={handleExportReport}
                 style={{
                   padding: "9px 16px",
-                  background: "rgba(99,102,241,0.12)",
-                  color: "#818cf8",
-                  border: "1px solid rgba(99,102,241,0.3)",
+                  background: "rgba(200, 149, 90,0.12)",
+                  color: "#c8955a",
+                  border: "1px solid rgba(200, 149, 90,0.3)",
                   borderRadius: 8,
                   fontSize: 13,
                   cursor: "pointer",
@@ -1518,12 +1483,12 @@ export default function StockAdjustment({
                   {
                     label: "Total Records",
                     value: reportData.adjustments?.length || 0,
-                    color: "#818cf8",
+                    color: "#c8955a",
                   },
                   {
                     label: "Items Affected",
                     value: reportData.summary?.length || 0,
-                    color: "#60a5fa",
+                    color: "#c8955a",
                   },
                   {
                     label: "Total Production",
@@ -1532,44 +1497,40 @@ export default function StockAdjustment({
                         (s, r) => s + r.production,
                         0,
                       ) || 0,
-                    color: "#c084fc",
+                    color: "#c8955a",
                   },
                   {
                     label: "Total Inward",
                     value:
                       reportData.summary?.reduce((s, r) => s + r.inward, 0) ||
                       0,
-                    color: "#4ade80",
+                    color: "#86b894",
                   },
                   {
                     label: "Total Outward",
                     value:
                       reportData.summary?.reduce((s, r) => s + r.outward, 0) ||
                       0,
-                    color: "#f87171",
+                    color: "#e0705f",
                   },
                 ].map((s) => (
-                  <div
+                  <StatCard
                     key={s.label}
-                    style={{
-                      background: "rgba(255,255,255,0.03)",
-                      border: "1px solid rgba(255,255,255,0.08)",
-                      borderRadius: 10,
-                      padding: "12px 20px",
-                      minWidth: 130,
-                    }}
-                  >
-                    <div
-                      style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}
-                    >
-                      {s.label}
-                    </div>
-                    <div
-                      style={{ fontSize: 22, fontWeight: 700, color: s.color }}
-                    >
-                      {fmt(s.value)}
-                    </div>
-                  </div>
+                    label={s.label}
+                    value={fmt(s.value)}
+                    icon={
+                      {
+                        "Total Adjustments": "fa-solid fa-sliders",
+                        Production: "fa-solid fa-industry",
+                        Inward: "fa-solid fa-arrow-down-to-line",
+                        Outward: "fa-solid fa-arrow-up-from-line",
+                        "Items Affected": "fa-solid fa-boxes-stacked",
+                        "Total Production": "fa-solid fa-industry",
+                        "Total Inward": "fa-solid fa-arrow-down-to-line",
+                        "Total Outward": "fa-solid fa-arrow-up-from-line",
+                      }[s.label]
+                    }
+                  />
                 ))}
               </div>
 
@@ -1614,7 +1575,6 @@ export default function StockAdjustment({
                             color: C.muted,
                             fontWeight: 600,
                             fontSize: 11,
-                            letterSpacing: "0.04em",
                           }}
                         >
                           {h}
@@ -1642,7 +1602,7 @@ export default function StockAdjustment({
                           <td
                             style={{
                               padding: "10px 12px",
-                              color: "#6366f1",
+                              color: "#c8955a",
                               fontWeight: 600,
                             }}
                           >
@@ -1653,22 +1613,26 @@ export default function StockAdjustment({
                           </td>
                           <td style={{ padding: "10px 12px" }}>
                             <span
+                              title={r.stockType}
                               style={{
                                 background: sc.bg,
+                                border: "1px solid rgba(255,255,255,0.08)",
                                 color: sc.text,
-                                borderRadius: 5,
-                                padding: "3px 8px",
+                                borderRadius: 6,
+                                padding: "2px 8px",
                                 fontSize: 11,
-                                fontWeight: 600,
+                                fontWeight: 500,
+                                whiteSpace: "nowrap",
+                                display: "inline-block",
                               }}
                             >
-                              {r.stockType}
+                              {STOCK_TYPE_ABBR[r.stockType] || r.stockType}
                             </span>
                           </td>
                           <td
                             style={{
                               padding: "10px 12px",
-                              color: "#c084fc",
+                              color: "#c8955a",
                               fontWeight: 600,
                             }}
                           >
@@ -1677,7 +1641,7 @@ export default function StockAdjustment({
                           <td
                             style={{
                               padding: "10px 12px",
-                              color: "#4ade80",
+                              color: "#86b894",
                               fontWeight: 600,
                             }}
                           >
@@ -1686,7 +1650,7 @@ export default function StockAdjustment({
                           <td
                             style={{
                               padding: "10px 12px",
-                              color: "#f87171",
+                              color: "#e0705f",
                               fontWeight: 600,
                             }}
                           >
@@ -1695,8 +1659,8 @@ export default function StockAdjustment({
                           <td
                             style={{
                               padding: "10px 12px",
-                              color: r.net >= 0 ? "#4ade80" : "#f87171",
-                              fontWeight: 700,
+                              color: r.net >= 0 ? "#86b894" : "#e0705f",
+                              fontWeight: 600,
                             }}
                           >
                             {r.net >= 0 ? "+" : ""}
@@ -1742,7 +1706,6 @@ export default function StockAdjustment({
                         "Type",
                         "Qty",
                         "Reason",
-                        "By",
                       ].map((h) => (
                         <th
                           key={h}
@@ -1772,7 +1735,7 @@ export default function StockAdjustment({
                           <td
                             style={{
                               padding: "10px 12px",
-                              color: "#818cf8",
+                              color: "#c8955a",
                               fontWeight: 600,
                             }}
                           >
@@ -1784,7 +1747,7 @@ export default function StockAdjustment({
                           <td
                             style={{
                               padding: "10px 12px",
-                              color: "#6366f1",
+                              color: "#c8955a",
                               fontWeight: 600,
                             }}
                           >
@@ -1813,8 +1776,8 @@ export default function StockAdjustment({
                               padding: "10px 12px",
                               color:
                                 a.adjustmentType === "Outward"
-                                  ? "#f87171"
-                                  : "#4ade80",
+                                  ? "#e0705f"
+                                  : "#86b894",
                               fontWeight: 600,
                             }}
                           >
@@ -1823,9 +1786,6 @@ export default function StockAdjustment({
                           </td>
                           <td style={{ padding: "10px 12px", color: C.muted }}>
                             {a.reason || "—"}
-                          </td>
-                          <td style={{ padding: "10px 12px", color: C.muted }}>
-                            {a.createdBy || "—"}
                           </td>
                         </tr>
                       );

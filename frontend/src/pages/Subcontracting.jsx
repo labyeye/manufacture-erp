@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from "react";
 import { Modal, AutocompleteInput } from "../components/ui/BasicComponents";
 import { C } from "../constants/colors";
+import { IconBtn } from "../components/ui/IconBtn";
+import { StatCard } from "../components/ui/StatCard";
 
 const today = () => new Date().toISOString().slice(0, 10);
 const uid = () =>
@@ -61,8 +63,6 @@ const lbl = {
   color: "#666",
   display: "block",
   marginBottom: 5,
-  textTransform: "uppercase",
-  letterSpacing: "0.04em",
 };
 
 const loadRecords = () => {
@@ -329,7 +329,7 @@ export default function Subcontracting({
         }}
       >
         <div>
-          <div style={{ fontSize: 20, fontWeight: 800 }}>Subcontracting</div>
+          <div style={{ fontSize: 20, fontWeight: 600 }}>Subcontracting</div>
           <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
             Track material issued to outside vendors and reconcile returns
           </div>
@@ -349,8 +349,7 @@ export default function Subcontracting({
             fontWeight: 600,
             fontSize: 13,
             cursor: "pointer",
-            boxShadow:
-              "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
           }}
         >
           + Issue to Vendor
@@ -361,7 +360,7 @@ export default function Subcontracting({
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
           gap: 12,
           marginBottom: 20,
         }}
@@ -380,31 +379,19 @@ export default function Subcontracting({
             color: "#22c55e",
           },
         ].map((s) => (
-          <div
+          <StatCard
             key={s.label}
-            style={{
-              background: "transparent",
-              border: `1px solid ${s.color}33`,
-              borderRadius: 8,
-              padding: 14,
-            }}
-          >
-            <div
-              style={{
-                fontSize: 10,
-                color: "#666",
-                fontWeight: 500,
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
-                marginBottom: 6,
-              }}
-            >
-              {s.label}
-            </div>
-            <div style={{ fontSize: 26, fontWeight: 800, color: s.color }}>
-              {s.value}
-            </div>
-          </div>
+            label={s.label}
+            value={s.value}
+            icon={
+              {
+                "Active Issues": "fa-solid fa-truck-ramp-box",
+                "Overdue Returns": "fa-solid fa-clock",
+                "Total Qty Issued": "fa-solid fa-arrow-up-from-line",
+                "Total Qty Received": "fa-solid fa-arrow-down-to-line",
+              }[s.label]
+            }
+          />
         ))}
       </div>
 
@@ -426,8 +413,7 @@ export default function Subcontracting({
               border: "1px solid rgba(255,255,255,0.1)",
               borderRadius: 10,
               padding: 24,
-              boxShadow:
-                "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
+              boxShadow: "0 4px 24px rgba(0,0,0,0.18)",
             }}
           >
             <div
@@ -712,7 +698,6 @@ export default function Subcontracting({
                         fontSize: 11,
                         color: "#666",
                         fontWeight: 500,
-                        textTransform: "uppercase",
                         marginBottom: 8,
                       }}
                     >
@@ -909,10 +894,10 @@ export default function Subcontracting({
                         borderRadius: 4,
                         fontSize: 10,
                         color: prioCol,
-                        fontWeight: 800,
+                        fontWeight: 600,
                       }}
                     >
-                      {r.priority === "VIP" ? "⭐ VIP" : "⚡ RUSH"}
+                      {r.priority === "VIP" ? "VIP" : "RUSH"}
                     </span>
                   )}
                   <span
@@ -936,10 +921,10 @@ export default function Subcontracting({
                         borderRadius: 4,
                         fontSize: 11,
                         color: "#ef4444",
-                        fontWeight: 800,
+                        fontWeight: 600,
                       }}
                     >
-                      ⚠ OVERDUE
+                      OVERDUE
                     </span>
                   )}
                 </div>
@@ -953,8 +938,8 @@ export default function Subcontracting({
                       }}
                       style={{
                         background: "transparent",
-                        color: "#8082ff",
-                        border: "1px solid #8082ff98",
+                        color: "#c8955a",
+                        border: "1px solid #c8955a98",
                         borderRadius: 6,
                         padding: "6px 12px",
                         fontSize: 11,
@@ -973,8 +958,8 @@ export default function Subcontracting({
                       onClick={() => handleReconcile(r.id)}
                       style={{
                         background: "transparent",
-                        color: "#8082ff",
-                        border: "1px solid #8082ff98",
+                        color: "#c8955a",
+                        border: "1px solid #c8955a98",
                         borderRadius: 6,
                         padding: "6px 12px",
                         fontSize: 11,
@@ -989,32 +974,19 @@ export default function Subcontracting({
                     </button>
                   )}
                   {!["Reconciled", "Cancelled"].includes(r.status) && (
-                    <button
+                    <IconBtn
+                      icon="fa-pen-to-square"
+                      label="Edit"
                       onClick={() => handleEdit(r)}
-                      style={{
-                        background: "transparent",
-                        color: "#8082ff",
-                        border: "1px solid #8082ff98",
-                        borderRadius: 6,
-                        padding: "6px 12px",
-                        fontSize: 11,
-                        fontWeight: 500,
-                        cursor: "pointer",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 6,
-                      }}
-                    >
-                      <i className="fa-solid fa-pen-to-square" /> Edit
-                    </button>
+                    />
                   )}
                   {!["Reconciled"].includes(r.status) && (
                     <button
                       onClick={() => handleCancel(r.id)}
                       style={{
                         background: "transparent",
-                        color: "#8082ff",
-                        border: "1px solid #8082ff98",
+                        color: "#c8955a",
+                        border: "1px solid #c8955a98",
                         borderRadius: 6,
                         padding: "6px 12px",
                         fontSize: 11,
@@ -1028,24 +1000,12 @@ export default function Subcontracting({
                       <i className="fa-solid fa-ban" /> Cancel
                     </button>
                   )}
-                  <button
+                  <IconBtn
+                    icon="fa-trash"
+                    label="Delete"
+                    danger
                     onClick={() => handleDelete(r.id)}
-                    style={{
-                      background: "transparent",
-                      color: "#8082ff",
-                      border: "1px solid #8082ff98",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    <i className="fa-solid fa-trash" /> Delete
-                  </button>
+                  />
                 </div>
               </div>
 

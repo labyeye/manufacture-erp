@@ -1,7 +1,18 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import * as XLSX from "xlsx";
 import { machineMasterAPI } from "../api/auth";
-import { AutocompleteInput } from "../components/ui/BasicComponents";
+import { IconBtn } from "../components/ui/IconBtn";
+import {
+  AutocompleteInput,
+  SelectToggle,
+  NameWithAvatar,
+  ListToolbar,
+  FilterModal,
+  SortSelect,
+  Modal,
+  FormGrid,
+  Field,
+} from "../components/ui/BasicComponents";
 import {
   ALL_SKU_FAMILIES,
   PARALLEL_MACHINE_GROUPS,
@@ -30,7 +41,7 @@ const TYPE_COLORS = {
   "Sheet Cutting": "#a855f7",
   "Manual Formation": "#8D6E63",
   Cutting: "#F44336",
-  Handmade: "#4CAF50",
+  Handmade: "#86b894",
 };
 
 const DIVISION_COLORS = { Sheet: "#3b82f6", Reel: "#f59e0b" };
@@ -47,11 +58,11 @@ const DAYS_OF_WEEK = [
 
 const inputStyle = {
   padding: "9px 12px",
-  border: "1px solid rgba(255,255,255,0.13)",
-  borderRadius: 6,
+  border: "1px solid rgba(255,255,255,0.08)",
+  borderRadius: 8,
   fontSize: 13,
-  background: "rgba(255,255,255,0.07)",
-  color: "#e0e0e0",
+  background: "#141414",
+  color: "#ededed",
   outline: "none",
   width: "100%",
   boxSizing: "border-box",
@@ -63,8 +74,6 @@ const labelStyle = {
   color: "#666",
   display: "block",
   marginBottom: 6,
-  letterSpacing: "0.5px",
-  textTransform: "uppercase",
 };
 
 const sectionHeaderStyle = {
@@ -79,6 +88,8 @@ export default function MachineMaster({ toast }) {
   const [loading, setLoading] = useState(false);
   const [machineName, setMachineName] = useState("");
   const [machineType, setMachineType] = useState("Printing");
+  const [showModal, setShowModal] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("");
   const [filterDivision, setFilterDivision] = useState("");
@@ -368,6 +379,11 @@ export default function MachineMaster({ toast }) {
     [machines, searchTerm, filterType, filterDivision, filterStatus],
   );
 
+  const closeModal = () => {
+    setShowModal(false);
+    setMachineName("");
+  };
+
   const handleAdd = async () => {
     if (!machineName.trim()) {
       toast("Enter machine name", "error");
@@ -382,6 +398,7 @@ export default function MachineMaster({ toast }) {
       });
       toast(`Machine "${machineName}" added`, "success");
       setMachineName("");
+      setShowModal(false);
       fetchMachines();
     } catch (error) {
       toast(error.response?.data?.error || "Failed to add machine", "error");
@@ -581,7 +598,7 @@ export default function MachineMaster({ toast }) {
           >
             {}
             <div style={sectionHeaderStyle}>
-              <span style={{ fontSize: 12, fontWeight: 800, color: "#FF9800" }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: "#FF9800" }}>
                 BASIC CONFIGURATION
               </span>
             </div>
@@ -646,7 +663,7 @@ export default function MachineMaster({ toast }) {
 
             {}
             <div style={sectionHeaderStyle}>
-              <span style={{ fontSize: 12, fontWeight: 800, color: "#2196F3" }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: "#2196F3" }}>
                 CAPACITY & SHIFTS
               </span>
             </div>
@@ -745,7 +762,7 @@ export default function MachineMaster({ toast }) {
 
             {}
             <div style={sectionHeaderStyle}>
-              <span style={{ fontSize: 12, fontWeight: 800, color: "#4CAF50" }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: "#86b894" }}>
                 OVERTIME & MAINTENANCE
               </span>
             </div>
@@ -803,7 +820,7 @@ export default function MachineMaster({ toast }) {
 
             {}
             <div style={sectionHeaderStyle}>
-              <span style={{ fontSize: 12, fontWeight: 800, color: "#F44336" }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: "#F44336" }}>
                 TIMING DEFAULTS (hours)
               </span>
             </div>
@@ -868,7 +885,7 @@ export default function MachineMaster({ toast }) {
 
             {}
             <div style={sectionHeaderStyle}>
-              <span style={{ fontSize: 12, fontWeight: 800, color: "#9C27B0" }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: "#9C27B0" }}>
                 SCHEDULING — PARALLEL GROUP & PRODUCT COMPATIBILITY
               </span>
             </div>
@@ -896,7 +913,7 @@ export default function MachineMaster({ toast }) {
                 Product Compatibility
                 {compatList.length > 0 && (
                   <span
-                    style={{ marginLeft: 8, color: "#FF9800", fontWeight: 800 }}
+                    style={{ marginLeft: 8, color: "#FF9800", fontWeight: 600 }}
                   >
                     ({compatList.length} selected)
                   </span>
@@ -912,7 +929,7 @@ export default function MachineMaster({ toast }) {
                       onClick={() => toggleCompat(sku)}
                       style={{
                         padding: "5px 12px",
-                        borderRadius: 20,
+                        borderRadius: 6,
                         fontSize: 12,
                         fontWeight: 600,
                         background: checked
@@ -921,7 +938,8 @@ export default function MachineMaster({ toast }) {
                         color: checked ? "#000" : "#666",
                         border: `1px solid ${checked ? "#FF9800" : "rgba(255,255,255,0.1)"}`,
                         cursor: "pointer",
-                        transition: "all 0.15s",
+                        transition:
+                          "background-color .15s, border-color .15s, color .15s, opacity .15s, transform .15s",
                       }}
                     >
                       {sku}
@@ -992,7 +1010,7 @@ export default function MachineMaster({ toast }) {
                       color: "#fff",
                       border: `1px solid ${(form.workingDays || []).includes(day) ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.1)"}`,
                       boxShadow: (form.workingDays || []).includes(day)
-                        ? "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)"
+                        ? "0 4px 16px rgba(0,0,0,0.2)"
                         : "none",
                       cursor: "pointer",
                     }}
@@ -1013,7 +1031,7 @@ export default function MachineMaster({ toast }) {
                 marginBottom: 16,
               }}
             >
-              <span style={{ fontSize: 12, fontWeight: 800, color: "#FF9800" }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: "#FF9800" }}>
                 CHANGEOVER RULES
               </span>
               <span style={{ fontSize: 11, color: "#666", marginLeft: 10 }}>
@@ -1044,7 +1062,6 @@ export default function MachineMaster({ toast }) {
                               color: "#666",
                               fontWeight: 500,
                               fontSize: 10,
-                              textTransform: "uppercase",
                               borderBottom: "1px solid rgba(255,255,255,0.08)",
                               background: "rgba(255,255,255,0.04)",
                             }}
@@ -1070,7 +1087,7 @@ export default function MachineMaster({ toast }) {
                           → {rule.toType}
                         </td>
                         <td style={{ padding: "6px 8px" }}>
-                          <span style={{ color: "#FF9800", fontWeight: 700 }}>
+                          <span style={{ color: "#FF9800", fontWeight: 600 }}>
                             {rule.minutes} min
                           </span>
                         </td>
@@ -1161,8 +1178,7 @@ export default function MachineMaster({ toast }) {
                   cursor: "pointer",
                   fontSize: 12,
                   whiteSpace: "nowrap",
-                  boxShadow:
-                    "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
                 }}
               >
                 + Add
@@ -1192,9 +1208,8 @@ export default function MachineMaster({ toast }) {
                 color: "#fff",
                 border: "1px solid rgba(255,255,255,0.18)",
                 borderRadius: 8,
-                fontWeight: 800,
-                boxShadow:
-                  "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                fontWeight: 600,
+                boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
                 cursor: "pointer",
               }}
             >
@@ -1231,208 +1246,125 @@ export default function MachineMaster({ toast }) {
         onChange={handleImportFile}
       />
 
-      <div
-        style={{
-          marginBottom: 20,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          flexWrap: "wrap",
-          gap: 12,
+      {showModal && (
+        <Modal title="New machine" maxWidth={520} onClose={closeModal}>
+          <FormGrid>
+            <Field label="Machine name *">
+              <input
+                className="lg-input"
+                placeholder="Machine name"
+                value={machineName}
+                onChange={(e) => setMachineName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+              />
+            </Field>
+            <Field label="Type">
+              <select
+                className="lg-input"
+                value={machineType}
+                onChange={(e) => setMachineType(e.target.value)}
+              >
+                {MACHINE_TYPES.map((t) => (
+                  <option key={t}>{t}</option>
+                ))}
+              </select>
+            </Field>
+          </FormGrid>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: 8,
+              marginTop: 20,
+            }}
+          >
+            <button type="button" className="lg-btn" onClick={closeModal}>
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="lg-btn lg-btn-primary"
+              disabled={loading}
+              onClick={handleAdd}
+            >
+              {loading ? "Saving…" : "Add machine"}
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      <ListToolbar
+        onSelectModeChange={(on) => {
+          if (!on) setSelectedIds(new Set());
         }}
-      >
-        <div>
-          <h2
-            style={{
-              fontSize: 22,
-              fontWeight: 500,
-              color: "#e0e0e0",
-              margin: 0,
-            }}
-          >
-            🏭 Machine Master
-          </h2>
-          <p style={{ fontSize: 13, color: "#777", margin: "4px 0 0" }}>
-            Configure capacity, shifts, parallel groups, and product
-            compatibility per machine
-          </p>
-        </div>
-
-        {}
-        <div
-          style={{
-            display: "flex",
-            gap: 8,
-            alignItems: "center",
-            flexWrap: "wrap",
-          }}
-        >
-          <button
-            onClick={handleDownloadTemplate}
-            title="Download a blank XLSX template with all columns"
-            style={{
-              padding: "8px 14px",
-              background: "transparent",
-              color: "#9C27B0",
-              border: "1px solid #9C27B044",
-              borderRadius: 6,
-              fontSize: 12,
-              fontWeight: 500,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-            }}
-          >
-            ⬇ Template
-          </button>
-          <button
-            onClick={handleExport}
-            title="Export all machines to XLSX"
-            style={{
-              padding: "8px 14px",
-              background: "transparent",
-              color: "#4CAF50",
-              border: "1px solid #4CAF5044",
-              borderRadius: 6,
-              fontSize: 12,
-              fontWeight: 500,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-            }}
-          >
-            ↑ Export
-          </button>
-          <button
-            onClick={() => importRef.current?.click()}
-            disabled={importing}
-            title="Import machines from XLSX (updates existing by name, creates new)"
-            style={{
-              padding: "8px 14px",
-              background: importing ? "rgba(255,255,255,0.05)" : "#2196F322",
-              color: importing ? "#555" : "#2196F3",
-              border: `1px solid ${importing ? "rgba(255,255,255,0.1)" : "#2196F344"}`,
-              borderRadius: 6,
-              fontSize: 12,
-              fontWeight: 500,
-              cursor: importing ? "not-allowed" : "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-            }}
-          >
-            {importing ? "Importing..." : "↓ Import"}
-          </button>
-        </div>
-      </div>
-
-      {}
-      <div
-        style={{
-          background: "transparent",
-          border: "1px solid rgba(255,255,255,0.1)",
-          borderRadius: 10,
-          padding: "16px 20px",
-          marginBottom: 20,
-          boxShadow:
-            "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
+        search={searchTerm}
+        setSearch={setSearchTerm}
+        placeholder="Search machines..."
+        count={filteredMachines.length}
+        filterCount={
+          (filterType ? 1 : 0) +
+          (filterDivision ? 1 : 0) +
+          (filterStatus ? 1 : 0)
+        }
+        onFilter={() => setShowFilterModal(true)}
+        exportOptions={[
+          {
+            label: "Excel",
+            icon: "fa-solid fa-file-excel",
+            onClick: handleExport,
+          },
+        ]}
+        onAdd={() => {
+          setMachineName("");
+          setMachineType("Printing");
+          setShowModal(true);
         }}
-      >
-        <div
-          style={{
-            fontSize: 11,
-            fontWeight: 800,
-            color: "#FF9800",
-            marginBottom: 12,
-            letterSpacing: 1,
-          }}
-        >
-          ADD NEW MACHINE
-        </div>
-        <div style={{ display: "flex", gap: 12 }}>
-          <input
-            style={{ ...inputStyle, flex: 1 }}
-            placeholder="Machine Name"
-            value={machineName}
-            onChange={(e) => setMachineName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-          />
-          <select
-            style={{ ...inputStyle, width: 200 }}
-            value={machineType}
-            onChange={(e) => setMachineType(e.target.value)}
-          >
-            {MACHINE_TYPES.map((t) => (
-              <option key={t}>{t}</option>
-            ))}
-          </select>
-          <button
-            onClick={handleAdd}
-            disabled={loading}
-            style={{
-              padding: "0 25px",
-              background: "rgba(255,255,255,0.08)",
-              border: "1px solid rgba(255,255,255,0.18)",
-              borderRadius: 6,
-              color: "#fff",
-              fontWeight: 800,
-              cursor: "pointer",
-              boxShadow:
-                "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
-            }}
-          >
-            {loading ? "..." : "ADD MACHINE"}
-          </button>
-        </div>
-      </div>
+        addLabel="Add machine"
+        onImport={importing ? undefined : () => importRef.current?.click()}
+        onTemplate={handleDownloadTemplate}
+      />
 
-      {}
-      <div
-        style={{ display: "flex", gap: 10, marginBottom: 15, flexWrap: "wrap" }}
-      >
-        <input
-          style={{ ...inputStyle, width: 220 }}
-          placeholder="Search machines..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-        <AutocompleteInput
-          value={filterType}
-          onChange={(v) => setFilterType(v)}
-          suggestions={MACHINE_TYPES}
-          placeholder="Filter by type..."
-          showAllOnFocus={true}
-          inputStyle={{ ...inputStyle, width: 160 }}
-        />
-        <AutocompleteInput
-          value={filterDivision}
-          onChange={(v) => setFilterDivision(v)}
-          suggestions={["Sheet", "Reel"]}
-          placeholder="Filter by division..."
-          showAllOnFocus={true}
-          inputStyle={{ ...inputStyle, width: 140 }}
-        />
-        <AutocompleteInput
-          value={filterStatus}
-          onChange={(v) => setFilterStatus(v)}
-          suggestions={["Active", "Inactive"]}
-          placeholder="Filter by status..."
-          showAllOnFocus={true}
-          inputStyle={{ ...inputStyle, width: 120 }}
-        />
-        <span
-          style={{
-            marginLeft: "auto",
-            fontSize: 12,
-            color: "#555",
-            alignSelf: "center",
+      {showFilterModal && (
+        <FilterModal
+          onClose={() => setShowFilterModal(false)}
+          onReset={() => {
+            setFilterType("");
+            setFilterDivision("");
+            setFilterStatus("");
           }}
         >
-          {filteredMachines.length} / {machines.length} machines
-        </span>
-      </div>
+          <Field label="Type">
+            <SortSelect
+              value={filterType}
+              onChange={setFilterType}
+              options={[["", "All"], ...MACHINE_TYPES.map((t) => [t, t])]}
+            />
+          </Field>
+          <Field label="Division">
+            <SortSelect
+              value={filterDivision}
+              onChange={setFilterDivision}
+              options={[
+                ["", "All"],
+                ["Sheet", "Sheet"],
+                ["Reel", "Reel"],
+              ]}
+            />
+          </Field>
+          <Field label="Status">
+            <SortSelect
+              value={filterStatus}
+              onChange={setFilterStatus}
+              options={[
+                ["", "All"],
+                ["Active", "Active"],
+                ["Inactive", "Inactive"],
+              ]}
+            />
+          </Field>
+        </FilterModal>
+      )}
+      <div style={{ height: 12 }} />
 
       {(() => {
         const filteredIds = filteredMachines.map((m) => m._id);
@@ -1448,48 +1380,30 @@ export default function MachineMaster({ toast }) {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  padding: "10px 14px",
-                  marginBottom: 10,
-                  background: "rgba(239,68,68,0.08)",
-                  border: "1px solid rgba(239,68,68,0.3)",
-                  borderRadius: 8,
+                  padding: "8px 16px",
+                  marginBottom: 12,
+                  background: "#1a1a1a",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: 10,
+                  fontSize: 13,
+                  color: "#a3a3a3",
                 }}
               >
-                <span
-                  style={{ fontSize: 13, fontWeight: 600, color: "#fecaca" }}
-                >
-                  {selectedIds.size} selected
-                </span>
+                {selectedIds.size} selected
                 <div style={{ display: "flex", gap: 8 }}>
                   <button
+                    type="button"
+                    className="lg-btn"
                     onClick={() => setSelectedIds(new Set())}
-                    style={{
-                      padding: "5px 12px",
-                      borderRadius: 5,
-                      border: "1px solid rgba(255,255,255,0.15)",
-                      background: "rgba(255,255,255,0.06)",
-                      color: "#fff",
-                      fontSize: 12,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                    }}
                   >
                     Clear
                   </button>
                   <button
+                    type="button"
+                    className="lg-btn lg-btn-danger"
                     onClick={handleBulkDelete}
-                    style={{
-                      padding: "5px 12px",
-                      borderRadius: 5,
-                      border: "1px solid rgba(239,68,68,0.4)",
-                      background: "rgba(239,68,68,0.15)",
-                      color: "#ef4444",
-                      fontSize: 12,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                    }}
                   >
-                    Delete Selected
+                    <i className="fa-solid fa-trash" /> Delete selected
                   </button>
                 </div>
               </div>
@@ -1554,8 +1468,7 @@ export default function MachineMaster({ toast }) {
                           padding: "14px 16px",
                           color: "#666",
                           fontSize: 11,
-                          fontWeight: 800,
-                          textTransform: "uppercase",
+                          fontWeight: 600,
                           whiteSpace: "nowrap",
                         }}
                       >
@@ -1620,7 +1533,7 @@ export default function MachineMaster({ toast }) {
                             color: "#fff",
                           }}
                         >
-                          {m.name}
+                          <NameWithAvatar name={m.name} />
                           {m.parallelMachineGroup && (
                             <div
                               style={{
@@ -1741,8 +1654,8 @@ export default function MachineMaster({ toast }) {
                             <span
                               style={{
                                 color:
-                                  m.status === "Active" ? "#4CAF50" : "#f44336",
-                                fontWeight: 800,
+                                  m.status === "Active" ? "#86b894" : "#e0705f",
+                                fontWeight: 600,
                                 fontSize: 11,
                               }}
                             >
@@ -1754,9 +1667,9 @@ export default function MachineMaster({ toast }) {
                                   fontSize: 10,
                                   color:
                                     m.currentStatus === "Running"
-                                      ? "#4CAF50"
+                                      ? "#86b894"
                                       : m.currentStatus === "Breakdown"
-                                        ? "#f44336"
+                                        ? "#e0705f"
                                         : m.currentStatus ===
                                             "Under Maintenance"
                                           ? "#FF9800"
@@ -1769,37 +1682,18 @@ export default function MachineMaster({ toast }) {
                           </div>
                         </td>
                         <td style={{ padding: "12px 16px" }}>
-                          <div style={{ display: "flex", gap: 8 }}>
-                            <button
+                          <div style={{ display: "flex", gap: 4 }}>
+                            <IconBtn
+                              icon="fa-pen-to-square"
+                              label="Configure"
                               onClick={() => setEditingMachine(m)}
-                              style={{
-                                padding: "6px 12px",
-                                background: "#3b82f622",
-                                color: "#3b82f6",
-                                border: "1px solid #3b82f644",
-                                borderRadius: 4,
-                                fontSize: 11,
-                                fontWeight: 500,
-                                cursor: "pointer",
-                              }}
-                            >
-                              CONFIGURE
-                            </button>
-                            <button
+                            />
+                            <IconBtn
+                              icon="fa-trash"
+                              label="Delete"
+                              danger
                               onClick={() => handleDelete(m._id)}
-                              style={{
-                                padding: "6px 12px",
-                                background: "#f4433622",
-                                color: "#f44336",
-                                border: "1px solid #f4433644",
-                                borderRadius: 4,
-                                fontSize: 11,
-                                fontWeight: 500,
-                                cursor: "pointer",
-                              }}
-                            >
-                              DELETE
-                            </button>
+                            />
                           </div>
                         </td>
                       </tr>

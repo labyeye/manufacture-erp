@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { categoryMasterAPI } from "../api/auth";
-import { ImportBtn, TemplateBtn } from "../components/ui/BasicComponents";
+import { DataMenus } from "../components/ui/BasicComponents";
 import * as XLSX from "xlsx";
+import { IconBtn } from "../components/ui/IconBtn";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 
@@ -15,11 +16,11 @@ const ITEM_TABS = [
 
 const inputStyle = {
   padding: "9px 12px",
-  border: "1px solid rgba(255,255,255,0.13)",
-  borderRadius: 6,
+  border: "1px solid rgba(255,255,255,0.08)",
+  borderRadius: 8,
   fontSize: 13,
-  background: "rgba(255,255,255,0.07)",
-  color: "#e0e0e0",
+  background: "#141414",
+  color: "#ededed",
   outline: "none",
   boxSizing: "border-box",
 };
@@ -381,7 +382,7 @@ export default function CategoryMaster({ toast, canExportImport = true }) {
   if (loading) {
     return (
       <div style={{ padding: "40px", textAlign: "center" }}>
-        <p style={{ color: "#777", fontSize: 14 }}>Loading categories...</p>
+        <p style={{ color: "#a3a3a3", fontSize: 14 }}>Loading categories...</p>
       </div>
     );
   }
@@ -391,11 +392,11 @@ export default function CategoryMaster({ toast, canExportImport = true }) {
       {}
       <div style={{ marginBottom: 20 }}>
         <h2
-          style={{ fontSize: 22, fontWeight: 500, color: "#e0e0e0", margin: 0 }}
+          style={{ fontSize: 22, fontWeight: 500, color: "#ededed", margin: 0 }}
         >
-          📂 Category Master
+          Category Master
         </h2>
-        <p style={{ fontSize: 13, color: "#777", margin: "4px 0 0" }}>
+        <p style={{ fontSize: 13, color: "#a3a3a3", margin: "4px 0 0" }}>
           Manage item categories and their sizes across all types
         </p>
       </div>
@@ -415,7 +416,7 @@ export default function CategoryMaster({ toast, canExportImport = true }) {
               fontWeight: 500,
               cursor: "pointer",
               background: "transparent",
-              color: activeTab === tab.key ? "#e0e0e0" : "#555",
+              color: activeTab === tab.key ? "#ededed" : "#555",
               border:
                 activeTab === tab.key ? "1px solid #555" : "1px solid #222",
             }}
@@ -457,9 +458,8 @@ export default function CategoryMaster({ toast, canExportImport = true }) {
               style={{
                 fontSize: 11,
                 fontWeight: 500,
-                color: "#2196F3",
+                color: "#c8955a",
                 letterSpacing: "1px",
-                textTransform: "uppercase",
               }}
             >
               {activeTab.replace(" ", " ")}
@@ -487,7 +487,7 @@ export default function CategoryMaster({ toast, canExportImport = true }) {
               onClick={handleAddCategory}
               style={{
                 padding: "7px 12px",
-                background: "#2196F3",
+                background: "#c8955a",
                 color: "#fff",
                 border: "none",
                 borderRadius: 6,
@@ -503,16 +503,15 @@ export default function CategoryMaster({ toast, canExportImport = true }) {
 
           {}
           <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-            <TemplateBtn
-              onClick={handleTemplate}
-              style={{ flex: 1, padding: "6px 0", fontSize: 11 }}
+            <DataMenus
+              onTemplate={handleTemplate}
+              onImport={
+                canExportImport
+                  ? () => fileInputRef.current?.click()
+                  : undefined
+              }
             />
-            {canExportImport && (
-              <ImportBtn
-                onClick={() => fileInputRef.current?.click()}
-                style={{ flex: 1, padding: "6px 0", fontSize: 11 }}
-              />
-            )}
+
             <input
               ref={fileInputRef}
               type="file"
@@ -585,7 +584,7 @@ export default function CategoryMaster({ toast, canExportImport = true }) {
                         style={{
                           fontSize: 13,
                           fontWeight: isSelected ? 700 : 400,
-                          color: isSelected ? "#64B5F6" : "#aaa",
+                          color: isSelected ? "#64B5F6" : "#a3a3a3",
                           flex: 1,
                           overflow: "hidden",
                           textOverflow: "ellipsis",
@@ -604,48 +603,23 @@ export default function CategoryMaster({ toast, canExportImport = true }) {
                           gap: 4,
                         }}
                       >
-                        <button
+                        <IconBtn
+                          icon="fa-pen-to-square"
+                          label="Edit"
                           onClick={(e) => {
                             e.stopPropagation();
                             setEditingCategory({ oldName: cat, newName: cat });
                           }}
-                          style={{
-                            background: "transparent",
-                            color: "#8082ff",
-                            border: "1px solid #8082ff98",
-                            borderRadius: 6,
-                            padding: "6px 12px",
-                            fontSize: 11,
-                            fontWeight: 500,
-                            cursor: "pointer",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 6,
-                          }}
-                        >
-                          <i className="fa-solid fa-pen-to-square" /> Edit
-                        </button>
-                        <button
+                        />
+                        <IconBtn
+                          icon="fa-trash"
+                          label="Delete"
+                          danger
                           onClick={(e) => {
                             e.stopPropagation();
                             handleDeleteCategory(cat);
                           }}
-                          style={{
-                            background: "transparent",
-                            color: "#8082ff",
-                            border: "1px solid #8082ff98",
-                            borderRadius: 6,
-                            padding: "6px 12px",
-                            fontSize: 11,
-                            fontWeight: 500,
-                            cursor: "pointer",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 6,
-                          }}
-                        >
-                          <i className="fa-solid fa-trash" /> Delete
-                        </button>
+                        />
                       </div>
                     )}
                   </div>
@@ -693,7 +667,7 @@ export default function CategoryMaster({ toast, canExportImport = true }) {
                     style={{
                       fontSize: 18,
                       fontWeight: 500,
-                      color: "#e0e0e0",
+                      color: "#ededed",
                       margin: 0,
                     }}
                   >
@@ -731,7 +705,7 @@ export default function CategoryMaster({ toast, canExportImport = true }) {
                   onClick={handleAddSubType}
                   style={{
                     padding: "9px 20px",
-                    background: "#2196F3",
+                    background: "#c8955a",
                     color: "#fff",
                     border: "none",
                     borderRadius: 6,
@@ -808,7 +782,7 @@ export default function CategoryMaster({ toast, canExportImport = true }) {
                               style={{
                                 background: "none",
                                 border: "none",
-                                color: "#f44336",
+                                color: "#e0705f",
                                 cursor: "pointer",
                                 fontSize: 12,
                                 lineHeight: 1,

@@ -77,13 +77,13 @@ export default function BreakdownLog({ toast }) {
   return (
     <div className="fade">
       <SectionTitle
-        icon="⚠️"
+        icon="fa-solid fa-triangle-exclamation"
         title="Breakdown Log"
         sub="Report and track machine breakdowns"
       >
         <Button
           onClick={() => setShowModal(true)}
-          text="🚨 Report Breakdown"
+          text="Report Breakdown"
           color={C.red}
         />
       </SectionTitle>

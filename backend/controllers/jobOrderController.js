@@ -837,7 +837,9 @@ async function recalculateProductionStats(jobOrder) {
         : jobOrder.status || "Draft";
 
   const lastOrderedStage = orderedProcesses[orderedProcesses.length - 1];
-  const lastStageQty = lastOrderedStage ? (stageQtyMap.get(lastOrderedStage) || 0) : 0;
+  const lastStageQty = lastOrderedStage
+    ? stageQtyMap.get(lastOrderedStage) || 0
+    : 0;
 
   if (lastStageQty > 0 || jobOrder.status === "Completed") {
     const finalQty = lastStageQty;

@@ -4,8 +4,8 @@ import DemandForecast from "./DemandForecast";
 import RMForecast from "./RMForecast";
 
 const TABS = [
-  { id: "demand", icon: "📈", label: "Demand Forecast" },
-  { id: "rm", icon: "🧮", label: "RM Forecast" },
+  { id: "demand", icon: "", label: "Demand Forecast" },
+  { id: "rm", icon: "", label: "RM Forecast" },
 ];
 
 const ACCENT = "#ff7800";
@@ -58,7 +58,8 @@ export default function Forecast({
                 display: "flex",
                 alignItems: "center",
                 gap: 7,
-                transition: "all 0.15s",
+                transition:
+                  "background-color .15s, border-color .15s, color .15s, opacity .15s, transform .15s",
                 whiteSpace: "nowrap",
               }}
             >

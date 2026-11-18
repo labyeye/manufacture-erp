@@ -9,6 +9,7 @@ import * as XLSX from "xlsx";
 import { C } from "../constants/colors";
 import { machineMaintenanceAPI, spareIssueLogAPI } from "../api/auth";
 import { Modal, AutocompleteInput } from "../components/ui/BasicComponents";
+import { IconBtn } from "../components/ui/IconBtn";
 
 const today = () => new Date().toISOString().slice(0, 10);
 const uid = () =>
@@ -57,8 +58,6 @@ const lbl = {
   color: "#666",
   display: "block",
   marginBottom: 5,
-  textTransform: "uppercase",
-  letterSpacing: "0.04em",
 };
 
 const INTERVALS = [
@@ -71,8 +70,8 @@ const INTERVALS = [
 ];
 
 const TABS = [
-  { id: "pm", icon: "🗓️", label: "PM Scheduler" },
-  { id: "parts", icon: "🔩", label: "Spare Parts" },
+  { id: "pm", icon: "", label: "PM Scheduler" },
+  { id: "parts", icon: "", label: "Spare Parts" },
 ];
 
 export { PMSchedulerTab, SparePartsTab };
@@ -247,7 +246,7 @@ function PMSchedulerTab({ machineMaster, toast }) {
         }}
       >
         <div>
-          <div style={{ fontSize: 17, fontWeight: 800 }}>
+          <div style={{ fontSize: 17, fontWeight: 600 }}>
             Preventive Maintenance Scheduler
           </div>
           <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
@@ -265,10 +264,10 @@ function PMSchedulerTab({ machineMaster, toast }) {
                 borderRadius: 6,
                 fontSize: 12,
                 color: "#ef4444",
-                fontWeight: 700,
+                fontWeight: 600,
               }}
             >
-              ⚠ {overdue} Overdue
+              {overdue} Overdue
             </div>
           )}
           {dueSoon > 0 && (
@@ -280,7 +279,7 @@ function PMSchedulerTab({ machineMaster, toast }) {
                 borderRadius: 6,
                 fontSize: 12,
                 color: "#f59e0b",
-                fontWeight: 700,
+                fontWeight: 600,
               }}
             >
               ⏰ {dueSoon} Due Soon
@@ -368,8 +367,7 @@ function PMSchedulerTab({ machineMaster, toast }) {
                     color: "#fff",
                     fontWeight: 500,
                     cursor: "pointer",
-                    boxShadow:
-                      "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
                   }}
                 >
                   Save Schedule
@@ -432,10 +430,8 @@ function PMSchedulerTab({ machineMaster, toast }) {
                     padding: "10px 14px",
                     textAlign: "left",
                     fontSize: 11,
-                    fontWeight: 700,
+                    fontWeight: 600,
                     color: C.muted,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em",
                     whiteSpace: "nowrap",
                   }}
                 >
@@ -526,7 +522,7 @@ function PMSchedulerTab({ machineMaster, toast }) {
                         borderRadius: 4,
                         fontSize: 11,
                         color: statusColor,
-                        fontWeight: 700,
+                        fontWeight: 600,
                       }}
                     >
                       {statusLabel}
@@ -556,11 +552,10 @@ function PMSchedulerTab({ machineMaster, toast }) {
                             fontSize: 11,
                             fontWeight: 500,
                             cursor: "pointer",
-                            boxShadow:
-                              "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                            boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
                           }}
                         >
-                          {creating[s.mid] ? "..." : "⚡ Create WO"}
+                          {creating[s.mid] ? "..." : "Create WO"}
                         </button>
                       )}
                       <button
@@ -1125,7 +1120,7 @@ function SparePartsTab({
         }}
       >
         <div>
-          <div style={{ fontSize: 17, fontWeight: 800 }}>Spare Parts</div>
+          <div style={{ fontSize: 17, fontWeight: 600 }}>Spare Parts</div>
           <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
             Machine spare parts inventory — linked to Item Master &amp; Category
             Master
@@ -1148,10 +1143,10 @@ function SparePartsTab({
                 borderRadius: 6,
                 fontSize: 12,
                 color: "#ef4444",
-                fontWeight: 700,
+                fontWeight: 600,
               }}
             >
-              🔔 {reorderCount} Reorder{reorderCount > 1 ? "s" : ""} Needed
+              {reorderCount} Reorder{reorderCount > 1 ? "s" : ""} Needed
             </div>
           )}
           <button
@@ -1169,8 +1164,7 @@ function SparePartsTab({
               fontWeight: 600,
               fontSize: 13,
               cursor: "pointer",
-              boxShadow:
-                "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
             }}
           >
             + Add Part
@@ -1191,13 +1185,10 @@ function SparePartsTab({
                 fontWeight: 500,
                 fontSize: 12,
                 cursor: "pointer",
-                boxShadow:
-                  view === v
-                    ? "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)"
-                    : "none",
+                boxShadow: view === v ? "0 4px 16px rgba(0,0,0,0.2)" : "none",
               }}
             >
-              {v === "list" ? "📋 Inventory" : "📊 Usage History"}
+              {v === "list" ? "Inventory" : "Usage History"}
             </button>
           ))}
         </div>
@@ -1332,7 +1323,8 @@ function SparePartsTab({
                             color: selected ? "#fff" : "#666",
                             border: `1px solid ${selected ? "#ff7800" : "#333"}`,
                             cursor: "pointer",
-                            transition: "all 0.15s",
+                            transition:
+                              "background-color .15s, border-color .15s, color .15s, opacity .15s, transform .15s",
                           }}
                         >
                           {m.name}
@@ -1438,8 +1430,7 @@ function SparePartsTab({
                   color: "#fff",
                   fontWeight: 500,
                   cursor: "pointer",
-                  boxShadow:
-                    "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
                 }}
               >
                 {editId ? "Update" : "Add Part"}
@@ -1486,7 +1477,7 @@ function SparePartsTab({
               <div
                 style={{
                   ...inp,
-                  fontWeight: 700,
+                  fontWeight: 600,
                   color: Number(issuingPart.qty) === 0 ? "#ef4444" : "#e0e0e0",
                 }}
               >
@@ -1598,8 +1589,7 @@ function SparePartsTab({
                 color: "#fff",
                 fontWeight: 600,
                 cursor: issuing ? "not-allowed" : "pointer",
-                boxShadow:
-                  "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
               }}
             >
               {issuing ? "Issuing…" : "Confirm Issue"}
@@ -1671,10 +1661,8 @@ function SparePartsTab({
                         padding: "10px 14px",
                         textAlign: "left",
                         fontSize: 11,
-                        fontWeight: 700,
+                        fontWeight: 600,
                         color: C.muted,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
                         whiteSpace: "nowrap",
                       }}
                     >
@@ -1746,7 +1734,10 @@ function SparePartsTab({
                         >
                           {p.criticalFlag && (
                             <span style={{ color: "#ef4444", fontSize: 10 }}>
-                              🔴
+                              <i
+                                className="fa-solid fa-circle"
+                                style={{ fontSize: 6 }}
+                              />
                             </span>
                           )}
                           {p.partName}
@@ -1799,7 +1790,7 @@ function SparePartsTab({
                         <span
                           style={{
                             fontSize: 18,
-                            fontWeight: 800,
+                            fontWeight: 600,
                             color: statusCol,
                           }}
                         >
@@ -1824,7 +1815,7 @@ function SparePartsTab({
                             borderRadius: 4,
                             fontSize: 10,
                             color: statusCol,
-                            fontWeight: 700,
+                            fontWeight: 600,
                           }}
                         >
                           {statusLabel}
@@ -1852,7 +1843,9 @@ function SparePartsTab({
                       </td>
                       <td style={{ padding: "10px 12px" }}>
                         <div style={{ display: "flex", gap: 6 }}>
-                          <button
+                          <IconBtn
+                            icon="fa-pen-to-square"
+                            label="Edit"
                             onClick={() => {
                               setForm({
                                 ...p,
@@ -1868,43 +1861,16 @@ function SparePartsTab({
                               setEditId(p.id);
                               setShowModal(true);
                             }}
-                            style={{
-                              background: "transparent",
-                              color: "#8082ff",
-                              border: "1px solid #8082ff98",
-                              borderRadius: 6,
-                              padding: "6px 12px",
-                              fontSize: 11,
-                              fontWeight: 500,
-                              cursor: "pointer",
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: 6,
-                            }}
-                          >
-                            <i className="fa-solid fa-pen-to-square" /> Edit
-                          </button>
-                          <button
+                          />
+                          <IconBtn
+                            icon="fa-trash"
+                            label="Delete"
+                            danger
                             onClick={() => {
                               if (confirm("Delete?"))
                                 persist(parts.filter((x) => x.id !== p.id));
                             }}
-                            style={{
-                              background: "transparent",
-                              color: "#8082ff",
-                              border: "1px solid #8082ff98",
-                              borderRadius: 6,
-                              padding: "6px 12px",
-                              fontSize: 11,
-                              fontWeight: 500,
-                              cursor: "pointer",
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: 6,
-                            }}
-                          >
-                            <i className="fa-solid fa-trash" /> Delete
-                          </button>
+                          />
                           <button
                             onClick={() => openIssue(p)}
                             style={{
@@ -2087,8 +2053,7 @@ function SparePartsTab({
                 color: "#fff",
                 fontWeight: 600,
                 cursor: savingLog ? "not-allowed" : "pointer",
-                boxShadow:
-                  "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
               }}
             >
               {savingLog ? "Saving…" : "Save Changes"}
@@ -2173,19 +2138,19 @@ function SparePartsTab({
                   border: "rgba(255,255,255,0.18)",
                 },
                 {
-                  label: "⬆ Import",
+                  label: "Import",
                   onClick: () => importRef.current?.click(),
                   color: "rgba(255,255,255,0.08)",
                   border: "rgba(255,255,255,0.18)",
                 },
                 {
-                  label: "⬇ Export",
+                  label: "Export",
                   onClick: handleExportLogs,
                   color: "rgba(255,255,255,0.08)",
                   border: "rgba(255,255,255,0.18)",
                 },
                 {
-                  label: "🖨 Report",
+                  label: "Report",
                   onClick: handlePrintReport,
                   color: "rgba(255,120,0,0.15)",
                   border: "#ff780055",
@@ -2203,8 +2168,7 @@ function SparePartsTab({
                     fontSize: 12,
                     fontWeight: 500,
                     cursor: "pointer",
-                    boxShadow:
-                      "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
                     whiteSpace: "nowrap",
                   }}
                 >
@@ -2267,10 +2231,8 @@ function SparePartsTab({
                           padding: "10px 14px",
                           textAlign: "left",
                           fontSize: 11,
-                          fontWeight: 700,
+                          fontWeight: 600,
                           color: C.muted,
-                          textTransform: "uppercase",
-                          letterSpacing: "0.05em",
                           whiteSpace: "nowrap",
                         }}
                       >
@@ -2365,42 +2327,17 @@ function SparePartsTab({
                       </td>
                       <td style={{ padding: "10px 12px" }}>
                         <div style={{ display: "flex", gap: 6 }}>
-                          <button
+                          <IconBtn
+                            icon="fa-pen-to-square"
+                            label="Edit"
                             onClick={() => openEditLog(log)}
-                            style={{
-                              background: "transparent",
-                              color: "#8082ff",
-                              border: "1px solid #8082ff98",
-                              borderRadius: 6,
-                              padding: "5px 10px",
-                              fontSize: 11,
-                              fontWeight: 500,
-                              cursor: "pointer",
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: 5,
-                            }}
-                          >
-                            <i className="fa-solid fa-pen-to-square" /> Edit
-                          </button>
-                          <button
+                          />
+                          <IconBtn
+                            icon="fa-trash"
+                            label="Delete"
+                            danger
                             onClick={() => handleDeleteLog(log._id)}
-                            style={{
-                              background: "transparent",
-                              color: "#ef4444",
-                              border: "1px solid #ef444460",
-                              borderRadius: 6,
-                              padding: "5px 10px",
-                              fontSize: 11,
-                              fontWeight: 500,
-                              cursor: "pointer",
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: 5,
-                            }}
-                          >
-                            <i className="fa-solid fa-trash" /> Delete
-                          </button>
+                          />
                         </div>
                       </td>
                     </tr>

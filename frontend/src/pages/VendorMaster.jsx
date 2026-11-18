@@ -1,14 +1,17 @@
 import React, { useState, useEffect, useRef } from "react";
 import { C } from "../constants/colors";
 import {
+  ListToolbar,
   SectionTitle,
   Badge,
-  ImportBtn,
-  ExportBtn,
-  TemplateBtn,
+  NameWithAvatar,
+  Modal,
+  FormGrid,
+  Field,
 } from "../components/ui/BasicComponents";
 import { vendorMasterAPI } from "../api/auth";
 import * as XLSX from "xlsx";
+import { IconBtn } from "../components/ui/IconBtn";
 
 const inputStyle = {
   width: "100%",
@@ -28,8 +31,7 @@ const cardStyle = {
   borderRadius: 10,
   padding: 20,
   marginBottom: 16,
-  boxShadow:
-    "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
+  boxShadow: "0 4px 24px rgba(0,0,0,0.18)",
 };
 
 export default function VendorMaster({
@@ -46,6 +48,7 @@ export default function VendorMaster({
     gstin: "",
     category: "",
   });
+  const [showModal, setShowModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -86,6 +89,19 @@ export default function VendorMaster({
     .slice()
     .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
+  const blankForm = {
+    name: "",
+    contact: "",
+    email: "",
+    gstin: "",
+    category: "",
+  };
+  const closeModal = () => {
+    setShowModal(false);
+    setEditingId(null);
+    setFormData(blankForm);
+  };
+
   const handleChange = (field, value) =>
     setFormData((p) => ({ ...p, [field]: value }));
 
@@ -112,6 +128,7 @@ export default function VendorMaster({
         gstin: "",
         category: "",
       });
+      setShowModal(false);
       fetchVendors();
     } catch (error) {
       toast(error.response?.data?.error || "Failed to save vendor", "error");
@@ -129,7 +146,7 @@ export default function VendorMaster({
       category: vendor.category || "",
     });
     setEditingId(vendor._id);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setShowModal(true);
   };
 
   const handleDelete = async (id) => {
@@ -348,7 +365,7 @@ export default function VendorMaster({
                 marginBottom: 8,
               }}
             >
-              🚀 Importing Vendors
+              Importing Vendors
             </div>
             <div style={{ fontSize: 13, color: "#666", marginBottom: 24 }}>
               Processing {importProgress.total} vendors
@@ -368,9 +385,9 @@ export default function VendorMaster({
                 style={{
                   height: "100%",
                   width: `${(importProgress.current / importProgress.total) * 100}%`,
-                  background: "linear-gradient(90deg, #4CAF50, #81C784)",
+                  background: "#4CAF50",
                   transition: "width 0.1s ease",
-                  boxShadow: "0 0 10px #4CAF5088",
+                  boxShadow: "none",
                 }}
               />
             </div>
@@ -405,267 +422,113 @@ export default function VendorMaster({
           </div>
         </div>
       )}
-      <div style={{ marginBottom: 20 }}>
-        <h2
-          style={{
-            fontSize: 22,
-            fontWeight: 500,
-            color: "#e0e0e0",
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            margin: 0,
-          }}
+      {showModal && (
+        <Modal
+          title={editingId ? "Edit vendor" : "New vendor"}
+          maxWidth={640}
+          onClose={closeModal}
         >
-          🏭 Vendor Master
-        </h2>
-        <p style={{ fontSize: 13, color: "#888", margin: "4px 0 0 0" }}>
-          All vendors — auto-populated from Purchase Orders or added manually
-        </p>
-      </div>
-
-      {}
-      <div style={cardStyle}>
-        <div
-          style={{
-            marginBottom: 14,
-            fontSize: 14,
-            fontWeight: 500,
-            color: "#4CAF50",
-          }}
-        >
-          {editingId ? "✏️ Edit Vendor" : "+ Add Vendor"}
-        </div>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-            gap: 12,
-            marginBottom: 14,
-          }}
-        >
-          <div>
-            <label
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: "#888",
-                display: "block",
-                marginBottom: 5,
-              }}
-            >
-              VENDOR NAME *
-            </label>
-            <input
-              style={inputStyle}
-              placeholder="Vendor name"
-              value={formData.name}
-              onChange={(e) => handleChange("name", e.target.value)}
-            />
-          </div>
-          <div>
-            <label
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: "#888",
-                display: "block",
-                marginBottom: 5,
-              }}
-            >
-              CATEGORY
-            </label>
-            <input
-              style={inputStyle}
-              placeholder="e.g. Paper Supplier, Ink Supplier"
-              value={formData.category}
-              onChange={(e) => handleChange("category", e.target.value)}
-            />
-          </div>
-          <div>
-            <label
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: "#888",
-                display: "block",
-                marginBottom: 5,
-              }}
-            >
-              PHONE / WHATSAPP
-            </label>
-            <input
-              style={inputStyle}
-              placeholder="Phone number"
-              value={formData.contact}
-              onChange={(e) => handleChange("contact", e.target.value)}
-            />
-          </div>
-          <div>
-            <label
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: "#888",
-                display: "block",
-                marginBottom: 5,
-              }}
-            >
-              EMAIL
-            </label>
-            <input
-              style={inputStyle}
-              placeholder="Email address"
-              value={formData.email}
-              onChange={(e) => handleChange("email", e.target.value)}
-            />
-          </div>
-          <div>
-            <label
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: "#888",
-                display: "block",
-                marginBottom: 5,
-              }}
-            >
-              GST NUMBER
-            </label>
-            <input
-              style={inputStyle}
-              placeholder="GST / Tax ID"
-              value={formData.gstin}
-              onChange={(e) => handleChange("gstin", e.target.value)}
-            />
-          </div>
-        </div>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <button
-            onClick={handleSubmit}
-            disabled={loading}
+          <FormGrid>
+            <Field label="Vendor name *">
+              <input
+                className="lg-input"
+                placeholder="Vendor name"
+                value={formData.name}
+                onChange={(e) => handleChange("name", e.target.value)}
+              />
+            </Field>
+            <Field label="Category">
+              <input
+                className="lg-input"
+                placeholder="e.g. Paper supplier, Ink supplier"
+                value={formData.category}
+                onChange={(e) => handleChange("category", e.target.value)}
+              />
+            </Field>
+            <Field label="Phone / WhatsApp">
+              <input
+                className="lg-input"
+                placeholder="Phone number"
+                value={formData.contact}
+                onChange={(e) => handleChange("contact", e.target.value)}
+              />
+            </Field>
+            <Field label="Email">
+              <input
+                className="lg-input"
+                placeholder="Email address"
+                value={formData.email}
+                onChange={(e) => handleChange("email", e.target.value)}
+              />
+            </Field>
+            <Field label="GST number">
+              <input
+                className="lg-input"
+                placeholder="GST / Tax ID"
+                value={formData.gstin}
+                onChange={(e) => handleChange("gstin", e.target.value)}
+              />
+            </Field>
+          </FormGrid>
+          <div
             style={{
-              padding: "9px 20px",
-              background: loading ? "#666" : "#4CAF50",
-              color: "#fff",
-              border: "none",
-              borderRadius: 6,
-              fontWeight: 500,
-              fontSize: 13,
-              cursor: loading ? "not-allowed" : "pointer",
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: 8,
+              marginTop: 20,
             }}
           >
-            {loading
-              ? "Saving..."
-              : editingId
-                ? "✅ Update Vendor"
-                : "+ Add Vendor"}
-          </button>
-          {editingId && (
-            <button
-              onClick={() => {
-                setEditingId(null);
-                setFormData({
-                  name: "",
-                  contact: "",
-                  email: "",
-                  gstin: "",
-                  category: "",
-                });
-              }}
-              style={{
-                padding: "9px 20px",
-                background: "transparent",
-                color: "#aaa",
-                border: "1px solid rgba(255,255,255,0.1)",
-                borderRadius: 6,
-                fontWeight: 500,
-                fontSize: 13,
-                cursor: "pointer",
-              }}
-            >
+            <button type="button" className="lg-btn" onClick={closeModal}>
               Cancel
             </button>
-          )}
-          <TemplateBtn onClick={handleTemplate} />
-          {canExportImport && (
-            <ImportBtn onClick={() => fileInputRef.current?.click()} />
-          )}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".xlsx, .xls"
-            style={{ display: "none" }}
-            onChange={handleImportExcel}
-          />
-          {canExportImport && <ExportBtn onClick={handleExportExcel} />}
-        </div>
-      </div>
+            <button
+              type="button"
+              className="lg-btn lg-btn-primary"
+              disabled={loading}
+              onClick={handleSubmit}
+            >
+              {loading ? "Saving…" : editingId ? "Update vendor" : "Add vendor"}
+            </button>
+          </div>
+        </Modal>
+      )}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".xlsx, .xls"
+        style={{ display: "none" }}
+        onChange={handleImportExcel}
+      />
 
       {}
-      <div style={cardStyle}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 14,
-          }}
-        >
-          <span style={{ fontSize: 14, fontWeight: 500, color: "#e0e0e0" }}>
-            Vendors
-            {searchTerm
-              ? ` (${filtered.length} of ${vendorMaster.length})`
-              : ` (${vendorMaster.length})`}
-          </span>
-          <div style={{ position: "relative", width: 260 }}>
-            <i
-              className="fa-solid fa-magnifying-glass"
-              style={{
-                position: "absolute",
-                left: 10,
-                top: "50%",
-                transform: "translateY(-50%)",
-                color: "#888",
-                fontSize: 12,
-                pointerEvents: "none",
-              }}
-            />
-            <input
-              type="text"
-              placeholder="Search by name, contact..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{
-                ...inputStyle,
-                width: "100%",
-                paddingLeft: 30,
-                paddingRight: searchTerm ? 28 : 12,
-              }}
-            />
-            {searchTerm && (
-              <button
-                onClick={() => setSearchTerm("")}
-                style={{
-                  position: "absolute",
-                  right: 8,
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  background: "none",
-                  border: "none",
-                  color: "#888",
-                  cursor: "pointer",
-                  fontSize: 13,
-                  padding: 0,
-                  lineHeight: 1,
-                }}
-              >
-                ✕
-              </button>
-            )}
-          </div>
-        </div>
-
+      <ListToolbar
+        search={searchTerm}
+        setSearch={setSearchTerm}
+        placeholder="Search by name, contact..."
+        count={filtered.length}
+        onAdd={() => {
+          setEditingId(null);
+          setFormData(blankForm);
+          setShowModal(true);
+        }}
+        addLabel="Add vendor"
+        onSelectModeChange={(on) => {
+          if (!on) setSelectedIds(new Set());
+        }}
+        exportOptions={[
+          canExportImport && {
+            label: "Excel",
+            icon: "fa-solid fa-file-excel",
+            onClick: handleExportExcel,
+          },
+        ].filter(Boolean)}
+        onImport={
+          canExportImport ? () => fileInputRef.current?.click() : undefined
+        }
+        onTemplate={handleTemplate}
+      />
+      <div style={{ height: 12 }} />
+      <div>
         {(() => {
           const filteredIds = filtered.map((v) => v._id);
           const allSelected =
@@ -680,48 +543,30 @@ export default function VendorMaster({
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    padding: "10px 14px",
-                    marginBottom: 10,
-                    background: "rgba(239,68,68,0.08)",
-                    border: "1px solid rgba(239,68,68,0.3)",
-                    borderRadius: 8,
+                    padding: "8px 16px",
+                    marginBottom: 12,
+                    background: "#1a1a1a",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    borderRadius: 10,
+                    fontSize: 13,
+                    color: "#a3a3a3",
                   }}
                 >
-                  <span
-                    style={{ fontSize: 13, fontWeight: 600, color: "#fecaca" }}
-                  >
-                    {selectedIds.size} selected
-                  </span>
+                  {selectedIds.size} selected
                   <div style={{ display: "flex", gap: 8 }}>
                     <button
+                      type="button"
+                      className="lg-btn"
                       onClick={() => setSelectedIds(new Set())}
-                      style={{
-                        padding: "5px 12px",
-                        borderRadius: 5,
-                        border: "1px solid rgba(255,255,255,0.15)",
-                        background: "rgba(255,255,255,0.06)",
-                        color: "#fff",
-                        fontSize: 12,
-                        fontWeight: 500,
-                        cursor: "pointer",
-                      }}
                     >
                       Clear
                     </button>
                     <button
+                      type="button"
+                      className="lg-btn lg-btn-danger"
                       onClick={handleBulkDelete}
-                      style={{
-                        padding: "5px 12px",
-                        borderRadius: 5,
-                        border: "1px solid rgba(239,68,68,0.4)",
-                        background: "rgba(239,68,68,0.15)",
-                        color: "#ef4444",
-                        fontSize: 12,
-                        fontWeight: 600,
-                        cursor: "pointer",
-                      }}
                     >
-                      Delete Selected
+                      <i className="fa-solid fa-trash" /> Delete selected
                     </button>
                   </div>
                 </div>
@@ -767,10 +612,8 @@ export default function VendorMaster({
                             padding: "10px 14px",
                             textAlign: "left",
                             fontSize: 11,
-                            fontWeight: 700,
+                            fontWeight: 600,
                             color: C.muted,
-                            textTransform: "uppercase",
-                            letterSpacing: "0.05em",
                             whiteSpace: "nowrap",
                             width: 36,
                           }}
@@ -789,11 +632,11 @@ export default function VendorMaster({
                           />
                         </th>
                         {[
-                          "Vendor Name",
+                          "Vendor name",
                           "Category",
-                          "Phone/WhatsApp",
+                          "Phone / WhatsApp",
                           "Email",
-                          "GST Number",
+                          "GST number",
                           "Status",
                           "Actions",
                         ].map((h) => (
@@ -803,10 +646,8 @@ export default function VendorMaster({
                               padding: "10px 14px",
                               textAlign: "left",
                               fontSize: 11,
-                              fontWeight: 700,
+                              fontWeight: 600,
                               color: C.muted,
-                              textTransform: "uppercase",
-                              letterSpacing: "0.05em",
                               whiteSpace: "nowrap",
                             }}
                           >
@@ -822,7 +663,7 @@ export default function VendorMaster({
                           style={{
                             borderBottom: "1px solid rgba(255,255,255,0.04)",
                             background: selectedIds.has(vendor._id)
-                              ? "rgba(96,165,250,0.08)"
+                              ? "rgba(200, 149, 90, 0.06)"
                               : i % 2 === 0
                                 ? "transparent"
                                 : "rgba(255,255,255,0.01)",
@@ -840,7 +681,7 @@ export default function VendorMaster({
                                   : "rgba(255,255,255,0.01)";
                           }}
                         >
-                          <td style={{ padding: "12px", width: 36 }}>
+                          <td style={{ padding: "12px 14px", width: 36 }}>
                             <input
                               type="checkbox"
                               checked={selectedIds.has(vendor._id)}
@@ -850,112 +691,83 @@ export default function VendorMaster({
                           </td>
                           <td
                             style={{
-                              padding: "12px",
-                              fontWeight: 600,
-                              color: "#e0e0e0",
+                              padding: "12px 14px",
+                              fontWeight: 500,
+                              color: "#ededed",
                             }}
                           >
-                            {vendor.name}
+                            <NameWithAvatar name={vendor.name} />
                           </td>
-                          <td style={{ padding: "12px", color: "#aaa" }}>
+                          <td
+                            style={{ padding: "12px 14px", color: "#a3a3a3" }}
+                          >
                             {vendor.category || "-"}
                           </td>
-                          <td style={{ padding: "12px", color: "#aaa" }}>
+                          <td
+                            style={{ padding: "12px 14px", color: "#a3a3a3" }}
+                          >
                             {vendor.contact || "-"}
                           </td>
-                          <td style={{ padding: "12px", color: "#aaa" }}>
+                          <td
+                            style={{ padding: "12px 14px", color: "#a3a3a3" }}
+                          >
                             {vendor.email || "-"}
                           </td>
                           <td
                             style={{
-                              padding: "12px",
-                              color: "#aaa",
-                              fontSize: 11,
+                              padding: "12px 14px",
+                              color: "#a3a3a3",
+                              fontSize: 12,
                             }}
                           >
                             {vendor.gstin || "-"}
                           </td>
-                          <td style={{ padding: "12px" }}>
+                          <td style={{ padding: "12px 14px" }}>
                             <span
                               style={{
-                                padding: "3px 10px",
-                                borderRadius: 20,
+                                padding: "2px 8px",
+                                borderRadius: 6,
                                 fontSize: 11,
                                 fontWeight: 500,
                                 background:
                                   vendor.status === "Active"
-                                    ? "#4CAF5022"
-                                    : "#f4433622",
+                                    ? "rgba(134,184,148,0.14)"
+                                    : "rgba(224,112,95,0.14)",
                                 color:
                                   vendor.status === "Active"
-                                    ? "#4CAF50"
-                                    : "#f44336",
+                                    ? "#86b894"
+                                    : "#e0705f",
                               }}
                             >
                               {vendor.status || "Active"}
                             </span>
                           </td>
-                          <td style={{ padding: "12px" }}>
+                          <td style={{ padding: "12px 14px" }}>
                             <div style={{ display: "flex", gap: 6 }}>
-                              <button
+                              <IconBtn
+                                icon="fa-pen-to-square"
+                                label="Edit"
                                 onClick={() => handleEdit(vendor)}
-                                style={{
-                                  background: "transparent",
-                                  color: "#8082ff",
-                                  border: "1px solid #8082ff98",
-                                  borderRadius: 6,
-                                  padding: "6px 12px",
-                                  fontSize: 11,
-                                  fontWeight: 500,
-                                  cursor: "pointer",
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: 6,
-                                }}
-                              >
-                                <i className="fa-solid fa-pen-to-square" /> Edit
-                              </button>
-                              <button
+                              />
+                              <IconBtn
+                                icon={
+                                  vendor.status === "Active"
+                                    ? "fa-pause"
+                                    : "fa-play"
+                                }
+                                label={
+                                  vendor.status === "Active"
+                                    ? "Pause"
+                                    : "Activate"
+                                }
                                 onClick={() => handleToggleStatus(vendor)}
-                                style={{
-                                  background: "transparent",
-                                  color: "#8082ff",
-                                  border: "1px solid #8082ff98",
-                                  borderRadius: 6,
-                                  padding: "6px 12px",
-                                  fontSize: 11,
-                                  fontWeight: 500,
-                                  cursor: "pointer",
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: 6,
-                                }}
-                              >
-                                <i
-                                  className={`fa-solid ${vendor.status === "Active" ? "fa-pause" : "fa-play"}`}
-                                />{" "}
-                                {vendor.status === "Active"
-                                  ? "Pause"
-                                  : "Activate"}
-                              </button>
-                              <button
+                              />
+                              <IconBtn
+                                icon="fa-trash"
+                                label="Delete"
+                                danger
                                 onClick={() => handleDelete(vendor._id)}
-                                style={{
-                                  background: "transparent",
-                                  color: "#8082ff",
-                                  border: "1px solid #8082ff98",
-                                  borderRadius: 6,
-                                  padding: "6px 12px",
-                                  fontSize: 11,
-                                  fontWeight: 500,
-                                  cursor: "pointer",
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: 6,
-                                }}
-                              >
-                                <i className="fa-solid fa-trash" /> Delete
-                              </button>
+                              />
                             </div>
                           </td>
                         </tr>

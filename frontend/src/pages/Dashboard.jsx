@@ -2,10 +2,12 @@ import React, { useState, useMemo, useEffect, useRef } from "react";
 import { C, PROCESS_COLORS, STAGES } from "../constants/colors";
 import {
   Badge,
-  Card,
-  SectionTitle,
-  ExportBtn,
+  ListToolbar,
+  FilterModal,
+  Field,
+  DateRangeFilter,
 } from "../components/ui/BasicComponents";
+import { StatCard } from "../components/ui/StatCard";
 import { DatePicker } from "../components/ui/DatePicker";
 import { fmt, today, xlsxDownload, daysSince } from "../utils/helpers";
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("en-GB") : "—");
@@ -52,7 +54,7 @@ const ALL_REPORT_TABS = [
   {
     id: "so_ageing",
     label: "SO Ageing",
-    icon: "⏳",
+    icon: "fa-solid fa-hourglass-half",
     roles: ["Admin", "Manager", "Sales", "Client"],
   },
   {
@@ -119,21 +121,19 @@ const ALL_REPORT_TABS = [
 
 const TH = {
   padding: "10px 12px",
-  background: "rgba(255,255,255,0.04)",
+  background: "transparent",
   borderBottom: "1px solid rgba(255,255,255,0.08)",
   fontSize: 11,
-  fontWeight: 500,
-  color: "#888",
-  textTransform: "uppercase",
-  letterSpacing: "0.04em",
+  fontWeight: 600,
+  color: "#8a8a8a",
   whiteSpace: "nowrap",
   fontStretch: "normal",
 };
 
 const TD = {
   padding: "12px 12px",
-  borderBottom: "1px solid #1e1e22",
-  fontSize: 12,
+  borderBottom: "1px solid rgba(255,255,255,0.05)",
+  fontSize: 13,
   fontWeight: 400,
   color: "#e0e0e0",
   whiteSpace: "nowrap",
@@ -239,13 +239,13 @@ const buildOpMachineTallyHTML = ({
     body { font-family: 'Inter', sans-serif; color: #1a1a2e; background: #fff; padding: 24px 28px; font-size: 11px; }
     .header { display: flex; align-items: flex-start; justify-content: space-between; padding-bottom: 14px; border-bottom: 3px solid ${color}; margin-bottom: 18px; }
     .company-name { font-size: 18px; font-weight: 800; color: ${color}; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.1; }
-    .company-addr { font-size: 9.5px; color: #475569; margin-top: 4px; line-height: 1.5; }
-    .company-contact { font-size: 9px; color: #64748b; margin-top: 3px; }
+    .company-addr { font-size: 9.5px; color: #6b6b6b; margin-top: 4px; line-height: 1.5; }
+    .company-contact { font-size: 9px; color: #8a8a8a; margin-top: 3px; }
     .logo-wrap { width: 72px; height: 72px; display: flex; align-items: center; justify-content: center; }
     .logo-wrap img { width: 72px; height: 72px; object-fit: contain; }
     .report-meta { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 14px; }
-    .report-title { font-size: 16px; font-weight: 800; color: #0f172a; }
-    .report-period { font-size: 9px; color: #64748b; text-align: right; line-height: 1.6; }
+    .report-title { font-size: 16px; font-weight: 800; color: #161616; }
+    .report-period { font-size: 9px; color: #8a8a8a; text-align: right; line-height: 1.6; }
     .period-badge { display: inline-block; background: ${accentLight}; color: ${color}; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 9px; }
     .subject-box { background: ${accentLight}; border-left: 4px solid ${color}; padding: 10px 14px; border-radius: 6px; margin-bottom: 14px; display: flex; gap: 24px; align-items: center; }
     .subject-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: ${color}; opacity: 0.8; }
@@ -257,7 +257,7 @@ const buildOpMachineTallyHTML = ({
     table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
     thead tr { background: ${color}; color: #fff; }
     th { padding: 6px 7px; text-align: left; font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; }
-    td { padding: 5px 7px; font-size: 9.5px; color: #1e293b; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    td { padding: 5px 7px; font-size: 9.5px; color: #1f1f1f; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
     tr.even td { background: #fff; }
     tr.odd td { background: #f8fafc; }
     .mono { font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 600; }
@@ -266,16 +266,16 @@ const buildOpMachineTallyHTML = ({
     .right { text-align: right; }
     .bold { font-weight: 700; }
     .totals-section { display: flex; justify-content: flex-end; margin-bottom: 20px; }
-    .totals-box { border: 1.5px solid #e2e8f0; border-radius: 8px; overflow: hidden; min-width: 240px; }
+    .totals-box { border: 1.5px solid #ededed; border-radius: 8px; overflow: hidden; min-width: 240px; }
     .totals-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; font-size: 10px; border-bottom: 1px solid #f1f5f9; }
     .totals-row:last-child { border-bottom: none; background: ${color}; color: #fff; padding: 9px 12px; }
     .totals-row:last-child .t-label { font-weight: 700; font-size: 11px; }
     .totals-row:last-child .t-val { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 800; }
-    .t-label { color: #64748b; font-weight: 600; }
-    .t-val { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #0f172a; }
+    .t-label { color: #8a8a8a; font-weight: 600; }
+    .t-val { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #161616; }
     .sig-row { display: flex; justify-content: space-between; margin-top: 30px; }
-    .sig-box { width: 140px; border-top: 1px solid #cbd5e1; text-align: center; padding-top: 5px; font-size: 9px; color: #64748b; }
-    .print-footer { margin-top: 20px; padding-top: 10px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; font-size: 8px; color: #94a3b8; }
+    .sig-box { width: 140px; border-top: 1px solid #c7c7c7; text-align: center; padding-top: 5px; font-size: 9px; color: #8a8a8a; }
+    .print-footer { margin-top: 20px; padding-top: 10px; border-top: 1px solid #ededed; display: flex; justify-content: space-between; font-size: 8px; color: #a3a3a3; }
     @media print { body { padding: 12px 16px; } @page { margin: 0.8cm; size: A4 landscape; } }
   </style>
 </head>
@@ -330,7 +330,7 @@ const buildOpMachineTallyHTML = ({
       <tr>${cols.map((c) => `<th>${c}</th>`).join("")}</tr>
     </thead>
     <tbody>
-      ${rows || `<tr><td colspan="${cols.length}" style="text-align:center; color:#94a3b8; padding: 20px;">No records found for selected period.</td></tr>`}
+      ${rows || `<tr><td colspan="${cols.length}" style="text-align:center; color:#a3a3a3; padding: 20px;">No records found for selected period.</td></tr>`}
     </tbody>
   </table>
 
@@ -665,6 +665,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
   const [lowStockCategoryFilter, setLowStockCategoryFilter] = useState("All");
   const [lowStockSelected, setLowStockSelected] = useState(new Set());
   const [dashboardSearch, setDashboardSearch] = useState("");
+  const [showDashFilter, setShowDashFilter] = useState(false);
 
   useEffect(() => {
     setDashboardSearch("");
@@ -1207,7 +1208,11 @@ export function Dashboard({ data, session, toast, onNavigate }) {
   );
 
   const statusColor = (s) =>
-    s === "Fully Dispatched" ? C.green : s === "Partial" ? C.yellow : C.red;
+    s === "Fully Dispatched"
+      ? "#86b894"
+      : s === "Partial"
+        ? "#d9b36a"
+        : "#e0705f";
 
   return (
     <div
@@ -1219,30 +1224,31 @@ export function Dashboard({ data, session, toast, onNavigate }) {
         fontStyle: "normal",
       }}
     >
-      {}
       <div
         style={{
           display: "flex",
-          alignItems: "center",
-          gap: 10,
+          alignItems: "flex-end",
+          justifyContent: "space-between",
+          gap: 16,
+          flexWrap: "wrap",
           marginBottom: 20,
         }}
       >
-        <i className="fa-solid fa-chart-pie" style={{ fontSize: 22 }} />
-        <h1
-          style={{
-            fontSize: 20,
-            fontWeight: 800,
-            textTransform: "uppercase",
-            letterSpacing: "0.06em",
-            margin: 0,
-            fontStretch: "normal",
-          }}
-        >
-          Production Dashboard
-        </h1>
-        <div style={{ marginLeft: "auto" }}>
-          <DateFilter />
+        <div>
+          <h1
+            style={{
+              fontSize: 22,
+              fontWeight: 600,
+              margin: 0,
+              letterSpacing: "-0.01em",
+              color: "#ededed",
+            }}
+          >
+            Production Dashboard
+          </h1>
+          <div style={{ fontSize: 13, color: "#8a8a8a", marginTop: 4 }}>
+            Output, orders and stock at a glance
+          </div>
         </div>
       </div>
       {}
@@ -1250,9 +1256,9 @@ export function Dashboard({ data, session, toast, onNavigate }) {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(6, 1fr)",
+          gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
           gap: 12,
-          marginBottom: 24,
+          marginBottom: 20,
         }}
       >
         {(() => {
@@ -1326,7 +1332,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
             return {
               val: `${diff > 0 ? "+" : ""}${diff.toFixed(0)}%`,
               isUp: diff > 0,
-              color: diff > 0 ? C.green : C.red,
+              color: diff > 0 ? "#86b894" : "#e0705f",
             };
           };
 
@@ -1371,7 +1377,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
             {
               label: "Aged Orders",
               val: agedOrders,
-              icon: "⏳",
+              icon: "fa-solid fa-hourglass-half",
               tab: "so_ageing",
               roles: ["Admin", "Manager", "Sales", "Client"],
             },
@@ -1392,422 +1398,205 @@ export function Dashboard({ data, session, toast, onNavigate }) {
             },
           ]
             .filter((card) => !card.roles || card.roles.includes(userRole))
-            .map((card) => (
-              <div
-                key={card.label}
-                onClick={() => setReportTab(card.tab)}
-                style={{
-                  background: "transparent",
-                  borderRadius: 18,
-                  padding: "20px",
-                  cursor: "pointer",
-                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                  position: "relative",
-                  display: "flex",
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  boxShadow:
-                    "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.transform = "translateY(-5px)";
-                  e.currentTarget.style.background = "rgba(255,255,255,0.1)";
-                  e.currentTarget.style.boxShadow = `0 16px 36px -8px ${card.color}44, inset 0 1px 0 rgba(255,255,255,0.15)`;
-                  e.currentTarget.style.borderColor = card.color + "77";
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.background =
-                    reportTab === card.tab
-                      ? "rgba(255,255,255,0.09)"
-                      : "rgba(255,255,255,0.05)";
-                  e.currentTarget.style.boxShadow =
-                    reportTab === card.tab
-                      ? `0 0 24px ${card.color}28, inset 0 1px 0 rgba(255,255,255,0.12)`
-                      : "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)";
-                  e.currentTarget.style.borderColor =
-                    reportTab === card.tab
-                      ? card.color + "88"
-                      : "rgba(255,255,255,0.12)";
-                }}
-              >
-                <div>
-                  <div
-                    style={{ display: "flex", alignItems: "baseline", gap: 3 }}
-                  >
-                    <div
-                      style={{
-                        fontSize: 32,
-                        fontWeight: 900,
-                        color: "#fff",
-                        letterSpacing: "-0.02em",
-                      }}
-                    >
-                      {card.val}
-                    </div>
-                    {card.unit && (
-                      <span
-                        style={{ fontSize: 12, color: "#666", fontWeight: 600 }}
-                      >
-                        {card.unit}
-                      </span>
-                    )}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: "#999",
-                      marginTop: 2,
-                    }}
-                  >
-                    {card.label}
-                  </div>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                    marginBottom: 12,
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: 24,
-                      padding: 10,
-                      borderRadius: 12,
-                      background: card.color + "11",
-                    }}
-                  >
-                    <i className={card.icon} />
-                  </span>
-                </div>
-                {reportTab === card.tab && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      borderRadius: 16,
-                      boxShadow: `inset 0 0 15px ${card.color}11`,
-                      pointerEvents: "none",
-                    }}
-                  />
-                )}
-              </div>
-            ));
+            .map((card) => {
+              const selected = reportTab === card.tab;
+              const t = card.trend;
+              // Rejections: an increase is bad
+              const good = t ? (card.inverse ? !t.isUp : t.isUp) : null;
+              return (
+                <StatCard
+                  key={card.label}
+                  label={card.label}
+                  value={card.val}
+                  unit={card.unit}
+                  icon={card.icon}
+                  selected={selected}
+                  onClick={() => setReportTab(card.tab)}
+                  change={t ? t.val : undefined}
+                  changeGood={good}
+                />
+              );
+            });
         })()}
       </div>
       {}
       {allAlerts.length > 0 && (
-        <div style={{ marginBottom: 16 }}>
-          <div
-            style={{
-              display: "flex",
-              gap: 8,
-              alignItems: "center",
-              overflowX: "auto",
-              paddingBottom: 4,
-            }}
-          >
-            <span
-              style={{
-                fontSize: 11,
-                color: "#555",
-                fontWeight: 500,
-                flexShrink: 0,
-              }}
-            >
-              {allAlerts.length} alert{allAlerts.length > 1 ? "s" : ""}
-            </span>
-            {allAlerts.slice(0, 5).map((a) => {
-              const col =
-                a.severity === "critical"
-                  ? "#ef4444"
-                  : a.severity === "high"
-                    ? "#f97316"
-                    : "#f59e0b";
-              return (
-                <div
-                  key={a.id}
-                  onClick={() => setReportTab("alerts")}
-                  style={{
-                    flexShrink: 0,
-                    background: `${col}11`,
-                    border: `1px solid ${col}44`,
-                    borderRadius: 8,
-                    padding: "6px 12px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 7,
-                    maxWidth: 260,
-                  }}
-                >
-                  <i className={a.icon} style={{ fontSize: 13 }} />
-                  <div style={{ overflow: "hidden" }}>
-                    <div
-                      style={{
-                        fontSize: 10,
-                        fontWeight: 500,
-                        color: col,
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                    >
-                      {a.title}
-                    </div>
-                    <div style={{ fontSize: 9, color: "#555" }}>{a.meta}</div>
-                  </div>
-                </div>
-              );
-            })}
-            {allAlerts.length > 5 && (
-              <div
-                onClick={() => setReportTab("alerts")}
-                style={{
-                  flexShrink: 0,
-                  background: "rgba(255,255,255,0.07)",
-                  border: "1px solid rgba(255,255,255,0.13)",
-                  borderRadius: 8,
-                  padding: "6px 12px",
-                  cursor: "pointer",
-                  color: "#aaa",
-                  fontSize: 10,
-                  fontWeight: 500,
-                }}
-              >
-                +{allAlerts.length - 5} more →
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-      {}
-      <div style={{ marginBottom: 24 }}>
-        {(() => {
-          const rows = [];
-          for (let i = 0; i < reportTabs.length; i += 6) {
-            rows.push(reportTabs.slice(i, i + 6));
-          }
-          return rows.map((row, ri) => (
-            <div
-              key={ri}
-              style={{
-                display: "grid",
-                gridTemplateColumns: `repeat(${row.length}, 1fr)`,
-                gap: 10,
-                marginBottom: 10,
-              }}
-            >
-              {row.map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => {
-                    setReportTab(t.id);
-                    setDrill(null);
-                  }}
-                  style={{
-                    padding: "12px 14px",
-                    borderRadius: 12,
-                    background:
-                      reportTab === t.id
-                        ? "rgba(255,120,0,0.15)"
-                        : "rgba(255,255,255,0.05)",
-                    border: `1px solid ${reportTab === t.id ? "#ff7800aa" : "rgba(255,255,255,0.12)"}`,
-                    color: reportTab === t.id ? "#ff7800" : "#999",
-                    cursor: "pointer",
-                    fontSize: 12,
-                    fontWeight: reportTab === t.id ? 700 : 500,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 10,
-                    transition: "all 0.2s ease",
-                    boxShadow:
-                      reportTab === t.id
-                        ? "0 4px 20px rgba(255,120,0,0.18), inset 0 1px 0 rgba(255,255,255,0.1)"
-                        : "0 2px 10px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.06)",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (reportTab !== t.id) {
-                      e.currentTarget.style.background =
-                        "rgba(255,255,255,0.09)";
-                      e.currentTarget.style.borderColor =
-                        "rgba(255,255,255,0.22)";
-                      e.currentTarget.style.color = "#fff";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (reportTab !== t.id) {
-                      e.currentTarget.style.background =
-                        "rgba(255,255,255,0.05)";
-                      e.currentTarget.style.borderColor =
-                        "rgba(255,255,255,0.12)";
-                      e.currentTarget.style.color = "#999";
-                    }
-                  }}
-                >
-                  <i className={t.icon} style={{ fontSize: 16 }} />
-                  <span style={{ whiteSpace: "nowrap" }}>{t.label} Report</span>
-                </button>
-              ))}
-            </div>
-          ));
-        })()}
-      </div>
-      {/* Search + Export toolbar */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          marginBottom: 16,
-          flexWrap: "wrap",
-        }}
-      >
         <div
           style={{
-            position: "relative",
-            flex: "1 1 280px",
-            maxWidth: 420,
+            display: "flex",
+            gap: 8,
+            alignItems: "center",
+            overflowX: "auto",
+            padding: "10px 14px",
+            marginBottom: 20,
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: 12,
+            background: "#161616",
           }}
         >
-          <i
-            className="fa-solid fa-magnifying-glass"
+          <span
             style={{
-              position: "absolute",
-              left: 12,
-              top: "50%",
-              transform: "translateY(-50%)",
-              color: "#666",
               fontSize: 12,
-              pointerEvents: "none",
-            }}
-          />
-          <input
-            type="text"
-            value={dashboardSearch}
-            onChange={(e) => setDashboardSearch(e.target.value)}
-            placeholder="Search rows in this tab…"
-            style={{
-              width: "100%",
-              padding: "8px 32px 8px 34px",
-              background: "transparent",
-              border: "1px solid rgba(255,255,255,0.12)",
-              borderRadius: 8,
-              color: "#e0e0e0",
-              fontSize: 13,
-              outline: "none",
-            }}
-          />
-          {dashboardSearch && (
-            <button
-              onClick={() => setDashboardSearch("")}
-              style={{
-                position: "absolute",
-                right: 6,
-                top: "50%",
-                transform: "translateY(-50%)",
-                width: 22,
-                height: 22,
-                borderRadius: "50%",
-                border: "none",
-                background: "rgba(255,255,255,0.08)",
-                color: "#999",
-                cursor: "pointer",
-                fontSize: 11,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              title="Clear search"
-            >
-              <i className="fa-solid fa-xmark" />
-            </button>
-          )}
-        </div>
-        <div style={{ marginLeft: "auto", display: "flex", gap: 10 }}>
-          <button
-            onClick={exportReportExcel}
-            style={{
-              padding: "8px 16px",
-              borderRadius: 8,
-              border: "none",
-              background: "rgba(34,197,94,0.85)",
-              color: "#fff",
-              fontWeight: 700,
-              fontSize: 12,
-              cursor: "pointer",
+              color: "#a3a3a3",
+              fontWeight: 600,
+              flexShrink: 0,
               display: "flex",
-              alignItems: "center",
-              gap: 7,
-            }}
-          >
-            <i className="fa-solid fa-file-excel" /> Excel
-          </button>
-          <button
-            onClick={exportReportPDF}
-            style={{
-              background: "transparent",
-              color: "#ffffff",
-              border: "1px solid rgba(255,255,255,0.2)",
-              borderRadius: 6,
-              padding: "6px 12px",
-              fontSize: 11,
-              fontWeight: 500,
-              cursor: "pointer",
-              display: "inline-flex",
               alignItems: "center",
               gap: 6,
             }}
           >
-            <i className="fa-solid fa-file-pdf" /> PDF
-          </button>
+            <i className="fa-solid fa-bell" />
+            {allAlerts.length} alert{allAlerts.length > 1 ? "s" : ""}
+          </span>
+          {allAlerts.slice(0, 5).map((a) => {
+            const col =
+              a.severity === "critical"
+                ? "#ef4444"
+                : a.severity === "high"
+                  ? "#f97316"
+                  : "#f59e0b";
+            return (
+              <div
+                key={a.id}
+                onClick={() => setReportTab("alerts")}
+                style={{
+                  flexShrink: 0,
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: 999,
+                  padding: "5px 12px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  maxWidth: 280,
+                }}
+              >
+                <span
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: "50%",
+                    background: col,
+                    flexShrink: 0,
+                  }}
+                />
+                <span
+                  style={{
+                    fontSize: 12,
+                    color: "#ededed",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {a.title}
+                </span>
+                <span
+                  style={{
+                    fontSize: 11,
+                    color: "#8a8a8a",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {a.meta}
+                </span>
+              </div>
+            );
+          })}
+          {allAlerts.length > 5 && (
+            <button
+              type="button"
+              onClick={() => setReportTab("alerts")}
+              style={{
+                flexShrink: 0,
+                background: "transparent",
+                border: "none",
+                color: "#a3a3a3",
+                fontSize: 12,
+                fontWeight: 500,
+                cursor: "pointer",
+              }}
+            >
+              +{allAlerts.length - 5} more →
+            </button>
+          )}
         </div>
+      )}
+      {}
+      <div style={{ marginBottom: 16 }}>
+        <ListToolbar
+          search={dashboardSearch}
+          setSearch={setDashboardSearch}
+          placeholder="Search rows in this report…"
+          filterCount={dateFrom || dateTo ? 1 : 0}
+          onFilter={() => setShowDashFilter(true)}
+          extra={
+            <select
+              className="lg-select"
+              value={reportTab}
+              onChange={(e) => {
+                setReportTab(e.target.value);
+                setDrill(null);
+              }}
+              style={{ width: 200, height: 38 }}
+              aria-label="Report"
+            >
+              {reportTabs.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          }
+          exportOptions={[
+            {
+              label: "Excel",
+              icon: "fa-solid fa-file-excel",
+              onClick: exportReportExcel,
+            },
+            {
+              label: "PDF",
+              icon: "fa-solid fa-file-pdf",
+              onClick: exportReportPDF,
+            },
+          ]}
+        />
       </div>
+      {showDashFilter && (
+        <FilterModal
+          onClose={() => setShowDashFilter(false)}
+          onReset={() => {
+            setDateFrom("");
+            setDateTo("");
+          }}
+        >
+          <Field label="Date range">
+            <DateRangeFilter
+              dateFrom={dateFrom}
+              setDateFrom={setDateFrom}
+              dateTo={dateTo}
+              setDateTo={setDateTo}
+            />
+          </Field>
+        </FilterModal>
+      )}
       <div ref={reportSectionRef}>
         {reportTab === "production" && (
           <div>
             <div
               style={{
-                padding: 20,
-                background: "transparent",
-                borderRadius: 16,
-                border: "1px solid rgba(255,255,255,0.12)",
-                boxShadow:
-                  "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
+                gap: 12,
                 marginBottom: 20,
-                display: "flex",
-                alignItems: "center",
-                gap: 20,
               }}
             >
-              <i
-                className="fa-solid fa-gears"
-                style={{ fontSize: 36, color: "inherit" }}
+              <StatCard
+                label="Open Job Orders"
+                value={activeJOs.length}
+                icon="fa-solid fa-gears"
+                note="Active orders currently in production"
               />
-              <div>
-                <div
-                  style={{ display: "flex", alignItems: "baseline", gap: 10 }}
-                >
-                  <span
-                    style={{ fontSize: 44, fontWeight: 900, color: C.yellow }}
-                  >
-                    {activeJOs.length}
-                  </span>
-                  <span style={{ fontSize: 16, fontWeight: 700 }}>
-                    Open Job Orders
-                  </span>
-                </div>
-                <div style={{ color: "#888", fontSize: 12 }}>
-                  Active orders currently in production
-                </div>
-              </div>
             </div>
 
             <div
@@ -1815,8 +1604,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                 fontSize: 11,
                 fontWeight: 500,
                 color: "#888",
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
                 marginBottom: 10,
               }}
             >
@@ -1825,52 +1612,25 @@ export function Dashboard({ data, session, toast, onNavigate }) {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(5, 1fr)",
-                gap: 10,
+                gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
+                gap: 12,
               }}
             >
               {STAGES.map((proc) => {
                 const count = processPendingMap[proc]?.length || 0;
                 const isSelected = selectedProcessPending === proc;
                 return (
-                  <div
+                  <StatCard
                     key={proc}
+                    label={proc}
+                    value={count}
+                    note={count > 0 ? "jobs pending" : "All clear"}
+                    selected={isSelected}
                     onClick={() =>
+                      count > 0 &&
                       setSelectedProcessPending(isSelected ? null : proc)
                     }
-                    style={{
-                      background: isSelected
-                        ? "rgba(255,255,255,0.1)"
-                        : "rgba(255,255,255,0.05)",
-                      border: `1px solid ${isSelected ? C.blue + "99" : count > 0 ? C.blue + "44" : "rgba(255,255,255,0.1)"}`,
-                      borderRadius: 12,
-                      padding: 14,
-                      cursor: count > 0 ? "pointer" : "default",
-                      boxShadow: isSelected
-                        ? `0 0 16px ${C.blue}44, inset 0 1px 0 rgba(255,255,255,0.1)`
-                        : "0 2px 12px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.07)",
-                      transform: isSelected ? "scale(1.02)" : "scale(1)",
-                      transition: "all 0.2s ease",
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: 30,
-                        fontWeight: 900,
-                        color: count > 0 ? C.blue : "#333",
-                      }}
-                    >
-                      {count}
-                    </div>
-                    <div
-                      style={{ fontSize: 13, fontWeight: 500, margin: "4px 0" }}
-                    >
-                      {proc}
-                    </div>
-                    <div style={{ fontSize: 11, color: "#888" }}>
-                      {count > 0 ? "jobs pending" : "All clear"}
-                    </div>
-                  </div>
+                  />
                 );
               })}
             </div>
@@ -1884,8 +1644,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     overflow: "hidden",
                     border: "1px solid rgba(255,255,255,0.12)",
                     background: "transparent",
-                    boxShadow:
-                      "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
+                    boxShadow: "0 4px 24px rgba(0,0,0,0.18)",
                   }}
                 >
                   <div
@@ -1893,7 +1652,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       padding: "12px 16px",
                       borderBottom: "1px solid #2a2a2e",
                       fontWeight: 500,
-                      color: C.blue,
+                      color: "#a3a3a3",
                     }}
                   >
                     Jobs Pending for {selectedProcessPending}
@@ -1933,20 +1692,20 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             <tr
                               key={jo._id || i}
                               style={{
-                                background: i % 2 === 0 ? "#0e0e12" : "#121216",
+                                background: "transparent",
                               }}
                             >
                               <td
                                 style={{
                                   ...TD,
-                                  color: C.yellow,
-                                  fontWeight: 700,
+                                  color: "#d9b36a",
+                                  fontWeight: 600,
                                 }}
                               >
                                 {jo.joNo}
                               </td>
                               <td style={TD}>
-                                <div style={{ color: C.green, fontSize: 12 }}>
+                                <div style={{ color: "#86b894", fontSize: 12 }}>
                                   {jo.soRef}
                                 </div>
                                 <div
@@ -1968,10 +1727,10 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               >
                                 {jo.itemName}
                               </td>
-                              <td style={{ ...TD, fontWeight: 700 }}>
+                              <td style={{ ...TD, fontWeight: 600 }}>
                                 {fmt(jo.orderQty)}
                               </td>
-                              <td style={{ ...TD, color: C.green }}>
+                              <td style={{ ...TD, color: "#86b894" }}>
                                 {fmt(jo.producedQty)}
                               </td>
                             </tr>
@@ -1998,7 +1757,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                 background: "transparent",
                 padding: 16,
                 borderRadius: 8,
-                border: "1px solid #2a2a2e",
+                border: "1px solid rgba(255,255,255,0.07)",
               }}
             >
               <div style={{ flex: 1, minWidth: 200 }}>
@@ -2007,7 +1766,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     fontSize: 11,
                     fontWeight: 500,
                     color: "#888",
-                    textTransform: "uppercase",
                     marginBottom: 6,
                   }}
                 >
@@ -2075,7 +1833,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     fontSize: 11,
                     fontWeight: 500,
                     color: "#888",
-                    textTransform: "uppercase",
                     marginBottom: 6,
                   }}
                 >
@@ -2094,7 +1851,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     fontSize: 11,
                     fontWeight: 500,
                     color: "#888",
-                    textTransform: "uppercase",
                     marginBottom: 6,
                   }}
                 >
@@ -2122,13 +1878,13 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                   color: "#fff",
                   border: "1px solid rgba(255,255,255,0.18)",
                   borderRadius: 10,
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: 13,
                   cursor: "pointer",
                   height: 38,
-                  boxShadow:
-                    "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
-                  transition: "all 0.18s ease",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
+                  transition:
+                    "background-color .15s, border-color .15s, color .15s, opacity .15s, transform .15s",
                 }}
               >
                 Generate Report
@@ -2149,7 +1905,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     borderRadius: 8,
                     overflowX: "auto",
                     WebkitOverflowScrolling: "touch",
-                    border: "1px solid #2a2a2e",
+                    border: "1px solid rgba(255,255,255,0.07)",
                   }}
                 >
                   {/* Header with Operator/Machine Details */}
@@ -2220,7 +1976,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             <div
                               style={{
                                 fontSize: 10,
-                                color: C.yellow,
+                                color: "#d9b36a",
                                 marginTop: 2,
                               }}
                             >
@@ -2243,7 +1999,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             </span>
                           </td>
                           <td
-                            style={{ ...TD, color: C.green, fontWeight: 700 }}
+                            style={{ ...TD, color: "#86b894", fontWeight: 600 }}
                           >
                             {fmt(e.qtyCompleted)}
                           </td>
@@ -2378,7 +2134,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     background: "transparent",
                     padding: 16,
                     borderRadius: 8,
-                    border: "1px solid #2a2a2e",
+                    border: "1px solid rgba(255,255,255,0.07)",
                   }}
                 >
                   <div style={{ flex: 1 }}>
@@ -2451,40 +2207,40 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                   }}
                 >
                   {[
-                    { label: "Total POs", val: stats.total, color: C.blue },
+                    { label: "Total POs", val: stats.total, color: C.text },
                     {
                       label: "Open / Partial",
                       val:
                         stats.total -
                         rows.filter((r) => r.status === "Received").length,
-                      color: C.yellow,
+                      color: C.accent,
                     },
                     {
                       label: "SKUs Ordered",
                       val: stats.skusOrd,
-                      color: C.blue,
+                      color: C.text,
                     },
                     {
                       label: "SKUs Received",
                       val: stats.skusRec,
-                      color: C.green,
+                      color: C.mint,
                     },
                     {
                       label: "Total Ordered (kg)",
                       val: fmt(stats.totOrdWt),
-                      color: C.blue,
+                      color: C.text,
                     },
                     {
                       label: "Total Received (kg)",
                       val: fmt(stats.totRecWt),
-                      color: C.green,
+                      color: C.mint,
                     },
                   ].map((s) => (
                     <div
                       key={s.label}
                       style={{
                         background: "transparent",
-                        border: `1px solid ${s.color}44`,
+                        border: `1px solid ${s.color}33`,
                         borderRadius: 8,
                         padding: 16,
                       }}
@@ -2492,7 +2248,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       <div
                         style={{
                           fontSize: 24,
-                          fontWeight: 900,
+                          fontWeight: 600,
                           color: s.color,
                         }}
                       >
@@ -2503,7 +2259,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                           fontSize: 10,
                           fontWeight: 500,
                           color: "#888",
-                          textTransform: "uppercase",
                           marginTop: 4,
                         }}
                       >
@@ -2524,13 +2279,17 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                   <div
                     style={{
                       background: "transparent",
-                      border: `1px solid ${C.red}44`,
+                      border: `1px solid #d98a8033`,
                       borderRadius: 8,
                       padding: 16,
                     }}
                   >
                     <div
-                      style={{ fontSize: 24, fontWeight: 900, color: C.red }}
+                      style={{
+                        fontSize: 24,
+                        fontWeight: 600,
+                        color: "#d98a80",
+                      }}
                     >
                       {stats.overallFill}%
                     </div>
@@ -2539,7 +2298,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                         fontSize: 10,
                         fontWeight: 500,
                         color: "#888",
-                        textTransform: "uppercase",
                         marginTop: 4,
                       }}
                     >
@@ -2549,13 +2307,17 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                   <div
                     style={{
                       background: "transparent",
-                      border: `1px solid ${C.red}44`,
+                      border: `1px solid #d98a8033`,
                       borderRadius: 8,
                       padding: 16,
                     }}
                   >
                     <div
-                      style={{ fontSize: 24, fontWeight: 900, color: C.red }}
+                      style={{
+                        fontSize: 24,
+                        fontWeight: 600,
+                        color: "#d98a80",
+                      }}
                     >
                       {fmt(stats.pendingWt)} kg
                     </div>
@@ -2564,7 +2326,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                         fontSize: 10,
                         fontWeight: 500,
                         color: "#888",
-                        textTransform: "uppercase",
                         marginTop: 4,
                       }}
                     >
@@ -2578,7 +2339,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     borderRadius: 8,
                     overflowX: "auto",
                     WebkitOverflowScrolling: "touch",
-                    border: "1px solid #2a2a2e",
+                    border: "1px solid rgba(255,255,255,0.07)",
                   }}
                 >
                   <table style={{ ...TABLE, minWidth: 980 }}>
@@ -2613,10 +2374,12 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                         <tr
                           key={i}
                           style={{
-                            background: i % 2 === 0 ? "#0e0e12" : "#121216",
+                            background: "transparent",
                           }}
                         >
-                          <td style={{ ...TD, color: C.blue, fontWeight: 700 }}>
+                          <td
+                            style={{ ...TD, color: "#a3a3a3", fontWeight: 600 }}
+                          >
                             {r.po.poNo || "—"}
                           </td>
                           <td style={{ ...TD, whiteSpace: "normal" }}>
@@ -2632,13 +2395,13 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                           </td>
                           <td style={TD}>
                             <Badge
-                              label={r.status}
+                              text={r.status}
                               color={
                                 r.status === "Received"
-                                  ? C.green
+                                  ? "#86b894"
                                   : r.status === "Partial"
-                                    ? C.yellow
-                                    : C.blue
+                                    ? "#d9b36a"
+                                    : "#a3a3a3"
                               }
                             />
                           </td>
@@ -2654,7 +2417,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             </div>
                           </td>
                           <td style={{ ...TD, whiteSpace: "normal" }}>
-                            <div style={{ fontWeight: 600, color: C.green }}>
+                            <div style={{ fontWeight: 600, color: "#86b894" }}>
                               {r.receivedQty > 0
                                 ? `${fmt(r.receivedQty)} sheets / `
                                 : ""}
@@ -2664,7 +2427,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               <div
                                 style={{
                                   fontSize: 9,
-                                  color: C.red,
+                                  color: "#e0705f",
                                   marginTop: 4,
                                 }}
                               >
@@ -2688,8 +2451,9 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               <span
                                 style={{
                                   fontSize: 11,
-                                  fontWeight: 800,
-                                  color: r.fillRate >= 90 ? C.green : C.yellow,
+                                  fontWeight: 600,
+                                  color:
+                                    r.fillRate >= 90 ? "#86b894" : "#d9b36a",
                                 }}
                               >
                                 {r.fillRate}%
@@ -2709,7 +2473,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                   width: `${r.fillRate}%`,
                                   height: "100%",
                                   background:
-                                    r.fillRate >= 90 ? C.green : C.yellow,
+                                    r.fillRate >= 90 ? "#86b894" : "#d9b36a",
                                   borderRadius: 2,
                                 }}
                               />
@@ -2751,7 +2515,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     background: "transparent",
                     padding: 16,
                     borderRadius: 8,
-                    border: "1px solid #2a2a2e",
+                    border: "1px solid rgba(255,255,255,0.07)",
                   }}
                 >
                   <div style={{ flex: 1 }}>
@@ -2828,23 +2592,27 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     {
                       label: "Total Sales Orders",
                       val: stats.total,
-                      color: C.blue,
+                      color: "#a3a3a3",
                     },
                     {
                       label: "Production Pending",
                       val: stats.productionPending,
-                      color: C.yellow,
+                      color: "#d9b36a",
                     },
                     {
                       label: "Dispatch Pending",
                       val: stats.dispatchPending,
-                      color: C.blue,
+                      color: "#a3a3a3",
                     },
-                    { label: "Complete", val: stats.complete, color: C.green },
+                    {
+                      label: "Complete",
+                      val: stats.complete,
+                      color: "#86b894",
+                    },
                     {
                       label: "Total Pending (pcs)",
                       val: fmt(stats.totalPend),
-                      color: C.red,
+                      color: "#e0705f",
                     },
                   ].map((s) => (
                     <div
@@ -2859,7 +2627,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       <div
                         style={{
                           fontSize: 26,
-                          fontWeight: 900,
+                          fontWeight: 600,
                           color: s.color,
                         }}
                       >
@@ -2891,7 +2659,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       borderRadius: 8,
                       overflowX: "auto",
                       WebkitOverflowScrolling: "touch",
-                      border: "1px solid #2a2a2e",
+                      border: "1px solid rgba(255,255,255,0.07)",
                     }}
                   >
                     <table style={TABLE}>
@@ -2930,11 +2698,13 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                           <tr
                             key={r.soKey + i}
                             style={{
-                              background: i % 2 === 0 ? "#0e0e12" : "#121216",
+                              background: "transparent",
                             }}
                           >
                             <td style={TD}>
-                              <div style={{ color: C.green, fontWeight: 700 }}>
+                              <div
+                                style={{ color: "#86b894", fontWeight: 600 }}
+                              >
                                 {r.soNo}
                               </div>
                               <div
@@ -2975,10 +2745,10 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               {(r.so.orderDate || "").slice(0, 10) || "—"}
                             </td>
                             <td style={TD}>{r.ord > 0 ? fmt(r.ord) : "—"}</td>
-                            <td style={{ ...TD, color: C.yellow }}>
+                            <td style={{ ...TD, color: "#d9b36a" }}>
                               {r.producedQty > 0 ? fmt(r.producedQty) : "—"}
                             </td>
-                            <td style={{ ...TD, color: C.green }}>
+                            <td style={{ ...TD, color: "#86b894" }}>
                               {r.disp > 0 ? fmt(r.disp) : "—"}
                             </td>
                             <td style={TD}>
@@ -2997,7 +2767,9 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               </div>
                               {r.status === "Fully Dispatched" &&
                                 r.disp < r.ord && (
-                                  <div style={{ fontSize: 9, color: C.green }}>
+                                  <div
+                                    style={{ fontSize: 9, color: "#86b894" }}
+                                  >
                                     Reconciled @ {r.pct}%
                                   </div>
                                 )}
@@ -3026,9 +2798,9 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                   onClick={() => handleCloseSO(r.so._id)}
                                   style={{
                                     padding: "4px 8px",
-                                    background: C.green + "22",
-                                    color: C.green,
-                                    border: `1px solid ${C.green}44`,
+                                    background: "#86b894" + "22",
+                                    color: "#86b894",
+                                    border: `1px solid ${"#86b894"}44`,
                                     borderRadius: 4,
                                     fontSize: 10,
                                     fontWeight: 500,
@@ -3061,11 +2833,11 @@ export function Dashboard({ data, session, toast, onNavigate }) {
 
             const STATUS_COLOR = {
               Draft: "#888",
-              Scheduled: C.blue,
-              "In Progress": C.yellow,
-              Completed: C.green,
+              Scheduled: "#a3a3a3",
+              "In Progress": "#d9b36a",
+              Completed: "#86b894",
               "On Hold": "#f97316",
-              Cancelled: C.red,
+              Cancelled: "#e0705f",
             };
 
             return (
@@ -3078,7 +2850,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     alignItems: "flex-end",
                     padding: 16,
                     borderRadius: 8,
-                    border: "1px solid #2a2a2e",
+                    border: "1px solid rgba(255,255,255,0.07)",
                   }}
                 >
                   <div style={{ flex: 1 }}>
@@ -3153,22 +2925,27 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     {
                       label: "Total SO Items",
                       val: totalItems,
-                      color: C.blue,
+                      color: "#a3a3a3",
                     },
                     {
                       label: "JO Created",
                       val: withJO,
-                      color: C.green,
+                      color: "#86b894",
                     },
                     {
                       label: "JO Pending",
                       val: withoutJO,
-                      color: C.red,
+                      color: "#e0705f",
                     },
                     {
                       label: "Coverage",
                       val: `${coveragePct}%`,
-                      color: coveragePct >= 90 ? C.green : coveragePct >= 50 ? C.yellow : C.red,
+                      color:
+                        coveragePct >= 90
+                          ? "#86b894"
+                          : coveragePct >= 50
+                            ? "#d9b36a"
+                            : "#e0705f",
                     },
                   ].map((s) => (
                     <div
@@ -3183,7 +2960,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       <div
                         style={{
                           fontSize: 26,
-                          fontWeight: 900,
+                          fontWeight: 600,
                           color: s.color,
                         }}
                       >
@@ -3215,7 +2992,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       borderRadius: 8,
                       overflowX: "auto",
                       WebkitOverflowScrolling: "touch",
-                      border: "1px solid #2a2a2e",
+                      border: "1px solid rgba(255,255,255,0.07)",
                     }}
                   >
                     <table style={TABLE}>
@@ -3252,19 +3029,18 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                           <tr
                             key={r.soNo + r.itemName + i}
                             style={{
-                              background: i % 2 === 0 ? "#0e0e12" : "#121216",
+                              background: "transparent",
                             }}
                           >
                             <td style={TD}>
                               <span
                                 style={{
-                                  color: C.green,
-                                  fontWeight: 700,
+                                  color: "#86b894",
+                                  fontWeight: 600,
                                   cursor: "pointer",
                                 }}
                                 onClick={() =>
-                                  onNavigate &&
-                                  onNavigate("sales", r.soId)
+                                  onNavigate && onNavigate("sales", r.soId)
                                 }
                               >
                                 {r.soNo}
@@ -3292,13 +3068,12 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               {r.joNo ? (
                                 <span
                                   style={{
-                                    color: C.blue,
-                                    fontWeight: 700,
+                                    color: C.accent,
+                                    fontWeight: 600,
                                     cursor: "pointer",
                                   }}
                                   onClick={() =>
-                                    onNavigate &&
-                                    onNavigate("jobs", r.joId)
+                                    onNavigate && onNavigate("jobs", r.joId)
                                   }
                                 >
                                   {r.joNo}
@@ -3333,8 +3108,8 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                     display: "inline-flex",
                                     alignItems: "center",
                                     gap: 5,
-                                    color: C.green,
-                                    fontWeight: 700,
+                                    color: "#86b894",
+                                    fontWeight: 600,
                                     fontSize: 12,
                                   }}
                                 >
@@ -3347,8 +3122,8 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                     display: "inline-flex",
                                     alignItems: "center",
                                     gap: 5,
-                                    color: C.red,
-                                    fontWeight: 700,
+                                    color: "#e0705f",
+                                    fontWeight: 600,
                                     fontSize: 12,
                                   }}
                                 >
@@ -3435,7 +3210,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     background: "transparent",
                     padding: 16,
                     borderRadius: 8,
-                    border: "1px solid #2a2a2e",
+                    border: "1px solid rgba(255,255,255,0.07)",
                   }}
                 >
                   <div style={{ flex: 1 }}>
@@ -3481,22 +3256,22 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     {
                       label: "Total Dispatches",
                       val: rows.length,
-                      color: C.blue,
+                      color: "#a3a3a3",
                     },
                     {
                       label: "Total Qty Dispatched",
                       val: fmt(totalQtyDispatched),
-                      color: C.green,
+                      color: "#86b894",
                     },
                     {
                       label: "Unique Clients",
                       val: uniqueClients,
-                      color: C.yellow,
+                      color: "#d9b36a",
                     },
                     {
                       label: "Dispatches Today",
                       val: dispToday,
-                      color: C.blue,
+                      color: "#a3a3a3",
                     },
                   ].map((s) => (
                     <div
@@ -3511,7 +3286,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       <div
                         style={{
                           fontSize: 26,
-                          fontWeight: 900,
+                          fontWeight: 600,
                           color: s.color,
                         }}
                       >
@@ -3543,7 +3318,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       borderRadius: 8,
                       overflowX: "auto",
                       WebkitOverflowScrolling: "touch",
-                      border: "1px solid #2a2a2e",
+                      border: "1px solid rgba(255,255,255,0.07)",
                     }}
                   >
                     <table style={TABLE}>
@@ -3580,15 +3355,21 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                           <tr
                             key={r.dispNo + i}
                             style={{
-                              background: i % 2 === 0 ? "#0e0e12" : "#121216",
+                              background: "transparent",
                             }}
                           >
                             <td
-                              style={{ ...TD, color: C.blue, fontWeight: 700 }}
+                              style={{
+                                ...TD,
+                                color: "#a3a3a3",
+                                fontWeight: 600,
+                              }}
                             >
                               {r.dispNo}
                             </td>
-                            <td style={{ ...TD, color: C.green }}>{r.soRef}</td>
+                            <td style={{ ...TD, color: "#86b894" }}>
+                              {r.soRef}
+                            </td>
                             <td style={{ ...TD, fontWeight: 600 }}>
                               {r.client}
                             </td>
@@ -3617,7 +3398,11 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               {r.dispDate?.slice(0, 10) || "—"}
                             </td>
                             <td
-                              style={{ ...TD, color: C.green, fontWeight: 700 }}
+                              style={{
+                                ...TD,
+                                color: "#86b894",
+                                fontWeight: 600,
+                              }}
                             >
                               {r.totalQty > 0 ? fmt(r.totalQty) : "—"}
                             </td>
@@ -3640,8 +3425,8 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 style={{
                                   padding: "2px 8px",
                                   borderRadius: 4,
-                                  background: C.green + "22",
-                                  color: C.green,
+                                  background: "#86b894" + "22",
+                                  color: "#86b894",
                                   fontSize: 11,
                                   fontWeight: 500,
                                 }}
@@ -3692,18 +3477,22 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                   }}
                 >
                   {[
-                    { label: "0-7 days", rows: bucket(0, 7), color: C.green },
+                    { label: "0-7 days", rows: bucket(0, 7), color: "#86b894" },
                     {
                       label: "8-14 days",
                       rows: bucket(8, 14),
-                      color: C.yellow,
+                      color: "#d9b36a",
                     },
                     {
                       label: "15-30 days",
                       rows: bucket(15, 30),
                       color: C.orange || "#f97316",
                     },
-                    { label: "30+ days", rows: bucket(31, null), color: C.red },
+                    {
+                      label: "30+ days",
+                      rows: bucket(31, null),
+                      color: "#e0705f",
+                    },
                   ].map((st) => (
                     <div
                       key={st.label}
@@ -3717,7 +3506,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       <div
                         style={{
                           fontSize: 32,
-                          fontWeight: 900,
+                          fontWeight: 600,
                           color: st.color,
                         }}
                       >
@@ -3744,7 +3533,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       borderRadius: 8,
                       overflowX: "auto",
                       WebkitOverflowScrolling: "touch",
-                      border: "1px solid #2a2a2e",
+                      border: "1px solid rgba(255,255,255,0.07)",
                     }}
                   >
                     <table style={TABLE}>
@@ -3778,24 +3567,24 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                         {rows.map((r, i) => {
                           const ageColor =
                             r.age <= 7
-                              ? C.green
+                              ? "#86b894"
                               : r.age <= 14
-                                ? C.yellow
+                                ? "#d9b36a"
                                 : r.age <= 30
                                   ? C.orange || "#f97316"
-                                  : C.red;
+                                  : "#e0705f";
                           return (
                             <tr
                               key={r.soKey || i}
                               style={{
-                                background: i % 2 === 0 ? "#0e0e12" : "#121216",
+                                background: "transparent",
                               }}
                             >
                               <td
                                 style={{
                                   ...TD,
-                                  color: C.green,
-                                  fontWeight: 700,
+                                  color: "#86b894",
+                                  fontWeight: 600,
                                 }}
                               >
                                 {r.s.soNo || "—"}
@@ -3824,13 +3613,13 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 style={{
                                   ...TD,
                                   color: ageColor,
-                                  fontWeight: 800,
+                                  fontWeight: 600,
                                 }}
                               >
                                 {r.age}
                               </td>
                               <td style={TD}>{fmt(r.ord)}</td>
-                              <td style={{ ...TD, color: C.green }}>
+                              <td style={{ ...TD, color: "#86b894" }}>
                                 {fmt(r.disp)}
                               </td>
                             </tr>
@@ -3860,7 +3649,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                   borderRadius: 8,
                   overflowX: "auto",
                   WebkitOverflowScrolling: "touch",
-                  border: "1px solid #2a2a2e",
+                  border: "1px solid rgba(255,255,255,0.07)",
                 }}
               >
                 <table style={TABLE}>
@@ -3895,7 +3684,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                         <tr
                           key={d}
                           style={{
-                            background: i % 2 === 0 ? "#0e0e12" : "#121216",
+                            background: "transparent",
                           }}
                         >
                           <td style={TD}>{d}</td>
@@ -3903,7 +3692,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                           <td
                             style={{
                               ...TD,
-                              color: target > 0 ? C.blue : "#555",
+                              color: target > 0 ? "#a3a3a3" : "#555",
                             }}
                           >
                             {target > 0 ? fmt(target) : "—"}
@@ -3912,7 +3701,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             style={{
                               ...TD,
                               fontWeight: 500,
-                              color: actual > 0 ? C.green : "#555",
+                              color: actual > 0 ? "#86b894" : "#555",
                             }}
                           >
                             {actual > 0 ? fmt(actual) : "—"}
@@ -3933,7 +3722,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 padding: "4px 8px",
                                 width: 110,
                                 background: "#0c0c0e",
-                                border: "1px solid #2a2a2e",
+                                border: "1px solid rgba(255,255,255,0.07)",
                                 color: "#e0e0e0",
                                 borderRadius: 4,
                                 fontSize: 12,
@@ -3991,104 +3780,24 @@ export function Dashboard({ data, session, toast, onNavigate }) {
               <div>
                 <div
                   style={{
-                    display: "flex",
-                    gap: 16,
-                    marginBottom: 20,
-                    alignItems: "flex-end",
-                    background: "transparent",
-                    padding: 16,
-                    borderRadius: 8,
-                    border: "1px solid #2a2a2e",
-                  }}
-                >
-                  <div style={{ flex: 1 }}>
-                    <div
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 500,
-                        color: "#888",
-                        marginBottom: 6,
-                      }}
-                    >
-                      DATE FROM
-                    </div>
-                    <DatePicker
-                      value={dateFrom}
-                      onChange={(v) => setDateFrom(v)}
-                    />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 500,
-                        color: "#888",
-                        marginBottom: 6,
-                      }}
-                    >
-                      DATE TO
-                    </div>
-                    <DatePicker value={dateTo} onChange={(v) => setDateTo(v)} />
-                  </div>
-                </div>
-
-                <div
-                  style={{
                     display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-                    gap: 14,
+                    gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
+                    gap: 12,
                     marginBottom: 24,
                   }}
                 >
                   {ySummary.map((y) => (
-                    <div
+                    <StatCard
                       key={y.stage}
-                      style={{
-                        background: "transparent",
-                        border: `1px solid ${y.pct > 95 ? C.green : C.yellow}44`,
-                        borderTop: `4px solid ${y.pct > 95 ? C.green : C.yellow}`,
-                        borderRadius: 8,
-                        padding: 16,
-                      }}
-                    >
-                      <div
-                        style={{ fontSize: 12, fontWeight: 500, color: "#888" }}
-                      >
-                        {y.stage}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: 30,
-                          fontWeight: 900,
-                          margin: "8px 0",
-                        }}
-                      >
-                        {y.pct}%
-                      </div>
-                      <div style={{ fontSize: 11 }}>
-                        <span style={{ color: C.green }}>{fmt(y.ok)} ok</span>{" "}
-                        <span style={{ color: "#555" }}>/</span>{" "}
-                        <span style={{ color: C.red }}>{fmt(y.rj)} rej</span>
-                      </div>
-                      <div
-                        style={{
-                          width: "100%",
-                          height: 3,
-                          background: "#1e1e22",
-                          borderRadius: 2,
-                          marginTop: 10,
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: y.pct + "%",
-                            height: "100%",
-                            background: y.pct > 95 ? C.green : C.yellow,
-                            borderRadius: 2,
-                          }}
-                        />
-                      </div>
-                    </div>
+                      label={y.stage}
+                      value={`${y.pct}%`}
+                      dot={y.pct > 95 ? "#86b894" : "#d9b36a"}
+                      note={
+                        <>
+                          {fmt(y.ok)} ok · {fmt(y.rj)} rejected
+                        </>
+                      }
+                    />
                   ))}
                 </div>
 
@@ -4097,9 +3806,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                   style={{
                     fontSize: 11,
                     fontWeight: 600,
-                    color: C.yellow,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.08em",
+                    color: "#d9b36a",
                     marginBottom: 10,
                   }}
                 >
@@ -4110,7 +3817,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     borderRadius: 8,
                     overflowX: "auto",
                     WebkitOverflowScrolling: "touch",
-                    border: "1px solid #2a2a2e",
+                    border: "1px solid rgba(255,255,255,0.07)",
                     marginBottom: 28,
                   }}
                 >
@@ -4142,22 +3849,27 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                         <tr
                           key={y.stage}
                           style={{
-                            background: i % 2 === 0 ? "#0e0e12" : "#121216",
+                            background: "transparent",
                           }}
                         >
-                          <td style={{ ...TD, fontWeight: 700 }}>{y.stage}</td>
+                          <td style={{ ...TD, fontWeight: 600 }}>{y.stage}</td>
                           <td style={TD}>{fmt(y.tot)}</td>
-                          <td style={{ ...TD, color: C.green }}>{fmt(y.ok)}</td>
+                          <td style={{ ...TD, color: "#86b894" }}>
+                            {fmt(y.ok)}
+                          </td>
                           <td
-                            style={{ ...TD, color: y.rj > 0 ? C.red : "#555" }}
+                            style={{
+                              ...TD,
+                              color: y.rj > 0 ? "#e0705f" : "#555",
+                            }}
                           >
                             {fmt(y.rj)}
                           </td>
                           <td
                             style={{
                               ...TD,
-                              fontWeight: 800,
-                              color: y.pct > 95 ? C.green : C.yellow,
+                              fontWeight: 600,
+                              color: y.pct > 95 ? "#86b894" : "#d9b36a",
                             }}
                           >
                             {y.pct}%
@@ -4183,9 +3895,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     style={{
                       fontSize: 11,
                       fontWeight: 600,
-                      color: C.blue,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.08em",
+                      color: "#a3a3a3",
                     }}
                   >
                     Machine-wise Yield
@@ -4234,77 +3944,24 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       style={{
                         display: "grid",
                         gridTemplateColumns:
-                          "repeat(auto-fit, minmax(200px, 1fr))",
-                        gap: 14,
+                          "repeat(auto-fit, minmax(190px, 1fr))",
+                        gap: 12,
                         marginBottom: 16,
                       }}
                     >
                       {mSummary.map((m) => (
-                        <div
+                        <StatCard
                           key={m.machine._id}
-                          style={{
-                            background: "transparent",
-                            border: `1px solid ${m.pct > 95 ? C.green : C.yellow}44`,
-                            borderTop: `4px solid ${m.pct > 95 ? C.green : C.yellow}`,
-                            borderRadius: 8,
-                            padding: 16,
-                          }}
-                        >
-                          <div
-                            style={{
-                              fontSize: 12,
-                              fontWeight: 600,
-                              color: "#ddd",
-                            }}
-                          >
-                            {m.machine.name}
-                          </div>
-                          <div
-                            style={{
-                              fontSize: 10,
-                              color: "#666",
-                              marginBottom: 4,
-                            }}
-                          >
-                            {m.machine.type || "—"}
-                          </div>
-                          <div
-                            style={{
-                              fontSize: 28,
-                              fontWeight: 900,
-                              margin: "6px 0",
-                            }}
-                          >
-                            {m.pct}%
-                          </div>
-                          <div style={{ fontSize: 11 }}>
-                            <span style={{ color: C.green }}>
-                              {fmt(m.ok)} ok
-                            </span>{" "}
-                            <span style={{ color: "#555" }}>/</span>{" "}
-                            <span style={{ color: C.red }}>
-                              {fmt(m.rj)} rej
-                            </span>
-                          </div>
-                          <div
-                            style={{
-                              width: "100%",
-                              height: 3,
-                              background: "#1e1e22",
-                              borderRadius: 2,
-                              marginTop: 10,
-                            }}
-                          >
-                            <div
-                              style={{
-                                width: m.pct + "%",
-                                height: "100%",
-                                background: m.pct > 95 ? C.green : C.yellow,
-                                borderRadius: 2,
-                              }}
-                            />
-                          </div>
-                        </div>
+                          label={m.machine.name}
+                          value={`${m.pct}%`}
+                          dot={m.pct > 95 ? "#86b894" : "#d9b36a"}
+                          note={
+                            <>
+                              {m.machine.type || "—"} · {fmt(m.ok)} ok ·{" "}
+                              {fmt(m.rj)} rejected
+                            </>
+                          }
+                        />
                       ))}
                     </div>
 
@@ -4313,7 +3970,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                         borderRadius: 8,
                         overflowX: "auto",
                         WebkitOverflowScrolling: "touch",
-                        border: "1px solid #2a2a2e",
+                        border: "1px solid rgba(255,255,255,0.07)",
                       }}
                     >
                       <table style={TABLE}>
@@ -4346,23 +4003,23 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             <tr
                               key={m.machine._id}
                               style={{
-                                background: i % 2 === 0 ? "#0e0e12" : "#121216",
+                                background: "transparent",
                               }}
                             >
-                              <td style={{ ...TD, fontWeight: 700 }}>
+                              <td style={{ ...TD, fontWeight: 600 }}>
                                 {m.machine.name}
                               </td>
                               <td style={{ ...TD, color: "#888" }}>
                                 {m.machine.type || "—"}
                               </td>
                               <td style={TD}>{fmt(m.tot)}</td>
-                              <td style={{ ...TD, color: C.green }}>
+                              <td style={{ ...TD, color: "#86b894" }}>
                                 {fmt(m.ok)}
                               </td>
                               <td
                                 style={{
                                   ...TD,
-                                  color: m.rj > 0 ? C.red : "#555",
+                                  color: m.rj > 0 ? "#e0705f" : "#555",
                                 }}
                               >
                                 {fmt(m.rj)}
@@ -4370,8 +4027,8 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               <td
                                 style={{
                                   ...TD,
-                                  fontWeight: 800,
-                                  color: m.pct > 95 ? C.green : C.yellow,
+                                  fontWeight: 600,
+                                  color: m.pct > 95 ? "#86b894" : "#d9b36a",
                                 }}
                               >
                                 {m.pct}%
@@ -4396,10 +4053,10 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                 style={{
                   textAlign: "center",
                   padding: 60,
-                  color: C.green,
+                  color: "#86b894",
                   background: "transparent",
                   borderRadius: 8,
-                  border: "1px solid #2a2a2e",
+                  border: "1px solid rgba(255,255,255,0.07)",
                 }}
               >
                 All items are within healthy stock levels.
@@ -4411,7 +4068,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     fontSize: 11,
                     fontWeight: 500,
                     color: "#888",
-                    textTransform: "uppercase",
                     marginBottom: 14,
                   }}
                 >
@@ -4437,10 +4093,12 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       style={{
                         padding: "6px 16px",
                         borderRadius: 6,
-                        border: `1px solid ${lowStockFilter === f ? C.red : "#2a2a2e"}`,
+                        border: `1px solid ${lowStockFilter === f ? "#e0705f" : "#2a2a2e"}`,
                         background:
-                          lowStockFilter === f ? C.red + "22" : "transparent",
-                        color: lowStockFilter === f ? C.red : "#888",
+                          lowStockFilter === f
+                            ? "#e0705f" + "22"
+                            : "transparent",
+                        color: lowStockFilter === f ? "#e0705f" : "#888",
                         fontSize: 12,
                         fontWeight: 500,
                         cursor: "pointer",
@@ -4514,7 +4172,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                         style={{
                           padding: "6px 12px",
                           borderRadius: 6,
-                          border: "1px solid #2a2a2e",
+                          border: "1px solid rgba(255,255,255,0.07)",
                           background: "transparent",
                           color: "#888",
                           fontSize: 11,
@@ -4622,11 +4280,11 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                         style={{
                           padding: "6px 14px",
                           borderRadius: 6,
-                          border: `1px solid ${C.blue}66`,
-                          background: C.blue + "22",
-                          color: C.blue,
+                          border: `1px solid ${"#a3a3a3"}66`,
+                          background: "#a3a3a3" + "22",
+                          color: "#a3a3a3",
                           fontSize: 12,
-                          fontWeight: 700,
+                          fontWeight: 600,
                           cursor: "pointer",
                           display: "inline-flex",
                           alignItems: "center",
@@ -4645,7 +4303,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     borderRadius: 8,
                     overflowX: "auto",
                     WebkitOverflowScrolling: "touch",
-                    border: "1px solid #2a2a2e",
+                    border: "1px solid rgba(255,255,255,0.07)",
                   }}
                 >
                   <table style={TABLE}>
@@ -4744,7 +4402,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               key={i}
                               style={{
                                 background: isSelected
-                                  ? C.blue + "18"
+                                  ? "#a3a3a3" + "18"
                                   : i % 2 === 0
                                     ? "#0e0e12"
                                     : "#121216",
@@ -4767,14 +4425,18 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                   />
                                 ) : null}
                               </td>
-                              <td style={{ ...TD, fontWeight: 700 }}>
+                              <td style={{ ...TD, fontWeight: 600 }}>
                                 {f.name}
                               </td>
                               <td style={{ ...TD, color: "#888" }}>
                                 {f.category}
                               </td>
                               <td
-                                style={{ ...TD, color: C.red, fontWeight: 800 }}
+                                style={{
+                                  ...TD,
+                                  color: "#e0705f",
+                                  fontWeight: 600,
+                                }}
                               >
                                 {fmt(f.stock)} {f.unit}
                               </td>
@@ -4786,11 +4448,10 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                   style={{
                                     padding: "2px 8px",
                                     borderRadius: 4,
-                                    background: C.red + "22",
-                                    color: C.red,
+                                    background: "#e0705f" + "22",
+                                    color: "#e0705f",
                                     fontSize: 10,
-                                    fontWeight: 800,
-                                    textTransform: "uppercase",
+                                    fontWeight: 600,
                                   }}
                                 >
                                   Critical
@@ -4882,11 +4543,11 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                     style={{
                                       padding: "5px 12px",
                                       borderRadius: 5,
-                                      border: `1px solid ${C.blue}66`,
-                                      background: C.blue + "22",
-                                      color: C.blue,
+                                      border: `1px solid ${"#a3a3a3"}66`,
+                                      background: "#a3a3a3" + "22",
+                                      color: "#a3a3a3",
                                       fontSize: 11,
-                                      fontWeight: 700,
+                                      fontWeight: 600,
                                       cursor: "pointer",
                                       display: "inline-flex",
                                       alignItems: "center",
@@ -4954,7 +4615,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       color: "#888",
                       fontSize: 11,
                       fontWeight: 500,
-                      textTransform: "uppercase",
                     }}
                   >
                     Month:
@@ -4966,7 +4626,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     style={{
                       padding: "7px 12px",
                       background: "transparent",
-                      border: "1px solid #2a2a2e",
+                      border: "1px solid rgba(255,255,255,0.07)",
                       color: "#e0e0e0",
                       borderRadius: 6,
                       fontSize: 13,
@@ -4987,18 +4647,18 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     {
                       label: "Total Produced",
                       val: fmt(totalProd),
-                      color: C.green,
+                      color: "#86b894",
                     },
                     {
                       label: "Total Rejected",
                       val: fmt(totalRej),
-                      color: C.red,
+                      color: "#e0705f",
                     },
-                    { label: "Active JOs", val: mJOs.length, color: C.blue },
+                    { label: "Active JOs", val: mJOs.length, color: "#a3a3a3" },
                     {
                       label: "Overall Yield",
                       val: yieldPct + "%",
-                      color: C.green,
+                      color: "#86b894",
                     },
                   ].map((s) => (
                     <div
@@ -5013,7 +4673,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       <div
                         style={{
                           fontSize: 26,
-                          fontWeight: 900,
+                          fontWeight: 600,
                           color: s.color,
                         }}
                       >
@@ -5033,7 +4693,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     borderRadius: 8,
                     overflowX: "auto",
                     WebkitOverflowScrolling: "touch",
-                    border: "1px solid #2a2a2e",
+                    border: "1px solid rgba(255,255,255,0.07)",
                     marginBottom: 20,
                   }}
                 >
@@ -5043,8 +4703,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       background: "transparent",
                       fontSize: 11,
                       fontWeight: 500,
-                      color: C.yellow,
-                      textTransform: "uppercase",
+                      color: "#d9b36a",
                     }}
                   >
                     Production by Process — {monthStr}
@@ -5091,21 +4750,26 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                           <tr
                             key={proc}
                             style={{
-                              background: i % 2 === 0 ? "#0e0e12" : "#121216",
+                              background: "transparent",
                             }}
                           >
-                            <td style={{ ...TD, fontWeight: 700 }}>{proc}</td>
-                            <td style={{ ...TD, color: C.green }}>{fmt(ok)}</td>
+                            <td style={{ ...TD, fontWeight: 600 }}>{proc}</td>
+                            <td style={{ ...TD, color: "#86b894" }}>
+                              {fmt(ok)}
+                            </td>
                             <td
-                              style={{ ...TD, color: rj > 0 ? C.red : "#555" }}
+                              style={{
+                                ...TD,
+                                color: rj > 0 ? "#e0705f" : "#555",
+                              }}
                             >
                               {fmt(rj)}
                             </td>
                             <td
                               style={{
                                 ...TD,
-                                fontWeight: 800,
-                                color: y > 95 ? C.green : C.yellow,
+                                fontWeight: 600,
+                                color: y > 95 ? "#86b894" : "#d9b36a",
                               }}
                             >
                               {y}%
@@ -5123,7 +4787,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                   style={{
                                     width: y + "%",
                                     height: "100%",
-                                    background: y > 95 ? C.green : C.yellow,
+                                    background: y > 95 ? "#86b894" : "#d9b36a",
                                     borderRadius: 2,
                                   }}
                                 />
@@ -5143,7 +4807,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       borderRadius: 8,
                       overflowX: "auto",
                       WebkitOverflowScrolling: "touch",
-                      border: "1px solid #2a2a2e",
+                      border: "1px solid rgba(255,255,255,0.07)",
                     }}
                   >
                     <div
@@ -5152,8 +4816,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                         background: "transparent",
                         fontSize: 11,
                         fontWeight: 500,
-                        color: C.yellow,
-                        textTransform: "uppercase",
+                        color: "#d9b36a",
                       }}
                     >
                       Job Orders — {monthStr}
@@ -5181,14 +4844,14 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                           <tr
                             key={j._id || i}
                             style={{
-                              background: i % 2 === 0 ? "#0e0e12" : "#121216",
+                              background: "transparent",
                             }}
                           >
                             <td
                               style={{
                                 ...TD,
-                                color: C.yellow,
-                                fontWeight: 700,
+                                color: "#d9b36a",
+                                fontWeight: 600,
                               }}
                             >
                               {j.joNo || "—"}
@@ -5201,12 +4864,12 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                   borderRadius: 4,
                                   background:
                                     (j.status === "Completed"
-                                      ? C.green
-                                      : C.yellow) + "22",
+                                      ? "#86b894"
+                                      : "#d9b36a") + "22",
                                   color:
                                     j.status === "Completed"
-                                      ? C.green
-                                      : C.yellow,
+                                      ? "#86b894"
+                                      : "#d9b36a",
                                   fontSize: 11,
                                   fontWeight: 500,
                                 }}
@@ -5356,7 +5019,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     background: "transparent",
                     padding: 16,
                     borderRadius: 8,
-                    border: "1px solid #2a2a2e",
+                    border: "1px solid rgba(255,255,255,0.07)",
                   }}
                 >
                   <div style={{ flex: 1 }}>
@@ -5401,49 +5064,49 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     {
                       label: "Unique Vendors",
                       val: uniqueVendors,
-                      color: C.blue,
+                      color: "#a3a3a3",
                     },
                     {
                       label: "Total POs",
                       val: totalPOs,
-                      color: C.blue,
+                      color: "#a3a3a3",
                     },
                     {
                       label: "Total GRNs",
                       val: totalGRNs,
-                      color: C.green,
+                      color: "#86b894",
                     },
                     {
                       label: "Open POs",
                       val: pendingPOs,
-                      color: C.red,
+                      color: "#e0705f",
                     },
                     {
                       label: "Total Ordered (kg)",
                       val: Math.round(totalOrdWt).toLocaleString("en-IN"),
-                      color: C.blue,
+                      color: "#a3a3a3",
                     },
                     {
                       label: "Total Received (kg)",
                       val: Math.round(totalRecWt).toLocaleString("en-IN"),
-                      color: C.green,
+                      color: "#86b894",
                     },
                     {
                       label: "Pending (kg)",
                       val: Math.round(
                         Math.max(0, totalOrdWt - totalRecWt),
                       ).toLocaleString("en-IN"),
-                      color: C.red,
+                      color: "#e0705f",
                     },
                     {
                       label: "Overall Fulfillment",
                       val: `${overallFulfill}%`,
                       color:
                         overallFulfill >= 95
-                          ? C.green
+                          ? "#86b894"
                           : overallFulfill > 0
-                            ? C.yellow
-                            : C.red,
+                            ? "#d9b36a"
+                            : "#e0705f",
                     },
                   ].map((s) => (
                     <div
@@ -5458,7 +5121,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       <div
                         style={{
                           fontSize: 26,
-                          fontWeight: 900,
+                          fontWeight: 600,
                           color: s.color,
                         }}
                       >
@@ -5485,7 +5148,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       borderRadius: 8,
                       overflowX: "auto",
                       WebkitOverflowScrolling: "touch",
-                      border: "1px solid #2a2a2e",
+                      border: "1px solid rgba(255,255,255,0.07)",
                     }}
                   >
                     <table style={TABLE}>
@@ -5522,25 +5185,33 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                           <tr
                             key={r.name}
                             style={{
-                              background: i % 2 === 0 ? "#0e0e12" : "#121216",
+                              background: "transparent",
                             }}
                           >
                             <td
                               style={{
                                 ...TD,
-                                fontWeight: 700,
+                                fontWeight: 600,
                                 whiteSpace: "normal",
                               }}
                             >
                               {r.name}
                             </td>
                             <td
-                              style={{ ...TD, color: C.blue, fontWeight: 700 }}
+                              style={{
+                                ...TD,
+                                color: "#a3a3a3",
+                                fontWeight: 600,
+                              }}
                             >
                               {r.poCount}
                             </td>
                             <td
-                              style={{ ...TD, color: C.green, fontWeight: 700 }}
+                              style={{
+                                ...TD,
+                                color: "#86b894",
+                                fontWeight: 600,
+                              }}
                             >
                               {r.grnCount}
                             </td>
@@ -5558,7 +5229,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             <td
                               style={{
                                 ...TD,
-                                color: C.green,
+                                color: "#86b894",
                                 whiteSpace: "normal",
                               }}
                             >
@@ -5575,7 +5246,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             <td
                               style={{
                                 ...TD,
-                                color: r.pendWt > 0 ? C.red : C.green,
+                                color: r.pendWt > 0 ? "#e0705f" : "#86b894",
                                 whiteSpace: "normal",
                               }}
                             >
@@ -5595,7 +5266,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             <td
                               style={{
                                 ...TD,
-                                color: r.openPOs > 0 ? C.yellow : "#555",
+                                color: r.openPOs > 0 ? "#d9b36a" : "#555",
                                 fontWeight: 500,
                               }}
                             >
@@ -5605,13 +5276,13 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               <div
                                 style={{
                                   fontSize: 11,
-                                  fontWeight: 800,
+                                  fontWeight: 600,
                                   color:
                                     r.fulfillRate >= 95
-                                      ? C.green
+                                      ? "#86b894"
                                       : r.fulfillRate > 0
-                                        ? C.yellow
-                                        : C.red,
+                                        ? "#d9b36a"
+                                        : "#e0705f",
                                   marginBottom: 3,
                                 }}
                               >
@@ -5631,10 +5302,10 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                     height: "100%",
                                     background:
                                       r.fulfillRate >= 95
-                                        ? C.green
+                                        ? "#86b894"
                                         : r.fulfillRate > 0
-                                          ? C.yellow
-                                          : C.red,
+                                          ? "#d9b36a"
+                                          : "#e0705f",
                                     borderRadius: 2,
                                   }}
                                 />
@@ -5660,10 +5331,10 @@ export function Dashboard({ data, session, toast, onNavigate }) {
               v == null
                 ? "#555"
                 : v >= 0.85
-                  ? C.green
+                  ? "#86b894"
                   : v >= 0.65
-                    ? C.yellow
-                    : C.red;
+                    ? "#d9b36a"
+                    : "#e0705f";
             const oeeLabel = (v) =>
               v == null
                 ? "—"
@@ -5936,7 +5607,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     background: "transparent",
                     padding: 16,
                     borderRadius: 8,
-                    border: "1px solid #2a2a2e",
+                    border: "1px solid rgba(255,255,255,0.07)",
                     marginBottom: 20,
                   }}
                 >
@@ -5947,7 +5618,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                         color: "#888",
                         fontWeight: 500,
                         marginBottom: 6,
-                        textTransform: "uppercase",
                       }}
                     >
                       Date From
@@ -5964,7 +5634,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                         color: "#888",
                         fontWeight: 500,
                         marginBottom: 6,
-                        textTransform: "uppercase",
                       }}
                     >
                       Date To
@@ -6041,9 +5710,9 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                   ].map(({ label, val, note, isGap }) => {
                     const col = isGap
                       ? val === 0
-                        ? C.green
+                        ? "#86b894"
                         : val != null
-                          ? C.red
+                          ? "#e0705f"
                           : "#555"
                       : oeeColor(val);
                     return (
@@ -6061,7 +5730,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             fontSize: 11,
                             color: "#888",
                             fontWeight: 500,
-                            textTransform: "uppercase",
                             marginBottom: 6,
                           }}
                         >
@@ -6070,7 +5738,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                         <div
                           style={{
                             fontSize: 30,
-                            fontWeight: 900,
+                            fontWeight: 600,
                             color: col,
                           }}
                         >
@@ -6147,7 +5815,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                 <div
                   style={{
                     background: "transparent",
-                    border: "1px solid #2a2a2e",
+                    border: "1px solid rgba(255,255,255,0.07)",
                     borderRadius: 8,
                     padding: "16px 20px",
                     marginBottom: 20,
@@ -6211,7 +5879,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     borderRadius: 8,
                     overflowX: "auto",
                     WebkitOverflowScrolling: "touch",
-                    border: "1px solid #2a2a2e",
+                    border: "1px solid rgba(255,255,255,0.07)",
                     marginBottom: 20,
                   }}
                 >
@@ -6281,10 +5949,10 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             <tr
                               key={mid}
                               style={{
-                                background: i % 2 === 0 ? "#0e0e12" : "#121216",
+                                background: "transparent",
                               }}
                             >
-                              <td style={{ ...TD, fontWeight: 700 }}>
+                              <td style={{ ...TD, fontWeight: 600 }}>
                                 {r.m.name}
                               </td>
                               <td style={{ ...TD, color: "#888" }}>
@@ -6294,7 +5962,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 {r.activeShifts}
                               </td>
                               <td style={{ ...TD, textAlign: "right" }}>
-                                <span style={{ color: C.green }}>
+                                <span style={{ color: "#86b894" }}>
                                   {r.good.toLocaleString("en-IN")}
                                 </span>
                                 {" / "}
@@ -6401,7 +6069,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               <td style={{ ...TD, textAlign: "right" }}>
                                 <span
                                   style={{
-                                    fontWeight: 900,
+                                    fontWeight: 600,
                                     fontSize: 16,
                                     color: col,
                                   }}
@@ -6501,7 +6169,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       borderRadius: 8,
                       overflowX: "auto",
                       WebkitOverflowScrolling: "touch",
-                      border: "1px solid #2a2a2e",
+                      border: "1px solid rgba(255,255,255,0.07)",
                       marginBottom: 20,
                     }}
                   >
@@ -6569,11 +6237,10 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 <tr
                                   key={`${r.mid}-${sh}`}
                                   style={{
-                                    background:
-                                      si % 2 === 0 ? "#0e0e12" : "#121216",
+                                    background: "transparent",
                                   }}
                                 >
-                                  <td style={{ ...TD, fontWeight: 700 }}>
+                                  <td style={{ ...TD, fontWeight: 600 }}>
                                     {r.m.name}
                                   </td>
                                   <td style={TD}>
@@ -6591,7 +6258,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                           sh === "Morning"
                                             ? "#60a5fa"
                                             : sh === "Night"
-                                              ? "#818cf8"
+                                              ? "#c8955a"
                                               : "#fb923c",
                                         fontSize: 11,
                                         fontWeight: 500,
@@ -6609,7 +6276,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                     style={{
                                       ...TD,
                                       textAlign: "right",
-                                      color: C.green,
+                                      color: "#86b894",
                                       fontWeight: 500,
                                     }}
                                   >
@@ -6619,7 +6286,8 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                     style={{
                                       ...TD,
                                       textAlign: "right",
-                                      color: sd.rejected > 0 ? C.red : "#555",
+                                      color:
+                                        sd.rejected > 0 ? "#e0705f" : "#555",
                                     }}
                                   >
                                     {sd.rejected > 0
@@ -6644,8 +6312,8 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                         delta == null
                                           ? "#555"
                                           : delta >= 0
-                                            ? C.green
-                                            : C.red,
+                                            ? "#86b894"
+                                            : "#e0705f",
                                       fontSize: 11,
                                       fontWeight: 500,
                                     }}
@@ -6660,9 +6328,9 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                       fontSize: 11,
                                       color:
                                         obs === "Needs attention"
-                                          ? C.red
+                                          ? "#e0705f"
                                           : obs === "Excellent"
-                                            ? C.green
+                                            ? "#86b894"
                                             : "#888",
                                     }}
                                   >
@@ -6765,7 +6433,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       padding: 60,
                       background: "transparent",
                       borderRadius: 12,
-                      border: "1px solid #2a2a2e",
+                      border: "1px solid rgba(255,255,255,0.07)",
                     }}
                   >
                     <i
@@ -6781,7 +6449,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       style={{
                         fontWeight: 500,
                         fontSize: 16,
-                        color: C.green,
+                        color: "#86b894",
                         marginBottom: 8,
                       }}
                     >
@@ -6820,7 +6488,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 fontSize: 11,
                                 color: "#888",
                                 fontWeight: 500,
-                                textTransform: "uppercase",
                                 marginBottom: 4,
                               }}
                             >
@@ -6829,7 +6496,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             <div
                               style={{
                                 fontSize: 32,
-                                fontWeight: 900,
+                                fontWeight: 600,
                                 color: cfg.color,
                               }}
                             >
@@ -6857,8 +6524,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             fontSize: 11,
                             fontWeight: 500,
                             color: "#888",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.07em",
                             marginBottom: 10,
                           }}
                         >
@@ -6948,8 +6613,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                       fontSize: 9,
                                       fontWeight: 500,
                                       color: cfg.color,
-                                      textTransform: "uppercase",
-                                      letterSpacing: "0.05em",
                                       marginBottom: 5,
                                     }}
                                   >
@@ -7078,12 +6741,12 @@ export function Dashboard({ data, session, toast, onNavigate }) {
 
             const starvationColor =
               starvationRisk === "high"
-                ? C.red
+                ? "#e0705f"
                 : starvationRisk === "medium"
-                  ? C.yellow
+                  ? "#d9b36a"
                   : starvationRisk === "none"
                     ? "#555"
-                    : C.green;
+                    : "#86b894";
             const starvationLabel =
               starvationRisk === "high"
                 ? "High Risk"
@@ -7137,7 +6800,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
               const border = isBN
                 ? "#ef4444"
                 : fillPct > 0.5
-                  ? C.yellow
+                  ? "#d9b36a"
                   : fillPct > 0
                     ? s.isFeeder
                       ? "#3b82f6"
@@ -7203,7 +6866,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       <div
                         style={{
                           fontSize,
-                          fontWeight: 900,
+                          fontWeight: 600,
                           color:
                             s.count > 0
                               ? isBN
@@ -7281,13 +6944,13 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     {
                       label: "Total WIP Jobs",
                       val: totalWIP,
-                      color: C.yellow,
+                      color: "#d9b36a",
                       isText: false,
                     },
                     {
                       label: "Bottleneck Stage",
                       val: bottleneck.count > 0 ? bottleneck.stage : "None",
-                      color: C.red,
+                      color: "#e0705f",
                       isText: true,
                     },
                     {
@@ -7326,7 +6989,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                           fontSize: 11,
                           color: "#888",
                           fontWeight: 500,
-                          textTransform: "uppercase",
                           marginBottom: 6,
                         }}
                       >
@@ -7335,7 +6997,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       <div
                         style={{
                           fontSize: isText ? 18 : 30,
-                          fontWeight: 900,
+                          fontWeight: 600,
                           color,
                         }}
                       >
@@ -7369,8 +7031,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                           fontWeight: 500,
                           color: "#ef4444",
                           fontSize: 11,
-                          textTransform: "uppercase",
-                          letterSpacing: "0.05em",
                           marginBottom: 4,
                         }}
                       >
@@ -7415,8 +7075,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             fontWeight: 500,
                             color: starvationColor,
                             fontSize: 11,
-                            textTransform: "uppercase",
-                            letterSpacing: "0.05em",
                             marginBottom: 4,
                           }}
                         >
@@ -7440,7 +7098,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                 <div
                   style={{
                     background: "transparent",
-                    border: "1px solid #2a2a2e",
+                    border: "1px solid rgba(255,255,255,0.07)",
                     borderRadius: 8,
                     padding: "20px 20px 16px",
                     marginBottom: 20,
@@ -7459,8 +7117,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                         fontSize: 11,
                         fontWeight: 500,
                         color: "#888",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
                       }}
                     >
                       Production Pipeline — Feeder Stages → Formation Sinks
@@ -7508,8 +7164,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                           fontSize: 9,
                           color: "#22c55e88",
                           fontWeight: 500,
-                          textTransform: "uppercase",
-                          letterSpacing: "0.05em",
                           textAlign: "center",
                         }}
                       >
@@ -7539,7 +7193,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     borderRadius: 8,
                     overflowX: "auto",
                     WebkitOverflowScrolling: "touch",
-                    border: "1px solid #2a2a2e",
+                    border: "1px solid rgba(255,255,255,0.07)",
                     marginBottom: 20,
                   }}
                 >
@@ -7578,11 +7232,11 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                         const isBN =
                           s.stage === bottleneck.stage && s.count > 0;
                         const col = isBN
-                          ? C.red
+                          ? "#e0705f"
                           : s.count > 2
-                            ? C.yellow
+                            ? "#d9b36a"
                             : s.count > 0
-                              ? C.green
+                              ? "#86b894"
                               : "#555";
                         const label =
                           s.count === 0
@@ -7598,10 +7252,10 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                           <tr
                             key={s.stage}
                             style={{
-                              background: i % 2 === 0 ? "#0e0e12" : "#121216",
+                              background: "transparent",
                             }}
                           >
-                            <td style={{ ...TD, fontWeight: 700 }}>
+                            <td style={{ ...TD, fontWeight: 600 }}>
                               {s.stage}
                             </td>
                             <td style={{ ...TD }}>
@@ -7635,9 +7289,9 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 textAlign: "right",
                                 color:
                                   s.avgWait > 3
-                                    ? C.red
+                                    ? "#e0705f"
                                     : s.avgWait > 1
-                                      ? C.yellow
+                                      ? "#d9b36a"
                                       : "#888",
                               }}
                             >
@@ -7649,9 +7303,9 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 textAlign: "right",
                                 color:
                                   s.maxWait > 5
-                                    ? C.red
+                                    ? "#e0705f"
                                     : s.maxWait > 2
-                                      ? C.yellow
+                                      ? "#d9b36a"
                                       : "#888",
                               }}
                             >
@@ -7741,7 +7395,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                         borderRadius: 8,
                         overflowX: "auto",
                         WebkitOverflowScrolling: "touch",
-                        border: "1px solid #2a2a2e",
+                        border: "1px solid rgba(255,255,255,0.07)",
                       }}
                     >
                       <div
@@ -7780,14 +7434,13 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               <tr
                                 key={jo._id || i}
                                 style={{
-                                  background:
-                                    i % 2 === 0 ? "#0e0e12" : "#121216",
+                                  background: "transparent",
                                 }}
                               >
                                 <td
                                   style={{
                                     ...TD,
-                                    color: C.yellow,
+                                    color: "#d9b36a",
                                     fontWeight: 500,
                                   }}
                                 >
@@ -7835,9 +7488,9 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                     fontWeight: 500,
                                     color:
                                       wait > 5
-                                        ? C.red
+                                        ? "#e0705f"
                                         : wait > 2
-                                          ? C.yellow
+                                          ? "#d9b36a"
                                           : "#888",
                                   }}
                                 >
@@ -8029,14 +7682,14 @@ export function Dashboard({ data, session, toast, onNavigate }) {
             const pctFmt = (n) =>
               n == null ? "—" : `${(n * 100).toFixed(1)}%`;
             const utilColor = (v) =>
-              v >= 0.7 ? C.green : v >= 0.4 ? C.yellow : C.red;
+              v >= 0.7 ? "#86b894" : v >= 0.4 ? "#d9b36a" : "#e0705f";
             const trendColor = (t) =>
               t === "improving"
-                ? C.green
+                ? "#86b894"
                 : t === "declining"
-                  ? C.red
+                  ? "#e0705f"
                   : t === "plateau"
-                    ? C.yellow
+                    ? "#d9b36a"
                     : "#555";
             const trendLabel = (t) =>
               t === "improving"
@@ -8063,7 +7716,8 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                 )
                 .join(" ");
               const col =
-                color || (vals[vals.length - 1] >= vals[0] ? C.green : C.red);
+                color ||
+                (vals[vals.length - 1] >= vals[0] ? "#86b894" : "#e0705f");
               return (
                 <svg
                   width={W}
@@ -8107,7 +7761,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     borderRadius: 8,
                     overflowX: "auto",
                     WebkitOverflowScrolling: "touch",
-                    border: "1px solid #2a2a2e",
+                    border: "1px solid rgba(255,255,255,0.07)",
                     marginBottom: 24,
                   }}
                 >
@@ -8171,20 +7825,20 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                   ? "3rd"
                                   : `#${i + 1}`;
                           const prodCol =
-                            i === 0 ? C.green : i < 3 ? C.yellow : "#e0e0e0";
+                            i === 0 ? "#86b894" : i < 3 ? "#d9b36a" : "#e0e0e0";
                           const qualCol =
                             r.quality == null
                               ? "#555"
                               : r.quality >= 0.95
-                                ? C.green
+                                ? "#86b894"
                                 : r.quality >= 0.85
-                                  ? C.yellow
-                                  : C.red;
+                                  ? "#d9b36a"
+                                  : "#e0705f";
                           return (
                             <tr
                               key={r.op}
                               style={{
-                                background: i % 2 === 0 ? "#0e0e12" : "#121216",
+                                background: "transparent",
                               }}
                             >
                               <td
@@ -8196,18 +7850,20 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               >
                                 {medal}
                               </td>
-                              <td style={{ ...TD, fontWeight: 700 }}>{r.op}</td>
+                              <td style={{ ...TD, fontWeight: 600 }}>{r.op}</td>
                               <td
                                 style={{
                                   ...TD,
                                   textAlign: "right",
-                                  color: C.green,
+                                  color: "#86b894",
                                   fontWeight: 500,
                                 }}
                               >
                                 {r.good.toLocaleString("en-IN")}
                                 {r.rejected > 0 && (
-                                  <div style={{ fontSize: 9, color: C.red }}>
+                                  <div
+                                    style={{ fontSize: 9, color: "#e0705f" }}
+                                  >
                                     +{r.rejected} rej
                                   </div>
                                 )}
@@ -8224,7 +7880,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               <td style={{ ...TD, textAlign: "right" }}>
                                 <span
                                   style={{
-                                    fontWeight: 900,
+                                    fontWeight: 600,
                                     fontSize: 15,
                                     color: prodCol,
                                   }}
@@ -8273,7 +7929,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                     <div
                                       style={{
                                         fontSize: 9,
-                                        color: C.yellow,
+                                        color: "#d9b36a",
                                         marginTop: 3,
                                       }}
                                     >
@@ -8284,7 +7940,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                   <div
                                     style={{
                                       fontSize: 9,
-                                      color: C.red,
+                                      color: "#e0705f",
                                       marginTop: 3,
                                     }}
                                   >
@@ -8306,7 +7962,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     borderRadius: 8,
                     overflowX: "auto",
                     WebkitOverflowScrolling: "touch",
-                    border: "1px solid #2a2a2e",
+                    border: "1px solid rgba(255,255,255,0.07)",
                   }}
                 >
                   <div
@@ -8367,18 +8023,18 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             r.quality == null
                               ? "#555"
                               : r.quality >= 0.95
-                                ? C.green
+                                ? "#86b894"
                                 : r.quality >= 0.85
-                                  ? C.yellow
-                                  : C.red;
+                                  ? "#d9b36a"
+                                  : "#e0705f";
                           return (
                             <tr
                               key={r.m._id}
                               style={{
-                                background: i % 2 === 0 ? "#0e0e12" : "#121216",
+                                background: "transparent",
                               }}
                             >
-                              <td style={{ ...TD, fontWeight: 700 }}>
+                              <td style={{ ...TD, fontWeight: 600 }}>
                                 {r.m.name}
                               </td>
                               <td style={{ ...TD, color: "#888" }}>
@@ -8433,7 +8089,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 style={{
                                   ...TD,
                                   textAlign: "right",
-                                  color: C.green,
+                                  color: "#86b894",
                                   fontWeight: 500,
                                 }}
                               >
@@ -8664,7 +8320,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
             return (
               <div>
                 <div style={{ marginBottom: 20 }}>
-                  <div style={{ fontSize: 18, fontWeight: 700 }}>
+                  <div style={{ fontSize: 18, fontWeight: 600 }}>
                     SO → Dispatch Funnel
                   </div>
                   <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
@@ -8813,8 +8469,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             fontSize: 10,
                             color: "#888",
                             fontWeight: 500,
-                            textTransform: "uppercase",
-                            letterSpacing: "0.05em",
                             marginBottom: 8,
                           }}
                         >
@@ -8823,7 +8477,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                         <div
                           style={{
                             fontSize: 28,
-                            fontWeight: 800,
+                            fontWeight: 600,
                             color: col,
                             lineHeight: 1,
                           }}

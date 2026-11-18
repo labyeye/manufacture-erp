@@ -12,13 +12,16 @@ import {
   brandMasterAPI,
 } from "../api/auth";
 import {
-  ImportBtn,
-  ExportBtn,
-  TemplateBtn,
+  ListToolbar,
+  FilterModal,
+  Field as FilterField,
+  SortSelect,
   ImportModal,
 } from "../components/ui/BasicComponents";
 import ConfirmModal from "../components/ConfirmModal";
 import * as XLSX from "xlsx";
+import { IconBtn } from "../components/ui/IconBtn";
+import { StatCard } from "../components/ui/StatCard";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 
@@ -62,11 +65,11 @@ const CONSUMABLE_DIM_CONFIG = {
 const inputStyle = {
   width: "100%",
   padding: "9px 12px",
-  border: "1px solid rgba(255,255,255,0.13)",
-  borderRadius: 6,
+  border: "1px solid rgba(255,255,255,0.08)",
+  borderRadius: 8,
   fontSize: 13,
-  background: "rgba(255,255,255,0.07)",
-  color: "#e0e0e0",
+  background: "#141414",
+  color: "#ededed",
   outline: "none",
   boxSizing: "border-box",
 };
@@ -83,6 +86,21 @@ function useIsMobile(breakpoint = 768) {
   return isMobile;
 }
 
+const th = {
+  padding: "10px 14px",
+  textAlign: "left",
+  fontSize: 11,
+  fontWeight: 600,
+  color: "#8a8a8a",
+  whiteSpace: "nowrap",
+};
+
+// Safe "date added": items without a valid date show nothing instead of crashing the page
+const addedDate = (item) => {
+  const d = new Date(item?.addedOn || item?.createdAt);
+  return isNaN(d.getTime()) ? "" : d.toISOString().split("T")[0];
+};
+
 export default function ItemMaster({
   companyMaster = [],
   toast,
@@ -98,6 +116,7 @@ export default function ItemMaster({
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("Raw Material");
   const [search, setSearch] = useState("");
+  const [showFilterModal, setShowFilterModal] = useState(false);
   const [filterCat, setFilterCat] = useState("All");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSubCategory, setSelectedSubCategory] = useState("");
@@ -129,6 +148,8 @@ export default function ItemMaster({
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, count: 0 });
   const [deleteAllModal, setDeleteAllModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [sortBy, setSortBy] = useState("newest");
   const fileInputRef = useRef(null);
   const companyCodesFileRef = useRef(null);
   const editInitRef = useRef(false); // suppresses name auto-gen during edit init
@@ -308,15 +329,33 @@ export default function ItemMaster({
   );
 
   const sorted = useMemo(() => {
+    const time = (x) => new Date(x.createdAt || x.addedOn || 0).getTime() || 0;
+    const byCode = (a, b) =>
+      (a.code || "").localeCompare(b.code || "", undefined, { numeric: true });
     return [...filtered].sort((a, b) => {
-      const dateA = new Date(a.createdAt || a.addedOn || 0).getTime();
-      const dateB = new Date(b.createdAt || b.addedOn || 0).getTime();
-      if (dateA !== dateB) return dateB - dateA;
-      const codeA = a.code || "";
-      const codeB = b.code || "";
-      return codeA.localeCompare(codeB, undefined, { numeric: true });
+      if (sortBy === "oldest") return time(a) - time(b) || byCode(a, b);
+      if (sortBy === "code") return byCode(a, b);
+      if (sortBy === "name")
+        return (a.name || "").localeCompare(b.name || "", undefined, {
+          numeric: true,
+        });
+      return time(b) - time(a) || byCode(a, b);
     });
-  }, [filtered]);
+  }, [filtered, sortBy]);
+
+  const switchTab = (key) => {
+    setActiveTab(key);
+    setFilterCat("All");
+    setEditingItem(null);
+    setNewItemName("");
+    setSelectedCategory("");
+    setSelectedSubCategory("");
+    setGsm("");
+    setWidth("");
+    setLength("");
+    setCompanyName("");
+    setSelectedIds([]);
+  };
 
   const handleAddItem = async () => {
     if (!editingItem && !canCreate) {
@@ -419,6 +458,7 @@ export default function ItemMaster({
       setHsnCode("");
       setReorderLevel("0");
       setProductCode("");
+      setShowAddModal(false);
       fetchItems();
       refreshData?.();
     } catch (error) {
@@ -611,10 +651,7 @@ export default function ItemMaster({
       { header: "Status", key: (i) => i.status || "Active" },
       {
         header: "Date Added",
-        key: (i) =>
-          i.addedOn || i.createdAt
-            ? new Date(i.addedOn || i.createdAt).toISOString().split("T")[0]
-            : "",
+        key: (i) => (i.addedOn || i.createdAt ? addedDate(i) : ""),
       },
     ];
 
@@ -977,69 +1014,7 @@ export default function ItemMaster({
         status={importProgress.status}
         title="Importing Items"
       />
-      <div style={{ marginBottom: 20 }}>
-        <h2
-          style={{ fontSize: 22, fontWeight: 500, color: "#e0e0e0", margin: 0 }}
-        >
-          Item Master
-        </h2>
-        <p style={{ fontSize: 13, color: "#777", margin: "4px 0 0" }}>
-          Manage your items, raw materials, and components
-        </p>
-      </div>
-
-      <div
-        style={{
-          display: "flex",
-          gap: 10,
-          background: "transparent",
-          padding: 4,
-          borderRadius: 12,
-          marginBottom: 20,
-          border: "1px solid rgba(255,255,255,0.1)",
-        }}
-      >
-        {ITEM_TABS.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => {
-              setActiveTab(tab.key);
-              setFilterCat("All");
-              setEditingItem(null);
-              setNewItemName("");
-              setSelectedCategory("");
-              setSelectedSubCategory("");
-              setGsm("");
-              setWidth("");
-              setLength("");
-              setCompanyName("");
-            }}
-            style={{
-              flex: 1,
-              padding: "10px 0",
-              borderRadius: 8,
-              border: "none",
-              background:
-                activeTab === tab.key
-                  ? "rgba(255,255,255,0.12)"
-                  : "rgba(255,255,255,0.05)",
-              color: "#fff",
-              boxShadow:
-                activeTab === tab.key
-                  ? "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)"
-                  : "none",
-              fontWeight: 500,
-              fontSize: 13,
-              cursor: "pointer",
-              transition: "all 0.2s",
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {showEditModal && editingItem && (
+      {(showAddModal || (showEditModal && editingItem)) && (
         <div
           style={{
             position: "fixed",
@@ -1048,6 +1023,7 @@ export default function ItemMaster({
             zIndex: 999,
           }}
           onClick={() => {
+            setShowAddModal(false);
             setShowEditModal(false);
             setEditingItem(null);
             setNewItemName("");
@@ -1064,155 +1040,117 @@ export default function ItemMaster({
         />
       )}
 
-      {(canCreate || (editingItem && canEdit)) && (
-        <div
-          style={
-            showEditModal && editingItem
-              ? {
-                  position: "fixed",
-                  top: "50%",
-                  left: "50%",
-                  transform: "translate(-50%, -50%)",
-                  zIndex: 1000,
-                  background: "transparent",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  borderRadius: 12,
-                  padding: "20px 24px",
-                  width: "90%",
-                  maxWidth: 960,
-                  maxHeight: "88vh",
-                  overflowY: "auto",
-                }
-              : {
-                  background: "transparent",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  borderRadius: 10,
-                  padding: "16px 20px",
-                  marginBottom: 14,
-                }
-          }
-        >
+      {(showAddModal || (showEditModal && editingItem)) &&
+        (canCreate || (editingItem && canEdit)) && (
           <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: 14,
-            }}
+            style={
+              true
+                ? {
+                    position: "fixed",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    zIndex: 1000,
+                    background: "#1a1a1a",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    borderRadius: 12,
+                    padding: "20px 24px",
+                    width: "90%",
+                    maxWidth: 960,
+                    maxHeight: "88vh",
+                    overflowY: "auto",
+                  }
+                : {
+                    background: "transparent",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    borderRadius: 10,
+                    padding: "16px 20px",
+                    marginBottom: 14,
+                  }
+            }
           >
             <div
               style={{
-                fontSize: 12,
-                fontWeight: 500,
-                color: "#2196F3",
-                letterSpacing: "1px",
-                textTransform: "uppercase",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: 14,
               }}
             >
-              {editingItem ? `Edit ${activeTab} Item` : `Add ${activeTab} Item`}
-            </div>
-            {showEditModal && editingItem && (
-              <button
-                onClick={() => {
-                  setShowEditModal(false);
-                  setEditingItem(null);
-                  setNewItemName("");
-                  setSelectedCategory("");
-                  setSelectedSubCategory("");
-                  setGsm("");
-                  setWidth("");
-                  setLength("");
-                  setGussett("");
-                  setHeight("");
-                  setGstRate("18");
-                  setHsnCode("");
-                  setReorderLevel("0");
-                  setProductCode("");
-                }}
+              <div
                 style={{
-                  background: "transparent",
-                  border: "none",
-                  color: "#888",
-                  fontSize: 20,
-                  cursor: "pointer",
-                  lineHeight: 1,
-                  padding: "0 4px",
-                }}
-              >
-                ✕
-              </button>
-            )}
-          </div>
-          {editingItem && (
-            <div style={{ marginBottom: 14 }}>
-              <label
-                style={{
-                  fontSize: 11,
+                  fontSize: 16,
                   fontWeight: 600,
-                  color: "#666",
-                  display: "block",
-                  marginBottom: 6,
-                  letterSpacing: "0.5px",
+                  color: "#ededed",
                 }}
               >
-                PRODUCT CODE
-              </label>
-              <input
-                style={inputStyle}
-                placeholder="e.g. RM0001"
-                value={productCode}
-                onChange={(e) => setProductCode(e.target.value)}
-              />
+                {editingItem
+                  ? `Edit ${activeTab.toLowerCase()} item`
+                  : `New ${activeTab.toLowerCase()} item`}
+              </div>
+              {
+                <button
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setShowEditModal(false);
+                    setEditingItem(null);
+                    setNewItemName("");
+                    setSelectedCategory("");
+                    setSelectedSubCategory("");
+                    setGsm("");
+                    setWidth("");
+                    setLength("");
+                    setGussett("");
+                    setHeight("");
+                    setGstRate("18");
+                    setHsnCode("");
+                    setReorderLevel("0");
+                    setProductCode("");
+                  }}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    color: "#888",
+                    fontSize: 20,
+                    cursor: "pointer",
+                    lineHeight: 1,
+                    padding: "0 4px",
+                  }}
+                >
+                  ✕
+                </button>
+              }
             </div>
-          )}
+            {editingItem && (
+              <div style={{ marginBottom: 14 }}>
+                <label
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: "#666",
+                    display: "block",
+                    marginBottom: 6,
+                  }}
+                >
+                  PRODUCT CODE
+                </label>
+                <input
+                  style={inputStyle}
+                  placeholder="e.g. RM0001"
+                  value={productCode}
+                  onChange={(e) => setProductCode(e.target.value)}
+                />
+              </div>
+            )}
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-              gap: 14,
-              marginBottom: 14,
-            }}
-          >
-            <div>
-              <label
-                style={{
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: "#666",
-                  display: "block",
-                  marginBottom: 6,
-                  letterSpacing: "0.5px",
-                }}
-              >
-                CATEGORY *
-              </label>
-              <select
-                value={selectedCategory}
-                onChange={(e) => {
-                  setSelectedCategory(e.target.value);
-                  setSelectedSubCategory("");
-                  setWidth("");
-                  setLength("");
-                  setHeight("");
-                  setNewItemName("");
-                  if (
-                    activeTab === "Consumable" ||
-                    activeTab === "Machine Spare"
-                  )
-                    setUom("mm");
-                }}
-                style={inputStyle}
-              >
-                <option value="">-- Select Category --</option>
-                {tabCategories.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {tabSubCategories.length > 0 ? (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+                gap: 14,
+                marginBottom: 14,
+              }}
+            >
               <div>
                 <label
                   style={{
@@ -1221,196 +1159,99 @@ export default function ItemMaster({
                     color: "#666",
                     display: "block",
                     marginBottom: 6,
-                    letterSpacing: "0.5px",
                   }}
                 >
-                  {activeTab === "Finished Goods"
-                    ? "SIZE *"
-                    : "SUB-CATEGORY / TYPE"}
+                  CATEGORY *
                 </label>
                 <select
-                  value={selectedSubCategory}
-                  onChange={(e) => handleSizeChange(e.target.value)}
-                  style={inputStyle}
-                >
-                  <option value="">-- Manual / Custom --</option>
-                  {tabSubCategories.map((sc) => (
-                    <option key={sc} value={sc}>
-                      {sc}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ) : (activeTab === "Consumable" || activeTab === "Machine Spare") &&
-              selectedCategory ? (
-              (() => {
-                const dimCfg = CONSUMABLE_DIM_CONFIG[selectedCategory];
-                const uomSelect = (
-                  <div key="uom">
-                    <label
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 600,
-                        color: "#666",
-                        display: "block",
-                        marginBottom: 6,
-                        letterSpacing: "0.5px",
-                      }}
-                    >
-                      UNIT (UOM)
-                    </label>
-                    <select
-                      value={uom}
-                      onChange={(e) => setUom(e.target.value)}
-                      style={inputStyle}
-                    >
-                      <option value="mm">mm</option>
-                      <option value="cm">cm</option>
-                      <option value="inch">inch</option>
-                      <option value="N/A">Not Applicable</option>
-                    </select>
-                  </div>
-                );
-                if (dimCfg) {
-                  // Dimension fields for LDPE Polybag / Corrugated + UOM
-                  return [
-                    uomSelect,
-                    ...dimCfg.fields.map((field) => (
-                      <div key={field}>
-                        <label
-                          style={{
-                            fontSize: 11,
-                            fontWeight: 600,
-                            color: "#666",
-                            display: "block",
-                            marginBottom: 6,
-                            letterSpacing: "0.5px",
-                          }}
-                        >
-                          {field}
-                          {uom !== "N/A" ? ` (${uom})` : ""}
-                        </label>
-                        <input
-                          type="number"
-                          placeholder="e.g. 200"
-                          style={inputStyle}
-                          value={
-                            field === "WIDTH"
-                              ? width
-                              : field === "LENGTH"
-                                ? length
-                                : height
-                          }
-                          onChange={(e) => {
-                            if (field === "WIDTH") setWidth(e.target.value);
-                            else if (field === "LENGTH")
-                              setLength(e.target.value);
-                            else setHeight(e.target.value);
-                          }}
-                        />
-                      </div>
-                    )),
-                  ];
-                }
-                // Default: free-text SIZE / TYPE + UOM
-                return [
-                  <div key="size">
-                    <label
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 600,
-                        color: "#666",
-                        display: "block",
-                        marginBottom: 6,
-                        letterSpacing: "0.5px",
-                      }}
-                    >
-                      SIZE / TYPE
-                    </label>
-                    <input
-                      style={inputStyle}
-                      placeholder="e.g. 100, A4, Large"
-                      value={selectedSubCategory}
-                      onChange={(e) => setSelectedSubCategory(e.target.value)}
-                    />
-                  </div>,
-                  uomSelect,
-                ];
-              })()
-            ) : null}
-            {activeTab === "Finished Goods" && (
-              <div>
-                <label
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 600,
-                    color: "#666",
-                    display: "block",
-                    marginBottom: 6,
-                    letterSpacing: "0.5px",
+                  value={selectedCategory}
+                  onChange={(e) => {
+                    setSelectedCategory(e.target.value);
+                    setSelectedSubCategory("");
+                    setWidth("");
+                    setLength("");
+                    setHeight("");
+                    setNewItemName("");
+                    if (
+                      activeTab === "Consumable" ||
+                      activeTab === "Machine Spare"
+                    )
+                      setUom("mm");
                   }}
-                >
-                  BRAND NAME *
-                </label>
-                <select
                   style={inputStyle}
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                >
-                  <option value="">-- Select Brand --</option>
-                  {brandMaster.map((b) => (
-                    <option key={b._id} value={b.name}>
-                      {b.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-            {activeTab === "Finished Goods" && (
-              <div>
-                <label
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 600,
-                    color: "#666",
-                    display: "block",
-                    marginBottom: 6,
-                    letterSpacing: "0.5px",
-                  }}
-                >
-                  CLIENT CATEGORY
-                </label>
-                <select
-                  style={inputStyle}
-                  value={companyCategory}
-                  onChange={(e) => setCompanyCategory(e.target.value)}
                 >
                   <option value="">-- Select Category --</option>
-                  {clientCategories.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
+                  {tabCategories.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
                     </option>
                   ))}
                 </select>
               </div>
-            )}
-            {activeTab === "Finished Goods" &&
-              selectedCategory &&
-              selectedCategory !== "Other" && (
-                <>
-                  {(() => {
-                    const config = CATEGORY_CONFIG[selectedCategory] || {
-                      layout: "2D",
-                      f1: "WIDTH",
-                      f2: "LENGTH",
-                    };
-                    const f1 = config.f1;
-                    const f2 = config.f2;
-                    const f3 = config.f3;
-
-                    return (
-                      <>
-                        <div>
+              {tabSubCategories.length > 0 ? (
+                <div>
+                  <label
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: "#666",
+                      display: "block",
+                      marginBottom: 6,
+                    }}
+                  >
+                    {activeTab === "Finished Goods"
+                      ? "SIZE *"
+                      : "SUB-CATEGORY / TYPE"}
+                  </label>
+                  <select
+                    value={selectedSubCategory}
+                    onChange={(e) => handleSizeChange(e.target.value)}
+                    style={inputStyle}
+                  >
+                    <option value="">-- Manual / Custom --</option>
+                    {tabSubCategories.map((sc) => (
+                      <option key={sc} value={sc}>
+                        {sc}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (activeTab === "Consumable" ||
+                  activeTab === "Machine Spare") &&
+                selectedCategory ? (
+                (() => {
+                  const dimCfg = CONSUMABLE_DIM_CONFIG[selectedCategory];
+                  const uomSelect = (
+                    <div key="uom">
+                      <label
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 600,
+                          color: "#666",
+                          display: "block",
+                          marginBottom: 6,
+                        }}
+                      >
+                        UNIT (UOM)
+                      </label>
+                      <select
+                        value={uom}
+                        onChange={(e) => setUom(e.target.value)}
+                        style={inputStyle}
+                      >
+                        <option value="mm">mm</option>
+                        <option value="cm">cm</option>
+                        <option value="inch">inch</option>
+                        <option value="N/A">Not Applicable</option>
+                      </select>
+                    </div>
+                  );
+                  if (dimCfg) {
+                    // Dimension fields for LDPE Polybag / Corrugated + UOM
+                    return [
+                      uomSelect,
+                      ...dimCfg.fields.map((field) => (
+                        <div key={field}>
                           <label
                             style={{
                               fontSize: 11,
@@ -1418,164 +1259,246 @@ export default function ItemMaster({
                               color: "#666",
                               display: "block",
                               marginBottom: 6,
-                              letterSpacing: "0.5px",
                             }}
                           >
-                            UOM
-                          </label>
-                          <select
-                            value={uom}
-                            onChange={(e) => setUom(e.target.value)}
-                            style={inputStyle}
-                          >
-                            <option value="mm">mm</option>
-                            <option value="cm">cm</option>
-                            <option value="inch">inch</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label
-                            style={{
-                              fontSize: 11,
-                              fontWeight: 600,
-                              color: "#666",
-                              display: "block",
-                              marginBottom: 6,
-                              letterSpacing: "0.5px",
-                            }}
-                          >
-                            GSM
+                            {field}
+                            {uom !== "N/A" ? ` (${uom})` : ""}
                           </label>
                           <input
                             type="number"
-                            placeholder="e.g. 100"
-                            value={gsm}
-                            onChange={(e) => setGsm(e.target.value)}
+                            placeholder="e.g. 200"
                             style={inputStyle}
-                          />
-                        </div>
-                        <div>
-                          <label
-                            style={{
-                              fontSize: 11,
-                              fontWeight: 600,
-                              color: "#666",
-                              display: "block",
-                              marginBottom: 6,
-                              letterSpacing: "0.5px",
+                            value={
+                              field === "WIDTH"
+                                ? width
+                                : field === "LENGTH"
+                                  ? length
+                                  : height
+                            }
+                            onChange={(e) => {
+                              if (field === "WIDTH") setWidth(e.target.value);
+                              else if (field === "LENGTH")
+                                setLength(e.target.value);
+                              else setHeight(e.target.value);
                             }}
-                          >
-                            {f1} ({uom})
-                          </label>
-                          <input
-                            type="number"
-                            placeholder={`e.g. 10`}
-                            value={width}
-                            onChange={(e) => setWidth(e.target.value)}
-                            style={inputStyle}
                           />
                         </div>
-                        {f2 && (
-                          <div>
-                            <label
-                              style={{
-                                fontSize: 11,
-                                fontWeight: 600,
-                                color: "#666",
-                                display: "block",
-                                marginBottom: 6,
-                                letterSpacing: "0.5px",
-                              }}
-                            >
-                              {f2} ({uom})
-                            </label>
-                            <input
-                              type="number"
-                              placeholder={`e.g. 10`}
-                              value={f2 === "GUSSETT" ? gussett : length}
-                              onChange={(e) =>
-                                f2 === "GUSSETT"
-                                  ? setGussett(e.target.value)
-                                  : setLength(e.target.value)
-                              }
-                              style={inputStyle}
-                            />
-                          </div>
-                        )}
-                        {f3 && (
-                          <div>
-                            <label
-                              style={{
-                                fontSize: 11,
-                                fontWeight: 600,
-                                color: "#666",
-                                display: "block",
-                                marginBottom: 6,
-                                letterSpacing: "0.5px",
-                              }}
-                            >
-                              {f3} ({uom})
-                            </label>
-                            <input
-                              type="number"
-                              placeholder={`e.g. 10`}
-                              value={height}
-                              onChange={(e) => setHeight(e.target.value)}
-                              style={inputStyle}
-                            />
-                          </div>
-                        )}
-                      </>
-                    );
-                  })()}
-                </>
+                      )),
+                    ];
+                  }
+                  // Default: free-text SIZE / TYPE + UOM
+                  return [
+                    <div key="size">
+                      <label
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 600,
+                          color: "#666",
+                          display: "block",
+                          marginBottom: 6,
+                        }}
+                      >
+                        SIZE / TYPE
+                      </label>
+                      <input
+                        style={inputStyle}
+                        placeholder="e.g. 100, A4, Large"
+                        value={selectedSubCategory}
+                        onChange={(e) => setSelectedSubCategory(e.target.value)}
+                      />
+                    </div>,
+                    uomSelect,
+                  ];
+                })()
+              ) : null}
+              {activeTab === "Finished Goods" && (
+                <div>
+                  <label
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: "#666",
+                      display: "block",
+                      marginBottom: 6,
+                    }}
+                  >
+                    BRAND NAME *
+                  </label>
+                  <select
+                    style={inputStyle}
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                  >
+                    <option value="">-- Select Brand --</option>
+                    {brandMaster.map((b) => (
+                      <option key={b._id} value={b.name}>
+                        {b.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               )}
+              {activeTab === "Finished Goods" && (
+                <div>
+                  <label
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: "#666",
+                      display: "block",
+                      marginBottom: 6,
+                    }}
+                  >
+                    CLIENT CATEGORY
+                  </label>
+                  <select
+                    style={inputStyle}
+                    value={companyCategory}
+                    onChange={(e) => setCompanyCategory(e.target.value)}
+                  >
+                    <option value="">-- Select Category --</option>
+                    {clientCategories.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {activeTab === "Finished Goods" &&
+                selectedCategory &&
+                selectedCategory !== "Other" && (
+                  <>
+                    {(() => {
+                      const config = CATEGORY_CONFIG[selectedCategory] || {
+                        layout: "2D",
+                        f1: "WIDTH",
+                        f2: "LENGTH",
+                      };
+                      const f1 = config.f1;
+                      const f2 = config.f2;
+                      const f3 = config.f3;
 
-            {activeTab === "Raw Material" && (
-              <>
-                <div>
-                  <label
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 600,
-                      color: "#666",
-                      display: "block",
-                      marginBottom: 6,
-                      letterSpacing: "0.5px",
-                    }}
-                  >
-                    GSM *
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="e.g. 70"
-                    value={gsm}
-                    onChange={(e) => setGsm(e.target.value)}
-                    style={inputStyle}
-                  />
-                </div>
-                <div>
-                  <label
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 600,
-                      color: "#666",
-                      display: "block",
-                      marginBottom: 6,
-                      letterSpacing: "0.5px",
-                    }}
-                  >
-                    WIDTH (mm) *
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="e.g. 1000"
-                    value={width}
-                    onChange={(e) => setWidth(e.target.value)}
-                    style={inputStyle}
-                  />
-                </div>
-                {selectedCategory !== "Paper Reel" && (
+                      return (
+                        <>
+                          <div>
+                            <label
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 600,
+                                color: "#666",
+                                display: "block",
+                                marginBottom: 6,
+                              }}
+                            >
+                              UOM
+                            </label>
+                            <select
+                              value={uom}
+                              onChange={(e) => setUom(e.target.value)}
+                              style={inputStyle}
+                            >
+                              <option value="mm">mm</option>
+                              <option value="cm">cm</option>
+                              <option value="inch">inch</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 600,
+                                color: "#666",
+                                display: "block",
+                                marginBottom: 6,
+                              }}
+                            >
+                              GSM
+                            </label>
+                            <input
+                              type="number"
+                              placeholder="e.g. 100"
+                              value={gsm}
+                              onChange={(e) => setGsm(e.target.value)}
+                              style={inputStyle}
+                            />
+                          </div>
+                          <div>
+                            <label
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 600,
+                                color: "#666",
+                                display: "block",
+                                marginBottom: 6,
+                              }}
+                            >
+                              {f1} ({uom})
+                            </label>
+                            <input
+                              type="number"
+                              placeholder={`e.g. 10`}
+                              value={width}
+                              onChange={(e) => setWidth(e.target.value)}
+                              style={inputStyle}
+                            />
+                          </div>
+                          {f2 && (
+                            <div>
+                              <label
+                                style={{
+                                  fontSize: 11,
+                                  fontWeight: 600,
+                                  color: "#666",
+                                  display: "block",
+                                  marginBottom: 6,
+                                }}
+                              >
+                                {f2} ({uom})
+                              </label>
+                              <input
+                                type="number"
+                                placeholder={`e.g. 10`}
+                                value={f2 === "GUSSETT" ? gussett : length}
+                                onChange={(e) =>
+                                  f2 === "GUSSETT"
+                                    ? setGussett(e.target.value)
+                                    : setLength(e.target.value)
+                                }
+                                style={inputStyle}
+                              />
+                            </div>
+                          )}
+                          {f3 && (
+                            <div>
+                              <label
+                                style={{
+                                  fontSize: 11,
+                                  fontWeight: 600,
+                                  color: "#666",
+                                  display: "block",
+                                  marginBottom: 6,
+                                }}
+                              >
+                                {f3} ({uom})
+                              </label>
+                              <input
+                                type="number"
+                                placeholder={`e.g. 10`}
+                                value={height}
+                                onChange={(e) => setHeight(e.target.value)}
+                                style={inputStyle}
+                              />
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </>
+                )}
+
+              {activeTab === "Raw Material" && (
+                <>
                   <div>
                     <label
                       style={{
@@ -1584,39 +1507,91 @@ export default function ItemMaster({
                         color: "#666",
                         display: "block",
                         marginBottom: 6,
-                        letterSpacing: "0.5px",
                       }}
                     >
-                      LENGTH (mm) *
+                      GSM *
                     </label>
                     <input
                       type="number"
-                      placeholder="e.g. 700"
-                      value={length}
-                      onChange={(e) => setLength(e.target.value)}
+                      placeholder="e.g. 70"
+                      value={gsm}
+                      onChange={(e) => setGsm(e.target.value)}
                       style={inputStyle}
                     />
                   </div>
-                )}
-              </>
-            )}
-            <div>
-              <label
-                style={{
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: "#666",
-                  display: "block",
-                  marginBottom: 6,
-                  letterSpacing: "0.5px",
-                }}
-              >
-                ITEM NAME *
-              </label>
-              <input
-                style={{
-                  ...inputStyle,
-                  background:
+                  <div>
+                    <label
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: "#666",
+                        display: "block",
+                        marginBottom: 6,
+                      }}
+                    >
+                      WIDTH (mm) *
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="e.g. 1000"
+                      value={width}
+                      onChange={(e) => setWidth(e.target.value)}
+                      style={inputStyle}
+                    />
+                  </div>
+                  {selectedCategory !== "Paper Reel" && (
+                    <div>
+                      <label
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 600,
+                          color: "#666",
+                          display: "block",
+                          marginBottom: 6,
+                        }}
+                      >
+                        LENGTH (mm) *
+                      </label>
+                      <input
+                        type="number"
+                        placeholder="e.g. 700"
+                        value={length}
+                        onChange={(e) => setLength(e.target.value)}
+                        style={inputStyle}
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+              <div>
+                <label
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: "#666",
+                    display: "block",
+                    marginBottom: 6,
+                  }}
+                >
+                  ITEM NAME *
+                </label>
+                <input
+                  style={{
+                    ...inputStyle,
+                    background:
+                      activeTab !== "Consumable" &&
+                      activeTab !== "Machine Spare" &&
+                      selectedSubCategory !== "Polycoated Blanks" &&
+                      selectedCategory !== "Polycoated Blanks" &&
+                      !(
+                        (activeTab === "Finished Goods" &&
+                          selectedCategory === "Other") ||
+                        selectedCategory === "Others"
+                      )
+                        ? "rgba(255,255,255,0.03)"
+                        : inputStyle.background,
+                  }}
+                  readOnly={
                     activeTab !== "Consumable" &&
                     activeTab !== "Machine Spare" &&
                     selectedSubCategory !== "Polycoated Blanks" &&
@@ -1626,165 +1601,144 @@ export default function ItemMaster({
                         selectedCategory === "Other") ||
                       selectedCategory === "Others"
                     )
-                      ? "rgba(255,255,255,0.03)"
-                      : inputStyle.background,
-                }}
-                readOnly={
-                  activeTab !== "Consumable" &&
-                  activeTab !== "Machine Spare" &&
-                  selectedSubCategory !== "Polycoated Blanks" &&
-                  selectedCategory !== "Polycoated Blanks" &&
-                  !(
-                    (activeTab === "Finished Goods" &&
-                      selectedCategory === "Other") ||
-                    selectedCategory === "Others"
-                  )
-                }
-                placeholder={`Enter ${activeTab} name`}
-                value={newItemName}
-                onChange={(e) => setNewItemName(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleAddItem()}
-              />
-            </div>
-            <div>
-              <label
-                style={{
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: "#666",
-                  display: "block",
-                  marginBottom: 6,
-                  letterSpacing: "0.5px",
-                }}
-              >
-                GST RATE (%)
-              </label>
-              <input
-                type="number"
-                placeholder="e.g. 18"
-                value={gstRate}
-                onChange={(e) => setGstRate(e.target.value)}
-                style={inputStyle}
-              />
-            </div>
-            <div>
-              <label
-                style={{
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: "#666",
-                  display: "block",
-                  marginBottom: 6,
-                  letterSpacing: "0.5px",
-                }}
-              >
-                HSN CODE
-              </label>
-              <input
-                placeholder="e.g. 4819"
-                value={hsnCode}
-                onChange={(e) => setHsnCode(e.target.value)}
-                style={inputStyle}
-              />
-            </div>
-            <div>
-              <label
-                style={{
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: "#666",
-                  display: "block",
-                  marginBottom: 6,
-                  letterSpacing: "0.5px",
-                }}
-              >
-                REORDER LEVEL
-              </label>
-              <input
-                type="number"
-                placeholder="e.g. 500"
-                value={reorderLevel}
-                onChange={(e) => setReorderLevel(e.target.value)}
-                style={inputStyle}
-              />
-            </div>
-          </div>
-
-          {}
-          {(activeTab === "Raw Material" || activeTab === "Finished Goods") && (
-            <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
-              <div
-                style={{
-                  flex: 1,
-                  padding: "12px 16px",
-                  background: "rgba(255,255,255,0.04)",
-                  border: "1px dashed #2196F344",
-                  borderRadius: 8,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                }}
-              >
-                <span style={{ fontSize: 11, color: "#555" }}>Preview:</span>
-                <span
+                  }
+                  placeholder={`Enter ${activeTab} name`}
+                  value={newItemName}
+                  onChange={(e) => setNewItemName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleAddItem()}
+                />
+              </div>
+              <div>
+                <label
                   style={{
-                    fontSize: 15,
-                    fontWeight: 500,
-                    color: "#4CAF50",
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: "#666",
+                    display: "block",
+                    marginBottom: 6,
                   }}
                 >
-                  {newItemName || "—"}
-                </span>
+                  GST RATE (%)
+                </label>
+                <input
+                  type="number"
+                  placeholder="e.g. 18"
+                  value={gstRate}
+                  onChange={(e) => setGstRate(e.target.value)}
+                  style={inputStyle}
+                />
               </div>
-              <div
-                style={{
-                  width: 160,
-                  padding: "12px 16px",
-                  background: "rgba(255,255,255,0.04)",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  borderRadius: 8,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                }}
-              >
-                <span style={{ fontSize: 10, color: "#444" }}>Auto Code:</span>
-                <span
+              <div>
+                <label
                   style={{
-                    fontSize: 14,
-                    fontWeight: 500,
-                    color: "#4CAF50",
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: "#666",
+                    display: "block",
+                    marginBottom: 6,
                   }}
                 >
-                  {ITEM_TABS.find((t) => t.key === activeTab)?.prefix}
-                  {"????"}
-                </span>
+                  HSN CODE
+                </label>
+                <input
+                  placeholder="e.g. 4819"
+                  value={hsnCode}
+                  onChange={(e) => setHsnCode(e.target.value)}
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: "#666",
+                    display: "block",
+                    marginBottom: 6,
+                  }}
+                >
+                  REORDER LEVEL
+                </label>
+                <input
+                  type="number"
+                  placeholder="e.g. 500"
+                  value={reorderLevel}
+                  onChange={(e) => setReorderLevel(e.target.value)}
+                  style={inputStyle}
+                />
               </div>
             </div>
-          )}
 
-          <div style={{ display: "flex", gap: 10 }}>
-            <button
-              onClick={handleAddItem}
+            {}
+            {(activeTab === "Raw Material" ||
+              activeTab === "Finished Goods") && (
+              <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
+                <div
+                  style={{
+                    flex: 1,
+                    padding: "12px 16px",
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px dashed rgba(255,255,255,0.16)",
+                    borderRadius: 8,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                  }}
+                >
+                  <span style={{ fontSize: 11, color: "#555" }}>Preview:</span>
+                  <span
+                    style={{
+                      fontSize: 15,
+                      fontWeight: 500,
+                      color: "#a3a3a3",
+                    }}
+                  >
+                    {newItemName || "—"}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    width: 160,
+                    padding: "12px 16px",
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    borderRadius: 8,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                  }}
+                >
+                  <span style={{ fontSize: 10, color: "#444" }}>
+                    Auto Code:
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 500,
+                      color: "#a3a3a3",
+                    }}
+                  >
+                    {ITEM_TABS.find((t) => t.key === activeTab)?.prefix}
+                    {"????"}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <div
               style={{
-                padding: "9px 20px",
-                background: "rgba(255,255,255,0.08)",
-                color: "#fff",
-                border: "1px solid rgba(255,255,255,0.18)",
-                borderRadius: 6,
-                fontWeight: 500,
-                fontSize: 13,
-                cursor: "pointer",
-                boxShadow:
-                  "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 8,
+                marginTop: 8,
               }}
             >
-              {editingItem ? "Update Item" : `+ Add ${activeTab} Item`}
-            </button>
-            {editingItem && (
               <button
+                type="button"
+                className="lg-btn"
                 onClick={() => {
                   setEditingItem(null);
+                  setShowAddModal(false);
                   setShowEditModal(false);
                   setNewItemName("");
                   setSelectedCategory("");
@@ -1797,26 +1751,19 @@ export default function ItemMaster({
                   setReorderLevel("0");
                   setProductCode("");
                 }}
-                style={{
-                  background: "transparent",
-                  color: "#ffffff",
-                  border: "1px solid rgba(255,255,255,0.2)",
-                  borderRadius: 6,
-                  padding: "6px 12px",
-                  fontSize: 11,
-                  fontWeight: 500,
-                  cursor: "pointer",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
               >
-                <i className="fa-solid fa-xmark" /> Cancel
+                Cancel
               </button>
-            )}
+              <button
+                type="button"
+                className="lg-btn lg-btn-primary"
+                onClick={handleAddItem}
+              >
+                {editingItem ? "Update item" : "Add item"}
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       {activeTab === "Finished Goods" && (
         <div
@@ -1836,7 +1783,7 @@ export default function ItemMaster({
               display: "flex",
               alignItems: "center",
               gap: 10,
-              color: "#818cf8",
+              color: "#c8955a",
               fontWeight: 500,
               fontSize: 13,
             }}
@@ -1844,7 +1791,7 @@ export default function ItemMaster({
             <i className="fa-solid fa-industry" style={{ fontSize: 16 }} /> Bulk
             Import Company Product Codes
           </div>
-          <div style={{ fontSize: 12, color: "#6366f199", lineHeight: 1.5 }}>
+          <div style={{ fontSize: 12, color: "#c8955a99", lineHeight: 1.5 }}>
             Download the template → fill in client codes → re-import. One column
             per client. Leave blank if that client doesn't have a code for that
             item.
@@ -1857,7 +1804,7 @@ export default function ItemMaster({
                 background: "transparent",
                 border: "1px solid #4f46e5",
                 borderRadius: 6,
-                color: "#818cf8",
+                color: "#c8955a",
                 fontSize: 12,
                 fontWeight: 500,
                 cursor: "pointer",
@@ -1879,8 +1826,7 @@ export default function ItemMaster({
                 fontSize: 12,
                 fontWeight: 500,
                 cursor: "pointer",
-                boxShadow:
-                  "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
                 display: "flex",
                 alignItems: "center",
                 gap: 8,
@@ -1905,152 +1851,158 @@ export default function ItemMaster({
 
       <div
         style={{
-          display: "flex",
-          flexWrap: "wrap",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: 10,
-          marginBottom: 14,
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+          gap: 12,
+          marginBottom: 16,
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            gap: 10,
-            flex: 1,
-            flexWrap: "wrap",
-            minWidth: 0,
-          }}
-        >
-          <input
-            placeholder="Search code or name..."
-            style={{
-              ...inputStyle,
-              maxWidth: 300,
-              minWidth: 120,
-              background: "rgba(255,255,255,0.07)",
-              borderColor: "rgba(255,255,255,0.13)",
-            }}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+        <StatCard
+          label="Total items"
+          value={tabItems.length.toLocaleString("en-IN")}
+          icon="fa-solid fa-boxes-stacked"
+        />
+        <StatCard
+          label="Categories"
+          value={tabCategories.length}
+          icon="fa-solid fa-layer-group"
+        />
+        <StatCard
+          label="Sub-categories"
+          value={
+            new Set(tabItems.map((i) => i.subCategory).filter(Boolean)).size
+          }
+          icon="fa-solid fa-sitemap"
+        />
+      </div>
+
+      <ListToolbar
+        onSelectModeChange={(on) => {
+          if (!on) setSelectedIds([]);
+        }}
+        search={search}
+        setSearch={setSearch}
+        placeholder="Search code or name..."
+        extra={
           <select
-            value={filterCat}
-            onChange={(e) => setFilterCat(e.target.value)}
-            style={{
-              ...inputStyle,
-              maxWidth: 160,
-              minWidth: 120,
-              background: "rgba(255,255,255,0.07)",
-              borderColor: "rgba(255,255,255,0.13)",
-            }}
+            className="lg-input"
+            aria-label="Item type"
+            value={activeTab}
+            onChange={(e) => switchTab(e.target.value)}
+            style={{ width: 180, height: 38 }}
           >
-            <option value="All">All Categories</option>
-            {tabCategories.map((c) => (
-              <option key={c} value={c}>
-                {c}
+            {ITEM_TABS.map((tab) => (
+              <option key={tab.key} value={tab.key}>
+                {tab.label}
               </option>
             ))}
           </select>
-        </div>
-
-        <div
-          style={{
-            display: "flex",
-            gap: 8,
-            alignItems: "center",
-            flexWrap: "wrap",
-          }}
-        >
-          {canDelete && selectedIds.length > 0 && (
-            <button
-              onClick={() =>
-                setConfirmModal({ isOpen: true, count: selectedIds.length })
+        }
+        onAdd={
+          canCreate
+            ? () => {
+                setEditingItem(null);
+                setNewItemName("");
+                setSelectedCategory("");
+                setSelectedSubCategory("");
+                setGsm("");
+                setWidth("");
+                setLength("");
+                setGstRate("18");
+                setHsnCode("");
+                setReorderLevel("0");
+                setProductCode("");
+                setShowAddModal(true);
               }
-              style={{
-                background: "rgba(255,255,255,0.08)",
-                color: "#fff",
-                border: "1px solid rgba(255,255,255,0.18)",
-                borderRadius: 6,
-                padding: "6px 16px",
-                fontSize: 12,
-                fontWeight: 500,
-                cursor: "pointer",
-                boxShadow:
-                  "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                marginRight: 10,
-              }}
-            >
-              Delete {selectedIds.length} Selected
-            </button>
-          )}
-          {canExportImport && (
-            <ExportBtn onClick={handleExport} label="Export" />
-          )}
-          <TemplateBtn onClick={handleTemplate} />
-          {canExportImport && (
-            <ImportBtn
-              onClick={() => fileInputRef.current?.click()}
-              label="Bulk Import"
-            />
-          )}
-          {tabItems.length > 0 && activeTab === "Machine Spare" && (
-            <button
-              onClick={() => setDeleteAllModal(true)}
-              style={{
-                background: "rgba(255,255,255,0.08)",
-                color: "#fff",
-                border: "1px solid rgba(255,255,255,0.18)",
-                borderRadius: 6,
-                padding: "6px 14px",
-                fontSize: 12,
-                fontWeight: 500,
-                cursor: "pointer",
-                boxShadow:
-                  "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Delete All
-            </button>
-          )}
-          <input
-            type="file"
-            ref={fileInputRef}
-            hidden
-            accept=".xlsx,.xls"
-            onChange={handleImport}
-          />
-        </div>
-      </div>
-
-      {sorted.length > 0 && !isMobile && (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            padding: "10px 16px",
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: "8px 8px 0 0",
-            marginBottom: -1,
-            gap: 16,
+            : undefined
+        }
+        addLabel="Add item"
+        count={sorted.length}
+        filterCount={
+          (filterCat !== "All" ? 1 : 0) + (sortBy !== "newest" ? 1 : 0)
+        }
+        onFilter={() => setShowFilterModal(true)}
+        actions={
+          <>
+            {canDelete && selectedIds.length > 0 && (
+              <button
+                type="button"
+                className="lg-btn lg-btn-danger"
+                onClick={() =>
+                  setConfirmModal({ isOpen: true, count: selectedIds.length })
+                }
+              >
+                <i className="fa-solid fa-trash" /> Delete {selectedIds.length}{" "}
+                selected
+              </button>
+            )}
+            {tabItems.length > 0 && activeTab === "Machine Spare" && (
+              <button
+                type="button"
+                className="lg-btn lg-btn-danger"
+                onClick={() => setDeleteAllModal(true)}
+              >
+                Delete all
+              </button>
+            )}
+          </>
+        }
+        exportOptions={
+          canExportImport
+            ? [
+                {
+                  label: "Excel",
+                  icon: "fa-solid fa-file-excel",
+                  onClick: handleExport,
+                },
+              ]
+            : []
+        }
+        onImport={
+          canExportImport ? () => fileInputRef.current?.click() : undefined
+        }
+        onTemplate={handleTemplate}
+      />
+      <input
+        type="file"
+        ref={fileInputRef}
+        hidden
+        accept=".xlsx,.xls"
+        onChange={handleImport}
+      />
+      {showFilterModal && (
+        <FilterModal
+          onClose={() => setShowFilterModal(false)}
+          onReset={() => {
+            setFilterCat("All");
+            setSortBy("newest");
           }}
         >
-          <input
-            type="checkbox"
-            checked={sorted.length > 0 && selectedIds.length === sorted.length}
-            onChange={toggleSelectAll}
-            style={{ cursor: "pointer", width: 16, height: 16 }}
-          />
-          <span style={{ fontSize: 11, fontWeight: 500, color: "#666" }}>
-            SELECT ALL {activeTab} ITEMS
-          </span>
-        </div>
+          <FilterField label="Category">
+            <SortSelect
+              value={filterCat}
+              onChange={setFilterCat}
+              options={[
+                ["All", "All categories"],
+                ...tabCategories.map((c) => [c, c]),
+              ]}
+            />
+          </FilterField>
+          <FilterField label="Sort by">
+            <SortSelect
+              value={sortBy}
+              onChange={setSortBy}
+              options={[
+                ["newest", "Newest first"],
+                ["oldest", "Oldest first"],
+                ["code", "Code"],
+                ["name", "Name A–Z"],
+              ]}
+            />
+          </FilterField>
+        </FilterModal>
       )}
+      <div style={{ height: 12 }} />
 
       {sorted.length === 0 ? (
         <div
@@ -2109,6 +2061,7 @@ export default function ItemMaster({
               >
                 <input
                   type="checkbox"
+                  className="row-select"
                   checked={selectedIds.includes(item._id)}
                   onChange={() => toggleSelect(item._id)}
                   style={{
@@ -2122,13 +2075,13 @@ export default function ItemMaster({
                 <div
                   onClick={() => canEdit && handleEdit(item)}
                   style={{
-                    padding: "3px 10px",
-                    border: "1px solid #2196F344",
+                    padding: "3px 0",
+                    border: "none",
                     borderRadius: 6,
-                    color: "#2196F3",
-                    fontSize: 11,
+                    color: "#c8955a",
+                    fontSize: 12,
                     fontWeight: 500,
-                    background: "#2196F30a",
+                    background: "transparent",
                     cursor: canEdit ? "pointer" : "default",
                     whiteSpace: "nowrap",
                     flexShrink: 0,
@@ -2139,7 +2092,7 @@ export default function ItemMaster({
                 <div
                   style={{
                     flex: 1,
-                    color: "#e6edf3",
+                    color: "#ededed",
                     fontSize: 13,
                     fontWeight: 600,
                     lineHeight: 1.4,
@@ -2162,9 +2115,9 @@ export default function ItemMaster({
                   <span
                     style={{
                       padding: "3px 8px",
-                      borderRadius: 20,
-                      background: "#9c27b01a",
-                      color: "#ba68c8",
+                      borderRadius: 6,
+                      background: "rgba(255,255,255,0.06)",
+                      color: "#a3a3a3",
                       fontSize: 11,
                       fontWeight: 600,
                     }}
@@ -2176,9 +2129,9 @@ export default function ItemMaster({
                   <span
                     style={{
                       padding: "3px 8px",
-                      borderRadius: 20,
-                      background: "#1565C022",
-                      color: "#64B5F6",
+                      borderRadius: 6,
+                      background: "rgba(255,255,255,0.06)",
+                      color: "#a3a3a3",
                       fontSize: 11,
                       fontWeight: 600,
                     }}
@@ -2190,9 +2143,9 @@ export default function ItemMaster({
                   <span
                     style={{
                       padding: "3px 8px",
-                      borderRadius: 20,
-                      background: "#4CAF501a",
-                      color: "#4CAF50",
+                      borderRadius: 6,
+                      background: "rgba(255,255,255,0.06)",
+                      color: "#a3a3a3",
                       fontSize: 11,
                       fontWeight: 600,
                     }}
@@ -2203,9 +2156,9 @@ export default function ItemMaster({
                 <span
                   style={{
                     padding: "3px 8px",
-                    borderRadius: 20,
-                    background: "#64B5F614",
-                    color: "#64B5F6",
+                    borderRadius: 6,
+                    background: "rgba(255,255,255,0.06)",
+                    color: "#a3a3a3",
                     fontSize: 11,
                     fontWeight: 600,
                   }}
@@ -2215,9 +2168,9 @@ export default function ItemMaster({
                 <span
                   style={{
                     padding: "3px 8px",
-                    borderRadius: 20,
-                    background: "#ff98001a",
-                    color: "#ff9800",
+                    borderRadius: 6,
+                    background: "rgba(255,255,255,0.06)",
+                    color: "#a3a3a3",
                     fontSize: 11,
                     fontWeight: 600,
                   }}
@@ -2227,17 +2180,13 @@ export default function ItemMaster({
                 <span
                   style={{
                     padding: "3px 8px",
-                    borderRadius: 20,
-                    background: "#ffffff08",
-                    color: "#484f58",
+                    borderRadius: 6,
+                    background: "rgba(255,255,255,0.06)",
+                    color: "#737373",
                     fontSize: 11,
                   }}
                 >
-                  {
-                    new Date(item.addedOn || item.createdAt)
-                      .toISOString()
-                      .split("T")[0]
-                  }
+                  {addedDate(item)}
                 </span>
               </div>
 
@@ -2256,7 +2205,7 @@ export default function ItemMaster({
                       padding: "5px 12px",
                       borderRadius: 6,
                       background: "#4f46e51a",
-                      color: "#818cf8",
+                      color: "#c8955a",
                       border: "1px solid #4f46e544",
                       fontSize: 11,
                       fontWeight: 500,
@@ -2304,7 +2253,7 @@ export default function ItemMaster({
                                 }}
                               >
                                 <span
-                                  style={{ color: "#e0e0e0", fontWeight: 700 }}
+                                  style={{ color: "#ededed", fontWeight: 600 }}
                                 >
                                   {code}
                                 </span>
@@ -2346,9 +2295,9 @@ export default function ItemMaster({
                         <div
                           style={{
                             fontSize: 10,
-                            color: "#818cf8",
+                            color: "#c8955a",
                             marginBottom: 4,
-                            fontWeight: 700,
+                            fontWeight: 600,
                           }}
                         >
                           + ADD CLIENT CODE
@@ -2362,7 +2311,7 @@ export default function ItemMaster({
                             border: "1px solid rgba(255,255,255,0.13)",
                             borderRadius: 4,
                             fontSize: 11,
-                            color: "#e0e0e0",
+                            color: "#ededed",
                             padding: 5,
                             marginBottom: 6,
                             outline: "none",
@@ -2386,7 +2335,7 @@ export default function ItemMaster({
                               border: "1px solid rgba(255,255,255,0.13)",
                               borderRadius: 4,
                               fontSize: 11,
-                              color: "#e0e0e0",
+                              color: "#ededed",
                               padding: 5,
                               outline: "none",
                             }}
@@ -2419,44 +2368,19 @@ export default function ItemMaster({
               {/* actions */}
               <div style={{ display: "flex", gap: 6 }}>
                 {canEdit && (
-                  <button
+                  <IconBtn
+                    icon="fa-pen-to-square"
+                    label="Edit"
                     onClick={() => handleEdit(item)}
-                    style={{
-                      background: "transparent",
-                      color: "#8082ff",
-                      border: "1px solid #8082ff98",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    <i className="fa-solid fa-pen-to-square" /> Edit
-                  </button>
+                  />
                 )}
                 {canDelete && (
-                  <button
+                  <IconBtn
+                    icon="fa-trash"
+                    label="Delete"
+                    danger
                     onClick={() => handleDelete(item)}
-                    style={{
-                      background: "transparent",
-                      color: "#8082ff",
-                      border: "1px solid #8082ff98",
-                      borderRadius: 6,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    <i className="fa-solid fa-trash" /> Delete
-                  </button>
+                  />
                 )}
               </div>
             </div>
@@ -2465,456 +2389,449 @@ export default function ItemMaster({
       ) : (
         <div
           style={{
-            border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: "0 0 10px 10px",
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: 12,
             overflowX: "auto",
-            WebkitOverflowScrolling: "touch",
           }}
         >
-          <div style={{ minWidth: 860 }}>
-            {/* header */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                padding: "8px 16px",
-                background: "rgba(255,255,255,0.04)",
-                borderBottom: "1px solid rgba(255,255,255,0.08)",
-                gap: 10,
-                fontSize: 10,
-                fontWeight: 800,
-                color: "#555",
-                textTransform: "uppercase",
-                letterSpacing: "0.5px",
-              }}
-            >
-              <div style={{ width: 16, flexShrink: 0 }} />
-              <div style={{ width: 72, flexShrink: 0 }}>Code</div>
-              <div style={{ flex: 1, minWidth: 180 }}>Item Name</div>
-              {activeTab === "Finished Goods" && (
-                <div style={{ width: 100, flexShrink: 0 }}>Client Cat</div>
-              )}
-              <div style={{ width: 110, flexShrink: 0 }}>Category</div>
-              <div style={{ width: 110, flexShrink: 0 }}>Sub-Category</div>
-              <div style={{ width: 50, flexShrink: 0, textAlign: "center" }}>
-                GST
-              </div>
-              <div style={{ width: 70, flexShrink: 0, textAlign: "center" }}>
-                Reorder
-              </div>
-              {activeTab === "Finished Goods" && (
-                <div style={{ width: 110, flexShrink: 0 }}>Co. Codes</div>
-              )}
-              <div style={{ width: 88, flexShrink: 0 }}>Date</div>
-              <div style={{ width: 160, flexShrink: 0, textAlign: "right" }}>
-                Actions
-              </div>
-            </div>
-
-            {/* rows */}
-            {sorted.map((item, idx) => (
-              <div
-                key={item._id}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  padding: "10px 16px",
-                  background: "transparent",
-                  borderBottom:
-                    idx === sorted.length - 1
-                      ? "none"
-                      : "1px solid rgba(255,255,255,0.06)",
-                  gap: 10,
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={selectedIds.includes(item._id)}
-                  onChange={() => toggleSelect(item._id)}
-                  style={{
-                    cursor: "pointer",
-                    width: 16,
-                    height: 16,
-                    flexShrink: 0,
-                  }}
-                />
-                <div
-                  style={{
-                    width: 72,
-                    flexShrink: 0,
-                    padding: "5px 0",
-                    border: "1px solid #2196F344",
-                    borderRadius: 6,
-                    textAlign: "center",
-                    color: "#2196F3",
-                    fontSize: 11,
-                    fontWeight: 500,
-                    background: "#2196F30a",
-                    cursor: canEdit ? "pointer" : "default",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                  onClick={() => canEdit && handleEdit(item)}
-                >
-                  {item.code}
-                </div>
-                <div
-                  style={{
-                    flex: 1,
-                    minWidth: 200,
-                    color: "#e6edf3",
-                    fontSize: 13,
-                    fontWeight: 600,
-                    wordBreak: "break-word",
-                  }}
-                  title={item.name}
-                >
-                  {item.name}
-                </div>
+          <table
+            style={{
+              width: "100%",
+              minWidth: 860,
+              borderCollapse: "collapse",
+              fontSize: 13,
+            }}
+          >
+            <thead>
+              <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                <th style={{ ...th, width: 40 }}>
+                  <input
+                    type="checkbox"
+                    checked={
+                      sorted.length > 0 && selectedIds.length === sorted.length
+                    }
+                    onChange={toggleSelectAll}
+                    style={{ cursor: "pointer", width: 16, height: 16 }}
+                  />
+                </th>
+                <th style={th}>Code</th>
+                <th style={th}>Item name</th>
                 {activeTab === "Finished Goods" && (
-                  <div
-                    style={{
-                      width: 100,
-                      flexShrink: 0,
-                      padding: "4px 8px",
-                      borderRadius: 6,
-                      background: "#9c27b01a",
-                      color: "#ba68c8",
-                      fontSize: 11,
-                      fontWeight: 600,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {item.companyCategory || "-"}
-                  </div>
+                  <th style={th}>Client cat</th>
                 )}
-                <div
-                  style={{
-                    width: 110,
-                    flexShrink: 0,
-                    padding: "4px 8px",
-                    borderRadius: 6,
-                    background: "#1565C022",
-                    color: "#64B5F6",
-                    fontSize: 11,
-                    fontWeight: 600,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {item.category || "-"}
-                </div>
-                <div
-                  style={{
-                    width: 110,
-                    flexShrink: 0,
-                    padding: "4px 8px",
-                    borderRadius: 6,
-                    background: "#4CAF501a",
-                    color: "#4CAF50",
-                    fontSize: 11,
-                    fontWeight: 600,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {item.subCategory || "-"}
-                </div>
-                <div
-                  style={{
-                    width: 50,
-                    flexShrink: 0,
-                    padding: "4px 6px",
-                    borderRadius: 6,
-                    background: "#64B5F614",
-                    color: "#64B5F6",
-                    fontSize: 10,
-                    fontWeight: 500,
-                    textAlign: "center",
-                  }}
-                >
-                  {item.gstRate || 0}%
-                </div>
-                <div
-                  style={{
-                    width: 70,
-                    flexShrink: 0,
-                    padding: "4px 6px",
-                    borderRadius: 6,
-                    background: "#ff98001a",
-                    color: "#ff9800",
-                    fontSize: 10,
-                    fontWeight: 500,
-                    textAlign: "center",
-                  }}
-                >
-                  RL: {item.reorderLevel || 0}
-                </div>
-
+                <th style={th}>Category</th>
+                <th style={th}>Sub-category</th>
+                <th style={{ ...th, textAlign: "center" }}>GST</th>
+                <th style={{ ...th, textAlign: "center" }}>Reorder</th>
                 {activeTab === "Finished Goods" && (
-                  <div
-                    style={{ position: "relative", width: 110, flexShrink: 0 }}
-                  >
-                    <button
-                      onClick={() => {
-                        setManualClient("");
-                        setManualCode("");
-                        setShowClientCodes(
-                          showClientCodes === item._id ? null : item._id,
-                        );
-                      }}
+                  <th style={th}>Co. codes</th>
+                )}
+                <th style={th}>Date</th>
+                <th style={{ ...th, textAlign: "right" }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.map((item, idx) => (
+                <tr
+                  key={item._id}
+                  style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+                >
+                  <td style={{ padding: "12px 14px", verticalAlign: "middle" }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(item._id)}
+                      onChange={() => toggleSelect(item._id)}
                       style={{
-                        padding: "4px 8px",
-                        borderRadius: 6,
-                        background: "rgba(255,255,255,0.08)",
-                        border: "1px solid rgba(255,255,255,0.18)",
-                        color: "#fff",
-                        fontSize: 10,
-                        fontWeight: 500,
                         cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 4,
-                        width: "100%",
-                        boxShadow:
-                          "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+                        width: 16,
+                        height: 16,
+                        flexShrink: 0,
                       }}
+                    />
+                  </td>
+                  <td style={{ padding: "12px 14px", verticalAlign: "middle" }}>
+                    <div
+                      style={{
+                        width: 72,
+                        flexShrink: 0,
+                        padding: "5px 0",
+                        border: "none",
+                        borderRadius: 6,
+                        textAlign: "left",
+                        color: "#c8955a",
+                        fontSize: 12,
+                        fontWeight: 500,
+                        background: "transparent",
+                        cursor: canEdit ? "pointer" : "default",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                      onClick={() => canEdit && handleEdit(item)}
                     >
-                      Co. Codes {showClientCodes === item._id ? "▲" : "▼"}
-                    </button>
-                    {showClientCodes === item._id && (
+                      {item.code}
+                    </div>
+                  </td>
+                  <td style={{ padding: "12px 14px", verticalAlign: "middle" }}>
+                    <div
+                      style={{
+                        flex: 1,
+                        minWidth: 200,
+                        color: "#ededed",
+                        fontSize: 13,
+                        fontWeight: 600,
+                        wordBreak: "break-word",
+                      }}
+                      title={item.name}
+                    >
+                      {item.name}
+                    </div>
+                  </td>
+                  {activeTab === "Finished Goods" && (
+                    <td
+                      style={{ padding: "12px 14px", verticalAlign: "middle" }}
+                    >
                       <div
                         style={{
-                          position: "absolute",
-                          top: "100%",
-                          right: 0,
-                          zIndex: 100,
-                          background: "rgba(20,20,30,0.95)",
-                          border: "1px solid rgba(255,255,255,0.1)",
-                          borderRadius: 8,
-                          padding: 8,
-                          minWidth: 150,
-                          boxShadow: "0 10px 25px rgba(0,0,0,0.5)",
-                          marginTop: 4,
+                          width: 100,
+                          flexShrink: 0,
+                          padding: "4px 8px",
+                          borderRadius: 6,
+                          background: "rgba(255,255,255,0.06)",
+                          color: "#a3a3a3",
+                          fontSize: 11,
+                          fontWeight: 600,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
                         }}
                       >
-                        {item.companyCodes &&
-                        Object.entries(item.companyCodes).filter(([_, v]) => v)
-                          .length > 0 ? (
-                          Object.entries(item.companyCodes)
-                            .filter(([_, v]) => v)
-                            .map(([client, code]) => (
+                        {item.companyCategory || "-"}
+                      </div>
+                    </td>
+                  )}
+                  <td style={{ padding: "12px 14px", verticalAlign: "middle" }}>
+                    <div
+                      style={{
+                        width: 110,
+                        flexShrink: 0,
+                        padding: "4px 8px",
+                        borderRadius: 6,
+                        background: "rgba(255,255,255,0.06)",
+                        color: "#a3a3a3",
+                        fontSize: 11,
+                        fontWeight: 600,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {item.category || "-"}
+                    </div>
+                  </td>
+                  <td style={{ padding: "12px 14px", verticalAlign: "middle" }}>
+                    <div
+                      style={{
+                        width: 110,
+                        flexShrink: 0,
+                        padding: "4px 8px",
+                        borderRadius: 6,
+                        background: "rgba(255,255,255,0.06)",
+                        color: "#a3a3a3",
+                        fontSize: 11,
+                        fontWeight: 600,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {item.subCategory || "-"}
+                    </div>
+                  </td>
+                  <td style={{ padding: "12px 14px", verticalAlign: "middle" }}>
+                    <div
+                      style={{
+                        width: 50,
+                        flexShrink: 0,
+                        padding: "4px 6px",
+                        borderRadius: 6,
+                        background: "rgba(255,255,255,0.06)",
+                        color: "#a3a3a3",
+                        fontSize: 10,
+                        fontWeight: 500,
+                        textAlign: "center",
+                      }}
+                    >
+                      {item.gstRate || 0}%
+                    </div>
+                  </td>
+                  <td style={{ padding: "12px 14px", verticalAlign: "middle" }}>
+                    <div
+                      style={{
+                        width: 70,
+                        flexShrink: 0,
+                        padding: "4px 6px",
+                        borderRadius: 6,
+                        background: "rgba(255,255,255,0.06)",
+                        color: "#a3a3a3",
+                        fontSize: 10,
+                        fontWeight: 500,
+                        textAlign: "center",
+                      }}
+                    >
+                      RL: {item.reorderLevel || 0}
+                    </div>
+                  </td>
+                  {activeTab === "Finished Goods" && (
+                    <td
+                      style={{ padding: "12px 14px", verticalAlign: "middle" }}
+                    >
+                      <div
+                        style={{
+                          position: "relative",
+                          width: 110,
+                          flexShrink: 0,
+                        }}
+                      >
+                        <button
+                          onClick={() => {
+                            setManualClient("");
+                            setManualCode("");
+                            setShowClientCodes(
+                              showClientCodes === item._id ? null : item._id,
+                            );
+                          }}
+                          style={{
+                            padding: "4px 8px",
+                            borderRadius: 6,
+                            background: "rgba(255,255,255,0.08)",
+                            border: "1px solid rgba(255,255,255,0.18)",
+                            color: "#fff",
+                            fontSize: 10,
+                            fontWeight: 500,
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 4,
+                            width: "100%",
+                            boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
+                          }}
+                        >
+                          Co. Codes {showClientCodes === item._id ? "▲" : "▼"}
+                        </button>
+                        {showClientCodes === item._id && (
+                          <div
+                            style={{
+                              position: "absolute",
+                              top: "100%",
+                              right: 0,
+                              zIndex: 100,
+                              background: "rgba(20,20,30,0.95)",
+                              border: "1px solid rgba(255,255,255,0.1)",
+                              borderRadius: 8,
+                              padding: 8,
+                              minWidth: 150,
+                              boxShadow: "0 10px 25px rgba(0,0,0,0.5)",
+                              marginTop: 4,
+                            }}
+                          >
+                            {item.companyCodes &&
+                            Object.entries(item.companyCodes).filter(
+                              ([_, v]) => v,
+                            ).length > 0 ? (
+                              Object.entries(item.companyCodes)
+                                .filter(([_, v]) => v)
+                                .map(([client, code]) => (
+                                  <div
+                                    key={client}
+                                    style={{
+                                      display: "flex",
+                                      justifyContent: "space-between",
+                                      fontSize: 11,
+                                      padding: "4px 0",
+                                      borderBottom:
+                                        "1px solid rgba(255,255,255,0.06)",
+                                      gap: 10,
+                                    }}
+                                  >
+                                    <span style={{ color: "#666" }}>
+                                      {client}:
+                                    </span>
+                                    <div
+                                      style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 6,
+                                      }}
+                                    >
+                                      <span
+                                        style={{
+                                          color: "#ededed",
+                                          fontWeight: 600,
+                                        }}
+                                      >
+                                        {code}
+                                      </span>
+                                      <button
+                                        onClick={() =>
+                                          removeClientCode(item, client)
+                                        }
+                                        style={{
+                                          background: "transparent",
+                                          border: "none",
+                                          cursor: "pointer",
+                                          fontSize: 10,
+                                          color: "#ff4444",
+                                          padding: 0,
+                                        }}
+                                        title="Remove"
+                                      >
+                                        ✕
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))
+                            ) : (
                               <div
-                                key={client}
                                 style={{
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  fontSize: 11,
-                                  padding: "4px 0",
-                                  borderBottom:
-                                    "1px solid rgba(255,255,255,0.06)",
-                                  gap: 10,
+                                  fontSize: 10,
+                                  color: "#444",
+                                  textAlign: "center",
+                                  marginBottom: 8,
                                 }}
                               >
-                                <span style={{ color: "#666" }}>{client}:</span>
-                                <div
+                                No client codes
+                              </div>
+                            )}
+                            <div
+                              style={{
+                                marginTop: 10,
+                                borderTop: "1px solid rgba(255,255,255,0.08)",
+                                paddingTop: 8,
+                              }}
+                            >
+                              <div
+                                style={{
+                                  fontSize: 9,
+                                  color: "#c8955a",
+                                  marginBottom: 4,
+                                  fontWeight: 600,
+                                }}
+                              >
+                                + ADD CLIENT CODE
+                              </div>
+                              <select
+                                value={manualClient}
+                                onChange={(e) =>
+                                  setManualClient(e.target.value)
+                                }
+                                style={{
+                                  width: "100%",
+                                  background: "rgba(255,255,255,0.07)",
+                                  border: "1px solid rgba(255,255,255,0.13)",
+                                  borderRadius: 4,
+                                  fontSize: 10,
+                                  color: "#ededed",
+                                  padding: 4,
+                                  marginBottom: 4,
+                                  outline: "none",
+                                }}
+                              >
+                                <option value="">-- Select Company --</option>
+                                {(companyMaster || []).map((c) => (
+                                  <option key={c.name} value={c.name}>
+                                    {c.name}
+                                  </option>
+                                ))}
+                              </select>
+                              <div style={{ display: "flex", gap: 4 }}>
+                                <input
+                                  placeholder="Code"
+                                  value={manualCode}
+                                  onChange={(e) =>
+                                    setManualCode(e.target.value)
+                                  }
                                   style={{
-                                    display: "flex",
+                                    flex: 1,
+                                    background: "rgba(255,255,255,0.07)",
+                                    border: "1px solid rgba(255,255,255,0.13)",
+                                    borderRadius: 4,
+                                    fontSize: 10,
+                                    color: "#ededed",
+                                    padding: 4,
+                                    outline: "none",
+                                  }}
+                                />
+                                <button
+                                  onClick={() =>
+                                    handleManualClientCodeSave(item)
+                                  }
+                                  style={{
+                                    background: "transparent",
+                                    color: "#ffffff",
+                                    border: "1px solid rgba(255,255,255,0.2)",
+                                    borderRadius: 6,
+                                    padding: "6px 12px",
+                                    fontSize: 11,
+                                    fontWeight: 500,
+                                    cursor: "pointer",
+                                    display: "inline-flex",
                                     alignItems: "center",
                                     gap: 6,
                                   }}
                                 >
-                                  <span
-                                    style={{
-                                      color: "#e0e0e0",
-                                      fontWeight: 700,
-                                    }}
-                                  >
-                                    {code}
-                                  </span>
-                                  <button
-                                    onClick={() =>
-                                      removeClientCode(item, client)
-                                    }
-                                    style={{
-                                      background: "transparent",
-                                      border: "none",
-                                      cursor: "pointer",
-                                      fontSize: 10,
-                                      color: "#ff4444",
-                                      padding: 0,
-                                    }}
-                                    title="Remove"
-                                  >
-                                    ✕
-                                  </button>
-                                </div>
+                                  <i className="fa-solid fa-floppy-disk" /> Save
+                                </button>
                               </div>
-                            ))
-                        ) : (
-                          <div
-                            style={{
-                              fontSize: 10,
-                              color: "#444",
-                              textAlign: "center",
-                              marginBottom: 8,
-                            }}
-                          >
-                            No client codes
+                            </div>
                           </div>
                         )}
-                        <div
-                          style={{
-                            marginTop: 10,
-                            borderTop: "1px solid rgba(255,255,255,0.08)",
-                            paddingTop: 8,
-                          }}
-                        >
-                          <div
-                            style={{
-                              fontSize: 9,
-                              color: "#818cf8",
-                              marginBottom: 4,
-                              fontWeight: 700,
-                            }}
-                          >
-                            + ADD CLIENT CODE
-                          </div>
-                          <select
-                            value={manualClient}
-                            onChange={(e) => setManualClient(e.target.value)}
-                            style={{
-                              width: "100%",
-                              background: "rgba(255,255,255,0.07)",
-                              border: "1px solid rgba(255,255,255,0.13)",
-                              borderRadius: 4,
-                              fontSize: 10,
-                              color: "#e0e0e0",
-                              padding: 4,
-                              marginBottom: 4,
-                              outline: "none",
-                            }}
-                          >
-                            <option value="">-- Select Company --</option>
-                            {(companyMaster || []).map((c) => (
-                              <option key={c.name} value={c.name}>
-                                {c.name}
-                              </option>
-                            ))}
-                          </select>
-                          <div style={{ display: "flex", gap: 4 }}>
-                            <input
-                              placeholder="Code"
-                              value={manualCode}
-                              onChange={(e) => setManualCode(e.target.value)}
-                              style={{
-                                flex: 1,
-                                background: "rgba(255,255,255,0.07)",
-                                border: "1px solid rgba(255,255,255,0.13)",
-                                borderRadius: 4,
-                                fontSize: 10,
-                                color: "#e0e0e0",
-                                padding: 4,
-                                outline: "none",
-                              }}
-                            />
-                            <button
-                              onClick={() => handleManualClientCodeSave(item)}
-                              style={{
-                                background: "transparent",
-                                color: "#ffffff",
-                                border: "1px solid rgba(255,255,255,0.2)",
-                                borderRadius: 6,
-                                padding: "6px 12px",
-                                fontSize: 11,
-                                fontWeight: 500,
-                                cursor: "pointer",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 6,
-                              }}
-                            >
-                              <i className="fa-solid fa-floppy-disk" /> Save
-                            </button>
-                          </div>
-                        </div>
                       </div>
-                    )}
-                  </div>
-                )}
-
-                <div
-                  style={{
-                    color: "#484f58",
-                    fontSize: 11,
-                    width: 88,
-                    flexShrink: 0,
-                  }}
-                >
-                  {
-                    new Date(item.addedOn || item.createdAt)
-                      .toISOString()
-                      .split("T")[0]
-                  }
-                </div>
-                <div
-                  style={{
-                    width: 160,
-                    flexShrink: 0,
-                    display: "flex",
-                    gap: 6,
-                    justifyContent: "flex-end",
-                  }}
-                >
-                  {canEdit && (
-                    <button
-                      onClick={() => handleEdit(item)}
+                    </td>
+                  )}
+                  <td style={{ padding: "12px 14px", verticalAlign: "middle" }}>
+                    <div
                       style={{
-                        background: "transparent",
-                        color: "#8082ff",
-                        border: "1px solid #8082ff98",
-                        borderRadius: 6,
-                        padding: "6px 12px",
+                        color: "#737373",
                         fontSize: 11,
-                        fontWeight: 500,
-                        cursor: "pointer",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 6,
+                        width: 88,
+                        flexShrink: 0,
                       }}
                     >
-                      <i className="fa-solid fa-pen-to-square" /> Edit
-                    </button>
-                  )}
-                  {canDelete && (
-                    <button
-                      onClick={() => handleDelete(item)}
+                      {addedDate(item)}
+                    </div>
+                  </td>
+                  <td style={{ padding: "12px 14px", verticalAlign: "middle" }}>
+                    <div
                       style={{
-                        background: "transparent",
-                        color: "#8082ff",
-                        border: "1px solid #8082ff98",
-                        borderRadius: 6,
-                        padding: "6px 12px",
-                        fontSize: 11,
-                        fontWeight: 500,
-                        cursor: "pointer",
-                        display: "inline-flex",
-                        alignItems: "center",
+                        width: 160,
+                        flexShrink: 0,
+                        display: "flex",
                         gap: 6,
+                        justifyContent: "flex-end",
                       }}
                     >
-                      <i className="fa-solid fa-trash" /> Delete
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+                      {canEdit && (
+                        <IconBtn
+                          icon="fa-pen-to-square"
+                          label="Edit"
+                          onClick={() => handleEdit(item)}
+                        />
+                      )}
+                      {canDelete && (
+                        <IconBtn
+                          icon="fa-trash"
+                          label="Delete"
+                          danger
+                          onClick={() => handleDelete(item)}
+                        />
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 

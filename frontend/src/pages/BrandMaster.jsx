@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { C } from "../constants/colors";
 import {
-  SectionTitle,
-  ImportBtn,
-  ExportBtn,
-  TemplateBtn,
   ImportModal,
+  ListToolbar,
+  Modal,
+  NameWithAvatar,
+  SectionTitle,
 } from "../components/ui/BasicComponents";
 import {
   brandMasterAPI,
@@ -14,15 +14,16 @@ import {
 } from "../api/auth";
 import ConfirmModal from "../components/ConfirmModal";
 import * as XLSX from "xlsx";
+import { IconBtn } from "../components/ui/IconBtn";
 
 const inputStyle = {
   width: "100%",
   padding: "9px 12px",
-  border: "1px solid rgba(255,255,255,0.13)",
-  borderRadius: 6,
+  border: "1px solid rgba(255,255,255,0.08)",
+  borderRadius: 8,
   fontSize: 13,
-  background: "rgba(255,255,255,0.07)",
-  color: "#e0e0e0",
+  background: "#141414",
+  color: "#ededed",
   outline: "none",
   boxSizing: "border-box",
 };
@@ -33,8 +34,7 @@ const cardStyle = {
   borderRadius: 10,
   padding: 20,
   marginBottom: 16,
-  boxShadow:
-    "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
+  boxShadow: "0 4px 24px rgba(0,0,0,0.18)",
 };
 
 export default function BrandMaster({ toast, canExportImport = true }) {
@@ -48,6 +48,7 @@ export default function BrandMaster({ toast, canExportImport = true }) {
     companyName: "",
     clientCategory: "",
   });
+  const [showModal, setShowModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -118,6 +119,19 @@ export default function BrandMaster({ toast, canExportImport = true }) {
     }
   };
 
+  const blankForm = {
+    name: "",
+    description: "",
+    companyId: null,
+    companyName: "",
+    clientCategory: "",
+  };
+  const closeModal = () => {
+    setShowModal(false);
+    setEditingId(null);
+    setFormData(blankForm);
+  };
+
   const handleSubmit = async () => {
     if (!formData.name.trim()) {
       toast("Brand name is required", "error");
@@ -147,6 +161,7 @@ export default function BrandMaster({ toast, canExportImport = true }) {
         clientCategory: "",
       });
       fetchBrands();
+      setShowModal(false);
     } catch (error) {
       toast(error.response?.data?.error || "Failed to save brand", "error");
     } finally {
@@ -163,7 +178,7 @@ export default function BrandMaster({ toast, canExportImport = true }) {
       clientCategory: brand.clientCategory || "",
     });
     setEditingId(brand._id);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setShowModal(true);
   };
 
   const handleDelete = async () => {
@@ -356,242 +371,180 @@ export default function BrandMaster({ toast, canExportImport = true }) {
         title="Importing Brands"
       />
       <SectionTitle
-        icon="🏷️"
+        icon="fa-solid fa-tag"
         title="Brand Master"
         sub="Manage product brands and link them to companies"
       />
 
-      <div style={cardStyle}>
-        <div
-          style={{
-            marginBottom: 14,
-            fontSize: 14,
-            fontWeight: 500,
-            color: C.accent || "#4CAF50",
-          }}
-        >
-          {editingId ? "✏️ Edit Brand" : "+ Add Brand"}
-        </div>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-            gap: 12,
-            marginBottom: 14,
-          }}
+      {showModal && (
+        <Modal
+          title={editingId ? "Edit brand" : "New brand"}
+          maxWidth={720}
+          onClose={closeModal}
         >
           <div>
-            <label
+            <div
               style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: "#888",
-                display: "block",
-                marginBottom: 5,
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+                gap: 12,
+                marginBottom: 14,
               }}
             >
-              BRAND NAME *
-            </label>
-            <input
-              style={inputStyle}
-              placeholder="e.g. Nike, Apple"
-              value={formData.name}
-              onChange={(e) => handleChange("name", e.target.value)}
-            />
+              <div>
+                <label
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: "#888",
+                    display: "block",
+                    marginBottom: 5,
+                  }}
+                >
+                  Brand name *
+                </label>
+                <input
+                  style={inputStyle}
+                  placeholder="e.g. Nike, Apple"
+                  value={formData.name}
+                  onChange={(e) => handleChange("name", e.target.value)}
+                />
+              </div>
+              <div>
+                <label
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: "#888",
+                    display: "block",
+                    marginBottom: 5,
+                  }}
+                >
+                  Linked company
+                </label>
+                <select
+                  style={inputStyle}
+                  value={formData.companyId || ""}
+                  onChange={(e) => handleChange("companyId", e.target.value)}
+                >
+                  <option value="">-- Select Company --</option>
+                  {companies.map((c) => (
+                    <option key={c._id} value={c._id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: "#888",
+                    display: "block",
+                    marginBottom: 5,
+                  }}
+                >
+                  Client category
+                </label>
+                <select
+                  style={inputStyle}
+                  value={formData.clientCategory || ""}
+                  onChange={(e) =>
+                    handleChange("clientCategory", e.target.value)
+                  }
+                >
+                  <option value="">-- Select Category --</option>
+                  {clientCategories.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div style={{ gridColumn: "span 2" }}>
+                <label
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: "#888",
+                    display: "block",
+                    marginBottom: 5,
+                  }}
+                >
+                  Description
+                </label>
+                <input
+                  style={inputStyle}
+                  placeholder="Optional description"
+                  value={formData.description}
+                  onChange={(e) => handleChange("description", e.target.value)}
+                />
+              </div>
+            </div>
           </div>
-          <div>
-            <label
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: "#888",
-                display: "block",
-                marginBottom: 5,
-              }}
-            >
-              LINKED COMPANY
-            </label>
-            <select
-              style={inputStyle}
-              value={formData.companyId || ""}
-              onChange={(e) => handleChange("companyId", e.target.value)}
-            >
-              <option value="">-- Select Company --</option>
-              {companies.map((c) => (
-                <option key={c._id} value={c._id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: "#888",
-                display: "block",
-                marginBottom: 5,
-              }}
-            >
-              CLIENT CATEGORY
-            </label>
-            <select
-              style={inputStyle}
-              value={formData.clientCategory || ""}
-              onChange={(e) => handleChange("clientCategory", e.target.value)}
-            >
-              <option value="">-- Select Category --</option>
-              {clientCategories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div style={{ gridColumn: "span 2" }}>
-            <label
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: "#888",
-                display: "block",
-                marginBottom: 5,
-              }}
-            >
-              DESCRIPTION
-            </label>
-            <input
-              style={inputStyle}
-              placeholder="Optional description"
-              value={formData.description}
-              onChange={(e) => handleChange("description", e.target.value)}
-            />
-          </div>
-        </div>
-        <div style={{ display: "flex", gap: 10 }}>
-          <button
-            onClick={handleSubmit}
-            disabled={loading}
+          <div
             style={{
-              padding: "9px 20px",
-              background: loading ? "#666" : C.accent || "#4CAF50",
-              color: "#000",
-              border: "none",
-              borderRadius: 6,
-              fontWeight: 500,
-              fontSize: 13,
-              cursor: loading ? "not-allowed" : "pointer",
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: 8,
+              marginTop: 20,
             }}
           >
-            {loading ? "Saving..." : editingId ? "Update Brand" : "Add Brand"}
-          </button>
-          {editingId && (
-            <button
-              onClick={() => {
-                setEditingId(null);
-                setFormData({
-                  name: "",
-                  description: "",
-                  companyId: "",
-                  companyName: "",
-                  clientCategory: "",
-                });
-              }}
-              style={{
-                padding: "9px 20px",
-                background: "transparent",
-                color: "#aaa",
-                border: "1px solid rgba(255,255,255,0.1)",
-                borderRadius: 6,
-                fontWeight: 500,
-                fontSize: 13,
-                cursor: "pointer",
-              }}
-            >
+            <button type="button" className="lg-btn" onClick={closeModal}>
               Cancel
             </button>
-          )}
-          {canExportImport && (
-            <ExportBtn onClick={handleExport} label="Export" />
-          )}
-          <TemplateBtn onClick={handleTemplate} />
-          {canExportImport && (
-            <ImportBtn onClick={() => fileInputRef.current.click()} />
-          )}
-          <input
-            type="file"
-            ref={fileInputRef}
-            hidden
-            onChange={handleImport}
-            accept=".xlsx, .xls"
-          />
-        </div>
-      </div>
-
-      <div style={cardStyle}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 14,
-          }}
-        >
-          <span style={{ fontSize: 14, fontWeight: 500, color: "#e0e0e0" }}>
-            Brands
-            {searchTerm
-              ? ` (${filtered.length} of ${brands.length})`
-              : ` (${brands.length})`}
-          </span>
-          <div style={{ position: "relative", width: 260 }}>
-            <i
-              className="fa-solid fa-magnifying-glass"
-              style={{
-                position: "absolute",
-                left: 10,
-                top: "50%",
-                transform: "translateY(-50%)",
-                color: "#888",
-                fontSize: 12,
-                pointerEvents: "none",
-              }}
-            />
-            <input
-              type="text"
-              placeholder="Search by brand, company..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{
-                ...inputStyle,
-                width: "100%",
-                paddingLeft: 30,
-                paddingRight: searchTerm ? 28 : 12,
-              }}
-            />
-            {searchTerm && (
-              <button
-                onClick={() => setSearchTerm("")}
-                style={{
-                  position: "absolute",
-                  right: 8,
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  background: "none",
-                  border: "none",
-                  color: "#888",
-                  cursor: "pointer",
-                  fontSize: 13,
-                  padding: 0,
-                  lineHeight: 1,
-                }}
-              >
-                ✕
-              </button>
-            )}
+            <button
+              type="button"
+              className="lg-btn lg-btn-primary"
+              disabled={loading}
+              onClick={handleSubmit}
+            >
+              {loading ? "Saving…" : editingId ? "Update brand" : "Add brand"}
+            </button>
           </div>
-        </div>
+        </Modal>
+      )}
+      <input
+        type="file"
+        ref={fileInputRef}
+        hidden
+        onChange={handleImport}
+        accept=".xlsx, .xls"
+      />
 
+      <ListToolbar
+        search={searchTerm}
+        setSearch={setSearchTerm}
+        placeholder="Search by brand, company..."
+        onAdd={() => {
+          setEditingId(null);
+          setFormData(blankForm);
+          setShowModal(true);
+        }}
+        addLabel="Add brand"
+        count={filtered.length}
+        onSelectModeChange={(on) => {
+          if (!on) setSelectedIds(new Set());
+        }}
+        exportOptions={
+          canExportImport
+            ? [
+                {
+                  label: "Excel",
+                  icon: "fa-solid fa-file-excel",
+                  onClick: handleExport,
+                },
+              ]
+            : []
+        }
+        onImport={
+          canExportImport ? () => fileInputRef.current.click() : undefined
+        }
+        onTemplate={handleTemplate}
+      />
+      <div style={{ height: 12 }} />
+      <div>
         {filtered.length === 0 ? (
           <div
             style={{
@@ -618,52 +571,30 @@ export default function BrandMaster({ toast, canExportImport = true }) {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
-                      padding: "10px 14px",
-                      marginBottom: 10,
-                      background: "rgba(239,68,68,0.08)",
-                      border: "1px solid rgba(239,68,68,0.3)",
-                      borderRadius: 8,
+                      padding: "8px 16px",
+                      marginBottom: 12,
+                      background: "#1a1a1a",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      borderRadius: 10,
+                      fontSize: 13,
+                      color: "#a3a3a3",
                     }}
                   >
-                    <span
-                      style={{
-                        fontSize: 13,
-                        fontWeight: 600,
-                        color: "#fecaca",
-                      }}
-                    >
-                      {selectedIds.size} selected
-                    </span>
+                    {selectedIds.size} selected
                     <div style={{ display: "flex", gap: 8 }}>
                       <button
+                        type="button"
+                        className="lg-btn"
                         onClick={() => setSelectedIds(new Set())}
-                        style={{
-                          padding: "5px 12px",
-                          borderRadius: 5,
-                          border: "1px solid rgba(255,255,255,0.15)",
-                          background: "rgba(255,255,255,0.06)",
-                          color: "#fff",
-                          fontSize: 12,
-                          fontWeight: 500,
-                          cursor: "pointer",
-                        }}
                       >
                         Clear
                       </button>
                       <button
-                        onClick={() => setBulkDeleteOpen(true)}
-                        style={{
-                          padding: "5px 12px",
-                          borderRadius: 5,
-                          border: "1px solid rgba(239,68,68,0.4)",
-                          background: "rgba(239,68,68,0.15)",
-                          color: "#ef4444",
-                          fontSize: 12,
-                          fontWeight: 600,
-                          cursor: "pointer",
-                        }}
+                        type="button"
+                        className="lg-btn lg-btn-danger"
+                        onClick={handleBulkDelete}
                       >
-                        Delete Selected
+                        <i className="fa-solid fa-trash" /> Delete selected
                       </button>
                     </div>
                   </div>
@@ -695,10 +626,8 @@ export default function BrandMaster({ toast, canExportImport = true }) {
                             padding: "10px 14px",
                             textAlign: "left",
                             fontSize: 11,
-                            fontWeight: 700,
+                            fontWeight: 600,
                             color: C.muted,
-                            textTransform: "uppercase",
-                            letterSpacing: "0.05em",
                             whiteSpace: "nowrap",
                             width: 36,
                           }}
@@ -730,10 +659,8 @@ export default function BrandMaster({ toast, canExportImport = true }) {
                               padding: "10px 14px",
                               textAlign: "left",
                               fontSize: 11,
-                              fontWeight: 700,
+                              fontWeight: 600,
                               color: C.muted,
-                              textTransform: "uppercase",
-                              letterSpacing: "0.05em",
                               whiteSpace: "nowrap",
                             }}
                           >
@@ -749,7 +676,7 @@ export default function BrandMaster({ toast, canExportImport = true }) {
                           style={{
                             borderBottom: "1px solid rgba(255,255,255,0.04)",
                             background: selectedIds.has(brand._id)
-                              ? "rgba(96,165,250,0.08)"
+                              ? "rgba(200, 149, 90, 0.06)"
                               : i % 2 === 0
                                 ? "transparent"
                                 : "rgba(255,255,255,0.01)",
@@ -777,22 +704,24 @@ export default function BrandMaster({ toast, canExportImport = true }) {
                           </td>
                           <td
                             style={{
-                              padding: "12px",
-                              fontWeight: 600,
-                              color: "#e0e0e0",
+                              padding: "12px 14px",
+                              fontWeight: 500,
+                              color: "#ededed",
                             }}
                           >
-                            {brand.name}
+                            <NameWithAvatar name={brand.name} />
                           </td>
-                          <td style={{ padding: "12px", color: "#aaa" }}>
+                          <td
+                            style={{ padding: "12px 14px", color: "#a3a3a3" }}
+                          >
                             {brand.companyName || "-"}
                           </td>
-                          <td style={{ padding: "12px" }}>
+                          <td style={{ padding: "12px 14px" }}>
                             {brand.clientCategory ? (
                               <span
                                 style={{
                                   padding: "3px 10px",
-                                  borderRadius: 20,
+                                  borderRadius: 6,
                                   fontSize: 11,
                                   fontWeight: 500,
                                   background:
@@ -815,55 +744,44 @@ export default function BrandMaster({ toast, canExportImport = true }) {
                               "-"
                             )}
                           </td>
-                          <td style={{ padding: "12px", color: "#aaa" }}>
+                          <td
+                            style={{ padding: "12px 14px", color: "#a3a3a3" }}
+                          >
                             {brand.description || "-"}
                           </td>
-                          <td style={{ padding: "12px" }}>
+                          <td style={{ padding: "12px 14px" }}>
                             <span
                               style={{
                                 padding: "3px 10px",
-                                borderRadius: 20,
+                                borderRadius: 6,
                                 fontSize: 11,
                                 fontWeight: 500,
                                 background:
                                   brand.status === "Active"
-                                    ? "#4CAF5022"
-                                    : "#f4433622",
+                                    ? "rgba(134,184,148,0.14)"
+                                    : "rgba(224,112,95,0.14)",
                                 color:
                                   brand.status === "Active"
-                                    ? "#4CAF50"
-                                    : "#f44336",
+                                    ? "#86b894"
+                                    : "#e0705f",
                               }}
                             >
                               {brand.status || "Active"}
                             </span>
                           </td>
-                          <td style={{ padding: "12px" }}>
+                          <td style={{ padding: "12px 14px" }}>
                             <div style={{ display: "flex", gap: 6 }}>
-                              <button
+                              <IconBtn
+                                icon="fa-pen-to-square"
+                                label="Edit"
                                 onClick={() => handleEdit(brand)}
-                                style={{
-                                  background: "transparent",
-                                  color: "#8082ff",
-                                  border: "1px solid #8082ff98",
-                                  borderRadius: 6,
-                                  padding: "6px 12px",
-                                  fontSize: 11,
-                                  fontWeight: 500,
-                                  cursor: "pointer",
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: 6,
-                                }}
-                              >
-                                <i className="fa-solid fa-pen-to-square" /> Edit
-                              </button>
+                              />
                               <button
                                 onClick={() => handleToggleStatus(brand)}
                                 style={{
                                   background: "transparent",
-                                  color: "#8082ff",
-                                  border: "1px solid #8082ff98",
+                                  color: "#c8955a",
+                                  border: "1px solid #c8955a98",
                                   borderRadius: 6,
                                   padding: "6px 12px",
                                   fontSize: 11,
@@ -881,29 +799,17 @@ export default function BrandMaster({ toast, canExportImport = true }) {
                                   ? "Pause"
                                   : "Activate"}
                               </button>
-                              <button
+                              <IconBtn
+                                icon="fa-trash"
+                                label="Delete"
+                                danger
                                 onClick={() =>
                                   setConfirmModal({
                                     isOpen: true,
                                     id: brand._id,
                                   })
                                 }
-                                style={{
-                                  background: "transparent",
-                                  color: "#8082ff",
-                                  border: "1px solid #8082ff98",
-                                  borderRadius: 6,
-                                  padding: "6px 12px",
-                                  fontSize: 11,
-                                  fontWeight: 500,
-                                  cursor: "pointer",
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: 6,
-                                }}
-                              >
-                                <i className="fa-solid fa-trash" /> Delete
-                              </button>
+                              />
                             </div>
                           </td>
                         </tr>

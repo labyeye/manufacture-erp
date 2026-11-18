@@ -9,6 +9,10 @@ import {
   materialInwardAPI,
   stockMovementAPI,
 } from "../api/auth";
+import { IconBtn } from "../components/ui/IconBtn";
+import { StatCard } from "../components/ui/StatCard";
+
+import { fmtLakh } from "../utils/formatINR";
 
 const SUBCONTRACTING_KEY = "subcontracting_records";
 
@@ -541,15 +545,15 @@ const generateReportHTML = ({
     .header { display: flex; align-items: flex-start; justify-content: space-between; padding-bottom: 14px; border-bottom: 3px solid ${color}; margin-bottom: 18px; }
     .company-info { flex: 1; }
     .company-name { font-size: 18px; font-weight: 800; color: ${color}; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.1; }
-    .company-addr { font-size: 9.5px; color: #475569; margin-top: 4px; line-height: 1.5; }
-    .company-contact { font-size: 9px; color: #64748b; margin-top: 3px; }
+    .company-addr { font-size: 9.5px; color: #6b6b6b; margin-top: 4px; line-height: 1.5; }
+    .company-contact { font-size: 9px; color: #8a8a8a; margin-top: 3px; }
     .logo-wrap { width: 72px; height: 72px; display: flex; align-items: center; justify-content: center; }
     .logo-wrap img { width: 72px; height: 72px; object-fit: contain; }
 
     /* â"€â"€â"€ REPORT META â"€â"€â"€ */
     .report-meta { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 14px; }
-    .report-title { font-size: 16px; font-weight: 800; color: #0f172a; }
-    .report-period { font-size: 9px; color: #64748b; text-align: right; line-height: 1.6; }
+    .report-title { font-size: 16px; font-weight: 800; color: #161616; }
+    .report-period { font-size: 9px; color: #8a8a8a; text-align: right; line-height: 1.6; }
     .period-badge { display: inline-block; background: ${accentLight}; color: ${color}; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 9px; }
 
     /* â"€â"€â"€ STAT CARDS â"€â"€â"€ */
@@ -562,7 +566,7 @@ const generateReportHTML = ({
     table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
     thead tr { background: ${color}; color: #fff; }
     th { padding: 6px 7px; text-align: left; font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; }
-    td { padding: 5px 7px; font-size: 9.5px; color: #1e293b; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    td { padding: 5px 7px; font-size: 9.5px; color: #1f1f1f; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
     tr.even td { background: #fff; }
     tr.odd td { background: #f8fafc; }
     tr:hover td { background: ${accentLight} !important; }
@@ -578,22 +582,22 @@ const generateReportHTML = ({
     .badge.blue { background: #dbeafe; color: #1e40af; }
     .badge.amber { background: #fef3c7; color: #92400e; }
     .badge.red { background: #fee2e2; color: #991b1b; }
-    .badge.gray { background: #f1f5f9; color: #475569; }
+    .badge.gray { background: #f1f5f9; color: #6b6b6b; }
 
     /* â"€â"€â"€ TOTALS BOX â"€â"€â"€ */
     .totals-section { display: flex; justify-content: flex-end; margin-bottom: 20px; }
-    .totals-box { border: 1.5px solid #e2e8f0; border-radius: 8px; overflow: hidden; min-width: 240px; }
+    .totals-box { border: 1.5px solid #ededed; border-radius: 8px; overflow: hidden; min-width: 240px; }
     .totals-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; font-size: 10px; border-bottom: 1px solid #f1f5f9; }
     .totals-row:last-child { border-bottom: none; background: ${color}; color: #fff; padding: 9px 12px; }
     .totals-row:last-child .t-label { font-weight: 700; font-size: 11px; }
     .totals-row:last-child .t-val { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 800; }
-    .t-label { color: #64748b; font-weight: 600; }
-    .t-val { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #0f172a; }
+    .t-label { color: #8a8a8a; font-weight: 600; }
+    .t-val { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #161616; }
 
     /* â"€â"€â"€ FOOTER â"€â"€â"€ */
     .sig-row { display: flex; justify-content: space-between; margin-top: 30px; }
-    .sig-box { width: 140px; border-top: 1px solid #cbd5e1; text-align: center; padding-top: 5px; font-size: 9px; color: #64748b; }
-    .print-footer { margin-top: 20px; padding-top: 10px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; font-size: 8px; color: #94a3b8; }
+    .sig-box { width: 140px; border-top: 1px solid #c7c7c7; text-align: center; padding-top: 5px; font-size: 9px; color: #8a8a8a; }
+    .print-footer { margin-top: 20px; padding-top: 10px; border-top: 1px solid #ededed; display: flex; justify-content: space-between; font-size: 8px; color: #a3a3a3; }
 
     @media print {
       body { padding: 12px 16px; }
@@ -649,7 +653,7 @@ const generateReportHTML = ({
       </tr>
     </thead>
     <tbody>
-      ${rows || `<tr><td colspan="${cols.length}" style="text-align:center; color:#94a3b8; padding: 20px;">No records found for selected period.</td></tr>`}
+      ${rows || `<tr><td colspan="${cols.length}" style="text-align:center; color:#a3a3a3; padding: 20px;">No records found for selected period.</td></tr>`}
     </tbody>
   </table>
 
@@ -749,8 +753,6 @@ export default function Reports() {
     fontSize: 11,
     color: C.muted,
     fontWeight: 600,
-    textTransform: "uppercase",
-    letterSpacing: "0.4px",
     marginBottom: 6,
     display: "block",
   };
@@ -1058,7 +1060,8 @@ export default function Reports() {
                     flexDirection: "column",
                     alignItems: "center",
                     gap: 6,
-                    transition: "all 0.15s",
+                    transition:
+                      "background-color .15s, border-color .15s, color .15s, opacity .15s, transform .15s",
                   }}
                 >
                   <i className={m.icon} style={{ fontSize: 16 }} />
@@ -1106,10 +1109,10 @@ export default function Reports() {
                 borderRadius: 10,
                 border: "none",
                 background: loading
-                  ? "rgba(99,102,241,0.4)"
-                  : "rgba(99,102,241,0.85)",
+                  ? "rgba(200, 149, 90,0.4)"
+                  : "rgba(200, 149, 90,0.85)",
                 color: "#fff",
-                fontWeight: 700,
+                fontWeight: 600,
                 fontSize: 13,
                 cursor: loading ? "not-allowed" : "pointer",
                 display: "flex",
@@ -1158,7 +1161,7 @@ export default function Reports() {
                   },
                   {
                     label: "Net Value",
-                    value: `₹${fmt(reportData.grandTotal)}`,
+                    value: fmtLakh(reportData.grandTotal),
                     color: "#a78bfa",
                   },
                 ];
@@ -1181,7 +1184,7 @@ export default function Reports() {
                   },
                   {
                     label: "Net Value",
-                    value: `₹${fmt(reportData.grandTotal)}`,
+                    value: fmtLakh(reportData.grandTotal),
                     color: "#a78bfa",
                   },
                 ];
@@ -1241,17 +1244,17 @@ export default function Reports() {
                 },
                 {
                   label: "Taxable Amt",
-                  value: `₹${fmt(reportData.grandSubtotal)}`,
+                  value: fmtLakh(reportData.grandSubtotal),
                   color: "#f59e0b",
                 },
                 {
                   label: "Total GST",
-                  value: `₹${fmt(reportData.grandTax)}`,
+                  value: fmtLakh(reportData.grandTax),
                   color: "#60a5fa",
                 },
                 {
                   label: "Net Value",
-                  value: `₹${fmt(reportData.grandTotal)}`,
+                  value: fmtLakh(reportData.grandTotal),
                   color: "#a78bfa",
                 },
               ];
@@ -1266,39 +1269,43 @@ export default function Reports() {
                   marginBottom: 16,
                 }}
               >
-                {cards.map((card, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      background: `${card.color}10`,
-                      border: `1px solid ${card.color}30`,
-                      borderRadius: 12,
-                      padding: "14px 18px",
-                    }}
-                  >
+                {cards.map((c0, i) => {
+                  const card = {
+                    ...c0,
+                    color: ["#ededed", C.accent, C.mint, C.mint][i % 4],
+                  };
+                  return (
                     <div
+                      key={i}
                       style={{
-                        fontSize: 10,
-                        color: card.color,
-                        fontWeight: 700,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.4px",
-                        marginBottom: 6,
+                        background: `${card.color}10`,
+                        border: `1px solid ${card.color}30`,
+                        borderRadius: 12,
+                        padding: "14px 18px",
                       }}
                     >
-                      {card.label}
+                      <div
+                        style={{
+                          fontSize: 10,
+                          color: card.color,
+                          fontWeight: 600,
+                          marginBottom: 6,
+                        }}
+                      >
+                        {card.label}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 22,
+                          fontWeight: 600,
+                          color: card.color,
+                        }}
+                      >
+                        {card.value}
+                      </div>
                     </div>
-                    <div
-                      style={{
-                        fontSize: 22,
-                        fontWeight: 800,
-                        color: card.color,
-                      }}
-                    >
-                      {card.value}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             );
           })()}
@@ -1337,7 +1344,7 @@ export default function Reports() {
                   border: "none",
                   background: "rgba(34,197,94,0.85)",
                   color: "#fff",
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: 13,
                   cursor: "pointer",
                   display: "flex",
@@ -1347,24 +1354,11 @@ export default function Reports() {
               >
                 <i className="fa-solid fa-file-excel" /> Excel
               </button>
-              <button
+              <IconBtn
+                icon="fa-file-pdf"
+                label="Download PDF"
                 onClick={openPDF}
-                style={{
-                  background: "transparent",
-                  color: "#ffffff",
-                  border: "1px solid rgba(255,255,255,0.2)",
-                  borderRadius: 6,
-                  padding: "6px 12px",
-                  fontSize: 11,
-                  fontWeight: 500,
-                  cursor: "pointer",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
-              >
-                <i className="fa-solid fa-file-pdf" /> PDF
-              </button>
+              />
               <button
                 onClick={printReport}
                 style={{
@@ -1373,7 +1367,7 @@ export default function Reports() {
                   border: "none",
                   background: "rgba(16,185,129,0.85)",
                   color: "#fff",
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: 13,
                   cursor: "pointer",
                   display: "flex",
@@ -1454,12 +1448,13 @@ export default function Reports() {
             background: showStockMovement
               ? "rgba(167,139,250,0.1)"
               : "rgba(255,255,255,0.03)",
-            color: showStockMovement ? "#a78bfa" : "#94a3b8",
+            color: showStockMovement ? "#a78bfa" : "#a3a3a3",
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            transition: "all 0.2s",
+            transition:
+              "background-color .15s, border-color .15s, color .15s, opacity .15s, transform .15s",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -1471,8 +1466,7 @@ export default function Reports() {
               <div
                 style={{
                   fontSize: 14,
-                  fontWeight: 700,
-                  letterSpacing: "0.02em",
+                  fontWeight: 600,
                 }}
               >
                 Stock Movement
@@ -1655,8 +1649,6 @@ function StockMovementReport() {
     fontSize: 11,
     color: C.muted,
     fontWeight: 600,
-    textTransform: "uppercase",
-    letterSpacing: "0.4px",
     marginBottom: 6,
     display: "block",
   };
@@ -1725,7 +1717,8 @@ function StockMovementReport() {
                 gap: 10,
                 fontWeight: stockType === t.id ? 700 : 500,
                 fontSize: 13,
-                transition: "all 0.15s",
+                transition:
+                  "background-color .15s, border-color .15s, color .15s, opacity .15s, transform .15s",
               }}
             >
               <i className={t.icon} style={{ fontSize: 18 }} />
@@ -1780,7 +1773,7 @@ function StockMovementReport() {
                   left: 0,
                   right: 0,
                   zIndex: 999,
-                  background: "#1e1e2e",
+                  background: "#1a1a1a",
                   border: "1px solid rgba(255,255,255,0.12)",
                   borderRadius: 8,
                   maxHeight: 220,
@@ -1867,7 +1860,7 @@ function StockMovementReport() {
                 ? "rgba(167,139,250,0.25)"
                 : "rgba(167,139,250,0.85)",
               color: "#fff",
-              fontWeight: 700,
+              fontWeight: 600,
               fontSize: 13,
               cursor: !selectedItem ? "not-allowed" : "pointer",
               display: "flex",
@@ -1894,7 +1887,7 @@ function StockMovementReport() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(4, 1fr)",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
               gap: 12,
               marginBottom: 16,
             }}
@@ -1917,34 +1910,20 @@ function StockMovementReport() {
                 color: typeColor,
               },
             ].map((card, i) => (
-              <div
+              <StatCard
                 key={i}
-                style={{
-                  background: `${card.color}10`,
-                  border: `1px solid ${card.color}30`,
-                  borderRadius: 12,
-                  padding: "14px 18px",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 10,
-                    color: card.color,
-                    fontWeight: 700,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.4px",
-                    marginBottom: 4,
-                  }}
-                >
-                  {card.label}
-                </div>
-                <div
-                  style={{ fontSize: 20, fontWeight: 800, color: card.color }}
-                >
-                  {card.value}{" "}
-                  <span style={{ fontSize: 11, opacity: 0.7 }}>{unit}</span>
-                </div>
-              </div>
+                label={card.label}
+                value={card.value}
+                unit={unit}
+                icon={
+                  {
+                    "Opening Balance": "fa-solid fa-flag",
+                    "Total Inward": "fa-solid fa-arrow-down-to-line",
+                    "Total Outward": "fa-solid fa-arrow-up-from-line",
+                    "Closing Balance": "fa-solid fa-scale-balanced",
+                  }[card.label]
+                }
+              />
             ))}
           </div>
 
@@ -1961,7 +1940,7 @@ function StockMovementReport() {
                 <span
                   style={{
                     color: typeColor,
-                    fontWeight: 700,
+                    fontWeight: 600,
                     fontFamily: "monospace",
                     marginRight: 8,
                   }}
@@ -1984,7 +1963,7 @@ function StockMovementReport() {
                   border: "none",
                   background: "rgba(34,197,94,0.85)",
                   color: "#fff",
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: 12,
                   cursor: "pointer",
                   display: "flex",
@@ -2033,10 +2012,8 @@ function StockMovementReport() {
                           ? "right"
                           : "left",
                         fontSize: 11,
-                        fontWeight: 700,
+                        fontWeight: 600,
                         color: C.muted,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.4px",
                         borderBottom: "1px solid rgba(255,255,255,0.1)",
                         whiteSpace: "nowrap",
                       }}
@@ -2102,7 +2079,7 @@ function StockMovementReport() {
                             padding: "2px 10px",
                             borderRadius: 20,
                             fontSize: 11,
-                            fontWeight: 700,
+                            fontWeight: 600,
                             background: `${txnColor}18`,
                             color: txnColor,
                             border: `1px solid ${txnColor}40`,
@@ -2156,7 +2133,7 @@ function StockMovementReport() {
                           padding: "10px 14px",
                           textAlign: "right",
                           color: "#fff",
-                          fontWeight: 700,
+                          fontWeight: 600,
                         }}
                       >
                         {fmtN(r.closing)}{" "}
@@ -2177,7 +2154,7 @@ function StockMovementReport() {
                     colSpan={6}
                     style={{
                       padding: "10px 14px",
-                      fontWeight: 700,
+                      fontWeight: 600,
                       color: "#fff",
                       fontSize: 12,
                     }}
@@ -2189,7 +2166,7 @@ function StockMovementReport() {
                       padding: "10px 14px",
                       textAlign: "right",
                       color: "#4ade80",
-                      fontWeight: 800,
+                      fontWeight: 600,
                     }}
                   >
                     {fmtN(totalIn)}
@@ -2199,7 +2176,7 @@ function StockMovementReport() {
                       padding: "10px 14px",
                       textAlign: "right",
                       color: "#f87171",
-                      fontWeight: 800,
+                      fontWeight: 600,
                     }}
                   >
                     {fmtN(totalOut)}
@@ -2209,7 +2186,7 @@ function StockMovementReport() {
                       padding: "10px 14px",
                       textAlign: "right",
                       color: typeColor,
-                      fontWeight: 800,
+                      fontWeight: 600,
                     }}
                   >
                     {fmtN(closingQty)}{" "}

@@ -20,17 +20,18 @@ import {
 } from "../api/auth";
 import moment from "moment";
 import * as XLSX from "xlsx";
+import { IconBtn } from "../components/ui/IconBtn";
 
-const ACCENT_SELL = "#4ade80";
-const ACCENT_BUY = "#60a5fa";
+const ACCENT_SELL = "#c8955a";
+const ACCENT_BUY = "#c8955a";
 
 const inputStyle = {
   padding: "9px 12px",
-  border: "1px solid rgba(255,255,255,0.13)",
-  borderRadius: 6,
+  border: "1px solid rgba(255,255,255,0.08)",
+  borderRadius: 8,
   fontSize: 13,
-  background: "rgba(255,255,255,0.07)",
-  color: "#e0e0e0",
+  background: "#141414",
+  color: "#ededed",
   outline: "none",
   boxSizing: "border-box",
 };
@@ -368,10 +369,9 @@ function SellingSection({ toast, canExportImport = true }) {
               fontWeight: 500,
               color: "#555",
               marginBottom: 5,
-              letterSpacing: "0.5px",
             }}
           >
-            SELECT CLIENT
+            Select client
           </div>
           <AutocompleteInput
             value={selectedClient}
@@ -394,10 +394,9 @@ function SellingSection({ toast, canExportImport = true }) {
                 fontWeight: 500,
                 color: "#555",
                 marginBottom: 5,
-                letterSpacing: "0.5px",
               }}
             >
-              SEARCH ITEM
+              Search item
             </div>
             <input
               style={{ ...inputStyle, width: "100%" }}
@@ -416,13 +415,17 @@ function SellingSection({ toast, canExportImport = true }) {
             flexWrap: "wrap",
           }}
         >
-          <Button text="⬇ Template" color="#444" onClick={handleTemplate} />
+          <button type="button" className="lg-btn" onClick={handleTemplate}>
+            Template
+          </button>
           {canExportImport && (
-            <Button
-              text={importing ? "Importing…" : "⬆ Import"}
-              color="#444"
+            <button
+              type="button"
+              className="lg-btn"
               onClick={() => importRef.current?.click()}
-            />
+            >
+              {importing ? "Importing…" : "Import"}
+            </button>
           )}
           <input
             ref={importRef}
@@ -432,18 +435,22 @@ function SellingSection({ toast, canExportImport = true }) {
             onChange={handleImport}
           />
           {canExportImport && (
-            <Button text="⬇ Export" color="#444" onClick={handleExport} />
+            <button type="button" className="lg-btn" onClick={handleExport}>
+              Export
+            </button>
           )}
-          <Button
-            text="+ Add Price"
-            color={ACCENT_SELL}
+          <button
+            type="button"
+            className="lg-btn lg-btn-primary"
             onClick={() => {
               resetForm();
               if (selectedClient)
                 setFormData((f) => ({ ...f, companyName: selectedClient }));
               setShowModal(true);
             }}
-          />
+          >
+            Add Price
+          </button>
         </div>
       </div>
 
@@ -460,12 +467,12 @@ function SellingSection({ toast, canExportImport = true }) {
           <span
             style={{
               padding: "4px 14px",
-              borderRadius: 20,
-              background: "#4ade8022",
+              borderRadius: 6,
+              background: "rgba(200,149,90,0.14)",
               color: ACCENT_SELL,
               fontSize: 12,
               fontWeight: 500,
-              border: "1px solid #4ade8044",
+              border: "1px solid rgba(200,149,90,0.3)",
             }}
           >
             {selectedClient}
@@ -532,42 +539,17 @@ function SellingSection({ toast, canExportImport = true }) {
               color={r.status === "Active" ? C.green : C.muted}
             />,
             <div style={{ display: "flex", gap: 6 }}>
-              <button
+              <IconBtn
+                icon="fa-pen-to-square"
+                label="Edit"
                 onClick={() => handleEdit(r)}
-                style={{
-                  background: "transparent",
-                  color: "#8082ff",
-                  border: "1px solid #8082ff98",
-                  borderRadius: 6,
-                  padding: "6px 12px",
-                  fontSize: 11,
-                  fontWeight: 500,
-                  cursor: "pointer",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
-              >
-                <i className="fa-solid fa-pen-to-square" /> Edit
-              </button>
-              <button
+              />
+              <IconBtn
+                icon="fa-trash"
+                label="Delete"
+                danger
                 onClick={() => handleDelete(r._id)}
-                style={{
-                  background: "transparent",
-                  color: "#8082ff",
-                  border: "1px solid #8082ff98",
-                  borderRadius: 6,
-                  padding: "6px 12px",
-                  fontSize: 11,
-                  fontWeight: 500,
-                  cursor: "pointer",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
-              >
-                <i className="fa-solid fa-trash" /> Delete
-              </button>
+              />
             </div>,
           ])}
         />
@@ -597,8 +579,6 @@ function SellingSection({ toast, canExportImport = true }) {
                     fontWeight: 600,
                     color: "#888",
                     marginBottom: 6,
-                    letterSpacing: "0.5px",
-                    textTransform: "uppercase",
                   }}
                 >
                   Item Code *
@@ -625,8 +605,6 @@ function SellingSection({ toast, canExportImport = true }) {
                     fontWeight: 600,
                     color: "#888",
                     marginBottom: 6,
-                    letterSpacing: "0.5px",
-                    textTransform: "uppercase",
                   }}
                 >
                   Item Name
@@ -651,8 +629,6 @@ function SellingSection({ toast, canExportImport = true }) {
                     fontWeight: 600,
                     color: "#888",
                     marginBottom: 6,
-                    letterSpacing: "0.5px",
-                    textTransform: "uppercase",
                   }}
                 >
                   Brand Name *
@@ -743,20 +719,23 @@ function SellingSection({ toast, canExportImport = true }) {
                 gap: 12,
               }}
             >
-              <Button
-                text="Cancel"
-                color="#666"
+              <button
+                type="button"
+                className="lg-btn"
                 onClick={() => {
                   setShowModal(false);
                   resetForm();
                 }}
-              />
-              <Button
+              >
+                Cancel
+              </button>
+              <button
                 type="submit"
-                text={editingId ? "Update" : "Save"}
-                color={ACCENT_SELL}
-                loading={loading}
-              />
+                className="lg-btn lg-btn-primary"
+                disabled={loading}
+              >
+                {loading ? "Saving…" : editingId ? "Update" : "Save"}
+              </button>
             </div>
           </form>
         </Modal>
@@ -1038,10 +1017,9 @@ function PurchaseSection({ toast, canExportImport = true }) {
               fontWeight: 500,
               color: "#555",
               marginBottom: 5,
-              letterSpacing: "0.5px",
             }}
           >
-            SELECT VENDOR
+            Select vendor
           </div>
           <AutocompleteInput
             value={selectedVendor}
@@ -1064,10 +1042,9 @@ function PurchaseSection({ toast, canExportImport = true }) {
                 fontWeight: 500,
                 color: "#555",
                 marginBottom: 5,
-                letterSpacing: "0.5px",
               }}
             >
-              SEARCH ITEM
+              Search item
             </div>
             <input
               style={{ ...inputStyle, width: "100%" }}
@@ -1086,13 +1063,17 @@ function PurchaseSection({ toast, canExportImport = true }) {
             flexWrap: "wrap",
           }}
         >
-          <Button text="⬇ Template" color="#444" onClick={handleTemplate} />
+          <button type="button" className="lg-btn" onClick={handleTemplate}>
+            Template
+          </button>
           {canExportImport && (
-            <Button
-              text={importing ? "Importing…" : "⬆ Import"}
-              color="#444"
+            <button
+              type="button"
+              className="lg-btn"
               onClick={() => importRef.current?.click()}
-            />
+            >
+              {importing ? "Importing…" : "Import"}
+            </button>
           )}
           <input
             ref={importRef}
@@ -1102,18 +1083,22 @@ function PurchaseSection({ toast, canExportImport = true }) {
             onChange={handleImport}
           />
           {canExportImport && (
-            <Button text="⬇ Export" color="#444" onClick={handleExport} />
+            <button type="button" className="lg-btn" onClick={handleExport}>
+              Export
+            </button>
           )}
-          <Button
-            text="+ Add Price"
-            color={ACCENT_BUY}
+          <button
+            type="button"
+            className="lg-btn lg-btn-primary"
             onClick={() => {
               resetForm();
               if (selectedVendor)
                 setFormData((f) => ({ ...f, vendorName: selectedVendor }));
               setShowModal(true);
             }}
-          />
+          >
+            Add Price
+          </button>
         </div>
       </div>
 
@@ -1130,12 +1115,12 @@ function PurchaseSection({ toast, canExportImport = true }) {
           <span
             style={{
               padding: "4px 14px",
-              borderRadius: 20,
-              background: "#60a5fa22",
+              borderRadius: 6,
+              background: "rgba(200,149,90,0.14)",
               color: ACCENT_BUY,
               fontSize: 12,
               fontWeight: 500,
-              border: "1px solid #60a5fa44",
+              border: "1px solid rgba(200,149,90,0.3)",
             }}
           >
             {selectedVendor}
@@ -1191,42 +1176,17 @@ function PurchaseSection({ toast, canExportImport = true }) {
               color={r.status === "Active" ? C.green : C.muted}
             />,
             <div style={{ display: "flex", gap: 6 }}>
-              <button
+              <IconBtn
+                icon="fa-pen-to-square"
+                label="Edit"
                 onClick={() => handleEdit(r)}
-                style={{
-                  background: "transparent",
-                  color: "#8082ff",
-                  border: "1px solid #8082ff98",
-                  borderRadius: 6,
-                  padding: "6px 12px",
-                  fontSize: 11,
-                  fontWeight: 500,
-                  cursor: "pointer",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
-              >
-                <i className="fa-solid fa-pen-to-square" /> Edit
-              </button>
-              <button
+              />
+              <IconBtn
+                icon="fa-trash"
+                label="Delete"
+                danger
                 onClick={() => handleDelete(r._id)}
-                style={{
-                  background: "transparent",
-                  color: "#8082ff",
-                  border: "1px solid #8082ff98",
-                  borderRadius: 6,
-                  padding: "6px 12px",
-                  fontSize: 11,
-                  fontWeight: 500,
-                  cursor: "pointer",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
-              >
-                <i className="fa-solid fa-trash" /> Delete
-              </button>
+              />
             </div>,
           ])}
         />
@@ -1351,20 +1311,23 @@ function PurchaseSection({ toast, canExportImport = true }) {
                 gap: 12,
               }}
             >
-              <Button
-                text="Cancel"
-                color="#666"
+              <button
+                type="button"
+                className="lg-btn"
                 onClick={() => {
                   setShowModal(false);
                   resetForm();
                 }}
-              />
-              <Button
+              >
+                Cancel
+              </button>
+              <button
                 type="submit"
-                text={editingId ? "Update" : "Save"}
-                color={ACCENT_BUY}
-                loading={loading}
-              />
+                className="lg-btn lg-btn-primary"
+                disabled={loading}
+              >
+                {loading ? "Saving…" : editingId ? "Update" : "Save"}
+              </button>
             </div>
           </form>
         </Modal>
@@ -1375,8 +1338,8 @@ function PurchaseSection({ toast, canExportImport = true }) {
 
 /* ─── Root ─── */
 const SUBTABS = [
-  { id: "selling", icon: "💰", label: "Selling Prices", accent: ACCENT_SELL },
-  { id: "purchase", icon: "🛒", label: "Purchase Prices", accent: ACCENT_BUY },
+  { id: "selling", icon: "", label: "Selling Prices", accent: ACCENT_SELL },
+  { id: "purchase", icon: "", label: "Purchase Prices", accent: ACCENT_BUY },
 ];
 
 export default function PriceMaster({ toast, canExportImport = true }) {
@@ -1385,7 +1348,7 @@ export default function PriceMaster({ toast, canExportImport = true }) {
   return (
     <div className="fade">
       <SectionTitle
-        icon="💲"
+        icon="fa-solid fa-tags"
         title="Price List Master"
         sub="Filter by client or vendor to view and manage their prices"
       />
@@ -1409,8 +1372,8 @@ export default function PriceMaster({ toast, canExportImport = true }) {
                   ? `2px solid ${t.accent}`
                   : "2px solid transparent",
               background: "transparent",
-              color: activeTab === t.id ? t.accent : "#555",
-              fontWeight: activeTab === t.id ? 700 : 500,
+              color: activeTab === t.id ? "#ededed" : "#a3a3a3",
+              fontWeight: 500,
               fontSize: 13,
               cursor: "pointer",
               display: "flex",

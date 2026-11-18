@@ -89,7 +89,7 @@ export default function FactoryCalendar({ toast }) {
   return (
     <div className="fade">
       <SectionTitle
-        icon="🗓️"
+        icon="fa-solid fa-calendar-days"
         title="Factory Calendar"
         sub="Manage Holidays and Shutdowns"
       >

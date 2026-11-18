@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { GLOBAL_STYLE } from "./constants/styles";
 import { C } from "./constants/colors";
 import {
@@ -34,6 +34,7 @@ import {
   priceListAPI,
   operatorMasterAPI,
 } from "./api/auth";
+import { startLabelIcons } from "./utils/labelIcons";
 import { AuthContext, AuthProvider, useAuth } from "./context/AuthContext";
 import { Toast } from "./components/ui/AdvancedComponents";
 import { Dashboard } from "./pages/Dashboard";
@@ -70,7 +71,6 @@ import StockAdjustment from "./pages/StockAdjustment";
 import Reports from "./pages/Reports";
 import OperatorMaster from "./pages/OperatorMaster";
 import companylogo from "../src/assets/logo.png";
-import bgImage from "./assets/bg.png";
 function App() {
   return (
     <AuthProvider>
@@ -97,8 +97,7 @@ function AppContent() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background:
-            "linear-gradient(135deg, #07070f 0%, #0c0c1a 50%, #09090e 100%)",
+          background: "#131313",
           color: C.text,
           flexDirection: "column",
           gap: 20,
@@ -108,19 +107,17 @@ function AppContent() {
           className="fa-solid fa-industry"
           style={{
             fontSize: 36,
-            color: "#6366f1",
-            animation: "bounce 1s infinite",
+            color: "#c8955a",
           }}
         />
         <div
           style={{
             fontWeight: 500,
-            letterSpacing: "0.04em",
             color: C.muted,
             fontSize: 13,
           }}
         >
-          Loading system...
+          Loading
         </div>
         <style>{`
  @keyframes bounce {
@@ -179,6 +176,7 @@ function AppInner({
   allowedTabs,
   editableTabs,
 }) {
+  const [profileOpen, setProfileOpen] = useState(false);
   const [currentTab, setCurrentTab] = useState(() => {
     const lastTab = localStorage.getItem("erp_lastTab");
     const candidate = lastTab || "dashboard";
@@ -188,8 +186,11 @@ function AppInner({
   });
   const [deepLink, setDeepLink] = useState(null);
   const [toast, setToast] = useState(null);
+  const pageRef = useRef(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const isMobile = useIsMobile();
+
+  useEffect(() => startLabelIcons(), []);
 
   const handleNavigate = (tab, recordId) => {
     setCurrentTab(tab);
@@ -249,7 +250,7 @@ function AppInner({
   );
   const [categoryMaster, setCategoryMaster] = usePersistedState(
     "erp_categoryMaster",
-    {},
+    [],
   );
   const [sizeMaster, setSizeMaster] = usePersistedState("erp_sizeMaster", {});
   const [printingMaster, setPrintingMaster] = usePersistedState(
@@ -849,40 +850,23 @@ function AppInner({
     <>
       <div
         style={{
-          padding: "22px 20px 18px",
-          borderBottom: `1px solid rgba(255,255,255,0.07)`,
+          height: 56,
+          padding: "0 16px",
+          flexShrink: 0,
+          borderBottom: `1px solid rgba(255,255,255,0.08)`,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
         }}
       >
-        <div
-          style={{
-            alignItems: "center",
-            justifyContent: "center",
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <img
             src={companylogo}
             alt="Logo"
-            style={{
-              width: 64,
-              height: 64,
-              marginRight: 12,
-            }}
+            style={{ width: 32, height: 32, objectFit: "contain" }}
           />
-          <div
-            style={{
-              color: "#ffffff",
-              fontSize: 14,
-              marginTop: 3,
-              fontWeight: 400,
-            }}
-          >
-            Manufacturing ERP
+          <div style={{ color: "#ededed", fontSize: 14, fontWeight: 500 }}>
+            ManufactureIQ
           </div>
         </div>
         {isMobile && (
@@ -902,7 +886,7 @@ function AppInner({
         )}
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: "8px 8px" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "8px 12px 16px" }}>
         {(() => {
           const TAB_GROUPS = [
             {
@@ -984,14 +968,14 @@ function AppInner({
                   .filter((t) => t && allowedSet.has(t.id));
                 if (!tabs.length) return null;
                 return (
-                  <div key={group.label}>
+                  <div key={group.label} className="lg-sidebar-group">
                     <div className="lg-sidebar-group-label">{group.label}</div>
                     {tabs.map(renderTab)}
                   </div>
                 );
               })}
               {ungroupedTabs.length > 0 && (
-                <div>
+                <div className="lg-sidebar-group">
                   <div className="lg-sidebar-group-label">Other</div>
                   {ungroupedTabs.map(renderTab)}
                 </div>
@@ -1003,41 +987,21 @@ function AppInner({
 
       <div
         style={{
-          padding: "14px 16px",
-          borderTop: `1px solid rgba(255,255,255,0.07)`,
+          padding: 16,
+          borderTop: "1px solid rgba(255,255,255,0.08)",
         }}
       >
         <div
           style={{
             fontSize: 12,
+            lineHeight: "16px",
             color: C.muted,
-            marginBottom: 10,
-            fontWeight: 400,
+            marginBottom: 12,
           }}
         >
           {session.username} · {session.role}
         </div>
-        <button
-          onClick={onLogout}
-          style={{
-            width: "100%",
-            background: "rgba(239,68,68,0.1)",
-            color: "#f87171",
-            border: "1px solid rgba(239,68,68,0.2)",
-            borderRadius: 10,
-            padding: "8px",
-            fontWeight: 600,
-            fontSize: 12,
-            cursor: "pointer",
-            transition: "all 0.18s ease",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "rgba(239,68,68,0.18)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "rgba(239,68,68,0.1)";
-          }}
-        >
+        <button onClick={onLogout} className="lg-signout">
           Sign out
         </button>
       </div>
@@ -1050,7 +1014,7 @@ function AppInner({
         height: "100vh",
         display: "flex",
         flexDirection: "column",
-        background: `url(${bgImage})`,
+        background: "#131313",
         backgroundSize: "cover",
         color: C.text,
         overflow: "hidden",
@@ -1075,15 +1039,13 @@ function AppInner({
         {!isMobile ? (
           <div
             style={{
-              background: "rgba(0, 0, 0, 0)",
-              //
-              borderRight: "1px solid rgba(255,255,255,0.18)",
+              background: "#171717",
+              borderRight: "1px solid rgba(255,255,255,0.08)",
               width: 230,
               display: "flex",
               flexDirection: "column",
               flexShrink: 0,
               maxHeight: "100%",
-              boxShadow: "2px 0 24px rgba(0,0,0,0.3)",
             }}
           >
             {sidebarContent}
@@ -1096,15 +1058,13 @@ function AppInner({
               left: 0,
               height: "100%",
               width: 260,
-              background: "rgba(0, 0, 0, 0)",
-              //
-              borderRight: "1px solid rgba(255,255,255,0.18)",
+              background: "#171717",
+              borderRight: "1px solid rgba(255,255,255,0.08)",
               display: "flex",
               flexDirection: "column",
               zIndex: 50,
               transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)",
               transition: "transform 0.25s ease",
-              boxShadow: "4px 0 32px rgba(0,0,0,0.4)",
             }}
           >
             {sidebarContent}
@@ -1124,10 +1084,9 @@ function AppInner({
           {/* Top header */}
           <div
             style={{
-              height: 54,
-              background: "rgba(0, 0, 0, 0)",
-              //
-              borderBottom: "1px solid rgba(255,255,255,0.18)",
+              height: 56,
+              background: "#131313",
+              borderBottom: "1px solid rgba(255,255,255,0.08)",
               display: "flex",
               alignItems: "center",
               padding: isMobile ? "0 12px" : "0 28px",
@@ -1152,63 +1111,111 @@ function AppInner({
                 <i className="fa-solid fa-bars" />
               </button>
             )}
-            <div
+            <div style={{ flex: 1 }} />
+            <button
+              type="button"
+              className="po-tbtn"
+              aria-label="Notifications"
+              onClick={() => setCurrentTab("notificationhub")}
               style={{
-                background: "rgba(0, 0, 0, 0)",
-                //
-                border: "1px solid rgba(255,255,255,0.18)",
-                borderRadius: 12,
-                padding: isMobile ? "7px 12px" : "8px 16px",
+                width: 36,
+                height: 36,
+                borderRadius: "50%",
+                background: "#1a1a1a",
+                border: "1px solid rgba(255,255,255,0.08)",
+                color: "#ededed",
+                cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
-                gap: 10,
-                flex: 1,
-                maxWidth: isMobile ? "100%" : 320,
-                color: C.placeholder,
-                fontSize: 13,
-                cursor: "pointer",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-                transition: "all 0.18s ease",
-              }}
-              onClick={() => {
-                setCurrentTab("search");
-                if (isMobile) setSidebarOpen(false);
+                justifyContent: "center",
+                flexShrink: 0,
               }}
             >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 20 20"
-                fill="none"
-                stroke={C.muted}
-                strokeWidth="2"
+              <i className="fa-solid fa-bell" style={{ fontSize: 14 }} />
+            </button>
+            <div style={{ position: "relative", flexShrink: 0 }}>
+              <button
+                type="button"
+                className="po-tbtn"
+                onClick={() => setProfileOpen((o) => !o)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: isMobile ? "3px" : "3px 12px 3px 3px",
+                  background: "#1a1a1a",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: 999,
+                  color: "#ededed",
+                  cursor: "pointer",
+                }}
               >
-                <circle cx="9" cy="9" r="6" />
-                <path d="m15 15 3 3" />
-              </svg>
-              <span style={{ flex: 1, fontWeight: 300, fontStyle: "italic" }}>
-                Search anything...
-              </span>
-              {!isMobile && (
                 <span
                   style={{
-                    fontSize: 10,
-                    background: "rgba(255,255,255,0.08)",
-                    color: C.muted,
-                    padding: "2px 7px",
-                    borderRadius: 10,
-                    flexShrink: 0,
-                    fontWeight: 500,
+                    width: 30,
+                    height: 30,
+                    borderRadius: "50%",
+                    background: C.accent,
+                    color: "#131313",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 12,
+                    fontWeight: 700,
                   }}
                 >
-                  Ctrl+K
+                  {String(session.name || session.username || "?")
+                    .trim()
+                    .slice(0, 2)
+                    .toUpperCase()}
                 </span>
+                {!isMobile && (
+                  <span style={{ textAlign: "left", lineHeight: 1.2 }}>
+                    <span
+                      style={{
+                        display: "block",
+                        fontSize: 12,
+                        fontWeight: 600,
+                      }}
+                    >
+                      {session.name || session.username}
+                    </span>
+                    <span
+                      style={{ display: "block", fontSize: 10, color: C.muted }}
+                    >
+                      {session.role}
+                    </span>
+                  </span>
+                )}
+              </button>
+              {profileOpen && (
+                <div
+                  onClick={() => setProfileOpen(false)}
+                  style={{ position: "fixed", inset: 0, zIndex: 49 }}
+                />
               )}
+              <div className="tb-menu" data-open={profileOpen || undefined}>
+                <button
+                  type="button"
+                  className="tb-menu-item"
+                  onClick={() => {
+                    setProfileOpen(false);
+                    onLogout();
+                  }}
+                >
+                  <i
+                    className="fa-solid fa-right-from-bracket"
+                    style={{ width: 14, color: "#c8955a" }}
+                  />
+                  Sign out
+                </button>
+              </div>
             </div>
           </div>
 
           {/* Page content */}
           <div
+            ref={pageRef}
             style={{
               flex: 1,
               padding: isMobile ? 16 : 32,

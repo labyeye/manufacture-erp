@@ -369,8 +369,15 @@ router.get("/", async (req, res) => {
       const currentQty = stock ? stock.qty || 0 : 0;
 
       const FG_STAGES_ORDER = [
-        "Printing", "Flexo Printing", "Varnish", "Lamination",
-        "Die Cutting", "Formation", "Manual Formation", "Bag Making", "Sheet Cutting",
+        "Printing",
+        "Flexo Printing",
+        "Varnish",
+        "Lamination",
+        "Die Cutting",
+        "Formation",
+        "Manual Formation",
+        "Bag Making",
+        "Sheet Cutting",
       ];
       const getLastStage = (process) => {
         const ordered = [...(process || [])].sort(
@@ -403,7 +410,9 @@ router.get("/", async (req, res) => {
       // Inward: JO production — each stage history entry on the LAST stage
       const allJos = await JobOrder.find({
         $or: [{ itemName: nameRegex }, { product: nameRegex }],
-      }).select("joNo jobcardDate itemName companyName status process stageHistory");
+      }).select(
+        "joNo jobcardDate itemName companyName status process stageHistory",
+      );
 
       for (const jo of allJos) {
         const lastStage = getLastStage(jo.process);

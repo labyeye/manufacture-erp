@@ -1,5 +1,15 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { activityLogAPI } from "../api/auth";
+import { StatCard as SharedStatCard } from "../components/ui/StatCard";
+import { IconBtn } from "../components/ui/IconBtn";
+import {
+  ListToolbar,
+  FilterModal,
+  Field,
+  Select,
+  DateRangeFilter,
+  toolbarBtn,
+} from "../components/ui/BasicComponents";
 
 const ACTION_META = {
   LOGIN: {
@@ -75,7 +85,6 @@ function Badge({ action }) {
         color: meta.color,
         background: meta.bg,
         border: `1px solid ${meta.color}33`,
-        letterSpacing: "0.3px",
         whiteSpace: "nowrap",
       }}
     >
@@ -89,21 +98,25 @@ function Badge({ action }) {
   );
 }
 
+const EVENT_ICONS = {
+  "Total Events": "fa-solid fa-list",
+  Logins: "fa-solid fa-right-to-bracket",
+  Created: "fa-solid fa-plus",
+  Updated: "fa-solid fa-pen",
+  Deleted: "fa-solid fa-trash",
+  "Status Changes": "fa-solid fa-arrows-rotate",
+  "Stock Adjustments": "fa-solid fa-sliders",
+  "Bulk Imports": "fa-solid fa-file-import",
+};
+
 function StatCard({ label, value, color }) {
   return (
-    <div
-      style={{
-        background: "#141414",
-        border: `1px solid ${color}33`,
-        borderRadius: 8,
-        padding: "12px 16px",
-        minWidth: 100,
-        flex: "1 1 100px",
-      }}
-    >
-      <div style={{ fontSize: 22, fontWeight: 800, color }}>{value}</div>
-      <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>{label}</div>
-    </div>
+    <SharedStatCard
+      label={label}
+      value={value}
+      dot={color}
+      icon={EVENT_ICONS[label]}
+    />
   );
 }
 
@@ -155,7 +168,6 @@ function DetailsPanel({ details }) {
               color: "#555",
               minWidth: 80,
               fontWeight: 600,
-              textTransform: "uppercase",
               fontSize: 10,
             }}
           >
@@ -184,37 +196,41 @@ function DetailsPanel({ details }) {
 
 function LogRow({ log, i, expanded, onToggle }) {
   const hasDetails = log.details && Object.keys(log.details).length > 0;
-  const base = i % 2 === 0 ? "transparent" : "#0a0a0a";
+  const base = "transparent";
 
   return (
     <>
       <tr
         style={{
-          borderBottom: expanded ? "none" : "1px solid #161616",
+          borderBottom: expanded ? "none" : "1px solid rgba(255,255,255,0.05)",
           background: base,
           cursor: hasDetails ? "pointer" : "default",
         }}
         onClick={hasDetails ? onToggle : undefined}
-        onMouseEnter={(e) => (e.currentTarget.style.background = "#1a1a1a")}
+        onMouseEnter={(e) =>
+          (e.currentTarget.style.background = "rgba(255,255,255,0.03)")
+        }
         onMouseLeave={(e) =>
-          (e.currentTarget.style.background = expanded ? "#111" : base)
+          (e.currentTarget.style.background = expanded
+            ? "rgba(255,255,255,0.03)"
+            : base)
         }
       >
         <td
-          style={{ padding: "9px 12px", color: "#666", whiteSpace: "nowrap" }}
+          style={{ padding: "12px 14px", color: "#666", whiteSpace: "nowrap" }}
         >
           <div style={{ color: "#777" }}>{formatTs(log.timestamp)}</div>
           <div style={{ fontSize: 10, color: "#444", marginTop: 1 }}>
             {timeAgo(log.timestamp)}
           </div>
         </td>
-        <td style={{ padding: "9px 12px" }}>
+        <td style={{ padding: "12px 14px" }}>
           <Badge action={log.action} />
         </td>
-        <td style={{ padding: "9px 12px" }}>
+        <td style={{ padding: "12px 14px" }}>
           <span style={{ color: "#ccc", fontWeight: 600 }}>{log.module}</span>
         </td>
-        <td style={{ padding: "9px 12px" }}>
+        <td style={{ padding: "12px 14px" }}>
           {log.entityName ? (
             <span style={{ color: "#e0e0e0" }}>{log.entityName}</span>
           ) : (
@@ -232,7 +248,7 @@ function LogRow({ log, i, expanded, onToggle }) {
             </div>
           )}
         </td>
-        <td style={{ padding: "9px 12px" }}>
+        <td style={{ padding: "12px 14px" }}>
           <span style={{ color: "#e0e0e0", fontWeight: 600 }}>
             {log.performedByName || log.performedBy?.name || (
               <span style={{ color: "#444" }}>System</span>
@@ -244,7 +260,7 @@ function LogRow({ log, i, expanded, onToggle }) {
             </div>
           )}
         </td>
-        <td style={{ padding: "9px 12px" }}>
+        <td style={{ padding: "12px 14px" }}>
           {log.performedByRole ? (
             <span
               style={{
@@ -265,23 +281,33 @@ function LogRow({ log, i, expanded, onToggle }) {
         </td>
         <td
           style={{
-            padding: "9px 12px",
+            padding: "12px 14px",
             color: "#444",
             fontSize: 11,
           }}
         >
           {log.ipAddress || "—"}
         </td>
-        <td style={{ padding: "9px 12px", textAlign: "center" }}>
+        <td style={{ padding: "12px 14px", textAlign: "center" }}>
           {hasDetails ? (
-            <span style={{ color: "#555", fontSize: 13 }}>
-              {expanded ? "▲" : "▼"}
-            </span>
+            <IconBtn
+              icon={expanded ? "fa-chevron-up" : "fa-chevron-down"}
+              label={expanded ? "Hide details" : "Show details"}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggle();
+              }}
+            />
           ) : null}
         </td>
       </tr>
       {expanded && hasDetails && (
-        <tr style={{ background: "#111", borderBottom: "1px solid #161616" }}>
+        <tr
+          style={{
+            background: "rgba(255,255,255,0.03)",
+            borderBottom: "1px solid rgba(255,255,255,0.05)",
+          }}
+        >
           <td colSpan={8} style={{ padding: "0 12px 12px 36px" }}>
             <DetailsPanel details={log.details} />
           </td>
@@ -301,6 +327,7 @@ export default function ERPConsole({ toast, session }) {
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [page, setPage] = useState(1);
   const [expandedRow, setExpandedRow] = useState(null);
+  const [showFilter, setShowFilter] = useState(false);
   const LIMIT = 50;
 
   const [filters, setFilters] = useState({
@@ -393,6 +420,13 @@ export default function ERPConsole({ toast, session }) {
 
   const totalPages = Math.ceil(total / LIMIT);
 
+  const activeFilterCount = [
+    filters.module !== "All",
+    filters.action !== "All",
+    filters.user !== "All",
+    filters.from,
+    filters.to,
+  ].filter(Boolean).length;
   const hasFilters =
     filters.search ||
     filters.module !== "All" ||
@@ -411,120 +445,14 @@ export default function ERPConsole({ toast, session }) {
         overflow: "hidden",
       }}
     >
-      {/* Header */}
-      <div
-        style={{
-          padding: "16px 24px",
-          borderBottom: "1px solid #1e1e1e",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 12,
-          flexShrink: 0,
-        }}
-      >
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <i
-              className="fa-solid fa-terminal"
-              style={{ fontSize: 18, color: "#ff7800" }}
-            />
-            <span style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>
-              ERP Console
-            </span>
-            <span
-              style={{
-                fontSize: 10,
-                padding: "2px 7px",
-                borderRadius: 4,
-                background: "#ff780018",
-                color: "#ff7800",
-                fontWeight: 500,
-                border: "1px solid #ff780033",
-                letterSpacing: "0.5px",
-              }}
-            >
-              ADMIN ONLY
-            </span>
-          </div>
-          <div style={{ fontSize: 11, color: "#555", marginTop: 2 }}>
-            Full activity monitoring — every create, edit, delete &amp; status
-            change across the ERP
-          </div>
-        </div>
-
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <button
-            onClick={() => setAutoRefresh((v) => !v)}
-            style={{
-              background: autoRefresh ? "#4caf5022" : "#1a1a1a",
-              border: `1px solid ${autoRefresh ? "#4caf50" : "#333"}`,
-              borderRadius: 6,
-              color: autoRefresh ? "#4caf50" : "#888",
-              fontSize: 11,
-              padding: "6px 12px",
-              cursor: "pointer",
-              fontWeight: 600,
-              display: "flex",
-              alignItems: "center",
-              gap: 5,
-            }}
-          >
-            <span
-              style={{
-                width: 7,
-                height: 7,
-                borderRadius: "50%",
-                background: autoRefresh ? "#4caf50" : "#555",
-                display: "inline-block",
-                ...(autoRefresh && { boxShadow: "0 0 6px #4caf50" }),
-              }}
-            />
-            {autoRefresh ? "Live (10s)" : "Auto Refresh"}
-          </button>
-          <button
-            onClick={() => fetchLogs(page)}
-            disabled={loading}
-            style={{
-              background: "#1a1a1a",
-              border: "1px solid #333",
-              borderRadius: 6,
-              color: "#ccc",
-              fontSize: 11,
-              padding: "6px 12px",
-              cursor: loading ? "not-allowed" : "pointer",
-              fontWeight: 600,
-            }}
-          >
-            {loading ? "Loading…" : "↻ Refresh"}
-          </button>
-          <button
-            onClick={handleClear}
-            style={{
-              background: "#1a1a1a",
-              border: "1px solid #f4433633",
-              borderRadius: 6,
-              color: "#f44336",
-              fontSize: 11,
-              padding: "6px 12px",
-              cursor: "pointer",
-              fontWeight: 600,
-            }}
-          >
-            Clear Old Logs
-          </button>
-        </div>
-      </div>
-
       {/* Stats row */}
       <div
         style={{
-          display: "flex",
-          gap: 10,
-          padding: "12px 24px",
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+          gap: 12,
+          padding: "16px 24px",
           flexShrink: 0,
-          flexWrap: "wrap",
-          borderBottom: "1px solid #1a1a1a",
         }}
       >
         <StatCard label="Total Events" value={total} color="#ff7800" />
@@ -541,117 +469,116 @@ export default function ERPConsole({ toast, session }) {
         <StatCard label="Bulk Imports" value={totalImported} color="#00bcd4" />
       </div>
 
-      {/* Filters */}
-      <div
-        style={{
-          display: "flex",
-          gap: 8,
-          padding: "10px 24px",
-          flexShrink: 0,
-          flexWrap: "wrap",
-          borderBottom: "1px solid #1a1a1a",
-          alignItems: "center",
-        }}
-      >
-        <input
-          style={{ ...inputStyle, width: 200 }}
+      {/* Toolbar */}
+      <div style={{ padding: "12px 24px", flexShrink: 0 }}>
+        <ListToolbar
+          search={filters.search}
+          setSearch={(v) =>
+            setFilters((f) => ({ ...f, search: v, user: "All" }))
+          }
           placeholder="Search name, user, module…"
-          value={filters.search}
-          onChange={(e) =>
-            setFilters((f) => ({ ...f, search: e.target.value, user: "All" }))
+          count={total}
+          filterCount={activeFilterCount}
+          onFilter={() => setShowFilter(true)}
+          actions={
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <button
+                type="button"
+                className="po-tbtn"
+                style={{
+                  ...toolbarBtn,
+                  color: autoRefresh ? "#6ee7b7" : "#ededed",
+                  borderColor: autoRefresh
+                    ? "rgba(16,185,129,0.30)"
+                    : "rgba(255,255,255,0.08)",
+                }}
+                onClick={() => setAutoRefresh((v) => !v)}
+              >
+                <i className="fa-solid fa-satellite-dish" />
+                {autoRefresh ? "Live (10s)" : "Auto Refresh"}
+              </button>
+              <button
+                type="button"
+                className="po-tbtn"
+                style={{ ...toolbarBtn, opacity: loading ? 0.6 : 1 }}
+                disabled={loading}
+                onClick={() => fetchLogs(page)}
+              >
+                <i className="fa-solid fa-rotate" />
+                {loading ? "Loading…" : "Refresh"}
+              </button>
+              <button
+                type="button"
+                className="po-tbtn"
+                style={{ ...toolbarBtn, color: "#e0705f" }}
+                onClick={handleClear}
+              >
+                <i className="fa-solid fa-trash" /> Clear Old Logs
+              </button>
+            </div>
           }
         />
-        <select
-          style={inputStyle}
-          value={filters.module}
-          onChange={(e) =>
-            setFilters((f) => ({ ...f, module: e.target.value }))
-          }
-        >
-          {modules.map((m) => (
-            <option key={m} value={m}>
-              {m === "All" ? "All Modules" : m}
-            </option>
-          ))}
-        </select>
-        <select
-          style={inputStyle}
-          value={filters.action}
-          onChange={(e) =>
-            setFilters((f) => ({ ...f, action: e.target.value }))
-          }
-        >
-          {ALL_ACTIONS.map((a) => (
-            <option key={a} value={a}>
-              {a === "All" ? "All Actions" : ACTION_META[a]?.label || a}
-            </option>
-          ))}
-        </select>
-        <select
-          style={{ ...inputStyle, maxWidth: 160 }}
-          value={filters.user}
-          onChange={(e) =>
-            setFilters((f) => ({ ...f, user: e.target.value, search: "" }))
-          }
-        >
-          {userList.map((u) => (
-            <option key={u} value={u}>
-              {u === "All" ? "All Users" : u}
-            </option>
-          ))}
-        </select>
-        <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-          <span style={{ fontSize: 11, color: "#555" }}>From</span>
-          <input
-            type="date"
-            style={inputStyle}
-            value={filters.from}
-            onChange={(e) =>
-              setFilters((f) => ({ ...f, from: e.target.value }))
-            }
-          />
-        </div>
-        <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-          <span style={{ fontSize: 11, color: "#555" }}>To</span>
-          <input
-            type="date"
-            style={inputStyle}
-            value={filters.to}
-            onChange={(e) => setFilters((f) => ({ ...f, to: e.target.value }))}
-          />
-        </div>
-        {hasFilters && (
-          <button
-            onClick={() =>
-              setFilters({
-                module: "All",
-                action: "All",
-                user: "All",
-                search: "",
-                from: "",
-                to: "",
-              })
-            }
-            style={{
-              background: "transparent",
-              border: "1px solid #444",
-              borderRadius: 6,
-              color: "#888",
-              fontSize: 11,
-              padding: "6px 10px",
-              cursor: "pointer",
-            }}
-          >
-            ✕ Clear
-          </button>
-        )}
-        <div style={{ marginLeft: "auto", fontSize: 11, color: "#555" }}>
-          {total} event{total !== 1 ? "s" : ""}
-        </div>
       </div>
+      {showFilter && (
+        <FilterModal
+          onClose={() => setShowFilter(false)}
+          onReset={() =>
+            setFilters({
+              module: "All",
+              action: "All",
+              user: "All",
+              search: filters.search,
+              from: "",
+              to: "",
+            })
+          }
+        >
+          <Select
+            label="Module"
+            value={filters.module}
+            onChange={(e) =>
+              setFilters((f) => ({ ...f, module: e.target.value }))
+            }
+            options={modules.map((m) => ({
+              value: m,
+              label: m === "All" ? "All Modules" : m,
+            }))}
+          />
+          <Select
+            label="Action"
+            value={filters.action}
+            onChange={(e) =>
+              setFilters((f) => ({ ...f, action: e.target.value }))
+            }
+            options={ALL_ACTIONS.map((a) => ({
+              value: a,
+              label: a === "All" ? "All Actions" : ACTION_META[a]?.label || a,
+            }))}
+          />
+          <Select
+            label="User"
+            value={filters.user}
+            onChange={(e) =>
+              setFilters((f) => ({ ...f, user: e.target.value, search: "" }))
+            }
+            options={userList.map((u) => ({
+              value: u,
+              label: u === "All" ? "All Users" : u,
+            }))}
+          />
+          <Field label="Date">
+            <DateRangeFilter
+              dateFrom={filters.from}
+              setDateFrom={(v) => setFilters((f) => ({ ...f, from: v }))}
+              dateTo={filters.to}
+              setDateTo={(v) => setFilters((f) => ({ ...f, to: v }))}
+            />
+          </Field>
+        </FilterModal>
+      )}
 
       {/* Log table */}
-      <div style={{ flex: 1, overflowY: "auto" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "0 24px 16px" }}>
         {loading && logs.length === 0 ? (
           <div style={{ padding: 40, textAlign: "center", color: "#444" }}>
             Loading logs…
@@ -671,61 +598,71 @@ export default function ERPConsole({ toast, session }) {
             with the ERP.
           </div>
         ) : (
-          <table
-            style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}
+          <div
+            style={{
+              border: "1px solid rgba(255,255,255,0.07)",
+              borderRadius: 12,
+              overflow: "hidden",
+            }}
           >
-            <thead>
-              <tr
-                style={{
-                  background: "#111",
-                  borderBottom: "1px solid #1e1e1e",
-                  position: "sticky",
-                  top: 0,
-                  zIndex: 2,
-                }}
-              >
-                {[
-                  "Timestamp",
-                  "Action",
-                  "Module",
-                  "Entity",
-                  "User",
-                  "Role",
-                  "IP",
-                  "",
-                ].map((h, i) => (
-                  <th
-                    key={i}
-                    style={{
-                      padding: "8px 12px",
-                      textAlign: "left",
-                      color: "#555",
-                      fontWeight: 500,
-                      fontSize: 10,
-                      letterSpacing: "0.8px",
-                      textTransform: "uppercase",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {h}
-                  </th>
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                fontSize: 13,
+              }}
+            >
+              <thead>
+                <tr
+                  style={{
+                    background: "#131313",
+                    borderBottom: "1px solid rgba(255,255,255,0.08)",
+                    position: "sticky",
+                    top: 0,
+                    zIndex: 2,
+                  }}
+                >
+                  {[
+                    "Timestamp",
+                    "Action",
+                    "Module",
+                    "Entity",
+                    "User",
+                    "Role",
+                    "IP",
+                    "",
+                  ].map((h, i) => (
+                    <th
+                      key={i}
+                      style={{
+                        padding: "10px 14px",
+                        textAlign: "left",
+                        color: "#8a8a8a",
+                        fontWeight: 600,
+                        fontSize: 11,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {logs.map((log, i) => (
+                  <LogRow
+                    key={log._id}
+                    log={log}
+                    i={i}
+                    expanded={expandedRow === log._id}
+                    onToggle={() =>
+                      setExpandedRow(expandedRow === log._id ? null : log._id)
+                    }
+                  />
                 ))}
-              </tr>
-            </thead>
-            <tbody>
-              {logs.map((log, i) => (
-                <LogRow
-                  key={log._id}
-                  log={log}
-                  i={i}
-                  expanded={expandedRow === log._id}
-                  onToggle={() =>
-                    setExpandedRow(expandedRow === log._id ? null : log._id)
-                  }
-                />
-              ))}
-            </tbody>
-          </table>
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
@@ -792,10 +729,10 @@ export default function ERPConsole({ toast, session }) {
 
 const paginationBtn = {
   background: "#1a1a1a",
-  border: "1px solid #2a2a2a",
-  borderRadius: 5,
-  color: "#888",
+  border: "1px solid rgba(255,255,255,0.08)",
+  borderRadius: 8,
+  color: "#ededed",
   fontSize: 13,
-  padding: "4px 10px",
+  padding: "6px 12px",
   cursor: "pointer",
 };

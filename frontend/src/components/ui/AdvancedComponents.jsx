@@ -146,7 +146,7 @@ export function Toast({ msg, type = "info", onClose, duration = 3500 }) {
           background: "rgba(248,251,254,0.96)",
           border: `1px solid ${color}55`,
           borderRadius: 20,
-          boxShadow: `0 0 0 1px ${color}33, 0 24px 60px rgba(27,39,68,0.15), 0 0 40px ${color}22`,
+          boxShadow: "none",
           overflow: "hidden",
           animation: exiting
             ? "alertScaleOut 0.28s ease forwards"
@@ -173,7 +173,6 @@ export function Toast({ msg, type = "info", onClose, duration = 3500 }) {
               fontWeight: 500,
               color,
               marginBottom: 4,
-              letterSpacing: "0.01em",
             }}
           >
             {TYPE_TITLE[type] || "Info"}
@@ -194,7 +193,6 @@ export function Toast({ msg, type = "info", onClose, duration = 3500 }) {
               marginTop: 18,
               fontSize: 11,
               color: "#8a9ab5",
-              letterSpacing: "0.03em",
             }}
           >
             Click anywhere to dismiss

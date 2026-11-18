@@ -6,12 +6,18 @@ import {
   Badge,
   Field,
   SubmitBtn,
-  ExportBtn,
   AutocompleteInput,
+  Modal,
+  SortSelect,
+  ListToolbar,
+  FilterModal,
+  DateRangeFilter,
 } from "../components/ui/BasicComponents";
 import { DatePicker } from "../components/ui/DatePicker";
 import { jobOrdersAPI } from "../api/auth";
 import { useEffect } from "react";
+import { IconBtn } from "../components/ui/IconBtn";
+import { StatCard } from "../components/ui/StatCard";
 
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 const today = () => new Date().toISOString().slice(0, 10);
@@ -65,7 +71,8 @@ export default function ProductionUpdate({
 
   const [entry, setEntry] = useState(blankEntry);
   const [errors, setErrors] = useState({});
-  const [view, setView] = useState("entry");
+  const [showEntryModal, setShowEntryModal] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
   const [fetching, setFetching] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [dateFrom, setDateFrom] = useState("");
@@ -74,6 +81,58 @@ export default function ProductionUpdate({
   const [filterItem, setFilterItem] = useState("");
   const [filterStage, setFilterStage] = useState("");
   const [editingEntry, setEditingEntry] = useState(null);
+  const [sortBy, setSortBy] = useState("newest");
+  const [statusJOId, setStatusJOId] = useState(null);
+
+  const closeEntryModal = () => {
+    setShowEntryModal(false);
+    setEditingEntry(null);
+    setEntry(blankEntry);
+    setErrors({});
+  };
+
+  const STAGE_ORDER = [
+    "Printing",
+    "Varnish",
+    "Lamination",
+    "Die Cutting",
+    "Formation",
+    "Manual Formation",
+  ];
+
+  // Per-stage progress of a job order (target / done / rejected / remaining).
+  const getStageProgress = (jo) => {
+    const isSheet = (jo.paperCategory || "").toLowerCase().includes("sheet");
+    const procArr = [...(jo.process || [])].sort(
+      (a, b) => STAGE_ORDER.indexOf(a) - STAGE_ORDER.indexOf(b),
+    );
+    return procArr.map((stage, idx) => {
+      const isFormation = stage.includes("Formation");
+      let target = 0;
+      if (isFormation) target = jo.orderQty || 0;
+      else if (idx === 0)
+        target = isSheet ? jo.noOfSheets || 0 : jo.reelWeightKg || 0;
+      else target = jo.stageQtyMap?.[procArr[idx - 1]] || 0;
+      const recs = (jo.stageHistory || []).filter((h) => h.stage === stage);
+      const done =
+        jo.stageTotalMap?.[stage] ??
+        recs.reduce((x, h) => x + (+h.qtyCompleted || 0), 0);
+      const rejected = recs.reduce((x, h) => x + (+h.qtyRejected || 0), 0);
+      const unit = isFormation ? "pcs" : isSheet ? "sheets" : "kg";
+      let state = "Pending";
+      if (target > 0 && done >= target) state = "Completed";
+      else if (done > 0) state = "In Progress";
+      return {
+        stage,
+        target,
+        done,
+        rejected,
+        unit,
+        state,
+        entries: recs.length,
+      };
+    });
+  };
 
   const fetchJobOrders = async () => {
     try {
@@ -178,6 +237,7 @@ export default function ProductionUpdate({
       setEntry(blankEntry);
       setEditingEntry(null);
       setErrors({});
+      setShowEntryModal(false);
       fetchJobOrders();
     } catch (error) {
       console.error("Production update error:", error);
@@ -201,8 +261,7 @@ export default function ProductionUpdate({
       shift: record.shift || "",
     });
     setEditingEntry({ joId: jo._id, stageId: record._id });
-    setView("entry");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setShowEntryModal(true);
   };
 
   const handleDelete = async (joId, stageId) => {
@@ -307,6 +366,23 @@ export default function ProductionUpdate({
     return qtyDoneInPrev;
   }, [selectedJO, entry.productionStage]);
 
+  const SORT_OPTIONS = [
+    ["newest", "Newest first"],
+    ["oldest", "Oldest first"],
+    ["done_desc", "Qty done (high → low)"],
+    ["done_asc", "Qty done (low → high)"],
+    ["rej_desc", "Rejected (high → low)"],
+    ["jo_asc", "JO No (A → Z)"],
+    ["client_asc", "Client (A → Z)"],
+  ];
+  const activeFilterCount = [
+    filterClient,
+    filterItem,
+    filterStage,
+    dateFrom || dateTo,
+    sortBy !== "newest",
+  ].filter(Boolean).length;
+
   const recordCount = allProductionRecords.length;
   const wipCount = wipStock.length;
   const joCount = jobOrders.length;
@@ -332,50 +408,14 @@ export default function ProductionUpdate({
         </div>
       )}
 
-      <div
-        style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}
-      >
-        {[
-          ["entry", "fa-solid fa-screwdriver-wrench", "Production Details"],
-          ["records", "fa-solid fa-clipboard-list", "Records"],
-          ["status", "fa-solid fa-chart-column", "Production Status"],
-        ].map(([v, iconClass, label]) => (
-          <button
-            key={v}
-            onClick={() => setView(v)}
-            style={{
-              padding: "8px 20px",
-              borderRadius: 6,
-              border: `1px solid ${view === v ? "#FF7F11" : C.border}`,
-              background: view === v ? "#FF7F1122" : "transparent",
-              color: view === v ? "#FF7F11" : C.muted,
-              fontWeight: 500,
-              fontSize: 13,
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-            }}
-          >
-            <i className={iconClass} />
-            <span>{label}</span>
-          </button>
-        ))}
-      </div>
 
-      {view === "entry" && (
+      {showEntryModal && (
+        <Modal
+          title={editingEntry ? "Edit Production Record" : "New Production Update"}
+          onClose={closeEntryModal}
+        >
         <div>
           <Card style={{ marginBottom: 16 }}>
-            <h3
-              style={{
-                fontSize: 16,
-                fontWeight: 500,
-                color: "#FF7F11",
-                marginBottom: 20,
-                textTransform: "capitalize",
-              }}
-            >
-              {editingEntry ? "Edit Production Record" : "Stage Update Entry"}
-            </h3>
             <div
               style={{
                 display: "grid",
@@ -495,7 +535,7 @@ export default function ProductionUpdate({
                     return (
                       <option key={s} value={s} disabled={disabled}>
                         {s} ({done}/{target}
-                        {unit}) {disabled ? "🔒" : ""}
+                        {unit}) {disabled ? " (locked)" : ""}
                       </option>
                     );
                   })}
@@ -724,12 +764,9 @@ export default function ProductionUpdate({
                 onClick={submit}
                 disabled={fetching}
               />
-              {editingEntry && (
+              {(
                 <button
-                  onClick={() => {
-                    setEditingEntry(null);
-                    setEntry(blankEntry);
-                  }}
+                  onClick={closeEntryModal}
                   style={{
                     padding: "10px 20px",
                     borderRadius: 6,
@@ -741,174 +778,24 @@ export default function ProductionUpdate({
                     cursor: "pointer",
                   }}
                 >
-                  Cancel Edit
+                  Cancel
                 </button>
               )}
             </div>
           </Card>
         </div>
+        </Modal>
       )}
 
-      {view === "records" && (
-        <div>
-          {}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: 12,
-              marginBottom: 20,
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                gap: 12,
-                flexWrap: "wrap",
-                alignItems: "center",
-              }}
-            >
-              <AutocompleteInput
-                value={searchTerm}
-                onChange={(v) => setSearchTerm(v)}
-                suggestions={[
-                  ...new Set(
-                    (jobOrders || []).map((jo) => jo.joNo).filter(Boolean),
-                  ),
-                ].sort()}
-                placeholder="Filter by JO#..."
-                showAllOnFocus={true}
-                inputStyle={{
-                  padding: "7px 10px",
-                  background: C.card,
-                  border: `1px solid ${C.border}`,
-                  borderRadius: 6,
-                  color: "#fff",
-                  fontSize: 12,
-                  width: 140,
-                }}
-              />
-              <AutocompleteInput
-                value={filterClient}
-                onChange={(v) => setFilterClient(v)}
-                suggestions={[
-                  ...new Set(
-                    (jobOrders || [])
-                      .map((jo) => jo.companyName)
-                      .filter(Boolean),
-                  ),
-                ].sort()}
-                placeholder="Filter by client..."
-                showAllOnFocus={true}
-                inputStyle={{
-                  padding: "7px 10px",
-                  background: C.card,
-                  border: `1px solid ${C.border}`,
-                  borderRadius: 6,
-                  color: "#fff",
-                  fontSize: 12,
-                  width: 180,
-                }}
-              />
-              <AutocompleteInput
-                value={filterItem}
-                onChange={(v) => setFilterItem(v)}
-                suggestions={[
-                  ...new Set(
-                    (jobOrders || []).map((jo) => jo.itemName).filter(Boolean),
-                  ),
-                ].sort()}
-                placeholder="Filter by item..."
-                showAllOnFocus={true}
-                inputStyle={{
-                  padding: "7px 10px",
-                  background: C.card,
-                  border: `1px solid ${C.border}`,
-                  borderRadius: 6,
-                  color: "#fff",
-                  fontSize: 12,
-                  width: 180,
-                }}
-              />
-              <AutocompleteInput
-                value={filterStage}
-                onChange={(v) => setFilterStage(v)}
-                suggestions={[
-                  "Printing",
-                  "Varnish",
-                  "Lamination",
-                  "Die Cutting",
-                  "Formation",
-                  "Manual Formation",
-                ]}
-                placeholder="Filter by stage..."
-                showAllOnFocus={true}
-                inputStyle={{
-                  padding: "7px 10px",
-                  background: C.card,
-                  border: `1px solid ${C.border}`,
-                  borderRadius: 6,
-                  color: "#fff",
-                  fontSize: 12,
-                  width: 160,
-                }}
-              />
-
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  fontSize: 12,
-                  color: C.muted,
-                }}
-              >
-                <span>Date:</span>
-                <input
-                  type="date"
-                  value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
-                  style={{
-                    padding: "6px 10px",
-                    borderRadius: 4,
-                    border: `1px solid ${C.border}`,
-                    background: C.card,
-                    color: C.text,
-                    fontSize: 12,
-                  }}
-                />
-                <span>to</span>
-                <input
-                  type="date"
-                  value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
-                  style={{
-                    padding: "6px 10px",
-                    borderRadius: 4,
-                    border: `1px solid ${C.border}`,
-                    background: C.card,
-                    color: C.text,
-                    fontSize: 12,
-                  }}
-                />
-              </div>
-            </div>
-
-            {canExportImport && (
-              <ExportBtn
-                onClick={() => {
-                  toast("Excel Export coming soon...", "info");
-                }}
-              />
-            )}
-          </div>
-
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           {(() => {
             const allRecs = [];
             jobOrders.forEach((jo) => {
-              if (searchTerm && jo.joNo !== searchTerm) return;
+              if (searchTerm) {
+                const q = searchTerm.toLowerCase();
+                const hay = `${jo.joNo} ${jo.companyName} ${jo.itemName}`.toLowerCase();
+                if (!hay.includes(q)) return;
+              }
               if (filterClient && (jo.companyName || "") !== filterClient)
                 return;
               if (filterItem && (jo.itemName || "") !== filterItem) return;
@@ -919,11 +806,24 @@ export default function ProductionUpdate({
                 allRecs.push({ ...r, jo });
               });
             });
-            allRecs.sort(
-              (a, b) =>
-                new Date(b.createdAt || b.enteredAt || b.date || 0) -
-                new Date(a.createdAt || a.enteredAt || a.date || 0),
-            );
+            const ts = (r) =>
+              new Date(r.createdAt || r.enteredAt || r.date || 0).getTime();
+            const sorters = {
+              newest: (a, b) => ts(b) - ts(a),
+              oldest: (a, b) => ts(a) - ts(b),
+              done_desc: (a, b) =>
+                (+b.qtyCompleted || 0) - (+a.qtyCompleted || 0),
+              done_asc: (a, b) =>
+                (+a.qtyCompleted || 0) - (+b.qtyCompleted || 0),
+              rej_desc: (a, b) => (+b.qtyRejected || 0) - (+a.qtyRejected || 0),
+              jo_asc: (a, b) =>
+                (a.jo.joNo || "").localeCompare(b.jo.joNo || "", undefined, {
+                  numeric: true,
+                }),
+              client_asc: (a, b) =>
+                (a.jo.companyName || "").localeCompare(b.jo.companyName || ""),
+            };
+            allRecs.sort(sorters[sortBy] || sorters.newest);
 
             const totalDone = allRecs.reduce(
               (s, r) => s + +(r.qtyCompleted || 0),
@@ -961,63 +861,47 @@ export default function ProductionUpdate({
                 <div
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "repeat(4, 1fr)",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
                     gap: 12,
                     marginBottom: 16,
                   }}
                 >
                   {statCards.map(({ label, value, icon }) => (
-                    <div
+                    <StatCard
                       key={label}
-                      style={{
-                        padding: "16px 20px",
-                        background: "transparent",
-                        border: "1px solid rgba(255,255,255,0.07)",
-                        borderRadius: 12,
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          marginBottom: 8,
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: 19,
-                            color: "#ffffff",
-                            fontWeight: 600,
-                            textTransform: "uppercase",
-                            letterSpacing: "0.05em",
-                          }}
-                        >
-                          {label}
-                        </span>
-                        <i
-                          className={icon}
-                          style={{
-                            color: C.muted,
-                            fontSize: 20,
-                            opacity: 0.9,
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            height: 28,
-                            width: 28,
-                            lineHeight: 1,
-                          }}
-                        />
-                      </div>
-                      <div
-                        style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}
-                      >
-                        {value}
-                      </div>
-                    </div>
+                      label={label}
+                      value={value}
+                      icon={icon}
+                    />
                   ))}
                 </div>
+
+                <ListToolbar
+                  search={searchTerm}
+                  setSearch={setSearchTerm}
+                  placeholder="Search JO, client, item..."
+                  count={allRecs.length}
+                  filterCount={activeFilterCount}
+                  onFilter={() => setShowFilterModal(true)}
+                  exportOptions={
+                    canExportImport
+                      ? [
+                          {
+                            label: "Excel",
+                            icon: "fa-solid fa-file-excel",
+                            onClick: () =>
+                              toast("Excel Export coming soon...", "info"),
+                          },
+                        ]
+                      : []
+                  }
+                  onAdd={() => {
+                    setEditingEntry(null);
+                    setEntry(blankEntry);
+                    setErrors({});
+                    setShowEntryModal(true);
+                  }}
+                />
 
                 {allRecs.length === 0 ? (
                   <div
@@ -1066,10 +950,8 @@ export default function ProductionUpdate({
                                 padding: "10px 14px",
                                 textAlign: "left",
                                 fontSize: 11,
-                                fontWeight: 700,
+                                fontWeight: 600,
                                 color: C.muted,
-                                textTransform: "uppercase",
-                                letterSpacing: "0.05em",
                                 whiteSpace: "nowrap",
                               }}
                             >
@@ -1096,8 +978,8 @@ export default function ProductionUpdate({
                               <td
                                 style={{
                                   padding: "11px 14px",
-                                  fontWeight: 700,
-                                  color: "#facc15",
+                                  fontWeight: 600,
+                                  color: C.accent,
                                   whiteSpace: "nowrap",
                                 }}
                               >
@@ -1115,7 +997,7 @@ export default function ProductionUpdate({
                               <td
                                 style={{
                                   padding: "11px 14px",
-                                  color: "#94a3b8",
+                                  color: "#a3a3a3",
                                 }}
                               >
                                 {jo.itemName}
@@ -1127,9 +1009,9 @@ export default function ProductionUpdate({
                                     borderRadius: 4,
                                     fontSize: 11,
                                     fontWeight: 600,
-                                    background: "#FF7F1122",
-                                    color: "#FF7F11",
-                                    border: "1px solid #FF7F1144",
+                                    background: "rgba(200,149,90,0.12)",
+                                    color: C.accent,
+                                    border: "1px solid rgba(200,149,90,0.28)",
                                   }}
                                 >
                                   {r.stage}
@@ -1148,8 +1030,8 @@ export default function ProductionUpdate({
                               <td
                                 style={{
                                   padding: "11px 14px",
-                                  fontWeight: 700,
-                                  color: "#10b981",
+                                  fontWeight: 600,
+                                  color: "#8ecfa8",
                                 }}
                               >
                                 {fmt(r.qtyCompleted)}
@@ -1158,7 +1040,7 @@ export default function ProductionUpdate({
                                 style={{
                                   padding: "11px 14px",
                                   color:
-                                    r.qtyRejected > 0 ? "#ef4444" : C.muted,
+                                    r.qtyRejected > 0 ? "#e08a7a" : C.muted,
                                 }}
                               >
                                 {r.qtyRejected || 0}
@@ -1183,43 +1065,22 @@ export default function ProductionUpdate({
                               </td>
                               <td style={{ padding: "11px 14px" }}>
                                 <div style={{ display: "flex", gap: 6 }}>
-                                  <button
+                                  <IconBtn
+                                    icon="fa-chart-column"
+                                    label="Status"
+                                    onClick={() => setStatusJOId(jo._id)}
+                                  />
+                                  <IconBtn
+                                    icon="fa-pen-to-square"
+                                    label="Edit"
                                     onClick={() => handleEdit(jo, r)}
-                                    style={{
-                                      background: "transparent",
-                                      color: "#8082ff",
-                                      border: "1px solid #8082ff98",
-                                      borderRadius: 6,
-                                      padding: "6px 12px",
-                                      fontSize: 11,
-                                      fontWeight: 500,
-                                      cursor: "pointer",
-                                      display: "inline-flex",
-                                      alignItems: "center",
-                                      gap: 6,
-                                    }}
-                                  >
-                                    <i className="fa-solid fa-pen-to-square" />{" "}
-                                    Edit
-                                  </button>
-                                  <button
+                                  />
+                                  <IconBtn
+                                    icon="fa-trash"
+                                    label="Delete"
+                                    danger
                                     onClick={() => handleDelete(jo._id, r._id)}
-                                    style={{
-                                      background: "transparent",
-                                      color: "#8082ff",
-                                      border: "1px solid #8082ff98",
-                                      borderRadius: 6,
-                                      padding: "6px 12px",
-                                      fontSize: 11,
-                                      fontWeight: 500,
-                                      cursor: "pointer",
-                                      display: "inline-flex",
-                                      alignItems: "center",
-                                      gap: 6,
-                                    }}
-                                  >
-                                    <i className="fa-solid fa-trash" /> Delete
-                                  </button>
+                                  />
                                 </div>
                               </td>
                             </tr>
@@ -1233,344 +1094,200 @@ export default function ProductionUpdate({
             );
           })()}
 
-          {false &&
-            [].map((jo) => {
-              return (
-                <Card key={jo._id} style={{ marginBottom: 20, padding: 20 }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "flex-start",
-                      marginBottom: 16,
-                    }}
-                  >
-                    <div>
-                      <span
-                        style={{
-                          fontSize: 16,
-                          fontWeight: 800,
-                          color: "#facc15",
-                        }}
-                      >
-                        {jo.joNo}
-                      </span>
-                      <span
-                        style={{ fontSize: 14, color: C.muted, marginLeft: 12 }}
-                      >
-                        {jo.itemName} {jo.companyName}
-                      </span>
-                    </div>
-                    <Badge
-                      text={jo.status}
-                      color={jo.status === "Completed" ? C.green : "#facc15"}
-                    />
-                  </div>
+      </div>
 
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 10,
-                    }}
-                  >
-                    {records.map((r, idx) => (
+      {showFilterModal && (
+        <FilterModal
+          onClose={() => setShowFilterModal(false)}
+          onReset={() => {
+            setFilterClient("");
+            setFilterItem("");
+            setFilterStage("");
+            setDateFrom("");
+            setDateTo("");
+            setSortBy("newest");
+          }}
+        >
+          <Field label="Client">
+            <AutocompleteInput
+              value={filterClient}
+              onChange={setFilterClient}
+              suggestions={[
+                ...new Set((jobOrders || []).map((jo) => jo.companyName).filter(Boolean)),
+              ].sort()}
+              placeholder="All clients"
+              showAllOnFocus={true}
+            />
+          </Field>
+          <Field label="Item">
+            <AutocompleteInput
+              value={filterItem}
+              onChange={setFilterItem}
+              suggestions={[
+                ...new Set((jobOrders || []).map((jo) => jo.itemName).filter(Boolean)),
+              ].sort()}
+              placeholder="All items"
+              showAllOnFocus={true}
+            />
+          </Field>
+          <Field label="Stage">
+            <AutocompleteInput
+              value={filterStage}
+              onChange={setFilterStage}
+              suggestions={STAGE_ORDER}
+              placeholder="All stages"
+              showAllOnFocus={true}
+            />
+          </Field>
+          <Field label="Date">
+            <DateRangeFilter
+              dateFrom={dateFrom}
+              setDateFrom={setDateFrom}
+              dateTo={dateTo}
+              setDateTo={setDateTo}
+            />
+          </Field>
+          <Field label="Sort by">
+            <SortSelect value={sortBy} onChange={setSortBy} options={SORT_OPTIONS} />
+          </Field>
+        </FilterModal>
+      )}
+
+      {statusJOId &&
+        (() => {
+          const jo = jobOrders.find((j) => j._id === statusJOId);
+          if (!jo) return null;
+          const stages = getStageProgress(jo);
+          const stateColor = {
+            Completed: C.green,
+            "In Progress": C.yellow,
+            Pending: C.muted,
+          };
+          return (
+            <Modal
+              title={`Production Status — ${jo.joNo}`}
+              onClose={() => setStatusJOId(null)}
+              maxWidth={760}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  gap: 16,
+                  flexWrap: "wrap",
+                  alignItems: "center",
+                  marginBottom: 16,
+                  fontSize: 13,
+                }}
+              >
+                <span style={{ fontWeight: 600 }}>{jo.itemName}</span>
+                <span style={{ color: C.muted }}>{jo.companyName}</span>
+                <span style={{ color: C.muted }}>
+                  Order Qty: {fmt(jo.orderQty)}
+                </span>
+                <Badge
+                  text={jo.status || "—"}
+                  color={jo.status === "Completed" ? C.green : C.yellow}
+                />
+                <span style={{ color: C.muted }}>
+                  Current stage: {jo.currentStage || "Not Started"}
+                </span>
+              </div>
+
+              {stages.length === 0 ? (
+                <div
+                  style={{ color: C.muted, padding: 24, textAlign: "center" }}
+                >
+                  No stages defined for this job order.
+                </div>
+              ) : (
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 12 }}
+                >
+                  {stages.map((st) => {
+                    const pct =
+                      st.target > 0
+                        ? Math.min(100, Math.round((st.done / st.target) * 100))
+                        : 0;
+                    return (
                       <div
-                        key={r._id || idx}
+                        key={st.stage}
                         style={{
-                          background: C.inputBg + "44",
-                          borderRadius: 6,
-                          padding: "10px 14px",
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          border: `1px solid ${C.border}22`,
+                          border: `1px solid ${C.border}`,
+                          borderRadius: 8,
+                          padding: "12px 14px",
                         }}
                       >
                         <div
                           style={{
                             display: "flex",
+                            justifyContent: "space-between",
                             alignItems: "center",
-                            gap: 16,
-                            flex: 1,
-                            flexWrap: "wrap",
+                            marginBottom: 8,
+                          }}
+                        >
+                          <span style={{ fontWeight: 600, fontSize: 13 }}>
+                            {st.stage}
+                          </span>
+                          <Badge text={st.state} color={stateColor[st.state]} />
+                        </div>
+                        <div
+                          style={{
+                            height: 6,
+                            borderRadius: 3,
+                            background: C.inputBg,
+                            overflow: "hidden",
+                            marginBottom: 8,
                           }}
                         >
                           <div
                             style={{
-                              background: "#FF7F1122",
-                              color: "#FF7F11",
-                              padding: "4px 10px",
-                              borderRadius: 4,
-                              fontSize: 11,
-                              fontWeight: 500,
-                              minWidth: 80,
-                              textAlign: "center",
-                              border: "1px solid #FF7F1144",
+                              width: `${pct}%`,
+                              height: "100%",
+                              background:
+                                st.state === "Completed" ? C.green : C.accent,
                             }}
-                          >
-                            {r.stage}
-                          </div>
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 12,
-                              fontSize: 13,
-                            }}
-                          >
-                            <span style={{ fontWeight: 600 }}>
-                              <span style={{ color: C.green }}>✓</span>{" "}
-                              {r.qtyCompleted} done
-                            </span>
-                            {r.qtyRejected > 0 && (
-                              <span style={{ color: C.red }}>
-                                <span style={{ color: C.red }}>✕</span>{" "}
-                                {r.qtyRejected} rejected
-                              </span>
-                            )}
-                            <span
-                              style={{
-                                color: C.muted,
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 4,
-                              }}
-                            >
-                              👤 {r.operator}
-                            </span>
-                            <span
-                              style={{
-                                color: C.muted,
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 4,
-                              }}
-                            >
-                              <i className="fa-solid fa-clock" /> {r.shift}
-                            </span>
-                            {r.machineId && (
-                              <span
-                                style={{
-                                  color: C.muted,
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: 4,
-                                }}
-                              >
-                                <i className="fa-solid fa-industry" />{" "}
-                                {machineMaster.find(
-                                  (m) => m._id === r.machineId,
-                                )?.name || r.machineId}
-                              </span>
-                            )}
-                            <span style={{ color: C.muted, fontSize: 12 }}>
-                              {fmtDate(r.date)}
-                            </span>
-                          </div>
+                          />
                         </div>
-
-                        <div style={{ display: "flex", gap: 6 }}>
-                          <button
-                            onClick={() => handleEdit(jo, r)}
-                            style={{
-                              background: "transparent",
-                              color: "#8082ff",
-                              border: "1px solid #8082ff98",
-                              borderRadius: 6,
-                              padding: "6px 12px",
-                              fontSize: 11,
-                              fontWeight: 500,
-                              cursor: "pointer",
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: 6,
-                            }}
-                          >
-                            <i className="fa-solid fa-pen-to-square" /> Edit
-                          </button>
-                          <button
-                            onClick={() => handleDelete(jo._id, r._id)}
-                            style={{
-                              background: "transparent",
-                              color: "#8082ff",
-                              border: "1px solid #8082ff98",
-                              borderRadius: 6,
-                              padding: "6px 12px",
-                              fontSize: 11,
-                              fontWeight: 500,
-                              cursor: "pointer",
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: 6,
-                            }}
-                          >
-                            <i className="fa-solid fa-trash" /> Delete
-                          </button>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: 18,
+                            flexWrap: "wrap",
+                            fontSize: 12,
+                            color: C.muted,
+                          }}
+                        >
+                          <span>
+                            Done:{" "}
+                            <b style={{ color: C.text }}>{fmt(st.done)}</b> /{" "}
+                            {fmt(st.target)} {st.unit} ({pct}%)
+                          </span>
+                          <span>
+                            Remaining:{" "}
+                            <b style={{ color: C.text }}>
+                              {fmt(Math.max(0, st.target - st.done))}
+                            </b>
+                          </span>
+                          <span>
+                            Rejected:{" "}
+                            <b
+                              style={{
+                                color: st.rejected > 0 ? C.red : C.text,
+                              }}
+                            >
+                              {fmt(st.rejected)}
+                            </b>
+                          </span>
+                          <span>Entries: {st.entries}</span>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </Card>
-              );
-            })}
-        </div>
-      )}
-
-      {view === "wip" && (
-        <Card>
-          <h3
-            style={{
-              fontSize: 14,
-              fontWeight: 500,
-              color: C.muted,
-              marginBottom: 14,
-            }}
-          >
-            Work-in-Progress Stock ({wipCount})
-          </h3>
-          {wipCount === 0 && (
-            <div
-              style={{
-                textAlign: "center",
-                color: C.muted,
-                padding: 32,
-                fontSize: 13,
-              }}
-            >
-              No WIP stock yet.
-            </div>
-          )}
-          {(wipStock || []).map((s) => (
-            <div
-              key={s.id}
-              style={{
-                borderBottom: `1px solid ${C.border}22`,
-                padding: "12px 4px",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                  gap: 8,
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    gap: 14,
-                    alignItems: "center",
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <span style={{ fontWeight: 600 }}>{s.joNo}</span>
-                  <Badge text={s.stage} color={C.yellow} />
-                  <span
-                    style={{ fontSize: 12, color: C.green, fontWeight: 700 }}
-                  >
-                    Qty: {s.qty}
-                  </span>
+                    );
+                  })}
                 </div>
-              </div>
-            </div>
-          ))}
-        </Card>
-      )}
-
-      {view === "status" && (
-        <Card>
-          <h3
-            style={{
-              fontSize: 14,
-              fontWeight: 500,
-              color: C.muted,
-              marginBottom: 14,
-            }}
-          >
-            Job Order Status ({joCount})
-          </h3>
-          {joCount === 0 && (
-            <div
-              style={{
-                textAlign: "center",
-                color: C.muted,
-                padding: 32,
-                fontSize: 13,
-              }}
-            >
-              No job orders yet.
-            </div>
-          )}
-          {(jobOrders || []).map((jo) => {
-            const updates = jo.stageHistory || [];
-            const totalCompleted = updates.reduce(
-              (sum, u) => sum + +(u.qtyCompleted || 0),
-              0,
-            );
-            return (
-              <div
-                key={jo.id}
-                style={{
-                  borderBottom: `1px solid ${C.border}22`,
-                  padding: "12px 4px",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    flexWrap: "wrap",
-                    gap: 8,
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 14,
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <span
-                      style={{
-                        color: C.blue,
-                        fontWeight: 500,
-                      }}
-                    >
-                      {jo.joNo}
-                    </span>
-                    <span style={{ fontSize: 13, fontWeight: 600 }}>
-                      {jo.itemName} — {jo.companyName}
-                    </span>
-                    <Badge
-                      text={jo.status}
-                      color={jo.status === "Completed" ? C.green : C.yellow}
-                    />
-                    <span style={{ fontSize: 12, color: C.muted }}>
-                      Updates: {updates.length}
-                    </span>
-                    {totalCompleted > 0 && (
-                      <span
-                        style={{
-                          fontSize: 12,
-                          fontWeight: 500,
-                          color: C.green,
-                        }}
-                      >
-                        Qty Done: {totalCompleted}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </Card>
-      )}
+              )}
+            </Modal>
+          );
+        })()}
     </div>
   );
 }
