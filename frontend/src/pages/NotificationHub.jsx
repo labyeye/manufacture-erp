@@ -28,11 +28,11 @@ const saveSettings = (v) => localStorage.setItem(LS_WA, JSON.stringify(v));
 
 const inp = {
   padding: "9px 12px",
-  border: "1px solid #2a2a2a",
+  border: "1px solid #161a49",
   borderRadius: 6,
   fontSize: 13,
-  background: "#141414",
-  color: "#e0e0e0",
+  background: "#05071a",
+  color: "#dfe2f4",
   outline: "none",
   width: "100%",
   boxSizing: "border-box",
@@ -40,7 +40,7 @@ const inp = {
 const lbl = {
   fontSize: 11,
   fontWeight: 600,
-  color: "#666",
+  color: "#6f74a0",
   display: "block",
   marginBottom: 5,
 };
@@ -68,7 +68,7 @@ export default function NotificationHub({
           display: "flex",
           gap: 4,
           marginBottom: 24,
-          borderBottom: "1px solid #2a2a2a",
+          borderBottom: "1px solid #161a49",
         }}
       >
         {TABS.map((t) => {
@@ -332,7 +332,7 @@ To configure: go to Notification Hub in your ERP.
       <div style={{ fontSize: 17, fontWeight: 600, marginBottom: 4 }}>
         Executive Morning Email
       </div>
-      <div style={{ fontSize: 12, color: "#888", marginBottom: 20 }}>
+      <div style={{ fontSize: 12, color: "#8b90b8", marginBottom: 20 }}>
         Daily factory digest — production, dispatch, alerts. Set up your email
         client to send at 8am.
       </div>
@@ -340,8 +340,8 @@ To configure: go to Notification Hub in your ERP.
       {}
       <div
         style={{
-          background: "#111",
-          border: "1px solid #2a2a2a",
+          background: "#05071a",
+          border: "1px solid #161a49",
           borderRadius: 10,
           padding: 20,
           marginBottom: 20,
@@ -393,7 +393,7 @@ To configure: go to Notification Hub in your ERP.
               background: "rgba(255,255,255,0.08)",
               border: "1px solid rgba(255,255,255,0.18)",
               borderRadius: 6,
-              color: "#fff",
+              color: "#dfe2f4",
               fontWeight: 500,
               fontSize: 12,
               cursor: "pointer",
@@ -425,9 +425,9 @@ To configure: go to Notification Hub in your ERP.
             style={{
               padding: "8px 18px",
               background: copied ? "#22c55e22" : "#ffffff11",
-              border: `1px solid ${copied ? "#22c55e" : "#2a2a2a"}`,
+              border: `1px solid ${copied ? "#22c55e" : "#161a49"}`,
               borderRadius: 6,
-              color: copied ? "#22c55e" : "#888",
+              color: copied ? "#22c55e" : "#8b90b8",
               fontWeight: 500,
               fontSize: 12,
               cursor: "pointer",
@@ -437,7 +437,7 @@ To configure: go to Notification Hub in your ERP.
           </button>
         </div>
         {!recipientEmail && (
-          <div style={{ fontSize: 11, color: "#555", marginTop: 8 }}>
+          <div style={{ fontSize: 11, color: "#6f74a0", marginTop: 8 }}>
             Enter recipient email to enable "Open in Mail App". Actual scheduled
             sending requires backend email service (e.g. SendGrid, Resend, or
             SMTP).
@@ -449,7 +449,7 @@ To configure: go to Notification Hub in your ERP.
       <div
         style={{
           background: "#0a0a0a",
-          border: "1px solid #2a2a2a",
+          border: "1px solid #161a49",
           borderRadius: 10,
           padding: 24,
         }}
@@ -457,7 +457,7 @@ To configure: go to Notification Hub in your ERP.
         <div
           style={{
             fontWeight: 500,
-            color: "#888",
+            color: "#8b90b8",
             marginBottom: 14,
             fontSize: 12,
           }}
@@ -652,7 +652,7 @@ Have a productive day!
       <div style={{ fontSize: 17, fontWeight: 600, marginBottom: 4 }}>
         WhatsApp Integration
       </div>
-      <div style={{ fontSize: 12, color: "#888", marginBottom: 20 }}>
+      <div style={{ fontSize: 12, color: "#8b90b8", marginBottom: 20 }}>
         Generate ready-to-send WhatsApp messages. Opens WhatsApp Web with
         pre-filled text — no API required.
       </div>
@@ -660,8 +660,8 @@ Have a productive day!
       {}
       <div
         style={{
-          background: "#111",
-          border: "1px solid #2a2a2a",
+          background: "#05071a",
+          border: "1px solid #161a49",
           borderRadius: 10,
           padding: 20,
           marginBottom: 20,
@@ -744,13 +744,13 @@ Have a productive day!
               style={{
                 fontWeight: 500,
                 fontSize: 13,
-                color: activeTemplate === t.id ? "#fff" : "#e0e0e0",
+                color: activeTemplate === t.id ? "#fff" : "#dfe2f4",
                 marginBottom: 4,
               }}
             >
               {t.label}
             </div>
-            <div style={{ fontSize: 11, color: "#666" }}>{t.desc}</div>
+            <div style={{ fontSize: 11, color: "#6f74a0" }}>{t.desc}</div>
           </button>
         ))}
       </div>
@@ -758,8 +758,8 @@ Have a productive day!
       {}
       <div
         style={{
-          background: "#111",
-          border: "1px solid #2a2a2a",
+          background: "#05071a",
+          border: "1px solid #161a49",
           borderRadius: 10,
           padding: 20,
           marginBottom: 16,
@@ -808,7 +808,7 @@ Have a productive day!
                   background: "rgba(255,255,255,0.08)",
                   border: "1px solid rgba(255,255,255,0.18)",
                   borderRadius: 6,
-                  color: "#fff",
+                  color: "#dfe2f4",
                   fontWeight: 500,
                   cursor: "pointer",
                   boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
@@ -868,7 +868,7 @@ Have a productive day!
                   background: "rgba(255,255,255,0.08)",
                   border: "1px solid rgba(255,255,255,0.18)",
                   borderRadius: 6,
-                  color: "#fff",
+                  color: "#dfe2f4",
                   fontWeight: 500,
                   cursor: "pointer",
                   boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
@@ -907,7 +907,7 @@ Have a productive day!
                   background: "rgba(255,255,255,0.08)",
                   border: "1px solid rgba(255,255,255,0.18)",
                   borderRadius: 6,
-                  color: "#fff",
+                  color: "#dfe2f4",
                   fontWeight: 500,
                   cursor: "pointer",
                   boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
@@ -925,7 +925,7 @@ Have a productive day!
             <div
               style={{
                 fontSize: 11,
-                color: "#888",
+                color: "#8b90b8",
                 fontWeight: 500,
                 marginBottom: 8,
               }}
@@ -965,7 +965,7 @@ Have a productive day!
                     background: "rgba(255,255,255,0.08)",
                     border: "1px solid rgba(255,255,255,0.18)",
                     borderRadius: 6,
-                    color: "#fff",
+                    color: "#dfe2f4",
                     fontWeight: 600,
                     cursor: "pointer",
                     textDecoration: "none",
@@ -986,9 +986,9 @@ Have a productive day!
                 style={{
                   padding: "10px 16px",
                   background: "#ffffff11",
-                  border: "1px solid #2a2a2a",
+                  border: "1px solid #161a49",
                   borderRadius: 6,
-                  color: "#888",
+                  color: "#8b90b8",
                   fontWeight: 500,
                   cursor: "pointer",
                 }}
@@ -1012,7 +1012,7 @@ Have a productive day!
         )}
       </div>
 
-      <div style={{ fontSize: 11, color: "#555", padding: "10px 0" }}>
+      <div style={{ fontSize: 11, color: "#6f74a0", padding: "10px 0" }}>
         WhatsApp Web links open wa.me on your browser — no API key required. For
         automated/scheduled sending, integrate WhatsApp Business API (Meta) with
         your backend.

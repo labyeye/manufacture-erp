@@ -300,16 +300,16 @@ export default function ConsumableStock({
         <head>
           <title>Consumable Stock</title>
           <style>
-            body { font-family: 'Inter', Arial, sans-serif; padding: 20px 30px; color: #1a1a1a; }
+            body { font-family: 'Inter', Arial, sans-serif; padding: 20px 30px; color: #0b0e2d; }
             .header { text-align: center; border-bottom: 2px solid #1e40af; padding-bottom: 10px; margin-bottom: 16px; }
             .header h1 { color: #1e3a8a; margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 1px; }
-            .header p { margin: 2px 0; font-size: 11px; color: #6b6b6b; }
+            .header p { margin: 2px 0; font-size: 11px; color: #6f74a0; }
             .doc-title { display: flex; justify-content: space-between; margin-bottom: 8px; }
             .doc-title h2 { margin: 0; font-size: 16px; font-weight: 700; }
-            .meta { font-size: 10px; color: #8a8a8a; }
+            .meta { font-size: 10px; color: #8b90b8; }
             table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-            th { background: #f1f5f9; border: 1px solid #c7c7c7; padding: 6px 8px; text-align: left; font-size: 10px; text-transform: uppercase; color: #3a3a3a; }
-            td { border: 1px solid #ededed; padding: 5px 8px; font-size: 10px; }
+            th { background: #f1f5f9; border: 1px solid #c9cdea; padding: 6px 8px; text-align: left; font-size: 10px; text-transform: uppercase; color: #3a3a3a; }
+            td { border: 1px solid #dfe2f4; padding: 5px 8px; font-size: 10px; }
             .num { text-align: right; font-family: 'JetBrains Mono', monospace; }
             tfoot td { font-weight: 800; background: #f8fafc; }
             @media print { @page { margin: 1cm; size: A4 landscape; } }
@@ -476,8 +476,8 @@ export default function ConsumableStock({
               padding: "0 16px",
               borderRadius: 8,
               border: `1px solid ${view === v ? "rgba(255,255,255,0.16)" : "rgba(255,255,255,0.08)"}`,
-              background: view === v ? "#242424" : "transparent",
-              color: view === v ? "#ededed" : "#a3a3a3",
+              background: view === v ? "#101339" : "transparent",
+              color: view === v ? "#dfe2f4" : "#a9aed3",
               fontWeight: 500,
               fontSize: 13,
               cursor: "pointer",
@@ -548,7 +548,7 @@ export default function ConsumableStock({
                 className="lg-btn"
                 aria-pressed={showZeroStock}
                 onClick={() => setShowZeroStock(!showZeroStock)}
-                style={showZeroStock ? { background: "#242424" } : undefined}
+                style={showZeroStock ? { background: "#101339" } : undefined}
               >
                 {showZeroStock ? "Hide zero stock" : "Show zero stock"}
               </button>
@@ -632,11 +632,11 @@ export default function ConsumableStock({
                 justifyContent: "space-between",
                 padding: "8px 16px",
                 margin: "12px 0",
-                background: "#1a1a1a",
+                background: "#0b0e2d",
                 border: "1px solid rgba(255,255,255,0.08)",
                 borderRadius: 10,
                 fontSize: 13,
-                color: "#a3a3a3",
+                color: "#a9aed3",
               }}
             >
               {selectedIds.length} selected
@@ -671,7 +671,7 @@ export default function ConsumableStock({
               >
                 <i
                   className="fa-solid fa-box"
-                  style={{ fontSize: 32, marginBottom: 12, color: "#6b6b6b" }}
+                  style={{ fontSize: 32, marginBottom: 12, color: "#6f74a0" }}
                 />
                 <div
                   style={{
@@ -780,7 +780,7 @@ export default function ConsumableStock({
                       const statusColor = out
                         ? "#e0705f"
                         : low
-                          ? "#c8955a"
+                          ? "#e0a84f"
                           : "#86b894";
                       const statusLabel = out
                         ? "Out of Stock"
@@ -793,7 +793,7 @@ export default function ConsumableStock({
                           style={{
                             borderBottom: "1px solid rgba(255,255,255,0.04)",
                             background: selectedIds.includes(s._id || s.id)
-                              ? "rgba(200, 149, 90, 0.06)"
+                              ? "rgba(174, 180, 238, 0.06)"
                               : i % 2 === 0
                                 ? "transparent"
                                 : "rgba(255,255,255,0.01)",
@@ -820,7 +820,7 @@ export default function ConsumableStock({
                           <td
                             style={{
                               padding: "10px 14px",
-                              color: "#c8955a",
+                              color: "#aeb4ee",
                               fontSize: 12,
                               fontWeight: 500,
                             }}
@@ -846,7 +846,7 @@ export default function ConsumableStock({
                                 borderRadius: 6,
                                 border: "1px solid rgba(255,255,255,0.08)",
                                 background: "rgba(255,255,255,0.06)",
-                                color: "#a3a3a3",
+                                color: "#a9aed3",
                                 fontSize: 11,
                                 fontWeight: 600,
                               }}
@@ -859,7 +859,7 @@ export default function ConsumableStock({
                               padding: "10px 14px",
                               fontWeight: 500,
                               textAlign: "right",
-                              color: out ? "#e0705f" : "#ededed",
+                              color: out ? "#e0705f" : "#dfe2f4",
                             }}
                           >
                             {fmt(s.qty || 0)}
@@ -1076,22 +1076,22 @@ export default function ConsumableStock({
             <div
               style={{
                 padding: "12px 16px",
-                background: "#c8955a" + "11",
-                border: `1px solid ${"#c8955a"}44`,
+                background: "#aeb4ee" + "11",
+                border: `1px solid ${"#aeb4ee"}44`,
                 borderRadius: 6,
                 marginBottom: 16,
                 fontSize: 13,
               }}
             >
               Issue{" "}
-              <strong style={{ color: "#c8955a" }}>{fmt(+issueQty)}</strong>{" "}
+              <strong style={{ color: "#aeb4ee" }}>{fmt(+issueQty)}</strong>{" "}
               {selectedStock.unit || "nos"} of{" "}
               <strong>{selectedStock.name}</strong>
               {issueMachine && (
                 <>
                   {" "}
                   → Machine:{" "}
-                  <strong style={{ color: "#c8955a" || "#c8955a" }}>
+                  <strong style={{ color: "#aeb4ee" || "#aeb4ee" }}>
                     {issueMachine.name}
                   </strong>
                 </>
@@ -1292,7 +1292,7 @@ export default function ConsumableStock({
                         style={{
                           padding: "9px 12px",
                           fontWeight: 500,
-                          color: "#c8955a",
+                          color: "#aeb4ee",
                           whiteSpace: "nowrap",
                         }}
                       >
@@ -1304,8 +1304,8 @@ export default function ConsumableStock({
                             style={{
                               padding: "2px 8px",
                               borderRadius: 4,
-                              background: ("#c8955a" || "#c8955a") + "22",
-                              color: "#a3a3a3",
+                              background: ("#aeb4ee" || "#aeb4ee") + "22",
+                              color: "#a9aed3",
                               fontSize: 11,
                               fontWeight: 600,
                             }}
@@ -1357,7 +1357,7 @@ function ActionBtn({ label, color, onClick }) {
         borderRadius: 6,
         border: "1px solid rgba(255,255,255,0.18)",
         background: "rgba(255,255,255,0.08)",
-        color: "#fff",
+        color: "#dfe2f4",
         fontWeight: 500,
         fontSize: 12,
         cursor: "pointer",

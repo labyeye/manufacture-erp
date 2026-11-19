@@ -19,9 +19,9 @@
   --lg-radius-sm: 8px;
   --lg-radius-lg: 16px;
 
-  --lg-bg: #1a1a1a;
-  --lg-bg-hover: #222222;
-  --lg-bg-active: #2a2a2a;
+  --lg-bg: #0b0e2d;
+  --lg-bg-hover: #101339;
+  --lg-bg-active: #161a49;
 
   --lg-border: rgba(255, 255, 255, 0.08);
   --lg-border-strong: rgba(255, 255, 255, 0.16);
@@ -40,8 +40,8 @@
   --lg-sheen-top: none;
   --lg-sheen-left: none;
 
-  --lg-accent: #c8955a;
-  --lg-accent-glow: rgba(200, 149, 90, 0.25);
+  --lg-accent: #aeb4ee;
+  --lg-accent-glow: rgba(174, 180, 238, 0.25);
   --lg-danger: #e0705f;
   --lg-danger-glow: rgba(224, 112, 95, 0.2);
 }
@@ -106,7 +106,7 @@
   box-shadow: var(--lg-shadow);
   backdrop-filter: var(--lg-blur);
   -webkit-backdrop-filter: var(--lg-blur);
-  color: #fff;
+  color: #dfe2f4;
 }
 
 /* Top glossy sheen */
@@ -185,7 +185,7 @@
     "Poppins",
     sans-serif;
   letter-spacing: -0.01em;
-  color: #fff;
+  color: #dfe2f4;
   background: var(--lg-bg);
   border: 1px solid var(--lg-border);
   border-radius: var(--lg-radius-sm);
@@ -243,10 +243,10 @@
 .lg-btn-primary {
   background: linear-gradient(
     135deg,
-    rgba(200, 149, 90, 0.45),
-    rgba(200, 149, 90, 0.25)
+    rgba(174, 180, 238, 0.45),
+    rgba(174, 180, 238, 0.25)
   );
-  border-color: rgba(200, 149, 90, 0.55);
+  border-color: rgba(174, 180, 238, 0.55);
   box-shadow:
     0 6px 20px var(--lg-accent-glow),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
@@ -254,10 +254,10 @@
 .lg-btn-primary:hover:not(:disabled) {
   background: linear-gradient(
     135deg,
-    rgba(200, 149, 90, 0.6),
-    rgba(200, 149, 90, 0.35)
+    rgba(174, 180, 238, 0.6),
+    rgba(174, 180, 238, 0.35)
   );
-  border-color: rgba(200, 149, 90, 0.75);
+  border-color: rgba(174, 180, 238, 0.75);
 }
 
 .lg-btn-danger {
@@ -301,7 +301,7 @@
     400 13px "Josefin Sans",
     "Poppins",
     sans-serif;
-  color: #fff;
+  color: #dfe2f4;
   background: var(--lg-bg);
   border: 1px solid var(--lg-border);
   border-radius: var(--lg-radius-sm);
@@ -326,15 +326,15 @@
 .lg-input:focus,
 .lg-select:focus,
 .lg-textarea:focus {
-  border-color: rgba(200, 149, 90, 0.65);
+  border-color: rgba(174, 180, 238, 0.65);
   background: rgba(255, 255, 255, 0.1);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.15),
-    0 0 0 3px rgba(200, 149, 90, 0.18);
+    0 0 0 3px rgba(174, 180, 238, 0.18);
 }
 .lg-select option {
-  background: #1a1a1a;
-  color: #fff;
+  background: #0b0e2d;
+  color: #dfe2f4;
 }
 
 /* Make EVERY bare input/select/textarea in the app pick up the look
@@ -351,7 +351,7 @@ textarea {
   backdrop-filter: var(--lg-blur-sm);
   -webkit-backdrop-filter: var(--lg-blur-sm);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  color: #fff;
+  color: #dfe2f4;
   transition:
     border-color 0.18s ease,
     background 0.18s ease,
@@ -360,9 +360,9 @@ textarea {
 input:focus,
 select:focus,
 textarea:focus {
-  border-color: rgba(200, 149, 90, 0.65) !important;
+  border-color: rgba(174, 180, 238, 0.65) !important;
   background: rgba(255, 255, 255, 0.1) !important;
-  box-shadow: 0 0 0 3px rgba(200, 149, 90, 0.18) !important;
+  box-shadow: 0 0 0 3px rgba(174, 180, 238, 0.18) !important;
   outline: none;
 }
 
@@ -392,7 +392,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
-  color: #fff;
+  color: #dfe2f4;
 }
 .lg-table thead tr {
   background: transparent;
@@ -490,7 +490,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 .lg-modal-close:hover {
   background: var(--lg-bg-hover);
-  color: #fff;
+  color: #dfe2f4;
 }
 
 /* ── Pills / Badges / Chips ──────────────────────────────────────── */
@@ -504,7 +504,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     500 12px "Fira Code",
     monospace;
   letter-spacing: 0.01em;
-  color: #fff;
+  color: #dfe2f4;
   background: var(--lg-bg);
   border: 1px solid var(--lg-border);
   border-radius: 999px;
@@ -621,7 +621,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   grid-row: 2;
   font-size: 28px;
   font-weight: 700;
-  color: #fff;
+  color: #dfe2f4;
   font-family: "Josefin Sans", "Poppins", sans-serif;
   letter-spacing: -0.01em;
   line-height: 1.1;
@@ -669,7 +669,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   background: rgba(255, 255, 255, 0.12);
 }
 .lg-summary-bar strong {
-  color: #fff;
+  color: #dfe2f4;
   font-weight: 600;
 }
 .lg-summary-bar .lg-summary-warn {
@@ -770,7 +770,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .lg-bulk-bar .lg-bulk-count {
   font-size: 13px;
   font-weight: 600;
-  color: #fff;
+  color: #dfe2f4;
   padding-right: 6px;
   border-right: 1px solid rgba(255, 255, 255, 0.12);
   margin-right: 4px;
@@ -830,8 +830,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   border-radius: 999px;
   font-size: 10px;
   font-weight: 700;
-  color: #fff;
-  background: var(--lg-avatar-bg, #c8955a);
+  color: #dfe2f4;
+  background: var(--lg-avatar-bg, #aeb4ee);
   border: 1px solid rgba(255, 255, 255, 0.2);
   letter-spacing: 0.02em;
   flex-shrink: 0;
@@ -846,13 +846,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .lg-link {
   font-family: "Josefin Sans", "Poppins", sans-serif;
   font-weight: 600;
-  color: #fff;
+  color: #dfe2f4;
   cursor: pointer;
   text-decoration: none;
   transition: color 0.15s ease;
 }
 .lg-link:hover {
-  color: #fff;
+  color: #dfe2f4;
   text-decoration: underline;
   text-decoration-color: rgba(255, 255, 255, 0.5);
 }
@@ -878,7 +878,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .lg-row-menu-trigger:hover {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.15);
-  color: #fff;
+  color: #dfe2f4;
 }
 .lg-row-menu {
   position: absolute;
@@ -902,7 +902,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   padding: 8px 12px;
   background: transparent;
   border: none;
-  color: #fff;
+  color: #dfe2f4;
   font-size: 13px;
   font-family: "Josefin Sans", "Poppins", sans-serif;
   text-align: left;
@@ -973,7 +973,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   padding: 0 12px;
   text-align: left;
   background: transparent;
-  color: #a3a3a3;
+  color: #a9aed3;
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -994,11 +994,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 .lg-sidebar-item:hover {
   background: rgba(255, 255, 255, 0.06);
-  color: #fff;
+  color: #dfe2f4;
 }
 .lg-sidebar-item.active {
   background: rgba(255, 255, 255, 0.06);
-  color: #ededed;
+  color: #dfe2f4;
   font-weight: 500;
 }
 .lg-sidebar-item.active::before {
@@ -1008,7 +1008,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   top: 8px;
   bottom: 8px;
   width: 2px;
-  background: #c8955a;
+  background: #aeb4ee;
   border-radius: 0 2px 2px 0;
 }
 .lg-sidebar-item i {
@@ -1022,7 +1022,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 .lg-sidebar-item.active i {
   opacity: 1;
-  color: #c8955a;
+  color: #aeb4ee;
 }
 
 /* ═══════════ Flat graphite layer ═══════════
@@ -1067,17 +1067,17 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   background: rgba(0, 0, 0, 0.6) !important;
 }
 .lg-modal {
-  background: #1a1a1a !important;
+  background: #0b0e2d !important;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5) !important;
 }
 .lg-btn-primary {
-  background: #c8955a !important;
-  color: #141414 !important;
+  background: #aeb4ee !important;
+  color: #05071a !important;
   border-color: transparent !important;
   box-shadow: none !important;
 }
 .lg-btn-primary:hover:not(:disabled) {
-  background: #d6a36a !important;
+  background: #c3c8f6 !important;
 }
 .lg-btn {
   transition:
@@ -1102,7 +1102,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   .lg-sidebar-item,
   .lg-row-menu-trigger
 ):focus-visible {
-  outline: 2px solid #c8955a;
+  outline: 2px solid #aeb4ee;
   outline-offset: 2px;
 }
 .lg-sidebar-group-label,
@@ -1129,7 +1129,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   justify-content: space-between;
   gap: 16px;
   padding: 20px;
-  background: #1a1a1a;
+  background: #0b0e2d;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
   cursor: pointer;
@@ -1138,15 +1138,15 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     border-color 0.15s;
 }
 .dash-stat:hover {
-  background: #202020;
+  background: #101339;
   border-color: rgba(255, 255, 255, 0.16);
 }
 .dash-stat:focus-visible {
-  outline: 2px solid #c8955a;
+  outline: 2px solid #aeb4ee;
   outline-offset: 2px;
 }
 .dash-stat[data-selected] {
-  background: #202020;
+  background: #101339;
   border-color: rgba(255, 255, 255, 0.16);
 }
 .dash-stat[data-selected]::before {
@@ -1156,7 +1156,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   top: 16px;
   bottom: 16px;
   width: 2px;
-  background: #c8955a;
+  background: #aeb4ee;
   border-radius: 0 2px 2px 0;
 }
 .dash-stat-icon {
@@ -1167,8 +1167,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   justify-content: center;
   flex-shrink: 0;
   font-size: 18px;
-  color: #a3a3a3;
-  background: #242424;
+  color: #a9aed3;
+  background: #101339;
   border-radius: 12px;
 }
 .dash-stat-body {
@@ -1185,27 +1185,27 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .dash-stat-label {
   font-size: 13px;
   line-height: 16px;
-  color: #a3a3a3;
+  color: #a9aed3;
 }
 .dash-stat-value {
   margin-top: 4px;
   font-size: 28px;
   line-height: 36px;
   font-weight: 500;
-  color: #ededed;
+  color: #dfe2f4;
   font-variant-numeric: tabular-nums;
 }
 .dash-stat-unit {
   margin-left: 4px;
   font-size: 12px;
   font-weight: 400;
-  color: #737373;
+  color: #7b80ad;
 }
 .dash-stat-meta {
   margin-top: 8px;
   font-size: 12px;
   line-height: 16px;
-  color: #737373;
+  color: #7b80ad;
   font-variant-numeric: tabular-nums;
 }
 .dash-stat-meta:empty {
@@ -1215,7 +1215,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   cursor: default;
 }
 .dash-stat[data-static]:hover {
-  background: #1a1a1a;
+  background: #0b0e2d;
   border-color: rgba(255, 255, 255, 0.08);
 }
 .dash-stat-label {
@@ -1231,7 +1231,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .po-tbtn:hover {
-  background: #202020 !important;
+  background: #101339 !important;
   border-color: rgba(255, 255, 255, 0.16) !important;
 }
 
@@ -1240,7 +1240,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   right: 0;
   top: calc(100% + 4px);
   min-width: 160px;
-  background: #1a1a1a;
+  background: #0b0e2d;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
   padding: 4px;
@@ -1271,7 +1271,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   text-align: left;
   background: transparent;
   border: none;
-  color: #ededed;
+  color: #dfe2f4;
   font-size: 12px;
   padding: 8px 10px;
   border-radius: 6px;
@@ -1315,7 +1315,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   height: 32px;
   padding: 0 12px;
   background: transparent;
-  color: #a3a3a3;
+  color: #a9aed3;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
   font-size: 13px;
@@ -1326,7 +1326,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 .lg-signout:hover {
   background: rgba(255, 255, 255, 0.06);
-  color: #ededed;
+  color: #dfe2f4;
 }
 .tb-menu-item {
   font-size: 13px !important;
@@ -1361,34 +1361,34 @@ input[type="radio"]:hover {
 }
 input[type="checkbox"]:checked,
 input[type="radio"]:checked {
-  border-color: #c8955a;
+  border-color: #aeb4ee;
 }
 input[type="checkbox"]:checked::after {
   content: "";
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #c8955a;
+  background: #aeb4ee;
 }
 input[type="radio"]:checked::after {
   content: "";
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #c8955a;
+  background: #aeb4ee;
 }
 input[type="checkbox"]:indeterminate {
-  border-color: #c8955a;
+  border-color: #aeb4ee;
 }
 input[type="checkbox"]:indeterminate::after {
   content: "";
   width: 8px;
   height: 2px;
-  background: #c8955a;
+  background: #aeb4ee;
 }
 input[type="checkbox"]:focus-visible,
 input[type="radio"]:focus-visible {
-  outline: 2px solid #c8955a;
+  outline: 2px solid #aeb4ee;
   outline-offset: 2px;
 }
 
@@ -1426,7 +1426,7 @@ body.has-select-toggle:not(.select-mode) .row-select {
   font-weight: 900;
   font-size: 12px;
   text-align: center;
-  color: #737373;
+  color: #7b80ad;
 }
 
 @keyframes tb-rise {

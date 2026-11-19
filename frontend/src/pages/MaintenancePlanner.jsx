@@ -43,11 +43,11 @@ const save = (k, v) => localStorage.setItem(k, JSON.stringify(v));
 
 const inp = {
   padding: "9px 12px",
-  border: "1px solid #2a2a2a",
+  border: "1px solid #161a49",
   borderRadius: 6,
   fontSize: 13,
-  background: "#141414",
-  color: "#e0e0e0",
+  background: "#05071a",
+  color: "#dfe2f4",
   outline: "none",
   width: "100%",
   boxSizing: "border-box",
@@ -55,7 +55,7 @@ const inp = {
 const lbl = {
   fontSize: 11,
   fontWeight: 600,
-  color: "#666",
+  color: "#6f74a0",
   display: "block",
   marginBottom: 5,
 };
@@ -86,7 +86,7 @@ export default function MaintenancePlanner({ machineMaster = [], toast }) {
           display: "flex",
           gap: 4,
           marginBottom: 24,
-          borderBottom: "1px solid #2a2a2a",
+          borderBottom: "1px solid #161a49",
         }}
       >
         {TABS.map((t) => {
@@ -249,7 +249,7 @@ function PMSchedulerTab({ machineMaster, toast }) {
           <div style={{ fontSize: 17, fontWeight: 600 }}>
             Preventive Maintenance Scheduler
           </div>
-          <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
+          <div style={{ fontSize: 12, color: "#8b90b8", marginTop: 2 }}>
             Define PM intervals per machine · auto-generate work orders before
             breakdowns occur
           </div>
@@ -295,7 +295,7 @@ function PMSchedulerTab({ machineMaster, toast }) {
           return (
             <div
               style={{
-                background: "#111",
+                background: "#05071a",
                 border: "1px solid #3b82f633",
                 borderRadius: 10,
                 padding: 20,
@@ -364,7 +364,7 @@ function PMSchedulerTab({ machineMaster, toast }) {
                     background: "rgba(255,255,255,0.08)",
                     border: "1px solid rgba(255,255,255,0.18)",
                     borderRadius: 6,
-                    color: "#fff",
+                    color: "#dfe2f4",
                     fontWeight: 500,
                     cursor: "pointer",
                     boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
@@ -376,7 +376,7 @@ function PMSchedulerTab({ machineMaster, toast }) {
                   onClick={() => setEditMachineId(null)}
                   style={{
                     background: "transparent",
-                    color: "#ffffff",
+                    color: "#dfe2f4",
                     border: "1px solid rgba(255,255,255,0.2)",
                     borderRadius: 6,
                     padding: "6px 12px",
@@ -469,7 +469,7 @@ function PMSchedulerTab({ machineMaster, toast }) {
                 >
                   <td style={{ padding: "12px 12px", fontWeight: 600 }}>
                     {s.machine.name}
-                    <div style={{ fontSize: 10, color: "#555" }}>
+                    <div style={{ fontSize: 10, color: "#6f74a0" }}>
                       {s.machine.type}
                     </div>
                   </td>
@@ -477,7 +477,7 @@ function PMSchedulerTab({ machineMaster, toast }) {
                     style={{
                       padding: "12px 12px",
                       fontSize: 12,
-                      color: "#888",
+                      color: "#8b90b8",
                     }}
                   >
                     Preventive
@@ -487,14 +487,14 @@ function PMSchedulerTab({ machineMaster, toast }) {
                       INTERVALS.find((i) => i.days === s.intervalDays)?.label ||
                       `${s.intervalDays}d`
                     ) : (
-                      <span style={{ color: "#555" }}>Not set</span>
+                      <span style={{ color: "#6f74a0" }}>Not set</span>
                     )}
                   </td>
                   <td
                     style={{
                       padding: "12px 12px",
                       fontSize: 12,
-                      color: "#888",
+                      color: "#8b90b8",
                     }}
                   >
                     {fmtDate(s.lastPMDate)}
@@ -508,7 +508,7 @@ function PMSchedulerTab({ machineMaster, toast }) {
                         ? "#ef4444"
                         : s.isDueSoon
                           ? "#f59e0b"
-                          : "#aaa",
+                          : "#a9aed3",
                     }}
                   >
                     {fmtDate(s.nextPMDate)}
@@ -532,7 +532,7 @@ function PMSchedulerTab({ machineMaster, toast }) {
                     style={{
                       padding: "12px 12px",
                       fontSize: 12,
-                      color: "#888",
+                      color: "#8b90b8",
                     }}
                   >
                     {s.machineRecords.length}
@@ -548,7 +548,7 @@ function PMSchedulerTab({ machineMaster, toast }) {
                             background: "rgba(255,255,255,0.08)",
                             border: "1px solid rgba(255,255,255,0.18)",
                             borderRadius: 4,
-                            color: "#fff",
+                            color: "#dfe2f4",
                             fontSize: 11,
                             fontWeight: 500,
                             cursor: "pointer",
@@ -572,7 +572,7 @@ function PMSchedulerTab({ machineMaster, toast }) {
                           padding: "4px 10px",
                           border: "1px solid rgba(255,255,255,0.15)",
                           background: "transparent",
-                          color: "#aaa",
+                          color: "#a9aed3",
                           borderRadius: 4,
                           fontSize: 11,
                           cursor: "pointer",
@@ -590,7 +590,7 @@ function PMSchedulerTab({ machineMaster, toast }) {
       </div>
 
       {machines.length === 0 && (
-        <div style={{ textAlign: "center", color: "#555", padding: 40 }}>
+        <div style={{ textAlign: "center", color: "#6f74a0", padding: 40 }}>
           No machines found. Add machines in Machine Master first.
         </div>
       )}
@@ -1017,20 +1017,20 @@ function SparePartsTab({
         ? `${usageDateFrom || "—"} to ${usageDateTo || "—"}`
         : "All dates";
     const html = `<html><head><title>Spare Parts Usage Report</title><style>
-      body{font-family:Arial,sans-serif;padding:20px 30px;color:#1a1a1a;}
+      body{font-family:Arial,sans-serif;padding:20px 30px;color:#0b0e2d;}
       .header{text-align:center;border-bottom:2px solid #ff7800;padding-bottom:10px;margin-bottom:16px;}
       .header h1{color:#c25a00;margin:0;font-size:20px;font-weight:800;}
-      .header p{margin:2px 0;font-size:11px;color:#666;}
+      .header p{margin:2px 0;font-size:11px;color:#6f74a0;}
       h2{font-size:13px;font-weight:700;margin:16px 0 6px;color:#333;text-transform:uppercase;letter-spacing:.05em;}
       .summary{display:flex;gap:20px;margin-bottom:16px;}
       .stat{padding:10px 16px;border:1px solid #ddd;border-radius:6px;flex:1;text-align:center;}
       .stat .val{font-size:22px;font-weight:900;color:#ff7800;}
-      .stat .lbl{font-size:10px;color:#888;margin-top:2px;}
+      .stat .lbl{font-size:10px;color:#8b90b8;margin-top:2px;}
       table{width:100%;border-collapse:collapse;margin-top:6px;font-size:10px;}
-      th{background:#f5f5f5;border:1px solid #ddd;padding:5px 8px;text-align:left;font-size:9px;text-transform:uppercase;color:#555;}
+      th{background:#f5f5f5;border:1px solid #ddd;padding:5px 8px;text-align:left;font-size:9px;text-transform:uppercase;color:#6f74a0;}
       td{border:1px solid #eee;padding:4px 8px;}
       .num{text-align:right;}
-      .code{color:#888;font-size:9px;}
+      .code{color:#8b90b8;font-size:9px;}
       .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
       @media print{@page{margin:1cm;size:A4 landscape;}}
     </style></head><body>
@@ -1121,7 +1121,7 @@ function SparePartsTab({
       >
         <div>
           <div style={{ fontSize: 17, fontWeight: 600 }}>Spare Parts</div>
-          <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
+          <div style={{ fontSize: 12, color: "#8b90b8", marginTop: 2 }}>
             Machine spare parts inventory — linked to Item Master &amp; Category
             Master
           </div>
@@ -1158,7 +1158,7 @@ function SparePartsTab({
             style={{
               background: "rgba(255,255,255,0.08)",
               border: "1px solid rgba(255,255,255,0.18)",
-              color: "#fff",
+              color: "#dfe2f4",
               padding: "9px 18px",
               borderRadius: 10,
               fontWeight: 600,
@@ -1181,7 +1181,7 @@ function SparePartsTab({
                     : "rgba(255,255,255,0.05)",
                 border: `1px solid ${view === v ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.18)"}`,
                 borderRadius: 6,
-                color: "#fff",
+                color: "#dfe2f4",
                 fontWeight: 500,
                 fontSize: 12,
                 cursor: "pointer",
@@ -1293,7 +1293,7 @@ function SparePartsTab({
                   )}
                 </label>
                 {machines.length === 0 ? (
-                  <div style={{ ...inp, color: "#555", fontSize: 12 }}>
+                  <div style={{ ...inp, color: "#6f74a0", fontSize: 12 }}>
                     No machines found
                   </div>
                 ) : (
@@ -1319,8 +1319,8 @@ function SparePartsTab({
                             borderRadius: 20,
                             fontSize: 12,
                             fontWeight: 600,
-                            background: selected ? "#ff7800" : "#1a1a1a",
-                            color: selected ? "#fff" : "#666",
+                            background: selected ? "#ff7800" : "#0b0e2d",
+                            color: selected ? "#fff" : "#6f74a0",
                             border: `1px solid ${selected ? "#ff7800" : "#333"}`,
                             cursor: "pointer",
                             transition:
@@ -1427,7 +1427,7 @@ function SparePartsTab({
                   background: "rgba(255,255,255,0.08)",
                   border: "1px solid rgba(255,255,255,0.18)",
                   borderRadius: 6,
-                  color: "#fff",
+                  color: "#dfe2f4",
                   fontWeight: 500,
                   cursor: "pointer",
                   boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
@@ -1443,7 +1443,7 @@ function SparePartsTab({
                 }}
                 style={{
                   background: "transparent",
-                  color: "#ffffff",
+                  color: "#dfe2f4",
                   border: "1px solid rgba(255,255,255,0.2)",
                   borderRadius: 6,
                   padding: "6px 12px",
@@ -1478,7 +1478,7 @@ function SparePartsTab({
                 style={{
                   ...inp,
                   fontWeight: 600,
-                  color: Number(issuingPart.qty) === 0 ? "#ef4444" : "#e0e0e0",
+                  color: Number(issuingPart.qty) === 0 ? "#ef4444" : "#dfe2f4",
                 }}
               >
                 {issuingPart.qty} nos
@@ -1521,7 +1521,7 @@ function SparePartsTab({
                 ))}
               </select>
               {issuingPart?.compatibleMachines?.length > 0 && (
-                <div style={{ fontSize: 10, color: "#555", marginTop: 3 }}>
+                <div style={{ fontSize: 10, color: "#6f74a0", marginTop: 3 }}>
                   Showing {issuingPart.compatibleMachines.length} compatible
                   machine{issuingPart.compatibleMachines.length > 1 ? "s" : ""}
                 </div>
@@ -1586,7 +1586,7 @@ function SparePartsTab({
                   : "rgba(255,255,255,0.08)",
                 border: "1px solid rgba(255,255,255,0.18)",
                 borderRadius: 6,
-                color: "#fff",
+                color: "#dfe2f4",
                 fontWeight: 600,
                 cursor: issuing ? "not-allowed" : "pointer",
                 boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
@@ -1598,7 +1598,7 @@ function SparePartsTab({
               onClick={closeIssue}
               style={{
                 background: "transparent",
-                color: "#aaa",
+                color: "#a9aed3",
                 border: "1px solid rgba(255,255,255,0.2)",
                 borderRadius: 6,
                 padding: "6px 14px",
@@ -1678,7 +1678,7 @@ function SparePartsTab({
                       colSpan={9}
                       style={{
                         textAlign: "center",
-                        color: "#555",
+                        color: "#6f74a0",
                         padding: 40,
                       }}
                     >
@@ -1718,7 +1718,7 @@ function SparePartsTab({
                         style={{
                           padding: "10px 12px",
                           fontSize: 11,
-                          color: "#888",
+                          color: "#8b90b8",
                         }}
                       >
                         {p.category || "—"}
@@ -1743,7 +1743,7 @@ function SparePartsTab({
                           {p.partName}
                         </div>
                         {p.partNumber && (
-                          <div style={{ fontSize: 10, color: "#555" }}>
+                          <div style={{ fontSize: 10, color: "#6f74a0" }}>
                             {p.partNumber}
                           </div>
                         )}
@@ -1756,7 +1756,7 @@ function SparePartsTab({
                               ? [p.machineId]
                               : [];
                           return names.length === 0 ? (
-                            <span style={{ color: "#555", fontSize: 11 }}>
+                            <span style={{ color: "#6f74a0", fontSize: 11 }}>
                               Any
                             </span>
                           ) : (
@@ -1801,7 +1801,7 @@ function SparePartsTab({
                         style={{
                           padding: "10px 12px",
                           fontSize: 12,
-                          color: "#666",
+                          color: "#6f74a0",
                         }}
                       >
                         {rop || "—"}
@@ -1825,7 +1825,7 @@ function SparePartsTab({
                         style={{
                           padding: "10px 12px",
                           fontSize: 12,
-                          color: "#888",
+                          color: "#8b90b8",
                         }}
                       >
                         {p.location || "—"}
@@ -1834,7 +1834,7 @@ function SparePartsTab({
                         style={{
                           padding: "10px 12px",
                           fontSize: 12,
-                          color: "#aaa",
+                          color: "#a9aed3",
                         }}
                       >
                         {p.unitCost
@@ -1903,12 +1903,12 @@ function SparePartsTab({
               style={{
                 marginTop: 12,
                 fontSize: 12,
-                color: "#888",
+                color: "#8b90b8",
                 textAlign: "right",
               }}
             >
               Total inventory value:{" "}
-              <strong style={{ color: "#e0e0e0" }}>
+              <strong style={{ color: "#dfe2f4" }}>
                 ₹
                 {parts
                   .reduce(
@@ -2050,7 +2050,7 @@ function SparePartsTab({
                   : "rgba(255,255,255,0.08)",
                 border: "1px solid rgba(255,255,255,0.18)",
                 borderRadius: 6,
-                color: "#fff",
+                color: "#dfe2f4",
                 fontWeight: 600,
                 cursor: savingLog ? "not-allowed" : "pointer",
                 boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
@@ -2062,7 +2062,7 @@ function SparePartsTab({
               onClick={() => setEditingLog(null)}
               style={{
                 background: "transparent",
-                color: "#aaa",
+                color: "#a9aed3",
                 border: "1px solid rgba(255,255,255,0.2)",
                 borderRadius: 6,
                 padding: "6px 14px",
@@ -2087,7 +2087,7 @@ function SparePartsTab({
               flexWrap: "wrap",
             }}
           >
-            <div style={{ fontSize: 14, fontWeight: 500, color: "#888" }}>
+            <div style={{ fontSize: 14, fontWeight: 500, color: "#8b90b8" }}>
               Spare Part Usage History
             </div>
             <div
@@ -2164,7 +2164,7 @@ function SparePartsTab({
                     background: color,
                     border: `1px solid ${border}`,
                     borderRadius: 6,
-                    color: "#fff",
+                    color: "#dfe2f4",
                     fontSize: 12,
                     fontWeight: 500,
                     cursor: "pointer",
@@ -2185,11 +2185,11 @@ function SparePartsTab({
             </div>
           </div>
           {logsLoading ? (
-            <div style={{ textAlign: "center", color: "#555", padding: 40 }}>
+            <div style={{ textAlign: "center", color: "#6f74a0", padding: 40 }}>
               Loading usage records…
             </div>
           ) : filteredUsageLogs.length === 0 ? (
-            <div style={{ textAlign: "center", color: "#555", padding: 40 }}>
+            <div style={{ textAlign: "center", color: "#6f74a0", padding: 40 }}>
               No usage records found for the selected period
             </div>
           ) : (
@@ -2257,7 +2257,7 @@ function SparePartsTab({
                         style={{
                           padding: "10px 12px",
                           fontSize: 11,
-                          color: "#888",
+                          color: "#8b90b8",
                           whiteSpace: "nowrap",
                         }}
                       >
@@ -2266,7 +2266,7 @@ function SparePartsTab({
                       <td style={{ padding: "10px 12px", fontWeight: 600 }}>
                         {log.itemName}
                         {log.itemCode && (
-                          <div style={{ fontSize: 10, color: "#555" }}>
+                          <div style={{ fontSize: 10, color: "#6f74a0" }}>
                             {log.itemCode}
                           </div>
                         )}
@@ -2275,7 +2275,7 @@ function SparePartsTab({
                         style={{
                           padding: "10px 12px",
                           fontSize: 12,
-                          color: "#888",
+                          color: "#8b90b8",
                         }}
                       >
                         {log.category || "—"}
@@ -2304,14 +2304,14 @@ function SparePartsTab({
                             {log.machineName}
                           </span>
                         ) : (
-                          <span style={{ color: "#555", fontSize: 11 }}>—</span>
+                          <span style={{ color: "#6f74a0", fontSize: 11 }}>—</span>
                         )}
                       </td>
                       <td
                         style={{
                           padding: "10px 12px",
                           fontSize: 12,
-                          color: "#888",
+                          color: "#8b90b8",
                         }}
                       >
                         {log.issuedBy || "—"}
@@ -2320,7 +2320,7 @@ function SparePartsTab({
                         style={{
                           padding: "10px 12px",
                           fontSize: 12,
-                          color: "#888",
+                          color: "#8b90b8",
                         }}
                       >
                         {log.remarks || "—"}
@@ -2348,12 +2348,12 @@ function SparePartsTab({
                 style={{
                   marginTop: 10,
                   fontSize: 12,
-                  color: "#888",
+                  color: "#8b90b8",
                   textAlign: "right",
                 }}
               >
                 Total usage:{" "}
-                <strong style={{ color: "#e0e0e0" }}>
+                <strong style={{ color: "#dfe2f4" }}>
                   {filteredUsageLogs.length} records
                 </strong>
               </div>

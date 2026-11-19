@@ -99,7 +99,7 @@ const TREND_CFG = {
   down: { color: "#ef4444", label: "Declining", bg: "#450a0a88" },
   stable: { color: "#f59e0b", label: "Stable", bg: "#451a0388" },
   new: { color: "#3b82f6", label: "New", bg: "#17254488" },
-  nodata: { color: "#555", label: "No Data", bg: "#11111188" },
+  nodata: { color: "#6f74a0", label: "No Data", bg: "#11111188" },
 };
 
 const ACCENT = "#ff7800";
@@ -690,7 +690,7 @@ export default function DemandForecast({
           borderRadius: 8,
           border: "1px solid rgba(255,255,255,0.1)",
           fontSize: 11,
-          color: "#888",
+          color: "#8b90b8",
         }}
       >
         <b style={{ color: "#999" }}>Model:</b> Forecast = weighted 3-month

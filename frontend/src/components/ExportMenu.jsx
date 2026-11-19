@@ -39,7 +39,7 @@ export default function ExportMenu({ getRoot, title, toast }) {
     background: "transparent",
     border: "none",
     borderRadius: 6,
-    color: "#ededed",
+    color: "#dfe2f4",
     fontSize: 13,
     cursor: "pointer",
     textAlign: "left",
@@ -71,7 +71,7 @@ export default function ExportMenu({ getRoot, title, toast }) {
             top: "calc(100% + 4px)",
             width: 184,
             padding: 4,
-            background: "#222",
+            background: "#101339",
             border: "1px solid rgba(255,255,255,0.16)",
             borderRadius: 10,
             boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
@@ -86,7 +86,7 @@ export default function ExportMenu({ getRoot, title, toast }) {
           >
             <i
               className="fa-solid fa-file-excel"
-              style={{ width: 16, color: "#a3a3a3" }}
+              style={{ width: 16, color: "#a9aed3" }}
             />
             Excel (.xlsx)
           </button>
@@ -98,7 +98,7 @@ export default function ExportMenu({ getRoot, title, toast }) {
           >
             <i
               className="fa-solid fa-file-pdf"
-              style={{ width: 16, color: "#a3a3a3" }}
+              style={{ width: 16, color: "#a9aed3" }}
             />
             PDF
           </button>

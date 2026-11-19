@@ -163,7 +163,7 @@ export default function MachineMaintenance({ toast }) {
             >
               <Button
                 text="Cancel"
-                color="#666"
+                color="#6f74a0"
                 onClick={() => setShowModal(false)}
               />
               <Button type="submit" text="Schedule" color={C.blue} />

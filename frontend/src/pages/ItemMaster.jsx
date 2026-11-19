@@ -68,8 +68,8 @@ const inputStyle = {
   border: "1px solid rgba(255,255,255,0.08)",
   borderRadius: 8,
   fontSize: 13,
-  background: "#141414",
-  color: "#ededed",
+  background: "#05071a",
+  color: "#dfe2f4",
   outline: "none",
   boxSizing: "border-box",
 };
@@ -91,7 +91,7 @@ const th = {
   textAlign: "left",
   fontSize: 11,
   fontWeight: 600,
-  color: "#8a8a8a",
+  color: "#8b90b8",
   whiteSpace: "nowrap",
 };
 
@@ -1051,7 +1051,7 @@ export default function ItemMaster({
                     left: "50%",
                     transform: "translate(-50%, -50%)",
                     zIndex: 1000,
-                    background: "#1a1a1a",
+                    background: "#0b0e2d",
                     border: "1px solid rgba(255,255,255,0.12)",
                     borderRadius: 12,
                     padding: "20px 24px",
@@ -1081,7 +1081,7 @@ export default function ItemMaster({
                 style={{
                   fontSize: 16,
                   fontWeight: 600,
-                  color: "#ededed",
+                  color: "#dfe2f4",
                 }}
               >
                 {editingItem
@@ -1110,7 +1110,7 @@ export default function ItemMaster({
                   style={{
                     background: "transparent",
                     border: "none",
-                    color: "#888",
+                    color: "#8b90b8",
                     fontSize: 20,
                     cursor: "pointer",
                     lineHeight: 1,
@@ -1127,7 +1127,7 @@ export default function ItemMaster({
                   style={{
                     fontSize: 11,
                     fontWeight: 600,
-                    color: "#666",
+                    color: "#6f74a0",
                     display: "block",
                     marginBottom: 6,
                   }}
@@ -1156,7 +1156,7 @@ export default function ItemMaster({
                   style={{
                     fontSize: 11,
                     fontWeight: 600,
-                    color: "#666",
+                    color: "#6f74a0",
                     display: "block",
                     marginBottom: 6,
                   }}
@@ -1194,7 +1194,7 @@ export default function ItemMaster({
                     style={{
                       fontSize: 11,
                       fontWeight: 600,
-                      color: "#666",
+                      color: "#6f74a0",
                       display: "block",
                       marginBottom: 6,
                     }}
@@ -1227,7 +1227,7 @@ export default function ItemMaster({
                         style={{
                           fontSize: 11,
                           fontWeight: 600,
-                          color: "#666",
+                          color: "#6f74a0",
                           display: "block",
                           marginBottom: 6,
                         }}
@@ -1256,7 +1256,7 @@ export default function ItemMaster({
                             style={{
                               fontSize: 11,
                               fontWeight: 600,
-                              color: "#666",
+                              color: "#6f74a0",
                               display: "block",
                               marginBottom: 6,
                             }}
@@ -1293,7 +1293,7 @@ export default function ItemMaster({
                         style={{
                           fontSize: 11,
                           fontWeight: 600,
-                          color: "#666",
+                          color: "#6f74a0",
                           display: "block",
                           marginBottom: 6,
                         }}
@@ -1317,7 +1317,7 @@ export default function ItemMaster({
                     style={{
                       fontSize: 11,
                       fontWeight: 600,
-                      color: "#666",
+                      color: "#6f74a0",
                       display: "block",
                       marginBottom: 6,
                     }}
@@ -1344,7 +1344,7 @@ export default function ItemMaster({
                     style={{
                       fontSize: 11,
                       fontWeight: 600,
-                      color: "#666",
+                      color: "#6f74a0",
                       display: "block",
                       marginBottom: 6,
                     }}
@@ -1386,7 +1386,7 @@ export default function ItemMaster({
                               style={{
                                 fontSize: 11,
                                 fontWeight: 600,
-                                color: "#666",
+                                color: "#6f74a0",
                                 display: "block",
                                 marginBottom: 6,
                               }}
@@ -1408,7 +1408,7 @@ export default function ItemMaster({
                               style={{
                                 fontSize: 11,
                                 fontWeight: 600,
-                                color: "#666",
+                                color: "#6f74a0",
                                 display: "block",
                                 marginBottom: 6,
                               }}
@@ -1428,7 +1428,7 @@ export default function ItemMaster({
                               style={{
                                 fontSize: 11,
                                 fontWeight: 600,
-                                color: "#666",
+                                color: "#6f74a0",
                                 display: "block",
                                 marginBottom: 6,
                               }}
@@ -1449,7 +1449,7 @@ export default function ItemMaster({
                                 style={{
                                   fontSize: 11,
                                   fontWeight: 600,
-                                  color: "#666",
+                                  color: "#6f74a0",
                                   display: "block",
                                   marginBottom: 6,
                                 }}
@@ -1475,7 +1475,7 @@ export default function ItemMaster({
                                 style={{
                                   fontSize: 11,
                                   fontWeight: 600,
-                                  color: "#666",
+                                  color: "#6f74a0",
                                   display: "block",
                                   marginBottom: 6,
                                 }}
@@ -1504,7 +1504,7 @@ export default function ItemMaster({
                       style={{
                         fontSize: 11,
                         fontWeight: 600,
-                        color: "#666",
+                        color: "#6f74a0",
                         display: "block",
                         marginBottom: 6,
                       }}
@@ -1524,7 +1524,7 @@ export default function ItemMaster({
                       style={{
                         fontSize: 11,
                         fontWeight: 600,
-                        color: "#666",
+                        color: "#6f74a0",
                         display: "block",
                         marginBottom: 6,
                       }}
@@ -1545,7 +1545,7 @@ export default function ItemMaster({
                         style={{
                           fontSize: 11,
                           fontWeight: 600,
-                          color: "#666",
+                          color: "#6f74a0",
                           display: "block",
                           marginBottom: 6,
                         }}
@@ -1568,7 +1568,7 @@ export default function ItemMaster({
                   style={{
                     fontSize: 11,
                     fontWeight: 600,
-                    color: "#666",
+                    color: "#6f74a0",
                     display: "block",
                     marginBottom: 6,
                   }}
@@ -1613,7 +1613,7 @@ export default function ItemMaster({
                   style={{
                     fontSize: 11,
                     fontWeight: 600,
-                    color: "#666",
+                    color: "#6f74a0",
                     display: "block",
                     marginBottom: 6,
                   }}
@@ -1633,7 +1633,7 @@ export default function ItemMaster({
                   style={{
                     fontSize: 11,
                     fontWeight: 600,
-                    color: "#666",
+                    color: "#6f74a0",
                     display: "block",
                     marginBottom: 6,
                   }}
@@ -1652,7 +1652,7 @@ export default function ItemMaster({
                   style={{
                     fontSize: 11,
                     fontWeight: 600,
-                    color: "#666",
+                    color: "#6f74a0",
                     display: "block",
                     marginBottom: 6,
                   }}
@@ -1685,12 +1685,12 @@ export default function ItemMaster({
                     gap: 10,
                   }}
                 >
-                  <span style={{ fontSize: 11, color: "#555" }}>Preview:</span>
+                  <span style={{ fontSize: 11, color: "#6f74a0" }}>Preview:</span>
                   <span
                     style={{
                       fontSize: 15,
                       fontWeight: 500,
-                      color: "#a3a3a3",
+                      color: "#a9aed3",
                     }}
                   >
                     {newItemName || "—"}
@@ -1708,14 +1708,14 @@ export default function ItemMaster({
                     gap: 10,
                   }}
                 >
-                  <span style={{ fontSize: 10, color: "#444" }}>
+                  <span style={{ fontSize: 10, color: "#3a3f78" }}>
                     Auto Code:
                   </span>
                   <span
                     style={{
                       fontSize: 14,
                       fontWeight: 500,
-                      color: "#a3a3a3",
+                      color: "#a9aed3",
                     }}
                   >
                     {ITEM_TABS.find((t) => t.key === activeTab)?.prefix}
@@ -1783,7 +1783,7 @@ export default function ItemMaster({
               display: "flex",
               alignItems: "center",
               gap: 10,
-              color: "#c8955a",
+              color: "#aeb4ee",
               fontWeight: 500,
               fontSize: 13,
             }}
@@ -1804,7 +1804,7 @@ export default function ItemMaster({
                 background: "transparent",
                 border: "1px solid #4f46e5",
                 borderRadius: 6,
-                color: "#c8955a",
+                color: "#aeb4ee",
                 fontSize: 12,
                 fontWeight: 500,
                 cursor: "pointer",
@@ -1822,7 +1822,7 @@ export default function ItemMaster({
                 background: "rgba(255,255,255,0.08)",
                 border: "1px solid rgba(255,255,255,0.18)",
                 borderRadius: 6,
-                color: "#fff",
+                color: "#dfe2f4",
                 fontSize: 12,
                 fontWeight: 500,
                 cursor: "pointer",
@@ -1842,7 +1842,7 @@ export default function ItemMaster({
               onChange={handleImportClientCodes}
             />
           </div>
-          <div style={{ fontSize: 10, color: "#444" }}>
+          <div style={{ fontSize: 10, color: "#3a3f78" }}>
             Template columns: Our Product Code · Item Name · one column per
             client
           </div>
@@ -2012,7 +2012,7 @@ export default function ItemMaster({
             background: "transparent",
             border: "1px solid rgba(255,255,255,0.1)",
             borderRadius: 10,
-            color: "#444",
+            color: "#3a3f78",
           }}
         >
           No items found.
@@ -2036,7 +2036,7 @@ export default function ItemMaster({
               onChange={toggleSelectAll}
               style={{ cursor: "pointer", width: 16, height: 16 }}
             />
-            <span style={{ fontSize: 11, fontWeight: 500, color: "#666" }}>
+            <span style={{ fontSize: 11, fontWeight: 500, color: "#6f74a0" }}>
               SELECT ALL ({sorted.length})
             </span>
           </div>
@@ -2078,7 +2078,7 @@ export default function ItemMaster({
                     padding: "3px 0",
                     border: "none",
                     borderRadius: 6,
-                    color: "#c8955a",
+                    color: "#aeb4ee",
                     fontSize: 12,
                     fontWeight: 500,
                     background: "transparent",
@@ -2092,7 +2092,7 @@ export default function ItemMaster({
                 <div
                   style={{
                     flex: 1,
-                    color: "#ededed",
+                    color: "#dfe2f4",
                     fontSize: 13,
                     fontWeight: 600,
                     lineHeight: 1.4,
@@ -2117,7 +2117,7 @@ export default function ItemMaster({
                       padding: "3px 8px",
                       borderRadius: 6,
                       background: "rgba(255,255,255,0.06)",
-                      color: "#a3a3a3",
+                      color: "#a9aed3",
                       fontSize: 11,
                       fontWeight: 600,
                     }}
@@ -2131,7 +2131,7 @@ export default function ItemMaster({
                       padding: "3px 8px",
                       borderRadius: 6,
                       background: "rgba(255,255,255,0.06)",
-                      color: "#a3a3a3",
+                      color: "#a9aed3",
                       fontSize: 11,
                       fontWeight: 600,
                     }}
@@ -2145,7 +2145,7 @@ export default function ItemMaster({
                       padding: "3px 8px",
                       borderRadius: 6,
                       background: "rgba(255,255,255,0.06)",
-                      color: "#a3a3a3",
+                      color: "#a9aed3",
                       fontSize: 11,
                       fontWeight: 600,
                     }}
@@ -2158,7 +2158,7 @@ export default function ItemMaster({
                     padding: "3px 8px",
                     borderRadius: 6,
                     background: "rgba(255,255,255,0.06)",
-                    color: "#a3a3a3",
+                    color: "#a9aed3",
                     fontSize: 11,
                     fontWeight: 600,
                   }}
@@ -2170,7 +2170,7 @@ export default function ItemMaster({
                     padding: "3px 8px",
                     borderRadius: 6,
                     background: "rgba(255,255,255,0.06)",
-                    color: "#a3a3a3",
+                    color: "#a9aed3",
                     fontSize: 11,
                     fontWeight: 600,
                   }}
@@ -2182,7 +2182,7 @@ export default function ItemMaster({
                     padding: "3px 8px",
                     borderRadius: 6,
                     background: "rgba(255,255,255,0.06)",
-                    color: "#737373",
+                    color: "#7b80ad",
                     fontSize: 11,
                   }}
                 >
@@ -2205,7 +2205,7 @@ export default function ItemMaster({
                       padding: "5px 12px",
                       borderRadius: 6,
                       background: "#4f46e51a",
-                      color: "#c8955a",
+                      color: "#aeb4ee",
                       border: "1px solid #4f46e544",
                       fontSize: 11,
                       fontWeight: 500,
@@ -2244,7 +2244,7 @@ export default function ItemMaster({
                                 gap: 10,
                               }}
                             >
-                              <span style={{ color: "#666" }}>{client}:</span>
+                              <span style={{ color: "#6f74a0" }}>{client}:</span>
                               <div
                                 style={{
                                   display: "flex",
@@ -2253,7 +2253,7 @@ export default function ItemMaster({
                                 }}
                               >
                                 <span
-                                  style={{ color: "#ededed", fontWeight: 600 }}
+                                  style={{ color: "#dfe2f4", fontWeight: 600 }}
                                 >
                                   {code}
                                 </span>
@@ -2277,7 +2277,7 @@ export default function ItemMaster({
                         <div
                           style={{
                             fontSize: 11,
-                            color: "#444",
+                            color: "#3a3f78",
                             textAlign: "center",
                             marginBottom: 8,
                           }}
@@ -2295,7 +2295,7 @@ export default function ItemMaster({
                         <div
                           style={{
                             fontSize: 10,
-                            color: "#c8955a",
+                            color: "#aeb4ee",
                             marginBottom: 4,
                             fontWeight: 600,
                           }}
@@ -2311,7 +2311,7 @@ export default function ItemMaster({
                             border: "1px solid rgba(255,255,255,0.13)",
                             borderRadius: 4,
                             fontSize: 11,
-                            color: "#ededed",
+                            color: "#dfe2f4",
                             padding: 5,
                             marginBottom: 6,
                             outline: "none",
@@ -2335,7 +2335,7 @@ export default function ItemMaster({
                               border: "1px solid rgba(255,255,255,0.13)",
                               borderRadius: 4,
                               fontSize: 11,
-                              color: "#ededed",
+                              color: "#dfe2f4",
                               padding: 5,
                               outline: "none",
                             }}
@@ -2344,7 +2344,7 @@ export default function ItemMaster({
                             onClick={() => handleManualClientCodeSave(item)}
                             style={{
                               background: "transparent",
-                              color: "#ffffff",
+                              color: "#dfe2f4",
                               border: "1px solid rgba(255,255,255,0.2)",
                               borderRadius: 6,
                               padding: "6px 12px",
@@ -2458,7 +2458,7 @@ export default function ItemMaster({
                         border: "none",
                         borderRadius: 6,
                         textAlign: "left",
-                        color: "#c8955a",
+                        color: "#aeb4ee",
                         fontSize: 12,
                         fontWeight: 500,
                         background: "transparent",
@@ -2477,7 +2477,7 @@ export default function ItemMaster({
                       style={{
                         flex: 1,
                         minWidth: 200,
-                        color: "#ededed",
+                        color: "#dfe2f4",
                         fontSize: 13,
                         fontWeight: 600,
                         wordBreak: "break-word",
@@ -2498,7 +2498,7 @@ export default function ItemMaster({
                           padding: "4px 8px",
                           borderRadius: 6,
                           background: "rgba(255,255,255,0.06)",
-                          color: "#a3a3a3",
+                          color: "#a9aed3",
                           fontSize: 11,
                           fontWeight: 600,
                           overflow: "hidden",
@@ -2518,7 +2518,7 @@ export default function ItemMaster({
                         padding: "4px 8px",
                         borderRadius: 6,
                         background: "rgba(255,255,255,0.06)",
-                        color: "#a3a3a3",
+                        color: "#a9aed3",
                         fontSize: 11,
                         fontWeight: 600,
                         overflow: "hidden",
@@ -2537,7 +2537,7 @@ export default function ItemMaster({
                         padding: "4px 8px",
                         borderRadius: 6,
                         background: "rgba(255,255,255,0.06)",
-                        color: "#a3a3a3",
+                        color: "#a9aed3",
                         fontSize: 11,
                         fontWeight: 600,
                         overflow: "hidden",
@@ -2556,7 +2556,7 @@ export default function ItemMaster({
                         padding: "4px 6px",
                         borderRadius: 6,
                         background: "rgba(255,255,255,0.06)",
-                        color: "#a3a3a3",
+                        color: "#a9aed3",
                         fontSize: 10,
                         fontWeight: 500,
                         textAlign: "center",
@@ -2573,7 +2573,7 @@ export default function ItemMaster({
                         padding: "4px 6px",
                         borderRadius: 6,
                         background: "rgba(255,255,255,0.06)",
-                        color: "#a3a3a3",
+                        color: "#a9aed3",
                         fontSize: 10,
                         fontWeight: 500,
                         textAlign: "center",
@@ -2606,7 +2606,7 @@ export default function ItemMaster({
                             borderRadius: 6,
                             background: "rgba(255,255,255,0.08)",
                             border: "1px solid rgba(255,255,255,0.18)",
-                            color: "#fff",
+                            color: "#dfe2f4",
                             fontSize: 10,
                             fontWeight: 500,
                             cursor: "pointer",
@@ -2626,7 +2626,7 @@ export default function ItemMaster({
                               top: "100%",
                               right: 0,
                               zIndex: 100,
-                              background: "rgba(20,20,30,0.95)",
+                              background: "rgba(5,7,26,0.97)",
                               border: "1px solid rgba(255,255,255,0.1)",
                               borderRadius: 8,
                               padding: 8,
@@ -2654,7 +2654,7 @@ export default function ItemMaster({
                                       gap: 10,
                                     }}
                                   >
-                                    <span style={{ color: "#666" }}>
+                                    <span style={{ color: "#6f74a0" }}>
                                       {client}:
                                     </span>
                                     <div
@@ -2666,7 +2666,7 @@ export default function ItemMaster({
                                     >
                                       <span
                                         style={{
-                                          color: "#ededed",
+                                          color: "#dfe2f4",
                                           fontWeight: 600,
                                         }}
                                       >
@@ -2695,7 +2695,7 @@ export default function ItemMaster({
                               <div
                                 style={{
                                   fontSize: 10,
-                                  color: "#444",
+                                  color: "#3a3f78",
                                   textAlign: "center",
                                   marginBottom: 8,
                                 }}
@@ -2713,7 +2713,7 @@ export default function ItemMaster({
                               <div
                                 style={{
                                   fontSize: 9,
-                                  color: "#c8955a",
+                                  color: "#aeb4ee",
                                   marginBottom: 4,
                                   fontWeight: 600,
                                 }}
@@ -2731,7 +2731,7 @@ export default function ItemMaster({
                                   border: "1px solid rgba(255,255,255,0.13)",
                                   borderRadius: 4,
                                   fontSize: 10,
-                                  color: "#ededed",
+                                  color: "#dfe2f4",
                                   padding: 4,
                                   marginBottom: 4,
                                   outline: "none",
@@ -2757,7 +2757,7 @@ export default function ItemMaster({
                                     border: "1px solid rgba(255,255,255,0.13)",
                                     borderRadius: 4,
                                     fontSize: 10,
-                                    color: "#ededed",
+                                    color: "#dfe2f4",
                                     padding: 4,
                                     outline: "none",
                                   }}
@@ -2768,7 +2768,7 @@ export default function ItemMaster({
                                   }
                                   style={{
                                     background: "transparent",
-                                    color: "#ffffff",
+                                    color: "#dfe2f4",
                                     border: "1px solid rgba(255,255,255,0.2)",
                                     borderRadius: 6,
                                     padding: "6px 12px",
@@ -2792,7 +2792,7 @@ export default function ItemMaster({
                   <td style={{ padding: "12px 14px", verticalAlign: "middle" }}>
                     <div
                       style={{
-                        color: "#737373",
+                        color: "#7b80ad",
                         fontSize: 11,
                         width: 88,
                         flexShrink: 0,

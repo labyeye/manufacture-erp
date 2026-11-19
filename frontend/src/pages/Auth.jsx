@@ -7,16 +7,16 @@ const TOAST_DURATION = 4000;
 
 // Local tokens: one graphite ramp, one kraft accent
 const T = {
-  bg: "#131313",
-  surface: "#1a1a1a",
-  raised: "#222222",
+  bg: "#070924",
+  surface: "#0b0e2d",
+  raised: "#101339",
   line: "rgba(255,255,255,0.08)",
   lineStrong: "rgba(255,255,255,0.16)",
-  text: "#ededed",
-  secondary: "#a3a3a3",
-  muted: "#737373",
-  accent: "#c8955a",
-  accentText: "#d9a86f",
+  text: "#dfe2f4",
+  secondary: "#a9aed3",
+  muted: "#7b80ad",
+  accent: "#aeb4ee",
+  accentText: "#c3c8f6",
   error: "#e08a7a",
   success: "#86b894",
   ease: "cubic-bezier(.22,1,.36,1)",
@@ -35,12 +35,12 @@ const CSS = `
 .au-input { width: 100%; box-sizing: border-box; height: 40px; padding: 0 12px; font: inherit; font-size: 14px; color: ${T.text}; background: ${T.surface}; border: 1px solid ${T.line}; border-radius: 8px; outline: none; transition: border-color .15s, background-color .15s; }
 .au-input::placeholder { color: ${T.muted}; font-style: normal; }
 .au-input:hover:not(:disabled) { border-color: ${T.lineStrong}; }
-.au-input:focus-visible { border-color: ${T.accent}; box-shadow: 0 0 0 3px rgba(200,149,90,.25); }
+.au-input:focus-visible { border-color: ${T.accent}; box-shadow: 0 0 0 3px rgba(174, 180, 238,.25); }
 .au-input:disabled { opacity: .6; }
 .au-eye { position: absolute; right: 4px; top: 4px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: none; border: 0; border-radius: 6px; color: ${T.muted}; cursor: pointer; transition: color .15s; }
 .au-eye:hover { color: ${T.text}; }
-.au-btn { width: 100%; height: 40px; margin-top: 4px; font: inherit; font-size: 14px; font-weight: 500; color: #141414; background: ${T.accent}; border: 0; border-radius: 8px; cursor: pointer; transition: background-color .15s, transform .15s, opacity .15s; }
-.au-btn:hover:not(:disabled) { background: #d6a36a; }
+.au-btn { width: 100%; height: 40px; margin-top: 4px; font: inherit; font-size: 14px; font-weight: 500; color: #05071a; background: ${T.accent}; border: 0; border-radius: 8px; cursor: pointer; transition: background-color .15s, transform .15s, opacity .15s; }
+.au-btn:hover:not(:disabled) { background: #c3c8f6; }
 .au-btn:active:not(:disabled) { transform: scale(.98); }
 .au-btn:focus-visible { outline: 2px solid ${T.accentText}; outline-offset: 2px; }
 .au-btn:disabled { opacity: .5; cursor: not-allowed; }

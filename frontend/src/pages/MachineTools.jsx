@@ -328,11 +328,11 @@ function ToolTypeSection({ tabId, toast, canExportImport = true }) {
           flexWrap: "wrap",
         }}
       >
-        <Button text="Template" color="#555" onClick={handleDownloadTemplate} />
+        <Button text="Template" color="#6f74a0" onClick={handleDownloadTemplate} />
         {canExportImport && (
           <Button
             text={importing ? "Importing…" : "Import"}
-            color="#555"
+            color="#6f74a0"
             onClick={() => importRef.current?.click()}
             loading={importing}
           />
@@ -345,7 +345,7 @@ function ToolTypeSection({ tabId, toast, canExportImport = true }) {
           onChange={handleImport}
         />
         {canExportImport && (
-          <Button text="Export" color="#555" onClick={handleExport} />
+          <Button text="Export" color="#6f74a0" onClick={handleExport} />
         )}
         <Button
           onClick={() => {
@@ -395,14 +395,14 @@ function ToolTypeSection({ tabId, toast, canExportImport = true }) {
                     </div>
                     {linkedItem && (
                       <div
-                        style={{ fontSize: 11, color: "#888", marginTop: 2 }}
+                        style={{ fontSize: 11, color: "#8b90b8", marginTop: 2 }}
                       >
                         {linkedItem.name}
                       </div>
                     )}
                   </div>
                 ) : (
-                  <span style={{ color: "#444" }}>—</span>
+                  <span style={{ color: "#3a3f78" }}>—</span>
                 ),
                 linkedMachineNames.length > 0 ? (
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
@@ -423,7 +423,7 @@ function ToolTypeSection({ tabId, toast, canExportImport = true }) {
                     ))}
                   </div>
                 ) : (
-                  <span style={{ color: "#444", fontSize: 11 }}>—</span>
+                  <span style={{ color: "#3a3f78", fontSize: 11 }}>—</span>
                 ),
                 <Badge
                   text={tool.status}
@@ -544,7 +544,7 @@ function ToolTypeSection({ tabId, toast, canExportImport = true }) {
                   style={{
                     display: "block",
                     fontSize: 11,
-                    color: "#666",
+                    color: "#6f74a0",
                     fontWeight: 500,
                     marginBottom: 8,
                   }}
@@ -571,8 +571,8 @@ function ToolTypeSection({ tabId, toast, canExportImport = true }) {
                           borderRadius: 20,
                           fontSize: 12,
                           fontWeight: 600,
-                          background: selected ? "#3b82f6" : "#1a1a1a",
-                          color: selected ? "#fff" : "#666",
+                          background: selected ? "#3b82f6" : "#0b0e2d",
+                          color: selected ? "#fff" : "#6f74a0",
                           border: `1px solid ${selected ? "#3b82f6" : "#333"}`,
                           cursor: "pointer",
                           transition:
@@ -596,7 +596,7 @@ function ToolTypeSection({ tabId, toast, canExportImport = true }) {
             >
               <Button
                 text="Cancel"
-                color="#666"
+                color="#6f74a0"
                 onClick={() => {
                   setShowModal(false);
                   resetForm();
@@ -757,7 +757,7 @@ function CalendarSection({ toast }) {
             >
               <Button
                 text="Cancel"
-                color="#666"
+                color="#6f74a0"
                 onClick={() => setShowModal(false)}
               />
               <Button
@@ -929,7 +929,7 @@ function MaintenanceSection({ toast }) {
             >
               <Button
                 text="Cancel"
-                color="#666"
+                color="#6f74a0"
                 onClick={() => setShowModal(false)}
               />
               <Button type="submit" text="Schedule" color={C.blue} />
@@ -1118,7 +1118,7 @@ function BreakdownSection({ toast }) {
             >
               <Button
                 text="Cancel"
-                color="#666"
+                color="#6f74a0"
                 onClick={() => setShowModal(false)}
               />
               <Button type="submit" text="Report Now" color={C.red} />

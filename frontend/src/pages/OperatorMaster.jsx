@@ -17,8 +17,8 @@ const inputStyle = {
   border: "1px solid rgba(255,255,255,0.08)",
   borderRadius: 8,
   fontSize: 13,
-  background: "#141414",
-  color: "#ededed",
+  background: "#05071a",
+  color: "#dfe2f4",
   outline: "none",
   boxSizing: "border-box",
 };
@@ -366,7 +366,7 @@ export default function OperatorMaster({ toast, canExportImport = true }) {
                     <td
                       style={{
                         padding: "10px 12px",
-                        color: "#c8955a",
+                        color: "#aeb4ee",
                         fontSize: 12,
                       }}
                     >
@@ -410,7 +410,7 @@ export default function OperatorMaster({ toast, canExportImport = true }) {
                           onClick={() => handleToggleActive(op)}
                           style={{
                             background: "transparent",
-                            color: "#c8955a",
+                            color: "#aeb4ee",
                             border: "1px solid #c8955a98",
                             borderRadius: 6,
                             padding: "6px 12px",
@@ -510,7 +510,7 @@ export default function OperatorMaster({ toast, canExportImport = true }) {
                 onClick={() => setShowModal(false)}
                 style={{
                   background: "transparent",
-                  color: "#ffffff",
+                  color: "#dfe2f4",
                   border: "1px solid rgba(255,255,255,0.2)",
                   borderRadius: 6,
                   padding: "6px 12px",
@@ -530,8 +530,8 @@ export default function OperatorMaster({ toast, canExportImport = true }) {
                   padding: "9px 22px",
                   borderRadius: 6,
                   border: "none",
-                  background: "#c8955a",
-                  color: "#141414",
+                  background: "#aeb4ee",
+                  color: "#05071a",
                   fontWeight: 600,
                   fontSize: 13,
                   cursor: "pointer",

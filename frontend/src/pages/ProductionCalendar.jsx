@@ -554,14 +554,14 @@ export default function ProductionCalendar({
             top: 0,
             width: 750,
             height: "100vh",
-            background: "#1a1a1a",
+            background: "#0b0e2d",
             zIndex: 1001,
             borderLeft: "1px solid rgba(255,255,255,0.08)",
             padding: "24px",
             display: "flex",
             flexDirection: "column",
             animation: "slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-            color: "#fff",
+            color: "#dfe2f4",
           }}
         >
           <style>{`
@@ -588,8 +588,8 @@ export default function ProductionCalendar({
                   alignItems: "center",
                   justifyContent: "center",
                   fontSize: 18,
-                  color: "#a3a3a3",
-                  background: "#242424",
+                  color: "#a9aed3",
+                  background: "#101339",
                   borderRadius: 12,
                 }}
               >
@@ -600,7 +600,7 @@ export default function ProductionCalendar({
                   style={{
                     margin: 0,
                     fontSize: 22,
-                    color: "#fff",
+                    color: "#dfe2f4",
                     fontWeight: 600,
                   }}
                 >
@@ -679,7 +679,7 @@ export default function ProductionCalendar({
                 style={{
                   position: "sticky",
                   top: 0,
-                  background: "#1a1a1a",
+                  background: "#0b0e2d",
                   zIndex: 10,
                   boxShadow: "0 2px 4px #00000044",
                 }}
@@ -884,19 +884,19 @@ export default function ProductionCalendar({
                 flex: 1,
                 padding: "14px",
                 borderRadius: 8,
-                background: "#242424",
+                background: "#101339",
                 border: "none",
-                color: "#ededed",
+                color: "#dfe2f4",
                 fontWeight: 500,
                 cursor: "pointer",
                 transition:
                   "background-color .15s, border-color .15s, color .15s, opacity .15s, transform .15s",
               }}
               onMouseEnter={(e) =>
-                (e.currentTarget.style.background = "#2a2a2a")
+                (e.currentTarget.style.background = "#161a49")
               }
               onMouseLeave={(e) =>
-                (e.currentTarget.style.background = "#242424")
+                (e.currentTarget.style.background = "#101339")
               }
             >
               Close
@@ -910,7 +910,7 @@ export default function ProductionCalendar({
                 borderRadius: 10,
                 background: "rgba(255,255,255,0.08)",
                 border: "1px solid rgba(255,255,255,0.18)",
-                color: "#fff",
+                color: "#dfe2f4",
                 fontWeight: 600,
                 cursor: "pointer",
                 opacity: isSaving ? 0.7 : 1,
@@ -1233,7 +1233,7 @@ export default function ProductionCalendar({
                   width: "100%",
                   padding: "8px 10px",
                   borderRadius: 8,
-                  background: "#1a1a1a",
+                  background: "#0b0e2d",
                   border: "1px solid #30363d",
                   color: "#e6edf3",
                   fontSize: 13,
@@ -1284,7 +1284,7 @@ export default function ProductionCalendar({
                   borderRadius: 8,
                   background: shifting ? "#f9731688" : "#f97316",
                   border: "none",
-                  color: "#fff",
+                  color: "#dfe2f4",
                   fontWeight: 600,
                   fontSize: 13,
                   cursor: shifting ? "not-allowed" : "pointer",
@@ -1356,7 +1356,7 @@ export default function ProductionCalendar({
             transform: "translate(-50%, -50%)",
             width: 460,
             maxWidth: "90vw",
-            background: "#1a1a1a",
+            background: "#0b0e2d",
             border: "1px solid #30363d",
             borderRadius: 12,
             zIndex: 2001,
@@ -1475,7 +1475,7 @@ export default function ProductionCalendar({
                 borderRadius: 8,
                 background: shifting ? "#f9731688" : "#f97316",
                 border: "none",
-                color: "#fff",
+                color: "#dfe2f4",
                 fontWeight: 600,
                 fontSize: 13,
                 cursor: shifting ? "not-allowed" : "pointer",
@@ -1565,7 +1565,7 @@ export default function ProductionCalendar({
             transform: "translate(-50%,-50%)",
             width: 420,
             maxWidth: "92vw",
-            background: "#1a1a1a",
+            background: "#0b0e2d",
             border: "1px solid #30363d",
             borderRadius: 12,
             zIndex: 3001,
@@ -1855,7 +1855,7 @@ export default function ProductionCalendar({
               onClick={() => setBreakdownModal(null)}
               style={{
                 background: "transparent",
-                color: "#ffffff",
+                color: "#dfe2f4",
                 border: "1px solid rgba(255,255,255,0.2)",
                 borderRadius: 8,
                 padding: "6px 12px",
@@ -1878,7 +1878,7 @@ export default function ProductionCalendar({
                 borderRadius: 8,
                 background: isSavingBd ? "#ef444488" : "#ef4444",
                 border: "none",
-                color: "#fff",
+                color: "#dfe2f4",
                 fontWeight: 600,
                 fontSize: 13,
                 cursor: isSavingBd ? "not-allowed" : "pointer",
@@ -1974,7 +1974,7 @@ export default function ProductionCalendar({
             transform: "translate(-50%,-50%)",
             width: 460,
             maxWidth: "92vw",
-            background: "#1a1a1a",
+            background: "#0b0e2d",
             border: "1px solid #30363d",
             borderRadius: 12,
             zIndex: 3001,
@@ -2126,7 +2126,7 @@ export default function ProductionCalendar({
               onClick={() => setPowerCutModal(false)}
               style={{
                 background: "transparent",
-                color: "#ffffff",
+                color: "#dfe2f4",
                 border: "1px solid rgba(255,255,255,0.2)",
                 borderRadius: 8,
                 padding: "6px 12px",
@@ -2271,7 +2271,7 @@ export default function ProductionCalendar({
                     background:
                       approvingId === jo._id ? "#ef444488" : "#ef4444",
                     border: "none",
-                    color: "#fff",
+                    color: "#dfe2f4",
                     fontSize: 10,
                     fontWeight: 600,
                     cursor: approvingId === jo._id ? "not-allowed" : "pointer",
@@ -2352,8 +2352,8 @@ export default function ProductionCalendar({
               style={{
                 height: 30,
                 padding: "0 16px",
-                background: rangeView === rv ? "#242424" : "transparent",
-                color: rangeView === rv ? "#ededed" : "#a3a3a3",
+                background: rangeView === rv ? "#101339" : "transparent",
+                color: rangeView === rv ? "#dfe2f4" : "#a9aed3",
                 fontWeight: 500,
                 fontSize: 12,
                 border: "none",
@@ -2372,7 +2372,7 @@ export default function ProductionCalendar({
           style={{
             fontSize: 13,
             fontWeight: 500,
-            color: "#ededed",
+            color: "#dfe2f4",
             minWidth: 130,
             fontVariantNumeric: "tabular-nums",
             textAlign: "center",
@@ -2451,8 +2451,8 @@ export default function ProductionCalendar({
               padding: "0 10px",
               borderRadius: 8,
               border: "1px solid rgba(255,255,255,0.08)",
-              background: "#1a1a1a",
-              color: "#ededed",
+              background: "#0b0e2d",
+              color: "#dfe2f4",
               fontSize: 12,
               cursor: "pointer",
             }}
@@ -2471,8 +2471,8 @@ export default function ProductionCalendar({
               padding: "0 10px",
               borderRadius: 8,
               border: "1px solid rgba(255,255,255,0.08)",
-              background: "#1a1a1a",
-              color: "#ededed",
+              background: "#0b0e2d",
+              color: "#dfe2f4",
               fontSize: 12,
               cursor: "pointer",
               fontWeight: 500,
@@ -2521,7 +2521,7 @@ export default function ProductionCalendar({
             style={{
               flex: "1 1 220px",
               minWidth: 220,
-              background: "#1a1a1a",
+              background: "#0b0e2d",
               border: "1px solid rgba(255,255,255,0.08)",
               borderRadius: 12,
               padding: 16,
@@ -2539,12 +2539,12 @@ export default function ProductionCalendar({
                 style={{
                   fontSize: 13,
                   fontWeight: 600,
-                  color: "#ededed",
+                  color: "#dfe2f4",
                 }}
               >
                 <i
                   className={MACHINE_ICON[stat.category] || "fa-solid fa-gears"}
-                  style={{ marginRight: 6, color: "#a3a3a3" }}
+                  style={{ marginRight: 6, color: "#a9aed3" }}
                 />{" "}
                 {stat.category}
               </span>
@@ -2570,7 +2570,7 @@ export default function ProductionCalendar({
                 >
                   Daily Capacity
                 </div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: "#fff" }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "#dfe2f4" }}>
                   {fmt(stat.totalCapPerDay)}
                 </div>
               </div>
@@ -2583,7 +2583,7 @@ export default function ProductionCalendar({
                 >
                   Scheduled Qty
                 </div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: "#fff" }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "#dfe2f4" }}>
                   {fmt(stat.totalScheduled)}
                 </div>
               </div>
@@ -2600,7 +2600,7 @@ export default function ProductionCalendar({
                   style={{
                     fontSize: 14,
                     fontWeight: 600,
-                    color: "#fff",
+                    color: "#dfe2f4",
                   }}
                 >
                   {stat.daysRequired} Days
@@ -2638,7 +2638,7 @@ export default function ProductionCalendar({
                   }}
                 >
                   <span style={{ color: C.muted }}>Load Utilization</span>
-                  <span style={{ color: "#fff", fontWeight: 600 }}>
+                  <span style={{ color: "#dfe2f4", fontWeight: 600 }}>
                     {Math.round(
                       (stat.totalScheduled /
                         (stat.totalCapPerDay * stat.daysRequired || 1)) *
@@ -2659,7 +2659,7 @@ export default function ProductionCalendar({
                     style={{
                       height: "100%",
                       width: `${Math.min(100, (stat.totalScheduled / (stat.totalCapPerDay * stat.daysRequired || 1)) * 100)}%`,
-                      background: "#ededed",
+                      background: "#dfe2f4",
                     }}
                   />
                 </div>
@@ -3214,7 +3214,7 @@ export default function ProductionCalendar({
                                   background: `${statusColor}08`,
                                   border: `1px solid ${statusColor}22`,
                                   borderRadius: "4px 8px 8px 4px",
-                                  color: "#fff",
+                                  color: "#dfe2f4",
                                   fontWeight: 600,
                                   marginBottom: 8,
                                   cursor: "pointer",
@@ -3285,7 +3285,7 @@ export default function ProductionCalendar({
                                 <div
                                   style={{
                                     fontSize: 10,
-                                    color: "#fff",
+                                    color: "#dfe2f4",
                                     marginBottom: 2,
                                     whiteSpace: "nowrap",
                                     overflow: "hidden",
@@ -3820,7 +3820,7 @@ export default function ProductionCalendar({
                   alignItems: "center",
                   marginBottom: 12,
                   fontSize: 11,
-                  color: "#888",
+                  color: "#8b90b8",
                 }}
               >
                 <span>Utilization:</span>
@@ -3872,7 +3872,7 @@ export default function ProductionCalendar({
                   />
                   Delivery risk
                 </span>
-                <span style={{ marginLeft: "auto", color: "#555" }}>
+                <span style={{ marginLeft: "auto", color: "#6f74a0" }}>
                   Drag jobs to reschedule
                 </span>
               </div>
@@ -3887,7 +3887,7 @@ export default function ProductionCalendar({
                           width: 160,
                           position: "sticky",
                           left: 0,
-                          background: C.surface || "#111",
+                          background: C.surface || "#05071a",
                           zIndex: 2,
                           borderRight: `1px solid ${C.border}22`,
                         }}
@@ -3908,16 +3908,16 @@ export default function ProductionCalendar({
                               textAlign: "center",
                               background: isToday
                                 ? "#3b82f611"
-                                : C.surface || "#111",
+                                : C.surface || "#05071a",
                               borderBottom: isToday
                                 ? "2px solid #3b82f6"
                                 : `1px solid ${C.border}22`,
-                              color: isToday ? "#3b82f6" : "#666",
+                              color: isToday ? "#3b82f6" : "#6f74a0",
                               padding: "6px 4px",
                             }}
                           >
                             <div>{dow}</div>
-                            <div style={{ fontSize: 9, color: "#555" }}>
+                            <div style={{ fontSize: 9, color: "#6f74a0" }}>
                               {date.slice(5)}
                             </div>
                           </th>
@@ -3936,7 +3936,7 @@ export default function ProductionCalendar({
                             ...tdS,
                             position: "sticky",
                             left: 0,
-                            background: C.surface || "#111",
+                            background: C.surface || "#05071a",
                             zIndex: 1,
                             borderRight: `1px solid ${C.border}22`,
                             minWidth: 160,
@@ -3946,7 +3946,7 @@ export default function ProductionCalendar({
                             style={{
                               fontSize: 11,
                               fontWeight: 500,
-                              color: TYPE_COLOR[machine.type] || "#888",
+                              color: TYPE_COLOR[machine.type] || "#8b90b8",
                             }}
                           >
                             <i
@@ -3958,7 +3958,7 @@ export default function ProductionCalendar({
                             />
                             {machine.name}
                           </div>
-                          <div style={{ fontSize: 9, color: "#555" }}>
+                          <div style={{ fontSize: 9, color: "#6f74a0" }}>
                             {machine.type}
                           </div>
                         </td>
@@ -4015,7 +4015,7 @@ export default function ProductionCalendar({
                                     style={{
                                       height: 4,
                                       borderRadius: 2,
-                                      background: "#1a1a1a",
+                                      background: "#0b0e2d",
                                       marginBottom: 3,
                                       overflow: "hidden",
                                     }}
@@ -4119,7 +4119,7 @@ export default function ProductionCalendar({
                                   <div
                                     style={{
                                       fontSize: 9,
-                                      color: "#666",
+                                      color: "#6f74a0",
                                       textAlign: "center",
                                     }}
                                   >
@@ -4261,9 +4261,9 @@ const modalInputStyle = {
   width: "100%",
   padding: "10px 12px",
   borderRadius: 8,
-  background: "#1a1a1a",
+  background: "#0b0e2d",
   border: `1px solid ${C.border}`,
-  color: "#fff",
+  color: "#dfe2f4",
   fontSize: 14,
   marginTop: 4,
   boxSizing: "border-box",
@@ -4273,7 +4273,7 @@ const modalInputStyle = {
 const thS = {
   textAlign: "left",
   padding: "10px 12px",
-  color: "#666",
+  color: "#6f74a0",
   fontWeight: 500,
   fontSize: 10,
 };
@@ -4286,10 +4286,10 @@ const tdS = {
 const miniInp = {
   width: "100%",
   padding: "8px 10px",
-  background: "#111",
+  background: "#05071a",
   border: `1px solid ${C.border}44`,
   borderRadius: 8,
-  color: "#fff",
+  color: "#dfe2f4",
   fontSize: 12,
   outline: "none",
   textAlign: "center",
@@ -4301,8 +4301,8 @@ function tabBtn(active) {
     padding: "0 16px",
     borderRadius: 8,
     border: `1px solid ${active ? "rgba(255,255,255,0.16)" : "rgba(255,255,255,0.08)"}`,
-    background: active ? "#242424" : "transparent",
-    color: active ? "#ededed" : "#a3a3a3",
+    background: active ? "#101339" : "transparent",
+    color: active ? "#dfe2f4" : "#a9aed3",
     fontWeight: 500,
     fontSize: 13,
     cursor: "pointer",
@@ -4320,7 +4320,7 @@ function navBtn() {
     borderRadius: 8,
     border: "1px solid rgba(255,255,255,0.08)",
     background: "transparent",
-    color: "#a3a3a3",
+    color: "#a9aed3",
     fontWeight: 500,
     fontSize: 16,
     cursor: "pointer",
@@ -4335,7 +4335,7 @@ const ghostBtn = {
   borderRadius: 8,
   border: "1px solid rgba(255,255,255,0.08)",
   background: "transparent",
-  color: "#a3a3a3",
+  color: "#a9aed3",
   fontWeight: 500,
   fontSize: 12,
   cursor: "pointer",

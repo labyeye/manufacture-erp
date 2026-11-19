@@ -1,11 +1,11 @@
 export const C = {
-  bg: "#131313",
-  surface: "#1a1a1a",
-  card: "#1a1a1a",
+  bg: "#070924",
+  surface: "#0b0e2d",
+  card: "#0b0e2d",
   border: "rgba(255,255,255,0.08)",
   divider: "rgba(255,255,255,0.08)",
-  accent: "#c8955a",
-  accentBg: "rgba(200,149,90,0.14)",
+  accent: "#aeb4ee",
+  accentBg: "rgba(174, 180, 238,0.14)",
   badge: "rgba(255,255,255,0.06)",
   green: "#22c55e",
   blue: "#3b82f6",
@@ -13,15 +13,15 @@ export const C = {
   red: "#ef4444",
   purple: "#a78bfa",
   mint: "#8fcfb4",
-  text: "#ededed",
-  muted: "#8a8a8a",
-  placeholder: "#6b6b6b",
-  inputBg: "#1a1a1a",
+  text: "#dfe2f4",
+  muted: "#8b90b8",
+  placeholder: "#6f74a0",
+  inputBg: "#0b0e2d",
   scrollbar: "rgba(255,255,255,0.16)",
 };
 
 export const GLASS = {
-  background: "#1a1a1a",
+  background: "#0b0e2d",
   border: "1px solid rgba(255,255,255,0.08)",
 };
 
@@ -84,7 +84,7 @@ export const MACHINE_TYPES = Object.keys(MACHINE_TYPE_COLORS);
 
 // Muted avatar fills that sit well with the copper/neutral palette.
 export const AVATAR_COLORS = [
-  "#c8955a", // copper
+  "#aeb4ee", // copper
   "#8fcfb4", // mint
   "#d9b98a", // sand
   "#9fb3c8", // slate

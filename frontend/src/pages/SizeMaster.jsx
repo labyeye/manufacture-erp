@@ -114,7 +114,7 @@ export default function SizeMaster({ toast }) {
     textAlign: "left",
     fontSize: 11,
     fontWeight: 600,
-    color: "#8a8a8a",
+    color: "#8b90b8",
     whiteSpace: "nowrap",
   };
 
@@ -153,7 +153,7 @@ export default function SizeMaster({ toast }) {
               style={{
                 marginTop: 16,
                 fontSize: 12,
-                color: "#a3a3a3",
+                color: "#a9aed3",
               }}
             >
               Current sizes in {formCategory}:{" "}
@@ -224,7 +224,7 @@ export default function SizeMaster({ toast }) {
           <div
             style={{
               textAlign: "center",
-              color: "#8a8a8a",
+              color: "#8b90b8",
               padding: 40,
               fontSize: 13,
             }}
@@ -248,13 +248,13 @@ export default function SizeMaster({ toast }) {
                   key={`${r.cat}-${r.size}`}
                   style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
                 >
-                  <td style={{ padding: "12px 14px", color: "#a3a3a3" }}>
+                  <td style={{ padding: "12px 14px", color: "#a9aed3" }}>
                     {r.cat}
                   </td>
                   <td
                     style={{
                       padding: "12px 14px",
-                      color: "#ededed",
+                      color: "#dfe2f4",
                       fontWeight: 500,
                     }}
                   >

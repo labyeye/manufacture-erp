@@ -48,10 +48,10 @@ const ConfirmModal = ({
           width: "100%",
           maxWidth: 440,
           padding: 28,
-          background: "#1a1a1a",
+          background: "#0b0e2d",
           border: "1px solid rgba(255,255,255,0.12)",
           borderRadius: 12,
-          color: "#ffffff",
+          color: "#dfe2f4",
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -61,7 +61,7 @@ const ConfirmModal = ({
               margin: 0,
               fontSize: 17,
               fontWeight: 600,
-              color: "#ffffff",
+              color: "#dfe2f4",
               display: "flex",
               alignItems: "center",
               gap: 8,
@@ -82,7 +82,7 @@ const ConfirmModal = ({
           style={{
             margin: "0 0 24px 0",
             fontSize: 14,
-            color: "#ffffff",
+            color: "#dfe2f4",
             opacity: 0.7,
             lineHeight: 1.6,
             fontWeight: 400,
@@ -99,7 +99,7 @@ const ConfirmModal = ({
               background: "transparent",
               border: "1px solid rgba(255,255,255,0.2)",
               borderRadius: 6,
-              color: "#ffffff",
+              color: "#dfe2f4",
               fontSize: 13,
               fontWeight: 500,
               cursor: "pointer",
@@ -114,7 +114,7 @@ const ConfirmModal = ({
               background: "transparent",
               border: "1px solid rgba(255,255,255,0.2)",
               borderRadius: 6,
-              color: "#ffffff",
+              color: "#dfe2f4",
               fontSize: 13,
               fontWeight: 600,
               cursor: "pointer",

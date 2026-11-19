@@ -528,30 +528,30 @@ export default function Dispatch({
           <title>DC-${d.dispatchId || "NEW"}</title>
           <style>
             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&family=JetBrains+Mono:wght@700&display=swap');
-            body { font-family: 'Inter', sans-serif; padding: 20px 30px; color: #1a1a1a; line-height: 1.4; }
+            body { font-family: 'Inter', sans-serif; padding: 20px 30px; color: #0b0e2d; line-height: 1.4; }
             .header { text-align: center; border-bottom: 2px solid #1e40af; padding-bottom: 10px; margin-bottom: 20px; }
             .header h1 { color: #1e3a8a; margin: 0; font-size: 24px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
-            .header p { margin: 2px 0; font-size: 11px; color: #6b6b6b; font-weight: 500; }
+            .header p { margin: 2px 0; font-size: 11px; color: #6f74a0; font-weight: 500; }
             
             .doc-title { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px; }
-            .doc-title h2 { margin: 0; font-size: 20px; font-weight: 700; color: #1f1f1f; }
+            .doc-title h2 { margin: 0; font-size: 20px; font-weight: 700; color: #101339; }
             .dc-no { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 800; color: #1e40af; margin: 5px 0; }
             
-            .hr { height: 1px; background: #ededed; margin: 15px 0; border: none; }
+            .hr { height: 1px; background: #dfe2f4; margin: 15px 0; border: none; }
             
-            .section-label { font-size: 10px; color: #8a8a8a; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px; background: #f8fafc; padding: 4px 8px; border-radius: 4px; }
+            .section-label { font-size: 10px; color: #8b90b8; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px; background: #f8fafc; padding: 4px 8px; border-radius: 4px; }
             
             .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 20px; }
-            .info-item label { display: block; font-size: 9px; color: #a3a3a3; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
-            .info-item span { font-size: 12px; font-weight: 600; color: #1f1f1f; }
+            .info-item label { display: block; font-size: 9px; color: #a9aed3; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
+            .info-item span { font-size: 12px; font-weight: 600; color: #101339; }
             
             table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-            th { background: #f8fafc; border: 1px solid #ededed; padding: 8px; text-align: left; font-size: 9px; font-weight: 800; text-transform: uppercase; color: #6b6b6b; }
-            td { border: 1px solid #ededed; padding: 8px; font-size: 11px; color: #1f1f1f; }
+            th { background: #f8fafc; border: 1px solid #dfe2f4; padding: 8px; text-align: left; font-size: 9px; font-weight: 800; text-transform: uppercase; color: #6f74a0; }
+            td { border: 1px solid #dfe2f4; padding: 8px; font-size: 11px; color: #101339; }
             .col-qty { text-align: center; font-weight: 700; }
             
             .footer { margin-top: 80px; display: flex; justify-content: space-between; }
-            .signature { border-top: 1px solid #c7c7c7; width: 200px; text-align: center; padding-top: 8px; font-size: 11px; color: #8a8a8a; font-weight: 600; }
+            .signature { border-top: 1px solid #c9cdea; width: 200px; text-align: center; padding-top: 8px; font-size: 11px; color: #8b90b8; font-weight: 600; }
             
             @media print {
               body { padding: 0; }
@@ -569,7 +569,7 @@ export default function Dispatch({
 
           <div class="doc-title">
             <h2>DELIVERY CHALLAN</h2>
-            <div style="font-size: 12px; color: #8a8a8a;">Date: <b>${fd(d.dispatchDate)}</b></div>
+            <div style="font-size: 12px; color: #8b90b8;">Date: <b>${fd(d.dispatchDate)}</b></div>
           </div>
           <div class="dc-no">DC: ${d.dispatchNo || d._id?.slice(-6).toUpperCase() || "NEW"}</div>
           <div class="hr"></div>
@@ -630,7 +630,7 @@ export default function Dispatch({
                   </td>
                   <td>
                     <div>${it.productCode || "—"}</div>
-                    ${it.companyCode ? `<div style="font-size: 9px; color: #666; margin-top: 2px;">Company: ${it.companyCode}</div>` : ""}
+                    ${it.companyCode ? `<div style="font-size: 9px; color: #6f74a0; margin-top: 2px;">Company: ${it.companyCode}</div>` : ""}
                   </td>
                   <td style="text-align: center;">${it.noOfBox > 0 ? it.noOfBox : "—"}</td>
                   <td style="text-align: center;">${it.pcsPerBox > 0 ? it.pcsPerBox : "—"}</td>
@@ -642,7 +642,7 @@ export default function Dispatch({
             </tbody>
           </table>
 
-          <div style="margin-top: 40px; font-size: 10px; color: #8a8a8a;">
+          <div style="margin-top: 40px; font-size: 10px; color: #8b90b8;">
             <b>Declaration:</b> We declare that this challan shows the actual quantity of goods described and that all particulars are true and correct.
           </div>
 
@@ -727,7 +727,7 @@ export default function Dispatch({
                       border: `1.5px solid ${materialType === t.id ? t.color : "rgba(255,255,255,0.1)"}`,
                       background:
                         materialType === t.id ? t.color + "18" : "transparent",
-                      color: materialType === t.id ? t.color : "#888",
+                      color: materialType === t.id ? t.color : "#8b90b8",
                       fontWeight: materialType === t.id ? 700 : 500,
                       fontSize: 12,
                       cursor: "pointer",
@@ -855,7 +855,7 @@ export default function Dispatch({
                 onClick={addItem}
                 style={{
                   background: "rgba(255,255,255,0.08)",
-                  color: "#fff",
+                  color: "#dfe2f4",
                   border: "1px solid rgba(255,255,255,0.18)",
                   borderRadius: 6,
                   padding: "8px 18px",
@@ -1252,7 +1252,7 @@ export default function Dispatch({
                 onClick={() => setReturnItems((prev) => [...prev, blankItem()])}
                 style={{
                   background: "rgba(255,255,255,0.08)",
-                  color: "#fff",
+                  color: "#dfe2f4",
                   border: "1px solid rgba(255,255,255,0.18)",
                   borderRadius: 6,
                   padding: "8px 18px",
@@ -1461,7 +1461,7 @@ export default function Dispatch({
                 }}
                 style={{
                   background: "rgba(255,255,255,0.08)",
-                  color: "#fff",
+                  color: "#dfe2f4",
                   border: "1px solid rgba(255,255,255,0.18)",
                   borderRadius: 6,
                   padding: "10px 24px",
@@ -1642,9 +1642,9 @@ export default function Dispatch({
               onClick={() => setRecordsTab(id)}
               style={{
                 background:
-                  recordsTab === id ? "rgba(200, 149, 90,0.12)" : "transparent",
-                color: recordsTab === id ? "#c8955a" : C.muted,
-                border: `1px solid ${recordsTab === id ? "#c8955a98" : "#2a2a2e"}`,
+                  recordsTab === id ? "rgba(174, 180, 238,0.12)" : "transparent",
+                color: recordsTab === id ? "#aeb4ee" : C.muted,
+                border: `1px solid ${recordsTab === id ? "#c8955a98" : "#161a49"}`,
                 borderRadius: 6,
                 padding: "8px 16px",
                 fontSize: 12,

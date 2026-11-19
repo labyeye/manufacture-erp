@@ -785,36 +785,36 @@ export default function SalesOrders(props) {
           <title>SO-${so.soNo}</title>
           <style>
             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&family=JetBrains+Mono:wght@700&display=swap');
-            body { font-family: 'Inter', sans-serif; padding: 20px 30px; color: #1a1a1a; line-height: 1.4; }
+            body { font-family: 'Inter', sans-serif; padding: 20px 30px; color: #0b0e2d; line-height: 1.4; }
             .header { text-align: center; border-bottom: 2px solid #1e40af; padding-bottom: 10px; margin-bottom: 20px; }
             .header h1 { color: #1e3a8a; margin: 0; font-size: 24px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
-            .header p { margin: 2px 0; font-size: 11px; color: #6b6b6b; font-weight: 500; }
+            .header p { margin: 2px 0; font-size: 11px; color: #6f74a0; font-weight: 500; }
             
             .doc-title { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px; }
-            .doc-title h2 { margin: 0; font-size: 20px; font-weight: 700; color: #1f1f1f; }
+            .doc-title h2 { margin: 0; font-size: 20px; font-weight: 700; color: #101339; }
             .status { color: #1e40af; font-weight: 700; font-size: 12px; }
             
-            .hr { height: 1px; background: #ededed; margin: 10px 0; border: none; }
+            .hr { height: 1px; background: #dfe2f4; margin: 10px 0; border: none; }
             .so-no { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 800; color: #1e40af; margin: 5px 0; }
             
-            .section-label { font-size: 10px; color: #8a8a8a; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 15px; margin-top: 25px; background: #f8fafc; padding: 4px 8px; border-radius: 4px; }
+            .section-label { font-size: 10px; color: #8b90b8; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 15px; margin-top: 25px; background: #f8fafc; padding: 4px 8px; border-radius: 4px; }
             
             .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 15px; }
-            .info-item label { display: block; font-size: 9px; color: #a3a3a3; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
-            .info-item span { font-size: 12px; font-weight: 600; color: #1f1f1f; }
+            .info-item label { display: block; font-size: 9px; color: #a9aed3; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
+            .info-item span { font-size: 12px; font-weight: 600; color: #101339; }
             
             table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-            th { background: #f8fafc; border: 1px solid #ededed; padding: 6px; text-align: left; font-size: 9px; font-weight: 800; text-transform: uppercase; color: #6b6b6b; }
-            td { border: 1px solid #ededed; padding: 6px; font-size: 11px; color: #1f1f1f; }
+            th { background: #f8fafc; border: 1px solid #dfe2f4; padding: 6px; text-align: left; font-size: 9px; font-weight: 800; text-transform: uppercase; color: #6f74a0; }
+            td { border: 1px solid #dfe2f4; padding: 6px; font-size: 11px; color: #101339; }
             .col-qty { text-align: center; }
             .col-amt { text-align: right; font-weight: 700; }
             
             .total-row { display: flex; justify-content: flex-end; margin-top: 25px; }
-            .total-box { display: flex; align-items: center; justify-content: space-between; font-size: 18px; font-weight: 800; color: #1e3a8a; background: #f8fafc; padding: 10px 15px; border-radius: 8px; border: 1px solid #ededed; }
-            .total-box label { font-size: 14px; color: #8a8a8a; font-weight: 700; margin-right: 20px; }
+            .total-box { display: flex; align-items: center; justify-content: space-between; font-size: 18px; font-weight: 800; color: #1e3a8a; background: #f8fafc; padding: 10px 15px; border-radius: 8px; border: 1px solid #dfe2f4; }
+            .total-box label { font-size: 14px; color: #8b90b8; font-weight: 700; margin-right: 20px; }
             
             .footer { margin-top: 60px; display: flex; justify-content: space-between; }
-            .signature { border-top: 1px solid #c7c7c7; width: 180px; text-align: center; padding-top: 8px; font-size: 11px; color: #8a8a8a; font-weight: 600; }
+            .signature { border-top: 1px solid #c9cdea; width: 180px; text-align: center; padding-top: 8px; font-size: 11px; color: #8b90b8; font-weight: 600; }
             
             @media print {
               body { padding: 0; }
@@ -877,7 +877,7 @@ export default function SalesOrders(props) {
                   <td class="col-qty">
                     <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
                       <span>${qfmt(it.orderQty)}</span>
-                      <span style="font-size: 9px; color: #8a8a8a;">${it.qtyUnit || "pcs"}</span>
+                      <span style="font-size: 9px; color: #8b90b8;">${it.qtyUnit || "pcs"}</span>
                     </div>
                   </td>
                   <td style="text-align: right;">₹${afmt(it.price)}</td>
@@ -893,11 +893,11 @@ export default function SalesOrders(props) {
           <div class="total-row">
             <div style="width: 250px;">
               <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; padding: 0 5px;">
-                <label style="color: #8a8a8a; font-weight: 600;">Subtotal:</label>
+                <label style="color: #8b90b8; font-weight: 600;">Subtotal:</label>
                 <span style="font-weight: 700;">₹${afmt(subtotal)}</span>
               </div>
               <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; padding: 0 5px;">
-                <label style="color: #8a8a8a; font-weight: 600;">GST Total:</label>
+                <label style="color: #8b90b8; font-weight: 600;">GST Total:</label>
                 <span style="font-weight: 700;">₹${afmt(totalTax)}</span>
               </div>
               <div class="hr"></div>
@@ -1119,7 +1119,7 @@ export default function SalesOrders(props) {
                   onClick={addItem}
                   style={{
                     background: "rgba(255,255,255,0.08)",
-                    color: "#fff",
+                    color: "#dfe2f4",
                     border: "1px solid rgba(255,255,255,0.18)",
                     borderRadius: 6,
                     padding: "8px 18px",
@@ -1636,7 +1636,7 @@ export default function SalesOrders(props) {
                   }}
                   style={{
                     background: "transparent",
-                    color: "#ffffff",
+                    color: "#dfe2f4",
                     border: "1px solid rgba(255,255,255,0.2)",
                     borderRadius: 6,
                     padding: "6px 12px",
@@ -1975,7 +1975,7 @@ export default function SalesOrders(props) {
                       color: C.muted,
                       padding: 32,
                       fontSize: 13,
-                      background: "#1a1a1a",
+                      background: "#0b0e2d",
                       borderRadius: 10,
                     }}
                   >
@@ -2013,7 +2013,7 @@ export default function SalesOrders(props) {
                           borderRadius: 5,
                           border: "1px solid rgba(255,255,255,0.15)",
                           background: "rgba(255,255,255,0.06)",
-                          color: "#fff",
+                          color: "#dfe2f4",
                           fontSize: 12,
                           fontWeight: 500,
                           cursor: "pointer",
@@ -2158,7 +2158,7 @@ export default function SalesOrders(props) {
                                 style={{
                                   padding: "12px 14px",
                                   fontWeight: 600,
-                                  color: "#c8955a",
+                                  color: "#aeb4ee",
                                   whiteSpace: "nowrap",
                                 }}
                               >

@@ -606,7 +606,7 @@ export function GlobalSearch({
               fontSize: 32,
               marginBottom: 8,
               display: "block",
-              color: "#444",
+              color: "#3a3f78",
             }}
           />
           <div>Start typing to search across all modules</div>

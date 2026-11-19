@@ -56,10 +56,10 @@ const ACTION_META = {
 const ALL_ACTIONS = ["All", ...Object.keys(ACTION_META)];
 
 const inputStyle = {
-  background: "#141414",
-  border: "1px solid #2a2a2a",
+  background: "#05071a",
+  border: "1px solid #161a49",
   borderRadius: 6,
-  color: "#e0e0e0",
+  color: "#dfe2f4",
   fontSize: 12,
   padding: "7px 10px",
   outline: "none",
@@ -68,7 +68,7 @@ const inputStyle = {
 function Badge({ action }) {
   const meta = ACTION_META[action] || {
     label: action,
-    color: "#888",
+    color: "#8b90b8",
     bg: "#88881a",
     icon: "•",
   };
@@ -156,7 +156,7 @@ function DetailsPanel({ details }) {
         marginTop: 6,
         padding: "8px 10px",
         background: "#0a0a0a",
-        border: "1px solid #222",
+        border: "1px solid #101339",
         borderRadius: 6,
         fontSize: 11,
       }}
@@ -165,7 +165,7 @@ function DetailsPanel({ details }) {
         <div key={k} style={{ display: "flex", gap: 8, marginBottom: 3 }}>
           <span
             style={{
-              color: "#555",
+              color: "#6f74a0",
               minWidth: 80,
               fontWeight: 600,
               fontSize: 10,
@@ -173,7 +173,7 @@ function DetailsPanel({ details }) {
           >
             {k}
           </span>
-          <span style={{ color: "#aaa", wordBreak: "break-all" }}>
+          <span style={{ color: "#a9aed3", wordBreak: "break-all" }}>
             {typeof v === "object" ? (
               <span style={{ fontSize: 10, color: "#777" }}>
                 {Object.entries(v)
@@ -217,10 +217,10 @@ function LogRow({ log, i, expanded, onToggle }) {
         }
       >
         <td
-          style={{ padding: "12px 14px", color: "#666", whiteSpace: "nowrap" }}
+          style={{ padding: "12px 14px", color: "#6f74a0", whiteSpace: "nowrap" }}
         >
           <div style={{ color: "#777" }}>{formatTs(log.timestamp)}</div>
-          <div style={{ fontSize: 10, color: "#444", marginTop: 1 }}>
+          <div style={{ fontSize: 10, color: "#3a3f78", marginTop: 1 }}>
             {timeAgo(log.timestamp)}
           </div>
         </td>
@@ -232,15 +232,15 @@ function LogRow({ log, i, expanded, onToggle }) {
         </td>
         <td style={{ padding: "12px 14px" }}>
           {log.entityName ? (
-            <span style={{ color: "#e0e0e0" }}>{log.entityName}</span>
+            <span style={{ color: "#dfe2f4" }}>{log.entityName}</span>
           ) : (
-            <span style={{ color: "#444" }}>—</span>
+            <span style={{ color: "#3a3f78" }}>—</span>
           )}
           {log.entityId && (
             <div
               style={{
                 fontSize: 10,
-                color: "#444",
+                color: "#3a3f78",
                 marginTop: 1,
               }}
             >
@@ -249,13 +249,13 @@ function LogRow({ log, i, expanded, onToggle }) {
           )}
         </td>
         <td style={{ padding: "12px 14px" }}>
-          <span style={{ color: "#e0e0e0", fontWeight: 600 }}>
+          <span style={{ color: "#dfe2f4", fontWeight: 600 }}>
             {log.performedByName || log.performedBy?.name || (
-              <span style={{ color: "#444" }}>System</span>
+              <span style={{ color: "#3a3f78" }}>System</span>
             )}
           </span>
           {log.performedBy?.username && (
-            <div style={{ fontSize: 10, color: "#555" }}>
+            <div style={{ fontSize: 10, color: "#6f74a0" }}>
               @{log.performedBy.username}
             </div>
           )}
@@ -268,21 +268,21 @@ function LogRow({ log, i, expanded, onToggle }) {
                 padding: "2px 6px",
                 borderRadius: 3,
                 background: "#ffffff0d",
-                color: "#888",
+                color: "#8b90b8",
                 fontWeight: 600,
-                border: "1px solid #2a2a2a",
+                border: "1px solid #161a49",
               }}
             >
               {log.performedByRole}
             </span>
           ) : (
-            <span style={{ color: "#444" }}>—</span>
+            <span style={{ color: "#3a3f78" }}>—</span>
           )}
         </td>
         <td
           style={{
             padding: "12px 14px",
-            color: "#444",
+            color: "#3a3f78",
             fontSize: 11,
           }}
         >
@@ -441,7 +441,7 @@ export default function ERPConsole({ toast, session }) {
         height: "100%",
         display: "flex",
         flexDirection: "column",
-        background: "#0d0d0d",
+        background: "#05071a",
         overflow: "hidden",
       }}
     >
@@ -487,7 +487,7 @@ export default function ERPConsole({ toast, session }) {
                 className="po-tbtn"
                 style={{
                   ...toolbarBtn,
-                  color: autoRefresh ? "#6ee7b7" : "#ededed",
+                  color: autoRefresh ? "#6ee7b7" : "#dfe2f4",
                   borderColor: autoRefresh
                     ? "rgba(16,185,129,0.30)"
                     : "rgba(255,255,255,0.08)",
@@ -580,17 +580,17 @@ export default function ERPConsole({ toast, session }) {
       {/* Log table */}
       <div style={{ flex: 1, overflowY: "auto", padding: "0 24px 16px" }}>
         {loading && logs.length === 0 ? (
-          <div style={{ padding: 40, textAlign: "center", color: "#444" }}>
+          <div style={{ padding: 40, textAlign: "center", color: "#3a3f78" }}>
             Loading logs…
           </div>
         ) : logs.length === 0 ? (
-          <div style={{ padding: 40, textAlign: "center", color: "#444" }}>
+          <div style={{ padding: 40, textAlign: "center", color: "#3a3f78" }}>
             <i
               className="fa-solid fa-inbox"
               style={{
                 fontSize: 32,
                 marginBottom: 8,
-                color: "#444",
+                color: "#3a3f78",
                 display: "block",
               }}
             />
@@ -615,7 +615,7 @@ export default function ERPConsole({ toast, session }) {
               <thead>
                 <tr
                   style={{
-                    background: "#131313",
+                    background: "#070924",
                     borderBottom: "1px solid rgba(255,255,255,0.08)",
                     position: "sticky",
                     top: 0,
@@ -637,7 +637,7 @@ export default function ERPConsole({ toast, session }) {
                       style={{
                         padding: "10px 14px",
                         textAlign: "left",
-                        color: "#8a8a8a",
+                        color: "#8b90b8",
                         fontWeight: 600,
                         fontSize: 11,
                         whiteSpace: "nowrap",
@@ -673,7 +673,7 @@ export default function ERPConsole({ toast, session }) {
             display: "flex",
             gap: 6,
             padding: "10px 24px",
-            borderTop: "1px solid #1a1a1a",
+            borderTop: "1px solid #0b0e2d",
             alignItems: "center",
             flexShrink: 0,
           }}
@@ -698,7 +698,7 @@ export default function ERPConsole({ toast, session }) {
           >
             ‹
           </button>
-          <span style={{ fontSize: 11, color: "#666", padding: "0 8px" }}>
+          <span style={{ fontSize: 11, color: "#6f74a0", padding: "0 8px" }}>
             Page {page} of {totalPages} &nbsp;·&nbsp; {total} events
           </span>
           <button
@@ -728,10 +728,10 @@ export default function ERPConsole({ toast, session }) {
 }
 
 const paginationBtn = {
-  background: "#1a1a1a",
+  background: "#0b0e2d",
   border: "1px solid rgba(255,255,255,0.08)",
   borderRadius: 8,
-  color: "#ededed",
+  color: "#dfe2f4",
   fontSize: 13,
   padding: "6px 12px",
   cursor: "pointer",

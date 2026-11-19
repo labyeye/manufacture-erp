@@ -118,7 +118,7 @@ export default function ProductionUpdate({
         jo.stageTotalMap?.[stage] ??
         recs.reduce((x, h) => x + (+h.qtyCompleted || 0), 0);
       const rejected = recs.reduce((x, h) => x + (+h.qtyRejected || 0), 0);
-      const unit = isFormation ? "pcs" : isSheet ? "sheets" : "kg";
+      const unit = isFormation ? "pcs" : "kg";
       let state = "Pending";
       if (target > 0 && done >= target) state = "Completed";
       else if (done > 0) state = "In Progress";
@@ -241,8 +241,11 @@ export default function ProductionUpdate({
       fetchJobOrders();
     } catch (error) {
       console.error("Production update error:", error);
+      const data = error.response?.data;
       toast(
-        error.response?.data?.error || "Failed to update production",
+        data?.error
+          ? `${data.error}${data.details ? `: ${data.details}` : ""}`
+          : "Failed to update production",
         "error",
       );
     }
@@ -408,692 +411,716 @@ export default function ProductionUpdate({
         </div>
       )}
 
-
       {showEntryModal && (
         <Modal
-          title={editingEntry ? "Edit Production Record" : "New Production Update"}
+          title={
+            editingEntry ? "Edit Production Record" : "New Production Update"
+          }
           onClose={closeEntryModal}
         >
-        <div>
-          <Card style={{ marginBottom: 16 }}>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(5, 1fr)",
-                gap: 14,
-                marginBottom: 14,
-              }}
-            >
-              <Field label="JOB ORDER *">
-                <select
-                  value={entry.joNo}
-                  onChange={(e) => setField("joNo", e.target.value)}
-                  style={E("joNo")}
-                >
-                  <option value="">-- Select Job Order --</option>
-                  {activeJOs.map((jo) => (
-                    <option key={jo.joNo} value={jo.joNo}>
-                      {jo.joNo} — {jo.companyName}
-                    </option>
-                  ))}
-                </select>
-                {EMsg("joNo")}
-              </Field>
-
-              <Field label="ITEM NAME">
-                <div style={readonlyStyle}>{selectedJO?.itemName || "—"}</div>
-              </Field>
-
-              <Field label="CURRENT STAGE">
-                <div style={readonlyStyle}>
-                  {selectedJO?.currentStage || "Not Started"}
-                </div>
-              </Field>
-
-              <Field label="ORDER QUANTITY">
-                <div style={readonlyStyle}>{selectedJO?.orderQty || 0}</div>
-              </Field>
-
-              <Field label="# OF SHEETS">
-                <div style={readonlyStyle}>
-                  {selectedJO?.paperCategory?.toLowerCase().includes("sheet")
-                    ? `Paper 1: ${selectedJO?.noOfSheets || 0}`
-                    : `${selectedJO?.orderQty || 0} pcs`}
-                </div>
-              </Field>
-
-              <Field label="PRODUCTION STAGE *">
-                <select
-                  value={entry.productionStage}
-                  onChange={(e) => setField("productionStage", e.target.value)}
-                  style={E("productionStage")}
-                >
-                  <option value="">-- Select Stage --</option>
-                  {(
-                    selectedJO?.process || [
-                      "Printing",
-                      "Varnish",
-                      "Lamination",
-                      "Die Cutting",
-                      "Formation",
-                      "Manual Formation",
-                    ]
-                  ).map((s, idx, arr) => {
-                    const isFormation = s.includes("Formation");
-                    const isSheet = (selectedJO?.paperCategory || "")
-                      .toLowerCase()
-                      .includes("sheet");
-
-                    let target = 0;
-                    if (isFormation) {
-                      target = selectedJO?.orderQty || 0;
-                    } else if (idx === 0) {
-                      target = isSheet
-                        ? selectedJO?.noOfSheets || 0
-                        : selectedJO?.reelWeightKg || 0;
-                    } else {
-                      const prevS = arr[idx - 1];
-                      target = selectedJO?.stageQtyMap?.[prevS] || 0;
-                    }
-
-                    const done = selectedJO?.stageTotalMap?.[s] || 0;
-                    const unit = isFormation ? " pcs" : isSheet ? "" : " kg";
-
-                    let disabled = false;
-                    for (let i = 0; i < idx; i++) {
-                      const prevS = arr[i];
-                      const prevDone = selectedJO?.stageTotalMap?.[prevS] || 0;
-
-                      let prevTarget = 0;
-                      if (prevS.includes("Formation")) {
-                        prevTarget = selectedJO?.orderQty || 0;
-                      } else if (i === 0) {
-                        prevTarget = isSheet
-                          ? selectedJO?.noOfSheets || 0
-                          : selectedJO?.reelWeightKg || 0;
-                      } else {
-                        const beforePrevS = arr[i - 1];
-                        prevTarget =
-                          selectedJO?.stageQtyMap?.[beforePrevS] || 0;
-                      }
-
-                      if (prevTarget <= 0 || prevDone < prevTarget) {
-                        disabled = true;
-                        break;
-                      }
-                    }
-
-                    if (
-                      !disabled &&
-                      target > 0 &&
-                      done >= target &&
-                      (!editingEntry || entry.productionStage !== s)
-                    ) {
-                      disabled = true;
-                    }
-
-                    return (
-                      <option key={s} value={s} disabled={disabled}>
-                        {s} ({done}/{target}
-                        {unit}) {disabled ? " (locked)" : ""}
-                      </option>
-                    );
-                  })}
-                </select>
-                {EMsg("productionStage")}
-
-                {entry.productionStage && selectedJO && (
-                  <div
-                    style={{
-                      fontSize: 10,
-                      color: C.muted,
-                      marginTop: 4,
-                      fontWeight: 500,
-                    }}
+          <div>
+            <Card style={{ marginBottom: 16 }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(5, 1fr)",
+                  gap: 14,
+                  marginBottom: 14,
+                }}
+              >
+                <Field label="JOB ORDER *">
+                  <select
+                    value={entry.joNo}
+                    onChange={(e) => setField("joNo", e.target.value)}
+                    style={E("joNo")}
                   >
-                    {(() => {
-                      const s = entry.productionStage;
-                      const procArr = selectedJO.process || [];
-                      const sIdx = procArr.indexOf(s);
+                    <option value="">-- Select Job Order --</option>
+                    {activeJOs.map((jo) => (
+                      <option key={jo.joNo} value={jo.joNo}>
+                        {jo.joNo} — {jo.companyName}
+                      </option>
+                    ))}
+                  </select>
+                  {EMsg("joNo")}
+                </Field>
+
+                <Field label="ITEM NAME">
+                  <div style={readonlyStyle}>{selectedJO?.itemName || "—"}</div>
+                </Field>
+
+                <Field label="CURRENT STAGE">
+                  <div style={readonlyStyle}>
+                    {selectedJO?.currentStage || "Not Started"}
+                  </div>
+                </Field>
+
+                <Field label="ORDER QUANTITY">
+                  <div style={readonlyStyle}>{selectedJO?.orderQty || 0}</div>
+                </Field>
+
+                <Field label="# OF SHEETS">
+                  <div style={readonlyStyle}>
+                    {selectedJO?.paperCategory?.toLowerCase().includes("sheet")
+                      ? `Paper 1: ${selectedJO?.noOfSheets || 0}`
+                      : `${selectedJO?.orderQty || 0} pcs`}
+                  </div>
+                </Field>
+
+                <Field label="PRODUCTION STAGE *">
+                  <select
+                    value={entry.productionStage}
+                    onChange={(e) =>
+                      setField("productionStage", e.target.value)
+                    }
+                    style={E("productionStage")}
+                  >
+                    <option value="">-- Select Stage --</option>
+                    {(
+                      selectedJO?.process || [
+                        "Printing",
+                        "Varnish",
+                        "Lamination",
+                        "Die Cutting",
+                        "Formation",
+                        "Manual Formation",
+                      ]
+                    ).map((s, idx, arr) => {
                       const isFormation = s.includes("Formation");
-                      const isSheet = (selectedJO.paperCategory || "")
+                      const isSheet = (selectedJO?.paperCategory || "")
                         .toLowerCase()
                         .includes("sheet");
 
                       let target = 0;
                       if (isFormation) {
-                        target = selectedJO.orderQty || 0;
-                      } else if (sIdx === 0) {
+                        target = selectedJO?.orderQty || 0;
+                      } else if (idx === 0) {
                         target = isSheet
-                          ? selectedJO.noOfSheets || 0
-                          : selectedJO.reelWeightKg || 0;
+                          ? selectedJO?.noOfSheets || 0
+                          : selectedJO?.reelWeightKg || 0;
                       } else {
-                        const prevS = procArr[sIdx - 1];
-                        target = selectedJO.stageQtyMap?.[prevS] || 0;
+                        const prevS = arr[idx - 1];
+                        target = selectedJO?.stageQtyMap?.[prevS] || 0;
                       }
 
-                      const done = selectedJO.stageTotalMap?.[s] || 0;
-                      const remain = Math.max(0, target - done);
-                      const unit = isFormation
-                        ? " pcs"
-                        : isSheet
-                          ? " sheets"
-                          : " kg";
-                      return (
-                        <span>
-                          {s}: <b style={{ color: C.yellow }}>{done}</b> /{" "}
-                          {target} filled -{" "}
-                          <b style={{ color: C.red }}>{remain}</b> remaining
-                        </span>
-                      );
-                    })()}
-                  </div>
-                )}
-              </Field>
-            </div>
+                      const done = selectedJO?.stageTotalMap?.[s] || 0;
+                      const unit = isFormation ? " pcs" : " kg";
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(5, 1fr)",
-                gap: 14,
-                marginBottom: 14,
-              }}
-            >
-              <Field label="OPERATOR / WORKER *">
-                {isOperator ? (
-                  <div
-                    style={{
-                      padding: "9px 12px",
-                      background: "transparent",
-                      border: "1px solid rgba(255,255,255,0.1)",
-                      borderRadius: 6,
-                      fontSize: 13,
-                      color: "#e0e0e0",
-                      fontWeight: 600,
-                    }}
-                  >
-                    {entry.operator || session?.username || "—"}
-                  </div>
-                ) : (
-                  <select
-                    value={entry.operator}
-                    onChange={(e) => setField("operator", e.target.value)}
-                    style={E("operator")}
-                  >
-                    <option value="">-- Select Operator --</option>
-                    {operatorMaster
-                      .filter((op) => op.isActive !== false)
-                      .map((op) => (
-                        <option key={op._id} value={op.name}>
-                          {op.name}
-                        </option>
-                      ))}
-                  </select>
-                )}
-                {EMsg("operator")}
-              </Field>
+                      let disabled = false;
+                      for (let i = 0; i < idx; i++) {
+                        const prevS = arr[i];
+                        const prevDone =
+                          selectedJO?.stageTotalMap?.[prevS] || 0;
 
-              <Field label="MACHINE">
-                <select
-                  value={entry.machineId}
-                  onChange={(e) => setField("machineId", e.target.value)}
-                >
-                  <option value="">-- Select Machine --</option>
-                  {machineMaster.map((m) => (
-                    <option key={m._id} value={m._id}>
-                      {m.name} ({m.type})
-                    </option>
-                  ))}
-                </select>
-              </Field>
+                        let prevTarget = 0;
+                        if (prevS.includes("Formation")) {
+                          prevTarget = selectedJO?.orderQty || 0;
+                        } else if (i === 0) {
+                          prevTarget = isSheet
+                            ? selectedJO?.noOfSheets || 0
+                            : selectedJO?.reelWeightKg || 0;
+                        } else {
+                          const beforePrevS = arr[i - 1];
+                          prevTarget =
+                            selectedJO?.stageQtyMap?.[beforePrevS] || 0;
+                        }
 
-              <Field label="DATE *">
-                <DatePicker
-                  value={entry.date}
-                  onChange={(v) => setField("date", v)}
-                  style={E("date")}
-                />
-                {EMsg("date")}
-              </Field>
-
-              <Field label="QTY COMPLETED *">
-                <input
-                  type="number"
-                  placeholder="Qty done"
-                  max={stageTargetLogic.remain}
-                  value={entry.qtyCompleted}
-                  onChange={(e) => {
-                    const val = Number(e.target.value);
-                    const remain = stageTargetLogic.remain;
-                    if (val > remain) {
-                      toast(
-                        `Cannot exceed remaining target (${remain})`,
-                        "error",
-                      );
-                      return;
-                    }
-
-                    setEntry((prev) => {
-                      const updated = { ...prev, qtyCompleted: e.target.value };
-
-                      if (val === remain) {
-                        updated.qtyRejected = 0;
-                      } else {
-                        const currentRej = Number(prev.qtyRejected || 0);
-                        if (val + currentRej > remain) {
-                          updated.qtyRejected = remain - val;
+                        if (prevTarget <= 0 || prevDone < prevTarget) {
+                          disabled = true;
+                          break;
                         }
                       }
-                      return updated;
-                    });
-                  }}
-                  style={E("qtyCompleted")}
+
+                      if (
+                        !disabled &&
+                        target > 0 &&
+                        done >= target &&
+                        (!editingEntry || entry.productionStage !== s)
+                      ) {
+                        disabled = true;
+                      }
+
+                      return (
+                        <option key={s} value={s} disabled={disabled}>
+                          {s} ({done}/{target}
+                          {unit}) {disabled ? " (locked)" : ""}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  {EMsg("productionStage")}
+
+                  {entry.productionStage && selectedJO && (
+                    <div
+                      style={{
+                        fontSize: 10,
+                        color: C.muted,
+                        marginTop: 4,
+                        fontWeight: 500,
+                      }}
+                    >
+                      {(() => {
+                        const s = entry.productionStage;
+                        const procArr = selectedJO.process || [];
+                        const sIdx = procArr.indexOf(s);
+                        const isFormation = s.includes("Formation");
+                        const isSheet = (selectedJO.paperCategory || "")
+                          .toLowerCase()
+                          .includes("sheet");
+
+                        let target = 0;
+                        if (isFormation) {
+                          target = selectedJO.orderQty || 0;
+                        } else if (sIdx === 0) {
+                          target = isSheet
+                            ? selectedJO.noOfSheets || 0
+                            : selectedJO.reelWeightKg || 0;
+                        } else {
+                          const prevS = procArr[sIdx - 1];
+                          target = selectedJO.stageQtyMap?.[prevS] || 0;
+                        }
+
+                        const done = selectedJO.stageTotalMap?.[s] || 0;
+                        const remain = Math.max(0, target - done);
+                        const unit = isFormation ? " pcs" : " kg";
+                        return (
+                          <span>
+                            {s}: <b style={{ color: C.yellow }}>{done}</b> /{" "}
+                            {target}
+                            {unit} filled -{" "}
+                            <b style={{ color: C.red }}>{remain}</b>
+                            {unit} remaining
+                          </span>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </Field>
+              </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(5, 1fr)",
+                  gap: 14,
+                  marginBottom: 14,
+                }}
+              >
+                <Field label="OPERATOR / WORKER *">
+                  {isOperator ? (
+                    <div
+                      style={{
+                        padding: "9px 12px",
+                        background: "transparent",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        borderRadius: 6,
+                        fontSize: 13,
+                        color: "#dfe2f4",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {entry.operator || session?.username || "—"}
+                    </div>
+                  ) : (
+                    <select
+                      value={entry.operator}
+                      onChange={(e) => setField("operator", e.target.value)}
+                      style={E("operator")}
+                    >
+                      <option value="">-- Select Operator --</option>
+                      {operatorMaster
+                        .filter((op) => op.isActive !== false)
+                        .map((op) => (
+                          <option key={op._id} value={op.name}>
+                            {op.name}
+                          </option>
+                        ))}
+                    </select>
+                  )}
+                  {EMsg("operator")}
+                </Field>
+
+                <Field label="MACHINE">
+                  <select
+                    value={entry.machineId}
+                    onChange={(e) => setField("machineId", e.target.value)}
+                  >
+                    <option value="">-- Select Machine --</option>
+                    {machineMaster.map((m) => (
+                      <option key={m._id} value={m._id}>
+                        {m.name} ({m.type})
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+
+                <Field label="DATE *">
+                  <DatePicker
+                    value={entry.date}
+                    onChange={(v) => setField("date", v)}
+                    style={E("date")}
+                  />
+                  {EMsg("date")}
+                </Field>
+
+                <Field
+                  label={`QTY COMPLETED (${(entry.productionStage || "").includes("Formation") ? "PCS" : "KG"}) *`}
+                >
+                  <input
+                    type="number"
+                    placeholder="Qty done"
+                    max={stageTargetLogic.remain}
+                    value={entry.qtyCompleted}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      const remain = stageTargetLogic.remain;
+                      if (val > remain) {
+                        toast(
+                          `Cannot exceed remaining target (${remain})`,
+                          "error",
+                        );
+                        return;
+                      }
+
+                      setEntry((prev) => {
+                        const updated = {
+                          ...prev,
+                          qtyCompleted: e.target.value,
+                        };
+
+                        if (val === remain) {
+                          updated.qtyRejected = 0;
+                        } else {
+                          const currentRej = Number(prev.qtyRejected || 0);
+                          if (val + currentRej > remain) {
+                            updated.qtyRejected = remain - val;
+                          }
+                        }
+                        return updated;
+                      });
+                    }}
+                    style={E("qtyCompleted")}
+                  />
+                  {EMsg("qtyCompleted")}
+                  {(entry.productionStage || "").includes("Formation") ? (
+                    <div
+                      style={{
+                        fontSize: 11,
+                        color: "#a9aed3",
+                        marginTop: 4,
+                        fontWeight: 500,
+                      }}
+                    >
+                      Done:{" "}
+                      <b style={{ color: "#86b894" }}>
+                        {fmt(stageTargetLogic.target - stageTargetLogic.remain)}{" "}
+                        pcs
+                      </b>
+                      {" · "}Left:{" "}
+                      <b style={{ color: "#e0a84f" }}>
+                        {fmt(stageTargetLogic.remain)} pcs
+                      </b>
+                    </div>
+                  ) : (
+                    availableQty !== null && (
+                      <div
+                        style={{
+                          fontSize: 10,
+                          color: C.blue,
+                          marginTop: 4,
+                          fontWeight: 500,
+                        }}
+                      >
+                        Available: {availableQty}
+                      </div>
+                    )
+                  )}
+                </Field>
+
+                <Field label="QTY REJECTED">
+                  <input
+                    type="number"
+                    placeholder="0"
+                    value={entry.qtyRejected}
+                    disabled={
+                      Number(entry.qtyCompleted) === stageTargetLogic.remain
+                    }
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      const comp = Number(entry.qtyCompleted || 0);
+                      const remain = stageTargetLogic.remain;
+
+                      if (comp + val > remain) {
+                        const maxAllowed = remain - comp;
+                        toast(
+                          `Total (Completed + Rejected) cannot exceed ${remain}. Max rejection allowed: ${maxAllowed}`,
+                          "error",
+                        );
+                        setField("qtyRejected", maxAllowed);
+                        return;
+                      }
+                      setField("qtyRejected", e.target.value);
+                    }}
+                  />
+                </Field>
+
+                <Field label="SHIFT">
+                  <select
+                    value={entry.shift}
+                    onChange={(e) => setField("shift", e.target.value)}
+                  >
+                    <option value="">-- Shift --</option>
+                    {SHIFTS.map((s) => (
+                      <option key={s}>{s}</option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="REMARKS">
+                  <input
+                    placeholder="Issues, observations, notes"
+                    value={entry.remarks}
+                    onChange={(e) => setField("remarks", e.target.value)}
+                  />
+                </Field>
+              </div>
+              <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
+                <SubmitBtn
+                  label={
+                    fetching
+                      ? "Saving..."
+                      : editingEntry
+                        ? "Update Record"
+                        : "Add Record"
+                  }
+                  color="#FF7F11"
+                  onClick={submit}
+                  disabled={fetching}
                 />
-                {EMsg("qtyCompleted")}
-                {availableQty !== null && (
-                  <div
+                {
+                  <button
+                    onClick={closeEntryModal}
                     style={{
-                      fontSize: 10,
-                      color: C.blue,
-                      marginTop: 4,
+                      padding: "10px 20px",
+                      borderRadius: 6,
+                      border: `1px solid ${C.border}`,
+                      background: "transparent",
+                      color: C.muted,
                       fontWeight: 500,
+                      fontSize: 13,
+                      cursor: "pointer",
                     }}
                   >
-                    Available: {availableQty}
-                  </div>
-                )}
-              </Field>
-
-              <Field label="QTY REJECTED">
-                <input
-                  type="number"
-                  placeholder="0"
-                  value={entry.qtyRejected}
-                  disabled={
-                    Number(entry.qtyCompleted) === stageTargetLogic.remain
-                  }
-                  onChange={(e) => {
-                    const val = Number(e.target.value);
-                    const comp = Number(entry.qtyCompleted || 0);
-                    const remain = stageTargetLogic.remain;
-
-                    if (comp + val > remain) {
-                      const maxAllowed = remain - comp;
-                      toast(
-                        `Total (Completed + Rejected) cannot exceed ${remain}. Max rejection allowed: ${maxAllowed}`,
-                        "error",
-                      );
-                      setField("qtyRejected", maxAllowed);
-                      return;
-                    }
-                    setField("qtyRejected", e.target.value);
-                  }}
-                />
-              </Field>
-
-              <Field label="SHIFT">
-                <select
-                  value={entry.shift}
-                  onChange={(e) => setField("shift", e.target.value)}
-                >
-                  <option value="">-- Shift --</option>
-                  {SHIFTS.map((s) => (
-                    <option key={s}>{s}</option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="REMARKS">
-                <input
-                  placeholder="Issues, observations, notes"
-                  value={entry.remarks}
-                  onChange={(e) => setField("remarks", e.target.value)}
-                />
-              </Field>
-            </div>
-            <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
-              <SubmitBtn
-                label={
-                  fetching
-                    ? "Saving..."
-                    : editingEntry
-                      ? "Update Record"
-                      : "Add Record"
+                    Cancel
+                  </button>
                 }
-                color="#FF7F11"
-                onClick={submit}
-                disabled={fetching}
-              />
-              {(
-                <button
-                  onClick={closeEntryModal}
-                  style={{
-                    padding: "10px 20px",
-                    borderRadius: 6,
-                    border: `1px solid ${C.border}`,
-                    background: "transparent",
-                    color: C.muted,
-                    fontWeight: 500,
-                    fontSize: 13,
-                    cursor: "pointer",
-                  }}
-                >
-                  Cancel
-                </button>
-              )}
-            </div>
-          </Card>
-        </div>
+              </div>
+            </Card>
+          </div>
         </Modal>
       )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          {(() => {
-            const allRecs = [];
-            jobOrders.forEach((jo) => {
-              if (searchTerm) {
-                const q = searchTerm.toLowerCase();
-                const hay = `${jo.joNo} ${jo.companyName} ${jo.itemName}`.toLowerCase();
-                if (!hay.includes(q)) return;
-              }
-              if (filterClient && (jo.companyName || "") !== filterClient)
-                return;
-              if (filterItem && (jo.itemName || "") !== filterItem) return;
-              (jo.stageHistory || []).forEach((r) => {
-                if (dateFrom && r.date < dateFrom) return;
-                if (dateTo && r.date > dateTo) return;
-                if (filterStage && r.stage !== filterStage) return;
-                allRecs.push({ ...r, jo });
-              });
+        {(() => {
+          const allRecs = [];
+          jobOrders.forEach((jo) => {
+            if (searchTerm) {
+              const q = searchTerm.toLowerCase();
+              const hay =
+                `${jo.joNo} ${jo.companyName} ${jo.itemName}`.toLowerCase();
+              if (!hay.includes(q)) return;
+            }
+            if (filterClient && (jo.companyName || "") !== filterClient) return;
+            if (filterItem && (jo.itemName || "") !== filterItem) return;
+            (jo.stageHistory || []).forEach((r) => {
+              if (dateFrom && r.date < dateFrom) return;
+              if (dateTo && r.date > dateTo) return;
+              if (filterStage && r.stage !== filterStage) return;
+              allRecs.push({ ...r, jo });
             });
-            const ts = (r) =>
-              new Date(r.createdAt || r.enteredAt || r.date || 0).getTime();
-            const sorters = {
-              newest: (a, b) => ts(b) - ts(a),
-              oldest: (a, b) => ts(a) - ts(b),
-              done_desc: (a, b) =>
-                (+b.qtyCompleted || 0) - (+a.qtyCompleted || 0),
-              done_asc: (a, b) =>
-                (+a.qtyCompleted || 0) - (+b.qtyCompleted || 0),
-              rej_desc: (a, b) => (+b.qtyRejected || 0) - (+a.qtyRejected || 0),
-              jo_asc: (a, b) =>
-                (a.jo.joNo || "").localeCompare(b.jo.joNo || "", undefined, {
-                  numeric: true,
-                }),
-              client_asc: (a, b) =>
-                (a.jo.companyName || "").localeCompare(b.jo.companyName || ""),
-            };
-            allRecs.sort(sorters[sortBy] || sorters.newest);
+          });
+          const ts = (r) =>
+            new Date(r.createdAt || r.enteredAt || r.date || 0).getTime();
+          const sorters = {
+            newest: (a, b) => ts(b) - ts(a),
+            oldest: (a, b) => ts(a) - ts(b),
+            done_desc: (a, b) =>
+              (+b.qtyCompleted || 0) - (+a.qtyCompleted || 0),
+            done_asc: (a, b) => (+a.qtyCompleted || 0) - (+b.qtyCompleted || 0),
+            rej_desc: (a, b) => (+b.qtyRejected || 0) - (+a.qtyRejected || 0),
+            jo_asc: (a, b) =>
+              (a.jo.joNo || "").localeCompare(b.jo.joNo || "", undefined, {
+                numeric: true,
+              }),
+            client_asc: (a, b) =>
+              (a.jo.companyName || "").localeCompare(b.jo.companyName || ""),
+          };
+          allRecs.sort(sorters[sortBy] || sorters.newest);
 
-            const totalDone = allRecs.reduce(
-              (s, r) => s + +(r.qtyCompleted || 0),
-              0,
-            );
-            const totalRejected = allRecs.reduce(
-              (s, r) => s + +(r.qtyRejected || 0),
-              0,
-            );
-            const uniqueJOs = new Set(allRecs.map((r) => r.jo.joNo)).size;
-            const statCards = [
-              {
-                label: "Total Records",
-                value: allRecs.length,
-                icon: "fa-solid fa-clipboard-list",
-              },
-              {
-                label: "Unique JOs",
-                value: uniqueJOs,
-                icon: "fa-solid fa-gears",
-              },
-              {
-                label: "Total Done",
-                value: fmt(totalDone),
-                icon: "fa-solid fa-circle-check",
-              },
-              {
-                label: "Total Rejected",
-                value: fmt(totalRejected),
-                icon: "fa-solid fa-circle-xmark",
-              },
-            ];
-            return (
-              <>
+          const totalDone = allRecs.reduce(
+            (s, r) => s + +(r.qtyCompleted || 0),
+            0,
+          );
+          const totalRejected = allRecs.reduce(
+            (s, r) => s + +(r.qtyRejected || 0),
+            0,
+          );
+          const uniqueJOs = new Set(allRecs.map((r) => r.jo.joNo)).size;
+          const statCards = [
+            {
+              label: "Total Records",
+              value: allRecs.length,
+              icon: "fa-solid fa-clipboard-list",
+            },
+            {
+              label: "Unique JOs",
+              value: uniqueJOs,
+              icon: "fa-solid fa-gears",
+            },
+            {
+              label: "Total Done",
+              value: fmt(totalDone),
+              icon: "fa-solid fa-circle-check",
+            },
+            {
+              label: "Total Rejected",
+              value: fmt(totalRejected),
+              icon: "fa-solid fa-circle-xmark",
+            },
+          ];
+          return (
+            <>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                  gap: 12,
+                  marginBottom: 16,
+                }}
+              >
+                {statCards.map(({ label, value, icon }) => (
+                  <StatCard
+                    key={label}
+                    label={label}
+                    value={value}
+                    icon={icon}
+                  />
+                ))}
+              </div>
+
+              <ListToolbar
+                search={searchTerm}
+                setSearch={setSearchTerm}
+                placeholder="Search JO, client, item..."
+                count={allRecs.length}
+                filterCount={activeFilterCount}
+                onFilter={() => setShowFilterModal(true)}
+                exportOptions={
+                  canExportImport
+                    ? [
+                        {
+                          label: "Excel",
+                          icon: "fa-solid fa-file-excel",
+                          onClick: () =>
+                            toast("Excel Export coming soon...", "info"),
+                        },
+                      ]
+                    : []
+                }
+                onAdd={() => {
+                  setEditingEntry(null);
+                  setEntry(blankEntry);
+                  setErrors({});
+                  setShowEntryModal(true);
+                }}
+              />
+
+              {allRecs.length === 0 ? (
+                <div
+                  style={{ textAlign: "center", color: C.muted, padding: 32 }}
+                >
+                  No production records found.
+                </div>
+              ) : (
                 <div
                   style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-                    gap: 12,
-                    marginBottom: 16,
+                    background: "transparent",
+                    border: "1px solid rgba(255,255,255,0.07)",
+                    borderRadius: 12,
+                    overflow: "hidden",
                   }}
                 >
-                  {statCards.map(({ label, value, icon }) => (
-                    <StatCard
-                      key={label}
-                      label={label}
-                      value={value}
-                      icon={icon}
-                    />
-                  ))}
-                </div>
-
-                <ListToolbar
-                  search={searchTerm}
-                  setSearch={setSearchTerm}
-                  placeholder="Search JO, client, item..."
-                  count={allRecs.length}
-                  filterCount={activeFilterCount}
-                  onFilter={() => setShowFilterModal(true)}
-                  exportOptions={
-                    canExportImport
-                      ? [
-                          {
-                            label: "Excel",
-                            icon: "fa-solid fa-file-excel",
-                            onClick: () =>
-                              toast("Excel Export coming soon...", "info"),
-                          },
-                        ]
-                      : []
-                  }
-                  onAdd={() => {
-                    setEditingEntry(null);
-                    setEntry(blankEntry);
-                    setErrors({});
-                    setShowEntryModal(true);
-                  }}
-                />
-
-                {allRecs.length === 0 ? (
-                  <div
-                    style={{ textAlign: "center", color: C.muted, padding: 32 }}
-                  >
-                    No production records found.
-                  </div>
-                ) : (
-                  <div
+                  <table
                     style={{
-                      background: "transparent",
-                      border: "1px solid rgba(255,255,255,0.07)",
-                      borderRadius: 12,
-                      overflow: "hidden",
+                      width: "100%",
+                      borderCollapse: "collapse",
+                      fontSize: 13,
                     }}
                   >
-                    <table
-                      style={{
-                        width: "100%",
-                        borderCollapse: "collapse",
-                        fontSize: 13,
-                      }}
-                    >
-                      <thead>
-                        <tr
-                          style={{
-                            background: "transparent",
-                            borderBottom: "1px solid rgba(255,255,255,0.08)",
-                          }}
-                        >
-                          {[
-                            "JO No",
-                            "Client",
-                            "Item",
-                            "Stage",
-                            "Date",
-                            "Done",
-                            "Rejected",
-                            "Operator",
-                            "Shift",
-                            "Actions",
-                          ].map((h) => (
-                            <th
-                              key={h}
+                    <thead>
+                      <tr
+                        style={{
+                          background: "transparent",
+                          borderBottom: "1px solid rgba(255,255,255,0.08)",
+                        }}
+                      >
+                        {[
+                          "JO No",
+                          "Client",
+                          "Item",
+                          "Stage",
+                          "Date",
+                          "Done",
+                          "Rejected",
+                          "Operator",
+                          "Shift",
+                          "Actions",
+                        ].map((h) => (
+                          <th
+                            key={h}
+                            style={{
+                              padding: "10px 14px",
+                              textAlign: "left",
+                              fontSize: 11,
+                              fontWeight: 600,
+                              color: C.muted,
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {allRecs.map((rec, i) => {
+                        const { jo, ...r } = rec;
+                        return (
+                          <tr
+                            key={r._id || i}
+                            style={{
+                              borderBottom: "1px solid rgba(255,255,255,0.04)",
+                              background:
+                                i % 2 === 0
+                                  ? "transparent"
+                                  : "rgba(255,255,255,0.01)",
+                            }}
+                          >
+                            <td
                               style={{
-                                padding: "10px 14px",
-                                textAlign: "left",
-                                fontSize: 11,
+                                padding: "11px 14px",
                                 fontWeight: 600,
-                                color: C.muted,
+                                color: C.accent,
                                 whiteSpace: "nowrap",
                               }}
                             >
-                              {h}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {allRecs.map((rec, i) => {
-                          const { jo, ...r } = rec;
-                          return (
-                            <tr
-                              key={r._id || i}
+                              {jo.joNo}
+                            </td>
+                            <td
                               style={{
-                                borderBottom:
-                                  "1px solid rgba(255,255,255,0.04)",
-                                background:
-                                  i % 2 === 0
-                                    ? "transparent"
-                                    : "rgba(255,255,255,0.01)",
+                                padding: "11px 14px",
+                                color: C.muted,
+                                fontSize: 12,
                               }}
                             >
-                              <td
+                              {jo.companyName}
+                            </td>
+                            <td
+                              style={{
+                                padding: "11px 14px",
+                                color: "#a9aed3",
+                              }}
+                            >
+                              {jo.itemName}
+                            </td>
+                            <td style={{ padding: "11px 14px" }}>
+                              <span
                                 style={{
-                                  padding: "11px 14px",
+                                  padding: "3px 10px",
+                                  borderRadius: 4,
+                                  fontSize: 11,
                                   fontWeight: 600,
+                                  background: "rgba(174, 180, 238,0.12)",
                                   color: C.accent,
-                                  whiteSpace: "nowrap",
+                                  border: "1px solid rgba(174, 180, 238,0.28)",
                                 }}
                               >
-                                {jo.joNo}
-                              </td>
-                              <td
-                                style={{
-                                  padding: "11px 14px",
-                                  color: C.muted,
-                                  fontSize: 12,
-                                }}
-                              >
-                                {jo.companyName}
-                              </td>
-                              <td
-                                style={{
-                                  padding: "11px 14px",
-                                  color: "#a3a3a3",
-                                }}
-                              >
-                                {jo.itemName}
-                              </td>
-                              <td style={{ padding: "11px 14px" }}>
-                                <span
-                                  style={{
-                                    padding: "3px 10px",
-                                    borderRadius: 4,
-                                    fontSize: 11,
-                                    fontWeight: 600,
-                                    background: "rgba(200,149,90,0.12)",
-                                    color: C.accent,
-                                    border: "1px solid rgba(200,149,90,0.28)",
-                                  }}
-                                >
-                                  {r.stage}
-                                </span>
-                              </td>
-                              <td
-                                style={{
-                                  padding: "11px 14px",
-                                  color: C.muted,
-                                  whiteSpace: "nowrap",
-                                  fontSize: 12,
-                                }}
-                              >
-                                {fmtDate(r.date)}
-                              </td>
-                              <td
-                                style={{
-                                  padding: "11px 14px",
-                                  fontWeight: 600,
-                                  color: "#8ecfa8",
-                                }}
-                              >
-                                {fmt(r.qtyCompleted)}
-                              </td>
-                              <td
-                                style={{
-                                  padding: "11px 14px",
-                                  color:
-                                    r.qtyRejected > 0 ? "#e08a7a" : C.muted,
-                                }}
-                              >
-                                {r.qtyRejected || 0}
-                              </td>
-                              <td
-                                style={{
-                                  padding: "11px 14px",
-                                  color: C.muted,
-                                  fontSize: 12,
-                                }}
-                              >
-                                {r.operator || "—"}
-                              </td>
-                              <td
-                                style={{
-                                  padding: "11px 14px",
-                                  color: C.muted,
-                                  fontSize: 12,
-                                }}
-                              >
-                                {r.shift || "—"}
-                              </td>
-                              <td style={{ padding: "11px 14px" }}>
-                                <div style={{ display: "flex", gap: 6 }}>
-                                  <IconBtn
-                                    icon="fa-chart-column"
-                                    label="Status"
-                                    onClick={() => setStatusJOId(jo._id)}
-                                  />
-                                  <IconBtn
-                                    icon="fa-pen-to-square"
-                                    label="Edit"
-                                    onClick={() => handleEdit(jo, r)}
-                                  />
-                                  <IconBtn
-                                    icon="fa-trash"
-                                    label="Delete"
-                                    danger
-                                    onClick={() => handleDelete(jo._id, r._id)}
-                                  />
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </>
-            );
-          })()}
-
+                                {r.stage}
+                              </span>
+                            </td>
+                            <td
+                              style={{
+                                padding: "11px 14px",
+                                color: C.muted,
+                                whiteSpace: "nowrap",
+                                fontSize: 12,
+                              }}
+                            >
+                              {fmtDate(r.date)}
+                            </td>
+                            <td
+                              style={{
+                                padding: "11px 14px",
+                                fontWeight: 600,
+                                color: "#8ecfa8",
+                              }}
+                            >
+                              {fmt(r.qtyCompleted)}
+                            </td>
+                            <td
+                              style={{
+                                padding: "11px 14px",
+                                color: r.qtyRejected > 0 ? "#e08a7a" : C.muted,
+                              }}
+                            >
+                              {r.qtyRejected || 0}
+                            </td>
+                            <td
+                              style={{
+                                padding: "11px 14px",
+                                color: C.muted,
+                                fontSize: 12,
+                              }}
+                            >
+                              {r.operator || "—"}
+                            </td>
+                            <td
+                              style={{
+                                padding: "11px 14px",
+                                color: C.muted,
+                                fontSize: 12,
+                              }}
+                            >
+                              {r.shift || "—"}
+                            </td>
+                            <td style={{ padding: "11px 14px" }}>
+                              <div style={{ display: "flex", gap: 6 }}>
+                                <IconBtn
+                                  icon="fa-chart-column"
+                                  label="Status"
+                                  onClick={() => setStatusJOId(jo._id)}
+                                />
+                                <IconBtn
+                                  icon="fa-pen-to-square"
+                                  label="Edit"
+                                  onClick={() => handleEdit(jo, r)}
+                                />
+                                <IconBtn
+                                  icon="fa-trash"
+                                  label="Delete"
+                                  danger
+                                  onClick={() => handleDelete(jo._id, r._id)}
+                                />
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          );
+        })()}
       </div>
 
       {showFilterModal && (
@@ -1113,7 +1140,9 @@ export default function ProductionUpdate({
               value={filterClient}
               onChange={setFilterClient}
               suggestions={[
-                ...new Set((jobOrders || []).map((jo) => jo.companyName).filter(Boolean)),
+                ...new Set(
+                  (jobOrders || []).map((jo) => jo.companyName).filter(Boolean),
+                ),
               ].sort()}
               placeholder="All clients"
               showAllOnFocus={true}
@@ -1124,7 +1153,9 @@ export default function ProductionUpdate({
               value={filterItem}
               onChange={setFilterItem}
               suggestions={[
-                ...new Set((jobOrders || []).map((jo) => jo.itemName).filter(Boolean)),
+                ...new Set(
+                  (jobOrders || []).map((jo) => jo.itemName).filter(Boolean),
+                ),
               ].sort()}
               placeholder="All items"
               showAllOnFocus={true}
@@ -1148,7 +1179,11 @@ export default function ProductionUpdate({
             />
           </Field>
           <Field label="Sort by">
-            <SortSelect value={sortBy} onChange={setSortBy} options={SORT_OPTIONS} />
+            <SortSelect
+              value={sortBy}
+              onChange={setSortBy}
+              options={SORT_OPTIONS}
+            />
           </Field>
         </FilterModal>
       )}

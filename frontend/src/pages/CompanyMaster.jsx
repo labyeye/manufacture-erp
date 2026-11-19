@@ -18,8 +18,8 @@ const inputStyle = {
   border: "1px solid rgba(255,255,255,0.08)",
   borderRadius: 8,
   fontSize: 13,
-  background: "#141414",
-  color: "#ededed",
+  background: "#05071a",
+  color: "#dfe2f4",
   outline: "none",
   boxSizing: "border-box",
 };
@@ -336,7 +336,7 @@ export default function CompanyMaster({ toast, canExportImport = true }) {
                   style={{
                     fontSize: 11,
                     fontWeight: 600,
-                    color: "#888",
+                    color: "#8b90b8",
                     display: "block",
                     marginBottom: 5,
                   }}
@@ -355,7 +355,7 @@ export default function CompanyMaster({ toast, canExportImport = true }) {
                   style={{
                     fontSize: 11,
                     fontWeight: 600,
-                    color: "#888",
+                    color: "#8b90b8",
                     display: "block",
                     marginBottom: 5,
                   }}
@@ -374,7 +374,7 @@ export default function CompanyMaster({ toast, canExportImport = true }) {
                   style={{
                     fontSize: 11,
                     fontWeight: 600,
-                    color: "#888",
+                    color: "#8b90b8",
                     display: "block",
                     marginBottom: 5,
                   }}
@@ -393,7 +393,7 @@ export default function CompanyMaster({ toast, canExportImport = true }) {
                   style={{
                     fontSize: 11,
                     fontWeight: 600,
-                    color: "#888",
+                    color: "#8b90b8",
                     display: "block",
                     marginBottom: 5,
                   }}
@@ -412,7 +412,7 @@ export default function CompanyMaster({ toast, canExportImport = true }) {
                   style={{
                     fontSize: 11,
                     fontWeight: 600,
-                    color: "#888",
+                    color: "#8b90b8",
                     display: "block",
                     marginBottom: 5,
                   }}
@@ -431,7 +431,7 @@ export default function CompanyMaster({ toast, canExportImport = true }) {
                   style={{
                     fontSize: 11,
                     fontWeight: 600,
-                    color: "#888",
+                    color: "#8b90b8",
                     display: "block",
                     marginBottom: 5,
                   }}
@@ -533,11 +533,11 @@ export default function CompanyMaster({ toast, canExportImport = true }) {
                     justifyContent: "space-between",
                     padding: "8px 16px",
                     marginBottom: 12,
-                    background: "#1a1a1a",
+                    background: "#0b0e2d",
                     border: "1px solid rgba(255,255,255,0.08)",
                     borderRadius: 10,
                     fontSize: 13,
-                    color: "#a3a3a3",
+                    color: "#a9aed3",
                   }}
                 >
                   {selectedIds.size} selected
@@ -563,7 +563,7 @@ export default function CompanyMaster({ toast, canExportImport = true }) {
                 <div
                   style={{
                     textAlign: "center",
-                    color: "#555",
+                    color: "#6f74a0",
                     padding: 40,
                     fontSize: 13,
                   }}
@@ -650,7 +650,7 @@ export default function CompanyMaster({ toast, canExportImport = true }) {
                           style={{
                             borderBottom: "1px solid rgba(255,255,255,0.04)",
                             background: selectedIds.has(company._id)
-                              ? "rgba(200, 149, 90, 0.06)"
+                              ? "rgba(174, 180, 238, 0.06)"
                               : i % 2 === 0
                                 ? "transparent"
                                 : "rgba(255,255,255,0.01)",
@@ -680,37 +680,37 @@ export default function CompanyMaster({ toast, canExportImport = true }) {
                             style={{
                               padding: "12px 14px",
                               fontWeight: 500,
-                              color: "#ededed",
+                              color: "#dfe2f4",
                             }}
                           >
                             <NameWithAvatar name={company.name} />
                           </td>
                           <td
-                            style={{ padding: "12px 14px", color: "#a3a3a3" }}
+                            style={{ padding: "12px 14px", color: "#a9aed3" }}
                           >
                             {company.category || "-"}
                           </td>
                           <td
-                            style={{ padding: "12px 14px", color: "#a3a3a3" }}
+                            style={{ padding: "12px 14px", color: "#a9aed3" }}
                           >
                             {company.contact || "-"}
                           </td>
                           <td
-                            style={{ padding: "12px 14px", color: "#a3a3a3" }}
+                            style={{ padding: "12px 14px", color: "#a9aed3" }}
                           >
                             {company.email || "-"}
                           </td>
                           <td
                             style={{
                               padding: "12px 14px",
-                              color: "#a3a3a3",
+                              color: "#a9aed3",
                               fontSize: 11,
                             }}
                           >
                             {company.gstin || "-"}
                           </td>
                           <td
-                            style={{ padding: "12px 14px", color: "#a3a3a3" }}
+                            style={{ padding: "12px 14px", color: "#a9aed3" }}
                           >
                             <span
                               style={{
@@ -757,7 +757,7 @@ export default function CompanyMaster({ toast, canExportImport = true }) {
                                 onClick={() => handleToggleStatus(company)}
                                 style={{
                                   background: "transparent",
-                                  color: "#c8955a",
+                                  color: "#aeb4ee",
                                   border: "1px solid #c8955a98",
                                   borderRadius: 6,
                                   padding: "6px 12px",

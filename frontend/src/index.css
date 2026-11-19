@@ -6,7 +6,7 @@
 
 :root {
   /* ── Canonical liquid-glass tokens ── */
-  --glass-bg: #1a1a1a;
+  --glass-bg: #0b0e2d;
   --glass-blur: none;
   --glass-blur-lg: none;
   --glass-distort: none;
@@ -17,17 +17,17 @@
   --glass-sheen-top: none;
   --glass-sheen-left: none;
 
-  --bg: #131313;
-  --surface: #1a1a1a;
+  --bg: #070924;
+  --surface: #0b0e2d;
   --card-bg: var(--glass-bg);
   --card-border: var(--glass-border);
   --card-shadow: var(--glass-shadow);
-  --accent: #c8955a;
-  --accent-bg: rgba(200, 149, 90, 0.14);
+  --accent: #aeb4ee;
+  --accent-bg: rgba(174, 180, 238, 0.14);
   --badge-bg: rgba(0, 0, 0, 0);
-  --text: #ffffff;
-  --muted: #8a8a8a;
-  --placeholder: #6b6b6b;
+  --text: #dfe2f4;
+  --muted: #8b90b8;
+  --placeholder: #6f74a0;
   --divider: rgba(255, 255, 255, 0.08);
   --border: var(--glass-border);
   --input-bg: var(--glass-bg);
@@ -39,7 +39,7 @@
 }
 
 body {
-  background-color: #131313;
+  background-color: #070924;
   color: var(--text);
   font-family: "Poppins", sans-serif;
   min-height: 100vh;
@@ -83,8 +83,8 @@ textarea {
 }
 
 select option {
-  background: #1a1a1a;
-  color: #ffffff;
+  background: #0b0e2d;
+  color: #dfe2f4;
 }
 
 button {
@@ -159,7 +159,7 @@ th {
 }
 
 td {
-  color: #ffffff;
+  color: #dfe2f4;
   font-size: 13px;
   padding: 11px 16px;
   vertical-align: middle;

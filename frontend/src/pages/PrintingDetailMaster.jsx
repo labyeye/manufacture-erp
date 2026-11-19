@@ -369,12 +369,12 @@ export default function PrintingDetailMaster({
   const CELL_STYLE = {
     padding: "16px",
     fontSize: 13,
-    color: "#ededed",
+    color: "#dfe2f4",
     borderBottom: `1px solid ${C.border}22`,
   };
 
   return (
-    <div className="fade" style={{ color: "#ededed" }}>
+    <div className="fade" style={{ color: "#dfe2f4" }}>
       <SectionTitle
         icon="fa-solid fa-print"
         title="Printing Detail Master"
@@ -694,7 +694,7 @@ export default function PrintingDetailMaster({
                         cursor: "pointer",
                         background: entry.process.includes(proc)
                           ? "#FF7F1122"
-                          : "#1f1f1f",
+                          : "#101339",
                         padding: "6px 12px",
                         borderRadius: 6,
                         border: `1px solid ${entry.process.includes(proc) ? "#FF7F11" : "#3a3a3a"}`,
@@ -711,7 +711,7 @@ export default function PrintingDetailMaster({
                         style={{
                           color: entry.process.includes(proc)
                             ? "#FF7F11"
-                            : "#a3a3a3",
+                            : "#a9aed3",
                         }}
                       >
                         {entry.process.includes(proc) ? "✓" : "+"} {proc}
@@ -769,11 +769,11 @@ export default function PrintingDetailMaster({
                   justifyContent: "space-between",
                   padding: "8px 16px",
                   marginBottom: 12,
-                  background: "#1a1a1a",
+                  background: "#0b0e2d",
                   border: "1px solid rgba(255,255,255,0.08)",
                   borderRadius: 10,
                   fontSize: 13,
-                  color: "#a3a3a3",
+                  color: "#a9aed3",
                 }}
               >
                 {selectedIds.size} selected
@@ -891,7 +891,7 @@ export default function PrintingDetailMaster({
                               marginTop: 4,
                             }}
                           >
-                            <span style={{ fontSize: 11, color: "#a3a3a3" }}>
+                            <span style={{ fontSize: 11, color: "#a9aed3" }}>
                               {item.companyName}
                             </span>
                           </div>
@@ -922,7 +922,7 @@ export default function PrintingDetailMaster({
                           {item.companyCategory ? (
                             <Badge
                               text={item.companyCategory}
-                              color="#c8955a"
+                              color="#aeb4ee"
                             />
                           ) : (
                             "—"
@@ -937,7 +937,7 @@ export default function PrintingDetailMaster({
                             }}
                           >
                             {item.plate && (
-                              <Badge text={item.plate} color="#c8955a" />
+                              <Badge text={item.plate} color="#aeb4ee" />
                             )}
                             <span style={{ fontWeight: 600 }}>
                               {item.printing || "0"}
@@ -948,7 +948,7 @@ export default function PrintingDetailMaster({
                               style={{
                                 marginTop: 4,
                                 fontSize: 10,
-                                color: "#c8955a",
+                                color: "#aeb4ee",
                                 fontWeight: 600,
                               }}
                             >
@@ -1009,7 +1009,7 @@ export default function PrintingDetailMaster({
                         </td>
                         <td style={CELL_STYLE}>{item.paperType || "—"}</td>
                         <td style={CELL_STYLE}>
-                          <span style={{ color: "#c8955a", fontWeight: 600 }}>
+                          <span style={{ color: "#aeb4ee", fontWeight: 600 }}>
                             {item.paperGsm}g
                           </span>
                         </td>
@@ -1045,10 +1045,10 @@ export default function PrintingDetailMaster({
         input, select { 
           width: 100%; 
           padding: 10px 12px; 
-          background: #1f1f1f; 
+          background: #101339; 
           border: 1px solid #3a3a3a; 
           border-radius: 8px; 
-          color: #fff; 
+          color: #dfe2f4; 
           font-size: 13px;
         }
         input:focus { outline: none; border-color: #FF7F11; }

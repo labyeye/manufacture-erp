@@ -17,9 +17,9 @@ const fmt = (n) => (n ?? 0).toLocaleString("en-IN");
 
 const TYPE_COLORS = {
   Production: {
-    bg: "rgba(200, 149, 90,0.15)",
-    text: "#c8955a",
-    border: "rgba(200, 149, 90,0.3)",
+    bg: "rgba(174, 180, 238,0.15)",
+    text: "#aeb4ee",
+    border: "rgba(174, 180, 238,0.3)",
   },
   Inward: {
     bg: "rgba(34,197,94,0.12)",
@@ -34,9 +34,9 @@ const TYPE_COLORS = {
 };
 
 const STOCK_TYPE_COLORS = {
-  "Raw Material": { bg: "rgba(255,255,255,0.06)", text: "#c8955a" },
-  "Finished Goods": { bg: "rgba(255,255,255,0.06)", text: "#c8955a" },
-  Consumable: { bg: "rgba(255,255,255,0.06)", text: "#c8955a" },
+  "Raw Material": { bg: "rgba(255,255,255,0.06)", text: "#aeb4ee" },
+  "Finished Goods": { bg: "rgba(255,255,255,0.06)", text: "#aeb4ee" },
+  Consumable: { bg: "rgba(255,255,255,0.06)", text: "#aeb4ee" },
 };
 
 // Short labels for the table: FG, RM, CS
@@ -383,8 +383,8 @@ export default function StockAdjustment({
         cursor: "pointer",
         fontWeight: 500,
         fontSize: 13,
-        background: view === id ? "#242424" : "transparent",
-        color: view === id ? "#ededed" : "#a3a3a3",
+        background: view === id ? "#101339" : "transparent",
+        color: view === id ? "#dfe2f4" : "#a9aed3",
         transition: "background-color .15s, color .15s",
       }}
     >
@@ -431,7 +431,7 @@ export default function StockAdjustment({
         >
           <div
             style={{
-              background: "#1a1a1a",
+              background: "#0b0e2d",
               border: "1px solid rgba(255,255,255,0.08)",
               borderRadius: 12,
               width: "100%",
@@ -498,7 +498,7 @@ export default function StockAdjustment({
                 onChange={(e) => setImportDate(e.target.value)}
                 style={{
                   padding: "6px 10px",
-                  background: "#141414",
+                  background: "#05071a",
                   border: "1px solid rgba(255,255,255,0.08)",
                   borderRadius: 6,
                   color: C.text,
@@ -750,7 +750,7 @@ export default function StockAdjustment({
                     top: "100%",
                     left: 0,
                     right: 0,
-                    background: "#1a1a1a",
+                    background: "#0b0e2d",
                     border: "1px solid rgba(255,255,255,0.12)",
                     borderRadius: 8,
                     zIndex: 100,
@@ -774,7 +774,7 @@ export default function StockAdjustment({
                       }}
                       onMouseEnter={(e) =>
                         (e.currentTarget.style.background =
-                          "rgba(200, 149, 90,0.15)")
+                          "rgba(174, 180, 238,0.15)")
                       }
                       onMouseLeave={(e) =>
                         (e.currentTarget.style.background = "transparent")
@@ -783,7 +783,7 @@ export default function StockAdjustment({
                       <span style={{ color: C.text }}>{item.name}</span>
                       <span
                         style={{
-                          color: "#c8955a",
+                          color: "#aeb4ee",
                           fontWeight: 600,
                           fontSize: 12,
                         }}
@@ -801,12 +801,12 @@ export default function StockAdjustment({
                 <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
                   <div
                     style={{
-                      background: "rgba(200, 149, 90,0.12)",
-                      border: "1px solid rgba(200, 149, 90,0.3)",
+                      background: "rgba(174, 180, 238,0.12)",
+                      border: "1px solid rgba(174, 180, 238,0.3)",
                       borderRadius: 6,
                       padding: "4px 10px",
                       fontSize: 12,
-                      color: "#c8955a",
+                      color: "#aeb4ee",
                       fontWeight: 600,
                     }}
                   >
@@ -843,7 +843,7 @@ export default function StockAdjustment({
                     <span
                       style={{
                         fontSize: 11,
-                        color: "#c8955a",
+                        color: "#aeb4ee",
                         fontWeight: 600,
                       }}
                     >
@@ -851,7 +851,7 @@ export default function StockAdjustment({
                     </span>
                     <div>
                       <span style={{ fontSize: 11, color: C.muted }}>Qty </span>
-                      <span style={{ fontWeight: 600, color: "#c8955a" }}>
+                      <span style={{ fontWeight: 600, color: "#aeb4ee" }}>
                         {(currentStock.qty || 0).toLocaleString("en-IN")} sheets
                       </span>
                     </div>
@@ -859,7 +859,7 @@ export default function StockAdjustment({
                       <span style={{ fontSize: 11, color: C.muted }}>
                         Weight{" "}
                       </span>
-                      <span style={{ fontWeight: 600, color: "#c8955a" }}>
+                      <span style={{ fontWeight: 600, color: "#aeb4ee" }}>
                         {(currentStock.weight || 0).toLocaleString("en-IN")} kg
                       </span>
                     </div>
@@ -926,13 +926,13 @@ export default function StockAdjustment({
             {/* Info banner */}
             <div
               style={{
-                background: "rgba(200, 149, 90,0.08)",
-                border: "1px solid rgba(200, 149, 90,0.2)",
+                background: "rgba(174, 180, 238,0.08)",
+                border: "1px solid rgba(174, 180, 238,0.2)",
                 borderRadius: 8,
                 padding: "10px 14px",
                 marginBottom: 20,
                 fontSize: 12,
-                color: "#c8955a",
+                color: "#aeb4ee",
               }}
             >
               <i
@@ -952,8 +952,8 @@ export default function StockAdjustment({
                 disabled={saving}
                 style={{
                   padding: "10px 24px",
-                  background: saving ? "#4b5563" : "#c8955a",
-                  color: "#fff",
+                  background: saving ? "#4b5563" : "#aeb4ee",
+                  color: "#dfe2f4",
                   border: "none",
                   borderRadius: 8,
                   fontWeight: 600,
@@ -1003,13 +1003,13 @@ export default function StockAdjustment({
               {
                 label: "Total Adjustments",
                 value: filtered.length,
-                color: "#c8955a",
+                color: "#aeb4ee",
               },
               {
                 label: "Production",
                 value: filtered.filter((a) => a.adjustmentType === "Production")
                   .length,
-                color: "#c8955a",
+                color: "#aeb4ee",
               },
               {
                 label: "Inward",
@@ -1216,7 +1216,7 @@ export default function StockAdjustment({
                         <td
                           style={{
                             padding: "10px 12px",
-                            color: "#c8955a",
+                            color: "#aeb4ee",
                             fontWeight: 600,
                           }}
                         >
@@ -1234,7 +1234,7 @@ export default function StockAdjustment({
                         <td
                           style={{
                             padding: "10px 12px",
-                            color: "#c8955a",
+                            color: "#aeb4ee",
                             fontWeight: 600,
                           }}
                         >
@@ -1324,7 +1324,7 @@ export default function StockAdjustment({
                           </span>
                           {a.stockType === "Raw Material" &&
                           (a.beforeWeight || a.afterWeight) ? (
-                            <div style={{ fontSize: 11, color: "#737373" }}>
+                            <div style={{ fontSize: 11, color: "#7b80ad" }}>
                               {fmt(a.beforeWeight)} → {fmt(a.afterWeight)} kg
                             </div>
                           ) : null}
@@ -1435,8 +1435,8 @@ export default function StockAdjustment({
               disabled={reportLoading}
               style={{
                 padding: "9px 20px",
-                background: "#c8955a",
-                color: "#141414",
+                background: "#aeb4ee",
+                color: "#05071a",
                 border: "none",
                 borderRadius: 8,
                 fontWeight: 600,
@@ -1451,9 +1451,9 @@ export default function StockAdjustment({
                 onClick={handleExportReport}
                 style={{
                   padding: "9px 16px",
-                  background: "rgba(200, 149, 90,0.12)",
-                  color: "#c8955a",
-                  border: "1px solid rgba(200, 149, 90,0.3)",
+                  background: "rgba(174, 180, 238,0.12)",
+                  color: "#aeb4ee",
+                  border: "1px solid rgba(174, 180, 238,0.3)",
                   borderRadius: 8,
                   fontSize: 13,
                   cursor: "pointer",
@@ -1483,12 +1483,12 @@ export default function StockAdjustment({
                   {
                     label: "Total Records",
                     value: reportData.adjustments?.length || 0,
-                    color: "#c8955a",
+                    color: "#aeb4ee",
                   },
                   {
                     label: "Items Affected",
                     value: reportData.summary?.length || 0,
-                    color: "#c8955a",
+                    color: "#aeb4ee",
                   },
                   {
                     label: "Total Production",
@@ -1497,7 +1497,7 @@ export default function StockAdjustment({
                         (s, r) => s + r.production,
                         0,
                       ) || 0,
-                    color: "#c8955a",
+                    color: "#aeb4ee",
                   },
                   {
                     label: "Total Inward",
@@ -1602,7 +1602,7 @@ export default function StockAdjustment({
                           <td
                             style={{
                               padding: "10px 12px",
-                              color: "#c8955a",
+                              color: "#aeb4ee",
                               fontWeight: 600,
                             }}
                           >
@@ -1632,7 +1632,7 @@ export default function StockAdjustment({
                           <td
                             style={{
                               padding: "10px 12px",
-                              color: "#c8955a",
+                              color: "#aeb4ee",
                               fontWeight: 600,
                             }}
                           >
@@ -1735,7 +1735,7 @@ export default function StockAdjustment({
                           <td
                             style={{
                               padding: "10px 12px",
-                              color: "#c8955a",
+                              color: "#aeb4ee",
                               fontWeight: 600,
                             }}
                           >
@@ -1747,7 +1747,7 @@ export default function StockAdjustment({
                           <td
                             style={{
                               padding: "10px 12px",
-                              color: "#c8955a",
+                              color: "#aeb4ee",
                               fontWeight: 600,
                             }}
                           >

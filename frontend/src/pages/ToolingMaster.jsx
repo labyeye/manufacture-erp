@@ -198,8 +198,8 @@ export default function ToolingMaster({ toast }) {
             "Actions",
           ]}
           data={visibleTools.map((tool) => [
-            <Badge text={tool.toolType} color="#a3a3a3" />,
-            <span style={{ fontWeight: 500, color: "#c8955a" }}>
+            <Badge text={tool.toolType} color="#a9aed3" />,
+            <span style={{ fontWeight: 500, color: "#aeb4ee" }}>
               {tool.designCode}
             </span>,
             tool.linkedSKU,
@@ -209,7 +209,7 @@ export default function ToolingMaster({ toast }) {
                 tool.status === "Available"
                   ? "#86b894"
                   : tool.status === "In Use"
-                    ? "#c8955a"
+                    ? "#e0a84f"
                     : "#e0705f"
               }
             />,

@@ -24,11 +24,11 @@ const save = (key, v) => localStorage.setItem(key, JSON.stringify(v));
 
 const inp = {
   padding: "9px 12px",
-  border: "1px solid #2a2a2a",
+  border: "1px solid #161a49",
   borderRadius: 6,
   fontSize: 13,
-  background: "#141414",
-  color: "#e0e0e0",
+  background: "#05071a",
+  color: "#dfe2f4",
   outline: "none",
   width: "100%",
   boxSizing: "border-box",
@@ -36,13 +36,13 @@ const inp = {
 const lbl = {
   fontSize: 11,
   fontWeight: 600,
-  color: "#666",
+  color: "#6f74a0",
   display: "block",
   marginBottom: 5,
 };
 const card = (col) => ({
-  background: "#111",
-  border: `1px solid ${col || "#2a2a2a"}22`,
+  background: "#05071a",
+  border: `1px solid ${col || "#161a49"}22`,
   borderRadius: 10,
   padding: 20,
 });
@@ -83,7 +83,7 @@ export default function QualityHub({
           display: "flex",
           gap: 4,
           marginBottom: 24,
-          borderBottom: "1px solid #2a2a2a",
+          borderBottom: "1px solid #161a49",
           paddingBottom: 0,
         }}
       >
@@ -239,7 +239,7 @@ function FAITab({ jobOrders, toast }) {
           <div style={{ fontSize: 17, fontWeight: 600 }}>
             First Article Inspection
           </div>
-          <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
+          <div style={{ fontSize: 12, color: "#8b90b8", marginTop: 2 }}>
             Mandatory sign-off before JO proceeds to full production
           </div>
         </div>
@@ -252,7 +252,7 @@ function FAITab({ jobOrders, toast }) {
           style={{
             background: "rgba(255,255,255,0.08)",
             border: "1px solid rgba(255,255,255,0.18)",
-            color: "#fff",
+            color: "#dfe2f4",
             padding: "9px 18px",
             borderRadius: 10,
             fontWeight: 600,
@@ -297,7 +297,7 @@ function FAITab({ jobOrders, toast }) {
               background: "#ffffff11",
               borderRadius: 20,
               fontSize: 12,
-              color: "#888",
+              color: "#8b90b8",
               cursor: "pointer",
             }}
             onClick={() => setFilterStatus("All")}
@@ -384,7 +384,7 @@ function FAITab({ jobOrders, toast }) {
                   onChange={(e) => setF("status", e.target.value)}
                   style={{
                     ...inp,
-                    color: FAI_STATUS[form.status]?.color || "#e0e0e0",
+                    color: FAI_STATUS[form.status]?.color || "#dfe2f4",
                     fontWeight: 600,
                   }}
                 >
@@ -463,7 +463,7 @@ function FAITab({ jobOrders, toast }) {
                     background: "rgba(255,255,255,0.08)",
                     border: "1px solid rgba(255,255,255,0.18)",
                     borderRadius: 5,
-                    color: "#fff",
+                    color: "#dfe2f4",
                     fontSize: 11,
                     cursor: "pointer",
                     boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
@@ -513,9 +513,9 @@ function FAITab({ jobOrders, toast }) {
                     type="file"
                     accept="image/*"
                     onChange={handlePhoto}
-                    style={{ fontSize: 12, color: "#888" }}
+                    style={{ fontSize: 12, color: "#8b90b8" }}
                   />
-                  <div style={{ fontSize: 10, color: "#555", marginTop: 4 }}>
+                  <div style={{ fontSize: 10, color: "#6f74a0", marginTop: 4 }}>
                     Max ~500KB recommended
                   </div>
                 </div>
@@ -528,7 +528,7 @@ function FAITab({ jobOrders, toast }) {
                       height: 90,
                       objectFit: "cover",
                       borderRadius: 6,
-                      border: "1px solid #2a2a2a",
+                      border: "1px solid #161a49",
                     }}
                   />
                 )}
@@ -543,7 +543,7 @@ function FAITab({ jobOrders, toast }) {
                   background: "rgba(255,255,255,0.08)",
                   border: "1px solid rgba(255,255,255,0.18)",
                   borderRadius: 6,
-                  color: "#fff",
+                  color: "#dfe2f4",
                   fontWeight: 500,
                   cursor: "pointer",
                   boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
@@ -559,7 +559,7 @@ function FAITab({ jobOrders, toast }) {
                 }}
                 style={{
                   background: "transparent",
-                  color: "#ffffff",
+                  color: "#dfe2f4",
                   border: "1px solid rgba(255,255,255,0.2)",
                   borderRadius: 6,
                   padding: "6px 12px",
@@ -579,22 +579,22 @@ function FAITab({ jobOrders, toast }) {
       )}
 
       {}
-      <div style={{ ...card(), background: "#111" }}>
+      <div style={{ ...card(), background: "#05071a" }}>
         {filteredRecords.length === 0 && (
-          <div style={{ textAlign: "center", color: "#555", padding: 40 }}>
+          <div style={{ textAlign: "center", color: "#6f74a0", padding: 40 }}>
             {records.length === 0
               ? "No FAI records yet. Create the first inspection to gate production."
               : "No records match the current filter."}
           </div>
         )}
         {filteredRecords.map((r) => {
-          const { color } = FAI_STATUS[r.status] || { color: "#888" };
+          const { color } = FAI_STATUS[r.status] || { color: "#8b90b8" };
           const jo = jobOrders.find((j) => j.joNo === r.joRef);
           return (
             <div
               key={r.id}
               style={{
-                borderBottom: "1px solid #1a1a1a",
+                borderBottom: "1px solid #0b0e2d",
                 padding: "14px 4px",
                 display: "flex",
                 flexDirection: "column",
@@ -620,10 +620,10 @@ function FAITab({ jobOrders, toast }) {
                   <span style={{ color: "#facc15", fontWeight: 600 }}>
                     {r.joRef}
                   </span>
-                  <span style={{ fontSize: 12, color: "#888" }}>
+                  <span style={{ fontSize: 12, color: "#8b90b8" }}>
                     {jo?.companyName || ""}
                   </span>
-                  <span style={{ fontSize: 12, color: "#aaa" }}>
+                  <span style={{ fontSize: 12, color: "#a9aed3" }}>
                     Sample #{r.sampleNo}
                   </span>
                   <span
@@ -639,7 +639,7 @@ function FAITab({ jobOrders, toast }) {
                   >
                     {r.status}
                   </span>
-                  <span style={{ fontSize: 11, color: "#666" }}>
+                  <span style={{ fontSize: 11, color: "#6f74a0" }}>
                     {fmtDate(r.inspectionDate)} · {r.inspectorName}
                     {r.approverName && ` · Approved: ${r.approverName}`}
                   </span>
@@ -673,8 +673,8 @@ function FAITab({ jobOrders, toast }) {
                   {r.measurements
                     .filter((m) => m.key && m.value)
                     .map((m, i) => (
-                      <span key={i} style={{ fontSize: 11, color: "#888" }}>
-                        <span style={{ color: "#aaa", fontWeight: 600 }}>
+                      <span key={i} style={{ fontSize: 11, color: "#8b90b8" }}>
+                        <span style={{ color: "#a9aed3", fontWeight: 600 }}>
                           {m.key}
                         </span>
                         : {m.value}
@@ -688,7 +688,7 @@ function FAITab({ jobOrders, toast }) {
                 </div>
               )}
               {r.remarks && (
-                <div style={{ fontSize: 11, color: "#666" }}>
+                <div style={{ fontSize: 11, color: "#6f74a0" }}>
                   Remarks: {r.remarks}
                 </div>
               )}
@@ -701,7 +701,7 @@ function FAITab({ jobOrders, toast }) {
                     height: 60,
                     objectFit: "cover",
                     borderRadius: 4,
-                    border: "1px solid #2a2a2a",
+                    border: "1px solid #161a49",
                     cursor: "pointer",
                   }}
                   onClick={() => window.open(r.photoDataUrl, "_blank")}
@@ -914,7 +914,7 @@ function SupplierTab({ purchaseOrders, inward, vendorMaster, toast }) {
       <div style={{ fontSize: 17, fontWeight: 600, marginBottom: 4 }}>
         Supplier Quality Scorecard
       </div>
-      <div style={{ fontSize: 12, color: "#888", marginBottom: 20 }}>
+      <div style={{ fontSize: 12, color: "#8b90b8", marginBottom: 20 }}>
         Computed from {purchaseOrders?.length || 0} POs · {inward?.length || 0}{" "}
         GRNs · Click a vendor to enter responsiveness score
       </div>
@@ -992,7 +992,7 @@ function SupplierTab({ purchaseOrders, inward, vendorMaster, toast }) {
               onClick={saveResponsiveness}
               style={{
                 background: "transparent",
-                color: "#ffffff",
+                color: "#dfe2f4",
                 border: "1px solid rgba(255,255,255,0.2)",
                 borderRadius: 6,
                 padding: "6px 12px",
@@ -1010,7 +1010,7 @@ function SupplierTab({ purchaseOrders, inward, vendorMaster, toast }) {
               onClick={() => setEditVendor(null)}
               style={{
                 background: "transparent",
-                color: "#ffffff",
+                color: "#dfe2f4",
                 border: "1px solid rgba(255,255,255,0.2)",
                 borderRadius: 6,
                 padding: "6px 12px",
@@ -1079,7 +1079,7 @@ function SupplierTab({ purchaseOrders, inward, vendorMaster, toast }) {
                   colSpan={7}
                   style={{
                     textAlign: "center",
-                    color: "#555",
+                    color: "#6f74a0",
                     padding: 40,
                     fontSize: 13,
                   }}
@@ -1135,7 +1135,7 @@ function SupplierTab({ purchaseOrders, inward, vendorMaster, toast }) {
                         style={{
                           width: 60,
                           height: 6,
-                          background: "#1a1a1a",
+                          background: "#0b0e2d",
                           borderRadius: 3,
                           overflow: "hidden",
                         }}
@@ -1168,12 +1168,12 @@ function SupplierTab({ purchaseOrders, inward, vendorMaster, toast }) {
                       >
                         {s.onTimePct}%
                       </span>
-                      <span style={{ fontSize: 10, color: "#555" }}>
+                      <span style={{ fontSize: 10, color: "#6f74a0" }}>
                         {s.deliveredPOs}/{s.totalPOs} POs
                       </span>
                     </div>
                   ) : (
-                    <span style={{ color: "#555", fontSize: 11 }}>
+                    <span style={{ color: "#6f74a0", fontSize: 11 }}>
                       No GRNs yet
                     </span>
                   )}
@@ -1207,7 +1207,7 @@ function SupplierTab({ purchaseOrders, inward, vendorMaster, toast }) {
                   )}
                 </td>
                 <td
-                  style={{ padding: "12px 12px", fontSize: 12, color: "#888" }}
+                  style={{ padding: "12px 12px", fontSize: 12, color: "#8b90b8" }}
                 >
                   {s.totalPOs}
                 </td>
@@ -1223,11 +1223,11 @@ function SupplierTab({ purchaseOrders, inward, vendorMaster, toast }) {
                       {s.composite}
                     </span>
                   ) : (
-                    <span style={{ color: "#555", fontSize: 11 }}>—</span>
+                    <span style={{ color: "#6f74a0", fontSize: 11 }}>—</span>
                   )}
                 </td>
                 <td
-                  style={{ padding: "12px 12px", fontSize: 11, color: "#aaa" }}
+                  style={{ padding: "12px 12px", fontSize: 11, color: "#a9aed3" }}
                 >
                   {s.action}
                 </td>
@@ -1237,7 +1237,7 @@ function SupplierTab({ purchaseOrders, inward, vendorMaster, toast }) {
         </table>
       </div>
 
-      <div style={{ fontSize: 11, color: "#555", marginTop: 12 }}>
+      <div style={{ fontSize: 11, color: "#6f74a0", marginTop: 12 }}>
         Score = On-Time Delivery (40%) + Responsiveness (30%) + remaining
         weighted by data available. A ≥ 70 · B 40–69 · C &lt; 40. Click any row
         to enter responsiveness score manually.

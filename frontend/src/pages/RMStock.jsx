@@ -285,16 +285,16 @@ export default function RMStock({
         <head>
           <title>RM Stock</title>
           <style>
-            body { font-family: 'Inter', Arial, sans-serif; padding: 20px 30px; color: #1a1a1a; }
+            body { font-family: 'Inter', Arial, sans-serif; padding: 20px 30px; color: #0b0e2d; }
             .header { text-align: center; border-bottom: 2px solid #1e40af; padding-bottom: 10px; margin-bottom: 16px; }
             .header h1 { color: #1e3a8a; margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 1px; }
-            .header p { margin: 2px 0; font-size: 11px; color: #6b6b6b; }
+            .header p { margin: 2px 0; font-size: 11px; color: #6f74a0; }
             .doc-title { display: flex; justify-content: space-between; margin-bottom: 8px; }
             .doc-title h2 { margin: 0; font-size: 16px; font-weight: 700; }
-            .meta { font-size: 10px; color: #8a8a8a; }
+            .meta { font-size: 10px; color: #8b90b8; }
             table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-            th { background: #f1f5f9; border: 1px solid #c7c7c7; padding: 6px 8px; text-align: left; font-size: 10px; text-transform: uppercase; color: #3a3a3a; }
-            td { border: 1px solid #ededed; padding: 5px 8px; font-size: 10px; }
+            th { background: #f1f5f9; border: 1px solid #c9cdea; padding: 6px 8px; text-align: left; font-size: 10px; text-transform: uppercase; color: #3a3a3a; }
+            td { border: 1px solid #dfe2f4; padding: 5px 8px; font-size: 10px; }
             .num { text-align: right; font-family: 'JetBrains Mono', monospace; }
             tfoot td { font-weight: 800; background: #f8fafc; }
             @media print { @page { margin: 1cm; size: A4 landscape; } }
@@ -454,10 +454,10 @@ export default function RMStock({
           style={{
             width: 65,
             padding: "6px 8px",
-            background: "#141414",
-            border: `1px solid ${hasChanged ? "#c8955a" : "rgba(255,255,255,0.08)"}`,
+            background: "#05071a",
+            border: `1px solid ${hasChanged ? "#aeb4ee" : "rgba(255,255,255,0.08)"}`,
             borderRadius: 4,
-            color: "#fff",
+            color: "#dfe2f4",
             fontSize: 12,
             outline: "none",
           }}
@@ -475,7 +475,7 @@ export default function RMStock({
               background: "rgba(255,255,255,0.08)",
               border: "1px solid rgba(255,255,255,0.18)",
               borderRadius: 4,
-              color: "#fff",
+              color: "#dfe2f4",
               padding: "4px 8px",
               fontSize: 10,
               cursor: "pointer",
@@ -545,7 +545,7 @@ export default function RMStock({
                     display: "block",
                     fontSize: 11,
                     fontWeight: 500,
-                    color: "#666",
+                    color: "#6f74a0",
                     marginBottom: 6,
                   }}
                 >
@@ -559,10 +559,10 @@ export default function RMStock({
                   style={{
                     width: "100%",
                     padding: 10,
-                    background: "#141414",
+                    background: "#05071a",
                     border: "1px solid rgba(255,255,255,0.08)",
                     borderRadius: 6,
-                    color: "#fff",
+                    color: "#dfe2f4",
                   }}
                 />
               </div>
@@ -579,7 +579,7 @@ export default function RMStock({
                       display: "block",
                       fontSize: 11,
                       fontWeight: 500,
-                      color: "#666",
+                      color: "#6f74a0",
                       marginBottom: 6,
                     }}
                   >
@@ -593,10 +593,10 @@ export default function RMStock({
                     style={{
                       width: "100%",
                       padding: 10,
-                      background: "#141414",
+                      background: "#05071a",
                       border: "1px solid rgba(255,255,255,0.08)",
                       borderRadius: 6,
-                      color: "#fff",
+                      color: "#dfe2f4",
                     }}
                   />
                 </div>
@@ -606,7 +606,7 @@ export default function RMStock({
                       display: "block",
                       fontSize: 11,
                       fontWeight: 500,
-                      color: "#666",
+                      color: "#6f74a0",
                       marginBottom: 6,
                     }}
                   >
@@ -625,10 +625,10 @@ export default function RMStock({
                     style={{
                       width: "100%",
                       padding: 10,
-                      background: "#141414",
+                      background: "#05071a",
                       border: "1px solid rgba(255,255,255,0.08)",
                       borderRadius: 6,
-                      color: "#fff",
+                      color: "#dfe2f4",
                     }}
                   />
                 </div>
@@ -646,7 +646,7 @@ export default function RMStock({
                       display: "block",
                       fontSize: 11,
                       fontWeight: 500,
-                      color: "#666",
+                      color: "#6f74a0",
                       marginBottom: 6,
                     }}
                   >
@@ -661,10 +661,10 @@ export default function RMStock({
                     style={{
                       width: "100%",
                       padding: 10,
-                      background: "#141414",
+                      background: "#05071a",
                       border: "1px solid rgba(255,255,255,0.08)",
                       borderRadius: 6,
-                      color: "#fff",
+                      color: "#dfe2f4",
                     }}
                   />
                 </div>
@@ -674,7 +674,7 @@ export default function RMStock({
                       display: "block",
                       fontSize: 11,
                       fontWeight: 500,
-                      color: "#666",
+                      color: "#6f74a0",
                       marginBottom: 6,
                     }}
                   >
@@ -693,10 +693,10 @@ export default function RMStock({
                     style={{
                       width: "100%",
                       padding: 10,
-                      background: "#141414",
+                      background: "#05071a",
                       border: "1px solid rgba(255,255,255,0.08)",
                       borderRadius: 6,
-                      color: "#fff",
+                      color: "#dfe2f4",
                     }}
                   />
                 </div>
@@ -714,7 +714,7 @@ export default function RMStock({
                       display: "block",
                       fontSize: 11,
                       fontWeight: 500,
-                      color: "#666",
+                      color: "#6f74a0",
                       marginBottom: 6,
                     }}
                   >
@@ -729,10 +729,10 @@ export default function RMStock({
                     style={{
                       width: "100%",
                       padding: 10,
-                      background: "#141414",
+                      background: "#05071a",
                       border: "1px solid rgba(255,255,255,0.08)",
                       borderRadius: 6,
-                      color: "#fff",
+                      color: "#dfe2f4",
                     }}
                   />
                 </div>
@@ -742,7 +742,7 @@ export default function RMStock({
                       display: "block",
                       fontSize: 11,
                       fontWeight: 500,
-                      color: "#666",
+                      color: "#6f74a0",
                       marginBottom: 6,
                     }}
                   >
@@ -760,10 +760,10 @@ export default function RMStock({
                     style={{
                       width: "100%",
                       padding: 10,
-                      background: "#141414",
+                      background: "#05071a",
                       border: "1px solid rgba(255,255,255,0.08)",
                       borderRadius: 6,
-                      color: "#fff",
+                      color: "#dfe2f4",
                     }}
                   />
                 </div>
@@ -779,7 +779,7 @@ export default function RMStock({
                   borderRadius: 6,
                   border: "1px solid rgba(255,255,255,0.08)",
                   background: "transparent",
-                  color: "#888",
+                  color: "#8b90b8",
                   fontWeight: 500,
                   cursor: "pointer",
                 }}
@@ -794,7 +794,7 @@ export default function RMStock({
                   borderRadius: 6,
                   border: "1px solid rgba(255,255,255,0.18)",
                   background: "rgba(255,255,255,0.08)",
-                  color: "#fff",
+                  color: "#dfe2f4",
                   fontWeight: 500,
                   cursor: "pointer",
                   boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
@@ -939,11 +939,11 @@ export default function RMStock({
             justifyContent: "space-between",
             padding: "8px 16px",
             margin: "12px 0",
-            background: "#1a1a1a",
+            background: "#0b0e2d",
             border: "1px solid rgba(255,255,255,0.08)",
             borderRadius: 10,
             fontSize: 13,
-            color: "#a3a3a3",
+            color: "#a9aed3",
           }}
         >
           {selectedIds.length} selected
@@ -1050,7 +1050,7 @@ export default function RMStock({
                   style={{
                     borderBottom: "1px solid rgba(255,255,255,0.04)",
                     background: selectedIds.includes(s._id || s.id)
-                      ? "rgba(200, 149, 90, 0.06)"
+                      ? "rgba(174, 180, 238, 0.06)"
                       : idx % 2 === 0
                         ? "transparent"
                         : "rgba(255,255,255,0.01)",
@@ -1074,7 +1074,7 @@ export default function RMStock({
                   <td
                     style={{
                       padding: "12px 14px",
-                      color: "#c8955a",
+                      color: "#aeb4ee",
                       fontWeight: 500,
                       fontSize: 12,
                     }}
@@ -1095,7 +1095,7 @@ export default function RMStock({
                           style={{
                             fontWeight: 500,
                             fontSize: 13,
-                            color: "#ededed",
+                            color: "#dfe2f4",
                             display: "-webkit-box",
                             WebkitLineClamp: 3,
                             WebkitBoxOrient: "vertical",
@@ -1110,7 +1110,7 @@ export default function RMStock({
                           <div
                             style={{
                               fontSize: 11,
-                              color: "#737373",
+                              color: "#7b80ad",
                               marginTop: 2,
                             }}
                           >
@@ -1129,7 +1129,7 @@ export default function RMStock({
                         fontWeight: 500,
                         background: "rgba(255,255,255,0.06)",
                         border: "1px solid rgba(255,255,255,0.08)",
-                        color: "#a3a3a3",
+                        color: "#a9aed3",
                       }}
                     >
                       {s.category || s.paperCategory || "—"}
@@ -1138,7 +1138,7 @@ export default function RMStock({
                   <td
                     style={{
                       padding: "12px 14px",
-                      color: qty > 0 ? "#ededed" : "#737373",
+                      color: qty > 0 ? "#dfe2f4" : "#7b80ad",
                       fontWeight: 500,
                       fontSize: 13,
                     }}
@@ -1148,7 +1148,7 @@ export default function RMStock({
                   <td
                     style={{
                       padding: "12px 14px",
-                      color: weight > 0 ? "#ededed" : "#737373",
+                      color: weight > 0 ? "#dfe2f4" : "#7b80ad",
                       fontWeight: 500,
                       fontSize: 13,
                     }}
@@ -1161,7 +1161,7 @@ export default function RMStock({
                   <td
                     style={{
                       padding: "12px 14px",
-                      color: "#a3a3a3",
+                      color: "#a9aed3",
                       fontSize: 12,
                     }}
                   >
@@ -1212,13 +1212,13 @@ export default function RMStock({
             alignItems: "center",
           }}
         >
-          <span style={{ fontSize: 11, color: "#737373" }}>
+          <span style={{ fontSize: 11, color: "#7b80ad" }}>
             {filtered.length} items
           </span>
           <div style={{ display: "flex", gap: 16 }}>
             {[
               { c: "#e0705f", l: "Low" },
-              { c: "#c8955a", l: "Moderate" },
+              { c: "#e0a84f", l: "Moderate" },
               { c: "#86b894", l: "Adequate" },
             ].map((x) => (
               <div
@@ -1233,7 +1233,7 @@ export default function RMStock({
                     background: x.c,
                   }}
                 />
-                <span style={{ fontSize: 11, color: "#a3a3a3" }}>{x.l}</span>
+                <span style={{ fontSize: 11, color: "#a9aed3" }}>{x.l}</span>
               </div>
             ))}
           </div>

@@ -61,8 +61,8 @@ const inputStyle = {
   border: "1px solid rgba(255,255,255,0.08)",
   borderRadius: 8,
   fontSize: 13,
-  background: "#141414",
-  color: "#ededed",
+  background: "#05071a",
+  color: "#dfe2f4",
   outline: "none",
   width: "100%",
   boxSizing: "border-box",
@@ -71,7 +71,7 @@ const inputStyle = {
 const labelStyle = {
   fontSize: 11,
   fontWeight: 600,
-  color: "#666",
+  color: "#6f74a0",
   display: "block",
   marginBottom: 6,
 };
@@ -561,7 +561,7 @@ export default function MachineMaster({ toast }) {
             overflowY: "auto",
             boxShadow: "0 20px 50px rgba(0,0,0,0.5)",
             padding: 30,
-            color: "#fff",
+            color: "#dfe2f4",
           }}
         >
           <div
@@ -580,7 +580,7 @@ export default function MachineMaster({ toast }) {
               style={{
                 background: "transparent",
                 border: "none",
-                color: "#666",
+                color: "#6f74a0",
                 fontSize: 24,
                 cursor: "pointer",
               }}
@@ -935,7 +935,7 @@ export default function MachineMaster({ toast }) {
                         background: checked
                           ? "#FF9800"
                           : "rgba(255,255,255,0.05)",
-                        color: checked ? "#000" : "#666",
+                        color: checked ? "#000" : "#6f74a0",
                         border: `1px solid ${checked ? "#FF9800" : "rgba(255,255,255,0.1)"}`,
                         cursor: "pointer",
                         transition:
@@ -959,7 +959,7 @@ export default function MachineMaster({ toast }) {
                     borderRadius: 4,
                     border: "1px solid rgba(255,255,255,0.1)",
                     background: "transparent",
-                    color: "#888",
+                    color: "#8b90b8",
                     cursor: "pointer",
                   }}
                 >
@@ -974,7 +974,7 @@ export default function MachineMaster({ toast }) {
                     borderRadius: 4,
                     border: "1px solid rgba(255,255,255,0.1)",
                     background: "transparent",
-                    color: "#888",
+                    color: "#8b90b8",
                     cursor: "pointer",
                   }}
                 >
@@ -1007,7 +1007,7 @@ export default function MachineMaster({ toast }) {
                       background: (form.workingDays || []).includes(day)
                         ? "rgba(255,255,255,0.12)"
                         : "rgba(255,255,255,0.05)",
-                      color: "#fff",
+                      color: "#dfe2f4",
                       border: `1px solid ${(form.workingDays || []).includes(day) ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.1)"}`,
                       boxShadow: (form.workingDays || []).includes(day)
                         ? "0 4px 16px rgba(0,0,0,0.2)"
@@ -1034,7 +1034,7 @@ export default function MachineMaster({ toast }) {
               <span style={{ fontSize: 12, fontWeight: 600, color: "#FF9800" }}>
                 CHANGEOVER RULES
               </span>
-              <span style={{ fontSize: 11, color: "#666", marginLeft: 10 }}>
+              <span style={{ fontSize: 11, color: "#6f74a0", marginLeft: 10 }}>
                 Define setup time per transition type to enable smart job
                 batching
               </span>
@@ -1059,7 +1059,7 @@ export default function MachineMaster({ toast }) {
                             style={{
                               textAlign: "left",
                               padding: "6px 8px",
-                              color: "#666",
+                              color: "#6f74a0",
                               fontWeight: 500,
                               fontSize: 10,
                               borderBottom: "1px solid rgba(255,255,255,0.08)",
@@ -1173,7 +1173,7 @@ export default function MachineMaster({ toast }) {
                   background: "rgba(255,255,255,0.08)",
                   border: "1px solid rgba(255,255,255,0.18)",
                   borderRadius: 6,
-                  color: "#fff",
+                  color: "#dfe2f4",
                   fontWeight: 500,
                   cursor: "pointer",
                   fontSize: 12,
@@ -1186,9 +1186,9 @@ export default function MachineMaster({ toast }) {
             </div>
 
             {changeoverRules.length === 0 && (
-              <div style={{ fontSize: 11, color: "#555", marginTop: 8 }}>
+              <div style={{ fontSize: 11, color: "#6f74a0", marginTop: 8 }}>
                 No rules defined. Scheduler uses{" "}
-                <strong style={{ color: "#888" }}>
+                <strong style={{ color: "#8b90b8" }}>
                   {form.changeoverTimeDefault || 0}h
                 </strong>{" "}
                 global default for all transitions.
@@ -1205,7 +1205,7 @@ export default function MachineMaster({ toast }) {
                 flex: 1,
                 padding: "12px",
                 background: "rgba(255,255,255,0.08)",
-                color: "#fff",
+                color: "#dfe2f4",
                 border: "1px solid rgba(255,255,255,0.18)",
                 borderRadius: 8,
                 fontWeight: 600,
@@ -1220,7 +1220,7 @@ export default function MachineMaster({ toast }) {
               style={{
                 padding: "12px 25px",
                 background: "transparent",
-                color: "#fff",
+                color: "#dfe2f4",
                 border: "1px solid rgba(255,255,255,0.1)",
                 borderRadius: 8,
                 fontWeight: 500,
@@ -1382,11 +1382,11 @@ export default function MachineMaster({ toast }) {
                   justifyContent: "space-between",
                   padding: "8px 16px",
                   marginBottom: 12,
-                  background: "#1a1a1a",
+                  background: "#0b0e2d",
                   border: "1px solid rgba(255,255,255,0.08)",
                   borderRadius: 10,
                   fontSize: 13,
-                  color: "#a3a3a3",
+                  color: "#a9aed3",
                 }}
               >
                 {selectedIds.size} selected
@@ -1466,7 +1466,7 @@ export default function MachineMaster({ toast }) {
                         style={{
                           textAlign: "left",
                           padding: "14px 16px",
-                          color: "#666",
+                          color: "#6f74a0",
                           fontSize: 11,
                           fontWeight: 600,
                           whiteSpace: "nowrap",
@@ -1485,7 +1485,7 @@ export default function MachineMaster({ toast }) {
                         style={{
                           padding: 40,
                           textAlign: "center",
-                          color: "#444",
+                          color: "#3a3f78",
                         }}
                       >
                         No machines found
@@ -1493,8 +1493,8 @@ export default function MachineMaster({ toast }) {
                     </tr>
                   )}
                   {filteredMachines.map((m) => {
-                    const typeColor = TYPE_COLORS[m.type] || "#888";
-                    const divColor = DIVISION_COLORS[m.division] || "#555";
+                    const typeColor = TYPE_COLORS[m.type] || "#8b90b8";
+                    const divColor = DIVISION_COLORS[m.division] || "#6f74a0";
                     const compat = Array.isArray(m.productCompatibility)
                       ? m.productCompatibility
                       : [];
@@ -1530,7 +1530,7 @@ export default function MachineMaster({ toast }) {
                           style={{
                             padding: "12px 16px",
                             fontWeight: 500,
-                            color: "#fff",
+                            color: "#dfe2f4",
                           }}
                         >
                           <NameWithAvatar name={m.name} />
@@ -1574,12 +1574,12 @@ export default function MachineMaster({ toast }) {
                             {m.division || "—"}
                           </span>
                         </td>
-                        <td style={{ padding: "12px 16px", color: "#aaa" }}>
+                        <td style={{ padding: "12px 16px", color: "#a9aed3" }}>
                           {m.practicalRunRate
                             ? `${m.practicalRunRate} ${m.capacityUnit || "Pcs"}/hr`
                             : "—"}
                         </td>
-                        <td style={{ padding: "12px 16px", color: "#aaa" }}>
+                        <td style={{ padding: "12px 16px", color: "#a9aed3" }}>
                           {m.maxShiftsAllowed || 1} ×{" "}
                           {m.standardShiftHours || 8}h
                         </td>
@@ -1595,14 +1595,14 @@ export default function MachineMaster({ toast }) {
                               +{m.maxOvertimeHours}h
                             </span>
                           ) : (
-                            <span style={{ color: "#444", fontSize: 11 }}>
+                            <span style={{ color: "#3a3f78", fontSize: 11 }}>
                               No
                             </span>
                           )}
                         </td>
                         <td style={{ padding: "12px 16px", maxWidth: 260 }}>
                           {compat.length === 0 ? (
-                            <span style={{ color: "#444", fontSize: 11 }}>
+                            <span style={{ color: "#3a3f78", fontSize: 11 }}>
                               Not set
                             </span>
                           ) : (
@@ -1633,7 +1633,7 @@ export default function MachineMaster({ toast }) {
                                 <span
                                   style={{
                                     fontSize: 10,
-                                    color: "#555",
+                                    color: "#6f74a0",
                                     alignSelf: "center",
                                   }}
                                 >
@@ -1673,7 +1673,7 @@ export default function MachineMaster({ toast }) {
                                         : m.currentStatus ===
                                             "Under Maintenance"
                                           ? "#FF9800"
-                                          : "#666",
+                                          : "#6f74a0",
                                 }}
                               >
                                 {m.currentStatus}

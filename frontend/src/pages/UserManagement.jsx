@@ -12,7 +12,7 @@ const ROLE_COLORS = {
   Production: "#00BCD4",
   Store: "#FF5722",
   Viewer: "#607D8B",
-  Client: "#888",
+  Client: "#8b90b8",
 };
 
 const inputStyle = {
@@ -22,7 +22,7 @@ const inputStyle = {
   borderRadius: 6,
   fontSize: 13,
   background: "rgba(255,255,255,0.07)",
-  color: "#e0e0e0",
+  color: "#dfe2f4",
   outline: "none",
   boxSizing: "border-box",
 };
@@ -334,7 +334,7 @@ export default function UserManagement({
                   style={{
                     fontSize: 11,
                     fontWeight: 600,
-                    color: "#666",
+                    color: "#6f74a0",
                     display: "block",
                     marginBottom: 6,
                   }}
@@ -358,7 +358,7 @@ export default function UserManagement({
                 style={{
                   fontSize: 11,
                   fontWeight: 600,
-                  color: "#666",
+                  color: "#6f74a0",
                   display: "block",
                   marginBottom: 6,
                 }}
@@ -388,7 +388,7 @@ export default function UserManagement({
                   style={{
                     fontSize: 11,
                     fontWeight: 600,
-                    color: "#666",
+                    color: "#6f74a0",
                     display: "block",
                     marginBottom: 6,
                   }}
@@ -427,10 +427,10 @@ export default function UserManagement({
             }}
           >
             <div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#e0e0e0" }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#dfe2f4" }}>
                 Allow Import / Export
               </div>
-              <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>
+              <div style={{ fontSize: 11, color: "#6f74a0", marginTop: 2 }}>
                 Excel & PDF import/export buttons across all pages
               </div>
             </div>
@@ -446,7 +446,7 @@ export default function UserManagement({
                 height: 22,
                 borderRadius: 11,
                 cursor: "pointer",
-                background: form.allowExportImport ? "#4CAF50" : "#444",
+                background: form.allowExportImport ? "#4CAF50" : "#3a3f78",
                 position: "relative",
                 transition: "background 0.2s",
                 flexShrink: 0,
@@ -481,10 +481,10 @@ export default function UserManagement({
             }}
           >
             <div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#e0e0e0" }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#dfe2f4" }}>
                 Allow Edit Stock
               </div>
-              <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>
+              <div style={{ fontSize: 11, color: "#6f74a0", marginTop: 2 }}>
                 Manually adjust stock quantities in RM Stock, FG Stock &amp;
                 Consumable Stock
               </div>
@@ -501,7 +501,7 @@ export default function UserManagement({
                 height: 22,
                 borderRadius: 11,
                 cursor: "pointer",
-                background: form.allowEditStock ? "#4CAF50" : "#444",
+                background: form.allowEditStock ? "#4CAF50" : "#3a3f78",
                 position: "relative",
                 transition: "background 0.2s",
                 flexShrink: 0,
@@ -537,7 +537,7 @@ export default function UserManagement({
                 style={{
                   fontSize: 11,
                   fontWeight: 500,
-                  color: "#666",
+                  color: "#6f74a0",
                 }}
               >
                 PAGE ACCESS — View:{form.allowedTabs?.length || 0} Create:
@@ -606,7 +606,7 @@ export default function UserManagement({
                       style={{
                         width: 18,
                         height: 18,
-                        border: `2px solid ${active ? color : "#444"}`,
+                        border: `2px solid ${active ? color : "#3a3f78"}`,
                         borderRadius: 4,
                         background: active
                           ? color + "22"
@@ -628,7 +628,7 @@ export default function UserManagement({
                     <span
                       style={{
                         fontSize: 8,
-                        color: active ? color : "#555",
+                        color: active ? color : "#6f74a0",
                         fontWeight: 600,
                       }}
                     >
@@ -666,7 +666,7 @@ export default function UserManagement({
                         className={tab.icon}
                         style={{
                           fontSize: 13,
-                          color: hasView ? "#c8955a" : "#444",
+                          color: hasView ? "#aeb4ee" : "#3a3f78",
                           width: 16,
                           textAlign: "center",
                           flexShrink: 0,
@@ -675,7 +675,7 @@ export default function UserManagement({
                       <span
                         style={{
                           fontSize: 12,
-                          color: hasView ? "#e0e0e0" : "#555",
+                          color: hasView ? "#dfe2f4" : "#6f74a0",
                           fontWeight: 600,
                           overflow: "hidden",
                           textOverflow: "ellipsis",
@@ -732,7 +732,7 @@ export default function UserManagement({
               style={{
                 padding: "10px 24px",
                 background: "rgba(255,255,255,0.08)",
-                color: "#fff",
+                color: "#dfe2f4",
                 border: "1px solid rgba(255,255,255,0.18)",
                 borderRadius: 7,
                 fontWeight: 500,
@@ -751,7 +751,7 @@ export default function UserManagement({
               }}
               style={{
                 background: "transparent",
-                color: "#ffffff",
+                color: "#dfe2f4",
                 border: "1px solid rgba(255,255,255,0.2)",
                 borderRadius: 6,
                 padding: "6px 12px",
@@ -770,7 +770,7 @@ export default function UserManagement({
       )}
 
       {loading && (
-        <div style={{ color: "#666", textAlign: "center", padding: "20px 0" }}>
+        <div style={{ color: "#6f74a0", textAlign: "center", padding: "20px 0" }}>
           Loading...
         </div>
       )}
@@ -805,7 +805,7 @@ export default function UserManagement({
                       textAlign: "left",
                       fontSize: 11,
                       fontWeight: 600,
-                      color: "#8a8a8a",
+                      color: "#8b90b8",
                       whiteSpace: "nowrap",
                     }}
                   >
@@ -816,7 +816,7 @@ export default function UserManagement({
             </thead>
             <tbody>
               {filteredUsers.map((user) => {
-                const roleColor = ROLE_COLORS[user.role] || "#888";
+                const roleColor = ROLE_COLORS[user.role] || "#8b90b8";
                 const cell = { padding: "12px 14px" };
                 const pill = (ok, label) => (
                   <span
@@ -849,10 +849,10 @@ export default function UserManagement({
                     key={user._id}
                     style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
                   >
-                    <td style={{ ...cell, color: "#e0e0e0", fontWeight: 500 }}>
+                    <td style={{ ...cell, color: "#dfe2f4", fontWeight: 500 }}>
                       {user.name || user.username}
                     </td>
-                    <td style={{ ...cell, color: "#8a8a8a" }}>
+                    <td style={{ ...cell, color: "#8b90b8" }}>
                       @{user.username}
                     </td>
                     <td style={cell}>
@@ -869,10 +869,10 @@ export default function UserManagement({
                         {user.role}
                       </span>
                     </td>
-                    <td style={{ ...cell, color: "#a3a3a3" }}>
+                    <td style={{ ...cell, color: "#a9aed3" }}>
                       {(user.allowedTabs || []).length}
                     </td>
-                    <td style={{ ...cell, color: "#a3a3a3" }}>
+                    <td style={{ ...cell, color: "#a9aed3" }}>
                       {perms || "—"}
                     </td>
                     <td style={cell}>
@@ -927,7 +927,7 @@ export default function UserManagement({
         <div
           style={{
             textAlign: "center",
-            color: "#444",
+            color: "#3a3f78",
             padding: "40px 0",
             fontSize: 13,
           }}

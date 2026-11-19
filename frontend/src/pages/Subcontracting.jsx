@@ -51,7 +51,7 @@ const inp = {
   borderRadius: 6,
   fontSize: 13,
   background: "rgba(255,255,255,0.07)",
-  color: "#e0e0e0",
+  color: "#dfe2f4",
   outline: "none",
   width: "100%",
   boxSizing: "border-box",
@@ -60,7 +60,7 @@ const inp = {
 const lbl = {
   fontSize: 11,
   fontWeight: 600,
-  color: "#666",
+  color: "#6f74a0",
   display: "block",
   marginBottom: 5,
 };
@@ -330,7 +330,7 @@ export default function Subcontracting({
       >
         <div>
           <div style={{ fontSize: 20, fontWeight: 600 }}>Subcontracting</div>
-          <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
+          <div style={{ fontSize: 12, color: "#8b90b8", marginTop: 2 }}>
             Track material issued to outside vendors and reconcile returns
           </div>
         </div>
@@ -343,7 +343,7 @@ export default function Subcontracting({
           style={{
             background: "rgba(255,255,255,0.08)",
             border: "1px solid rgba(255,255,255,0.18)",
-            color: "#fff",
+            color: "#dfe2f4",
             padding: "9px 18px",
             borderRadius: 10,
             fontWeight: 600,
@@ -490,7 +490,7 @@ export default function Subcontracting({
                   onChange={(e) => setF("priority", e.target.value)}
                   style={{
                     ...inp,
-                    color: PRIORITY_COLORS[form.priority] || "#e0e0e0",
+                    color: PRIORITY_COLORS[form.priority] || "#dfe2f4",
                     fontWeight: form.priority !== "Standard" ? 700 : 400,
                   }}
                 >
@@ -562,7 +562,7 @@ export default function Subcontracting({
                   background: "#3b82f6",
                   border: "none",
                   borderRadius: 6,
-                  color: "#fff",
+                  color: "#dfe2f4",
                   fontWeight: 500,
                   cursor: "pointer",
                 }}
@@ -580,7 +580,7 @@ export default function Subcontracting({
                   background: "transparent",
                   border: "1px solid rgba(255,255,255,0.1)",
                   borderRadius: 6,
-                  color: "#888",
+                  color: "#8b90b8",
                   fontWeight: 600,
                   cursor: "pointer",
                 }}
@@ -630,7 +630,7 @@ export default function Subcontracting({
                 >
                   Record Receipt — {rec.joNo} / {rec.stage}
                 </div>
-                <div style={{ fontSize: 12, color: "#888", marginBottom: 20 }}>
+                <div style={{ fontSize: 12, color: "#8b90b8", marginBottom: 20 }}>
                   Vendor: {rec.vendor} · Issued: {fmt(rec.qtyIssued)} · Received
                   so far: {fmt(totalReceived)} · Remaining: {fmt(remaining)}
                 </div>
@@ -696,7 +696,7 @@ export default function Subcontracting({
                     <div
                       style={{
                         fontSize: 11,
-                        color: "#666",
+                        color: "#6f74a0",
                         fontWeight: 500,
                         marginBottom: 8,
                       }}
@@ -708,7 +708,7 @@ export default function Subcontracting({
                         key={i}
                         style={{
                           fontSize: 12,
-                          color: "#aaa",
+                          color: "#a9aed3",
                           padding: "4px 0",
                           borderBottom: "1px solid rgba(255,255,255,0.06)",
                         }}
@@ -746,7 +746,7 @@ export default function Subcontracting({
                       background: "transparent",
                       border: "1px solid rgba(255,255,255,0.1)",
                       borderRadius: 6,
-                      color: "#888",
+                      color: "#8b90b8",
                       cursor: "pointer",
                     }}
                   >
@@ -799,7 +799,7 @@ export default function Subcontracting({
             showAllOnFocus={true}
             inputStyle={{ ...inp, width: 160 }}
           />
-          <span style={{ fontSize: 12, color: "#555", marginLeft: "auto" }}>
+          <span style={{ fontSize: 12, color: "#6f74a0", marginLeft: "auto" }}>
             {filteredRecords.length} records
           </span>
         </div>
@@ -808,7 +808,7 @@ export default function Subcontracting({
           <div
             style={{
               textAlign: "center",
-              color: "#555",
+              color: "#6f74a0",
               padding: 40,
               fontSize: 14,
             }}
@@ -830,8 +830,8 @@ export default function Subcontracting({
             r.expectedReturn &&
             r.expectedReturn < today() &&
             !["Received", "Reconciled", "Cancelled"].includes(r.status);
-          const statusCol = STATUS_COLOR[r.status] || "#888";
-          const prioCol = PRIORITY_COLORS[r.priority] || "#888";
+          const statusCol = STATUS_COLOR[r.status] || "#8b90b8";
+          const prioCol = PRIORITY_COLORS[r.priority] || "#8b90b8";
 
           return (
             <div
@@ -867,7 +867,7 @@ export default function Subcontracting({
                   >
                     {r.joNo}
                   </span>
-                  <span style={{ fontSize: 12, color: "#888" }}>
+                  <span style={{ fontSize: 12, color: "#8b90b8" }}>
                     {r.clientName}
                   </span>
                   <span
@@ -882,8 +882,8 @@ export default function Subcontracting({
                   >
                     {r.stage}
                   </span>
-                  <span style={{ fontSize: 12, color: "#aaa" }}>
-                    → <strong style={{ color: "#e0e0e0" }}>{r.vendor}</strong>
+                  <span style={{ fontSize: 12, color: "#a9aed3" }}>
+                    → <strong style={{ color: "#dfe2f4" }}>{r.vendor}</strong>
                   </span>
                   {r.priority && r.priority !== "Standard" && (
                     <span
@@ -938,7 +938,7 @@ export default function Subcontracting({
                       }}
                       style={{
                         background: "transparent",
-                        color: "#c8955a",
+                        color: "#aeb4ee",
                         border: "1px solid #c8955a98",
                         borderRadius: 6,
                         padding: "6px 12px",
@@ -958,7 +958,7 @@ export default function Subcontracting({
                       onClick={() => handleReconcile(r.id)}
                       style={{
                         background: "transparent",
-                        color: "#c8955a",
+                        color: "#aeb4ee",
                         border: "1px solid #c8955a98",
                         borderRadius: 6,
                         padding: "6px 12px",
@@ -985,7 +985,7 @@ export default function Subcontracting({
                       onClick={() => handleCancel(r.id)}
                       style={{
                         background: "transparent",
-                        color: "#c8955a",
+                        color: "#aeb4ee",
                         border: "1px solid #c8955a98",
                         borderRadius: 6,
                         padding: "6px 12px",
@@ -1032,7 +1032,7 @@ export default function Subcontracting({
                       height: "100%",
                       width: `${Math.min(100, pct)}%`,
                       background:
-                        pct >= 100 ? "#22c55e" : pct > 0 ? "#f59e0b" : "#555",
+                        pct >= 100 ? "#22c55e" : pct > 0 ? "#f59e0b" : "#6f74a0",
                       borderRadius: 3,
                       transition: "width 0.3s",
                     }}
@@ -1041,7 +1041,7 @@ export default function Subcontracting({
                 <span
                   style={{
                     fontSize: 11,
-                    color: "#888",
+                    color: "#8b90b8",
                     minWidth: 80,
                     textAlign: "right",
                   }}
@@ -1056,12 +1056,12 @@ export default function Subcontracting({
                   display: "flex",
                   gap: 16,
                   fontSize: 11,
-                  color: "#666",
+                  color: "#6f74a0",
                 }}
               >
                 <span>Issued: {fmtDate(r.issueDate)}</span>
                 {r.expectedReturn && (
-                  <span style={{ color: isOverdue ? "#ef4444" : "#666" }}>
+                  <span style={{ color: isOverdue ? "#ef4444" : "#6f74a0" }}>
                     Expected: {fmtDate(r.expectedReturn)}
                   </span>
                 )}

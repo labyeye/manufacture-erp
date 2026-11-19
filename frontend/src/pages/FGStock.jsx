@@ -26,7 +26,7 @@ const inputStyle = {
   borderRadius: 8,
   fontSize: 13,
   background: "transparent",
-  color: "#ededed",
+  color: "#dfe2f4",
   outline: "none",
 };
 
@@ -147,10 +147,10 @@ export default function FGStock({
           style={{
             width: 65,
             padding: "5px 8px",
-            background: "#141414",
+            background: "#05071a",
             border: `1px solid ${hasChanged && !isClient ? "#FF9800" : "rgba(255,255,255,0.08)"}`,
             borderRadius: 4,
-            color: "#fff",
+            color: "#dfe2f4",
             fontSize: 12,
             outline: "none",
             textAlign: "right",
@@ -169,7 +169,7 @@ export default function FGStock({
               background: "rgba(255,255,255,0.08)",
               border: "1px solid rgba(255,255,255,0.18)",
               borderRadius: 4,
-              color: "#fff",
+              color: "#dfe2f4",
               padding: "4px 8px",
               fontSize: 10,
               cursor: "pointer",
@@ -185,7 +185,7 @@ export default function FGStock({
 
   const PriceEdit = ({ item }) => {
     return (
-      <span style={{ color: "#c8955a", fontSize: 12, fontWeight: 500 }}>
+      <span style={{ color: "#aeb4ee", fontSize: 12, fontWeight: 500 }}>
         {item.price ? `₹${Number(item.price).toLocaleString("en-IN")}` : "—"}
       </span>
     );
@@ -193,7 +193,7 @@ export default function FGStock({
 
   const QtyEdit = ({ item }) => {
     return (
-      <span style={{ color: "#ededed", fontSize: 12, fontWeight: 500 }}>
+      <span style={{ color: "#dfe2f4", fontSize: 12, fontWeight: 500 }}>
         {(item.qty || 0).toLocaleString("en-IN")}
       </span>
     );
@@ -221,10 +221,10 @@ export default function FGStock({
           style={{
             width: 80,
             padding: "5px 8px",
-            background: "#141414",
+            background: "#05071a",
             border: `1px solid ${hasChanged && !isClient ? "#4CAF50" : "rgba(255,255,255,0.08)"}`,
             borderRadius: 4,
-            color: hasChanged && !isClient ? "#4CAF50" : "#ededed",
+            color: hasChanged && !isClient ? "#4CAF50" : "#dfe2f4",
             fontSize: 12,
             fontWeight: 500,
             outline: "none",
@@ -261,7 +261,7 @@ export default function FGStock({
               background: "rgba(255,255,255,0.08)",
               border: "1px solid rgba(255,255,255,0.18)",
               borderRadius: 4,
-              color: "#fff",
+              color: "#dfe2f4",
               padding: "4px 8px",
               fontSize: 10,
               cursor: "pointer",
@@ -391,20 +391,20 @@ export default function FGStock({
 
     const BUCKETS = [
       { key: "0-7d", label: "0–7 days", min: 0, max: 7, color: "#86b894" },
-      { key: "8-15d", label: "8–15 days", min: 8, max: 15, color: "#a3a3a3" },
+      { key: "8-15d", label: "8–15 days", min: 8, max: 15, color: "#a9aed3" },
       {
         key: "16-30d",
         label: "16–30 days",
         min: 16,
         max: 30,
-        color: "#c8955a",
+        color: "#e0a84f",
       },
       {
         key: "31-60d",
         label: "31–60 days",
         min: 31,
         max: 60,
-        color: "#c8955a",
+        color: "#e0a84f",
       },
       {
         key: "60+d",
@@ -697,7 +697,7 @@ export default function FGStock({
                     : "60+d";
         const ageColor =
           ageDays === null
-            ? "#a3a3a3"
+            ? "#a9aed3"
             : ageDays <= 7
               ? "#16a34a"
               : ageDays <= 15
@@ -736,16 +736,16 @@ export default function FGStock({
         <head>
           <title>FG Stock</title>
           <style>
-            body { font-family: 'Inter', Arial, sans-serif; padding: 20px 30px; color: #1a1a1a; }
+            body { font-family: 'Inter', Arial, sans-serif; padding: 20px 30px; color: #0b0e2d; }
             .header { text-align: center; border-bottom: 2px solid #1e40af; padding-bottom: 10px; margin-bottom: 16px; }
             .header h1 { color: #1e3a8a; margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 1px; }
-            .header p { margin: 2px 0; font-size: 11px; color: #6b6b6b; }
+            .header p { margin: 2px 0; font-size: 11px; color: #6f74a0; }
             .doc-title { display: flex; justify-content: space-between; margin-bottom: 8px; }
             .doc-title h2 { margin: 0; font-size: 16px; font-weight: 700; }
-            .meta { font-size: 10px; color: #8a8a8a; }
+            .meta { font-size: 10px; color: #8b90b8; }
             table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-            th { background: #f1f5f9; border: 1px solid #c7c7c7; padding: 6px 8px; text-align: left; font-size: 10px; text-transform: uppercase; color: #3a3a3a; }
-            td { border: 1px solid #ededed; padding: 5px 8px; font-size: 10px; }
+            th { background: #f1f5f9; border: 1px solid #c9cdea; padding: 6px 8px; text-align: left; font-size: 10px; text-transform: uppercase; color: #3a3a3a; }
+            td { border: 1px solid #dfe2f4; padding: 5px 8px; font-size: 10px; }
             .num { text-align: right; font-family: 'JetBrains Mono', monospace; }
             tfoot td { font-weight: 800; background: #f8fafc; }
             @media print { @page { margin: 1cm; size: A4 landscape; } }
@@ -1013,7 +1013,7 @@ export default function FGStock({
               className="lg-btn"
               aria-pressed={showZeroStock}
               onClick={() => setShowZeroStock(!showZeroStock)}
-              style={showZeroStock ? { background: "#242424" } : undefined}
+              style={showZeroStock ? { background: "#101339" } : undefined}
             >
               {showZeroStock ? "Hide zero stock" : "Show zero stock"}
             </button>
@@ -1022,7 +1022,7 @@ export default function FGStock({
               className="lg-btn"
               aria-pressed={showAgeing}
               onClick={() => setShowAgeing((v) => !v)}
-              style={showAgeing ? { background: "#242424" } : undefined}
+              style={showAgeing ? { background: "#101339" } : undefined}
             >
               <i className="fa-solid fa-clock-rotate-left" /> Stock ageing
             </button>
@@ -1094,11 +1094,11 @@ export default function FGStock({
             justifyContent: "space-between",
             padding: "8px 16px",
             margin: "12px 0",
-            background: "#1a1a1a",
+            background: "#0b0e2d",
             border: "1px solid rgba(255,255,255,0.08)",
             borderRadius: 10,
             fontSize: 13,
-            color: "#a3a3a3",
+            color: "#a9aed3",
           }}
         >
           {selectedIds.length} selected
@@ -1134,12 +1134,12 @@ export default function FGStock({
           >
             <i
               className="fa-solid fa-clock-rotate-left"
-              style={{ color: "#c8955a" }}
+              style={{ color: "#aeb4ee" }}
             />
-            <span style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "#dfe2f4" }}>
               FG Stock Ageing Analysis
             </span>
-            <span style={{ fontSize: 11, color: "#737373" }}>
+            <span style={{ fontSize: 11, color: "#7b80ad" }}>
               — FIFO basis: production lots consumed by dispatches oldest-first
               · click ageing cell for item detail
             </span>
@@ -1152,7 +1152,7 @@ export default function FGStock({
             }}
           >
             {ageingData.map((bucket, bi) => {
-              const colors = ["#86b894", "#a3a3a3", "#c8955a", "#e0705f"];
+              const colors = ["#86b894", "#a9aed3", "#e0a84f", "#e0705f"];
               const col = colors[bi];
               const isExpanded = expandedBucket === bi;
               const totalQtyBucket = bucket.items.reduce(
@@ -1391,7 +1391,7 @@ export default function FGStock({
                     style={{
                       textAlign: "center",
                       padding: "60px 0",
-                      color: "#737373",
+                      color: "#7b80ad",
                     }}
                   >
                     <i
@@ -1399,7 +1399,7 @@ export default function FGStock({
                       style={{
                         fontSize: 32,
                         marginBottom: 12,
-                        color: "#6b6b6b",
+                        color: "#6f74a0",
                       }}
                     />
                     <div style={{ fontSize: 13 }}>
@@ -1427,15 +1427,15 @@ export default function FGStock({
                       : null);
                   const ageColor =
                     ageDays === null
-                      ? "#737373"
+                      ? "#7b80ad"
                       : ageDays <= 7
                         ? "#86b894"
                         : ageDays <= 15
-                          ? "#c8955a"
+                          ? "#e0a84f"
                           : ageDays <= 30
-                            ? "#c8955a"
+                            ? "#e0a84f"
                             : ageDays <= 60
-                              ? "#c8955a"
+                              ? "#e0a84f"
                               : "#e0705f";
                   const ageLabel =
                     ageDays === null
@@ -1482,7 +1482,7 @@ export default function FGStock({
                       <td
                         style={{
                           padding: "10px 14px",
-                          color: "#737373",
+                          color: "#7b80ad",
                           fontSize: 11,
                         }}
                       >
@@ -1493,7 +1493,7 @@ export default function FGStock({
                         style={{
                           padding: "10px 14px",
                           fontWeight: 600,
-                          color: "#ededed",
+                          color: "#dfe2f4",
                           minWidth: 250,
                           whiteSpace: "normal",
                           wordBreak: "break-word",
@@ -1518,7 +1518,7 @@ export default function FGStock({
                       <td
                         style={{
                           padding: "10px 14px",
-                          color: "#a3a3a3",
+                          color: "#a9aed3",
                           fontSize: 11,
                         }}
                       >
@@ -1546,7 +1546,7 @@ export default function FGStock({
                           padding: "10px 14px",
                           textAlign: "right",
                           fontWeight: 500,
-                          color: isLow ? "#f44336" : "#ededed",
+                          color: isLow ? "#f44336" : "#dfe2f4",
                         }}
                       >
                         <QtyEdit item={s} />
@@ -1555,7 +1555,7 @@ export default function FGStock({
                         style={{
                           padding: "10px 14px",
                           textAlign: "right",
-                          color: "#737373",
+                          color: "#7b80ad",
                         }}
                       >
                         <ReorderEdit item={s} />
@@ -1564,7 +1564,7 @@ export default function FGStock({
                         style={{
                           padding: "10px 14px",
                           textAlign: "right",
-                          color: "#a3a3a3",
+                          color: "#a9aed3",
                         }}
                       >
                         <PriceEdit item={s} />
@@ -1641,12 +1641,12 @@ export default function FGStock({
                                 {ageLabel}
                               </span>
                             )}
-                            <span style={{ fontSize: 10, color: "#737373" }}>
+                            <span style={{ fontSize: 10, color: "#7b80ad" }}>
                               {ageDays}d
                             </span>
                           </span>
                         ) : (
-                          <span style={{ color: "#737373", fontSize: 11 }}>
+                          <span style={{ color: "#7b80ad", fontSize: 11 }}>
                             —
                           </span>
                         )}
@@ -1788,12 +1788,12 @@ function EditModal({ item, onClose, onSave, companyMaster = [] }) {
   };
 
   const contentStyle = {
-    background: "#1a1a1a",
+    background: "#0b0e2d",
     padding: 30,
     borderRadius: 12,
     width: 500,
     maxWidth: "90%",
-    border: "1px solid #737373",
+    border: "1px solid #7b80ad",
     boxShadow: "0 20px 40px rgba(0,0,0,0.4)",
   };
 
@@ -1804,7 +1804,7 @@ function EditModal({ item, onClose, onSave, companyMaster = [] }) {
   const labelStyle = {
     display: "block",
     fontSize: 12,
-    color: "#a3a3a3",
+    color: "#a9aed3",
     marginBottom: 6,
     fontWeight: 600,
   };
@@ -1812,10 +1812,10 @@ function EditModal({ item, onClose, onSave, companyMaster = [] }) {
   const inputStyle = {
     width: "100%",
     padding: "10px 14px",
-    background: "#141414",
+    background: "#05071a",
     border: "1px solid rgba(255,255,255,0.08)",
     borderRadius: 6,
-    color: "#fff",
+    color: "#dfe2f4",
     fontSize: 14,
     outline: "none",
   };
@@ -1823,7 +1823,7 @@ function EditModal({ item, onClose, onSave, companyMaster = [] }) {
   return (
     <div style={modalStyle} className="modal-backdrop">
       <div style={contentStyle} className="fade-in">
-        <h3 style={{ margin: "0 0 20px 0", color: "#c8955a", fontSize: 18 }}>
+        <h3 style={{ margin: "0 0 20px 0", color: "#aeb4ee", fontSize: 18 }}>
           Edit Stock Item
         </h3>
 
@@ -1927,7 +1927,7 @@ function EditModal({ item, onClose, onSave, companyMaster = [] }) {
             onClick={onClose}
             style={{
               background: "transparent",
-              color: "#ffffff",
+              color: "#dfe2f4",
               border: "1px solid rgba(255,255,255,0.2)",
               borderRadius: 6,
               padding: "6px 12px",
@@ -1953,7 +1953,7 @@ function EditModal({ item, onClose, onSave, companyMaster = [] }) {
               padding: "10px 24px",
               background: "rgba(255,255,255,0.08)",
               border: "1px solid rgba(255,255,255,0.18)",
-              color: "#fff",
+              color: "#dfe2f4",
               borderRadius: 6,
               cursor: "pointer",
               fontWeight: 500,
@@ -2000,7 +2000,7 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
     >
       <div
         style={{
-          background: "#1a1a1a",
+          background: "#0b0e2d",
           border: "1px solid rgba(255,255,255,0.1)",
           borderRadius: 14,
           width: 680,
@@ -2028,7 +2028,7 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
               <div
                 style={{
                   fontSize: 11,
-                  color: "#c8955a",
+                  color: "#aeb4ee",
                   fontWeight: 600,
                   marginBottom: 4,
                 }}
@@ -2043,13 +2043,13 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
                 style={{
                   fontSize: 16,
                   fontWeight: 600,
-                  color: "#fff",
+                  color: "#dfe2f4",
                   marginBottom: 2,
                 }}
               >
                 {item.itemName}
               </div>
-              <div style={{ fontSize: 12, color: "#737373" }}>
+              <div style={{ fontSize: 12, color: "#7b80ad" }}>
                 {item.itemCode && (
                   <span style={{ marginRight: 12 }}>{item.itemCode}</span>
                 )}
@@ -2061,7 +2061,7 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
               style={{
                 background: "transparent",
                 border: "none",
-                color: "#737373",
+                color: "#7b80ad",
                 fontSize: 20,
                 cursor: "pointer",
                 padding: "4px 8px",
@@ -2077,13 +2077,13 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
               <div
                 style={{
                   fontSize: 10,
-                  color: "#737373",
+                  color: "#7b80ad",
                   marginBottom: 2,
                 }}
               >
                 Stock in Hand
               </div>
-              <div style={{ fontSize: 20, fontWeight: 600, color: "#fff" }}>
+              <div style={{ fontSize: 20, fontWeight: 600, color: "#dfe2f4" }}>
                 {fmtN(totalQty)}
               </div>
             </div>
@@ -2092,14 +2092,14 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
                 <div
                   style={{
                     fontSize: 10,
-                    color: "#737373",
+                    color: "#7b80ad",
                     marginBottom: 2,
                   }}
                 >
                   Oldest Stock
                 </div>
                 <div
-                  style={{ fontSize: 20, fontWeight: 600, color: "#c8955a" }}
+                  style={{ fontSize: 20, fontWeight: 600, color: "#aeb4ee" }}
                 >
                   {fifoData.lots[0].ageDays}d ago
                 </div>
@@ -2110,14 +2110,14 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
                 <div
                   style={{
                     fontSize: 10,
-                    color: "#737373",
+                    color: "#7b80ad",
                     marginBottom: 2,
                   }}
                 >
                   Lots
                 </div>
                 <div
-                  style={{ fontSize: 20, fontWeight: 600, color: "#c8955a" }}
+                  style={{ fontSize: 20, fontWeight: 600, color: "#aeb4ee" }}
                 >
                   {fifoData.lots.length}
                 </div>
@@ -2137,7 +2137,7 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
             <div
               style={{
                 fontSize: 11,
-                color: "#a3a3a3",
+                color: "#a9aed3",
                 fontWeight: 600,
                 marginBottom: 10,
               }}
@@ -2177,7 +2177,7 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
                       {fmtN(b.qty)}
                     </div>
                     <div
-                      style={{ fontSize: 10, color: "#737373", marginTop: 1 }}
+                      style={{ fontSize: 10, color: "#7b80ad", marginTop: 1 }}
                     >
                       {pct}% of stock
                     </div>
@@ -2226,7 +2226,7 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
             <div
               style={{
                 fontSize: 11,
-                color: "#a3a3a3",
+                color: "#a9aed3",
                 fontWeight: 600,
                 marginBottom: 10,
               }}
@@ -2239,11 +2239,11 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
                   lot.ageDays <= 7
                     ? "#86b894"
                     : lot.ageDays <= 15
-                      ? "#c8955a"
+                      ? "#e0a84f"
                       : lot.ageDays <= 30
-                        ? "#c8955a"
+                        ? "#e0a84f"
                         : lot.ageDays <= 60
-                          ? "#c8955a"
+                          ? "#e0a84f"
                           : "#e0705f";
                 return (
                   <div
@@ -2268,13 +2268,13 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
                       }}
                     />
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 12, color: "#a3a3a3" }}>
+                      <div style={{ fontSize: 12, color: "#a9aed3" }}>
                         {lot.ref === "Opening Balance"
                           ? "Opening Balance"
                           : `Production: ${lot.ref}`}
                       </div>
                       <div
-                        style={{ fontSize: 11, color: "#737373", marginTop: 2 }}
+                        style={{ fontSize: 11, color: "#7b80ad", marginTop: 2 }}
                       >
                         {fmtDate(lot.date)}
                       </div>
@@ -2284,7 +2284,7 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
                         style={{
                           fontSize: 13,
                           fontWeight: 600,
-                          color: "#ededed",
+                          color: "#dfe2f4",
                         }}
                       >
                         {fmtN(lot.qty)}
@@ -2306,7 +2306,7 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
             <div
               style={{
                 fontSize: 11,
-                color: "#a3a3a3",
+                color: "#a9aed3",
                 fontWeight: 600,
                 marginBottom: 10,
               }}
@@ -2319,7 +2319,7 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
                   tx.txType === "production" || tx.txType === "opening";
                 const color =
                   tx.txType === "opening"
-                    ? "#c8955a"
+                    ? "#e0a84f"
                     : isIn
                       ? "#86b894"
                       : "#e0705f";
@@ -2359,7 +2359,7 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
                         <span
                           style={{
                             fontSize: 11,
-                            color: "#737373",
+                            color: "#7b80ad",
                             marginLeft: 8,
                           }}
                         >
@@ -2367,7 +2367,7 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
                         </span>
                       )}
                     </div>
-                    <div style={{ fontSize: 11, color: "#737373" }}>
+                    <div style={{ fontSize: 11, color: "#7b80ad" }}>
                       {fmtDate(tx.date)}
                     </div>
                     <div
@@ -2390,7 +2390,7 @@ function FifoAgeingModal({ item, fifoData, onClose }) {
         )}
 
         {!fifoData && (
-          <div style={{ padding: 32, textAlign: "center", color: "#737373" }}>
+          <div style={{ padding: 32, textAlign: "center", color: "#7b80ad" }}>
             <i
               className="fa-solid fa-circle-info"
               style={{ fontSize: 28, marginBottom: 10, display: "block" }}

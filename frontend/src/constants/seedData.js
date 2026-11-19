@@ -560,7 +560,7 @@ export const DEFAULT_ROLES = {
   },
   Client: {
     label: "Client",
-    color: "#888",
+    color: "#8b90b8",
     tabs: ["sales", "jobs", "dispatch", "fg"],
   },
 };

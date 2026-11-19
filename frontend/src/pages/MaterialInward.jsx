@@ -97,7 +97,7 @@ export default function MaterialInward({
       fontSize: 11,
       fontWeight: 600,
       background: isTeal ? "rgba(20,184,166,0.15)" : "rgba(255,255,255,0.06)",
-      color: isTeal ? "#5eead4" : "#c7c7c7",
+      color: isTeal ? "#5eead4" : "#c9cdea",
       border: `1px solid ${isTeal ? "rgba(20,184,166,0.30)" : "rgba(255,255,255,0.12)"}`,
     };
   };
@@ -1146,32 +1146,32 @@ export default function MaterialInward({
           <title>GRN-${r.inwardNo}</title>
           <style>
             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&family=JetBrains+Mono:wght@700&display=swap');
-            body { font-family: 'Inter', sans-serif; padding: 20px 30px; color: #1a1a1a; }
+            body { font-family: 'Inter', sans-serif; padding: 20px 30px; color: #0b0e2d; }
             .header { text-align: center; border-bottom: 2px solid #0891b2; padding-bottom: 10px; margin-bottom: 20px; }
             .header h1 { color: #0e7490; margin: 0; font-size: 24px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
-            .header p { margin: 2px 0; font-size: 11px; color: #6b6b6b; font-weight: 500; }
+            .header p { margin: 2px 0; font-size: 11px; color: #6f74a0; font-weight: 500; }
             
             .doc-title { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px; }
             .doc-title h2 { margin: 0; font-size: 18px; font-weight: 700; }
             .status { color: #0891b2; font-weight: 700; font-size: 12px; }
             
-            .hr { height: 1px; background: #ededed; margin: 10px 0; border: none; }
-            .po-no { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; color: #1a1a1a; margin: 5px 0; }
+            .hr { height: 1px; background: #dfe2f4; margin: 10px 0; border: none; }
+            .po-no { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; color: #0b0e2d; margin: 5px 0; }
             
-            .section-label { font-size: 10px; color: #8a8a8a; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 15px; margin-top: 20px; }
+            .section-label { font-size: 10px; color: #8b90b8; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 15px; margin-top: 20px; }
             
             .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px; }
-            .info-item label { display: block; font-size: 9px; color: #a3a3a3; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
-            .info-item span { font-size: 11px; font-weight: 600; color: #1f1f1f; }
+            .info-item label { display: block; font-size: 9px; color: #a9aed3; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
+            .info-item span { font-size: 11px; font-weight: 600; color: #101339; }
             
             table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-            th { background: #f8fafc; border: 1px solid #ededed; padding: 4px 6px; text-align: left; font-size: 9px; font-weight: 800; text-transform: uppercase; color: #6b6b6b; }
-            td { border: 1px solid #ededed; padding: 4px 6px; font-size: 9px; color: #1f1f1f; }
+            th { background: #f8fafc; border: 1px solid #dfe2f4; padding: 4px 6px; text-align: left; font-size: 9px; font-weight: 800; text-transform: uppercase; color: #6f74a0; }
+            td { border: 1px solid #dfe2f4; padding: 4px 6px; font-size: 9px; color: #101339; }
             .col-qty { text-align: center; }
             .col-amt { text-align: right; font-weight: 700; }
             
             .total-row { display: flex; justify-content: flex-end; margin-top: 15px; }
-            .total-box { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 800; color: #1a1a1a; }
+            .total-box { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 800; color: #0b0e2d; }
             
             @media print { body { padding: 0; } @page { margin: 1cm; } }
           </style>
@@ -1491,7 +1491,7 @@ export default function MaterialInward({
                   onClick={addItem}
                   style={{
                     background: "rgba(255,255,255,0.08)",
-                    color: "#fff",
+                    color: "#dfe2f4",
                     border: "1px solid rgba(255,255,255,0.18)",
                     borderRadius: 6,
                     padding: "8px 18px",
@@ -1935,8 +1935,8 @@ export default function MaterialInward({
                               <div
                                 style={{
                                   padding: "10px 14px",
-                                  background: "#0c0c0e",
-                                  border: "1px solid #2a2a2e",
+                                  background: "#05071a",
+                                  border: "1px solid #161a49",
                                   borderRadius: 6,
                                   color: "#4ade80",
                                   fontWeight: 500,
@@ -2013,7 +2013,7 @@ export default function MaterialInward({
                                     : "— Qty × Rate —"
                                 }
                                 style={{
-                                  background: "#0c0c0e",
+                                  background: "#05071a",
                                   color: it.amount ? C.green : C.muted,
                                   fontWeight: 500,
                                 }}
@@ -2091,7 +2091,7 @@ export default function MaterialInward({
                                     : "— Qty × Rate —"
                                 }
                                 style={{
-                                  background: "#0c0c0e",
+                                  background: "#05071a",
                                   color: it.amount ? C.green : C.muted,
                                   fontWeight: 500,
                                 }}
@@ -2134,8 +2134,8 @@ export default function MaterialInward({
                       <div
                         style={{
                           padding: "9px 12px",
-                          background: "#0c0c0e",
-                          border: "1px solid #2a2a2e",
+                          background: "#05071a",
+                          border: "1px solid #161a49",
                           borderRadius: 6,
                           fontSize: 13,
                           color: it.totalWithTax ? C.green : C.muted,
@@ -2660,7 +2660,7 @@ export default function MaterialInward({
                               style={{
                                 padding: "0 14px",
                                 fontSize: 12,
-                                color: "#a3a3a3",
+                                color: "#a9aed3",
                                 whiteSpace: "nowrap",
                               }}
                             >
@@ -2788,7 +2788,7 @@ export default function MaterialInward({
                     alignItems: "center",
                     gap: 14,
                     padding: "10px 18px",
-                    background: "#1a1a1a",
+                    background: "#0b0e2d",
                     border: "1px solid rgba(255,255,255,0.12)",
                     borderRadius: 999,
                     boxShadow:
@@ -2800,7 +2800,7 @@ export default function MaterialInward({
                     style={{
                       fontSize: 12,
                       fontWeight: 600,
-                      color: "#c7c7c7",
+                      color: "#c9cdea",
                     }}
                   >
                     {selectedIds.size} row{selectedIds.size !== 1 ? "s" : ""}{" "}
@@ -2821,7 +2821,7 @@ export default function MaterialInward({
                     }
                     style={{
                       background: "transparent",
-                      color: "#ffffff",
+                      color: "#dfe2f4",
                       border: "none",
                       fontSize: 12,
                       fontWeight: 500,
@@ -2836,7 +2836,7 @@ export default function MaterialInward({
                     onClick={() => setBulkDeleteOpen(true)}
                     style={{
                       background: "transparent",
-                      color: "#ffffff",
+                      color: "#dfe2f4",
                       border: "none",
                       fontSize: 12,
                       fontWeight: 600,
@@ -2852,7 +2852,7 @@ export default function MaterialInward({
                     title="Clear selection"
                     style={{
                       background: "transparent",
-                      color: "#ffffff",
+                      color: "#dfe2f4",
                       border: "none",
                       fontSize: 14,
                       cursor: "pointer",

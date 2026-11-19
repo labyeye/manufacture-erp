@@ -22,11 +22,11 @@ const save = (k, v) => localStorage.setItem(k, JSON.stringify(v));
 
 const inp = {
   padding: "9px 12px",
-  border: "1px solid #2a2a2a",
+  border: "1px solid #161a49",
   borderRadius: 6,
   fontSize: 13,
-  background: "#141414",
-  color: "#e0e0e0",
+  background: "#05071a",
+  color: "#dfe2f4",
   outline: "none",
   width: "100%",
   boxSizing: "border-box",
@@ -34,7 +34,7 @@ const inp = {
 const lbl = {
   fontSize: 11,
   fontWeight: 600,
-  color: "#666",
+  color: "#6f74a0",
   display: "block",
   marginBottom: 5,
 };
@@ -76,7 +76,7 @@ export default function DesignHub({ salesOrders = [], jobOrders = [], toast }) {
           display: "flex",
           gap: 4,
           marginBottom: 24,
-          borderBottom: "1px solid #2a2a2a",
+          borderBottom: "1px solid #161a49",
         }}
       >
         {TABS.map((t) => {
@@ -317,7 +317,7 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
           <div style={{ fontSize: 17, fontWeight: 600 }}>
             Artwork Approval Workflow
           </div>
-          <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
+          <div style={{ fontSize: 12, color: "#8b90b8", marginTop: 2 }}>
             Received → Internal Review → Proof Sent → Client Approved →
             Production Release · Eliminates version conflicts
           </div>
@@ -331,7 +331,7 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
           style={{
             background: "rgba(255,255,255,0.08)",
             border: "1px solid rgba(255,255,255,0.18)",
-            color: "#fff",
+            color: "#dfe2f4",
             padding: "9px 18px",
             borderRadius: 10,
             fontWeight: 600,
@@ -362,12 +362,12 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
                 padding: "3px 12px",
                 background:
                   filterStage === s
-                    ? (stg?.color || "#888") + "33"
+                    ? (stg?.color || "#8b90b8") + "33"
                     : "transparent",
-                border: `1px solid ${filterStage === s ? stg?.color || "#888" : "#2a2a2a"}`,
+                border: `1px solid ${filterStage === s ? stg?.color || "#8b90b8" : "#161a49"}`,
                 borderRadius: 20,
                 fontSize: 11,
-                color: filterStage === s ? stg?.color || "#fff" : "#666",
+                color: filterStage === s ? stg?.color || "#fff" : "#6f74a0",
                 cursor: "pointer",
                 fontWeight: filterStage === s ? 700 : 400,
               }}
@@ -452,10 +452,10 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
               <input
                 type="file"
                 onChange={handleFile}
-                style={{ fontSize: 12, color: "#888" }}
+                style={{ fontSize: 12, color: "#8b90b8" }}
               />
               {form.fileName && (
-                <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>
+                <div style={{ fontSize: 11, color: "#8b90b8", marginTop: 4 }}>
                   {form.fileName}
                 </div>
               )}
@@ -469,7 +469,7 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
                 background: "rgba(255,255,255,0.08)",
                 border: "1px solid rgba(255,255,255,0.18)",
                 borderRadius: 6,
-                color: "#fff",
+                color: "#dfe2f4",
                 fontWeight: 500,
                 cursor: "pointer",
                 boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
@@ -485,7 +485,7 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
               }}
               style={{
                 background: "transparent",
-                color: "#ffffff",
+                color: "#dfe2f4",
                 border: "1px solid rgba(255,255,255,0.2)",
                 borderRadius: 6,
                 padding: "6px 12px",
@@ -506,14 +506,14 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
       {}
       <div
         style={{
-          background: "#111",
-          border: "1px solid #2a2a2a",
+          background: "#05071a",
+          border: "1px solid #161a49",
           borderRadius: 10,
           padding: 20,
         }}
       >
         {filtered.length === 0 && (
-          <div style={{ textAlign: "center", color: "#555", padding: 40 }}>
+          <div style={{ textAlign: "center", color: "#6f74a0", padding: 40 }}>
             {records.length === 0
               ? "No artwork records. Register the first artwork to start the approval workflow."
               : "No records match the filter."}
@@ -534,7 +534,7 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
           return (
             <div
               key={rec.id}
-              style={{ borderBottom: "1px solid #1a1a1a", padding: "14px 4px" }}
+              style={{ borderBottom: "1px solid #0b0e2d", padding: "14px 4px" }}
             >
               {}
               <div
@@ -563,7 +563,7 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
                       background: "#ffffff11",
                       borderRadius: 4,
                       fontSize: 11,
-                      color: "#888",
+                      color: "#8b90b8",
                     }}
                   >
                     {rec.version}
@@ -587,7 +587,7 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
                     {stage.icon} {stage.label}
                   </span>
                   {rec.clientContact && (
-                    <span style={{ fontSize: 11, color: "#888" }}>
+                    <span style={{ fontSize: 11, color: "#8b90b8" }}>
                       · {rec.clientContact}
                     </span>
                   )}
@@ -599,7 +599,7 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
                       padding: "4px 10px",
                       border: "1px solid rgba(255,255,255,0.15)",
                       background: "transparent",
-                      color: "#aaa",
+                      color: "#a9aed3",
                       borderRadius: 4,
                       fontSize: 11,
                       cursor: "pointer",
@@ -615,7 +615,7 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
                         background: "rgba(255,255,255,0.08)",
                         border: "1px solid rgba(255,255,255,0.18)",
                         borderRadius: 4,
-                        color: "#fff",
+                        color: "#dfe2f4",
                         fontSize: 11,
                         cursor: "pointer",
                         boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
@@ -629,7 +629,7 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
                       onClick={() => versionUp(rec)}
                       style={{
                         background: "transparent",
-                        color: "#c8955a",
+                        color: "#aeb4ee",
                         border: "1px solid #c8955a98",
                         borderRadius: 6,
                         padding: "6px 12px",
@@ -686,8 +686,8 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
                           width: 28,
                           height: 28,
                           borderRadius: "50%",
-                          background: done ? stg?.color + "cc" : "#1a1a1a",
-                          border: `2px solid ${isCurrent ? stg?.color : done ? stg?.color + "44" : "#2a2a2a"}`,
+                          background: done ? stg?.color + "cc" : "#0b0e2d",
+                          border: `2px solid ${isCurrent ? stg?.color : done ? stg?.color + "44" : "#161a49"}`,
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
@@ -704,7 +704,7 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
                             background:
                               stageOrder.indexOf(rec.currentStage) > i
                                 ? "#22c55e44"
-                                : "#1a1a1a",
+                                : "#0b0e2d",
                           }}
                         />
                       )}
@@ -718,7 +718,7 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
                 <div
                   style={{
                     background: "#0a0a0a",
-                    border: "1px solid #2a2a2a",
+                    border: "1px solid #161a49",
                     borderRadius: 8,
                     padding: 14,
                     marginBottom: 10,
@@ -727,7 +727,7 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
                   <div
                     style={{
                       fontSize: 11,
-                      color: "#888",
+                      color: "#8b90b8",
                       marginBottom: 10,
                       fontWeight: 600,
                     }}
@@ -804,25 +804,25 @@ function ArtworkTab({ salesOrders, jobOrders, toast }) {
                         }}
                       >
                         <span
-                          style={{ color: stg?.color || "#888", minWidth: 20 }}
+                          style={{ color: stg?.color || "#8b90b8", minWidth: 20 }}
                         >
                           {stg?.icon || "•"}
                         </span>
                         <span
                           style={{
-                            color: stg?.color || "#888",
+                            color: stg?.color || "#8b90b8",
                             fontWeight: 500,
                             minWidth: 130,
                           }}
                         >
                           {stg?.label || h.stage}
                         </span>
-                        <span style={{ color: "#666", minWidth: 90 }}>
+                        <span style={{ color: "#6f74a0", minWidth: 90 }}>
                           {fmtDate(h.date)}
                         </span>
-                        <span style={{ color: "#888" }}>{h.user}</span>
+                        <span style={{ color: "#8b90b8" }}>{h.user}</span>
                         {h.notes && (
-                          <span style={{ color: "#555" }}>· {h.notes}</span>
+                          <span style={{ color: "#6f74a0" }}>· {h.notes}</span>
                         )}
                       </div>
                     );
@@ -943,7 +943,7 @@ function DielineTab({ jobOrders, toast }) {
       >
         <div>
           <div style={{ fontSize: 17, fontWeight: 600 }}>Dieline Library</div>
-          <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
+          <div style={{ fontSize: 12, color: "#8b90b8", marginTop: 2 }}>
             Cutting patterns as versioned assets · dimensions · compatible
             machines · client history
           </div>
@@ -957,7 +957,7 @@ function DielineTab({ jobOrders, toast }) {
           style={{
             background: "rgba(255,255,255,0.08)",
             border: "1px solid rgba(255,255,255,0.18)",
-            color: "#fff",
+            color: "#dfe2f4",
             padding: "9px 18px",
             borderRadius: 10,
             fontWeight: 600,
@@ -1056,10 +1056,10 @@ function DielineTab({ jobOrders, toast }) {
                 type="file"
                 accept="image/*,.pdf"
                 onChange={handlePreview}
-                style={{ fontSize: 12, color: "#888" }}
+                style={{ fontSize: 12, color: "#8b90b8" }}
               />
               {form.previewFileName && (
-                <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>
+                <div style={{ fontSize: 11, color: "#8b90b8", marginTop: 4 }}>
                   {form.previewFileName}
                 </div>
               )}
@@ -1073,7 +1073,7 @@ function DielineTab({ jobOrders, toast }) {
                 background: "rgba(255,255,255,0.08)",
                 border: "1px solid rgba(255,255,255,0.18)",
                 borderRadius: 6,
-                color: "#fff",
+                color: "#dfe2f4",
                 fontWeight: 500,
                 cursor: "pointer",
                 boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
@@ -1089,7 +1089,7 @@ function DielineTab({ jobOrders, toast }) {
               }}
               style={{
                 background: "transparent",
-                color: "#ffffff",
+                color: "#dfe2f4",
                 border: "1px solid rgba(255,255,255,0.2)",
                 borderRadius: 6,
                 padding: "6px 12px",
@@ -1128,7 +1128,7 @@ function DielineTab({ jobOrders, toast }) {
               style={{
                 gridColumn: "1/-1",
                 textAlign: "center",
-                color: "#555",
+                color: "#6f74a0",
                 padding: 40,
               }}
             >
@@ -1143,8 +1143,8 @@ function DielineTab({ jobOrders, toast }) {
               <div
                 key={d.id}
                 style={{
-                  background: "#111",
-                  border: "1px solid #2a2a2a",
+                  background: "#05071a",
+                  border: "1px solid #161a49",
                   borderRadius: 10,
                   overflow: "hidden",
                 }}
@@ -1186,21 +1186,21 @@ function DielineTab({ jobOrders, toast }) {
                   </div>
                   {d.description && (
                     <div
-                      style={{ fontSize: 12, color: "#aaa", marginBottom: 6 }}
+                      style={{ fontSize: 12, color: "#a9aed3", marginBottom: 6 }}
                     >
                       {d.description}
                     </div>
                   )}
                   {d.dimensions && (
                     <div
-                      style={{ fontSize: 11, color: "#888", marginBottom: 4 }}
+                      style={{ fontSize: 11, color: "#8b90b8", marginBottom: 4 }}
                     >
                       {d.dimensions}
                     </div>
                   )}
                   {d.machineCompatible && (
                     <div
-                      style={{ fontSize: 11, color: "#888", marginBottom: 4 }}
+                      style={{ fontSize: 11, color: "#8b90b8", marginBottom: 4 }}
                     >
                       {d.machineCompatible}
                     </div>
@@ -1238,10 +1238,10 @@ function DielineTab({ jobOrders, toast }) {
                       alignItems: "center",
                       marginTop: 8,
                       paddingTop: 8,
-                      borderTop: "1px solid #1a1a1a",
+                      borderTop: "1px solid #0b0e2d",
                     }}
                   >
-                    <div style={{ fontSize: 10, color: "#555" }}>
+                    <div style={{ fontSize: 10, color: "#6f74a0" }}>
                       Last used: {fmtDate(d.lastUsedDate)} · {usage} JO
                       {usage !== 1 ? "s" : ""}
                     </div>
@@ -1267,7 +1267,7 @@ function DielineTab({ jobOrders, toast }) {
                     </div>
                   </div>
                   {d.notes && (
-                    <div style={{ fontSize: 10, color: "#555", marginTop: 6 }}>
+                    <div style={{ fontSize: 10, color: "#6f74a0", marginTop: 6 }}>
                       {d.notes}
                     </div>
                   )}

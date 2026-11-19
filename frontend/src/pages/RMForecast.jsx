@@ -84,8 +84,8 @@ const S = {
   },
   warning: { color: "#f59e0b", label: "Warning", bg: "#451a0399", icon: "" },
   ok: { color: "#22c55e", label: "OK", bg: "#052e1699", icon: "" },
-  dead: { color: "#c8955a", label: "Dead Stock", bg: "#1e1b4b99", icon: "⚫" },
-  nodata: { color: "#555", label: "No Data", bg: "#11111199", icon: "—" },
+  dead: { color: "#aeb4ee", label: "Dead Stock", bg: "#1e1b4b99", icon: "⚫" },
+  nodata: { color: "#6f74a0", label: "No Data", bg: "#11111199", icon: "—" },
 };
 
 const ACCENT = "#ff7800";
@@ -255,7 +255,7 @@ function DraftPOModal({
           gap: 12,
         }}
       >
-        <Button text="Cancel" color="#666" onClick={onClose} />
+        <Button text="Cancel" color="#6f74a0" onClick={onClose} />
         <Button
           type="button"
           text="Create Draft PO"
@@ -403,7 +403,7 @@ export default function RMForecast({
           { label: "Critical", value: summary.critical, color: "#ef4444" },
           { label: "Warning", value: summary.warning, color: "#f59e0b" },
           { label: "OK", value: summary.ok, color: "#22c55e" },
-          { label: "Dead stock", value: summary.dead, color: "#c8955a" },
+          { label: "Dead stock", value: summary.dead, color: "#aeb4ee" },
         ].map(({ label, value, color }) => (
           <StatCard
             key={label}
@@ -814,7 +814,7 @@ export default function RMForecast({
                             Draft PO
                           </button>
                         ) : r.status === "dead" ? (
-                          <span style={{ fontSize: 11, color: "#c8955a" }}>
+                          <span style={{ fontSize: 11, color: "#aeb4ee" }}>
                             Review
                           </span>
                         ) : (
@@ -848,7 +848,7 @@ export default function RMForecast({
             <div
               style={{
                 fontWeight: 500,
-                color: "#c8955a",
+                color: "#aeb4ee",
                 marginBottom: 6,
                 fontSize: 13,
               }}
@@ -879,10 +879,10 @@ export default function RMForecast({
           borderRadius: 12,
           border: "1px solid rgba(255,255,255,0.1)",
           fontSize: 11,
-          color: "#888",
+          color: "#8b90b8",
         }}
       >
-        <b style={{ color: "#555" }}>How velocity is computed:</b> Matches RM
+        <b style={{ color: "#6f74a0" }}>How velocity is computed:</b> Matches RM
         stock to Job Orders by <b>Paper Type + GSM</b>. Weight per job ={" "}
         <code>reelWeightKg</code> (if set) or{" "}
         <code>noOfSheets × gsm × area(m²) / 1000</code>. Includes Scheduled, In

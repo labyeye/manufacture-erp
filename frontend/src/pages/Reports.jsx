@@ -545,15 +545,15 @@ const generateReportHTML = ({
     .header { display: flex; align-items: flex-start; justify-content: space-between; padding-bottom: 14px; border-bottom: 3px solid ${color}; margin-bottom: 18px; }
     .company-info { flex: 1; }
     .company-name { font-size: 18px; font-weight: 800; color: ${color}; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.1; }
-    .company-addr { font-size: 9.5px; color: #6b6b6b; margin-top: 4px; line-height: 1.5; }
-    .company-contact { font-size: 9px; color: #8a8a8a; margin-top: 3px; }
+    .company-addr { font-size: 9.5px; color: #6f74a0; margin-top: 4px; line-height: 1.5; }
+    .company-contact { font-size: 9px; color: #8b90b8; margin-top: 3px; }
     .logo-wrap { width: 72px; height: 72px; display: flex; align-items: center; justify-content: center; }
     .logo-wrap img { width: 72px; height: 72px; object-fit: contain; }
 
     /* â"€â"€â"€ REPORT META â"€â"€â"€ */
     .report-meta { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 14px; }
     .report-title { font-size: 16px; font-weight: 800; color: #161616; }
-    .report-period { font-size: 9px; color: #8a8a8a; text-align: right; line-height: 1.6; }
+    .report-period { font-size: 9px; color: #8b90b8; text-align: right; line-height: 1.6; }
     .period-badge { display: inline-block; background: ${accentLight}; color: ${color}; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 9px; }
 
     /* â"€â"€â"€ STAT CARDS â"€â"€â"€ */
@@ -564,9 +564,9 @@ const generateReportHTML = ({
 
     /* â"€â"€â"€ TABLE â"€â"€â"€ */
     table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
-    thead tr { background: ${color}; color: #fff; }
+    thead tr { background: ${color}; color: #dfe2f4; }
     th { padding: 6px 7px; text-align: left; font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; }
-    td { padding: 5px 7px; font-size: 9.5px; color: #1f1f1f; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    td { padding: 5px 7px; font-size: 9.5px; color: #101339; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
     tr.even td { background: #fff; }
     tr.odd td { background: #f8fafc; }
     tr:hover td { background: ${accentLight} !important; }
@@ -582,22 +582,22 @@ const generateReportHTML = ({
     .badge.blue { background: #dbeafe; color: #1e40af; }
     .badge.amber { background: #fef3c7; color: #92400e; }
     .badge.red { background: #fee2e2; color: #991b1b; }
-    .badge.gray { background: #f1f5f9; color: #6b6b6b; }
+    .badge.gray { background: #f1f5f9; color: #6f74a0; }
 
     /* â"€â"€â"€ TOTALS BOX â"€â"€â"€ */
     .totals-section { display: flex; justify-content: flex-end; margin-bottom: 20px; }
-    .totals-box { border: 1.5px solid #ededed; border-radius: 8px; overflow: hidden; min-width: 240px; }
+    .totals-box { border: 1.5px solid #dfe2f4; border-radius: 8px; overflow: hidden; min-width: 240px; }
     .totals-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; font-size: 10px; border-bottom: 1px solid #f1f5f9; }
-    .totals-row:last-child { border-bottom: none; background: ${color}; color: #fff; padding: 9px 12px; }
+    .totals-row:last-child { border-bottom: none; background: ${color}; color: #dfe2f4; padding: 9px 12px; }
     .totals-row:last-child .t-label { font-weight: 700; font-size: 11px; }
     .totals-row:last-child .t-val { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 800; }
-    .t-label { color: #8a8a8a; font-weight: 600; }
+    .t-label { color: #8b90b8; font-weight: 600; }
     .t-val { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #161616; }
 
     /* â"€â"€â"€ FOOTER â"€â"€â"€ */
     .sig-row { display: flex; justify-content: space-between; margin-top: 30px; }
-    .sig-box { width: 140px; border-top: 1px solid #c7c7c7; text-align: center; padding-top: 5px; font-size: 9px; color: #8a8a8a; }
-    .print-footer { margin-top: 20px; padding-top: 10px; border-top: 1px solid #ededed; display: flex; justify-content: space-between; font-size: 8px; color: #a3a3a3; }
+    .sig-box { width: 140px; border-top: 1px solid #c9cdea; text-align: center; padding-top: 5px; font-size: 9px; color: #8b90b8; }
+    .print-footer { margin-top: 20px; padding-top: 10px; border-top: 1px solid #dfe2f4; display: flex; justify-content: space-between; font-size: 8px; color: #a9aed3; }
 
     @media print {
       body { padding: 12px 16px; }
@@ -653,7 +653,7 @@ const generateReportHTML = ({
       </tr>
     </thead>
     <tbody>
-      ${rows || `<tr><td colspan="${cols.length}" style="text-align:center; color:#a3a3a3; padding: 20px;">No records found for selected period.</td></tr>`}
+      ${rows || `<tr><td colspan="${cols.length}" style="text-align:center; color:#a9aed3; padding: 20px;">No records found for selected period.</td></tr>`}
     </tbody>
   </table>
 
@@ -742,7 +742,7 @@ export default function Reports() {
     background: "transparent",
     border: "1px solid rgba(255,255,255,0.12)",
     borderRadius: 8,
-    color: "#fff",
+    color: "#dfe2f4",
     padding: "8px 12px",
     fontSize: 13,
     outline: "none",
@@ -1109,9 +1109,9 @@ export default function Reports() {
                 borderRadius: 10,
                 border: "none",
                 background: loading
-                  ? "rgba(200, 149, 90,0.4)"
-                  : "rgba(200, 149, 90,0.85)",
-                color: "#fff",
+                  ? "rgba(174, 180, 238,0.4)"
+                  : "rgba(174, 180, 238,0.85)",
+                color: "#dfe2f4",
                 fontWeight: 600,
                 fontSize: 13,
                 cursor: loading ? "not-allowed" : "pointer",
@@ -1272,7 +1272,7 @@ export default function Reports() {
                 {cards.map((c0, i) => {
                   const card = {
                     ...c0,
-                    color: ["#ededed", C.accent, C.mint, C.mint][i % 4],
+                    color: ["#dfe2f4", C.accent, C.mint, C.mint][i % 4],
                   };
                   return (
                     <div
@@ -1328,7 +1328,7 @@ export default function Reports() {
                 className={`${mod.icon} mr-2`}
                 style={{ color: mod.color, marginRight: 8 }}
               />
-              <strong style={{ color: "#fff" }}>
+              <strong style={{ color: "#dfe2f4" }}>
                 {MODULES.find((m) => m.id === selectedModule)?.label}
               </strong>
               &nbsp;Â·&nbsp; {previewData.reportData.count} records
@@ -1343,7 +1343,7 @@ export default function Reports() {
                   borderRadius: 9,
                   border: "none",
                   background: "rgba(34,197,94,0.85)",
-                  color: "#fff",
+                  color: "#dfe2f4",
                   fontWeight: 600,
                   fontSize: 13,
                   cursor: "pointer",
@@ -1366,7 +1366,7 @@ export default function Reports() {
                   borderRadius: 9,
                   border: "none",
                   background: "rgba(16,185,129,0.85)",
-                  color: "#fff",
+                  color: "#dfe2f4",
                   fontWeight: 600,
                   fontSize: 13,
                   cursor: "pointer",
@@ -1423,7 +1423,7 @@ export default function Reports() {
             style={{
               fontSize: 15,
               fontWeight: 600,
-              color: "#fff",
+              color: "#dfe2f4",
               marginBottom: 6,
             }}
           >
@@ -1448,7 +1448,7 @@ export default function Reports() {
             background: showStockMovement
               ? "rgba(167,139,250,0.1)"
               : "rgba(255,255,255,0.03)",
-            color: showStockMovement ? "#a78bfa" : "#a3a3a3",
+            color: showStockMovement ? "#a78bfa" : "#a9aed3",
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
@@ -1639,7 +1639,7 @@ function StockMovementReport() {
     background: "transparent",
     border: "1px solid rgba(255,255,255,0.12)",
     borderRadius: 8,
-    color: "#fff",
+    color: "#dfe2f4",
     padding: "8px 12px",
     fontSize: 13,
     outline: "none",
@@ -1773,7 +1773,7 @@ function StockMovementReport() {
                   left: 0,
                   right: 0,
                   zIndex: 999,
-                  background: "#1a1a1a",
+                  background: "#0b0e2d",
                   border: "1px solid rgba(255,255,255,0.12)",
                   borderRadius: 8,
                   maxHeight: 220,
@@ -1796,7 +1796,7 @@ function StockMovementReport() {
                       cursor: "pointer",
                       fontSize: 13,
                       borderBottom: "1px solid rgba(255,255,255,0.06)",
-                      color: "#e0e0e0",
+                      color: "#dfe2f4",
                     }}
                     onMouseEnter={(e) =>
                       (e.currentTarget.style.background =
@@ -1859,7 +1859,7 @@ function StockMovementReport() {
               background: !selectedItem
                 ? "rgba(167,139,250,0.25)"
                 : "rgba(167,139,250,0.85)",
-              color: "#fff",
+              color: "#dfe2f4",
               fontWeight: 600,
               fontSize: 13,
               cursor: !selectedItem ? "not-allowed" : "pointer",
@@ -1948,7 +1948,7 @@ function StockMovementReport() {
                   {itemCode}
                 </span>
               )}
-              <strong style={{ color: "#fff" }}>{selectedItem?.name}</strong>
+              <strong style={{ color: "#dfe2f4" }}>{selectedItem?.name}</strong>
               <span style={{ marginLeft: 8 }}>
                 · {dateFrom} to {dateTo} · {ledger.length} transaction
                 {ledger.length !== 1 ? "s" : ""}
@@ -1962,7 +1962,7 @@ function StockMovementReport() {
                   borderRadius: 8,
                   border: "none",
                   background: "rgba(34,197,94,0.85)",
-                  color: "#fff",
+                  color: "#dfe2f4",
                   fontWeight: 600,
                   fontSize: 12,
                   cursor: "pointer",
@@ -2025,7 +2025,7 @@ function StockMovementReport() {
               </thead>
               <tbody>
                 {ledgerRows.map((r, i) => {
-                  const txnColor = TXN_COLOR[r.txnType] || "#e0e0e0";
+                  const txnColor = TXN_COLOR[r.txnType] || "#dfe2f4";
                   return (
                     <tr
                       key={i}
@@ -2041,7 +2041,7 @@ function StockMovementReport() {
                       <td
                         style={{
                           padding: "10px 14px",
-                          color: "#e0e0e0",
+                          color: "#dfe2f4",
                           whiteSpace: "nowrap",
                           fontSize: 12,
                         }}
@@ -2062,7 +2062,7 @@ function StockMovementReport() {
                       <td
                         style={{
                           padding: "10px 14px",
-                          color: "#e0e0e0",
+                          color: "#dfe2f4",
                           fontSize: 12,
                           maxWidth: 180,
                           overflow: "hidden",
@@ -2132,7 +2132,7 @@ function StockMovementReport() {
                         style={{
                           padding: "10px 14px",
                           textAlign: "right",
-                          color: "#fff",
+                          color: "#dfe2f4",
                           fontWeight: 600,
                         }}
                       >
@@ -2155,7 +2155,7 @@ function StockMovementReport() {
                     style={{
                       padding: "10px 14px",
                       fontWeight: 600,
-                      color: "#fff",
+                      color: "#dfe2f4",
                       fontSize: 12,
                     }}
                   >
@@ -2213,7 +2213,7 @@ function StockMovementReport() {
                 className="fa-solid fa-inbox"
                 style={{ fontSize: 32, marginBottom: 10, opacity: 0.3 }}
               />
-              <div style={{ fontSize: 14, fontWeight: 600, color: "#fff" }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "#dfe2f4" }}>
                 No transactions found
               </div>
               <div style={{ fontSize: 12 }}>

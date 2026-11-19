@@ -166,7 +166,7 @@ export default function FactoryCalendar({ toast }) {
             >
               <Button
                 text="Cancel"
-                color="#666"
+                color="#6f74a0"
                 onClick={() => setShowModal(false)}
               />
               <Button type="submit" text="Save Event" color={C.blue} />

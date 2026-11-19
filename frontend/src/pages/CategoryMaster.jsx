@@ -19,8 +19,8 @@ const inputStyle = {
   border: "1px solid rgba(255,255,255,0.08)",
   borderRadius: 8,
   fontSize: 13,
-  background: "#141414",
-  color: "#ededed",
+  background: "#05071a",
+  color: "#dfe2f4",
   outline: "none",
   boxSizing: "border-box",
 };
@@ -382,7 +382,7 @@ export default function CategoryMaster({ toast, canExportImport = true }) {
   if (loading) {
     return (
       <div style={{ padding: "40px", textAlign: "center" }}>
-        <p style={{ color: "#a3a3a3", fontSize: 14 }}>Loading categories...</p>
+        <p style={{ color: "#a9aed3", fontSize: 14 }}>Loading categories...</p>
       </div>
     );
   }
@@ -392,11 +392,11 @@ export default function CategoryMaster({ toast, canExportImport = true }) {
       {}
       <div style={{ marginBottom: 20 }}>
         <h2
-          style={{ fontSize: 22, fontWeight: 500, color: "#ededed", margin: 0 }}
+          style={{ fontSize: 22, fontWeight: 500, color: "#dfe2f4", margin: 0 }}
         >
           Category Master
         </h2>
-        <p style={{ fontSize: 13, color: "#a3a3a3", margin: "4px 0 0" }}>
+        <p style={{ fontSize: 13, color: "#a9aed3", margin: "4px 0 0" }}>
           Manage item categories and their sizes across all types
         </p>
       </div>
@@ -416,9 +416,9 @@ export default function CategoryMaster({ toast, canExportImport = true }) {
               fontWeight: 500,
               cursor: "pointer",
               background: "transparent",
-              color: activeTab === tab.key ? "#ededed" : "#555",
+              color: activeTab === tab.key ? "#dfe2f4" : "#6f74a0",
               border:
-                activeTab === tab.key ? "1px solid #555" : "1px solid #222",
+                activeTab === tab.key ? "1px solid #6f74a0" : "1px solid #101339",
             }}
           >
             {tab.label}
@@ -458,13 +458,13 @@ export default function CategoryMaster({ toast, canExportImport = true }) {
               style={{
                 fontSize: 11,
                 fontWeight: 500,
-                color: "#c8955a",
+                color: "#aeb4ee",
                 letterSpacing: "1px",
               }}
             >
               {activeTab.replace(" ", " ")}
             </span>
-            <span style={{ fontSize: 11, color: "#555" }}>
+            <span style={{ fontSize: 11, color: "#6f74a0" }}>
               {totalCats} {totalCats === 1 ? "category" : "categories"}
             </span>
           </div>
@@ -487,8 +487,8 @@ export default function CategoryMaster({ toast, canExportImport = true }) {
               onClick={handleAddCategory}
               style={{
                 padding: "7px 12px",
-                background: "#c8955a",
-                color: "#fff",
+                background: "#aeb4ee",
+                color: "#dfe2f4",
                 border: "none",
                 borderRadius: 6,
                 fontWeight: 500,
@@ -527,7 +527,7 @@ export default function CategoryMaster({ toast, canExportImport = true }) {
               <div
                 style={{
                   textAlign: "center",
-                  color: "#444",
+                  color: "#3a3f78",
                   padding: "20px 0",
                   fontSize: 12,
                 }}
@@ -584,7 +584,7 @@ export default function CategoryMaster({ toast, canExportImport = true }) {
                         style={{
                           fontSize: 13,
                           fontWeight: isSelected ? 700 : 400,
-                          color: isSelected ? "#64B5F6" : "#a3a3a3",
+                          color: isSelected ? "#64B5F6" : "#a9aed3",
                           flex: 1,
                           overflow: "hidden",
                           textOverflow: "ellipsis",
@@ -645,7 +645,7 @@ export default function CategoryMaster({ toast, canExportImport = true }) {
                 alignItems: "center",
                 justifyContent: "center",
                 height: "100%",
-                color: "#444",
+                color: "#3a3f78",
                 fontSize: 13,
               }}
             >
@@ -667,13 +667,13 @@ export default function CategoryMaster({ toast, canExportImport = true }) {
                     style={{
                       fontSize: 18,
                       fontWeight: 500,
-                      color: "#ededed",
+                      color: "#dfe2f4",
                       margin: 0,
                     }}
                   >
                     {selectedCategory}
                   </h3>
-                  <p style={{ fontSize: 12, color: "#555", margin: "4px 0 0" }}>
+                  <p style={{ fontSize: 12, color: "#6f74a0", margin: "4px 0 0" }}>
                     {selectedSubTypes.length} {activeTab.toLowerCase()} types
                   </p>
                 </div>
@@ -705,8 +705,8 @@ export default function CategoryMaster({ toast, canExportImport = true }) {
                   onClick={handleAddSubType}
                   style={{
                     padding: "9px 20px",
-                    background: "#c8955a",
-                    color: "#fff",
+                    background: "#aeb4ee",
+                    color: "#dfe2f4",
                     border: "none",
                     borderRadius: 6,
                     fontWeight: 500,
@@ -721,7 +721,7 @@ export default function CategoryMaster({ toast, canExportImport = true }) {
 
               {}
               {selectedSubTypes.length === 0 ? (
-                <div style={{ color: "#444", fontSize: 13 }}>
+                <div style={{ color: "#3a3f78", fontSize: 13 }}>
                   No sub-types yet. Add one above.
                 </div>
               ) : (

@@ -135,11 +135,11 @@ export function exportPDF(tables, title) {
   <style>
     @page { size: A4 landscape; margin: 12mm; }
     * { box-sizing: border-box; }
-    body { font-family: Inter, Arial, sans-serif; color: #111; font-size: 10px; margin: 0; }
+    body { font-family: Inter, Arial, sans-serif; color: #05071a; font-size: 10px; margin: 0; }
     header { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid #ccc; padding-bottom: 8px; margin-bottom: 12px; }
     h1 { font-size: 16px; font-weight: 600; margin: 0; }
     h2 { font-size: 12px; font-weight: 600; margin: 16px 0 6px; }
-    .meta { color: #666; font-size: 10px; }
+    .meta { color: #6f74a0; font-size: 10px; }
     table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
     th { text-align: left; font-weight: 600; background: #f3f3f3; }
     th, td { border: 1px solid #ddd; padding: 4px 6px; vertical-align: top; }

@@ -392,34 +392,34 @@ export default function PurchaseOrders({
           <title>PO-${po.poNo}</title>
           <style>
             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&family=JetBrains+Mono:wght@700&display=swap');
-            body { font-family: 'Inter', sans-serif; padding: 20px 30px; color: #1a1a1a; }
+            body { font-family: 'Inter', sans-serif; padding: 20px 30px; color: #0b0e2d; }
             .header { text-align: center; border-bottom: 2px solid #1e40af; padding-bottom: 10px; margin-bottom: 20px; }
             .header h1 { color: #1e3a8a; margin: 0; font-size: 24px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
-            .header p { margin: 2px 0; font-size: 11px; color: #6b6b6b; font-weight: 500; }
+            .header p { margin: 2px 0; font-size: 11px; color: #6f74a0; font-weight: 500; }
             .header a { color: #1e40af; text-decoration: none; }
             
             .doc-title { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px; }
             .doc-title h2 { margin: 0; font-size: 18px; font-weight: 700; }
             .status { color: #1e40af; font-weight: 700; font-size: 12px; }
             
-            .hr { height: 1px; background: #ededed; margin: 10px 0; border: none; }
-            .po-no { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; color: #1a1a1a; margin: 5px 0; }
+            .hr { height: 1px; background: #dfe2f4; margin: 10px 0; border: none; }
+            .po-no { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; color: #0b0e2d; margin: 5px 0; }
             
-            .section-label { font-size: 10px; color: #8a8a8a; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 15px; margin-top: 20px; }
+            .section-label { font-size: 10px; color: #8b90b8; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 15px; margin-top: 20px; }
             
             .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px; }
-            .info-item label { display: block; font-size: 9px; color: #a3a3a3; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
-            .info-item span { font-size: 11px; font-weight: 600; color: #1f1f1f; }
+            .info-item label { display: block; font-size: 9px; color: #a9aed3; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
+            .info-item span { font-size: 11px; font-weight: 600; color: #101339; }
             
             table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-            th { background: #f8fafc; border: 1px solid #ededed; padding: 4px 6px; text-align: left; font-size: 9px; font-weight: 800; text-transform: uppercase; color: #6b6b6b; white-space: nowrap; }
-            td { border: 1px solid #ededed; padding: 4px 6px; font-size: 9px; color: #1f1f1f; line-height: 1.2; word-wrap: break-word; }
+            th { background: #f8fafc; border: 1px solid #dfe2f4; padding: 4px 6px; text-align: left; font-size: 9px; font-weight: 800; text-transform: uppercase; color: #6f74a0; white-space: nowrap; }
+            td { border: 1px solid #dfe2f4; padding: 4px 6px; font-size: 9px; color: #101339; line-height: 1.2; word-wrap: break-word; }
             .col-qty { text-align: center; }
             .col-amt { text-align: right; font-weight: 700; }
             
             .total-row { display: flex; justify-content: flex-end; margin-top: 15px; }
-            .total-box { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 800; color: #1a1a1a; }
-            .total-box label { font-size: 14px; color: #8a8a8a; font-weight: 700; }
+            .total-box { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 800; color: #0b0e2d; }
+            .total-box label { font-size: 14px; color: #8b90b8; font-weight: 700; }
             
             @media print {
               body { padding: 0; }
@@ -493,7 +493,7 @@ export default function PurchaseOrders({
                 <tr>
                   <td>
                     <div style="font-weight: 700;">${it.itemName}</div>
-                    <div style="font-size: 8px; color: #8a8a8a;">${it.productCode || ""}</div>
+                    <div style="font-size: 8px; color: #8b90b8;">${it.productCode || ""}</div>
                     ${it.remarks ? `<div style="font-size: 8px; color: #1e40af; font-style: italic; margin-top: 2px;">Note: ${it.remarks}</div>` : ""}
                   </td>
                   <td style="white-space: nowrap;">${it.category || "—"}</td>
@@ -532,8 +532,8 @@ export default function PurchaseOrders({
           </div>
 
           <div style="margin-top: 60px; display: flex; justify-content: space-between;">
-             <div style="border-top: 1px solid #ccc; width: 150px; text-align: center; padding-top: 5px; font-size: 11px; color: #666;">Authorized Signatory</div>
-             <div style="border-top: 1px solid #ccc; width: 150px; text-align: center; padding-top: 5px; font-size: 11px; color: #666;">Vendor Confirmation</div>
+             <div style="border-top: 1px solid #ccc; width: 150px; text-align: center; padding-top: 5px; font-size: 11px; color: #6f74a0;">Authorized Signatory</div>
+             <div style="border-top: 1px solid #ccc; width: 150px; text-align: center; padding-top: 5px; font-size: 11px; color: #6f74a0;">Vendor Confirmation</div>
           </div>
         </body>
       </html>
@@ -1194,8 +1194,8 @@ export default function PurchaseOrders({
                     onClick={addItem}
                     style={{
                       background: "transparent",
-                      color: "#ffffff",
-                      border: "1px solid #c8955a",
+                      color: "#dfe2f4",
+                      border: "1px solid #aeb4ee",
                       borderRadius: 6,
                       padding: "6px 14px",
                       fontWeight: 500,
@@ -1228,8 +1228,8 @@ export default function PurchaseOrders({
                         onClick={() => removeItem(idx)}
                         style={{
                           background: "transparent",
-                          color: "#ffffff",
-                          border: "1px solid #c8955a",
+                          color: "#dfe2f4",
+                          border: "1px solid #aeb4ee",
                           borderRadius: 6,
                           padding: "6px 14px",
                           fontSize: 11,
@@ -1283,7 +1283,7 @@ export default function PurchaseOrders({
                               value={it.category}
                               style={{
                                 background: "rgba(255,255,255,0.04)",
-                                color: "#aaa",
+                                color: "#a9aed3",
                                 border: "1px solid rgba(255,255,255,0.08)",
                                 borderRadius: 6,
                               }}
@@ -1313,7 +1313,7 @@ export default function PurchaseOrders({
                               value={it.subCategory}
                               style={{
                                 background: "rgba(255,255,255,0.04)",
-                                color: "#aaa",
+                                color: "#a9aed3",
                                 border: "1px solid rgba(255,255,255,0.08)",
                                 borderRadius: 6,
                               }}
@@ -1739,8 +1739,8 @@ export default function PurchaseOrders({
                   onClick={addItem}
                   style={{
                     background: "transparent",
-                    color: "#ffffff",
-                    border: "1px solid #c8955a",
+                    color: "#dfe2f4",
+                    border: "1px solid #aeb4ee",
                     borderRadius: 6,
                     padding: "9px 20px",
                     fontWeight: 500,
@@ -1769,8 +1769,8 @@ export default function PurchaseOrders({
                   }}
                   style={{
                     background: "transparent",
-                    color: "#ffffff",
-                    border: "1px solid #c8955a",
+                    color: "#dfe2f4",
+                    border: "1px solid #aeb4ee",
                     borderRadius: 6,
                     padding: "9px 20px",
                     fontWeight: 500,
@@ -2069,7 +2069,7 @@ export default function PurchaseOrders({
               .join("");
             const html = `<html><head><title>Purchase Orders</title><style>
               body{font-family:Arial,sans-serif;font-size:11px;color:#161616;padding:20px}
-              h2{margin:0 0 4px} p{margin:0 0 12px;color:#6b6b6b}
+              h2{margin:0 0 4px} p{margin:0 0 12px;color:#6f74a0}
               table{width:100%;border-collapse:collapse}
               th{background:#f1f1f1;text-align:left;padding:6px;border-bottom:1px solid #ccc}
               td{padding:6px;border-bottom:1px solid #eee}
@@ -2341,9 +2341,9 @@ export default function PurchaseOrders({
                       style={{
                         padding: "5px 12px",
                         borderRadius: 5,
-                        border: "1px solid #c8955a",
+                        border: "1px solid #aeb4ee",
                         background: "transparent",
-                        color: "#ffffff",
+                        color: "#dfe2f4",
                         fontSize: 12,
                         fontWeight: 500,
                         cursor: "pointer",
@@ -2362,7 +2362,7 @@ export default function PurchaseOrders({
                         borderRadius: 5,
                         border: "1px solid rgba(255,255,255,0.15)",
                         background: "transparent",
-                        color: "#fff",
+                        color: "#dfe2f4",
                         fontSize: 12,
                         fontWeight: 500,
                         cursor: "pointer",
@@ -2377,7 +2377,7 @@ export default function PurchaseOrders({
                         borderRadius: 5,
                         border: "1px solid rgba(255,255,255,0.15)",
                         background: "transparent",
-                        color: "#fff",
+                        color: "#dfe2f4",
                         fontSize: 12,
                         fontWeight: 500,
                         cursor: "pointer",
@@ -2390,9 +2390,9 @@ export default function PurchaseOrders({
                       style={{
                         padding: "5px 12px",
                         borderRadius: 5,
-                        border: "1px solid #c8955a",
+                        border: "1px solid #aeb4ee",
                         background: "transparent",
-                        color: "#ffffff",
+                        color: "#dfe2f4",
                         fontSize: 12,
                         fontWeight: 600,
                         cursor: "pointer",
@@ -2552,7 +2552,7 @@ export default function PurchaseOrders({
                               style={{
                                 padding: "12px 14px",
                                 fontWeight: 600,
-                                color: "#c8955a",
+                                color: "#aeb4ee",
                                 whiteSpace: "nowrap",
                                 cursor: "pointer",
                               }}

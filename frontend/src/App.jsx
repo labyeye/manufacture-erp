@@ -97,7 +97,7 @@ function AppContent() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "#131313",
+          background: "#070924",
           color: C.text,
           flexDirection: "column",
           gap: 20,
@@ -107,7 +107,7 @@ function AppContent() {
           className="fa-solid fa-industry"
           style={{
             fontSize: 36,
-            color: "#c8955a",
+            color: "#aeb4ee",
           }}
         />
         <div
@@ -576,12 +576,12 @@ function AppInner({
         >
           <i
             className="fa-solid fa-lock"
-            style={{ fontSize: 40, color: "#555" }}
+            style={{ fontSize: 40, color: "#6f74a0" }}
           />
-          <div style={{ fontSize: 16, fontWeight: 600, color: "#e0e0e0" }}>
+          <div style={{ fontSize: 16, fontWeight: 600, color: "#dfe2f4" }}>
             Access Denied
           </div>
-          <div style={{ fontSize: 13, color: "#888" }}>
+          <div style={{ fontSize: 13, color: "#8b90b8" }}>
             You don't have permission to view this module.
           </div>
         </div>
@@ -865,7 +865,7 @@ function AppInner({
             alt="Logo"
             style={{ width: 32, height: 32, objectFit: "contain" }}
           />
-          <div style={{ color: "#ededed", fontSize: 14, fontWeight: 500 }}>
+          <div style={{ color: "#dfe2f4", fontSize: 14, fontWeight: 500 }}>
             ManufactureIQ
           </div>
         </div>
@@ -875,7 +875,7 @@ function AppInner({
             style={{
               background: "transparent",
               border: "none",
-              color: "#ffffff",
+              color: "#dfe2f4",
               fontSize: 16,
               cursor: "pointer",
               padding: "4px 8px",
@@ -1014,7 +1014,7 @@ function AppInner({
         height: "100vh",
         display: "flex",
         flexDirection: "column",
-        background: "#131313",
+        background: "#070924",
         backgroundSize: "cover",
         color: C.text,
         overflow: "hidden",
@@ -1039,7 +1039,7 @@ function AppInner({
         {!isMobile ? (
           <div
             style={{
-              background: "#171717",
+              background: "#05071a",
               borderRight: "1px solid rgba(255,255,255,0.08)",
               width: 230,
               display: "flex",
@@ -1058,7 +1058,7 @@ function AppInner({
               left: 0,
               height: "100%",
               width: 260,
-              background: "#171717",
+              background: "#05071a",
               borderRight: "1px solid rgba(255,255,255,0.08)",
               display: "flex",
               flexDirection: "column",
@@ -1085,7 +1085,7 @@ function AppInner({
           <div
             style={{
               height: 56,
-              background: "#131313",
+              background: "#070924",
               borderBottom: "1px solid rgba(255,255,255,0.08)",
               display: "flex",
               alignItems: "center",
@@ -1121,9 +1121,9 @@ function AppInner({
                 width: 36,
                 height: 36,
                 borderRadius: "50%",
-                background: "#1a1a1a",
+                background: "#0b0e2d",
                 border: "1px solid rgba(255,255,255,0.08)",
-                color: "#ededed",
+                color: "#dfe2f4",
                 cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
@@ -1143,10 +1143,10 @@ function AppInner({
                   alignItems: "center",
                   gap: 10,
                   padding: isMobile ? "3px" : "3px 12px 3px 3px",
-                  background: "#1a1a1a",
+                  background: "#0b0e2d",
                   border: "1px solid rgba(255,255,255,0.08)",
                   borderRadius: 999,
-                  color: "#ededed",
+                  color: "#dfe2f4",
                   cursor: "pointer",
                 }}
               >
@@ -1156,7 +1156,7 @@ function AppInner({
                     height: 30,
                     borderRadius: "50%",
                     background: C.accent,
-                    color: "#131313",
+                    color: "#070924",
                     display: "inline-flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -1205,7 +1205,7 @@ function AppInner({
                 >
                   <i
                     className="fa-solid fa-right-from-bracket"
-                    style={{ width: 14, color: "#c8955a" }}
+                    style={{ width: 14, color: "#aeb4ee" }}
                   />
                   Sign out
                 </button>

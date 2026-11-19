@@ -264,10 +264,10 @@ export function Modal({ title, children, onClose, maxWidth = 1100 }) {
         style={{
           width: "100%",
           maxWidth,
-          background: "#1a1a1a",
+          background: "#0b0e2d",
           border: "1px solid rgba(255,255,255,0.12)",
           borderRadius: 12,
-          color: "#ffffff",
+          color: "#dfe2f4",
           display: "flex",
           flexDirection: "column",
           maxHeight: "calc(100vh - 80px)",
@@ -289,7 +289,7 @@ export function Modal({ title, children, onClose, maxWidth = 1100 }) {
               margin: 0,
               fontSize: 16,
               fontWeight: 600,
-              color: "#ffffff",
+              color: "#dfe2f4",
             }}
           >
             {title}
@@ -300,7 +300,7 @@ export function Modal({ title, children, onClose, maxWidth = 1100 }) {
             style={{
               background: "transparent",
               border: "1px solid rgba(255,255,255,0.2)",
-              color: "#ffffff",
+              color: "#dfe2f4",
               borderRadius: 6,
               width: 28,
               height: 28,
@@ -488,7 +488,7 @@ export function AutocompleteInput({
           top: dropdownPos.top,
           left: dropdownPos.left,
           width: dropdownPos.width,
-          background: "#1a1a1a",
+          background: "#0b0e2d",
           border: "1px solid rgba(255,255,255,0.12)",
           borderRadius: 8,
           boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
@@ -508,7 +508,7 @@ export function AutocompleteInput({
             style={{
               padding: "9px 14px",
               fontSize: 13,
-              color: "#ededed",
+              color: "#dfe2f4",
               borderBottom:
                 i < filtered.length - 1
                   ? "1px solid rgba(255,255,255,0.06)"
@@ -516,7 +516,7 @@ export function AutocompleteInput({
               cursor: "pointer",
             }}
             onMouseOver={(e) =>
-              (e.currentTarget.style.background = "rgba(200,149,90,0.14)")
+              (e.currentTarget.style.background = "rgba(174, 180, 238,0.14)")
             }
             onMouseOut={(e) =>
               (e.currentTarget.style.background = "transparent")
@@ -594,8 +594,8 @@ export function DateRangeFilter({ dateFrom, setDateFrom, dateTo, setDateTo }) {
 
 /* ── Compact toolbar button + smooth dropdown (shared across pages) ── */
 export const toolbarBtn = {
-  background: "#1a1a1a",
-  color: "#ededed",
+  background: "#0b0e2d",
+  color: "#dfe2f4",
   border: "1px solid rgba(255,255,255,0.08)",
   borderRadius: 8,
   padding: "9px 16px",
@@ -630,7 +630,7 @@ export function SelectToggle({ onChange }) {
       aria-pressed={on}
       style={{
         ...toolbarBtn,
-        ...(on ? { borderColor: "#c8955a", color: "#c8955a" } : {}),
+        ...(on ? { borderColor: "#aeb4ee", color: "#aeb4ee" } : {}),
       }}
       onClick={toggle}
     >
@@ -689,7 +689,7 @@ export function DropMenu({ icon, label, options }) {
               o.onClick();
             }}
           >
-            <i className={o.icon} style={{ width: 14, color: "#c8955a" }} />
+            <i className={o.icon} style={{ width: 14, color: "#aeb4ee" }} />
             {o.label}
           </button>
         ))}
@@ -714,7 +714,7 @@ export function ImportPickerModal({
             borderRadius: 10,
             padding: "26px 16px",
             textAlign: "center",
-            background: "#1a1a1a",
+            background: "#0b0e2d",
           }}
         >
           <i
@@ -726,7 +726,7 @@ export function ImportPickerModal({
               display: "block",
             }}
           />
-          <div style={{ fontSize: 13, color: "#ededed", marginBottom: 4 }}>
+          <div style={{ fontSize: 13, color: "#dfe2f4", marginBottom: 4 }}>
             Choose an .xlsx or .xls file
           </div>
           <div style={{ fontSize: 11, color: C.muted, marginBottom: 14 }}>
@@ -837,7 +837,7 @@ export function ListToolbar({
                   left: 10,
                   top: "50%",
                   transform: "translateY(-50%)",
-                  color: "#555",
+                  color: "#6f74a0",
                 }}
               >
                 <i className="fa-solid fa-magnifying-glass" />
@@ -849,10 +849,10 @@ export function ListToolbar({
                 style={{
                   width: "100%",
                   padding: "9px 12px 9px 34px",
-                  background: "#1a1a1a",
+                  background: "#0b0e2d",
                   border: "1px solid rgba(255,255,255,0.08)",
                   borderRadius: 8,
-                  color: "#fff",
+                  color: "#dfe2f4",
                   fontSize: 13,
                 }}
               />
@@ -869,8 +869,8 @@ export function ListToolbar({
               {filterCount > 0 && (
                 <span
                   style={{
-                    background: "#c8955a",
-                    color: "#131313",
+                    background: "#aeb4ee",
+                    color: "#070924",
                     borderRadius: 8,
                     fontSize: 10,
                     fontWeight: 700,
@@ -974,10 +974,10 @@ export function SortSelect({ value, onChange, options }) {
       style={{
         width: "100%",
         padding: "8px 10px",
-        background: "#1a1a1a",
-        border: "1px solid #2a2a2e",
+        background: "#0b0e2d",
+        border: "1px solid #161a49",
         borderRadius: 6,
-        color: "#fff",
+        color: "#dfe2f4",
         fontSize: 12,
       }}
     >
@@ -1135,10 +1135,10 @@ export function ImportModal({
           maxWidth: 400,
           padding: 32,
           textAlign: "center",
-          background: "#1a1a1a",
+          background: "#0b0e2d",
           border: "1px solid rgba(255,255,255,0.12)",
           borderRadius: 12,
-          color: "#ffffff",
+          color: "#dfe2f4",
         }}
       >
         <i

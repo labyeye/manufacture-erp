@@ -12,7 +12,7 @@ const LABEL_ICONS = {
 };
 
 const LABEL_COLORS = {
-  "Purchase Order": "#c8955a",
+  "Purchase Order": "#aeb4ee",
   "Material Inward": "#22c55e",
   "Sales Order": "#f59e0b",
   "Job Order": "#3b82f6",

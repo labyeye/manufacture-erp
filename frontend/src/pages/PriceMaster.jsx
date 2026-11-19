@@ -22,16 +22,16 @@ import moment from "moment";
 import * as XLSX from "xlsx";
 import { IconBtn } from "../components/ui/IconBtn";
 
-const ACCENT_SELL = "#c8955a";
-const ACCENT_BUY = "#c8955a";
+const ACCENT_SELL = "#aeb4ee";
+const ACCENT_BUY = "#aeb4ee";
 
 const inputStyle = {
   padding: "9px 12px",
   border: "1px solid rgba(255,255,255,0.08)",
   borderRadius: 8,
   fontSize: 13,
-  background: "#141414",
-  color: "#ededed",
+  background: "#05071a",
+  color: "#dfe2f4",
   outline: "none",
   boxSizing: "border-box",
 };
@@ -367,7 +367,7 @@ function SellingSection({ toast, canExportImport = true }) {
             style={{
               fontSize: 11,
               fontWeight: 500,
-              color: "#555",
+              color: "#6f74a0",
               marginBottom: 5,
             }}
           >
@@ -392,7 +392,7 @@ function SellingSection({ toast, canExportImport = true }) {
               style={{
                 fontSize: 11,
                 fontWeight: 500,
-                color: "#555",
+                color: "#6f74a0",
                 marginBottom: 5,
               }}
             >
@@ -468,16 +468,16 @@ function SellingSection({ toast, canExportImport = true }) {
             style={{
               padding: "4px 14px",
               borderRadius: 6,
-              background: "rgba(200,149,90,0.14)",
+              background: "rgba(174, 180, 238,0.14)",
               color: ACCENT_SELL,
               fontSize: 12,
               fontWeight: 500,
-              border: "1px solid rgba(200,149,90,0.3)",
+              border: "1px solid rgba(174, 180, 238,0.3)",
             }}
           >
             {selectedClient}
           </span>
-          <span style={{ fontSize: 12, color: "#555" }}>
+          <span style={{ fontSize: 12, color: "#6f74a0" }}>
             {filtered.length} item{filtered.length !== 1 ? "s" : ""}
           </span>
           <button
@@ -485,7 +485,7 @@ function SellingSection({ toast, canExportImport = true }) {
             style={{
               background: "none",
               border: "none",
-              color: "#555",
+              color: "#6f74a0",
               cursor: "pointer",
               fontSize: 12,
             }}
@@ -499,7 +499,7 @@ function SellingSection({ toast, canExportImport = true }) {
         <div
           style={{
             textAlign: "center",
-            color: "#555",
+            color: "#6f74a0",
             fontSize: 13,
             padding: "32px 0",
           }}
@@ -577,7 +577,7 @@ function SellingSection({ toast, canExportImport = true }) {
                   style={{
                     fontSize: 11,
                     fontWeight: 600,
-                    color: "#888",
+                    color: "#8b90b8",
                     marginBottom: 6,
                   }}
                 >
@@ -603,7 +603,7 @@ function SellingSection({ toast, canExportImport = true }) {
                   style={{
                     fontSize: 11,
                     fontWeight: 600,
-                    color: "#888",
+                    color: "#8b90b8",
                     marginBottom: 6,
                   }}
                 >
@@ -627,7 +627,7 @@ function SellingSection({ toast, canExportImport = true }) {
                   style={{
                     fontSize: 11,
                     fontWeight: 600,
-                    color: "#888",
+                    color: "#8b90b8",
                     marginBottom: 6,
                   }}
                 >
@@ -1015,7 +1015,7 @@ function PurchaseSection({ toast, canExportImport = true }) {
             style={{
               fontSize: 11,
               fontWeight: 500,
-              color: "#555",
+              color: "#6f74a0",
               marginBottom: 5,
             }}
           >
@@ -1040,7 +1040,7 @@ function PurchaseSection({ toast, canExportImport = true }) {
               style={{
                 fontSize: 11,
                 fontWeight: 500,
-                color: "#555",
+                color: "#6f74a0",
                 marginBottom: 5,
               }}
             >
@@ -1116,16 +1116,16 @@ function PurchaseSection({ toast, canExportImport = true }) {
             style={{
               padding: "4px 14px",
               borderRadius: 6,
-              background: "rgba(200,149,90,0.14)",
+              background: "rgba(174, 180, 238,0.14)",
               color: ACCENT_BUY,
               fontSize: 12,
               fontWeight: 500,
-              border: "1px solid rgba(200,149,90,0.3)",
+              border: "1px solid rgba(174, 180, 238,0.3)",
             }}
           >
             {selectedVendor}
           </span>
-          <span style={{ fontSize: 12, color: "#555" }}>
+          <span style={{ fontSize: 12, color: "#6f74a0" }}>
             {filtered.length} item{filtered.length !== 1 ? "s" : ""}
           </span>
           <button
@@ -1133,7 +1133,7 @@ function PurchaseSection({ toast, canExportImport = true }) {
             style={{
               background: "none",
               border: "none",
-              color: "#555",
+              color: "#6f74a0",
               cursor: "pointer",
               fontSize: 12,
             }}
@@ -1372,7 +1372,7 @@ export default function PriceMaster({ toast, canExportImport = true }) {
                   ? `2px solid ${t.accent}`
                   : "2px solid transparent",
               background: "transparent",
-              color: activeTab === t.id ? "#ededed" : "#a3a3a3",
+              color: activeTab === t.id ? "#dfe2f4" : "#a9aed3",
               fontWeight: 500,
               fontSize: 13,
               cursor: "pointer",

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-const TONES = { default: "#ededed", danger: "#e0705f" };
+const TONES = { default: "#dfe2f4", danger: "#e0705f" };
 
 // Icon-only row action. Always give it a label: it feeds the tooltip and the aria-label.
 export function IconBtn({
@@ -30,7 +30,7 @@ export function IconBtn({
         alignItems: "center",
         justifyContent: "center",
         background: active ? "rgba(255,255,255,0.06)" : "transparent",
-        color: active ? (danger ? TONES.danger : TONES.default) : "#a3a3a3",
+        color: active ? (danger ? TONES.danger : TONES.default) : "#a9aed3",
         border: "1px solid rgba(255,255,255,0.08)",
         borderRadius: 8,
         cursor: disabled ? "not-allowed" : "pointer",

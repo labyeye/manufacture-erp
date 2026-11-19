@@ -688,7 +688,9 @@ exports.addStage = async (req, res) => {
     res.json(jobOrder);
   } catch (error) {
     console.error("Add stage error:", error);
-    res.status(500).json({ error: "Failed to add stage entry" });
+    res
+      .status(500)
+      .json({ error: "Failed to add stage entry", details: error.message });
   }
 };
 
@@ -723,7 +725,9 @@ exports.updateStage = async (req, res) => {
     res.json(jobOrder);
   } catch (error) {
     console.error("Update stage error:", error);
-    res.status(500).json({ error: "Failed to update stage entry" });
+    res
+      .status(500)
+      .json({ error: "Failed to update stage entry", details: error.message });
   }
 };
 
@@ -747,9 +751,97 @@ exports.deleteStage = async (req, res) => {
     res.json(jobOrder);
   } catch (error) {
     console.error("Delete stage error:", error);
-    res.status(500).json({ error: "Failed to delete stage entry" });
+    res
+      .status(500)
+      .json({ error: "Failed to delete stage entry", details: error.message });
   }
 };
+
+// FG stock keeps ONE record per item (unique index on itemName). A job order only
+// applies its own change (delta) to that record and logs it in the stock history,
+// so other jobs' stock, dispatches and adjustments are never overwritten.
+async function syncFGProduction(jobOrder, finalQty, meta) {
+  const itemName = jobOrder.itemName;
+  if (!itemName) return;
+
+  const fg = await FGStock.findOne({ itemName });
+  const producedBefore = fg
+    ? (fg.stockHistory || [])
+        .filter((h) => h.type === "production" && h.ref === jobOrder.joNo)
+        .reduce((sum, h) => sum + (h.qty || 0), 0)
+    : 0;
+
+  // Records written by the old sync hold only this job's output and no history
+  const legacy =
+    fg &&
+    fg.joNo === jobOrder.joNo &&
+    !(fg.stockHistory || []).some(
+      (h) => h.type === "production" && h.ref === jobOrder.joNo,
+    );
+  const previous = legacy ? Math.max(0, fg.qty || 0) : producedBefore;
+  const delta = finalQty - previous;
+
+  if (!fg) {
+    if (finalQty <= 0) return;
+    await FGStock.create({
+      itemName,
+      itemCode: meta.itemCode || "",
+      joNo: jobOrder.joNo,
+      soRef: jobOrder.soRef,
+      companyName: jobOrder.companyName,
+      companyCat: jobOrder.companyCategory,
+      category: meta.itemCategory || "",
+      qty: finalQty,
+      price: meta.price || 0,
+      lastUpdated: new Date(),
+      stockHistory: [
+        {
+          date: new Date(),
+          qty: finalQty,
+          type: "production",
+          ref: jobOrder.joNo,
+          note: "Production update",
+        },
+      ],
+    });
+    return;
+  }
+
+  // Old-style record: log the quantity it already holds (no stock change) so the
+  // history sums to this job's output from now on
+  if (legacy && previous > 0) {
+    fg.stockHistory.push({
+      date: new Date(),
+      qty: previous,
+      type: "production",
+      ref: jobOrder.joNo,
+      note: "Linked existing record",
+    });
+  }
+
+  if (delta !== 0) {
+    fg.qty = (fg.qty || 0) + delta;
+    fg.stockHistory.push({
+      date: new Date(),
+      qty: delta,
+      type: "production",
+      ref: jobOrder.joNo,
+      note: "Production update",
+    });
+  }
+
+  if (finalQty > 0) {
+    fg.joNo = jobOrder.joNo;
+    if (jobOrder.soRef) fg.soRef = jobOrder.soRef;
+    if (jobOrder.companyName) fg.companyName = jobOrder.companyName;
+    if (jobOrder.companyCategory) fg.companyCat = jobOrder.companyCategory;
+    if (meta.itemCode && !fg.itemCode) fg.itemCode = meta.itemCode;
+    if (meta.itemCategory && !fg.category) fg.category = meta.itemCategory;
+    if (meta.price > 0) fg.price = meta.price;
+  }
+  fg.lastUpdated = new Date();
+  await fg.save();
+}
 
 async function recalculateProductionStats(jobOrder) {
   const stageQtyMap = new Map();
@@ -873,24 +965,13 @@ async function recalculateProductionStats(jobOrder) {
       if (im.code) itemCode = im.code;
     }
 
-    await FGStock.findOneAndUpdate(
-      { itemName: jobOrder.itemName, joNo: jobOrder.joNo },
-      {
-        itemName: jobOrder.itemName,
-        itemCode,
-        joNo: jobOrder.joNo,
-        soRef: jobOrder.soRef,
-        companyName: jobOrder.companyName,
-        companyCat: jobOrder.companyCategory,
-        category: itemCategory,
-        qty: finalQty,
-        price,
-        lastUpdated: new Date(),
-      },
-      { upsert: true },
-    );
+    await syncFGProduction(jobOrder, finalQty, {
+      itemCode,
+      itemCategory,
+      price,
+    });
   } else {
-    await FGStock.deleteOne({ joNo: jobOrder.joNo });
+    await syncFGProduction(jobOrder, 0, {});
   }
 }
 

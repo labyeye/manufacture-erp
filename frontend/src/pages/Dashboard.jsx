@@ -125,7 +125,7 @@ const TH = {
   borderBottom: "1px solid rgba(255,255,255,0.08)",
   fontSize: 11,
   fontWeight: 600,
-  color: "#8a8a8a",
+  color: "#8b90b8",
   whiteSpace: "nowrap",
   fontStretch: "normal",
 };
@@ -135,7 +135,7 @@ const TD = {
   borderBottom: "1px solid rgba(255,255,255,0.05)",
   fontSize: 13,
   fontWeight: 400,
-  color: "#e0e0e0",
+  color: "#dfe2f4",
   whiteSpace: "nowrap",
   fontStretch: "normal",
 };
@@ -239,13 +239,13 @@ const buildOpMachineTallyHTML = ({
     body { font-family: 'Inter', sans-serif; color: #1a1a2e; background: #fff; padding: 24px 28px; font-size: 11px; }
     .header { display: flex; align-items: flex-start; justify-content: space-between; padding-bottom: 14px; border-bottom: 3px solid ${color}; margin-bottom: 18px; }
     .company-name { font-size: 18px; font-weight: 800; color: ${color}; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.1; }
-    .company-addr { font-size: 9.5px; color: #6b6b6b; margin-top: 4px; line-height: 1.5; }
-    .company-contact { font-size: 9px; color: #8a8a8a; margin-top: 3px; }
+    .company-addr { font-size: 9.5px; color: #6f74a0; margin-top: 4px; line-height: 1.5; }
+    .company-contact { font-size: 9px; color: #8b90b8; margin-top: 3px; }
     .logo-wrap { width: 72px; height: 72px; display: flex; align-items: center; justify-content: center; }
     .logo-wrap img { width: 72px; height: 72px; object-fit: contain; }
     .report-meta { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 14px; }
     .report-title { font-size: 16px; font-weight: 800; color: #161616; }
-    .report-period { font-size: 9px; color: #8a8a8a; text-align: right; line-height: 1.6; }
+    .report-period { font-size: 9px; color: #8b90b8; text-align: right; line-height: 1.6; }
     .period-badge { display: inline-block; background: ${accentLight}; color: ${color}; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 9px; }
     .subject-box { background: ${accentLight}; border-left: 4px solid ${color}; padding: 10px 14px; border-radius: 6px; margin-bottom: 14px; display: flex; gap: 24px; align-items: center; }
     .subject-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: ${color}; opacity: 0.8; }
@@ -255,9 +255,9 @@ const buildOpMachineTallyHTML = ({
     .stat-card-label { font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; opacity: 0.75; margin-bottom: 4px; }
     .stat-card-value { font-size: 16px; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
     table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
-    thead tr { background: ${color}; color: #fff; }
+    thead tr { background: ${color}; color: #dfe2f4; }
     th { padding: 6px 7px; text-align: left; font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; }
-    td { padding: 5px 7px; font-size: 9.5px; color: #1f1f1f; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    td { padding: 5px 7px; font-size: 9.5px; color: #101339; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
     tr.even td { background: #fff; }
     tr.odd td { background: #f8fafc; }
     .mono { font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 600; }
@@ -266,16 +266,16 @@ const buildOpMachineTallyHTML = ({
     .right { text-align: right; }
     .bold { font-weight: 700; }
     .totals-section { display: flex; justify-content: flex-end; margin-bottom: 20px; }
-    .totals-box { border: 1.5px solid #ededed; border-radius: 8px; overflow: hidden; min-width: 240px; }
+    .totals-box { border: 1.5px solid #dfe2f4; border-radius: 8px; overflow: hidden; min-width: 240px; }
     .totals-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; font-size: 10px; border-bottom: 1px solid #f1f5f9; }
-    .totals-row:last-child { border-bottom: none; background: ${color}; color: #fff; padding: 9px 12px; }
+    .totals-row:last-child { border-bottom: none; background: ${color}; color: #dfe2f4; padding: 9px 12px; }
     .totals-row:last-child .t-label { font-weight: 700; font-size: 11px; }
     .totals-row:last-child .t-val { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 800; }
-    .t-label { color: #8a8a8a; font-weight: 600; }
+    .t-label { color: #8b90b8; font-weight: 600; }
     .t-val { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #161616; }
     .sig-row { display: flex; justify-content: space-between; margin-top: 30px; }
-    .sig-box { width: 140px; border-top: 1px solid #c7c7c7; text-align: center; padding-top: 5px; font-size: 9px; color: #8a8a8a; }
-    .print-footer { margin-top: 20px; padding-top: 10px; border-top: 1px solid #ededed; display: flex; justify-content: space-between; font-size: 8px; color: #a3a3a3; }
+    .sig-box { width: 140px; border-top: 1px solid #c9cdea; text-align: center; padding-top: 5px; font-size: 9px; color: #8b90b8; }
+    .print-footer { margin-top: 20px; padding-top: 10px; border-top: 1px solid #dfe2f4; display: flex; justify-content: space-between; font-size: 8px; color: #a9aed3; }
     @media print { body { padding: 12px 16px; } @page { margin: 0.8cm; size: A4 landscape; } }
   </style>
 </head>
@@ -330,7 +330,7 @@ const buildOpMachineTallyHTML = ({
       <tr>${cols.map((c) => `<th>${c}</th>`).join("")}</tr>
     </thead>
     <tbody>
-      ${rows || `<tr><td colspan="${cols.length}" style="text-align:center; color:#a3a3a3; padding: 20px;">No records found for selected period.</td></tr>`}
+      ${rows || `<tr><td colspan="${cols.length}" style="text-align:center; color:#a9aed3; padding: 20px;">No records found for selected period.</td></tr>`}
     </tbody>
   </table>
 
@@ -553,7 +553,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
       body{font-family:sans-serif;font-size:11px;padding:20px}
       table{border-collapse:collapse;width:100%}
       th,td{border:1px solid #ccc;padding:5px 8px;text-align:left}
-      th{background:#1e40af;color:#fff}
+      th{background:#1e40af;color:#dfe2f4}
       tr:nth-child(even) td{background:#f8fafc}
       h2{margin-bottom:12px}
     </style></head><body>
@@ -1172,7 +1172,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
 
   const DateFilter = () => (
     <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-      <span style={{ color: "#888", fontSize: 11 }}>From:</span>
+      <span style={{ color: "#8b90b8", fontSize: 11 }}>From:</span>
       <input
         type="date"
         value={dateFrom}
@@ -1181,14 +1181,14 @@ export function Dashboard({ data, session, toast, onNavigate }) {
           fontSize: 12,
           padding: "6px 10px",
           background: "rgba(255,255,255,0.07)",
-          color: "#e0e0e0",
+          color: "#dfe2f4",
           border: "1px solid rgba(255,255,255,0.13)",
           borderRadius: 8,
           colorScheme: "dark",
           fontStretch: "normal",
         }}
       />
-      <span style={{ color: "#888", fontSize: 11 }}>To:</span>
+      <span style={{ color: "#8b90b8", fontSize: 11 }}>To:</span>
       <input
         type="date"
         value={dateTo}
@@ -1197,7 +1197,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
           fontSize: 12,
           padding: "6px 10px",
           background: "rgba(255,255,255,0.07)",
-          color: "#e0e0e0",
+          color: "#dfe2f4",
           border: "1px solid rgba(255,255,255,0.13)",
           borderRadius: 8,
           colorScheme: "dark",
@@ -1211,14 +1211,14 @@ export function Dashboard({ data, session, toast, onNavigate }) {
     s === "Fully Dispatched"
       ? "#86b894"
       : s === "Partial"
-        ? "#d9b36a"
+        ? "#aeb4ee"
         : "#e0705f";
 
   return (
     <div
       style={{
         minHeight: "100vh",
-        color: "#e0e0e0",
+        color: "#dfe2f4",
         paddingBottom: 40,
         fontStretch: "normal",
         fontStyle: "normal",
@@ -1241,12 +1241,12 @@ export function Dashboard({ data, session, toast, onNavigate }) {
               fontWeight: 600,
               margin: 0,
               letterSpacing: "-0.01em",
-              color: "#ededed",
+              color: "#dfe2f4",
             }}
           >
             Production Dashboard
           </h1>
-          <div style={{ fontSize: 13, color: "#8a8a8a", marginTop: 4 }}>
+          <div style={{ fontSize: 13, color: "#8b90b8", marginTop: 4 }}>
             Output, orders and stock at a glance
           </div>
         </div>
@@ -1437,7 +1437,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
           <span
             style={{
               fontSize: 12,
-              color: "#a3a3a3",
+              color: "#a9aed3",
               fontWeight: 600,
               flexShrink: 0,
               display: "flex",
@@ -1483,7 +1483,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                 <span
                   style={{
                     fontSize: 12,
-                    color: "#ededed",
+                    color: "#dfe2f4",
                     whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
@@ -1494,7 +1494,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                 <span
                   style={{
                     fontSize: 11,
-                    color: "#8a8a8a",
+                    color: "#8b90b8",
                     whiteSpace: "nowrap",
                   }}
                 >
@@ -1511,7 +1511,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                 flexShrink: 0,
                 background: "transparent",
                 border: "none",
-                color: "#a3a3a3",
+                color: "#a9aed3",
                 fontSize: 12,
                 fontWeight: 500,
                 cursor: "pointer",
@@ -1603,7 +1603,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
               style={{
                 fontSize: 11,
                 fontWeight: 500,
-                color: "#888",
+                color: "#8b90b8",
                 marginBottom: 10,
               }}
             >
@@ -1650,9 +1650,9 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                   <div
                     style={{
                       padding: "12px 16px",
-                      borderBottom: "1px solid #2a2a2e",
+                      borderBottom: "1px solid #161a49",
                       fontWeight: 500,
-                      color: "#a3a3a3",
+                      color: "#a9aed3",
                     }}
                   >
                     Jobs Pending for {selectedProcessPending}
@@ -1698,7 +1698,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               <td
                                 style={{
                                   ...TD,
-                                  color: "#d9b36a",
+                                  color: "#aeb4ee",
                                   fontWeight: 600,
                                 }}
                               >
@@ -1710,7 +1710,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 </div>
                                 <div
                                   style={{
-                                    color: "#aaa",
+                                    color: "#a9aed3",
                                     fontSize: 12,
                                     marginTop: 4,
                                   }}
@@ -1765,7 +1765,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                   style={{
                     fontSize: 11,
                     fontWeight: 500,
-                    color: "#888",
+                    color: "#8b90b8",
                     marginBottom: 6,
                   }}
                 >
@@ -1786,9 +1786,9 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     style={{
                       flex: 1,
                       padding: "8px 10px",
-                      background: "#0c0c0e",
+                      background: "#05071a",
                       border: "1px solid #3a3a3e",
-                      color: "#e0e0e0",
+                      color: "#dfe2f4",
                       borderRadius: 6,
                       fontSize: 13,
                       fontStretch: "normal",
@@ -1832,7 +1832,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                   style={{
                     fontSize: 11,
                     fontWeight: 500,
-                    color: "#888",
+                    color: "#8b90b8",
                     marginBottom: 6,
                   }}
                 >
@@ -1841,7 +1841,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                 <DatePicker
                   value={dateFrom}
                   onChange={(v) => setDateFrom(v)}
-                  style={{ background: "#0c0c0e", border: "1px solid #3a3a3e" }}
+                  style={{ background: "#05071a", border: "1px solid #3a3a3e" }}
                 />
               </div>
 
@@ -1850,7 +1850,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                   style={{
                     fontSize: 11,
                     fontWeight: 500,
-                    color: "#888",
+                    color: "#8b90b8",
                     marginBottom: 6,
                   }}
                 >
@@ -1859,7 +1859,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                 <DatePicker
                   value={dateTo}
                   onChange={(v) => setDateTo(v)}
-                  style={{ background: "#0c0c0e", border: "1px solid #3a3a3e" }}
+                  style={{ background: "#05071a", border: "1px solid #3a3a3e" }}
                 />
               </div>
 
@@ -1875,7 +1875,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                 style={{
                   padding: "10px 24px",
                   background: "rgba(255,255,255,0.08)",
-                  color: "#fff",
+                  color: "#dfe2f4",
                   border: "1px solid rgba(255,255,255,0.18)",
                   borderRadius: 10,
                   fontWeight: 600,
@@ -1895,7 +1895,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
             (reportTab === "machine" && appliedFilters.machine) ? (
               filteredEntries.length === 0 ? (
                 <div
-                  style={{ textAlign: "center", padding: 60, color: "#555" }}
+                  style={{ textAlign: "center", padding: 60, color: "#6f74a0" }}
                 >
                   No entries found for selected filters.
                 </div>
@@ -1912,22 +1912,22 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                   <div
                     style={{
                       background: "rgba(255,255,255,0.02)",
-                      borderBottom: "1px solid #2a2a2e",
+                      borderBottom: "1px solid #161a49",
                       padding: "12px 16px",
                       fontSize: 12,
-                      color: "#aaa",
+                      color: "#a9aed3",
                     }}
                   >
                     {reportTab === "operator" ? (
                       <div>
-                        <span style={{ fontWeight: 600, color: "#e0e0e0" }}>
+                        <span style={{ fontWeight: 600, color: "#dfe2f4" }}>
                           Operator:{" "}
                         </span>
                         <span>{appliedFilters.operator || "—"}</span>
                       </div>
                     ) : (
                       <div>
-                        <span style={{ fontWeight: 600, color: "#e0e0e0" }}>
+                        <span style={{ fontWeight: 600, color: "#dfe2f4" }}>
                           Machine:{" "}
                         </span>
                         <span>
@@ -1976,7 +1976,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             <div
                               style={{
                                 fontSize: 10,
-                                color: "#d9b36a",
+                                color: "#aeb4ee",
                                 marginTop: 2,
                               }}
                             >
@@ -1989,8 +1989,8 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 padding: "2px 8px",
                                 borderRadius: 4,
                                 background:
-                                  (PROCESS_COLORS[e.stage] || "#555") + "33",
-                                color: PROCESS_COLORS[e.stage] || "#aaa",
+                                  (PROCESS_COLORS[e.stage] || "#6f74a0") + "33",
+                                color: PROCESS_COLORS[e.stage] || "#a9aed3",
                                 fontSize: 11,
                                 fontWeight: 500,
                               }}
@@ -2010,7 +2010,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                 </div>
               )
             ) : (
-              <div style={{ textAlign: "center", padding: 60, color: "#555" }}>
+              <div style={{ textAlign: "center", padding: 60, color: "#6f74a0" }}>
                 Select {reportTab === "operator" ? "an operator" : "a machine"}{" "}
                 to view logs
               </div>
@@ -2117,7 +2117,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
             if (rows.length === 0)
               return (
                 <div
-                  style={{ textAlign: "center", padding: 60, color: "#555" }}
+                  style={{ textAlign: "center", padding: 60, color: "#6f74a0" }}
                 >
                   No Purchase Orders found.
                 </div>
@@ -2142,7 +2142,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       style={{
                         fontSize: 11,
                         fontWeight: 500,
-                        color: "#888",
+                        color: "#8b90b8",
                         marginBottom: 6,
                       }}
                     >
@@ -2158,7 +2158,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       style={{
                         fontSize: 11,
                         fontWeight: 500,
-                        color: "#888",
+                        color: "#8b90b8",
                         marginBottom: 6,
                       }}
                     >
@@ -2171,7 +2171,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       style={{
                         fontSize: 11,
                         fontWeight: 500,
-                        color: "#888",
+                        color: "#8b90b8",
                         marginBottom: 6,
                       }}
                     >
@@ -2183,9 +2183,9 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       style={{
                         width: "100%",
                         padding: "8px 10px",
-                        background: "#0c0c0e",
+                        background: "#05071a",
                         border: "1px solid #3a3a3e",
-                        color: "#e0e0e0",
+                        color: "#dfe2f4",
                         borderRadius: 6,
                         fontSize: 13,
                       }}
@@ -2258,7 +2258,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                         style={{
                           fontSize: 10,
                           fontWeight: 500,
-                          color: "#888",
+                          color: "#8b90b8",
                           marginTop: 4,
                         }}
                       >
@@ -2297,7 +2297,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       style={{
                         fontSize: 10,
                         fontWeight: 500,
-                        color: "#888",
+                        color: "#8b90b8",
                         marginTop: 4,
                       }}
                     >
@@ -2325,7 +2325,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       style={{
                         fontSize: 10,
                         fontWeight: 500,
-                        color: "#888",
+                        color: "#8b90b8",
                         marginTop: 4,
                       }}
                     >
@@ -2378,7 +2378,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                           }}
                         >
                           <td
-                            style={{ ...TD, color: "#a3a3a3", fontWeight: 600 }}
+                            style={{ ...TD, color: "#a9aed3", fontWeight: 600 }}
                           >
                             {r.po.poNo || "—"}
                           </td>
@@ -2386,11 +2386,11 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             <div style={{ fontWeight: 600 }}>
                               {r.po.vendor || r.po.vendorName || "—"}
                             </div>
-                            <div style={{ fontSize: 9, color: "#666" }}>
+                            <div style={{ fontSize: 9, color: "#6f74a0" }}>
                               {r.skuCount} SKU
                             </div>
                           </td>
-                          <td style={{ ...TD, color: "#888" }}>
+                          <td style={{ ...TD, color: "#8b90b8" }}>
                             {r.po.poDate?.slice(0, 10) || "—"}
                           </td>
                           <td style={TD}>
@@ -2400,8 +2400,8 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 r.status === "Received"
                                   ? "#86b894"
                                   : r.status === "Partial"
-                                    ? "#d9b36a"
-                                    : "#a3a3a3"
+                                    ? "#aeb4ee"
+                                    : "#a9aed3"
                               }
                             />
                           </td>
@@ -2412,7 +2412,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 : ""}
                               {fmt(r.orderedWt)} kg
                             </div>
-                            <div style={{ fontSize: 9, color: "#666" }}>
+                            <div style={{ fontSize: 9, color: "#6f74a0" }}>
                               {r.skuCount} SKU
                             </div>
                           </td>
@@ -2453,7 +2453,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                   fontSize: 11,
                                   fontWeight: 600,
                                   color:
-                                    r.fillRate >= 90 ? "#86b894" : "#d9b36a",
+                                    r.fillRate >= 90 ? "#86b894" : "#aeb4ee",
                                 }}
                               >
                                 {r.fillRate}%
@@ -2463,7 +2463,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               style={{
                                 width: "100%",
                                 height: 4,
-                                background: "#2a2a2e",
+                                background: "#161a49",
                                 borderRadius: 2,
                                 overflow: "hidden",
                               }}
@@ -2473,7 +2473,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                   width: `${r.fillRate}%`,
                                   height: "100%",
                                   background:
-                                    r.fillRate >= 90 ? "#86b894" : "#d9b36a",
+                                    r.fillRate >= 90 ? "#86b894" : "#aeb4ee",
                                   borderRadius: 2,
                                 }}
                               />
@@ -2523,7 +2523,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       style={{
                         fontSize: 11,
                         fontWeight: 500,
-                        color: "#888",
+                        color: "#8b90b8",
                         marginBottom: 6,
                       }}
                     >
@@ -2539,7 +2539,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       style={{
                         fontSize: 11,
                         fontWeight: 500,
-                        color: "#888",
+                        color: "#8b90b8",
                         marginBottom: 6,
                       }}
                     >
@@ -2552,7 +2552,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       style={{
                         fontSize: 11,
                         fontWeight: 500,
-                        color: "#888",
+                        color: "#8b90b8",
                         marginBottom: 6,
                       }}
                     >
@@ -2564,9 +2564,9 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       style={{
                         width: "100%",
                         padding: "8px 10px",
-                        background: "#0c0c0e",
+                        background: "#05071a",
                         border: "1px solid #3a3a3e",
-                        color: "#e0e0e0",
+                        color: "#dfe2f4",
                         borderRadius: 6,
                         fontSize: 13,
                       }}
@@ -2592,17 +2592,17 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     {
                       label: "Total Sales Orders",
                       val: stats.total,
-                      color: "#a3a3a3",
+                      color: "#a9aed3",
                     },
                     {
                       label: "Production Pending",
                       val: stats.productionPending,
-                      color: "#d9b36a",
+                      color: "#aeb4ee",
                     },
                     {
                       label: "Dispatch Pending",
                       val: stats.dispatchPending,
-                      color: "#a3a3a3",
+                      color: "#a9aed3",
                     },
                     {
                       label: "Complete",
@@ -2649,7 +2649,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
 
                 {rows.length === 0 ? (
                   <div
-                    style={{ textAlign: "center", padding: 60, color: "#555" }}
+                    style={{ textAlign: "center", padding: 60, color: "#6f74a0" }}
                   >
                     No Sales Orders found.
                   </div>
@@ -2710,7 +2710,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               <div
                                 style={{
                                   fontSize: 9,
-                                  color: "#666",
+                                  color: "#6f74a0",
                                   marginTop: 2,
                                 }}
                               >
@@ -2723,7 +2723,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             <td
                               style={{
                                 ...TD,
-                                color: "#888",
+                                color: "#8b90b8",
                                 maxWidth: 220,
                                 whiteSpace: "normal",
                               }}
@@ -2741,11 +2741,11 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 {r.itemsStr}
                               </div>
                             </td>
-                            <td style={{ ...TD, color: "#888" }}>
+                            <td style={{ ...TD, color: "#8b90b8" }}>
                               {(r.so.orderDate || "").slice(0, 10) || "—"}
                             </td>
                             <td style={TD}>{r.ord > 0 ? fmt(r.ord) : "—"}</td>
-                            <td style={{ ...TD, color: "#d9b36a" }}>
+                            <td style={{ ...TD, color: "#aeb4ee" }}>
                               {r.producedQty > 0 ? fmt(r.producedQty) : "—"}
                             </td>
                             <td style={{ ...TD, color: "#86b894" }}>
@@ -2832,9 +2832,9 @@ export function Dashboard({ data, session, toast, onNavigate }) {
               totalItems > 0 ? Math.round((withJO / totalItems) * 100) : 0;
 
             const STATUS_COLOR = {
-              Draft: "#888",
-              Scheduled: "#a3a3a3",
-              "In Progress": "#d9b36a",
+              Draft: "#8b90b8",
+              Scheduled: "#a9aed3",
+              "In Progress": "#aeb4ee",
               Completed: "#86b894",
               "On Hold": "#f97316",
               Cancelled: "#e0705f",
@@ -2858,7 +2858,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       style={{
                         fontSize: 11,
                         fontWeight: 500,
-                        color: "#888",
+                        color: "#8b90b8",
                         marginBottom: 6,
                       }}
                     >
@@ -2874,7 +2874,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       style={{
                         fontSize: 11,
                         fontWeight: 500,
-                        color: "#888",
+                        color: "#8b90b8",
                         marginBottom: 6,
                       }}
                     >
@@ -2887,7 +2887,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       style={{
                         fontSize: 11,
                         fontWeight: 500,
-                        color: "#888",
+                        color: "#8b90b8",
                         marginBottom: 6,
                       }}
                     >
@@ -2899,9 +2899,9 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       style={{
                         width: "100%",
                         padding: "8px 10px",
-                        background: "#0c0c0e",
+                        background: "#05071a",
                         border: "1px solid #3a3a3e",
-                        color: "#e0e0e0",
+                        color: "#dfe2f4",
                         borderRadius: 6,
                         fontSize: 13,
                       }}
@@ -2925,7 +2925,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     {
                       label: "Total SO Items",
                       val: totalItems,
-                      color: "#a3a3a3",
+                      color: "#a9aed3",
                     },
                     {
                       label: "JO Created",
@@ -2944,7 +2944,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                         coveragePct >= 90
                           ? "#86b894"
                           : coveragePct >= 50
-                            ? "#d9b36a"
+                            ? "#aeb4ee"
                             : "#e0705f",
                     },
                   ].map((s) => (
@@ -2982,7 +2982,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
 
                 {rows.length === 0 ? (
                   <div
-                    style={{ textAlign: "center", padding: 60, color: "#555" }}
+                    style={{ textAlign: "center", padding: 60, color: "#6f74a0" }}
                   >
                     No items found.
                   </div>
@@ -3061,7 +3061,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             <td style={{ ...TD, textAlign: "right" }}>
                               {r.orderQty.toLocaleString("en-IN")}
                             </td>
-                            <td style={{ ...TD, color: "#888" }}>
+                            <td style={{ ...TD, color: "#8b90b8" }}>
                               {fmtDate(r.deliveryDate)}
                             </td>
                             <td style={TD}>
@@ -3079,7 +3079,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                   {r.joNo}
                                 </span>
                               ) : (
-                                <span style={{ color: "#444" }}>—</span>
+                                <span style={{ color: "#3a3f78" }}>—</span>
                               )}
                             </td>
                             <td style={TD}>
@@ -3090,15 +3090,15 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                     borderRadius: 4,
                                     fontSize: 11,
                                     fontWeight: 600,
-                                    background: `${STATUS_COLOR[r.joStatus] || "#888"}22`,
-                                    color: STATUS_COLOR[r.joStatus] || "#888",
-                                    border: `1px solid ${STATUS_COLOR[r.joStatus] || "#888"}44`,
+                                    background: `${STATUS_COLOR[r.joStatus] || "#8b90b8"}22`,
+                                    color: STATUS_COLOR[r.joStatus] || "#8b90b8",
+                                    border: `1px solid ${STATUS_COLOR[r.joStatus] || "#8b90b8"}44`,
                                   }}
                                 >
                                   {r.joStatus}
                                 </span>
                               ) : (
-                                <span style={{ color: "#444" }}>—</span>
+                                <span style={{ color: "#3a3f78" }}>—</span>
                               )}
                             </td>
                             <td style={TD}>
@@ -3218,7 +3218,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       style={{
                         fontSize: 11,
                         fontWeight: 500,
-                        color: "#888",
+                        color: "#8b90b8",
                         marginBottom: 6,
                       }}
                     >
@@ -3234,7 +3234,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       style={{
                         fontSize: 11,
                         fontWeight: 500,
-                        color: "#888",
+                        color: "#8b90b8",
                         marginBottom: 6,
                       }}
                     >
@@ -3256,7 +3256,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     {
                       label: "Total Dispatches",
                       val: rows.length,
-                      color: "#a3a3a3",
+                      color: "#a9aed3",
                     },
                     {
                       label: "Total Qty Dispatched",
@@ -3266,12 +3266,12 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     {
                       label: "Unique Clients",
                       val: uniqueClients,
-                      color: "#d9b36a",
+                      color: "#aeb4ee",
                     },
                     {
                       label: "Dispatches Today",
                       val: dispToday,
-                      color: "#a3a3a3",
+                      color: "#a9aed3",
                     },
                   ].map((s) => (
                     <div
@@ -3308,7 +3308,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
 
                 {rows.length === 0 ? (
                   <div
-                    style={{ textAlign: "center", padding: 60, color: "#555" }}
+                    style={{ textAlign: "center", padding: 60, color: "#6f74a0" }}
                   >
                     No Dispatches found.
                   </div>
@@ -3361,7 +3361,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             <td
                               style={{
                                 ...TD,
-                                color: "#a3a3a3",
+                                color: "#a9aed3",
                                 fontWeight: 600,
                               }}
                             >
@@ -3376,7 +3376,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             <td
                               style={{
                                 ...TD,
-                                color: "#888",
+                                color: "#8b90b8",
                                 maxWidth: 220,
                                 whiteSpace: "normal",
                               }}
@@ -3394,7 +3394,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 {r.itemsStr}
                               </div>
                             </td>
-                            <td style={{ ...TD, color: "#888" }}>
+                            <td style={{ ...TD, color: "#8b90b8" }}>
                               {r.dispDate?.slice(0, 10) || "—"}
                             </td>
                             <td
@@ -3406,13 +3406,13 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             >
                               {r.totalQty > 0 ? fmt(r.totalQty) : "—"}
                             </td>
-                            <td style={{ ...TD, color: "#888" }}>
+                            <td style={{ ...TD, color: "#8b90b8" }}>
                               <div>{r.vehicle}</div>
                               {r.carrier !== "—" && (
                                 <div
                                   style={{
                                     fontSize: 10,
-                                    color: "#555",
+                                    color: "#6f74a0",
                                     marginTop: 2,
                                   }}
                                 >
@@ -3481,7 +3481,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     {
                       label: "8-14 days",
                       rows: bucket(8, 14),
-                      color: "#d9b36a",
+                      color: "#aeb4ee",
                     },
                     {
                       label: "15-30 days",
@@ -3523,7 +3523,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
 
                 {rows.length === 0 ? (
                   <div
-                    style={{ textAlign: "center", padding: 60, color: "#555" }}
+                    style={{ textAlign: "center", padding: 60, color: "#6f74a0" }}
                   >
                     No open Sales Orders found.
                   </div>
@@ -3569,7 +3569,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             r.age <= 7
                               ? "#86b894"
                               : r.age <= 14
-                                ? "#d9b36a"
+                                ? "#aeb4ee"
                                 : r.age <= 30
                                   ? C.orange || "#f97316"
                                   : "#e0705f";
@@ -3595,7 +3595,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               <td
                                 style={{
                                   ...TD,
-                                  color: "#888",
+                                  color: "#8b90b8",
                                   whiteSpace: "normal",
                                   wordBreak: "break-word",
                                   maxWidth: 0,
@@ -3606,7 +3606,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                   .filter(Boolean)
                                   .join(", ") || "—"}
                               </td>
-                              <td style={{ ...TD, color: "#888" }}>
+                              <td style={{ ...TD, color: "#8b90b8" }}>
                                 {r.s.orderDate?.slice(0, 10) || "—"}
                               </td>
                               <td
@@ -3688,11 +3688,11 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                           }}
                         >
                           <td style={TD}>{d}</td>
-                          <td style={{ ...TD, color: "#888" }}>{dayLabel}</td>
+                          <td style={{ ...TD, color: "#8b90b8" }}>{dayLabel}</td>
                           <td
                             style={{
                               ...TD,
-                              color: target > 0 ? "#a3a3a3" : "#555",
+                              color: target > 0 ? "#a9aed3" : "#6f74a0",
                             }}
                           >
                             {target > 0 ? fmt(target) : "—"}
@@ -3701,7 +3701,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             style={{
                               ...TD,
                               fontWeight: 500,
-                              color: actual > 0 ? "#86b894" : "#555",
+                              color: actual > 0 ? "#86b894" : "#6f74a0",
                             }}
                           >
                             {actual > 0 ? fmt(actual) : "—"}
@@ -3721,9 +3721,9 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               style={{
                                 padding: "4px 8px",
                                 width: 110,
-                                background: "#0c0c0e",
+                                background: "#05071a",
                                 border: "1px solid rgba(255,255,255,0.07)",
-                                color: "#e0e0e0",
+                                color: "#dfe2f4",
                                 borderRadius: 4,
                                 fontSize: 12,
                                 fontStretch: "normal",
@@ -3791,7 +3791,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       key={y.stage}
                       label={y.stage}
                       value={`${y.pct}%`}
-                      dot={y.pct > 95 ? "#86b894" : "#d9b36a"}
+                      dot={y.pct > 95 ? "#86b894" : "#aeb4ee"}
                       note={
                         <>
                           {fmt(y.ok)} ok · {fmt(y.rj)} rejected
@@ -3806,7 +3806,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                   style={{
                     fontSize: 11,
                     fontWeight: 600,
-                    color: "#d9b36a",
+                    color: "#aeb4ee",
                     marginBottom: 10,
                   }}
                 >
@@ -3860,7 +3860,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                           <td
                             style={{
                               ...TD,
-                              color: y.rj > 0 ? "#e0705f" : "#555",
+                              color: y.rj > 0 ? "#e0705f" : "#6f74a0",
                             }}
                           >
                             {fmt(y.rj)}
@@ -3869,7 +3869,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             style={{
                               ...TD,
                               fontWeight: 600,
-                              color: y.pct > 95 ? "#86b894" : "#d9b36a",
+                              color: y.pct > 95 ? "#86b894" : "#aeb4ee",
                             }}
                           >
                             {y.pct}%
@@ -3895,7 +3895,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     style={{
                       fontSize: 11,
                       fontWeight: 600,
-                      color: "#a3a3a3",
+                      color: "#a9aed3",
                     }}
                   >
                     Machine-wise Yield
@@ -3905,9 +3905,9 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     onChange={(e) => setYieldSelectedMachine(e.target.value)}
                     style={{
                       padding: "7px 10px",
-                      background: "#0c0c0e",
+                      background: "#05071a",
                       border: "1px solid #3a3a3e",
-                      color: "#e0e0e0",
+                      color: "#dfe2f4",
                       borderRadius: 6,
                       fontSize: 12,
                       minWidth: 220,
@@ -3930,10 +3930,10 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     style={{
                       textAlign: "center",
                       padding: 40,
-                      color: "#555",
+                      color: "#6f74a0",
                       background: "rgba(255,255,255,0.03)",
                       borderRadius: 8,
-                      border: "1px dashed #2a2a2e",
+                      border: "1px dashed #161a49",
                     }}
                   >
                     No machine activity in selected period.
@@ -3954,7 +3954,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                           key={m.machine._id}
                           label={m.machine.name}
                           value={`${m.pct}%`}
-                          dot={m.pct > 95 ? "#86b894" : "#d9b36a"}
+                          dot={m.pct > 95 ? "#86b894" : "#aeb4ee"}
                           note={
                             <>
                               {m.machine.type || "—"} · {fmt(m.ok)} ok ·{" "}
@@ -4009,7 +4009,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               <td style={{ ...TD, fontWeight: 600 }}>
                                 {m.machine.name}
                               </td>
-                              <td style={{ ...TD, color: "#888" }}>
+                              <td style={{ ...TD, color: "#8b90b8" }}>
                                 {m.machine.type || "—"}
                               </td>
                               <td style={TD}>{fmt(m.tot)}</td>
@@ -4019,7 +4019,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               <td
                                 style={{
                                   ...TD,
-                                  color: m.rj > 0 ? "#e0705f" : "#555",
+                                  color: m.rj > 0 ? "#e0705f" : "#6f74a0",
                                 }}
                               >
                                 {fmt(m.rj)}
@@ -4028,7 +4028,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 style={{
                                   ...TD,
                                   fontWeight: 600,
-                                  color: m.pct > 95 ? "#86b894" : "#d9b36a",
+                                  color: m.pct > 95 ? "#86b894" : "#aeb4ee",
                                 }}
                               >
                                 {m.pct}%
@@ -4067,7 +4067,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                   style={{
                     fontSize: 11,
                     fontWeight: 500,
-                    color: "#888",
+                    color: "#8b90b8",
                     marginBottom: 14,
                   }}
                 >
@@ -4093,12 +4093,12 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       style={{
                         padding: "6px 16px",
                         borderRadius: 6,
-                        border: `1px solid ${lowStockFilter === f ? "#e0705f" : "#2a2a2e"}`,
+                        border: `1px solid ${lowStockFilter === f ? "#e0705f" : "#161a49"}`,
                         background:
                           lowStockFilter === f
                             ? "#e0705f" + "22"
                             : "transparent",
-                        color: lowStockFilter === f ? "#e0705f" : "#888",
+                        color: lowStockFilter === f ? "#e0705f" : "#8b90b8",
                         fontSize: 12,
                         fontWeight: 500,
                         cursor: "pointer",
@@ -4145,7 +4145,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             color:
                               lowStockCategoryFilter === cat
                                 ? "#60a5fa"
-                                : "#666",
+                                : "#6f74a0",
                             fontSize: 11,
                             fontWeight: 500,
                             cursor: "pointer",
@@ -4164,7 +4164,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                         alignItems: "center",
                       }}
                     >
-                      <span style={{ color: "#aaa", fontSize: 12 }}>
+                      <span style={{ color: "#a9aed3", fontSize: 12 }}>
                         {lowStockSelected.size} selected
                       </span>
                       <button
@@ -4174,7 +4174,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                           borderRadius: 6,
                           border: "1px solid rgba(255,255,255,0.07)",
                           background: "transparent",
-                          color: "#888",
+                          color: "#8b90b8",
                           fontSize: 11,
                           fontWeight: 500,
                           cursor: "pointer",
@@ -4280,9 +4280,9 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                         style={{
                           padding: "6px 14px",
                           borderRadius: 6,
-                          border: `1px solid ${"#a3a3a3"}66`,
-                          background: "#a3a3a3" + "22",
-                          color: "#a3a3a3",
+                          border: `1px solid ${"#a9aed3"}66`,
+                          background: "#a9aed3" + "22",
+                          color: "#a9aed3",
                           fontSize: 12,
                           fontWeight: 600,
                           cursor: "pointer",
@@ -4402,7 +4402,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               key={i}
                               style={{
                                 background: isSelected
-                                  ? "#a3a3a3" + "18"
+                                  ? "#a9aed3" + "18"
                                   : i % 2 === 0
                                     ? "#0e0e12"
                                     : "#121216",
@@ -4428,7 +4428,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               <td style={{ ...TD, fontWeight: 600 }}>
                                 {f.name}
                               </td>
-                              <td style={{ ...TD, color: "#888" }}>
+                              <td style={{ ...TD, color: "#8b90b8" }}>
                                 {f.category}
                               </td>
                               <td
@@ -4440,7 +4440,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               >
                                 {fmt(f.stock)} {f.unit}
                               </td>
-                              <td style={{ ...TD, color: "#888" }}>
+                              <td style={{ ...TD, color: "#8b90b8" }}>
                                 {fmt(f.reorder)} {f.unit}
                               </td>
                               <td style={TD}>
@@ -4543,9 +4543,9 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                     style={{
                                       padding: "5px 12px",
                                       borderRadius: 5,
-                                      border: `1px solid ${"#a3a3a3"}66`,
-                                      background: "#a3a3a3" + "22",
-                                      color: "#a3a3a3",
+                                      border: `1px solid ${"#a9aed3"}66`,
+                                      background: "#a9aed3" + "22",
+                                      color: "#a9aed3",
                                       fontSize: 11,
                                       fontWeight: 600,
                                       cursor: "pointer",
@@ -4559,7 +4559,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                     PO
                                   </button>
                                 ) : (
-                                  <span style={{ color: "#444", fontSize: 11 }}>
+                                  <span style={{ color: "#3a3f78", fontSize: 11 }}>
                                     —
                                   </span>
                                 )}
@@ -4612,7 +4612,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                 >
                   <span
                     style={{
-                      color: "#888",
+                      color: "#8b90b8",
                       fontSize: 11,
                       fontWeight: 500,
                     }}
@@ -4627,7 +4627,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       padding: "7px 12px",
                       background: "transparent",
                       border: "1px solid rgba(255,255,255,0.07)",
-                      color: "#e0e0e0",
+                      color: "#dfe2f4",
                       borderRadius: 6,
                       fontSize: 13,
                       fontStretch: "normal",
@@ -4654,7 +4654,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       val: fmt(totalRej),
                       color: "#e0705f",
                     },
-                    { label: "Active JOs", val: mJOs.length, color: "#a3a3a3" },
+                    { label: "Active JOs", val: mJOs.length, color: "#a9aed3" },
                     {
                       label: "Overall Yield",
                       val: yieldPct + "%",
@@ -4680,7 +4680,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                         {s.val}
                       </div>
                       <div
-                        style={{ fontSize: 11, color: "#aaa", marginTop: 4 }}
+                        style={{ fontSize: 11, color: "#a9aed3", marginTop: 4 }}
                       >
                         {s.label}
                       </div>
@@ -4703,7 +4703,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       background: "transparent",
                       fontSize: 11,
                       fontWeight: 500,
-                      color: "#d9b36a",
+                      color: "#aeb4ee",
                     }}
                   >
                     Production by Process — {monthStr}
@@ -4760,7 +4760,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             <td
                               style={{
                                 ...TD,
-                                color: rj > 0 ? "#e0705f" : "#555",
+                                color: rj > 0 ? "#e0705f" : "#6f74a0",
                               }}
                             >
                               {fmt(rj)}
@@ -4769,7 +4769,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               style={{
                                 ...TD,
                                 fontWeight: 600,
-                                color: y > 95 ? "#86b894" : "#d9b36a",
+                                color: y > 95 ? "#86b894" : "#aeb4ee",
                               }}
                             >
                               {y}%
@@ -4787,7 +4787,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                   style={{
                                     width: y + "%",
                                     height: "100%",
-                                    background: y > 95 ? "#86b894" : "#d9b36a",
+                                    background: y > 95 ? "#86b894" : "#aeb4ee",
                                     borderRadius: 2,
                                   }}
                                 />
@@ -4816,7 +4816,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                         background: "transparent",
                         fontSize: 11,
                         fontWeight: 500,
-                        color: "#d9b36a",
+                        color: "#aeb4ee",
                       }}
                     >
                       Job Orders — {monthStr}
@@ -4850,7 +4850,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             <td
                               style={{
                                 ...TD,
-                                color: "#d9b36a",
+                                color: "#aeb4ee",
                                 fontWeight: 600,
                               }}
                             >
@@ -4865,11 +4865,11 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                   background:
                                     (j.status === "Completed"
                                       ? "#86b894"
-                                      : "#d9b36a") + "22",
+                                      : "#aeb4ee") + "22",
                                   color:
                                     j.status === "Completed"
                                       ? "#86b894"
-                                      : "#d9b36a",
+                                      : "#aeb4ee",
                                   fontSize: 11,
                                   fontWeight: 500,
                                 }}
@@ -5027,7 +5027,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       style={{
                         fontSize: 11,
                         fontWeight: 500,
-                        color: "#888",
+                        color: "#8b90b8",
                         marginBottom: 6,
                       }}
                     >
@@ -5043,7 +5043,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       style={{
                         fontSize: 11,
                         fontWeight: 500,
-                        color: "#888",
+                        color: "#8b90b8",
                         marginBottom: 6,
                       }}
                     >
@@ -5064,12 +5064,12 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     {
                       label: "Unique Vendors",
                       val: uniqueVendors,
-                      color: "#a3a3a3",
+                      color: "#a9aed3",
                     },
                     {
                       label: "Total POs",
                       val: totalPOs,
-                      color: "#a3a3a3",
+                      color: "#a9aed3",
                     },
                     {
                       label: "Total GRNs",
@@ -5084,7 +5084,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     {
                       label: "Total Ordered (kg)",
                       val: Math.round(totalOrdWt).toLocaleString("en-IN"),
-                      color: "#a3a3a3",
+                      color: "#a9aed3",
                     },
                     {
                       label: "Total Received (kg)",
@@ -5105,7 +5105,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                         overallFulfill >= 95
                           ? "#86b894"
                           : overallFulfill > 0
-                            ? "#d9b36a"
+                            ? "#aeb4ee"
                             : "#e0705f",
                     },
                   ].map((s) => (
@@ -5128,7 +5128,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                         {s.val}
                       </div>
                       <div
-                        style={{ fontSize: 11, color: "#aaa", marginTop: 4 }}
+                        style={{ fontSize: 11, color: "#a9aed3", marginTop: 4 }}
                       >
                         {s.label}
                       </div>
@@ -5138,7 +5138,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
 
                 {vRows.length === 0 ? (
                   <div
-                    style={{ textAlign: "center", padding: 60, color: "#555" }}
+                    style={{ textAlign: "center", padding: 60, color: "#6f74a0" }}
                   >
                     No Purchase Orders found. Add POs to see vendor performance.
                   </div>
@@ -5200,7 +5200,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             <td
                               style={{
                                 ...TD,
-                                color: "#a3a3a3",
+                                color: "#a9aed3",
                                 fontWeight: 600,
                               }}
                             >
@@ -5220,7 +5220,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 {Math.round(r.ordWt).toLocaleString("en-IN")} kg
                               </div>
                               {r.ordQty > 0 && (
-                                <div style={{ fontSize: 9, color: "#666" }}>
+                                <div style={{ fontSize: 9, color: "#6f74a0" }}>
                                   {Math.round(r.ordQty).toLocaleString("en-IN")}{" "}
                                   sheets
                                 </div>
@@ -5237,7 +5237,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 {Math.round(r.recWt).toLocaleString("en-IN")} kg
                               </div>
                               {r.recQty > 0 && (
-                                <div style={{ fontSize: 9, color: "#888" }}>
+                                <div style={{ fontSize: 9, color: "#8b90b8" }}>
                                   {Math.round(r.recQty).toLocaleString("en-IN")}{" "}
                                   sheets
                                 </div>
@@ -5255,7 +5255,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 kg
                               </div>
                               {r.pendQty > 0 && (
-                                <div style={{ fontSize: 9, color: "#666" }}>
+                                <div style={{ fontSize: 9, color: "#6f74a0" }}>
                                   {Math.round(r.pendQty).toLocaleString(
                                     "en-IN",
                                   )}{" "}
@@ -5266,7 +5266,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             <td
                               style={{
                                 ...TD,
-                                color: r.openPOs > 0 ? "#d9b36a" : "#555",
+                                color: r.openPOs > 0 ? "#aeb4ee" : "#6f74a0",
                                 fontWeight: 500,
                               }}
                             >
@@ -5281,7 +5281,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                     r.fulfillRate >= 95
                                       ? "#86b894"
                                       : r.fulfillRate > 0
-                                        ? "#d9b36a"
+                                        ? "#aeb4ee"
                                         : "#e0705f",
                                   marginBottom: 3,
                                 }}
@@ -5304,7 +5304,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                       r.fulfillRate >= 95
                                         ? "#86b894"
                                         : r.fulfillRate > 0
-                                          ? "#d9b36a"
+                                          ? "#aeb4ee"
                                           : "#e0705f",
                                     borderRadius: 2,
                                   }}
@@ -5329,11 +5329,11 @@ export function Dashboard({ data, session, toast, onNavigate }) {
             const pct = (n) => (n == null ? "—" : `${(n * 100).toFixed(1)}%`);
             const oeeColor = (v) =>
               v == null
-                ? "#555"
+                ? "#6f74a0"
                 : v >= 0.85
                   ? "#86b894"
                   : v >= 0.65
-                    ? "#d9b36a"
+                    ? "#aeb4ee"
                     : "#e0705f";
             const oeeLabel = (v) =>
               v == null
@@ -5501,7 +5501,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                           y1={y}
                           x2="100%"
                           y2={y}
-                          stroke={v === 85 ? "#22c55e" : "#2a2a2e"}
+                          stroke={v === 85 ? "#22c55e" : "#161a49"}
                           strokeWidth={v === 85 ? 1.5 : 1}
                           strokeDasharray={v === 85 ? "5 4" : "none"}
                           opacity={v === 85 ? 0.7 : 0.4}
@@ -5510,7 +5510,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                           x={2}
                           y={y - 2}
                           fontSize={8}
-                          fill={v === 85 ? "#22c55e" : "#555"}
+                          fill={v === 85 ? "#22c55e" : "#6f74a0"}
                           fontWeight={v === 85 ? 700 : 400}
                         >
                           {v === 85 ? "85%" : `${v}%`}
@@ -5559,7 +5559,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                           y={chartH - 6}
                           textAnchor="middle"
                           fontSize={7}
-                          fill="#555"
+                          fill="#6f74a0"
                         >
                           {row.label.replace(/^\d{4}-/, "")}
                         </text>
@@ -5615,7 +5615,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     <div
                       style={{
                         fontSize: 11,
-                        color: "#888",
+                        color: "#8b90b8",
                         fontWeight: 500,
                         marginBottom: 6,
                       }}
@@ -5631,7 +5631,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     <div
                       style={{
                         fontSize: 11,
-                        color: "#888",
+                        color: "#8b90b8",
                         fontWeight: 500,
                         marginBottom: 6,
                       }}
@@ -5651,7 +5651,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                           border: `1px solid ${oeeGranularity === g ? "#ff7800" : "#3a3a3e"}`,
                           background:
                             oeeGranularity === g ? "#ff780022" : "transparent",
-                          color: oeeGranularity === g ? "#ff7800" : "#888",
+                          color: oeeGranularity === g ? "#ff7800" : "#8b90b8",
                           fontWeight: 500,
                           fontSize: 11,
                           cursor: "pointer",
@@ -5713,7 +5713,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                         ? "#86b894"
                         : val != null
                           ? "#e0705f"
-                          : "#555"
+                          : "#6f74a0"
                       : oeeColor(val);
                     return (
                       <div
@@ -5728,7 +5728,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                         <div
                           style={{
                             fontSize: 11,
-                            color: "#888",
+                            color: "#8b90b8",
                             fontWeight: 500,
                             marginBottom: 6,
                           }}
@@ -5751,7 +5751,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               : pct(val)}
                         </div>
                         <div
-                          style={{ fontSize: 10, color: "#555", marginTop: 4 }}
+                          style={{ fontSize: 10, color: "#6f74a0", marginTop: 4 }}
                         >
                           {note}
                         </div>
@@ -5789,7 +5789,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                         Lowest factor: {rootCause.label} ({pct(rootCause.val)})
                       </div>
                       <div
-                        style={{ fontSize: 11, color: "#888", marginTop: 2 }}
+                        style={{ fontSize: 11, color: "#8b90b8", marginTop: 2 }}
                       >
                         Root cause:{" "}
                         <b style={{ color: "#bbb" }}>{rootCause.fix}</b>. This
@@ -5801,7 +5801,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                         marginLeft: "auto",
                         textAlign: "right",
                         fontSize: 11,
-                        color: "#555",
+                        color: "#6f74a0",
                       }}
                     >
                       World-class = 85% OEE
@@ -5834,7 +5834,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     >
                       Quality Rate Trend —{" "}
                       {oeeGranularity === "weekly" ? "Weekly" : "Monthly"}{" "}
-                      <span style={{ fontSize: 10, color: "#555" }}>
+                      <span style={{ fontSize: 10, color: "#6f74a0" }}>
                         (basis: Good / Total produced)
                       </span>
                     </div>
@@ -5843,9 +5843,9 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       onChange={(e) => setOeeSelectedMachine(e.target.value)}
                       style={{
                         padding: "5px 10px",
-                        background: "#0c0c0e",
+                        background: "#05071a",
                         border: "1px solid #3a3a3e",
-                        color: "#e0e0e0",
+                        color: "#dfe2f4",
                         borderRadius: 6,
                         fontSize: 12,
                       }}
@@ -5863,7 +5863,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       style={{
                         textAlign: "center",
                         padding: 40,
-                        color: "#555",
+                        color: "#6f74a0",
                       }}
                     >
                       No production data in selected range.
@@ -5887,7 +5887,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     style={{
                       padding: "12px 16px",
                       background: "transparent",
-                      borderBottom: "1px solid #2a2a2e",
+                      borderBottom: "1px solid #161a49",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
@@ -5898,7 +5898,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     >
                       Per-Machine OEE Breakdown
                     </span>
-                    <span style={{ fontSize: 10, color: "#555" }}>
+                    <span style={{ fontSize: 10, color: "#6f74a0" }}>
                       A = Availability · P = Performance (needs shift target) ·
                       Q = Quality · OEE = A×P×Q
                     </span>
@@ -5932,7 +5932,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             style={{
                               ...TD,
                               textAlign: "center",
-                              color: "#555",
+                              color: "#6f74a0",
                               padding: 40,
                             }}
                           >
@@ -5955,7 +5955,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               <td style={{ ...TD, fontWeight: 600 }}>
                                 {r.m.name}
                               </td>
-                              <td style={{ ...TD, color: "#888" }}>
+                              <td style={{ ...TD, color: "#8b90b8" }}>
                                 {r.m.type || "—"}
                               </td>
                               <td style={{ ...TD, textAlign: "right" }}>
@@ -5966,7 +5966,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                   {r.good.toLocaleString("en-IN")}
                                 </span>
                                 {" / "}
-                                <span style={{ color: "#888" }}>
+                                <span style={{ color: "#8b90b8" }}>
                                   {r.total.toLocaleString("en-IN")}
                                 </span>
                               </td>
@@ -5983,7 +5983,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 <div
                                   style={{
                                     height: 3,
-                                    background: "#2a2a2e",
+                                    background: "#161a49",
                                     borderRadius: 2,
                                     marginTop: 3,
                                     width: 60,
@@ -6014,7 +6014,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                     <div
                                       style={{
                                         height: 3,
-                                        background: "#2a2a2e",
+                                        background: "#161a49",
                                         borderRadius: 2,
                                         marginTop: 3,
                                         width: 60,
@@ -6031,7 +6031,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                     </div>
                                   </>
                                 ) : (
-                                  <span style={{ color: "#555", fontSize: 10 }}>
+                                  <span style={{ color: "#6f74a0", fontSize: 10 }}>
                                     Set target →
                                   </span>
                                 )}
@@ -6049,7 +6049,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 <div
                                   style={{
                                     height: 3,
-                                    background: "#2a2a2e",
+                                    background: "#161a49",
                                     borderRadius: 2,
                                     marginTop: 3,
                                     width: 60,
@@ -6077,7 +6077,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                   {pct(r.oee)}
                                 </span>
                                 {r.P == null && (
-                                  <div style={{ fontSize: 9, color: "#555" }}>
+                                  <div style={{ fontSize: 9, color: "#6f74a0" }}>
                                     Q only
                                   </div>
                                 )}
@@ -6126,9 +6126,9 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                     style={{
                                       width: 70,
                                       padding: "4px 6px",
-                                      background: "#0c0c0e",
+                                      background: "#05071a",
                                       border: "1px solid #ff7800",
-                                      color: "#e0e0e0",
+                                      color: "#dfe2f4",
                                       borderRadius: 4,
                                       fontSize: 12,
                                     }}
@@ -6140,8 +6140,8 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                       background: "transparent",
                                       border: "1px solid #3a3a3e",
                                       color: pvtTargets[mid]?.targetPerShift
-                                        ? "#e0e0e0"
-                                        : "#555",
+                                        ? "#dfe2f4"
+                                        : "#6f74a0",
                                       borderRadius: 4,
                                       padding: "3px 10px",
                                       fontSize: 11,
@@ -6177,7 +6177,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       style={{
                         padding: "12px 16px",
                         background: "transparent",
-                        borderBottom: "1px solid #2a2a2e",
+                        borderBottom: "1px solid #161a49",
                         fontWeight: 500,
                         color: "#bbb",
                         fontSize: 12,
@@ -6188,7 +6188,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                         style={{
                           fontSize: 10,
                           fontWeight: 400,
-                          color: "#555",
+                          color: "#6f74a0",
                           marginLeft: 10,
                         }}
                       >
@@ -6258,7 +6258,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                           sh === "Morning"
                                             ? "#60a5fa"
                                             : sh === "Night"
-                                              ? "#c8955a"
+                                              ? "#aeb4ee"
                                               : "#fb923c",
                                         fontSize: 11,
                                         fontWeight: 500,
@@ -6287,7 +6287,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                       ...TD,
                                       textAlign: "right",
                                       color:
-                                        sd.rejected > 0 ? "#e0705f" : "#555",
+                                        sd.rejected > 0 ? "#e0705f" : "#6f74a0",
                                     }}
                                   >
                                     {sd.rejected > 0
@@ -6310,7 +6310,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                       textAlign: "right",
                                       color:
                                         delta == null
-                                          ? "#555"
+                                          ? "#6f74a0"
                                           : delta >= 0
                                             ? "#86b894"
                                             : "#e0705f",
@@ -6331,7 +6331,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                           ? "#e0705f"
                                           : obs === "Excellent"
                                             ? "#86b894"
-                                            : "#888",
+                                            : "#8b90b8",
                                     }}
                                   >
                                     {obs}
@@ -6349,15 +6349,15 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                 <div
                   style={{
                     padding: "10px 16px",
-                    background: "#0d0d0d",
+                    background: "#05071a",
                     borderRadius: 8,
                     border: "1px solid #2a2a2e22",
                     fontSize: 10,
-                    color: "#444",
+                    color: "#3a3f78",
                     lineHeight: 1.7,
                   }}
                 >
-                  <b style={{ color: "#666" }}>
+                  <b style={{ color: "#6f74a0" }}>
                     OEE = Availability × Performance × Quality
                   </b>
                   {" · "}
@@ -6455,7 +6455,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     >
                       All Clear — No Active Alerts
                     </div>
-                    <div style={{ fontSize: 12, color: "#555" }}>
+                    <div style={{ fontSize: 12, color: "#6f74a0" }}>
                       All delivery schedules, vendor lead times, client orders,
                       stock levels, and machine availability look healthy.
                     </div>
@@ -6486,7 +6486,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             <div
                               style={{
                                 fontSize: 11,
-                                color: "#888",
+                                color: "#8b90b8",
                                 fontWeight: 500,
                                 marginBottom: 4,
                               }}
@@ -6505,7 +6505,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             <div
                               style={{
                                 fontSize: 10,
-                                color: "#555",
+                                color: "#6f74a0",
                                 marginTop: 2,
                               }}
                             >
@@ -6523,7 +6523,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                           style={{
                             fontSize: 11,
                             fontWeight: 500,
-                            color: "#888",
+                            color: "#8b90b8",
                             marginBottom: 10,
                           }}
                         >
@@ -6577,7 +6577,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                     style={{
                                       fontWeight: 500,
                                       fontSize: 14,
-                                      color: "#e0e0e0",
+                                      color: "#dfe2f4",
                                       marginBottom: 4,
                                     }}
                                   >
@@ -6586,14 +6586,14 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                   <div
                                     style={{
                                       fontSize: 12,
-                                      color: "#888",
+                                      color: "#8b90b8",
                                       lineHeight: 1.5,
                                       marginBottom: 6,
                                     }}
                                   >
                                     {a.detail}
                                   </div>
-                                  <div style={{ fontSize: 11, color: "#555" }}>
+                                  <div style={{ fontSize: 11, color: "#6f74a0" }}>
                                     {a.meta}
                                   </div>
                                 </div>
@@ -6639,15 +6639,15 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     <div
                       style={{
                         padding: "10px 16px",
-                        background: "#0d0d0d",
+                        background: "#05071a",
                         borderRadius: 8,
                         border: "1px solid #2a2a2e22",
                         fontSize: 10,
-                        color: "#444",
+                        color: "#3a3f78",
                         lineHeight: 1.8,
                       }}
                     >
-                      <b style={{ color: "#666" }}>Alert logic:</b>{" "}
+                      <b style={{ color: "#6f74a0" }}>Alert logic:</b>{" "}
                       <b>Delivery Risk</b> — production velocity (last 7d) ×
                       remaining units &gt; days until SO delivery date.{" "}
                       <b>Vendor Lead Time</b> — avg lead time of last 3 POs vs
@@ -6743,9 +6743,9 @@ export function Dashboard({ data, session, toast, onNavigate }) {
               starvationRisk === "high"
                 ? "#e0705f"
                 : starvationRisk === "medium"
-                  ? "#d9b36a"
+                  ? "#aeb4ee"
                   : starvationRisk === "none"
-                    ? "#555"
+                    ? "#6f74a0"
                     : "#86b894";
             const starvationLabel =
               starvationRisk === "high"
@@ -6800,12 +6800,12 @@ export function Dashboard({ data, session, toast, onNavigate }) {
               const border = isBN
                 ? "#ef4444"
                 : fillPct > 0.5
-                  ? "#d9b36a"
+                  ? "#aeb4ee"
                   : fillPct > 0
                     ? s.isFeeder
                       ? "#3b82f6"
                       : "#22c55e"
-                    : "#2a2a2e";
+                    : "#161a49";
               const fillBg = isBN
                 ? "#ef444422"
                 : fillPct > 0.5
@@ -6836,7 +6836,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       height,
                       border: `2px solid ${border}`,
                       borderRadius: 6,
-                      background: "#0c0c0e",
+                      background: "#05071a",
                       position: "relative",
                       overflow: "hidden",
                     }}
@@ -6871,15 +6871,15 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             s.count > 0
                               ? isBN
                                 ? "#ef4444"
-                                : "#e0e0e0"
-                              : "#2a2a2e",
+                                : "#dfe2f4"
+                              : "#161a49",
                           lineHeight: 1,
                         }}
                       >
                         {s.count}
                       </div>
                       {s.count > 0 && (
-                        <div style={{ fontSize: 9, color: "#888" }}>
+                        <div style={{ fontSize: 9, color: "#8b90b8" }}>
                           ~{s.avgWait.toFixed(1)}d
                         </div>
                       )}
@@ -6888,7 +6888,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                   <div
                     style={{
                       fontSize: 9,
-                      color: isBN ? "#ef4444" : "#666",
+                      color: isBN ? "#ef4444" : "#6f74a0",
                       fontWeight: isBN ? 700 : 400,
                       marginTop: 6,
                       textAlign: "center",
@@ -6902,7 +6902,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
               );
             };
 
-            const Arrow = ({ color = "#2a2a2e", wide = false }) => (
+            const Arrow = ({ color = "#161a49", wide = false }) => (
               <div
                 style={{
                   display: "flex",
@@ -6944,7 +6944,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     {
                       label: "Total WIP Jobs",
                       val: totalWIP,
-                      color: "#d9b36a",
+                      color: "#aeb4ee",
                       isText: false,
                     },
                     {
@@ -6987,7 +6987,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       <div
                         style={{
                           fontSize: 11,
-                          color: "#888",
+                          color: "#8b90b8",
                           fontWeight: 500,
                           marginBottom: 6,
                         }}
@@ -7116,7 +7116,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       style={{
                         fontSize: 11,
                         fontWeight: 500,
-                        color: "#888",
+                        color: "#8b90b8",
                       }}
                     >
                       Production Pipeline — Feeder Stages → Formation Sinks
@@ -7180,7 +7180,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     </div>
                   </div>
 
-                  <div style={{ fontSize: 10, color: "#444", marginTop: 8 }}>
+                  <div style={{ fontSize: 10, color: "#3a3f78", marginTop: 8 }}>
                     Fill = relative WIP queue depth · * = highest pressure (jobs
                     × avg wait) · Blue arrow = feeder → Formation flow · Varnish
                     & Lamination apply to ~20–25% of jobs
@@ -7201,7 +7201,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     style={{
                       padding: "12px 16px",
                       background: "transparent",
-                      borderBottom: "1px solid #2a2a2e",
+                      borderBottom: "1px solid #161a49",
                       fontWeight: 500,
                       color: "#bbb",
                       fontSize: 12,
@@ -7234,10 +7234,10 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                         const col = isBN
                           ? "#e0705f"
                           : s.count > 2
-                            ? "#d9b36a"
+                            ? "#aeb4ee"
                             : s.count > 0
                               ? "#86b894"
-                              : "#555";
+                              : "#6f74a0";
                         const label =
                           s.count === 0
                             ? "Clear"
@@ -7278,7 +7278,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 ...TD,
                                 textAlign: "right",
                                 fontWeight: 500,
-                                color: s.count > 0 ? col : "#555",
+                                color: s.count > 0 ? col : "#6f74a0",
                               }}
                             >
                               {s.count || "—"}
@@ -7291,8 +7291,8 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                   s.avgWait > 3
                                     ? "#e0705f"
                                     : s.avgWait > 1
-                                      ? "#d9b36a"
-                                      : "#888",
+                                      ? "#aeb4ee"
+                                      : "#8b90b8",
                               }}
                             >
                               {s.count > 0 ? s.avgWait.toFixed(1) : "—"}
@@ -7305,8 +7305,8 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                   s.maxWait > 5
                                     ? "#e0705f"
                                     : s.maxWait > 2
-                                      ? "#d9b36a"
-                                      : "#888",
+                                      ? "#aeb4ee"
+                                      : "#8b90b8",
                               }}
                             >
                               {s.count > 0 ? s.maxWait.toFixed(1) : "—"}
@@ -7325,7 +7325,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                     style={{
                                       width: 60,
                                       height: 4,
-                                      background: "#2a2a2e",
+                                      background: "#161a49",
                                       borderRadius: 2,
                                       overflow: "hidden",
                                     }}
@@ -7350,7 +7350,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                   </span>
                                 </div>
                               ) : (
-                                <span style={{ color: "#555" }}>—</span>
+                                <span style={{ color: "#6f74a0" }}>—</span>
                               )}
                             </td>
                             <td style={{ ...TD }}>
@@ -7402,7 +7402,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                         style={{
                           padding: "12px 16px",
                           background: "transparent",
-                          borderBottom: "1px solid #2a2a2e",
+                          borderBottom: "1px solid #161a49",
                           fontWeight: 500,
                           color: "#bbb",
                           fontSize: 12,
@@ -7440,14 +7440,14 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 <td
                                   style={{
                                     ...TD,
-                                    color: "#d9b36a",
+                                    color: "#aeb4ee",
                                     fontWeight: 500,
                                   }}
                                 >
                                   {jo.joNo}
                                 </td>
                                 <td style={TD}>{jo.itemName || "—"}</td>
-                                <td style={{ ...TD, color: "#888" }}>
+                                <td style={{ ...TD, color: "#8b90b8" }}>
                                   {jo.companyName || "—"}
                                 </td>
                                 <td style={TD}>
@@ -7456,9 +7456,9 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                       padding: "2px 8px",
                                       borderRadius: 4,
                                       background:
-                                        (PROCESS_COLORS[stage] || "#555") +
+                                        (PROCESS_COLORS[stage] || "#6f74a0") +
                                         "33",
-                                      color: PROCESS_COLORS[stage] || "#aaa",
+                                      color: PROCESS_COLORS[stage] || "#a9aed3",
                                       fontSize: 11,
                                       fontWeight: 500,
                                     }}
@@ -7490,8 +7490,8 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                       wait > 5
                                         ? "#e0705f"
                                         : wait > 2
-                                          ? "#d9b36a"
-                                          : "#888",
+                                          ? "#aeb4ee"
+                                          : "#8b90b8",
                                   }}
                                 >
                                   {wait.toFixed(1)}d
@@ -7682,15 +7682,15 @@ export function Dashboard({ data, session, toast, onNavigate }) {
             const pctFmt = (n) =>
               n == null ? "—" : `${(n * 100).toFixed(1)}%`;
             const utilColor = (v) =>
-              v >= 0.7 ? "#86b894" : v >= 0.4 ? "#d9b36a" : "#e0705f";
+              v >= 0.7 ? "#86b894" : v >= 0.4 ? "#aeb4ee" : "#e0705f";
             const trendColor = (t) =>
               t === "improving"
                 ? "#86b894"
                 : t === "declining"
                   ? "#e0705f"
                   : t === "plateau"
-                    ? "#d9b36a"
-                    : "#555";
+                    ? "#aeb4ee"
+                    : "#6f74a0";
             const trendLabel = (t) =>
               t === "improving"
                 ? "↑ Improving"
@@ -7705,7 +7705,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
             // Mini SVG sparkline
             const Sparkline = ({ vals, color }) => {
               if (!vals || vals.length < 2)
-                return <span style={{ color: "#555", fontSize: 10 }}>—</span>;
+                return <span style={{ color: "#6f74a0", fontSize: 10 }}>—</span>;
               const max = Math.max(...vals, 1);
               const W = 52;
               const H = 22;
@@ -7750,7 +7750,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
 
             return (
               <div>
-                <div style={{ fontSize: 11, color: "#555", marginBottom: 16 }}>
+                <div style={{ fontSize: 11, color: "#6f74a0", marginBottom: 16 }}>
                   Period: {dateFrom || cut30str} → {dateTo || "today"} · Adjust
                   using the Date From / To filter above.
                 </div>
@@ -7769,7 +7769,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     style={{
                       padding: "12px 16px",
                       background: "transparent",
-                      borderBottom: "1px solid #2a2a2e",
+                      borderBottom: "1px solid #161a49",
                     }}
                   >
                     <span
@@ -7778,7 +7778,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       Operator Productivity Scorecards
                     </span>
                     <span
-                      style={{ fontSize: 10, color: "#555", marginLeft: 10 }}
+                      style={{ fontSize: 10, color: "#6f74a0", marginLeft: 10 }}
                     >
                       Ranked by units/shift · Sparkline = last 6 weeks output ·
                       Learning curve flag
@@ -7789,7 +7789,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       style={{
                         textAlign: "center",
                         padding: 40,
-                        color: "#555",
+                        color: "#6f74a0",
                       }}
                     >
                       No production records with operator names in this period.
@@ -7825,14 +7825,14 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                   ? "3rd"
                                   : `#${i + 1}`;
                           const prodCol =
-                            i === 0 ? "#86b894" : i < 3 ? "#d9b36a" : "#e0e0e0";
+                            i === 0 ? "#86b894" : i < 3 ? "#aeb4ee" : "#dfe2f4";
                           const qualCol =
                             r.quality == null
-                              ? "#555"
+                              ? "#6f74a0"
                               : r.quality >= 0.95
                                 ? "#86b894"
                                 : r.quality >= 0.85
-                                  ? "#d9b36a"
+                                  ? "#aeb4ee"
                                   : "#e0705f";
                           return (
                             <tr
@@ -7872,7 +7872,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 style={{
                                   ...TD,
                                   textAlign: "right",
-                                  color: "#888",
+                                  color: "#8b90b8",
                                 }}
                               >
                                 {r.activeShifts}
@@ -7889,7 +7889,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 </span>
                                 <span
                                   style={{
-                                    color: "#555",
+                                    color: "#6f74a0",
                                     fontSize: 10,
                                     marginLeft: 3,
                                   }}
@@ -7929,7 +7929,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                     <div
                                       style={{
                                         fontSize: 9,
-                                        color: "#d9b36a",
+                                        color: "#aeb4ee",
                                         marginTop: 3,
                                       }}
                                     >
@@ -7969,7 +7969,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                     style={{
                       padding: "12px 16px",
                       background: "transparent",
-                      borderBottom: "1px solid #2a2a2e",
+                      borderBottom: "1px solid #161a49",
                     }}
                   >
                     <span
@@ -7978,7 +7978,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       Machine Utilization
                     </span>
                     <span
-                      style={{ fontSize: 10, color: "#555", marginLeft: 10 }}
+                      style={{ fontSize: 10, color: "#6f74a0", marginLeft: 10 }}
                     >
                       Active shifts ÷ fleet shifts · Weekly utilization
                       sparkline · Capacity planning input
@@ -7989,7 +7989,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                       style={{
                         textAlign: "center",
                         padding: 40,
-                        color: "#555",
+                        color: "#6f74a0",
                       }}
                     >
                       No machine data in this period. Select a Machine in
@@ -8021,11 +8021,11 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                           const col = utilColor(r.util);
                           const qualCol =
                             r.quality == null
-                              ? "#555"
+                              ? "#6f74a0"
                               : r.quality >= 0.95
                                 ? "#86b894"
                                 : r.quality >= 0.85
-                                  ? "#d9b36a"
+                                  ? "#aeb4ee"
                                   : "#e0705f";
                           return (
                             <tr
@@ -8037,7 +8037,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               <td style={{ ...TD, fontWeight: 600 }}>
                                 {r.m.name}
                               </td>
-                              <td style={{ ...TD, color: "#888" }}>
+                              <td style={{ ...TD, color: "#8b90b8" }}>
                                 {r.m.type || "—"}
                               </td>
                               <td style={{ ...TD, textAlign: "right" }}>
@@ -8055,7 +8055,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                     style={{
                                       flex: 1,
                                       height: 5,
-                                      background: "#2a2a2e",
+                                      background: "#161a49",
                                       borderRadius: 3,
                                       overflow: "hidden",
                                       minWidth: 64,
@@ -8106,7 +8106,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 {pctFmt(r.quality)}
                               </td>
                               <td
-                                style={{ ...TD, color: "#888", fontSize: 11 }}
+                                style={{ ...TD, color: "#8b90b8", fontSize: 11 }}
                               >
                                 {r.topOp}
                               </td>
@@ -8117,10 +8117,10 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                       padding: "2px 8px",
                                       borderRadius: 4,
                                       background:
-                                        (PROCESS_COLORS[r.topStage] || "#555") +
+                                        (PROCESS_COLORS[r.topStage] || "#6f74a0") +
                                         "33",
                                       color:
-                                        PROCESS_COLORS[r.topStage] || "#aaa",
+                                        PROCESS_COLORS[r.topStage] || "#a9aed3",
                                       fontSize: 10,
                                       fontWeight: 500,
                                     }}
@@ -8323,7 +8323,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                   <div style={{ fontSize: 18, fontWeight: 600 }}>
                     SO → Dispatch Funnel
                   </div>
-                  <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
+                  <div style={{ fontSize: 12, color: "#8b90b8", marginTop: 2 }}>
                     Conversion rates and cycle times across {total} sales orders
                   </div>
                 </div>
@@ -8383,7 +8383,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             style={{
                               width: 100,
                               fontSize: 12,
-                              color: "#aaa",
+                              color: "#a9aed3",
                               flexShrink: 0,
                               textAlign: "right",
                             }}
@@ -8416,7 +8416,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 style={{
                                   fontSize: 11,
                                   fontWeight: 500,
-                                  color: "#fff",
+                                  color: "#dfe2f4",
                                   whiteSpace: "nowrap",
                                 }}
                               >
@@ -8428,7 +8428,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                             style={{
                               width: 50,
                               fontSize: 11,
-                              color: "#aaa",
+                              color: "#a9aed3",
                               flexShrink: 0,
                             }}
                           >
@@ -8467,7 +8467,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                         <div
                           style={{
                             fontSize: 10,
-                            color: "#888",
+                            color: "#8b90b8",
                             fontWeight: 500,
                             marginBottom: 8,
                           }}
@@ -8486,7 +8486,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                           <span
                             style={{
                               fontSize: 12,
-                              color: "#888",
+                              color: "#8b90b8",
                               fontWeight: 400,
                             }}
                           >
@@ -8498,7 +8498,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                           <div
                             style={{
                               fontSize: 11,
-                              color: "#888",
+                              color: "#8b90b8",
                               marginTop: 4,
                             }}
                           >
@@ -8506,7 +8506,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                           </div>
                         )}
                         <div
-                          style={{ fontSize: 10, color: "#666", marginTop: 2 }}
+                          style={{ fontSize: 10, color: "#6f74a0", marginTop: 2 }}
                         >
                           {times.length} completed
                         </div>
@@ -8563,7 +8563,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                               y={120}
                               textAnchor="middle"
                               fontSize={9}
-                              fill="#666"
+                              fill="#6f74a0"
                             >
                               {mo.slice(5)}
                             </text>
@@ -8583,7 +8583,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                         );
                       })}
                     </svg>
-                    <div style={{ fontSize: 10, color: "#666", marginTop: 4 }}>
+                    <div style={{ fontSize: 10, color: "#6f74a0", marginTop: 4 }}>
                       <span style={{ color: "#22c55e" }}>■</span> ≤7d &nbsp;
                       <span style={{ color: "#f59e0b" }}>■</span> ≤14d &nbsp;
                       <span style={{ color: "#ef4444" }}>■</span> &gt;14d
@@ -8649,7 +8649,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                     {d.soKey}
                                   </span>
                                 </td>
-                                <td style={{ ...TD, color: "#aaa" }}>
+                                <td style={{ ...TD, color: "#a9aed3" }}>
                                   {d.so.clientName || d.so.client || "—"}
                                 </td>
                                 <td style={TD}>
@@ -8669,7 +8669,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 <td
                                   style={{
                                     ...TD,
-                                    color: stuck ? "#f59e0b" : "#aaa",
+                                    color: stuck ? "#f59e0b" : "#a9aed3",
                                     fontWeight: stuck ? 700 : 400,
                                     textAlign: "right",
                                   }}
@@ -8679,7 +8679,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 <td
                                   style={{
                                     ...TD,
-                                    color: "#aaa",
+                                    color: "#a9aed3",
                                     textAlign: "right",
                                   }}
                                 >
@@ -8690,7 +8690,7 @@ export function Dashboard({ data, session, toast, onNavigate }) {
                                 <td
                                   style={{
                                     ...TD,
-                                    color: "#aaa",
+                                    color: "#a9aed3",
                                     textAlign: "right",
                                   }}
                                 >

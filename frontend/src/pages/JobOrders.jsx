@@ -123,6 +123,13 @@ const AutoField = ({ value, placeholder }) => (
   </div>
 );
 
+// Size of an SO item: use its size field, else build it from the dimensions.
+const itemSize = (it) => {
+  if (it?.size) return it.size;
+  const dims = [it?.width, it?.length, it?.gussett, it?.height].filter(Boolean);
+  return dims.length ? `${dims.join("x")}${it?.uom || "inch"}` : "";
+};
+
 export default function JobOrders(props) {
   const {
     machineMaster = {},
@@ -666,7 +673,7 @@ export default function JobOrders(props) {
             const it = firstAvailable || soItems[0];
 
             updated.itemName = it.itemName || "";
-            updated.size = it.size || "";
+            updated.size = itemSize(it);
             updated.orderQty = it.orderQty || "";
             updated.noOfSheets = calcSheets(updated.orderQty, updated.noOfUps);
           }
@@ -897,32 +904,32 @@ export default function JobOrders(props) {
           <title>JobCard-${r.joNo}</title>
           <style>
             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&family=JetBrains+Mono:wght@700&display=swap');
-            body { font-family: 'Inter', sans-serif; padding: 20px 30px; color: #1a1a1a; line-height: 1.4; }
+            body { font-family: 'Inter', sans-serif; padding: 20px 30px; color: #0b0e2d; line-height: 1.4; }
             .header { text-align: center; border-bottom: 2px solid #1e40af; padding-bottom: 10px; margin-bottom: 20px; }
             .header h1 { color: #1e3a8a; margin: 0; font-size: 24px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
-            .header p { margin: 2px 0; font-size: 11px; color: #6b6b6b; font-weight: 500; }
+            .header p { margin: 2px 0; font-size: 11px; color: #6f74a0; font-weight: 500; }
             
             .doc-title { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px; }
-            .doc-title h2 { margin: 0; font-size: 20px; font-weight: 700; color: #1f1f1f; }
+            .doc-title h2 { margin: 0; font-size: 20px; font-weight: 700; color: #101339; }
             .status { color: #1e40af; font-weight: 700; font-size: 12px; }
             
-            .hr { height: 1px; background: #ededed; margin: 10px 0; border: none; }
+            .hr { height: 1px; background: #dfe2f4; margin: 10px 0; border: none; }
             .jo-no { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 800; color: #1e40af; margin: 5px 0; }
             
-            .section-label { font-size: 10px; color: #8a8a8a; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 15px; margin-top: 25px; background: #f8fafc; padding: 4px 8px; border-radius: 4px; }
+            .section-label { font-size: 10px; color: #8b90b8; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 15px; margin-top: 25px; background: #f8fafc; padding: 4px 8px; border-radius: 4px; }
             
             .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 15px; }
-            .info-item label { display: block; font-size: 9px; color: #a3a3a3; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
-            .info-item span { font-size: 12px; font-weight: 600; color: #1f1f1f; }
+            .info-item label { display: block; font-size: 9px; color: #a9aed3; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
+            .info-item span { font-size: 12px; font-weight: 600; color: #101339; }
             
             table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-            th { background: #f8fafc; border: 1px solid #ededed; padding: 6px; text-align: left; font-size: 9px; font-weight: 800; text-transform: uppercase; color: #6b6b6b; }
-            td { border: 1px solid #ededed; padding: 6px; font-size: 11px; color: #1f1f1f; }
+            th { background: #f8fafc; border: 1px solid #dfe2f4; padding: 6px; text-align: left; font-size: 9px; font-weight: 800; text-transform: uppercase; color: #6f74a0; }
+            td { border: 1px solid #dfe2f4; padding: 6px; font-size: 11px; color: #101339; }
             
             .process-tag { display: inline-block; background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; margin-right: 5px; margin-bottom: 5px; border: 1px solid #bfdbfe; }
             
             .footer { margin-top: 50px; display: flex; justify-content: space-between; }
-            .signature { border-top: 1px solid #c7c7c7; width: 180px; text-align: center; padding-top: 8px; font-size: 11px; color: #8a8a8a; font-weight: 600; }
+            .signature { border-top: 1px solid #c9cdea; width: 180px; text-align: center; padding-top: 8px; font-size: 11px; color: #8b90b8; font-weight: 600; }
             
             @media print {
               body { padding: 0; }
@@ -1034,8 +1041,8 @@ export default function JobOrders(props) {
           ${
             r.hasSecondPaper
               ? `
-          <div style="margin-top: 10px; padding: 10px; border: 1px dashed #c7c7c7; border-radius: 6px;">
-            <label style="display: block; font-size: 8px; font-weight: 800; color: #8a8a8a; text-transform: uppercase; margin-bottom: 5px;">Second Paper Details</label>
+          <div style="margin-top: 10px; padding: 10px; border: 1px dashed #c9cdea; border-radius: 6px;">
+            <label style="display: block; font-size: 8px; font-weight: 800; color: #8b90b8; text-transform: uppercase; margin-bottom: 5px;">Second Paper Details</label>
             <div class="info-grid">
                <div class="info-item">
                 <label>Type</label>
@@ -1097,7 +1104,7 @@ export default function JobOrders(props) {
           </table>
 
           <div class="section-label">Special Remarks / Instructions</div>
-          <div style="min-height: 40px; font-size: 11px; font-style: italic; color: #6b6b6b;">
+          <div style="min-height: 40px; font-size: 11px; font-style: italic; color: #6f74a0;">
             ${r.remarks || "No special instructions provided."}
           </div>
 
@@ -1230,11 +1237,11 @@ export default function JobOrders(props) {
                             ? "#f97316"
                             : header.priority === "Fill-in"
                               ? "#6b7280"
-                              : "#2a2a2a"
+                              : "#161a49"
                       }`,
                       borderRadius: 6,
                       fontSize: 13,
-                      background: "#141414",
+                      background: "#05071a",
                       color:
                         header.priority === "VIP"
                           ? "#ef4444"
@@ -1242,7 +1249,7 @@ export default function JobOrders(props) {
                             ? "#f97316"
                             : header.priority === "Fill-in"
                               ? "#6b7280"
-                              : "#e0e0e0",
+                              : "#dfe2f4",
                       outline: "none",
                       width: "100%",
                       boxSizing: "border-box",
@@ -1303,7 +1310,7 @@ export default function JobOrders(props) {
                             const next = {
                               ...f,
                               itemName: it.itemName,
-                              size: it.size || "",
+                              size: itemSize(it),
                               orderQty: it.orderQty || "",
                             };
                             next.noOfSheets = calcSheets(
@@ -1337,7 +1344,7 @@ export default function JobOrders(props) {
                               disabled={alreadyHasJO}
                               style={
                                 alreadyHasJO
-                                  ? { color: "#888", fontStyle: "italic" }
+                                  ? { color: "#8b90b8", fontStyle: "italic" }
                                   : {}
                               }
                             >
@@ -1701,14 +1708,14 @@ export default function JobOrders(props) {
                     style={{
                       fontSize: 11,
                       fontWeight: 600,
-                      color: "#c8955a",
+                      color: "#aeb4ee",
                       marginBottom: 12,
                     }}
                   >
                     Paper Bag — RM Calculation
                   </div>
                   {!bagRmData.w ? (
-                    <div style={{ fontSize: 12, color: "#a3a3a3" }}>
+                    <div style={{ fontSize: 12, color: "#a9aed3" }}>
                       Enter bag size as W×G×H (e.g. 21×12×33 cm) to calculate RM
                       required
                     </div>
@@ -1725,7 +1732,7 @@ export default function JobOrders(props) {
                         <div
                           style={{
                             fontSize: 10,
-                            color: "#a3a3a3",
+                            color: "#a9aed3",
                             marginBottom: 2,
                           }}
                         >
@@ -1735,7 +1742,7 @@ export default function JobOrders(props) {
                           style={{
                             fontSize: 15,
                             fontWeight: 600,
-                            color: "#ededed",
+                            color: "#dfe2f4",
                           }}
                         >
                           {bagRmData.rw} mm
@@ -1743,7 +1750,7 @@ export default function JobOrders(props) {
                         <div
                           style={{
                             fontSize: 10,
-                            color: "#8a8a8a",
+                            color: "#8b90b8",
                             marginTop: 2,
                           }}
                         >
@@ -1754,7 +1761,7 @@ export default function JobOrders(props) {
                         <div
                           style={{
                             fontSize: 10,
-                            color: "#a3a3a3",
+                            color: "#a9aed3",
                             marginBottom: 2,
                           }}
                         >
@@ -1764,7 +1771,7 @@ export default function JobOrders(props) {
                           style={{
                             fontSize: 15,
                             fontWeight: 600,
-                            color: "#ededed",
+                            color: "#dfe2f4",
                           }}
                         >
                           {bagRmData.cl} mm
@@ -1772,7 +1779,7 @@ export default function JobOrders(props) {
                         <div
                           style={{
                             fontSize: 10,
-                            color: "#8a8a8a",
+                            color: "#8b90b8",
                             marginTop: 2,
                           }}
                         >
@@ -1783,7 +1790,7 @@ export default function JobOrders(props) {
                         <div
                           style={{
                             fontSize: 10,
-                            color: "#a3a3a3",
+                            color: "#a9aed3",
                             marginBottom: 2,
                           }}
                         >
@@ -1793,7 +1800,7 @@ export default function JobOrders(props) {
                           style={{
                             fontSize: 15,
                             fontWeight: 600,
-                            color: "#ededed",
+                            color: "#dfe2f4",
                           }}
                         >
                           {bagRmData.bagWeightG.toFixed(2)} g/bag
@@ -1801,7 +1808,7 @@ export default function JobOrders(props) {
                         <div
                           style={{
                             fontSize: 10,
-                            color: "#8a8a8a",
+                            color: "#8b90b8",
                             marginTop: 2,
                           }}
                         >
@@ -1813,7 +1820,7 @@ export default function JobOrders(props) {
                           <div
                             style={{
                               fontSize: 10,
-                              color: "#a3a3a3",
+                              color: "#a9aed3",
                               marginBottom: 2,
                             }}
                           >
@@ -1823,7 +1830,7 @@ export default function JobOrders(props) {
                             style={{
                               fontSize: 17,
                               fontWeight: 600,
-                              color: "#c8955a",
+                              color: "#aeb4ee",
                             }}
                           >
                             ~{bagRmData.totalKg.toFixed(1)} kg
@@ -1831,7 +1838,7 @@ export default function JobOrders(props) {
                           <div
                             style={{
                               fontSize: 10,
-                              color: "#8a8a8a",
+                              color: "#8b90b8",
                               marginTop: 2,
                             }}
                           >
@@ -2640,7 +2647,7 @@ export default function JobOrders(props) {
                           borderRadius: 5,
                           border: "1px solid rgba(255,255,255,0.15)",
                           background: "rgba(255,255,255,0.06)",
-                          color: "#fff",
+                          color: "#dfe2f4",
                           fontSize: 12,
                           fontWeight: 500,
                           cursor: "pointer",
@@ -2796,7 +2803,7 @@ export default function JobOrders(props) {
                                 style={{
                                   padding: "11px 14px",
                                   fontWeight: 600,
-                                  color: "#c8955a",
+                                  color: "#aeb4ee",
                                   whiteSpace: "nowrap",
                                 }}
                               >
@@ -2827,7 +2834,7 @@ export default function JobOrders(props) {
                               <td
                                 style={{
                                   padding: "11px 14px",
-                                  color: "#a3a3a3",
+                                  color: "#a9aed3",
                                   maxWidth: 220,
                                 }}
                               >
@@ -2847,7 +2854,7 @@ export default function JobOrders(props) {
                               <td
                                 style={{
                                   padding: "11px 14px",
-                                  color: "#ededed",
+                                  color: "#dfe2f4",
                                 }}
                               >
                                 {fmt(r.orderQty)}

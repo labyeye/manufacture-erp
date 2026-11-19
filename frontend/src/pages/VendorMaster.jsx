@@ -20,7 +20,7 @@ const inputStyle = {
   borderRadius: 6,
   fontSize: 13,
   background: "rgba(255,255,255,0.07)",
-  color: "#e0e0e0",
+  color: "#dfe2f4",
   outline: "none",
   boxSizing: "border-box",
 };
@@ -367,7 +367,7 @@ export default function VendorMaster({
             >
               Importing Vendors
             </div>
-            <div style={{ fontSize: 13, color: "#666", marginBottom: 24 }}>
+            <div style={{ fontSize: 13, color: "#6f74a0", marginBottom: 24 }}>
               Processing {importProgress.total} vendors
             </div>
 
@@ -398,7 +398,7 @@ export default function VendorMaster({
                 justifyContent: "space-between",
                 fontSize: 12,
                 fontWeight: 500,
-                color: "#888",
+                color: "#8b90b8",
                 marginBottom: 20,
               }}
             >
@@ -411,7 +411,7 @@ export default function VendorMaster({
             <div
               style={{
                 fontSize: 11,
-                color: "#555",
+                color: "#6f74a0",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
@@ -545,11 +545,11 @@ export default function VendorMaster({
                     justifyContent: "space-between",
                     padding: "8px 16px",
                     marginBottom: 12,
-                    background: "#1a1a1a",
+                    background: "#0b0e2d",
                     border: "1px solid rgba(255,255,255,0.08)",
                     borderRadius: 10,
                     fontSize: 13,
-                    color: "#a3a3a3",
+                    color: "#a9aed3",
                   }}
                 >
                   {selectedIds.size} selected
@@ -575,7 +575,7 @@ export default function VendorMaster({
                 <div
                   style={{
                     textAlign: "center",
-                    color: "#555",
+                    color: "#6f74a0",
                     padding: 40,
                     fontSize: 13,
                   }}
@@ -663,7 +663,7 @@ export default function VendorMaster({
                           style={{
                             borderBottom: "1px solid rgba(255,255,255,0.04)",
                             background: selectedIds.has(vendor._id)
-                              ? "rgba(200, 149, 90, 0.06)"
+                              ? "rgba(174, 180, 238, 0.06)"
                               : i % 2 === 0
                                 ? "transparent"
                                 : "rgba(255,255,255,0.01)",
@@ -693,30 +693,30 @@ export default function VendorMaster({
                             style={{
                               padding: "12px 14px",
                               fontWeight: 500,
-                              color: "#ededed",
+                              color: "#dfe2f4",
                             }}
                           >
                             <NameWithAvatar name={vendor.name} />
                           </td>
                           <td
-                            style={{ padding: "12px 14px", color: "#a3a3a3" }}
+                            style={{ padding: "12px 14px", color: "#a9aed3" }}
                           >
                             {vendor.category || "-"}
                           </td>
                           <td
-                            style={{ padding: "12px 14px", color: "#a3a3a3" }}
+                            style={{ padding: "12px 14px", color: "#a9aed3" }}
                           >
                             {vendor.contact || "-"}
                           </td>
                           <td
-                            style={{ padding: "12px 14px", color: "#a3a3a3" }}
+                            style={{ padding: "12px 14px", color: "#a9aed3" }}
                           >
                             {vendor.email || "-"}
                           </td>
                           <td
                             style={{
                               padding: "12px 14px",
-                              color: "#a3a3a3",
+                              color: "#a9aed3",
                               fontSize: 12,
                             }}
                           >

@@ -25,7 +25,7 @@ export function Toast({ msg, onClose, type = "success" }) {
         transform: "translateX(-50%)",
         zIndex: 9999,
         background: bg,
-        color: "#fff",
+        color: "#dfe2f4",
         borderRadius: 8,
         padding: "12px 20px",
         fontWeight: 600,
