@@ -1530,24 +1530,6 @@ export function Dashboard({ data, session, toast, onNavigate }) {
           placeholder="Search rows in this report…"
           filterCount={dateFrom || dateTo ? 1 : 0}
           onFilter={() => setShowDashFilter(true)}
-          extra={
-            <select
-              className="lg-select"
-              value={reportTab}
-              onChange={(e) => {
-                setReportTab(e.target.value);
-                setDrill(null);
-              }}
-              style={{ width: 200, height: 38 }}
-              aria-label="Report"
-            >
-              {reportTabs.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
-          }
           exportOptions={[
             {
               label: "Excel",
@@ -1561,6 +1543,41 @@ export function Dashboard({ data, session, toast, onNavigate }) {
             },
           ]}
         />
+        <div
+          style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}
+          role="tablist"
+          aria-label="Report"
+        >
+          {reportTabs.map((t) => {
+            const active = reportTab === t.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => {
+                  setReportTab(t.id);
+                  setDrill(null);
+                }}
+                style={{
+                  height: 36,
+                  padding: "0 14px",
+                  borderRadius: 8,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                  color: active ? "#fff" : "#a9aed3",
+                  background: active ? "#3a3f7a" : "transparent",
+                  border: active ? "1px solid #6b72d6" : "1px solid #23264a",
+                }}
+              >
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
       {showDashFilter && (
         <FilterModal
